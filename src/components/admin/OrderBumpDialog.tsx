@@ -135,29 +135,30 @@ const OrderBumpDialog = ({ open, onClose, productId, onSaved }: OrderBumpDialogP
             </div>
           </div>
 
-          {/* Preview */}
-          {selectedProduct && (
-            <div className="mt-4">
-              <Label className="text-sm text-muted-foreground mb-2 block">Pré-visualização</Label>
-              <div className="border-2 border-dashed border-border rounded-lg p-4 space-y-2">
-                <div className="bg-primary text-primary-foreground text-center text-xs font-bold py-2 rounded uppercase">
-                  {callToAction}
-                </div>
-                <div className="flex items-center gap-3 p-2">
-                  {useProductImage && selectedProduct.image_url && (
-                    <img src={selectedProduct.image_url} alt="" className="w-10 h-10 rounded object-cover" />
-                  )}
-                  <div className="flex items-center gap-2">
-                    <input type="checkbox" disabled className="w-4 h-4" />
-                    <span className="text-sm">
-                      <strong className="text-primary">{title || selectedProduct.name}</strong>{" "}
-                      {description} - R$ {selectedProduct.price.toFixed(2).replace(".", ",")}
-                    </span>
-                  </div>
+          {/* Preview - always visible */}
+          <div className="mt-4">
+            <Label className="text-sm text-muted-foreground mb-2 block">Pré-visualização</Label>
+            <div className="border-2 border-dashed border-border rounded-lg p-4 space-y-2">
+              <div className="bg-primary text-primary-foreground text-center text-xs font-bold py-2 rounded uppercase">
+                {callToAction}
+              </div>
+              <div className="flex items-center gap-3 p-2">
+                {useProductImage && selectedProduct?.image_url && (
+                  <img src={selectedProduct.image_url} alt="" className="w-10 h-10 rounded object-cover" />
+                )}
+                {!useProductImage || !selectedProduct?.image_url ? (
+                  <div className="w-10 h-10 rounded bg-destructive/80 flex items-center justify-center text-destructive-foreground text-lg">▶</div>
+                ) : null}
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" disabled className="w-4 h-4" />
+                  <span className="text-sm">
+                    <strong className="text-primary">{title || selectedProduct?.name || "Nome do produto"}</strong>{" "}
+                    {description} - R$ {selectedProduct ? selectedProduct.price.toFixed(2).replace(".", ",") : "0,00"}
+                  </span>
                 </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
 
         <DialogFooter>
