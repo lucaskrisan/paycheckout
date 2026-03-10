@@ -836,6 +836,11 @@ const ProductEdit = () => {
           </TabsContent>
         </Tabs>
       </div>
+      <FacebookDomainManager
+        open={showDomainManager}
+        onClose={() => setShowDomainManager(false)}
+        onDomainsChange={(d) => setFbDomains(d)}
+      />
     </div>
   );
 };
