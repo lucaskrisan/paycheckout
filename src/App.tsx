@@ -12,6 +12,7 @@ import Orders from "./pages/admin/Orders";
 import Products from "./pages/admin/Products";
 import Customers from "./pages/admin/Customers";
 import Settings from "./pages/admin/Settings";
+import Gateways from "./pages/admin/Gateways";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
