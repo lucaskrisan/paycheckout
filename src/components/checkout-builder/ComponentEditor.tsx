@@ -53,20 +53,40 @@ const ComponentEditor = ({ component, onUpdate, onRemove }: ComponentEditorProps
           <div className="space-y-4">
             <div className="space-y-2">
               <Label className="text-xs">Imagem</Label>
-              <div className="border-2 border-dashed border-border rounded-lg p-6 flex flex-col items-center gap-2">
+              <div
+                className="border-2 border-dashed border-border rounded-lg p-6 flex flex-col items-center gap-2 cursor-pointer hover:border-primary/50 transition-colors"
+                onClick={() => !component.props.url && fileInputRef.current?.click()}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleImageUpload(f); }}
+              >
                 {component.props.url ? (
-                  <img src={component.props.url} alt="" className="w-full h-20 object-cover rounded" />
+                  <div className="relative w-full">
+                    <img src={component.props.url} alt="" className="w-full h-20 object-cover rounded" />
+                    <button
+                      onClick={(e) => { e.stopPropagation(); update("url", ""); }}
+                      className="absolute top-1 right-1 bg-card/80 rounded-full p-0.5 hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
                 ) : (
                   <>
                     <div className="w-10 h-10 text-muted-foreground/40 flex items-center justify-center">
                       <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                     </div>
-                    <p className="text-xs text-primary cursor-pointer">Selecione do computador</p>
+                    <p className="text-xs text-primary">Selecione do computador</p>
                     <p className="text-[10px] text-muted-foreground">ou arraste aqui</p>
                     <p className="text-[10px] text-muted-foreground">PNG, JPG até 10 MB</p>
                   </>
                 )}
               </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); }}
+              />
               <Input
                 value={component.props.url || ""}
                 onChange={(e) => update("url", e.target.value)}
