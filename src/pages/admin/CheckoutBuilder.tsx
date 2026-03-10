@@ -42,17 +42,26 @@ const CheckoutBuilder = () => {
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
-  const DEFAULT_COMPONENTS: BuilderComponent[] = [
-    { id: "default-header", type: "header", zone: "left", order: 0, props: { title: "TÍTULO DO PRODUTO" } },
+  const getDefaultComponents = (productName: string): BuilderComponent[] => [
+    { id: "default-header", type: "header", zone: "left", order: 0, props: { title: productName.toUpperCase() } },
     { id: "default-form", type: "form", zone: "left", order: 1, props: {} },
     { id: "default-button", type: "button", zone: "left", order: 2, props: { text: "Finalizar compra" } },
   ];
 
-  // Load config
+  // Load config + product name
   useEffect(() => {
     if (!productId) return;
 
     const load = async () => {
+      // Fetch product name
+      const { data: product } = await supabase
+        .from("products")
+        .select("name")
+        .eq("id", productId)
+        .single();
+      const productName = product?.name || "TÍTULO DO PRODUTO";
+      const defaults = getDefaultComponents(productName);
+
       let loaded = false;
       if (configId) {
         const { data } = await supabase
@@ -63,7 +72,7 @@ const CheckoutBuilder = () => {
         if (data) {
           setCheckoutName(data.name);
           const layout = (data.layout as any) || [];
-          setComponents(layout.length > 0 ? layout : DEFAULT_COMPONENTS);
+          setComponents(layout.length > 0 ? layout : defaults);
           setDbConfigId(data.id);
           loaded = true;
         }
@@ -77,13 +86,13 @@ const CheckoutBuilder = () => {
         if (data && data.length > 0) {
           setCheckoutName(data[0].name);
           const layout = (data[0].layout as any) || [];
-          setComponents(layout.length > 0 ? layout : DEFAULT_COMPONENTS);
+          setComponents(layout.length > 0 ? layout : defaults);
           setDbConfigId(data[0].id);
           loaded = true;
         }
       }
       if (!loaded) {
-        setComponents(DEFAULT_COMPONENTS);
+        setComponents(defaults);
       }
       setLoading(false);
     };
