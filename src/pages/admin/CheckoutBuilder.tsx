@@ -71,8 +71,12 @@ const CheckoutBuilder = () => {
           .single();
         if (data) {
           setCheckoutName(data.name);
-          const layout = (data.layout as any) || [];
-          setComponents(layout.length > 0 ? layout : defaults);
+          let layout = (data.layout as any) || [];
+          // Always sync header title with product name
+          layout = layout.length > 0
+            ? layout.map((c: any) => c.type === "header" ? { ...c, props: { ...c.props, title: productName.toUpperCase() } } : c)
+            : defaults;
+          setComponents(layout);
           setDbConfigId(data.id);
           loaded = true;
         }
