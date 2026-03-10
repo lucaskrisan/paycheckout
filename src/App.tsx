@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import MemberArea from "./pages/MemberArea";
+import CustomerPortal from "./pages/CustomerPortal";
 import Login from "./pages/Login";
 import AdminLayout from "./components/admin/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
@@ -14,6 +15,10 @@ import Products from "./pages/admin/Products";
 import Customers from "./pages/admin/Customers";
 import Settings from "./pages/admin/Settings";
 import Gateways from "./pages/admin/Gateways";
+import Courses from "./pages/admin/Courses";
+import Coupons from "./pages/admin/Coupons";
+import AbandonedCarts from "./pages/admin/AbandonedCarts";
+import Integrations from "./pages/admin/Integrations";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +33,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/membros" element={<MemberArea />} />
+            <Route path="/minha-conta" element={<CustomerPortal />} />
             <Route path="/login" element={<Login />} />
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<Dashboard />} />
@@ -35,6 +41,10 @@ const App = () => (
               <Route path="products" element={<Products />} />
               <Route path="customers" element={<Customers />} />
               <Route path="gateways" element={<Gateways />} />
+              <Route path="courses" element={<Courses />} />
+              <Route path="coupons" element={<Coupons />} />
+              <Route path="abandoned" element={<AbandonedCarts />} />
+              <Route path="integrations" element={<Integrations />} />
               <Route path="settings" element={<Settings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
