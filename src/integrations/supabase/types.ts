@@ -417,6 +417,50 @@ export type Database = {
         }
         Relationships: []
       }
+      product_pixels: {
+        Row: {
+          created_at: string
+          domain: string | null
+          fire_on_boleto: boolean
+          fire_on_pix: boolean
+          id: string
+          pixel_id: string
+          platform: string
+          product_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          domain?: string | null
+          fire_on_boleto?: boolean
+          fire_on_pix?: boolean
+          id?: string
+          pixel_id: string
+          platform?: string
+          product_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          domain?: string | null
+          fire_on_boleto?: boolean
+          fire_on_pix?: boolean
+          id?: string
+          pixel_id?: string
+          platform?: string
+          product_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_pixels_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           active: boolean
