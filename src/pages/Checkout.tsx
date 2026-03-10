@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Lock, ShieldCheck, ArrowRight, Loader2, QrCode } from "lucide-react";
+import { Lock, ShieldCheck, ArrowRight, Loader2, QrCode, Award, Star, ListOrdered } from "lucide-react";
 import OrderSummary from "@/components/checkout/OrderSummary";
 import CustomerForm, { type CustomerData } from "@/components/checkout/CustomerForm";
 import PixPayment from "@/components/checkout/PixPayment";
@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFacebookPixel } from "@/hooks/useFacebookPixel";
 import { Checkbox } from "@/components/ui/checkbox";
+import type { BuilderComponent } from "@/components/checkout-builder/types";
 
 interface Product {
   id: string;
@@ -46,6 +47,7 @@ const Checkout = () => {
   const { trackPurchase } = useFacebookPixel(productId);
   const [orderBumps, setOrderBumps] = useState<OrderBump[]>([]);
   const [selectedBumps, setSelectedBumps] = useState<Set<string>>(new Set());
+  const [builderLayout, setBuilderLayout] = useState<BuilderComponent[]>([]);
 
   const [customer, setCustomer] = useState<CustomerData>({
     name: "",
@@ -55,29 +57,55 @@ const Checkout = () => {
   });
 
   useEffect(() => {
-    if (!productId) { setNotFound(true); setLoading(false); return; }
-    supabase
-      .from("products")
-      .select("*")
-      .eq("id", productId)
-      .eq("active", true)
-      .single()
-      .then(({ data, error }) => {
-        if (error || !data) setNotFound(true);
-        else setProduct(data);
-        setLoading(false);
-      });
+    if (!productId) {
+      setNotFound(true);
+      setLoading(false);
+      return;
+    }
 
-    // Load order bumps
-    supabase
-      .from("order_bumps")
-      .select("id, call_to_action, title, description, use_product_image, bump_product:products!order_bumps_bump_product_id_fkey(id, name, price, image_url)")
-      .eq("product_id", productId)
-      .eq("active", true)
-      .order("sort_order")
-      .then(({ data }) => {
-        if (data) setOrderBumps(data as any);
-      });
+    const loadCheckoutData = async () => {
+      setLoading(true);
+
+      const [productRes, orderBumpsRes, builderRes] = await Promise.all([
+        supabase
+          .from("products")
+          .select("*")
+          .eq("id", productId)
+          .eq("active", true)
+          .single(),
+        supabase
+          .from("order_bumps")
+          .select("id, call_to_action, title, description, use_product_image, bump_product:products!order_bumps_bump_product_id_fkey(id, name, price, image_url)")
+          .eq("product_id", productId)
+          .eq("active", true)
+          .order("sort_order"),
+        supabase
+          .from("checkout_builder_configs")
+          .select("layout")
+          .eq("product_id", productId)
+          .eq("is_default", true)
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .maybeSingle(),
+      ]);
+
+      if (productRes.error || !productRes.data) {
+        setNotFound(true);
+      } else {
+        setProduct(productRes.data);
+      }
+
+      if (orderBumpsRes.data) {
+        setOrderBumps(orderBumpsRes.data as any);
+      }
+
+      const layout = (builderRes.data?.layout as unknown as BuilderComponent[] | null) ?? [];
+      setBuilderLayout(Array.isArray(layout) ? layout : []);
+
+      setLoading(false);
+    };
+
+    loadCheckoutData();
   }, [productId]);
 
   const toggleBump = (bumpId: string) => {
@@ -87,6 +115,60 @@ const Checkout = () => {
       else next.add(bumpId);
       return next;
     });
+  };
+
+  const sortedLayout = useMemo(
+    () => [...builderLayout].sort((a, b) => a.order - b.order),
+    [builderLayout]
+  );
+
+  const headerTitle = sortedLayout.find((c) => c.type === "header")?.props?.title || product?.name;
+  const countdownMinutes = Number(sortedLayout.find((c) => c.type === "countdown")?.props?.minutes || 15);
+  const submitLabel = sortedLayout.find((c) => c.type === "button")?.props?.text || "Gerar PIX";
+
+  const renderCustomComponent = (component: BuilderComponent) => {
+    switch (component.type) {
+      case "text":
+        return <p className="text-foreground whitespace-pre-line">{component.props.content}</p>;
+      case "image":
+        return component.props.url ? <img src={component.props.url} alt="Imagem do checkout" className="w-full rounded-xl object-cover" /> : null;
+      case "header":
+        return <h1 className="font-display text-2xl font-bold text-foreground">{component.props.title || product?.name}</h1>;
+      case "advantages":
+      case "list":
+        return (
+          <ul className="space-y-2">
+            {(component.props.items || []).map((item: string, i: number) => (
+              <li key={`${component.id}-${i}`} className="flex items-center gap-2 text-sm text-foreground">
+                <ListOrdered className="w-4 h-4 text-primary" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        );
+      case "testimonial":
+        return (
+          <div className="rounded-xl border border-border bg-card p-4">
+            <div className="mb-2 flex gap-1">{[...Array(5)].map((_, i) => <Star key={i} className="w-3.5 h-3.5 text-primary fill-primary" />)}</div>
+            <p className="text-sm text-foreground italic">"{component.props.text}"</p>
+            <p className="mt-1 text-xs text-muted-foreground">— {component.props.author}</p>
+          </div>
+        );
+      case "seal":
+        return (
+          <div className="flex items-center gap-2 rounded-xl border border-border bg-card p-4">
+            <Award className="w-5 h-5 text-primary" />
+            <div>
+              <p className="text-sm font-semibold text-foreground">{component.props.title}</p>
+              <p className="text-xs text-muted-foreground">{component.props.subtitle}</p>
+            </div>
+          </div>
+        );
+      case "video":
+        return component.props.url ? <iframe src={component.props.url.replace("watch?v=", "embed/")} className="w-full h-64 rounded-xl border border-border" allowFullScreen title="Vídeo" /> : null;
+      default:
+        return null;
+    }
   };
 
   if (loading) {
@@ -193,7 +275,19 @@ const Checkout = () => {
       </div>
 
       <div className="container max-w-5xl mx-auto px-4 py-6 lg:py-10">
-        <CountdownTimer minutes={15} />
+        <CountdownTimer minutes={countdownMinutes} />
+
+        {sortedLayout.filter((c) => c.zone === "top").length > 0 && (
+          <div className="mt-6 space-y-4">
+            {sortedLayout
+              .filter((c) => c.zone === "top")
+              .map((component) => (
+                <div key={component.id} className="rounded-xl border border-border bg-card p-4">
+                  {renderCustomComponent(component)}
+                </div>
+              ))}
+          </div>
+        )}
 
         <div className="mt-6 grid lg:grid-cols-5 gap-6 lg:gap-8">
           <motion.div
@@ -202,6 +296,16 @@ const Checkout = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4 }}
           >
+            <h1 className="font-display text-2xl font-bold text-foreground">{headerTitle}</h1>
+
+            {sortedLayout
+              .filter((c) => c.zone === "left" && !["form", "button", "countdown", "facebook"].includes(c.type))
+              .map((component) => (
+                <div key={component.id} className="rounded-xl border border-border bg-card p-4">
+                  {renderCustomComponent(component)}
+                </div>
+              ))}
+
             <div className="bg-card border border-border rounded-2xl p-6 space-y-6 shadow-sm">
               <CustomerForm data={customer} onChange={setCustomer} />
             </div>
@@ -267,7 +371,7 @@ const Checkout = () => {
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   <>
-                    Gerar PIX
+                    {submitLabel}
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </>
                 )}
@@ -283,11 +387,18 @@ const Checkout = () => {
 
           <motion.div
             className="lg:col-span-2"
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 1, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4, delay: 0.1 }}
           >
-            <div className="lg:sticky lg:top-6">
+            <div className="lg:sticky lg:top-6 space-y-4">
+              {sortedLayout
+                .filter((c) => c.zone === "right" && !["form", "button", "countdown", "facebook"].includes(c.type))
+                .map((component) => (
+                  <div key={component.id} className="rounded-xl border border-border bg-card p-4">
+                    {renderCustomComponent(component)}
+                  </div>
+                ))}
               <OrderSummary items={items} discount={pixDiscount} />
             </div>
           </motion.div>
