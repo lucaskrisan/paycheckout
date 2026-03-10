@@ -58,7 +58,12 @@ const Products = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  useEffect(() => { loadProducts(); }, []);
+  useEffect(() => { loadProducts(); loadCourses(); }, []);
+
+  const loadCourses = async () => {
+    const { data } = await supabase.from("courses").select("id, title");
+    setCourses(data || []);
+  };
 
   const loadProducts = async () => {
     const { data } = await supabase.from("products").select("*").order("created_at", { ascending: false });
