@@ -118,7 +118,14 @@ const CheckoutBuilder = () => {
 
     // Dropping from palette
     if (activeData?.fromPalette) {
-      const zone = (["top", "left", "right"].includes(overZone) ? overZone : "left") as "top" | "left" | "right";
+      let zone: "top" | "left" | "right" = "left";
+      if (["top", "left", "right"].includes(overZone)) {
+        zone = overZone as "top" | "left" | "right";
+      } else {
+        // over might be a component inside a zone
+        const overComp = components.find((c) => c.id === overZone);
+        if (overComp) zone = overComp.zone;
+      }
       const zoneComponents = components.filter((c) => c.zone === zone);
       const newComponent: BuilderComponent = {
         id: generateId(),
