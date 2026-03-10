@@ -158,6 +158,20 @@ export function AdminSidebar() {
             <SidebarGroupContent>{renderItems(configItems)}</SidebarGroupContent>
           )}
         </SidebarGroup>
+
+        {/* Super Admin */}
+        {isSuperAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>
+              {!collapsed && (
+                <span className="text-xs font-semibold text-checkout-badge uppercase tracking-wider flex items-center gap-1.5">
+                  <Crown className="w-3.5 h-3.5" /> Super Admin
+                </span>
+              )}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>{renderItems(superAdminItems)}</SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter>
