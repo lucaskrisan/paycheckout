@@ -44,6 +44,8 @@ const ProductEdit = () => {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
+  const [selectedCourseId, setSelectedCourseId] = useState("");
   const [form, setForm] = useState({
     name: "",
     description: "",
