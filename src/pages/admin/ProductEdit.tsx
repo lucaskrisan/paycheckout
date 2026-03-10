@@ -57,6 +57,15 @@ const ProductEdit = () => {
   });
 
   useEffect(() => {
+    // Load courses
+    supabase.from("courses").select("id, title, product_id").then(({ data }) => {
+      setCourses(data || []);
+      if (!isNew && productId) {
+        const linked = data?.find((c) => c.product_id === productId);
+        if (linked) setSelectedCourseId(linked.id);
+      }
+    });
+
     if (!isNew && productId) {
       supabase
         .from("products")
