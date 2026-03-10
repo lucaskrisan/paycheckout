@@ -113,6 +113,33 @@ const ComponentPreview = ({ component }: { component: BuilderComponent }) => {
         </div>
       );
 
+    case "form":
+      return (
+        <div className="py-2 space-y-2">
+          <p className="text-xs font-semibold text-foreground">📝 Formulário do checkout</p>
+          <div className="space-y-1.5">
+            <div className="h-8 w-full bg-muted/60 rounded border border-border/30" />
+            <div className="h-8 w-full bg-muted/60 rounded border border-border/30" />
+            <div className="h-8 w-full bg-muted/60 rounded border border-border/30" />
+            <div className="grid grid-cols-2 gap-1.5">
+              <div className="h-8 bg-muted/60 rounded border border-border/30" />
+              <div className="h-8 bg-muted/60 rounded border border-border/30" />
+            </div>
+          </div>
+        </div>
+      );
+
+    case "button":
+      return (
+        <div className="py-2">
+          <div className="h-12 w-full bg-primary rounded-lg flex items-center justify-center">
+            <span className="text-primary-foreground text-sm font-bold">
+              {component.props.text || "Finalizar compra"}
+            </span>
+          </div>
+        </div>
+      );
+
     default:
       return <div className="py-2 text-xs text-muted-foreground">Componente desconhecido</div>;
   }
