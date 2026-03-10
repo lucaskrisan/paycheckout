@@ -244,7 +244,7 @@ const Index = () => {
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   <>
-                    {paymentMethod === "credit_card" ? "Finalizar Pagamento" : "Gerar PIX"}
+                    Gerar PIX
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </>
                 )}
