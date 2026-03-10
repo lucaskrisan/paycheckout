@@ -6,9 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Copy, Link, CheckCircle2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Plus, Pencil, Trash2, Copy, Link } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Product {
   id: string;
@@ -21,6 +22,7 @@ interface Product {
 }
 
 const Products = () => {
+  const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
@@ -57,7 +59,7 @@ const Products = () => {
       return;
     }
 
-    const payload = {
+    const payload: any = {
       name: form.name,
       description: form.description || null,
       price: parseFloat(form.price),
@@ -71,6 +73,7 @@ const Products = () => {
       if (error) { toast.error("Erro ao atualizar"); return; }
       toast.success("Produto atualizado!");
     } else {
+      payload.user_id = user?.id;
       const { error } = await supabase.from("products").insert(payload);
       if (error) { toast.error("Erro ao criar"); return; }
       toast.success("Produto criado!");
