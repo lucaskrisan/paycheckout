@@ -27,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, MoreVertical, Search, Pencil, Trash2, Copy, ExternalLink } from "lucide-react";
+import { MoreVertical, Search, Pencil, Trash2, Copy, ExternalLink, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
