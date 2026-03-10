@@ -55,6 +55,9 @@ const ProductEdit = () => {
   const [dragOver, setDragOver] = useState(false);
   const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState("");
+  const [pixels, setPixels] = useState<PixelEntry[]>([]);
+  const [activePixelPlatform, setActivePixelPlatform] = useState("Facebook");
+  const [savingPixels, setSavingPixels] = useState(false);
   const [form, setForm] = useState({
     name: "",
     description: "",
