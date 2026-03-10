@@ -32,16 +32,14 @@ const Login = () => {
     try {
       if (isSignUp) {
         await signUp(email, password, fullName);
-        toast.success("Conta criada! Verifique seu e-mail para confirmar.");
-        setLoading(false);
-        return;
+        // Auto-confirm is on, so sign in immediately
+        await signIn(email, password);
       } else {
         await signIn(email, password);
       }
       // Auth state change will trigger redirect via useEffect
     } catch (err: any) {
       toast.error(err.message || "Erro na autenticação");
-    } finally {
       setLoading(false);
     }
   };
