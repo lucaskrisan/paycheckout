@@ -21,6 +21,16 @@ interface Product {
   image_url: string | null;
 }
 
+const PUBLISHED_URL = "https://paycheckout.lovable.app";
+
+const getPublicUrl = () => {
+  // Use published URL if available, fallback to current origin
+  if (window.location.hostname.includes("preview")) {
+    return PUBLISHED_URL;
+  }
+  return window.location.origin;
+};
+
 const Products = () => {
   const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
@@ -122,14 +132,14 @@ const Products = () => {
                 <div className="flex items-center gap-1.5 bg-muted/50 rounded-lg px-3 py-2">
                   <Link className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                   <span className="text-xs text-muted-foreground truncate flex-1">
-                    {window.location.origin}/checkout/{p.id}
+                    {getPublicUrl()}/checkout/{p.id}
                   </span>
                   <Button
                     variant="ghost"
                     size="icon"
                     className="h-6 w-6 shrink-0"
                     onClick={() => {
-                      navigator.clipboard.writeText(`${window.location.origin}/checkout/${p.id}`);
+                      navigator.clipboard.writeText(`${getPublicUrl()}/checkout/${p.id}`);
                       toast.success("Link do checkout copiado!");
                     }}
                   >
