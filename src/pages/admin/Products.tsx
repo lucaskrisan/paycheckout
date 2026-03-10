@@ -79,12 +79,16 @@ const Products = () => {
 
   const openEdit = (p: Product) => {
     setEditing(p);
+    setStep(2);
     setForm({
       name: p.name,
       description: p.description || "",
       price: String(p.price),
       original_price: p.original_price ? String(p.original_price) : "",
       active: p.active,
+      payment_type: "one_time",
+      delivery: "members_area",
+      course_id: "new",
     });
     setOpen(true);
   };
