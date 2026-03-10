@@ -1,4 +1,4 @@
-import { Clock, ThumbsUp, Star, Award, Image, Video, Facebook, LayoutGrid, ListOrdered, FileText, MousePointerClick } from "lucide-react";
+import { Clock, ThumbsUp, Star, Award, Image, Video, Facebook, LayoutGrid, ListOrdered } from "lucide-react";
 import type { BuilderComponent } from "./types";
 
 const ComponentPreview = ({ component }: { component: BuilderComponent }) => {
