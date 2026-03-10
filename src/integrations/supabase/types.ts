@@ -25,6 +25,7 @@ export type Database = {
           primary_color: string | null
           show_countdown: boolean | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           company_name?: string | null
@@ -36,6 +37,7 @@ export type Database = {
           primary_color?: string | null
           show_countdown?: boolean | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           company_name?: string | null
@@ -47,6 +49,7 @@ export type Database = {
           primary_color?: string | null
           show_countdown?: boolean | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -135,6 +138,7 @@ export type Database = {
           product_id: string | null
           title: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           cover_image_url?: string | null
@@ -144,6 +148,7 @@ export type Database = {
           product_id?: string | null
           title: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           cover_image_url?: string | null
@@ -153,6 +158,7 @@ export type Database = {
           product_id?: string | null
           title?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -173,6 +179,7 @@ export type Database = {
           name: string
           phone: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           cpf?: string | null
@@ -182,6 +189,7 @@ export type Database = {
           name: string
           phone?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           cpf?: string | null
@@ -191,6 +199,7 @@ export type Database = {
           name?: string
           phone?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -294,9 +303,12 @@ export type Database = {
           id: string
           metadata: Json | null
           payment_method: string
+          platform_fee_amount: number | null
+          platform_fee_percent: number | null
           product_id: string | null
           status: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           amount: number
@@ -306,9 +318,12 @@ export type Database = {
           id?: string
           metadata?: Json | null
           payment_method?: string
+          platform_fee_amount?: number | null
+          platform_fee_percent?: number | null
           product_id?: string | null
           status?: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           amount?: number
@@ -318,9 +333,12 @@ export type Database = {
           id?: string
           metadata?: Json | null
           payment_method?: string
+          platform_fee_amount?: number | null
+          platform_fee_percent?: number | null
           product_id?: string | null
           status?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -350,6 +368,7 @@ export type Database = {
           payment_methods: Json
           provider: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           active?: boolean
@@ -361,6 +380,7 @@ export type Database = {
           payment_methods?: Json
           provider: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           active?: boolean
@@ -372,6 +392,28 @@ export type Database = {
           payment_methods?: Json
           provider?: string
           updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      platform_settings: {
+        Row: {
+          id: string
+          platform_fee_percent: number | null
+          platform_name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          platform_fee_percent?: number | null
+          platform_name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          platform_fee_percent?: number | null
+          platform_name?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -386,6 +428,7 @@ export type Database = {
           original_price: number | null
           price: number
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           active?: boolean
@@ -397,6 +440,7 @@ export type Database = {
           original_price?: number | null
           price?: number
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           active?: boolean
@@ -408,6 +452,7 @@ export type Database = {
           original_price?: number | null
           price?: number
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -462,6 +507,7 @@ export type Database = {
           name: string | null
           payment_methods: Json | null
           provider: string | null
+          user_id: string | null
         }
         Insert: {
           environment?: string | null
@@ -469,6 +515,7 @@ export type Database = {
           name?: string | null
           payment_methods?: Json | null
           provider?: string | null
+          user_id?: string | null
         }
         Update: {
           environment?: string | null
@@ -476,6 +523,7 @@ export type Database = {
           name?: string | null
           payment_methods?: Json | null
           provider?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -488,9 +536,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "super_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -618,7 +667,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "super_admin"],
     },
   },
 } as const

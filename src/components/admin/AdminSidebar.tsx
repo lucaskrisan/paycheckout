@@ -13,6 +13,7 @@ import {
   GraduationCap,
   BarChart3,
   ChevronDown,
+  Crown,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -62,7 +63,11 @@ export function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
-  const { signOut, user } = useAuth();
+  const { signOut, user, isSuperAdmin } = useAuth();
+
+  const superAdminItems = [
+    { title: "Painel Plataforma", url: "/admin/platform", icon: Crown },
+  ];
 
   const isInGroup = (items: { url: string }[]) =>
     items.some((i) => location.pathname === i.url || location.pathname.startsWith(i.url + "/"));
@@ -153,6 +158,20 @@ export function AdminSidebar() {
             <SidebarGroupContent>{renderItems(configItems)}</SidebarGroupContent>
           )}
         </SidebarGroup>
+
+        {/* Super Admin */}
+        {isSuperAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>
+              {!collapsed && (
+                <span className="text-xs font-semibold text-checkout-badge uppercase tracking-wider flex items-center gap-1.5">
+                  <Crown className="w-3.5 h-3.5" /> Super Admin
+                </span>
+              )}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>{renderItems(superAdminItems)}</SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +45,7 @@ interface Course {
 }
 
 const Courses = () => {
+  const { user } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
@@ -136,7 +138,7 @@ const Courses = () => {
       if (error) { toast.error("Erro ao atualizar"); return; }
       toast.success("Curso atualizado!");
     } else {
-      const { error } = await supabase.from("courses").insert(payload);
+      const { error } = await supabase.from("courses").insert({ ...payload, user_id: user?.id });
       if (error) { toast.error("Erro ao criar"); return; }
       toast.success("Curso criado!");
     }

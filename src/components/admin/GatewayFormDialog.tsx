@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useAuth } from "@/hooks/useAuth";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ interface Props {
 }
 
 const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
+  const { user } = useAuth();
   const [form, setForm] = useState<GatewayConfig>({
     provider: "asaas",
     name: "",
@@ -70,7 +72,7 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
     if (isEditing) {
       ({ error } = await supabase.from("payment_gateways").update(payload).eq("id", form.id!));
     } else {
-      ({ error } = await supabase.from("payment_gateways").insert(payload));
+      ({ error } = await supabase.from("payment_gateways").insert({ ...payload, user_id: user?.id }));
     }
 
     setSaving(false);
