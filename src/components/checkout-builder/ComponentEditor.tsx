@@ -33,13 +33,62 @@ const ComponentEditor = ({ component, onUpdate, onRemove }: ComponentEditorProps
 
       case "image":
         return (
-          <div className="space-y-2">
-            <Label className="text-xs">URL da imagem</Label>
-            <Input
-              value={component.props.url || ""}
-              onChange={(e) => update("url", e.target.value)}
-              placeholder="https://..."
-            />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-xs">Imagem</Label>
+              <div className="border-2 border-dashed border-border rounded-lg p-6 flex flex-col items-center gap-2">
+                {component.props.url ? (
+                  <img src={component.props.url} alt="" className="w-full h-20 object-cover rounded" />
+                ) : (
+                  <>
+                    <div className="w-10 h-10 text-muted-foreground/40 flex items-center justify-center">
+                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                    </div>
+                    <p className="text-xs text-primary cursor-pointer">Selecione do computador</p>
+                    <p className="text-[10px] text-muted-foreground">ou arraste aqui</p>
+                    <p className="text-[10px] text-muted-foreground">PNG, JPG até 10 MB</p>
+                  </>
+                )}
+              </div>
+              <Input
+                value={component.props.url || ""}
+                onChange={(e) => update("url", e.target.value)}
+                placeholder="Ou cole a URL da imagem"
+                className="text-xs"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs">Alinhamento</Label>
+              <div className="flex border border-border rounded-md overflow-hidden">
+                {(["left", "center", "right"] as const).map((align) => (
+                  <button
+                    key={align}
+                    onClick={() => update("align", align)}
+                    className={`flex-1 py-1.5 text-xs transition-colors ${
+                      (component.props.align || "center") === align
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {align === "left" ? "≡ᐊ" : align === "center" ? "≡" : "ᐅ≡"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs">URL de redirecionamento</Label>
+              <div className="flex items-center gap-1.5 border border-input rounded-md px-2 py-1.5">
+                <svg className="w-3.5 h-3.5 text-muted-foreground shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                <input
+                  value={component.props.redirectUrl || ""}
+                  onChange={(e) => update("redirectUrl", e.target.value)}
+                  placeholder="https://"
+                  className="flex-1 text-xs bg-transparent outline-none"
+                />
+              </div>
+            </div>
           </div>
         );
 
