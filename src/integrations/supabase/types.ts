@@ -250,7 +250,30 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      active_gateways: {
+        Row: {
+          environment: string | null
+          id: string | null
+          name: string | null
+          payment_methods: Json | null
+          provider: string | null
+        }
+        Insert: {
+          environment?: string | null
+          id?: string | null
+          name?: string | null
+          payment_methods?: Json | null
+          provider?: string | null
+        }
+        Update: {
+          environment?: string | null
+          id?: string | null
+          name?: string | null
+          payment_methods?: Json | null
+          provider?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
