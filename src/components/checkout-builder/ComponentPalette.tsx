@@ -10,6 +10,8 @@ import {
   Star,
   Video,
   Facebook,
+  FileText,
+  MousePointerClick,
 } from "lucide-react";
 import { COMPONENT_CATALOG, type ComponentType } from "./types";
 
