@@ -94,7 +94,7 @@ const Gateways = () => {
         <Card className="border-dashed border-2 flex flex-col items-center justify-center p-8 cursor-pointer hover:border-primary/50 transition-colors" onClick={() => handleNew("pagarme")}>
           <Plus className="w-8 h-8 text-muted-foreground mb-2" />
           <p className="font-semibold text-foreground">Adicionar Pagar.me</p>
-          <p className="text-xs text-muted-foreground">PIX</p>
+          <p className="text-xs text-muted-foreground">PIX e Cartão de Crédito</p>
         </Card>
       </div>
 
@@ -176,7 +176,19 @@ const defaultAsaasConfig = {
 };
 
 const defaultPagarmeConfig = {
-  pix_expires_in: 1800,
+  pix_fee_percent: 0.89,
+  pix_fee_fixed: 0.44,
+  pix_timer_minutes: 30,
+  credit_fee_1x: 2.99,
+  credit_fee_2_6x: 2.99,
+  credit_fee_7_12x: 2.99,
+  credit_processing_fee: 0.44,
+  soft_descriptor: "",
+  max_installments: 12,
+  min_installment_value: 5,
+  free_installments: 1,
+  interest_rate_initial: 6.58,
+  interest_rate_incremental: 1.45,
 };
 
 export default Gateways;
