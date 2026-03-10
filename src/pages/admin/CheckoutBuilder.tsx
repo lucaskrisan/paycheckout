@@ -306,6 +306,14 @@ const CheckoutBuilder = () => {
           </Tabs>
         </div>
       </div>
+        <DragOverlay>
+          {activeDragType && (
+            <div className="bg-card border border-primary rounded-lg px-4 py-2 shadow-lg text-sm text-foreground capitalize">
+              {activeDragType}
+            </div>
+          )}
+        </DragOverlay>
+      </DndContext>
     </div>
   );
 };
