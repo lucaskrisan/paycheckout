@@ -59,6 +59,8 @@ const ProductEdit = () => {
   const [pixels, setPixels] = useState<PixelEntry[]>([]);
   const [activePixelPlatform, setActivePixelPlatform] = useState("Facebook");
   const [savingPixels, setSavingPixels] = useState(false);
+  const [showDomainManager, setShowDomainManager] = useState(false);
+  const [fbDomains, setFbDomains] = useState<{ id: string; domain: string; verified: boolean }[]>([]);
   const [form, setForm] = useState({
     name: "",
     description: "",
