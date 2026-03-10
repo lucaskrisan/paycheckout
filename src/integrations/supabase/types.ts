@@ -203,6 +203,30 @@ export type Database = {
         }
         Relationships: []
       }
+      facebook_domains: {
+        Row: {
+          created_at: string
+          domain: string
+          id: string
+          user_id: string
+          verified: boolean
+        }
+        Insert: {
+          created_at?: string
+          domain: string
+          id?: string
+          user_id: string
+          verified?: boolean
+        }
+        Update: {
+          created_at?: string
+          domain?: string
+          id?: string
+          user_id?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
       lesson_progress: {
         Row: {
           completed: boolean
