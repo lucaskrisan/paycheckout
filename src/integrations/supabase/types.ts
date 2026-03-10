@@ -318,6 +318,63 @@ export type Database = {
           },
         ]
       }
+      order_bumps: {
+        Row: {
+          active: boolean
+          bump_product_id: string
+          call_to_action: string
+          created_at: string
+          description: string
+          id: string
+          product_id: string
+          sort_order: number
+          title: string
+          use_product_image: boolean
+          user_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          bump_product_id: string
+          call_to_action?: string
+          created_at?: string
+          description?: string
+          id?: string
+          product_id: string
+          sort_order?: number
+          title?: string
+          use_product_image?: boolean
+          user_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          bump_product_id?: string
+          call_to_action?: string
+          created_at?: string
+          description?: string
+          id?: string
+          product_id?: string
+          sort_order?: number
+          title?: string
+          use_product_image?: boolean
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_bumps_bump_product_id_fkey"
+            columns: ["bump_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_bumps_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           amount: number
