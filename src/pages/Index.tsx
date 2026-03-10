@@ -9,6 +9,7 @@ import PixPayment from "@/components/checkout/PixPayment";
 import PaymentTabs from "@/components/checkout/PaymentTabs";
 import CountdownTimer from "@/components/checkout/CountdownTimer";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const DEMO_ITEMS = [
   {
@@ -23,6 +24,7 @@ const DEMO_ITEMS = [
 const Index = () => {
   const [paymentMethod, setPaymentMethod] = useState<"credit_card" | "pix">("credit_card");
   const [isLoading, setIsLoading] = useState(false);
+  const [pixData, setPixData] = useState<{ qrCode?: string; qrCodeUrl?: string; pixCode?: string } | null>(null);
 
   const [customer, setCustomer] = useState<CustomerData>({
     name: "",
@@ -54,19 +56,47 @@ const Index = () => {
         toast.error("Preencha todos os dados do cartão");
         return;
       }
+      // TODO: Integrate credit card payment
+      setIsLoading(true);
+      setTimeout(() => {
+        setIsLoading(false);
+        toast.success("Pagamento aprovado! Redirecionando...");
+      }, 2000);
+      return;
     }
 
+    // PIX payment via Pagar.me
     setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-pix-payment', {
+        body: {
+          amount: finalAmount,
+          customer: {
+            name: customer.name,
+            email: customer.email,
+            cpf: customer.cpf,
+            phone: customer.phone,
+          },
+        },
+      });
 
-    // Simulating payment processing
-    setTimeout(() => {
+      if (error) throw error;
+
+      if (data?.qr_code_url || data?.qr_code) {
+        setPixData({
+          qrCodeUrl: data.qr_code_url,
+          pixCode: data.qr_code,
+        });
+        toast.success("PIX gerado! Escaneie o QR Code para pagar.");
+      } else {
+        throw new Error('Falha ao gerar o PIX');
+      }
+    } catch (err: any) {
+      console.error('PIX error:', err);
+      toast.error(err.message || "Erro ao gerar PIX. Tente novamente.");
+    } finally {
       setIsLoading(false);
-      toast.success(
-        paymentMethod === "credit_card"
-          ? "Pagamento aprovado! Redirecionando..."
-          : "PIX gerado! Aguardando pagamento..."
-      );
-    }, 2000);
+    }
   };
 
   return (
@@ -122,7 +152,7 @@ const Index = () => {
                   {paymentMethod === "credit_card" ? (
                     <CreditCardForm data={cardData} onChange={setCardData} totalAmount={finalAmount} />
                   ) : (
-                    <PixPayment totalAmount={finalAmount} />
+                    <PixPayment totalAmount={finalAmount} qrCodeData={pixData?.qrCodeUrl} pixCode={pixData?.pixCode} />
                   )}
                 </motion.div>
               </AnimatePresence>
