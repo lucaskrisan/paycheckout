@@ -11,9 +11,12 @@ import {
   Link2,
   Megaphone,
   GraduationCap,
-  BarChart3,
   ChevronDown,
   Crown,
+  HelpCircle,
+  UserPlus,
+  BarChart3,
+  Wallet,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -39,23 +42,13 @@ import {
 
 const mainItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
+  { title: "Produtos", url: "/admin/products", icon: Package },
+  { title: "Área de Membros", url: "/admin/courses", icon: GraduationCap },
   { title: "Vendas", url: "/admin/orders", icon: ShoppingCart },
   { title: "Clientes", url: "/admin/customers", icon: Users },
-];
-
-const productItems = [
-  { title: "Meus Produtos", url: "/admin/products", icon: Package },
-  { title: "Cursos", url: "/admin/courses", icon: GraduationCap },
-];
-
-const marketingItems = [
-  { title: "Cupons", url: "/admin/coupons", icon: Tag },
-  { title: "Carrinho Abandonado", url: "/admin/abandoned", icon: ShoppingBag },
-];
-
-const configItems = [
-  { title: "Gateways", url: "/admin/gateways", icon: CreditCard },
-  { title: "Integrações", url: "/admin/integrations", icon: Link2 },
+  { title: "Financeiro", url: "/admin/gateways", icon: Wallet },
+  { title: "Relatórios", url: "/admin/abandoned", icon: BarChart3 },
+  { title: "Colaboradores", url: "/admin/integrations", icon: UserPlus },
   { title: "Configurações", url: "/admin/settings", icon: Settings },
 ];
 
@@ -69,9 +62,6 @@ export function AdminSidebar() {
     { title: "Painel Plataforma", url: "/admin/platform", icon: Crown },
   ];
 
-  const isInGroup = (items: { url: string }[]) =>
-    items.some((i) => location.pathname === i.url || location.pathname.startsWith(i.url + "/"));
-
   const renderItems = (items: { title: string; url: string; icon: any }[]) => (
     <SidebarMenu>
       {items.map((item) => (
@@ -80,11 +70,11 @@ export function AdminSidebar() {
             <NavLink
               to={item.url}
               end={item.url === "/admin"}
-              className="hover:bg-muted/50"
-              activeClassName="bg-primary/10 text-primary font-medium"
+              className="hover:bg-sidebar-accent/60 rounded-md transition-colors"
+              activeClassName="bg-sidebar-primary/15 text-sidebar-primary font-semibold"
             >
-              <item.icon className="mr-2 h-4 w-4" />
-              {!collapsed && <span>{item.title}</span>}
+              <item.icon className="mr-3 h-4 w-4" />
+              {!collapsed && <span className="text-sm">{item.title}</span>}
             </NavLink>
           </SidebarMenuButton>
         </SidebarMenuItem>
@@ -95,68 +85,22 @@ export function AdminSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarContent>
-        {/* Logo */}
+        {/* User / Brand */}
         <SidebarGroup>
           <SidebarGroupLabel>
             {!collapsed && (
-              <span className="font-display font-bold text-sm">Admin Panel</span>
+              <div className="flex items-center gap-2 px-1 py-2">
+                <div className="w-7 h-7 rounded-full bg-sidebar-primary flex items-center justify-center text-sidebar-primary-foreground text-xs font-bold">
+                  {user?.email?.[0]?.toUpperCase() || "P"}
+                </div>
+                <span className="font-semibold text-sidebar-accent-foreground text-sm truncate max-w-[140px]">
+                  {user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Produtor"}
+                </span>
+                <ChevronDown className="w-3 h-3 text-sidebar-foreground ml-auto" />
+              </div>
             )}
           </SidebarGroupLabel>
           <SidebarGroupContent>{renderItems(mainItems)}</SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* Produtos */}
-        <SidebarGroup>
-          {!collapsed ? (
-            <Collapsible defaultOpen={isInGroup(productItems)}>
-              <CollapsibleTrigger className="flex items-center justify-between w-full px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors">
-                <span>Produtos</span>
-                <ChevronDown className="w-3.5 h-3.5" />
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <SidebarGroupContent>{renderItems(productItems)}</SidebarGroupContent>
-              </CollapsibleContent>
-            </Collapsible>
-          ) : (
-            <SidebarGroupContent>{renderItems(productItems)}</SidebarGroupContent>
-          )}
-        </SidebarGroup>
-
-        {/* Marketing */}
-        <SidebarGroup>
-          {!collapsed ? (
-            <Collapsible defaultOpen={isInGroup(marketingItems)}>
-              <CollapsibleTrigger className="flex items-center justify-between w-full px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors">
-                <div className="flex items-center gap-1.5">
-                  <Megaphone className="w-3.5 h-3.5" />
-                  <span>Marketing</span>
-                </div>
-                <ChevronDown className="w-3.5 h-3.5" />
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <SidebarGroupContent>{renderItems(marketingItems)}</SidebarGroupContent>
-              </CollapsibleContent>
-            </Collapsible>
-          ) : (
-            <SidebarGroupContent>{renderItems(marketingItems)}</SidebarGroupContent>
-          )}
-        </SidebarGroup>
-
-        {/* Configurações */}
-        <SidebarGroup>
-          {!collapsed ? (
-            <Collapsible defaultOpen={isInGroup(configItems)}>
-              <CollapsibleTrigger className="flex items-center justify-between w-full px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors">
-                <span>Configurações</span>
-                <ChevronDown className="w-3.5 h-3.5" />
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <SidebarGroupContent>{renderItems(configItems)}</SidebarGroupContent>
-              </CollapsibleContent>
-            </Collapsible>
-          ) : (
-            <SidebarGroupContent>{renderItems(configItems)}</SidebarGroupContent>
-          )}
         </SidebarGroup>
 
         {/* Super Admin */}
@@ -176,13 +120,13 @@ export function AdminSidebar() {
 
       <SidebarFooter>
         {!collapsed && user && (
-          <p className="text-xs text-muted-foreground truncate px-2 mb-1">{user.email}</p>
+          <p className="text-xs text-sidebar-foreground truncate px-3 mb-1">{user.email}</p>
         )}
         <Button
           variant="ghost"
           size="sm"
           onClick={signOut}
-          className="w-full justify-start text-muted-foreground hover:text-destructive"
+          className="w-full justify-start text-sidebar-foreground hover:text-destructive hover:bg-sidebar-accent/60"
         >
           <LogOut className="h-4 w-4 mr-2" />
           {!collapsed && "Sair"}
