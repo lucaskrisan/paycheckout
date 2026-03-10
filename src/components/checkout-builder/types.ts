@@ -8,7 +8,9 @@ export type ComponentType =
   | "countdown"
   | "testimonial"
   | "video"
-  | "facebook";
+  | "facebook"
+  | "form"
+  | "button";
 
 export interface BuilderComponent {
   id: string;
@@ -31,6 +33,8 @@ export const COMPONENT_CATALOG: {
 }[] = [
   { type: "text", label: "Texto", icon: "AlignLeft" },
   { type: "image", label: "Imagem", icon: "Image" },
+  { type: "form", label: "Formulário", icon: "FileText" },
+  { type: "button", label: "Botão", icon: "MousePointerClick" },
   { type: "advantages", label: "Vantagens", icon: "ThumbsUp" },
   { type: "seal", label: "Selo", icon: "Award" },
   { type: "header", label: "Header", icon: "LayoutGrid" },

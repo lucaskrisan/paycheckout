@@ -146,6 +146,21 @@ const ComponentEditor = ({ component, onUpdate, onRemove }: ComponentEditorProps
           </div>
         );
 
+      case "button":
+        return (
+          <div className="space-y-2">
+            <Label className="text-xs">Texto do botão</Label>
+            <Input
+              value={component.props.text || ""}
+              onChange={(e) => update("text", e.target.value)}
+              placeholder="Finalizar compra"
+            />
+          </div>
+        );
+
+      case "form":
+        return <p className="text-xs text-muted-foreground">O formulário de checkout é gerado automaticamente com os campos de nome, email, CPF e telefone.</p>;
+
       default:
         return <p className="text-xs text-muted-foreground">Nenhuma configuração disponível.</p>;
     }

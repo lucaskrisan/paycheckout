@@ -10,20 +10,14 @@ import {
   Star,
   Video,
   Facebook,
+  FileText,
+  MousePointerClick,
 } from "lucide-react";
 import { COMPONENT_CATALOG, type ComponentType } from "./types";
 
 const iconMap: Record<string, React.ElementType> = {
-  AlignLeft,
-  Image,
-  ThumbsUp,
-  Award,
-  LayoutGrid,
-  ListOrdered,
-  Clock,
-  Star,
-  Video,
-  Facebook,
+  AlignLeft, Image, ThumbsUp, Award, LayoutGrid, ListOrdered,
+  Clock, Star, Video, Facebook, FileText, MousePointerClick,
 };
 
 function DraggablePaletteItem({ type, label, icon }: { type: ComponentType; label: string; icon: string }) {

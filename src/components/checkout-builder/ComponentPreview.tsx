@@ -1,4 +1,4 @@
-import { Clock, ThumbsUp, Star, Award, Image, Video, Facebook, AlignLeft, LayoutGrid, ListOrdered } from "lucide-react";
+import { Clock, ThumbsUp, Star, Award, Image, Video, Facebook, LayoutGrid, ListOrdered } from "lucide-react";
 import type { BuilderComponent } from "./types";
 
 const ComponentPreview = ({ component }: { component: BuilderComponent }) => {
@@ -110,6 +110,33 @@ const ComponentPreview = ({ component }: { component: BuilderComponent }) => {
         <div className="py-2 flex items-center gap-2 justify-center">
           <Facebook className="w-5 h-5 text-blue-600" />
           <span className="text-xs text-muted-foreground">Facebook Comments</span>
+        </div>
+      );
+
+    case "form":
+      return (
+        <div className="py-2 space-y-2">
+          <p className="text-xs font-semibold text-foreground">📝 Formulário do checkout</p>
+          <div className="space-y-1.5">
+            <div className="h-8 w-full bg-muted/60 rounded border border-border/30" />
+            <div className="h-8 w-full bg-muted/60 rounded border border-border/30" />
+            <div className="h-8 w-full bg-muted/60 rounded border border-border/30" />
+            <div className="grid grid-cols-2 gap-1.5">
+              <div className="h-8 bg-muted/60 rounded border border-border/30" />
+              <div className="h-8 bg-muted/60 rounded border border-border/30" />
+            </div>
+          </div>
+        </div>
+      );
+
+    case "button":
+      return (
+        <div className="py-2">
+          <div className="h-12 w-full bg-primary rounded-lg flex items-center justify-center">
+            <span className="text-primary-foreground text-sm font-bold">
+              {component.props.text || "Finalizar compra"}
+            </span>
+          </div>
         </div>
       );
 
