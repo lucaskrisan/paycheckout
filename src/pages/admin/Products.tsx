@@ -28,7 +28,7 @@ import { MoreVertical, Search, Pencil, Trash2, Copy, ExternalLink } from "lucide
 import { toast } from "sonner";
 
 const PUBLISHED_URL = "https://paycheckout.lovable.app";
-const getPublicUrl = () => (window.location.hostname.includes("preview") ? PUBLISHED_URL : window.location.origin);
+const getPublicUrl = () => (window.location.hostname.includes("lovable") ? PUBLISHED_URL : window.location.origin);
 
 interface Product {
   id: string;
