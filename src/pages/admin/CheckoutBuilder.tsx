@@ -289,7 +289,7 @@ const CheckoutBuilder = () => {
               components={components}
               selectedId={selectedId}
               onRemove={removeComponent}
-              onSelect={setSelectedId}
+              onSelect={(id) => { setSelectedId(id); setActiveTab("config"); }}
               isMobile={isMobile}
             />
         </div>
