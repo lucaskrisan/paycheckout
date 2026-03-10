@@ -8,7 +8,9 @@ export type ComponentType =
   | "countdown"
   | "testimonial"
   | "video"
-  | "facebook";
+  | "facebook"
+  | "form"
+  | "button";
 
 export interface BuilderComponent {
   id: string;
