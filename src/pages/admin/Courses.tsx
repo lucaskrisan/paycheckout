@@ -45,6 +45,7 @@ interface Course {
 }
 
 const Courses = () => {
+  const { user } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
