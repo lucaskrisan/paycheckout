@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFacebookPixel } from "@/hooks/useFacebookPixel";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Product {
   id: string;
@@ -21,6 +22,20 @@ interface Product {
   image_url: string | null;
 }
 
+interface OrderBump {
+  id: string;
+  call_to_action: string;
+  title: string;
+  description: string;
+  use_product_image: boolean;
+  bump_product: {
+    id: string;
+    name: string;
+    price: number;
+    image_url: string | null;
+  };
+}
+
 const Checkout = () => {
   const { productId } = useParams<{ productId: string }>();
   const [product, setProduct] = useState<Product | null>(null);
@@ -29,6 +44,8 @@ const Checkout = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pixData, setPixData] = useState<{ qrCodeUrl?: string; pixCode?: string } | null>(null);
   const { trackPurchase } = useFacebookPixel(productId);
+  const [orderBumps, setOrderBumps] = useState<OrderBump[]>([]);
+  const [selectedBumps, setSelectedBumps] = useState<Set<string>>(new Set());
 
   const [customer, setCustomer] = useState<CustomerData>({
     name: "",
@@ -50,7 +67,27 @@ const Checkout = () => {
         else setProduct(data);
         setLoading(false);
       });
+
+    // Load order bumps
+    supabase
+      .from("order_bumps")
+      .select("id, call_to_action, title, description, use_product_image, bump_product:products!order_bumps_bump_product_id_fkey(id, name, price, image_url)")
+      .eq("product_id", productId)
+      .eq("active", true)
+      .order("sort_order")
+      .then(({ data }) => {
+        if (data) setOrderBumps(data as any);
+      });
   }, [productId]);
+
+  const toggleBump = (bumpId: string) => {
+    setSelectedBumps((prev) => {
+      const next = new Set(prev);
+      if (next.has(bumpId)) next.delete(bumpId);
+      else next.add(bumpId);
+      return next;
+    });
+  };
 
   if (loading) {
     return (
@@ -75,8 +112,12 @@ const Checkout = () => {
     );
   }
 
+  const bumpTotal = orderBumps
+    .filter((b) => selectedBumps.has(b.id))
+    .reduce((sum, b) => sum + (b.bump_product?.price || 0), 0);
+
   const pixDiscount = product.price * 0.05;
-  const finalAmount = product.price - pixDiscount;
+  const finalAmount = product.price - pixDiscount + bumpTotal;
 
   const items = [
     {
@@ -87,6 +128,14 @@ const Checkout = () => {
       quantity: 1,
       image: product.image_url || undefined,
     },
+    ...orderBumps
+      .filter((b) => selectedBumps.has(b.id))
+      .map((b) => ({
+        name: b.bump_product.name,
+        price: b.bump_product.price,
+        quantity: 1,
+        image: b.bump_product.image_url || undefined,
+      })),
   ];
 
   const handleSubmit = async () => {
@@ -115,7 +164,6 @@ const Checkout = () => {
       if (data?.qr_code_url || data?.qr_code) {
         setPixData({ qrCodeUrl: data.qr_code_url, pixCode: data.qr_code });
         toast.success("PIX gerado! Escaneie o QR Code para pagar.");
-        // Fire FB Pixel Purchase event (fire_on_pix support)
         trackPurchase(finalAmount);
       } else {
         throw new Error("Falha ao gerar o PIX");
@@ -157,6 +205,47 @@ const Checkout = () => {
             <div className="bg-card border border-border rounded-2xl p-6 space-y-6 shadow-sm">
               <CustomerForm data={customer} onChange={setCustomer} />
             </div>
+
+            {/* Order Bumps */}
+            {orderBumps.length > 0 && (
+              <div className="space-y-3">
+                {orderBumps.map((bump) => (
+                  <div
+                    key={bump.id}
+                    className={`border-2 rounded-xl overflow-hidden transition-colors cursor-pointer ${
+                      selectedBumps.has(bump.id)
+                        ? "border-primary bg-primary/5"
+                        : "border-dashed border-border bg-card"
+                    }`}
+                    onClick={() => toggleBump(bump.id)}
+                  >
+                    <div className="bg-primary text-primary-foreground text-center text-xs font-bold py-2 uppercase">
+                      {bump.call_to_action}
+                    </div>
+                    <div className="flex items-center gap-3 p-4">
+                      {bump.use_product_image && bump.bump_product?.image_url && (
+                        <img
+                          src={bump.bump_product.image_url}
+                          alt=""
+                          className="w-12 h-12 rounded-lg object-cover shrink-0"
+                        />
+                      )}
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <Checkbox
+                          checked={selectedBumps.has(bump.id)}
+                          onCheckedChange={() => toggleBump(bump.id)}
+                          className="shrink-0"
+                        />
+                        <span className="text-sm">
+                          <strong className="text-primary">{bump.title || bump.bump_product?.name}</strong>{" "}
+                          {bump.description} — R$ {bump.bump_product?.price?.toFixed(2).replace(".", ",")}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="bg-card border border-border rounded-2xl p-6 space-y-6 shadow-sm">
               <h2 className="font-display text-lg font-bold text-foreground">Forma de pagamento</h2>
