@@ -21,6 +21,7 @@ const menuItems = [
   { title: "Pedidos", url: "/admin/orders", icon: ShoppingCart },
   { title: "Produtos", url: "/admin/products", icon: Package },
   { title: "Clientes", url: "/admin/customers", icon: Users },
+  { title: "Gateways", url: "/admin/gateways", icon: CreditCard },
   { title: "Configurações", url: "/admin/settings", icon: Settings },
 ];
 
