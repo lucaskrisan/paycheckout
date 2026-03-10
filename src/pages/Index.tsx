@@ -9,6 +9,7 @@ import PixPayment from "@/components/checkout/PixPayment";
 import PaymentTabs from "@/components/checkout/PaymentTabs";
 import CountdownTimer from "@/components/checkout/CountdownTimer";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const DEMO_ITEMS = [
   {
