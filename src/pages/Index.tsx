@@ -29,7 +29,7 @@ interface ActiveGateway {
 }
 
 const Index = () => {
-  const [paymentMethod, setPaymentMethod] = useState<"credit_card" | "pix">("credit_card");
+  const [paymentMethod, setPaymentMethod] = useState<"credit_card" | "pix">("pix");
   const [isLoading, setIsLoading] = useState(false);
   const [pixData, setPixData] = useState<{ qrCode?: string; qrCodeUrl?: string; pixCode?: string } | null>(null);
   const [gateways, setGateways] = useState<ActiveGateway[]>([]);
