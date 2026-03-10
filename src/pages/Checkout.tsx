@@ -28,6 +28,7 @@ const Checkout = () => {
   const [notFound, setNotFound] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pixData, setPixData] = useState<{ qrCodeUrl?: string; pixCode?: string } | null>(null);
+  const { trackPurchase } = useFacebookPixel(productId);
 
   const [customer, setCustomer] = useState<CustomerData>({
     name: "",
