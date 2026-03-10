@@ -68,6 +68,25 @@ const ProductEdit = () => {
     sales_page_url: "",
   });
 
+  // Load pixels for this product
+  const loadPixels = useCallback(async () => {
+    if (isNew || !productId) return;
+    const { data } = await supabase
+      .from("product_pixels")
+      .select("*")
+      .eq("product_id", productId);
+    if (data) {
+      setPixels(data.map((p: any) => ({
+        id: p.id,
+        platform: p.platform,
+        pixel_id: p.pixel_id,
+        domain: p.domain || "",
+        fire_on_pix: p.fire_on_pix,
+        fire_on_boleto: p.fire_on_boleto,
+      })));
+    }
+  }, [isNew, productId]);
+
   useEffect(() => {
     // Load courses
     supabase.from("courses").select("id, title, product_id").then(({ data }) => {
@@ -101,8 +120,58 @@ const ProductEdit = () => {
           });
           setLoading(false);
         });
+      loadPixels();
     }
   }, [productId]);
+
+  const addPixel = () => {
+    if (pixels.length >= 50) { toast.error("Máximo de 50 pixels"); return; }
+    setPixels((prev) => [...prev, { platform: activePixelPlatform.toLowerCase(), pixel_id: "", domain: "", fire_on_pix: false, fire_on_boleto: false }]);
+  };
+
+  const updatePixel = (index: number, field: keyof PixelEntry, value: any) => {
+    setPixels((prev) => prev.map((p, i) => i === index ? { ...p, [field]: value } : p));
+  };
+
+  const removePixel = async (index: number) => {
+    const px = pixels[index];
+    if (px.id) {
+      await supabase.from("product_pixels").delete().eq("id", px.id);
+    }
+    setPixels((prev) => prev.filter((_, i) => i !== index));
+    toast.success("Pixel removido");
+  };
+
+  const savePixels = async () => {
+    if (isNew || !productId) { toast.error("Salve o produto primeiro"); return; }
+    setSavingPixels(true);
+    try {
+      // Delete existing
+      await supabase.from("product_pixels").delete().eq("product_id", productId);
+      // Insert all
+      const validPixels = pixels.filter((p) => p.pixel_id.trim());
+      if (validPixels.length > 0) {
+        const { error } = await supabase.from("product_pixels").insert(
+          validPixels.map((p) => ({
+            product_id: productId,
+            platform: p.platform,
+            pixel_id: p.pixel_id.trim(),
+            domain: p.domain.trim() || null,
+            fire_on_pix: p.fire_on_pix,
+            fire_on_boleto: p.fire_on_boleto,
+            user_id: user?.id,
+          }))
+        );
+        if (error) throw error;
+      }
+      toast.success("Pixels salvos!");
+      loadPixels();
+    } catch (err) {
+      toast.error("Erro ao salvar pixels");
+    } finally {
+      setSavingPixels(false);
+    }
+  };
 
   const uploadImage = useCallback(async (file: File) => {
     if (!file.type.startsWith("image/")) {
