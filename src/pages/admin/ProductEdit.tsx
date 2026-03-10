@@ -100,6 +100,19 @@ const ProductEdit = () => {
       }
     });
 
+    // Load facebook domains
+    if (user) {
+      supabase.from("facebook_domains").select("*").eq("user_id", user.id).then(({ data }) => {
+        setFbDomains((data || []) as any);
+      });
+    }
+      setCourses(data || []);
+      if (!isNew && productId) {
+        const linked = data?.find((c) => c.product_id === productId);
+        if (linked) setSelectedCourseId(linked.id);
+      }
+    });
+
     if (!isNew && productId) {
       supabase
         .from("products")
