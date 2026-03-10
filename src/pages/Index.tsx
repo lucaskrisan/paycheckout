@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Lock, ShieldCheck, ArrowRight, Loader2 } from "lucide-react";
+import { Lock, ShieldCheck, ArrowRight, Loader2, QrCode } from "lucide-react";
 import OrderSummary from "@/components/checkout/OrderSummary";
 import CustomerForm, { type CustomerData } from "@/components/checkout/CustomerForm";
 import CreditCardForm, { type CreditCardData } from "@/components/checkout/CreditCardForm";
@@ -29,7 +29,7 @@ interface ActiveGateway {
 }
 
 const Index = () => {
-  const [paymentMethod, setPaymentMethod] = useState<"credit_card" | "pix">("credit_card");
+  const [paymentMethod, setPaymentMethod] = useState<"credit_card" | "pix">("pix");
   const [isLoading, setIsLoading] = useState(false);
   const [pixData, setPixData] = useState<{ qrCode?: string; qrCodeUrl?: string; pixCode?: string } | null>(null);
   const [gateways, setGateways] = useState<ActiveGateway[]>([]);
@@ -77,94 +77,19 @@ const Index = () => {
       return;
     }
 
-    const gateway = getGatewayForMethod(paymentMethod);
-
-    if (paymentMethod === "credit_card") {
-      if (!cardData.number || !cardData.name || !cardData.expiry || !cardData.cvv) {
-        toast.error("Preencha todos os dados do cartão");
-        return;
-      }
-
-      if (gateway?.provider === "asaas") {
-        setIsLoading(true);
-        try {
-          const [expMonth, expYear] = cardData.expiry.split("/");
-          const { data, error } = await supabase.functions.invoke("create-asaas-payment", {
-            body: {
-              amount: finalAmount,
-              payment_method: "credit_card",
-              installments: cardData.installments,
-              customer: {
-                name: customer.name,
-                email: customer.email,
-                cpf: customer.cpf,
-                phone: customer.phone,
-                creditCard: {
-                  holderName: cardData.name,
-                  number: cardData.number.replace(/\s/g, ""),
-                  expiryMonth: expMonth,
-                  expiryYear: `20${expYear}`,
-                  ccv: cardData.cvv,
-                },
-              },
-            },
-          });
-          if (error) throw error;
-          if (data?.status === "CONFIRMED" || data?.status === "RECEIVED" || data?.status === "PENDING") {
-            toast.success("Pagamento processado! Redirecionando...");
-          } else {
-            toast.error("Pagamento não aprovado. Tente novamente.");
-          }
-        } catch (err: any) {
-          console.error("Credit card error:", err);
-          toast.error(err.message || "Erro ao processar pagamento.");
-        } finally {
-          setIsLoading(false);
-        }
-        return;
-      }
-
-      // Fallback for no gateway
-      setIsLoading(true);
-      setTimeout(() => {
-        setIsLoading(false);
-        toast.success("Pagamento aprovado! Redirecionando...");
-      }, 2000);
-      return;
-    }
-
-    // PIX payment
     setIsLoading(true);
     try {
-      let data, error;
-
-      if (gateway?.provider === "asaas") {
-        ({ data, error } = await supabase.functions.invoke("create-asaas-payment", {
-          body: {
-            amount: finalAmount,
-            payment_method: "pix",
-            customer: {
-              name: customer.name,
-              email: customer.email,
-              cpf: customer.cpf,
-              phone: customer.phone,
-            },
+      const { data, error } = await supabase.functions.invoke("create-pix-payment", {
+        body: {
+          amount: finalAmount,
+          customer: {
+            name: customer.name,
+            email: customer.email,
+            cpf: customer.cpf,
+            phone: customer.phone,
           },
-        }));
-      } else {
-        // Pagar.me fallback
-        ({ data, error } = await supabase.functions.invoke("create-pix-payment", {
-          body: {
-            amount: finalAmount,
-            customer: {
-              name: customer.name,
-              email: customer.email,
-              cpf: customer.cpf,
-              phone: customer.phone,
-            },
-          },
-        }));
-      }
+        },
+      });
 
       if (error) throw error;
 
@@ -219,23 +144,21 @@ const Index = () => {
 
             <div className="bg-card border border-border rounded-2xl p-6 space-y-6 shadow-sm">
               <h2 className="font-display text-lg font-bold text-foreground">Forma de pagamento</h2>
-              <PaymentTabs activeMethod={paymentMethod} onMethodChange={setPaymentMethod} />
+              
+              {/* PIX only mode - no tabs needed */}
+              <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 flex items-center gap-2">
+                <QrCode className="w-5 h-5 text-primary" />
+                <span className="text-sm font-semibold text-foreground">PIX</span>
+                <span className="ml-auto bg-checkout-badge text-checkout-surface text-[10px] font-bold px-2 py-0.5 rounded-full">5% OFF</span>
+              </div>
 
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={paymentMethod}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {paymentMethod === "credit_card" ? (
-                    <CreditCardForm data={cardData} onChange={setCardData} totalAmount={finalAmount} />
-                  ) : (
-                    <PixPayment totalAmount={finalAmount} qrCodeData={pixData?.qrCodeUrl} pixCode={pixData?.pixCode} />
-                  )}
-                </motion.div>
-              </AnimatePresence>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <PixPayment totalAmount={finalAmount} qrCodeData={pixData?.qrCodeUrl} pixCode={pixData?.pixCode} />
+              </motion.div>
 
               <Button
                 onClick={handleSubmit}
@@ -246,7 +169,7 @@ const Index = () => {
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   <>
-                    {paymentMethod === "credit_card" ? "Finalizar Pagamento" : "Gerar PIX"}
+                    Gerar PIX
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </>
                 )}
