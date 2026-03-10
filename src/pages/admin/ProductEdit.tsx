@@ -340,14 +340,107 @@ const ProductEdit = () => {
 
           {/* Área de membros */}
           <TabsContent value="members" className="mt-8">
-            <div className="border border-border rounded-lg p-6 bg-card max-w-2xl space-y-4">
-              <h2 className="text-base font-semibold text-foreground">Área de membros</h2>
-              <p className="text-sm text-muted-foreground">
-                Configure a área de membros vinculada a este produto. Os compradores terão acesso automático após o pagamento.
-              </p>
-              <Button variant="outline" onClick={() => navigate("/admin/courses")}>
-                Gerenciar cursos
-              </Button>
+            <div className="space-y-10">
+              {/* Área de membros select */}
+              <div className="grid lg:grid-cols-12 gap-8">
+                <div className="lg:col-span-4">
+                  <h2 className="text-base font-semibold text-foreground">Área de Membros</h2>
+                  <p className="text-sm text-primary mt-1">
+                    Ao comprar esse produto, o aluno será automaticamente adicionado na área de membros selecionada.
+                  </p>
+                </div>
+                <div className="lg:col-span-8">
+                  <div className="border border-border rounded-lg p-6 bg-card space-y-4">
+                    <div className="space-y-1.5">
+                      <Label>Área de Membros</Label>
+                      <Select value={selectedCourseId} onValueChange={async (v) => {
+                        setSelectedCourseId(v);
+                        if (!isNew && productId) {
+                          // Unlink old
+                          if (selectedCourseId) {
+                            await supabase.from("courses").update({ product_id: null }).eq("id", selectedCourseId);
+                          }
+                          // Link new
+                          if (v) {
+                            await supabase.from("courses").update({ product_id: productId }).eq("id", v);
+                            toast.success("Área de membros vinculada!");
+                          }
+                        }
+                      }}>
+                        <SelectTrigger><SelectValue placeholder="Selecione uma área de membros" /></SelectTrigger>
+                        <SelectContent>
+                          {courses.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {selectedCourseId && (
+                      <button
+                        onClick={() => navigate("/admin/courses")}
+                        className="text-sm text-primary hover:underline flex items-center gap-1"
+                      >
+                        Abrir editor da área de membros <ExternalLink className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Controle de acesso */}
+              <div className="grid lg:grid-cols-12 gap-8">
+                <div className="lg:col-span-4">
+                  <h2 className="text-base font-semibold text-foreground">Controle de Acesso</h2>
+                </div>
+                <div className="lg:col-span-8">
+                  <div className="border border-border rounded-lg overflow-hidden bg-card">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="hover:bg-transparent">
+                          <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Oferta</TableHead>
+                          <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Valor</TableHead>
+                          <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Grupo</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {form.name ? (
+                          <TableRow>
+                            <TableCell className="text-sm text-foreground truncate max-w-[200px]">{form.name}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {form.price ? `R$ ${Number(form.price).toFixed(2).replace(".", ",")}` : "—"}
+                            </TableCell>
+                            <TableCell>
+                              <Select defaultValue="default">
+                                <SelectTrigger className="h-8 text-xs w-[180px]"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="default">Grupo padrão (Grupo A)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                              Salve o produto primeiro para configurar o acesso.
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom actions */}
+              {!isNew && (
+                <div className="flex justify-between pt-4 border-t border-border">
+                  <Button variant="destructive" size="sm" onClick={handleDelete}>Excluir produto</Button>
+                  <Button onClick={handleSave} disabled={saving}>
+                    {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                    Salvar produto
+                  </Button>
+                </div>
+              )}
             </div>
           </TabsContent>
 
