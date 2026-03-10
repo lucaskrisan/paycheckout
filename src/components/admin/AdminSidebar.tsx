@@ -63,7 +63,11 @@ export function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
-  const { signOut, user } = useAuth();
+  const { signOut, user, isSuperAdmin } = useAuth();
+
+  const superAdminItems = [
+    { title: "Painel Plataforma", url: "/admin/platform", icon: Crown },
+  ];
 
   const isInGroup = (items: { url: string }[]) =>
     items.some((i) => location.pathname === i.url || location.pathname.startsWith(i.url + "/"));
