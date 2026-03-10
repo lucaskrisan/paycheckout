@@ -10,6 +10,7 @@ import CountdownTimer from "@/components/checkout/CountdownTimer";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useFacebookPixel } from "@/hooks/useFacebookPixel";
 
 interface Product {
   id: string;
