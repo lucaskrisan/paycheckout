@@ -143,7 +143,6 @@ const Index = () => {
           body: {
             amount: finalAmount,
             payment_method: "pix",
-            gateway_config: { ...gateway.config, environment: gateway.environment },
             customer: {
               name: customer.name,
               email: customer.email,
