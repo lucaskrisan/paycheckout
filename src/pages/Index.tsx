@@ -152,7 +152,7 @@ const Index = () => {
                   {paymentMethod === "credit_card" ? (
                     <CreditCardForm data={cardData} onChange={setCardData} totalAmount={finalAmount} />
                   ) : (
-                    <PixPayment totalAmount={finalAmount} />
+                    <PixPayment totalAmount={finalAmount} qrCodeData={pixData?.qrCodeUrl} pixCode={pixData?.pixCode} />
                   )}
                 </motion.div>
               </AnimatePresence>
