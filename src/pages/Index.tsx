@@ -101,11 +101,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Google Fonts */}
-      <link
-        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
-        rel="stylesheet"
-      />
 
       {/* Top trust bar */}
       <div className="bg-checkout-surface text-checkout-surface-foreground py-2.5">
