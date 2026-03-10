@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Lock, ShieldCheck, ArrowRight, Loader2 } from "lucide-react";
+import { Lock, ShieldCheck, ArrowRight, Loader2, QrCode } from "lucide-react";
 import OrderSummary from "@/components/checkout/OrderSummary";
 import CustomerForm, { type CustomerData } from "@/components/checkout/CustomerForm";
 import CreditCardForm, { type CreditCardData } from "@/components/checkout/CreditCardForm";
