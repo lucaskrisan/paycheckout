@@ -10,6 +10,7 @@ import CountdownTimer from "@/components/checkout/CountdownTimer";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useFacebookPixel } from "@/hooks/useFacebookPixel";
 
 interface Product {
   id: string;
@@ -27,6 +28,7 @@ const Checkout = () => {
   const [notFound, setNotFound] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pixData, setPixData] = useState<{ qrCodeUrl?: string; pixCode?: string } | null>(null);
+  const { trackPurchase } = useFacebookPixel(productId);
 
   const [customer, setCustomer] = useState<CustomerData>({
     name: "",
@@ -113,6 +115,8 @@ const Checkout = () => {
       if (data?.qr_code_url || data?.qr_code) {
         setPixData({ qrCodeUrl: data.qr_code_url, pixCode: data.qr_code });
         toast.success("PIX gerado! Escaneie o QR Code para pagar.");
+        // Fire FB Pixel Purchase event (fire_on_pix support)
+        trackPurchase(finalAmount);
       } else {
         throw new Error("Falha ao gerar o PIX");
       }

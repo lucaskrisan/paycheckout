@@ -7,7 +7,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Upload, Loader2, X, Link as LinkIcon, ExternalLink } from "lucide-react";
+import { ArrowLeft, Upload, Loader2, X, Link as LinkIcon, ExternalLink, Settings2, Trash2 } from "lucide-react";
+
+interface PixelEntry {
+  id?: string;
+  platform: string;
+  pixel_id: string;
+  domain: string;
+  fire_on_pix: boolean;
+  fire_on_boleto: boolean;
+}
 import {
   Select,
   SelectContent,
@@ -46,6 +55,9 @@ const ProductEdit = () => {
   const [dragOver, setDragOver] = useState(false);
   const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState("");
+  const [pixels, setPixels] = useState<PixelEntry[]>([]);
+  const [activePixelPlatform, setActivePixelPlatform] = useState("Facebook");
+  const [savingPixels, setSavingPixels] = useState(false);
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -55,6 +67,25 @@ const ProductEdit = () => {
     image_url: "",
     sales_page_url: "",
   });
+
+  // Load pixels for this product
+  const loadPixels = useCallback(async () => {
+    if (isNew || !productId) return;
+    const { data } = await supabase
+      .from("product_pixels")
+      .select("*")
+      .eq("product_id", productId);
+    if (data) {
+      setPixels(data.map((p: any) => ({
+        id: p.id,
+        platform: p.platform,
+        pixel_id: p.pixel_id,
+        domain: p.domain || "",
+        fire_on_pix: p.fire_on_pix,
+        fire_on_boleto: p.fire_on_boleto,
+      })));
+    }
+  }, [isNew, productId]);
 
   useEffect(() => {
     // Load courses
@@ -89,8 +120,58 @@ const ProductEdit = () => {
           });
           setLoading(false);
         });
+      loadPixels();
     }
   }, [productId]);
+
+  const addPixel = () => {
+    if (pixels.length >= 50) { toast.error("Máximo de 50 pixels"); return; }
+    setPixels((prev) => [...prev, { platform: activePixelPlatform.toLowerCase(), pixel_id: "", domain: "", fire_on_pix: false, fire_on_boleto: false }]);
+  };
+
+  const updatePixel = (index: number, field: keyof PixelEntry, value: any) => {
+    setPixels((prev) => prev.map((p, i) => i === index ? { ...p, [field]: value } : p));
+  };
+
+  const removePixel = async (index: number) => {
+    const px = pixels[index];
+    if (px.id) {
+      await supabase.from("product_pixels").delete().eq("id", px.id);
+    }
+    setPixels((prev) => prev.filter((_, i) => i !== index));
+    toast.success("Pixel removido");
+  };
+
+  const savePixels = async () => {
+    if (isNew || !productId) { toast.error("Salve o produto primeiro"); return; }
+    setSavingPixels(true);
+    try {
+      // Delete existing
+      await supabase.from("product_pixels").delete().eq("product_id", productId);
+      // Insert all
+      const validPixels = pixels.filter((p) => p.pixel_id.trim());
+      if (validPixels.length > 0) {
+        const { error } = await supabase.from("product_pixels").insert(
+          validPixels.map((p) => ({
+            product_id: productId,
+            platform: p.platform,
+            pixel_id: p.pixel_id.trim(),
+            domain: p.domain.trim() || null,
+            fire_on_pix: p.fire_on_pix,
+            fire_on_boleto: p.fire_on_boleto,
+            user_id: user?.id,
+          }))
+        );
+        if (error) throw error;
+      }
+      toast.success("Pixels salvos!");
+      loadPixels();
+    } catch (err) {
+      toast.error("Erro ao salvar pixels");
+    } finally {
+      setSavingPixels(false);
+    }
+  };
 
   const uploadImage = useCallback(async (file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -555,39 +636,90 @@ const ProductEdit = () => {
                 <div className="lg:col-span-4">
                   <h2 className="text-base font-semibold text-foreground">Pixels de conversão</h2>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Aprenda sobre os pixels de conversão
+                    Aprenda sobre os <span className="text-primary underline cursor-pointer">pixels de conversão</span>
                   </p>
                 </div>
                 <div className="lg:col-span-8">
                   <div className="border border-border rounded-lg p-6 bg-card space-y-4">
-                    <div className="flex flex-wrap gap-3">
+                    {/* Platform tabs */}
+                    <div className="flex flex-wrap gap-2">
                       {["Facebook", "G Ads", "G Analytics", "Taboola", "Outbrain", "TikTok", "Pinterest", "Kwai"].map((px) => (
-                        <button key={px} className="text-xs px-3 py-1.5 rounded-full border border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors">
+                        <button
+                          key={px}
+                          onClick={() => setActivePixelPlatform(px)}
+                          className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                            activePixelPlatform === px
+                              ? "border-primary bg-primary/10 text-primary font-medium"
+                              : "border-border text-muted-foreground hover:border-primary hover:text-primary"
+                          }`}
+                        >
                           {px}
                         </button>
                       ))}
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <Label>Pixel ID</Label>
-                        <Input placeholder="Ex: 1234567890" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>Domínio</Label>
-                        <Input placeholder="meudominio.com.br" />
-                      </div>
+
+                    {/* Existing pixels for active platform */}
+                    {pixels.filter((p) => p.platform === activePixelPlatform.toLowerCase()).length === 0 && (
+                      <p className="text-sm text-muted-foreground py-2">
+                        Nenhum pixel de {activePixelPlatform} cadastrado.
+                      </p>
+                    )}
+
+                    {pixels.map((px, idx) => {
+                      if (px.platform !== activePixelPlatform.toLowerCase()) return null;
+                      return (
+                        <div key={idx} className="space-y-3 border border-border rounded-lg p-4 bg-muted/20">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                              <Label>Pixel ID</Label>
+                              <Input
+                                value={px.pixel_id}
+                                onChange={(e) => updatePixel(idx, "pixel_id", e.target.value)}
+                                placeholder="Ex: 1234567890"
+                              />
+                            </div>
+                            <div className="space-y-1.5">
+                              <Label>
+                                Domínio{" "}
+                                <span className="text-primary text-xs cursor-pointer">(Gerenciar domínios {activePixelPlatform})</span>
+                              </Label>
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  value={px.domain}
+                                  onChange={(e) => updatePixel(idx, "domain", e.target.value)}
+                                  placeholder="go.seudominio.com.br"
+                                />
+                                <button className="text-muted-foreground hover:text-foreground"><Settings2 className="w-4 h-4" /></button>
+                                <button onClick={() => removePixel(idx)} className="text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-3">
+                              <Switch checked={px.fire_on_pix} onCheckedChange={(v) => updatePixel(idx, "fire_on_pix", v)} />
+                              <Label className="text-sm">Disparar evento "Purchase" ao gerar um pix?</Label>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <Switch checked={px.fire_on_boleto} onCheckedChange={(v) => updatePixel(idx, "fire_on_boleto", v)} />
+                              <Label className="text-sm">Disparar evento "Purchase" ao gerar um boleto?</Label>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    <div className="flex items-center gap-3">
+                      <Button size="sm" onClick={addPixel} className="gap-1">Adicionar outro</Button>
+                      <span className="text-xs text-muted-foreground">
+                        {pixels.filter((p) => p.platform === activePixelPlatform.toLowerCase()).length}/50
+                      </span>
                     </div>
-                    <Button size="sm" className="gap-1">Adicionar outro</Button>
-                    <span className="text-xs text-muted-foreground ml-2">1/50</span>
-                    <div className="space-y-3 pt-2">
-                      <div className="flex items-center gap-3">
-                        <Switch />
-                        <Label className="text-sm">Disparar evento "Purchase" ao gerar um pix?</Label>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Switch />
-                        <Label className="text-sm">Disparar evento "Purchase" ao gerar um boleto?</Label>
-                      </div>
+
+                    <div className="pt-2">
+                      <Button onClick={savePixels} disabled={savingPixels} size="sm" variant="outline">
+                        {savingPixels && <Loader2 className="w-3 h-3 animate-spin mr-1" />}
+                        Salvar pixels
+                      </Button>
                     </div>
                   </div>
                 </div>
