@@ -16,6 +16,9 @@ import {
 import { COMPONENT_CATALOG, type ComponentType } from "./types";
 
 const iconMap: Record<string, React.ElementType> = {
+  AlignLeft, Image, ThumbsUp, Award, LayoutGrid, ListOrdered,
+  Clock, Star, Video, Facebook, FileText, MousePointerClick,
+};
   AlignLeft,
   Image,
   ThumbsUp,
