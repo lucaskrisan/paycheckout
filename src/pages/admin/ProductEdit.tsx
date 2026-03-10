@@ -446,11 +446,214 @@ const ProductEdit = () => {
 
           {/* Configurações */}
           <TabsContent value="config" className="mt-8">
-            <div className="border border-border rounded-lg p-6 bg-card max-w-2xl space-y-4">
-              <h2 className="text-base font-semibold text-foreground">Configurações</h2>
-              <p className="text-sm text-muted-foreground">
-                Configurações avançadas do produto como garantia, políticas de reembolso e notificações.
-              </p>
+            <div className="space-y-10">
+              {/* Pagamento */}
+              <div className="grid lg:grid-cols-12 gap-8">
+                <div className="lg:col-span-4">
+                  <h2 className="text-base font-semibold text-foreground">Pagamento</h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Aprenda sobre as configurações de parcelamento no checkout
+                  </p>
+                </div>
+                <div className="lg:col-span-8">
+                  <div className="border border-border rounded-lg p-6 bg-card space-y-5">
+                    <div className="space-y-1.5">
+                      <Label>Método de pagamento</Label>
+                      <Select defaultValue="all">
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Cartão de crédito, boleto e Pix</SelectItem>
+                          <SelectItem value="pix_only">Apenas Pix</SelectItem>
+                          <SelectItem value="card_pix">Cartão de crédito e Pix</SelectItem>
+                          <SelectItem value="card_only">Apenas Cartão de crédito</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label>Descrição na fatura do cartão</Label>
+                      <div className="flex items-center">
+                        <span className="inline-flex items-center px-3 text-xs text-muted-foreground bg-muted border border-r-0 border-input rounded-l-md h-10 font-semibold">KIWIFY*</span>
+                        <Input defaultValue="" placeholder="MEUPRODUTO" className="rounded-l-none uppercase" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label>Parcelamento</Label>
+                      <Select defaultValue="12">
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {[1,2,3,4,5,6,7,8,9,10,11,12,15,18,21].map((n) => (
+                            <SelectItem key={n} value={String(n)}>Até {n}x</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label>Validade do boleto</Label>
+                      <div className="flex items-center gap-2">
+                        <Input type="number" defaultValue="2" className="w-20" />
+                        <span className="text-sm text-muted-foreground">dias corridos</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 pt-2">
+                      <div className="flex items-center gap-3">
+                        <Switch />
+                        <Label className="text-sm">Habilitar pagamento com 2 cartões</Label>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Switch />
+                        <Label className="text-sm">Habilitar pagamento com Cartão + Pix</Label>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Switch />
+                        <Label className="text-sm">Habilitar parcelamento inteligente</Label>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Switch defaultChecked />
+                        <Label className="text-sm">Pedir para o comprador repetir o e-mail</Label>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Switch />
+                        <Label className="text-sm">Coletar o endereço do comprador</Label>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Switch />
+                        <Label className="text-sm">Coletar o Instagram do comprador</Label>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Switch />
+                        <Label className="text-sm">Conversão automática de moedas (recomendado)</Label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Página de obrigado e upsell */}
+              <div className="grid lg:grid-cols-12 gap-8">
+                <div className="lg:col-span-4">
+                  <h2 className="text-base font-semibold text-foreground">Página de obrigado e upsell</h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Aprenda sobre as páginas de obrigado personalizadas e também sobre a upsell de 1 clique.
+                  </p>
+                </div>
+                <div className="lg:col-span-8">
+                  <div className="border border-border rounded-lg p-6 bg-card">
+                    <div className="flex items-center gap-3">
+                      <Switch />
+                      <Label className="text-sm">Esse produto tem uma página de obrigado personalizada ou upsell</Label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pixels de conversão */}
+              <div className="grid lg:grid-cols-12 gap-8">
+                <div className="lg:col-span-4">
+                  <h2 className="text-base font-semibold text-foreground">Pixels de conversão</h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Aprenda sobre os pixels de conversão
+                  </p>
+                </div>
+                <div className="lg:col-span-8">
+                  <div className="border border-border rounded-lg p-6 bg-card space-y-4">
+                    <div className="flex flex-wrap gap-3">
+                      {["Facebook", "G Ads", "G Analytics", "Taboola", "Outbrain", "TikTok", "Pinterest", "Kwai"].map((px) => (
+                        <button key={px} className="text-xs px-3 py-1.5 rounded-full border border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors">
+                          {px}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label>Pixel ID</Label>
+                        <Input placeholder="Ex: 1234567890" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Domínio</Label>
+                        <Input placeholder="meudominio.com.br" />
+                      </div>
+                    </div>
+                    <Button size="sm" className="gap-1">Adicionar outro</Button>
+                    <span className="text-xs text-muted-foreground ml-2">1/50</span>
+                    <div className="space-y-3 pt-2">
+                      <div className="flex items-center gap-3">
+                        <Switch />
+                        <Label className="text-sm">Disparar evento "Purchase" ao gerar um pix?</Label>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Switch />
+                        <Label className="text-sm">Disparar evento "Purchase" ao gerar um boleto?</Label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Cupons de desconto */}
+              <div className="grid lg:grid-cols-12 gap-8">
+                <div className="lg:col-span-4">
+                  <h2 className="text-base font-semibold text-foreground">Cupons de desconto</h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Aprenda sobre os cupons de desconto
+                  </p>
+                </div>
+                <div className="lg:col-span-8">
+                  <div className="border border-border rounded-lg p-6 bg-card">
+                    <div className="flex items-center gap-3">
+                      <Switch />
+                      <Label className="text-sm">Habilitar cupons de desconto</Label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Order bump */}
+              <div className="grid lg:grid-cols-12 gap-8">
+                <div className="lg:col-span-4">
+                  <h2 className="text-base font-semibold text-foreground">Order bump</h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Aprenda sobre os order bumps
+                  </p>
+                </div>
+                <div className="lg:col-span-8">
+                  <div className="border border-border rounded-lg overflow-hidden bg-card">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="hover:bg-transparent">
+                          <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Ordem</TableHead>
+                          <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Produto</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        <TableRow>
+                          <TableCell colSpan={2} className="text-center text-sm text-muted-foreground py-6">
+                            Não há nenhum order bump
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                    <div className="px-6 pb-4">
+                      <Button size="sm" className="gap-1">Adicionar order bump</Button>
+                      <span className="text-xs text-muted-foreground ml-2">0/5</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom actions */}
+              {!isNew && (
+                <div className="flex justify-between pt-4 border-t border-border">
+                  <Button variant="destructive" size="sm" onClick={handleDelete}>Excluir produto</Button>
+                  <Button onClick={handleSave} disabled={saving}>
+                    {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                    Salvar produto
+                  </Button>
+                </div>
+              )}
             </div>
           </TabsContent>
 
