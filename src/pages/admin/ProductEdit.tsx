@@ -856,16 +856,82 @@ const ProductEdit = () => {
 
           {/* Checkout */}
           <TabsContent value="checkout" className="mt-8">
-            <div className="border border-border rounded-lg p-6 bg-card max-w-2xl space-y-4">
-              <h2 className="text-base font-semibold text-foreground">Checkout</h2>
-              <p className="text-sm text-muted-foreground">Personalize o checkout deste produto.</p>
-              {checkoutLink && (
-                <div className="space-y-1.5">
-                  <Label>Link do checkout</Label>
-                  <div className="flex items-center gap-2">
-                    <Input value={checkoutLink} readOnly className="bg-muted/50" />
-                    <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(checkoutLink); toast.success("Link copiado!"); }}>Copiar</Button>
-                  </div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="relative w-64">
+                  <Input placeholder="Buscar..." className="pl-9 h-9 text-sm" />
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                </div>
+                <Button size="sm" variant="outline" className="text-sm">
+                  Criar novo checkout
+                </Button>
+              </div>
+
+              <div className="border border-border rounded-lg overflow-hidden bg-card">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Nome</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Oferta</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider w-10"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {checkoutLink ? (
+                      <TableRow>
+                        <TableCell className="text-sm text-foreground">
+                          Checkout A
+                          <span className="ml-2 text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full">Padrão</span>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {form.price ? `R$ ${Number(form.price).toFixed(2).replace(".", ",")}` : "—"}
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="p-1 rounded hover:bg-muted transition-colors">
+                                <MoreVertical className="w-4 h-4 text-muted-foreground" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40">
+                              <DropdownMenuItem onClick={() => window.open(checkoutLink, "_blank")} className="gap-2 text-sm">
+                                <ExternalLink className="w-3.5 h-3.5" /> Personalizar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="gap-2 text-sm">
+                                <Settings2 className="w-3.5 h-3.5" /> Configurações
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => { navigator.clipboard.writeText(checkoutLink); toast.success("Link copiado!"); }} className="gap-2 text-sm">
+                                <LinkIcon className="w-3.5 h-3.5" /> Duplicar
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center text-sm text-muted-foreground py-8">
+                          Salve o produto primeiro.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              <div className="flex items-center justify-center">
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <span className="text-primary">ℹ</span> Aprenda mais sobre o{" "}
+                  <a href="#" className="text-primary underline">checkout builder</a>
+                </p>
+              </div>
+
+              {!isNew && (
+                <div className="flex justify-between pt-4 border-t border-border">
+                  <Button variant="destructive" size="sm" onClick={handleDelete}>Excluir produto</Button>
+                  <Button onClick={handleSave} disabled={saving}>
+                    {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                    Salvar produto
+                  </Button>
                 </div>
               )}
             </div>
