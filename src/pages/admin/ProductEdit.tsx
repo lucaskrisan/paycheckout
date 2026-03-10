@@ -895,6 +895,14 @@ const ProductEdit = () => {
         onClose={() => setShowDomainManager(false)}
         onDomainsChange={(d) => setFbDomains(d)}
       />
+      {!isNew && productId && (
+        <OrderBumpDialog
+          open={showBumpDialog}
+          onClose={() => setShowBumpDialog(false)}
+          productId={productId}
+          onSaved={loadOrderBumps}
+        />
+      )}
     </div>
   );
 };
