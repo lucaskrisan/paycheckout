@@ -13,6 +13,7 @@ import AdminLayout from "./components/admin/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import Orders from "./pages/admin/Orders";
 import Products from "./pages/admin/Products";
+import ProductEdit from "./pages/admin/ProductEdit";
 import Customers from "./pages/admin/Customers";
 import Settings from "./pages/admin/Settings";
 import Gateways from "./pages/admin/Gateways";
@@ -42,6 +43,7 @@ const App = () => (
               <Route index element={<Dashboard />} />
               <Route path="orders" element={<Orders />} />
               <Route path="products" element={<Products />} />
+              <Route path="products/:productId/edit" element={<ProductEdit />} />
               <Route path="customers" element={<Customers />} />
               <Route path="gateways" element={<Gateways />} />
               <Route path="courses" element={<Courses />} />
