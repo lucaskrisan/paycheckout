@@ -7,7 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Upload, Loader2, X, Link as LinkIcon, ExternalLink, Settings2, Trash2 } from "lucide-react";
+import { ArrowLeft, Upload, Loader2, X, Link as LinkIcon, ExternalLink, Settings2, Trash2, MoreVertical } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import FacebookDomainManager from "@/components/admin/FacebookDomainManager";
 import OrderBumpDialog from "@/components/admin/OrderBumpDialog";
 
