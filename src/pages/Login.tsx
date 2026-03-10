@@ -51,9 +51,9 @@ const Login = () => {
           <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
             <Lock className="w-6 h-6 text-primary" />
           </div>
-          <h1 className="font-display text-2xl font-bold text-foreground">Painel Admin</h1>
+          <h1 className="font-display text-2xl font-bold text-foreground">PayCheckout</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {isSignUp ? "Crie sua conta" : "Faça login para acessar"}
+            {isSignUp ? "Crie sua conta e comece a vender" : "Acesse seu painel de vendas"}
           </p>
         </div>
 
