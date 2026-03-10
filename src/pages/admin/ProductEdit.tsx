@@ -684,15 +684,23 @@ const ProductEdit = () => {
                             <div className="space-y-1.5">
                               <Label>
                                 Domínio{" "}
-                                <span className="text-primary text-xs cursor-pointer">(Gerenciar domínios {activePixelPlatform})</span>
+                                <span
+                                  onClick={() => setShowDomainManager(true)}
+                                  className="text-primary text-xs cursor-pointer hover:underline"
+                                >
+                                  (Gerenciar domínios {activePixelPlatform})
+                                </span>
                               </Label>
                               <div className="flex items-center gap-2">
-                                <Input
-                                  value={px.domain}
-                                  onChange={(e) => updatePixel(idx, "domain", e.target.value)}
-                                  placeholder="go.seudominio.com.br"
-                                />
-                                <button className="text-muted-foreground hover:text-foreground"><Settings2 className="w-4 h-4" /></button>
+                                <Select value={px.domain || ""} onValueChange={(v) => updatePixel(idx, "domain", v)}>
+                                  <SelectTrigger className="flex-1"><SelectValue placeholder="Selecione um domínio" /></SelectTrigger>
+                                  <SelectContent>
+                                    {fbDomains.map((d) => (
+                                      <SelectItem key={d.id} value={d.domain}>{d.domain}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <button onClick={() => setShowDomainManager(true)} className="text-muted-foreground hover:text-foreground"><Settings2 className="w-4 h-4" /></button>
                                 <button onClick={() => removePixel(idx)} className="text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button>
                               </div>
                             </div>
