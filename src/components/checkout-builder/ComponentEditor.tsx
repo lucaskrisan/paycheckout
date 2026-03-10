@@ -15,9 +15,23 @@ interface ComponentEditorProps {
 }
 
 const ComponentEditor = ({ component, onUpdate, onRemove }: ComponentEditorProps) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const update = (key: string, value: any) => {
     onUpdate(component.id, { ...component.props, [key]: value });
   };
+
+  const handleImageUpload = useCallback(async (file: File) => {
+    if (!file.type.startsWith("image/")) { toast.error("Apenas imagens"); return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error("Máximo 10MB"); return; }
+    const ext = file.name.split(".").pop();
+    const path = `builder/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("product-images").upload(path, file);
+    if (error) { toast.error("Erro no upload"); return; }
+    const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(path);
+    update("url", urlData.publicUrl);
+    toast.success("Imagem enviada!");
+  }, [component.props]);
 
   const renderFields = () => {
     switch (component.type) {
