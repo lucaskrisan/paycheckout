@@ -40,13 +40,13 @@ const App = () => (
             <Route path="/membros" element={<MemberArea />} />
             <Route path="/minha-conta" element={<CustomerPortal />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/admin/products/:productId/checkout-builder" element={<CheckoutBuilder />} />
+            <Route path="/admin/products/:productId/checkout-builder/:configId" element={<CheckoutBuilder />} />
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<Dashboard />} />
               <Route path="orders" element={<Orders />} />
               <Route path="products" element={<Products />} />
               <Route path="products/:productId/edit" element={<ProductEdit />} />
-              <Route path="products/:productId/checkout-builder" element={<CheckoutBuilder />} />
-              <Route path="products/:productId/checkout-builder/:configId" element={<CheckoutBuilder />} />
               <Route path="customers" element={<Customers />} />
               <Route path="gateways" element={<Gateways />} />
               <Route path="courses" element={<Courses />} />
