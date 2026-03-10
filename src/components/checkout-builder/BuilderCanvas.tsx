@@ -105,61 +105,6 @@ function DropZone({
   );
 }
 
-/** Simulated checkout form (non-interactive, visual only) */
-const CheckoutFormPreview = () => (
-  <div className="p-4 space-y-3 pointer-events-none select-none opacity-80">
-    {/* Product header */}
-    <div className="flex items-center gap-3 pb-3 border-b border-border/30">
-      <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
-        <span className="text-lg">📦</span>
-      </div>
-      <div>
-        <div className="h-4 w-48 bg-foreground/10 rounded" />
-        <div className="h-3 w-32 bg-foreground/5 rounded mt-1.5" />
-      </div>
-    </div>
-    {/* Form fields */}
-    <div className="space-y-2">
-      <div className="h-9 w-full bg-muted/60 rounded-md border border-border/30" />
-      <div className="h-9 w-full bg-muted/60 rounded-md border border-border/30" />
-      <div className="h-9 w-full bg-muted/60 rounded-md border border-border/30" />
-      <div className="grid grid-cols-2 gap-2">
-        <div className="h-9 bg-muted/60 rounded-md border border-border/30" />
-        <div className="h-9 bg-muted/60 rounded-md border border-border/30" />
-      </div>
-    </div>
-    {/* Payment methods */}
-    <div className="flex gap-2 pt-1">
-      <div className="h-8 w-16 bg-muted/40 rounded" />
-      <div className="h-8 w-16 bg-muted/40 rounded" />
-      <div className="h-8 w-16 bg-muted/40 rounded" />
-      <div className="h-8 w-16 bg-muted/40 rounded" />
-    </div>
-    {/* Card form */}
-    <div className="border border-border/30 rounded-lg p-3 space-y-2">
-      <div className="h-8 w-full bg-muted/50 rounded" />
-      <div className="grid grid-cols-3 gap-2">
-        <div className="h-8 bg-muted/50 rounded" />
-        <div className="h-8 bg-muted/50 rounded" />
-        <div className="h-8 bg-muted/50 rounded" />
-      </div>
-      <div className="h-8 w-full bg-muted/50 rounded" />
-    </div>
-    {/* Price */}
-    <div className="space-y-1 pt-1">
-      <div className="h-3 w-24 bg-foreground/10 rounded" />
-      <div className="h-3 w-40 bg-foreground/5 rounded" />
-    </div>
-    {/* CTA button */}
-    <div className="h-12 w-full bg-primary rounded-lg" />
-    {/* Footer */}
-    <div className="flex justify-center gap-4 pt-1">
-      <div className="h-3 w-20 bg-foreground/5 rounded" />
-      <div className="h-3 w-20 bg-foreground/5 rounded" />
-    </div>
-  </div>
-);
-
 interface BuilderCanvasProps {
   components: BuilderComponent[];
   selectedId: string | null;
@@ -188,12 +133,8 @@ const BuilderCanvas = ({ components, selectedId, onRemove, onSelect, isMobile }:
 
       {/* Two-column layout */}
       <div className={`grid gap-0 ${isMobile ? "grid-cols-1" : "grid-cols-5"}`}>
-        {/* Left column */}
+        {/* Left column - fully free */}
         <div className={isMobile ? "" : "col-span-3 border-r border-dashed border-border/50"}>
-          {/* Simulated checkout form */}
-          <CheckoutFormPreview />
-
-          {/* Drop zone below form */}
           <DropZone
             zone="left"
             components={leftComponents}
@@ -201,7 +142,7 @@ const BuilderCanvas = ({ components, selectedId, onRemove, onSelect, isMobile }:
             onRemove={onRemove}
             onSelect={onSelect}
             label="Arraste componentes aqui"
-            className="rounded-none border-x-0 border-b-0"
+            className="rounded-none border-0 min-h-[500px]"
           />
         </div>
 
@@ -215,7 +156,7 @@ const BuilderCanvas = ({ components, selectedId, onRemove, onSelect, isMobile }:
               onRemove={onRemove}
               onSelect={onSelect}
               label="Arraste componentes aqui"
-              className="rounded-none border-0 min-h-[400px]"
+              className="rounded-none border-0 min-h-[500px]"
             />
           </div>
         )}
