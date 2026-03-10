@@ -21,6 +21,16 @@ interface Product {
   image_url: string | null;
 }
 
+const PUBLISHED_URL = "https://paycheckout.lovable.app";
+
+const getPublicUrl = () => {
+  // Use published URL if available, fallback to current origin
+  if (window.location.hostname.includes("preview")) {
+    return PUBLISHED_URL;
+  }
+  return window.location.origin;
+};
+
 const Products = () => {
   const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
