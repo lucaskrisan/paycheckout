@@ -115,15 +115,51 @@ const ComponentPreview = ({ component }: { component: BuilderComponent }) => {
 
     case "form":
       return (
-        <div className="py-2 space-y-2">
-          <p className="text-xs font-semibold text-foreground">📝 Formulário do checkout</p>
-          <div className="space-y-1.5">
-            <div className="h-8 w-full bg-muted/60 rounded border border-border/30" />
-            <div className="h-8 w-full bg-muted/60 rounded border border-border/30" />
-            <div className="h-8 w-full bg-muted/60 rounded border border-border/30" />
-            <div className="grid grid-cols-2 gap-1.5">
-              <div className="h-8 bg-muted/60 rounded border border-border/30" />
-              <div className="h-8 bg-muted/60 rounded border border-border/30" />
+        <div className="group/form relative -mx-3 -my-3 p-4 bg-muted/40 hover:bg-muted/70 transition-colors cursor-default">
+          {/* Tooltip on hover */}
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/form:opacity-100 transition-opacity z-10 pointer-events-none">
+            <div className="bg-foreground text-background text-xs font-semibold px-3 py-1.5 rounded-md shadow-lg">
+              <p className="text-center">Checkout</p>
+              <p className="text-center text-[10px] font-normal opacity-80">Será exibido aqui</p>
+            </div>
+          </div>
+          {/* Simulated form */}
+          <div className="space-y-2.5 group-hover/form:opacity-60 transition-opacity">
+            <div className="h-9 w-full bg-foreground/10 rounded-md" />
+            <div className="h-9 w-full bg-foreground/10 rounded-md" />
+            <div className="h-9 w-full bg-foreground/10 rounded-md" />
+            <div className="grid grid-cols-2 gap-2">
+              <div className="h-9 bg-foreground/10 rounded-md" />
+              <div className="h-9 bg-foreground/10 rounded-md" />
+            </div>
+            {/* Payment method tabs */}
+            <div className="flex gap-2 pt-1">
+              <div className="h-8 w-16 bg-foreground/8 rounded" />
+              <div className="h-8 w-16 bg-foreground/8 rounded" />
+              <div className="h-8 w-16 bg-foreground/8 rounded" />
+              <div className="h-8 w-16 bg-foreground/8 rounded" />
+            </div>
+            {/* Card form */}
+            <div className="border border-foreground/10 rounded-lg p-3 space-y-2">
+              <div className="h-8 w-full bg-foreground/8 rounded" />
+              <div className="grid grid-cols-3 gap-2">
+                <div className="h-8 bg-foreground/8 rounded" />
+                <div className="h-8 bg-foreground/8 rounded" />
+                <div className="h-8 bg-foreground/8 rounded" />
+              </div>
+              <div className="h-8 w-full bg-foreground/8 rounded" />
+            </div>
+            {/* Price info */}
+            <div className="space-y-1 pt-1">
+              <div className="h-3 w-24 bg-foreground/12 rounded" />
+              <div className="h-3 w-40 bg-foreground/8 rounded" />
+            </div>
+            {/* CTA */}
+            <div className="h-12 w-full bg-primary/80 rounded-lg" />
+            {/* Footer links */}
+            <div className="flex justify-center gap-4 pt-1">
+              <div className="h-3 w-20 bg-foreground/6 rounded" />
+              <div className="h-3 w-20 bg-foreground/6 rounded" />
             </div>
           </div>
         </div>
