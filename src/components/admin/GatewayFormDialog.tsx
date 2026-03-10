@@ -21,6 +21,7 @@ interface Props {
 }
 
 const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
+  const { user } = useAuth();
   const [form, setForm] = useState<GatewayConfig>({
     provider: "asaas",
     name: "",
