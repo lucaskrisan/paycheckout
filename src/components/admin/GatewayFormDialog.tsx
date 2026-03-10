@@ -94,7 +94,7 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
           <p className="text-sm text-muted-foreground">
             {form.provider === "asaas"
               ? "Aceite pagamentos via Pix e Cartão de Crédito de forma simples e segura."
-              : "Aceite pagamentos via PIX."}
+              : "Processamento rápido e confiável de pagamentos com Pix e Cartão."}
           </p>
         </DialogHeader>
 
