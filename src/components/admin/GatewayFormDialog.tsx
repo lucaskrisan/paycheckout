@@ -284,12 +284,159 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
             {form.provider === "pagarme" && (
               <>
                 <Separator />
+                {/* Antifraude notice */}
+                <div className="bg-accent/50 border border-border rounded-lg p-4 space-y-2">
+                  <h4 className="text-sm font-semibold text-foreground">⚠️ Importante: Antifraude e Endereço</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Se o Antifraude Pagar.me estiver <strong>ATIVO</strong>: é obrigatório coletar o endereço completo dos clientes.
+                    Se estiver <strong>DESLIGADO</strong>: o endereço é opcional.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Dica: Verifique no dashboard do Pagar.me em Configurações → Antifraude se está ativo ou não.
+                  </p>
+                </div>
+
+                <Separator />
+                {/* Pagar.me Hub */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-foreground">Configurações PIX</h3>
+                  <h3 className="text-sm font-semibold text-foreground">Pagar.me Hub</h3>
+                  <p className="text-xs text-muted-foreground">Integração OAuth - Melhor compatibilidade e respostas</p>
+                  <Button variant="outline" className="w-full" onClick={() => toast.info("Configure a integração OAuth no painel do Pagar.me")}>
+                    Integrar com o Pagar.me
+                  </Button>
+                </div>
+
+                <Separator />
+                {/* Taxas PIX */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-foreground">Taxas PIX</h3>
+                  <p className="text-xs text-muted-foreground">Quem paga: Você (vendedor) · Para quem: Gateway de pagamento</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label>Taxa Percentual (%)</Label>
+                      <Input type="number" step="0.01" value={form.config.pix_fee_percent ?? 0.89} onChange={(e) => updateConfig("pix_fee_percent", parseFloat(e.target.value) || 0)} />
+                      <p className="text-xs text-muted-foreground">Ex: 0.89% (Pagar.me padrão)</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Taxa Fixa (R$)</Label>
+                      <Input type="number" step="0.01" value={form.config.pix_fee_fixed ?? 0.44} onChange={(e) => updateConfig("pix_fee_fixed", parseFloat(e.target.value) || 0)} />
+                      <p className="text-xs text-muted-foreground">Ex: R$ 0,44 por transação</p>
+                    </div>
+                  </div>
                   <div className="space-y-1.5">
-                    <Label>Expiração do PIX (segundos)</Label>
-                    <Input type="number" value={form.config.pix_expires_in ?? 1800} onChange={(e) => updateConfig("pix_expires_in", parseInt(e.target.value) || 1800)} />
-                    <p className="text-xs text-muted-foreground">Padrão: 1800 (30 minutos)</p>
+                    <Label>Timer PIX (minutos)</Label>
+                    <Select value={String(form.config.pix_timer_minutes ?? 30)} onValueChange={(v) => updateConfig("pix_timer_minutes", parseInt(v))}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="15">15 minutos</SelectItem>
+                        <SelectItem value="30">30 minutos (padrão)</SelectItem>
+                        <SelectItem value="60">60 minutos</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">Tempo exibido no timer da página de pagamento PIX para o cliente.</p>
+                  </div>
+                </div>
+
+                <Separator />
+                {/* Taxas Cartão de Crédito (MDR) */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-foreground">Taxas Cartão de Crédito (MDR)</h3>
+                  <p className="text-xs text-muted-foreground">Quem paga: Você (vendedor) · Para quem: Gateway de pagamento</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label>À Vista (%)</Label>
+                      <Input type="number" step="0.01" value={form.config.credit_fee_1x ?? 2.99} onChange={(e) => updateConfig("credit_fee_1x", parseFloat(e.target.value) || 0)} />
+                      <p className="text-xs text-muted-foreground">Crédito em 1x</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>2 a 6x (%)</Label>
+                      <Input type="number" step="0.01" value={form.config.credit_fee_2_6x ?? 2.99} onChange={(e) => updateConfig("credit_fee_2_6x", parseFloat(e.target.value) || 0)} />
+                      <p className="text-xs text-muted-foreground">Parcelado até 6x</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>7 a 12x (%)</Label>
+                      <Input type="number" step="0.01" value={form.config.credit_fee_7_12x ?? 2.99} onChange={(e) => updateConfig("credit_fee_7_12x", parseFloat(e.target.value) || 0)} />
+                      <p className="text-xs text-muted-foreground">Parcelado 7x ou mais</p>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Custo de Processamento (R$)</Label>
+                    <Input type="number" step="0.01" value={form.config.credit_processing_fee ?? 0.44} onChange={(e) => updateConfig("credit_processing_fee", parseFloat(e.target.value) || 0)} />
+                    <p className="text-xs text-muted-foreground">Custo fixo por transação de cartão</p>
+                  </div>
+                </div>
+
+                <Separator />
+                {/* Soft descriptor */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-foreground">Como Aparece na Fatura do Cartão</h3>
+                  <div className="space-y-1.5">
+                    <Label>Nome que aparece para o cliente</Label>
+                    <Input value={form.config.soft_descriptor ?? ""} onChange={(e) => updateConfig("soft_descriptor", e.target.value.slice(0, 13))} placeholder="Ex: MINHA LOJA" maxLength={13} />
+                    <p className="text-xs text-muted-foreground">Este nome aparece na fatura do cartão do cliente. Máximo: 13 caracteres. Deixe em branco para usar o nome padrão.</p>
+                  </div>
+                </div>
+
+                <Separator />
+                {/* Installments */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-foreground">Configuração de Parcelamento (Juros)</h3>
+                  <p className="text-xs text-muted-foreground">Quem paga: Cliente · Para quem: Você (vendedor)</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label>Máximo de Parcelas</Label>
+                      <Select value={String(form.config.max_installments ?? 12)} onValueChange={(v) => updateConfig("max_installments", parseInt(v))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => (
+                            <SelectItem key={n} value={String(n)}>{n}x</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Valor Mínimo Parcela (R$)</Label>
+                      <Input type="number" step="0.01" value={form.config.min_installment_value ?? 5} onChange={(e) => updateConfig("min_installment_value", parseFloat(e.target.value) || 5)} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Parcelas Sem Juros</Label>
+                      <Select value={String(form.config.free_installments ?? 1)} onValueChange={(v) => updateConfig("free_installments", parseInt(v))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => (
+                            <SelectItem key={n} value={String(n)}>{n}x sem juros</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label>Taxa de Juros Inicial (%)</Label>
+                      <Input type="number" step="0.01" value={form.config.interest_rate_initial ?? 6.58} onChange={(e) => updateConfig("interest_rate_initial", parseFloat(e.target.value) || 0)} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Taxa Incremental (%)</Label>
+                      <Input type="number" step="0.01" value={form.config.interest_rate_incremental ?? 1.45} onChange={(e) => updateConfig("interest_rate_incremental", parseFloat(e.target.value) || 0)} />
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+                {/* Exemplo prático */}
+                <div className="bg-muted/50 border border-border rounded-lg p-4 space-y-3">
+                  <h4 className="text-sm font-semibold text-foreground">📊 Exemplo Prático: Como as Taxas Funcionam</h4>
+                  <div className="space-y-2 text-xs text-muted-foreground">
+                    <div>
+                      <p className="font-medium text-foreground">Venda PIX - R$ 100,00</p>
+                      <p>Você paga: {form.config.pix_fee_percent ?? 0.89}% + R$ {(form.config.pix_fee_fixed ?? 0.44).toFixed(2)} = R$ {((100 * (form.config.pix_fee_percent ?? 0.89) / 100) + (form.config.pix_fee_fixed ?? 0.44)).toFixed(2)}</p>
+                      <p>Recebe líquido: R$ {(100 - ((100 * (form.config.pix_fee_percent ?? 0.89) / 100) + (form.config.pix_fee_fixed ?? 0.44))).toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground">Venda Cartão 1x - R$ 100,00</p>
+                      <p>Você paga: MDR {form.config.credit_fee_1x ?? 2.99}% + R$ {(form.config.credit_processing_fee ?? 0.44).toFixed(2)}</p>
+                      <p>Recebe líquido: R$ {(100 - ((100 * (form.config.credit_fee_1x ?? 2.99) / 100) + (form.config.credit_processing_fee ?? 0.44))).toFixed(2)}</p>
+                    </div>
                   </div>
                 </div>
               </>
