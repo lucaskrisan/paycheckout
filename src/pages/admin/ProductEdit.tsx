@@ -146,6 +146,7 @@ const ProductEdit = () => {
           setLoading(false);
         });
       loadPixels();
+      loadOrderBumps();
     }
   }, [productId]);
 
