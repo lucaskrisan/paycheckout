@@ -47,9 +47,14 @@ interface Product {
 const Products = () => {
   const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
+  const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
-  const [form, setForm] = useState({ name: "", description: "", price: "", original_price: "", active: true });
+  const [step, setStep] = useState<1 | 2>(1);
+  const [form, setForm] = useState({
+    name: "", description: "", price: "", original_price: "", active: true,
+    payment_type: "one_time", delivery: "members_area", course_id: "new",
+  });
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
