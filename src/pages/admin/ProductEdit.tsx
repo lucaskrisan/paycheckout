@@ -782,7 +782,7 @@ const ProductEdit = () => {
                 <div className="lg:col-span-4">
                   <h2 className="text-base font-semibold text-foreground">Order bump</h2>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Aprenda sobre os order bumps
+                    Aprenda sobre os <span className="text-primary underline cursor-pointer">order bumps</span>
                   </p>
                 </div>
                 <div className="lg:col-span-8">
@@ -792,19 +792,50 @@ const ProductEdit = () => {
                         <TableRow className="hover:bg-transparent">
                           <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Ordem</TableHead>
                           <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Produto</TableHead>
+                          <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider w-10"></TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        <TableRow>
-                          <TableCell colSpan={2} className="text-center text-sm text-muted-foreground py-6">
-                            Não há nenhum order bump
-                          </TableCell>
-                        </TableRow>
+                        {orderBumps.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={3} className="text-center text-sm text-primary py-6">
+                              Não há nenhum order bump
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          orderBumps.map((ob, idx) => (
+                            <TableRow key={ob.id}>
+                              <TableCell className="text-sm text-muted-foreground">{idx + 1}</TableCell>
+                              <TableCell className="text-sm text-foreground">
+                                {ob.bump_product?.name || ob.title} — R$ {Number(ob.bump_product?.price || 0).toFixed(2).replace(".", ",")}
+                              </TableCell>
+                              <TableCell>
+                                <button
+                                  onClick={async () => {
+                                    await supabase.from("order_bumps").delete().eq("id", ob.id);
+                                    toast.success("Order bump removido");
+                                    loadOrderBumps();
+                                  }}
+                                  className="text-destructive hover:text-destructive/80"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
                       </TableBody>
                     </Table>
                     <div className="px-6 pb-4">
-                      <Button size="sm" className="gap-1">Adicionar order bump</Button>
-                      <span className="text-xs text-muted-foreground ml-2">0/5</span>
+                      <Button
+                        size="sm"
+                        className="gap-1"
+                        disabled={orderBumps.length >= 5}
+                        onClick={() => setShowBumpDialog(true)}
+                      >
+                        Adicionar order bump
+                      </Button>
+                      <span className="text-xs text-muted-foreground ml-2">{orderBumps.length}/5</span>
                     </div>
                   </div>
                 </div>
