@@ -22,6 +22,7 @@ import Coupons from "./pages/admin/Coupons";
 import AbandonedCarts from "./pages/admin/AbandonedCarts";
 import Integrations from "./pages/admin/Integrations";
 import SuperAdminDashboard from "./pages/admin/SuperAdminDashboard";
+import CheckoutBuilder from "./pages/admin/CheckoutBuilder";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
