@@ -12,12 +12,12 @@ const ComponentPreview = ({ component }: { component: BuilderComponent }) => {
 
     case "image":
       return (
-        <div className="py-2">
+        <div className="py-1">
           {component.props.url ? (
             <img src={component.props.url} alt="" className="w-full h-32 object-cover rounded-lg" />
           ) : (
-            <div className="w-full h-24 bg-muted rounded-lg flex items-center justify-center">
-              <Image className="w-8 h-8 text-muted-foreground" />
+            <div className="w-full h-28 bg-muted/50 border border-border/30 rounded-lg flex flex-col items-center justify-center gap-1">
+              <Image className="w-10 h-10 text-muted-foreground/50" />
             </div>
           )}
         </div>
