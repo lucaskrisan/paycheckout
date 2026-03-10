@@ -27,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, MoreVertical, Search, Pencil, Trash2, Copy, ExternalLink } from "lucide-react";
+import { MoreVertical, Search, Pencil, Trash2, Copy, ExternalLink, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -47,13 +47,23 @@ interface Product {
 const Products = () => {
   const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
+  const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
-  const [form, setForm] = useState({ name: "", description: "", price: "", original_price: "", active: true });
+  const [step, setStep] = useState<1 | 2>(1);
+  const [form, setForm] = useState({
+    name: "", description: "", price: "", original_price: "", active: true,
+    payment_type: "one_time", delivery: "members_area", course_id: "new",
+  });
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  useEffect(() => { loadProducts(); }, []);
+  useEffect(() => { loadProducts(); loadCourses(); }, []);
+
+  const loadCourses = async () => {
+    const { data } = await supabase.from("courses").select("id, title");
+    setCourses(data || []);
+  };
 
   const loadProducts = async () => {
     const { data } = await supabase.from("products").select("*").order("created_at", { ascending: false });
@@ -62,18 +72,23 @@ const Products = () => {
 
   const openNew = () => {
     setEditing(null);
-    setForm({ name: "", description: "", price: "", original_price: "", active: true });
+    setStep(1);
+    setForm({ name: "", description: "", price: "", original_price: "", active: true, payment_type: "one_time", delivery: "members_area", course_id: "new" });
     setOpen(true);
   };
 
   const openEdit = (p: Product) => {
     setEditing(p);
+    setStep(2);
     setForm({
       name: p.name,
       description: p.description || "",
       price: String(p.price),
       original_price: p.original_price ? String(p.original_price) : "",
       active: p.active,
+      payment_type: "one_time",
+      delivery: "members_area",
+      course_id: "new",
     });
     setOpen(true);
   };
@@ -237,37 +252,85 @@ const Products = () => {
         Exibindo {filtered.length} de {products.length} produtos
       </p>
 
-      {/* Dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editing ? "Editar Produto" : "Novo Produto"}</DialogTitle>
+            <DialogTitle>{editing ? "Editar produto" : "Criar produto"}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label>Nome</Label>
-              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Descrição</Label>
-              <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+
+          {step === 1 ? (
+            <div className="space-y-5">
               <div className="space-y-1.5">
-                <Label>Preço (R$)</Label>
-                <Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+                <Label className="text-sm font-medium">Tipo de pagamento</Label>
+                <Select value={form.payment_type} onValueChange={(v) => setForm({ ...form, payment_type: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="one_time">Pagamento único</SelectItem>
+                    <SelectItem value="subscription">Assinatura</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Preço original (R$)</Label>
-                <Input type="number" step="0.01" value={form.original_price} onChange={(e) => setForm({ ...form, original_price: e.target.value })} />
+                <Label className="text-sm font-medium">Entrega do conteúdo</Label>
+                <Select value={form.delivery} onValueChange={(v) => setForm({ ...form, delivery: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="members_area">Área de membros</SelectItem>
+                    <SelectItem value="external">Link externo</SelectItem>
+                    <SelectItem value="none">Sem entrega digital</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {form.delivery === "members_area" && (
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium">Área de membros</Label>
+                  <Select value={form.course_id} onValueChange={(v) => setForm({ ...form, course_id: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="new">Criar nova área de membros</SelectItem>
+                      {courses.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <Button onClick={() => setStep(2)} className="w-full gap-2">
+                Continuar <ArrowRight className="w-4 h-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label>Nome do produto</Label>
+                <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ex: Curso Completo de Marketing" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Descrição</Label>
+                <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} placeholder="Descreva seu produto..." />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label>Preço (R$)</Label>
+                  <Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="0,00" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Preço original (R$)</Label>
+                  <Input type="number" step="0.01" value={form.original_price} onChange={(e) => setForm({ ...form, original_price: e.target.value })} placeholder="0,00" />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch checked={form.active} onCheckedChange={(v) => setForm({ ...form, active: v })} />
+                <Label>Produto ativo</Label>
+              </div>
+              <div className="flex gap-3">
+                {!editing && (
+                  <Button variant="outline" onClick={() => setStep(1)} className="flex-1">Voltar</Button>
+                )}
+                <Button onClick={handleSave} className="flex-1">Salvar</Button>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Switch checked={form.active} onCheckedChange={(v) => setForm({ ...form, active: v })} />
-              <Label>Produto ativo</Label>
-            </div>
-            <Button onClick={handleSave} className="w-full">Salvar</Button>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
