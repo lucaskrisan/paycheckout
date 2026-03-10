@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,9 +15,16 @@ const Login = () => {
   const [fullName, setFullName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
-  const navigate = useNavigate();
   const [googleLoading, setGoogleLoading] = useState(false);
+  const { signIn, signUp, user, isAdmin, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate(isAdmin ? "/admin" : "/minha-conta", { replace: true });
+    }
+  }, [user, isAdmin, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,12 +32,13 @@ const Login = () => {
     try {
       if (isSignUp) {
         await signUp(email, password, fullName);
-        toast.success("Conta criada! Fazendo login...");
-        await signIn(email, password);
+        toast.success("Conta criada! Verifique seu e-mail para confirmar.");
+        setLoading(false);
+        return;
       } else {
         await signIn(email, password);
       }
-      navigate("/admin");
+      // Auth state change will trigger redirect via useEffect
     } catch (err: any) {
       toast.error(err.message || "Erro na autenticação");
     } finally {
