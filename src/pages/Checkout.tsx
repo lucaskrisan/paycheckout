@@ -57,29 +57,55 @@ const Checkout = () => {
   });
 
   useEffect(() => {
-    if (!productId) { setNotFound(true); setLoading(false); return; }
-    supabase
-      .from("products")
-      .select("*")
-      .eq("id", productId)
-      .eq("active", true)
-      .single()
-      .then(({ data, error }) => {
-        if (error || !data) setNotFound(true);
-        else setProduct(data);
-        setLoading(false);
-      });
+    if (!productId) {
+      setNotFound(true);
+      setLoading(false);
+      return;
+    }
 
-    // Load order bumps
-    supabase
-      .from("order_bumps")
-      .select("id, call_to_action, title, description, use_product_image, bump_product:products!order_bumps_bump_product_id_fkey(id, name, price, image_url)")
-      .eq("product_id", productId)
-      .eq("active", true)
-      .order("sort_order")
-      .then(({ data }) => {
-        if (data) setOrderBumps(data as any);
-      });
+    const loadCheckoutData = async () => {
+      setLoading(true);
+
+      const [productRes, orderBumpsRes, builderRes] = await Promise.all([
+        supabase
+          .from("products")
+          .select("*")
+          .eq("id", productId)
+          .eq("active", true)
+          .single(),
+        supabase
+          .from("order_bumps")
+          .select("id, call_to_action, title, description, use_product_image, bump_product:products!order_bumps_bump_product_id_fkey(id, name, price, image_url)")
+          .eq("product_id", productId)
+          .eq("active", true)
+          .order("sort_order"),
+        supabase
+          .from("checkout_builder_configs")
+          .select("layout")
+          .eq("product_id", productId)
+          .eq("is_default", true)
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .maybeSingle(),
+      ]);
+
+      if (productRes.error || !productRes.data) {
+        setNotFound(true);
+      } else {
+        setProduct(productRes.data);
+      }
+
+      if (orderBumpsRes.data) {
+        setOrderBumps(orderBumpsRes.data as any);
+      }
+
+      const layout = (builderRes.data?.layout as BuilderComponent[] | null) ?? [];
+      setBuilderLayout(Array.isArray(layout) ? layout : []);
+
+      setLoading(false);
+    };
+
+    loadCheckoutData();
   }, [productId]);
 
   const toggleBump = (bumpId: string) => {
