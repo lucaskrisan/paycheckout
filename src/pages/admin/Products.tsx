@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -27,9 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MoreVertical, Search, Pencil, Trash2, Copy, ExternalLink, ArrowRight } from "lucide-react";
+import { MoreVertical, Search, Pencil, Trash2, Copy, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/useAuth";
 
 const PUBLISHED_URL = "https://paycheckout.lovable.app";
 const getPublicUrl = () => (window.location.hostname.includes("preview") ? PUBLISHED_URL : window.location.origin);
@@ -37,87 +33,21 @@ const getPublicUrl = () => (window.location.hostname.includes("preview") ? PUBLI
 interface Product {
   id: string;
   name: string;
-  description: string | null;
   price: number;
-  original_price: number | null;
   active: boolean;
-  image_url: string | null;
 }
 
 const Products = () => {
-  const { user } = useAuth();
+  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
-  const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<Product | null>(null);
-  const [step, setStep] = useState<1 | 2>(1);
-  const [form, setForm] = useState({
-    name: "", description: "", price: "", original_price: "", active: true,
-    payment_type: "one_time", delivery: "members_area", course_id: "new",
-  });
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  useEffect(() => { loadProducts(); loadCourses(); }, []);
-
-  const loadCourses = async () => {
-    const { data } = await supabase.from("courses").select("id, title");
-    setCourses(data || []);
-  };
+  useEffect(() => { loadProducts(); }, []);
 
   const loadProducts = async () => {
-    const { data } = await supabase.from("products").select("*").order("created_at", { ascending: false });
+    const { data } = await supabase.from("products").select("id, name, price, active").order("created_at", { ascending: false });
     setProducts(data || []);
-  };
-
-  const openNew = () => {
-    setEditing(null);
-    setStep(1);
-    setForm({ name: "", description: "", price: "", original_price: "", active: true, payment_type: "one_time", delivery: "members_area", course_id: "new" });
-    setOpen(true);
-  };
-
-  const openEdit = (p: Product) => {
-    setEditing(p);
-    setStep(2);
-    setForm({
-      name: p.name,
-      description: p.description || "",
-      price: String(p.price),
-      original_price: p.original_price ? String(p.original_price) : "",
-      active: p.active,
-      payment_type: "one_time",
-      delivery: "members_area",
-      course_id: "new",
-    });
-    setOpen(true);
-  };
-
-  const handleSave = async () => {
-    if (!form.name || !form.price) {
-      toast.error("Nome e preço são obrigatórios");
-      return;
-    }
-    const payload: any = {
-      name: form.name,
-      description: form.description || null,
-      price: parseFloat(form.price),
-      original_price: form.original_price ? parseFloat(form.original_price) : null,
-      active: form.active,
-      updated_at: new Date().toISOString(),
-    };
-    if (editing) {
-      const { error } = await supabase.from("products").update(payload).eq("id", editing.id);
-      if (error) { toast.error("Erro ao atualizar"); return; }
-      toast.success("Produto atualizado!");
-    } else {
-      payload.user_id = user?.id;
-      const { error } = await supabase.from("products").insert(payload);
-      if (error) { toast.error("Erro ao criar"); return; }
-      toast.success("Produto criado!");
-    }
-    setOpen(false);
-    loadProducts();
   };
 
   const handleDelete = async (id: string) => {
@@ -137,29 +67,20 @@ const Products = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-foreground">Produtos</h1>
-        <Button onClick={openNew} className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
+        <Button onClick={() => navigate("/admin/products/new/edit")} className="bg-primary hover:bg-primary/90 text-primary-foreground">
           Criar produto
         </Button>
       </div>
 
-      {/* Filters */}
       <div className="flex items-center justify-between gap-4">
         <div className="relative w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 h-9 text-sm"
-          />
+          <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 text-sm" />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[120px] h-9 text-sm">
-            <SelectValue />
-          </SelectTrigger>
+          <SelectTrigger className="w-[120px] h-9 text-sm"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="active">Ativo</SelectItem>
@@ -168,7 +89,6 @@ const Products = () => {
         </Select>
       </div>
 
-      {/* Table */}
       <div className="border border-border rounded-lg overflow-hidden bg-card">
         <Table>
           <TableHeader>
@@ -181,7 +101,7 @@ const Products = () => {
           </TableHeader>
           <TableBody>
             {filtered.map((p) => (
-              <TableRow key={p.id} className="hover:bg-muted/30">
+              <TableRow key={p.id} className="hover:bg-muted/30 cursor-pointer" onClick={() => navigate(`/admin/products/${p.id}/edit`)}>
                 <TableCell className="font-medium text-sm text-foreground">{p.name}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">{fmt(p.price)}</TableCell>
                 <TableCell>
@@ -189,46 +109,26 @@ const Products = () => {
                     {p.active ? "Ativo" : "Inativo"}
                   </span>
                 </TableCell>
-                <TableCell>
+                <TableCell onClick={(e) => e.stopPropagation()}>
                   <div className="flex items-center gap-1 justify-end">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => {
-                        navigator.clipboard.writeText(`${getPublicUrl()}/checkout/${p.id}`);
-                        toast.success("Link copiado!");
-                      }}
-                    >
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { navigator.clipboard.writeText(`${getPublicUrl()}/checkout/${p.id}`); toast.success("Link copiado!"); }}>
                       <Copy className="w-3.5 h-3.5" />
                     </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreVertical className="w-4 h-4" />
-                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="w-4 h-4" /></Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openEdit(p)}>
+                        <DropdownMenuItem onClick={() => navigate(`/admin/products/${p.id}/edit`)}>
                           <Pencil className="w-3.5 h-3.5 mr-2" /> Editar
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => window.open(`${getPublicUrl()}/checkout/${p.id}`, "_blank")}
-                        >
+                        <DropdownMenuItem onClick={() => window.open(`${getPublicUrl()}/checkout/${p.id}`, "_blank")}>
                           <ExternalLink className="w-3.5 h-3.5 mr-2" /> Ver checkout
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            navigator.clipboard.writeText(`${getPublicUrl()}/checkout/${p.id}`);
-                            toast.success("Link copiado!");
-                          }}
-                        >
+                        <DropdownMenuItem onClick={() => { navigator.clipboard.writeText(`${getPublicUrl()}/checkout/${p.id}`); toast.success("Link copiado!"); }}>
                           <Copy className="w-3.5 h-3.5 mr-2" /> Copiar link
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-destructive focus:text-destructive"
-                          onClick={() => handleDelete(p.id)}
-                        >
+                        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDelete(p.id)}>
                           <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -239,100 +139,14 @@ const Products = () => {
             ))}
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-muted-foreground py-12">
-                  Nenhum produto encontrado.
-                </TableCell>
+                <TableCell colSpan={4} className="text-center text-muted-foreground py-12">Nenhum produto encontrado.</TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
 
-      <p className="text-center text-xs text-muted-foreground">
-        Exibindo {filtered.length} de {products.length} produtos
-      </p>
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{editing ? "Editar produto" : "Criar produto"}</DialogTitle>
-          </DialogHeader>
-
-          {step === 1 ? (
-            <div className="space-y-5">
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium">Tipo de pagamento</Label>
-                <Select value={form.payment_type} onValueChange={(v) => setForm({ ...form, payment_type: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="one_time">Pagamento único</SelectItem>
-                    <SelectItem value="subscription">Assinatura</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-sm font-medium">Entrega do conteúdo</Label>
-                <Select value={form.delivery} onValueChange={(v) => setForm({ ...form, delivery: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="members_area">Área de membros</SelectItem>
-                    <SelectItem value="external">Link externo</SelectItem>
-                    <SelectItem value="none">Sem entrega digital</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {form.delivery === "members_area" && (
-                <div className="space-y-1.5">
-                  <Label className="text-sm font-medium">Área de membros</Label>
-                  <Select value={form.course_id} onValueChange={(v) => setForm({ ...form, course_id: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="new">Criar nova área de membros</SelectItem>
-                      {courses.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              <Button onClick={() => setStep(2)} className="w-full gap-2">
-                Continuar <ArrowRight className="w-4 h-4" />
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <Label>Nome do produto</Label>
-                <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ex: Curso Completo de Marketing" />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Descrição</Label>
-                <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} placeholder="Descreva seu produto..." />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label>Preço (R$)</Label>
-                  <Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} placeholder="0,00" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Preço original (R$)</Label>
-                  <Input type="number" step="0.01" value={form.original_price} onChange={(e) => setForm({ ...form, original_price: e.target.value })} placeholder="0,00" />
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch checked={form.active} onCheckedChange={(v) => setForm({ ...form, active: v })} />
-                <Label>Produto ativo</Label>
-              </div>
-              <div className="flex gap-3">
-                {!editing && (
-                  <Button variant="outline" onClick={() => setStep(1)} className="flex-1">Voltar</Button>
-                )}
-                <Button onClick={handleSave} className="flex-1">Salvar</Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <p className="text-center text-xs text-muted-foreground">Exibindo {filtered.length} de {products.length} produtos</p>
     </div>
   );
 };
