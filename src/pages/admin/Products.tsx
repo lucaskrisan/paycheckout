@@ -1,15 +1,38 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Copy, Link } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Plus, MoreVertical, Search, Pencil, Trash2, Copy, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+
+const PUBLISHED_URL = "https://paycheckout.lovable.app";
+const getPublicUrl = () => (window.location.hostname.includes("preview") ? PUBLISHED_URL : window.location.origin);
 
 interface Product {
   id: string;
@@ -21,22 +44,14 @@ interface Product {
   image_url: string | null;
 }
 
-const PUBLISHED_URL = "https://paycheckout.lovable.app";
-
-const getPublicUrl = () => {
-  // Use published URL if available, fallback to current origin
-  if (window.location.hostname.includes("preview")) {
-    return PUBLISHED_URL;
-  }
-  return window.location.origin;
-};
-
 const Products = () => {
   const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [form, setForm] = useState({ name: "", description: "", price: "", original_price: "", active: true });
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => { loadProducts(); }, []);
 
@@ -68,7 +83,6 @@ const Products = () => {
       toast.error("Nome e preço são obrigatórios");
       return;
     }
-
     const payload: any = {
       name: form.name,
       description: form.description || null,
@@ -77,7 +91,6 @@ const Products = () => {
       active: form.active,
       updated_at: new Date().toISOString(),
     };
-
     if (editing) {
       const { error } = await supabase.from("products").update(payload).eq("id", editing.id);
       if (error) { toast.error("Erro ao atualizar"); return; }
@@ -88,7 +101,6 @@ const Products = () => {
       if (error) { toast.error("Erro ao criar"); return; }
       toast.success("Produto criado!");
     }
-
     setOpen(false);
     loadProducts();
   };
@@ -100,73 +112,136 @@ const Products = () => {
     loadProducts();
   };
 
+  const fmt = (v: number) => `R$ ${Number(v).toFixed(2).replace(".", ",")}`;
+
+  const filtered = products.filter((p) => {
+    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === "all" || (statusFilter === "active" ? p.active : !p.active);
+    return matchesSearch && matchesStatus;
+  });
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold text-foreground">Produtos</h1>
-        <Button onClick={openNew} className="gap-2">
-          <Plus className="w-4 h-4" /> Novo Produto
+        <h1 className="text-xl font-semibold text-foreground">Produtos</h1>
+        <Button onClick={openNew} className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
+          Criar produto
         </Button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {products.map((p) => (
-          <Card key={p.id}>
-            <CardContent className="p-4 space-y-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-display font-bold text-foreground">{p.name}</h3>
-                  {p.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{p.description}</p>}
-                </div>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${p.active ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
-                  {p.active ? "Ativo" : "Inativo"}
-                </span>
-              </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-lg font-bold text-foreground">R$ {Number(p.price).toFixed(2).replace(".", ",")}</span>
-                {p.original_price && (
-                  <span className="text-sm text-muted-foreground line-through">R$ {Number(p.original_price).toFixed(2).replace(".", ",")}</span>
-                )}
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5 bg-muted/50 rounded-lg px-3 py-2">
-                  <Link className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                  <span className="text-xs text-muted-foreground truncate flex-1">
-                    {getPublicUrl()}/checkout/{p.id}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 shrink-0"
-                    onClick={() => {
-                      navigator.clipboard.writeText(`${getPublicUrl()}/checkout/${p.id}`);
-                      toast.success("Link do checkout copiado!");
-                    }}
-                  >
-                    <Copy className="w-3 h-3" />
-                  </Button>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => openEdit(p)} className="gap-1">
-                    <Pencil className="w-3 h-3" /> Editar
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => handleDelete(p.id)} className="gap-1 text-destructive hover:text-destructive">
-                    <Trash2 className="w-3 h-3" /> Excluir
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-        {products.length === 0 && (
-          <p className="text-muted-foreground col-span-full text-center py-8">Nenhum produto cadastrado.</p>
-        )}
+      {/* Filters */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="relative w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 h-9 text-sm"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[120px] h-9 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="active">Ativo</SelectItem>
+            <SelectItem value="inactive">Inativo</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
+      {/* Table */}
+      <div className="border border-border rounded-lg overflow-hidden bg-card">
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Nome</TableHead>
+              <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Preço</TableHead>
+              <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Status</TableHead>
+              <TableHead className="w-[80px]"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.map((p) => (
+              <TableRow key={p.id} className="hover:bg-muted/30">
+                <TableCell className="font-medium text-sm text-foreground">{p.name}</TableCell>
+                <TableCell className="text-sm text-muted-foreground">{fmt(p.price)}</TableCell>
+                <TableCell>
+                  <span className={`text-xs font-medium ${p.active ? "text-primary" : "text-muted-foreground"}`}>
+                    {p.active ? "Ativo" : "Inativo"}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1 justify-end">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${getPublicUrl()}/checkout/${p.id}`);
+                        toast.success("Link copiado!");
+                      }}
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => openEdit(p)}>
+                          <Pencil className="w-3.5 h-3.5 mr-2" /> Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => window.open(`${getPublicUrl()}/checkout/${p.id}`, "_blank")}
+                        >
+                          <ExternalLink className="w-3.5 h-3.5 mr-2" /> Ver checkout
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            navigator.clipboard.writeText(`${getPublicUrl()}/checkout/${p.id}`);
+                            toast.success("Link copiado!");
+                          }}
+                        >
+                          <Copy className="w-3.5 h-3.5 mr-2" /> Copiar link
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onClick={() => handleDelete(p.id)}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+            {filtered.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center text-muted-foreground py-12">
+                  Nenhum produto encontrado.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <p className="text-center text-xs text-muted-foreground">
+        Exibindo {filtered.length} de {products.length} produtos
+      </p>
+
+      {/* Dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="font-display">{editing ? "Editar Produto" : "Novo Produto"}</DialogTitle>
+            <DialogTitle>{editing ? "Editar Produto" : "Novo Produto"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-1.5">
