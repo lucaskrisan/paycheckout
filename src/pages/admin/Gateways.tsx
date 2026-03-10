@@ -94,7 +94,7 @@ const Gateways = () => {
         <Card className="border-dashed border-2 flex flex-col items-center justify-center p-8 cursor-pointer hover:border-primary/50 transition-colors" onClick={() => handleNew("pagarme")}>
           <Plus className="w-8 h-8 text-muted-foreground mb-2" />
           <p className="font-semibold text-foreground">Adicionar Pagar.me</p>
-          <p className="text-xs text-muted-foreground">PIX</p>
+          <p className="text-xs text-muted-foreground">PIX e Cartão de Crédito</p>
         </Card>
       </div>
 

@@ -458,17 +458,15 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
                     onCheckedChange={() => togglePaymentMethod("pix")}
                   />
                 </div>
-                {form.provider === "asaas" && (
-                  <div className="flex items-center justify-between p-3 border border-border rounded-lg">
-                    <div>
-                      <span className="text-sm font-medium">Cartão de Crédito</span>
-                    </div>
-                    <Switch
-                      checked={form.payment_methods.includes("credit_card")}
-                      onCheckedChange={() => togglePaymentMethod("credit_card")}
-                    />
+                <div className="flex items-center justify-between p-3 border border-border rounded-lg">
+                  <div>
+                    <span className="text-sm font-medium">Cartão de Crédito</span>
                   </div>
-                )}
+                  <Switch
+                    checked={form.payment_methods.includes("credit_card")}
+                    onCheckedChange={() => togglePaymentMethod("credit_card")}
+                  />
+                </div>
               </div>
             </div>
 
