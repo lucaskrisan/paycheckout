@@ -7,7 +7,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Upload, Loader2, X, Link as LinkIcon, ExternalLink } from "lucide-react";
+import { ArrowLeft, Upload, Loader2, X, Link as LinkIcon, ExternalLink, Settings2, Trash2 } from "lucide-react";
+
+interface PixelEntry {
+  id?: string;
+  platform: string;
+  pixel_id: string;
+  domain: string;
+  fire_on_pix: boolean;
+  fire_on_boleto: boolean;
+}
 import {
   Select,
   SelectContent,
