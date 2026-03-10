@@ -275,7 +275,19 @@ const Checkout = () => {
       </div>
 
       <div className="container max-w-5xl mx-auto px-4 py-6 lg:py-10">
-        <CountdownTimer minutes={15} />
+        <CountdownTimer minutes={countdownMinutes} />
+
+        {sortedLayout.filter((c) => c.zone === "top").length > 0 && (
+          <div className="mt-6 space-y-4">
+            {sortedLayout
+              .filter((c) => c.zone === "top")
+              .map((component) => (
+                <div key={component.id} className="rounded-xl border border-border bg-card p-4">
+                  {renderCustomComponent(component)}
+                </div>
+              ))}
+          </div>
+        )}
 
         <div className="mt-6 grid lg:grid-cols-5 gap-6 lg:gap-8">
           <motion.div
@@ -284,6 +296,16 @@ const Checkout = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4 }}
           >
+            <h1 className="font-display text-2xl font-bold text-foreground">{headerTitle}</h1>
+
+            {sortedLayout
+              .filter((c) => c.zone === "left" && !["form", "button", "countdown", "facebook"].includes(c.type))
+              .map((component) => (
+                <div key={component.id} className="rounded-xl border border-border bg-card p-4">
+                  {renderCustomComponent(component)}
+                </div>
+              ))}
+
             <div className="bg-card border border-border rounded-2xl p-6 space-y-6 shadow-sm">
               <CustomerForm data={customer} onChange={setCustomer} />
             </div>
@@ -349,7 +371,7 @@ const Checkout = () => {
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   <>
-                    Gerar PIX
+                    {submitLabel}
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </>
                 )}
@@ -365,11 +387,18 @@ const Checkout = () => {
 
           <motion.div
             className="lg:col-span-2"
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 1, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4, delay: 0.1 }}
           >
-            <div className="lg:sticky lg:top-6">
+            <div className="lg:sticky lg:top-6 space-y-4">
+              {sortedLayout
+                .filter((c) => c.zone === "right" && !["form", "button", "countdown", "facebook"].includes(c.type))
+                .map((component) => (
+                  <div key={component.id} className="rounded-xl border border-border bg-card p-4">
+                    {renderCustomComponent(component)}
+                  </div>
+                ))}
               <OrderSummary items={items} discount={pixDiscount} />
             </div>
           </motion.div>
