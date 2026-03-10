@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Upload, Loader2, X, Link as LinkIcon, ExternalLink, Settings2, Trash2 } from "lucide-react";
+import FacebookDomainManager from "@/components/admin/FacebookDomainManager";
 
 interface PixelEntry {
   id?: string;
@@ -58,6 +59,8 @@ const ProductEdit = () => {
   const [pixels, setPixels] = useState<PixelEntry[]>([]);
   const [activePixelPlatform, setActivePixelPlatform] = useState("Facebook");
   const [savingPixels, setSavingPixels] = useState(false);
+  const [showDomainManager, setShowDomainManager] = useState(false);
+  const [fbDomains, setFbDomains] = useState<{ id: string; domain: string; verified: boolean }[]>([]);
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -96,6 +99,15 @@ const ProductEdit = () => {
         if (linked) setSelectedCourseId(linked.id);
       }
     });
+
+    // Load facebook domains
+    if (user) {
+      supabase.from("facebook_domains").select("*").eq("user_id", user.id).then(({ data }) => {
+        setFbDomains((data || []) as any);
+      });
+    }
+
+
 
     if (!isNew && productId) {
       supabase
@@ -681,15 +693,23 @@ const ProductEdit = () => {
                             <div className="space-y-1.5">
                               <Label>
                                 Domínio{" "}
-                                <span className="text-primary text-xs cursor-pointer">(Gerenciar domínios {activePixelPlatform})</span>
+                                <span
+                                  onClick={() => setShowDomainManager(true)}
+                                  className="text-primary text-xs cursor-pointer hover:underline"
+                                >
+                                  (Gerenciar domínios {activePixelPlatform})
+                                </span>
                               </Label>
                               <div className="flex items-center gap-2">
-                                <Input
-                                  value={px.domain}
-                                  onChange={(e) => updatePixel(idx, "domain", e.target.value)}
-                                  placeholder="go.seudominio.com.br"
-                                />
-                                <button className="text-muted-foreground hover:text-foreground"><Settings2 className="w-4 h-4" /></button>
+                                <Select value={px.domain || ""} onValueChange={(v) => updatePixel(idx, "domain", v)}>
+                                  <SelectTrigger className="flex-1"><SelectValue placeholder="Selecione um domínio" /></SelectTrigger>
+                                  <SelectContent>
+                                    {fbDomains.map((d) => (
+                                      <SelectItem key={d.id} value={d.domain}>{d.domain}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <button onClick={() => setShowDomainManager(true)} className="text-muted-foreground hover:text-foreground"><Settings2 className="w-4 h-4" /></button>
                                 <button onClick={() => removePixel(idx)} className="text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button>
                               </div>
                             </div>
@@ -825,6 +845,11 @@ const ProductEdit = () => {
           </TabsContent>
         </Tabs>
       </div>
+      <FacebookDomainManager
+        open={showDomainManager}
+        onClose={() => setShowDomainManager(false)}
+        onDomainsChange={(d) => setFbDomains(d)}
+      />
     </div>
   );
 };
