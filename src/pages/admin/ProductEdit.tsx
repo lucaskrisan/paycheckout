@@ -93,6 +93,16 @@ const ProductEdit = () => {
     }
   }, [isNew, productId]);
 
+  const loadOrderBumps = useCallback(async () => {
+    if (isNew || !productId) return;
+    const { data } = await supabase
+      .from("order_bumps")
+      .select("*, bump_product:products!order_bumps_bump_product_id_fkey(name, price, image_url)")
+      .eq("product_id", productId)
+      .order("sort_order");
+    if (data) setOrderBumps(data);
+  }, [isNew, productId]);
+
   useEffect(() => {
     // Load courses
     supabase.from("courses").select("id, title, product_id").then(({ data }) => {
