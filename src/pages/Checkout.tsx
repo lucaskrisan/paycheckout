@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Lock, ShieldCheck, ArrowRight, Loader2, QrCode } from "lucide-react";
+import { Lock, ShieldCheck, ArrowRight, Loader2, QrCode, ThumbsUp, Award, Star, ListOrdered } from "lucide-react";
 import OrderSummary from "@/components/checkout/OrderSummary";
 import CustomerForm, { type CustomerData } from "@/components/checkout/CustomerForm";
 import PixPayment from "@/components/checkout/PixPayment";
@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFacebookPixel } from "@/hooks/useFacebookPixel";
 import { Checkbox } from "@/components/ui/checkbox";
+import type { BuilderComponent } from "@/components/checkout-builder/types";
 
 interface Product {
   id: string;
