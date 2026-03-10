@@ -50,12 +50,12 @@ const Index = () => {
   });
 
   useEffect(() => {
-    supabase.from("payment_gateways").select("*").eq("active", true).then(({ data }) => {
+    supabase.from("active_gateways" as any).select("*").then(({ data }) => {
       if (data) {
         setGateways(data.map((g: any) => ({
           provider: g.provider,
           payment_methods: (g.payment_methods as string[]) || [],
-          config: (g.config as Record<string, any>) || {},
+          config: {},
           environment: g.environment,
         })));
       }
@@ -94,7 +94,6 @@ const Index = () => {
               amount: finalAmount,
               payment_method: "credit_card",
               installments: cardData.installments,
-              gateway_config: { ...gateway.config, environment: gateway.environment },
               customer: {
                 name: customer.name,
                 email: customer.email,
@@ -144,7 +143,6 @@ const Index = () => {
           body: {
             amount: finalAmount,
             payment_method: "pix",
-            gateway_config: { ...gateway.config, environment: gateway.environment },
             customer: {
               name: customer.name,
               email: customer.email,

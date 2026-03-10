@@ -1,3 +1,5 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
@@ -14,7 +16,7 @@ Deno.serve(async (req) => {
       throw new Error('ASAAS_API_KEY not configured');
     }
 
-    const { amount, customer, payment_method, installments, gateway_config } = await req.json();
+    const { amount, customer, payment_method, installments } = await req.json();
 
     if (!amount || !customer?.name || !customer?.email || !customer?.cpf) {
       return new Response(
@@ -23,8 +25,24 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Fetch gateway config server-side
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+
+    const { data: gatewayData } = await supabaseAdmin
+      .from('payment_gateways')
+      .select('config, environment')
+      .eq('provider', 'asaas')
+      .eq('active', true)
+      .limit(1)
+      .single();
+
+    const gateway_config = gatewayData?.config as Record<string, any> || {};
+    const environment = gatewayData?.environment || 'sandbox';
+
     const cleanCpf = customer.cpf.replace(/\D/g, '');
-    const environment = gateway_config?.environment || 'sandbox';
     const baseUrl = environment === 'production'
       ? 'https://api.asaas.com/v3'
       : 'https://sandbox.asaas.com/api/v3';
@@ -49,7 +67,6 @@ Deno.serve(async (req) => {
     const customerData = await customerRes.json();
     
     if (!customerRes.ok && !customerData.id) {
-      // Try to find existing customer by CPF
       const searchRes = await fetch(`${baseUrl}/customers?cpfCnpj=${cleanCpf}`, {
         headers: { 'access_token': ASAAS_API_KEY },
       });
@@ -67,11 +84,10 @@ Deno.serve(async (req) => {
 
     // 2. Create payment
     const billingType = payment_method === 'credit_card' ? 'CREDIT_CARD' : 'PIX';
-    const config = gateway_config || {};
 
     const dueDate = new Date();
     if (payment_method === 'pix') {
-      dueDate.setDate(dueDate.getDate() + (config.pix_validity_days || 1));
+      dueDate.setDate(dueDate.getDate() + (gateway_config.pix_validity_days || 1));
     }
 
     const paymentPayload: any = {
@@ -79,10 +95,9 @@ Deno.serve(async (req) => {
       billingType,
       value: amount,
       dueDate: dueDate.toISOString().split('T')[0],
-      description: config.billing_description || 'Pagamento',
+      description: gateway_config.billing_description || 'Pagamento',
     };
 
-    // Credit card specifics
     if (payment_method === 'credit_card') {
       const installmentCount = parseInt(installments) || 1;
       if (installmentCount > 1) {
@@ -90,7 +105,6 @@ Deno.serve(async (req) => {
         paymentPayload.installmentValue = Math.round((amount / installmentCount) * 100) / 100;
       }
 
-      // Credit card data is tokenized on the frontend
       if (customer.creditCard) {
         paymentPayload.creditCard = customer.creditCard;
         paymentPayload.creditCardHolderInfo = {
@@ -142,7 +156,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Credit card response
     return new Response(
       JSON.stringify({
         payment_id: paymentData.id,
