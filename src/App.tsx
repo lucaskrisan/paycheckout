@@ -49,6 +49,7 @@ const App = () => (
               <Route path="abandoned" element={<AbandonedCarts />} />
               <Route path="integrations" element={<Integrations />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="platform" element={<SuperAdminDashboard />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
