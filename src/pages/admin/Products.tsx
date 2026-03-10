@@ -72,7 +72,8 @@ const Products = () => {
 
   const openNew = () => {
     setEditing(null);
-    setForm({ name: "", description: "", price: "", original_price: "", active: true });
+    setStep(1);
+    setForm({ name: "", description: "", price: "", original_price: "", active: true, payment_type: "one_time", delivery: "members_area", course_id: "new" });
     setOpen(true);
   };
 
