@@ -77,94 +77,19 @@ const Index = () => {
       return;
     }
 
-    const gateway = getGatewayForMethod(paymentMethod);
-
-    if (paymentMethod === "credit_card") {
-      if (!cardData.number || !cardData.name || !cardData.expiry || !cardData.cvv) {
-        toast.error("Preencha todos os dados do cartão");
-        return;
-      }
-
-      if (gateway?.provider === "asaas") {
-        setIsLoading(true);
-        try {
-          const [expMonth, expYear] = cardData.expiry.split("/");
-          const { data, error } = await supabase.functions.invoke("create-asaas-payment", {
-            body: {
-              amount: finalAmount,
-              payment_method: "credit_card",
-              installments: cardData.installments,
-              customer: {
-                name: customer.name,
-                email: customer.email,
-                cpf: customer.cpf,
-                phone: customer.phone,
-                creditCard: {
-                  holderName: cardData.name,
-                  number: cardData.number.replace(/\s/g, ""),
-                  expiryMonth: expMonth,
-                  expiryYear: `20${expYear}`,
-                  ccv: cardData.cvv,
-                },
-              },
-            },
-          });
-          if (error) throw error;
-          if (data?.status === "CONFIRMED" || data?.status === "RECEIVED" || data?.status === "PENDING") {
-            toast.success("Pagamento processado! Redirecionando...");
-          } else {
-            toast.error("Pagamento não aprovado. Tente novamente.");
-          }
-        } catch (err: any) {
-          console.error("Credit card error:", err);
-          toast.error(err.message || "Erro ao processar pagamento.");
-        } finally {
-          setIsLoading(false);
-        }
-        return;
-      }
-
-      // Fallback for no gateway
-      setIsLoading(true);
-      setTimeout(() => {
-        setIsLoading(false);
-        toast.success("Pagamento aprovado! Redirecionando...");
-      }, 2000);
-      return;
-    }
-
-    // PIX payment
     setIsLoading(true);
     try {
-      let data, error;
-
-      if (gateway?.provider === "asaas") {
-        ({ data, error } = await supabase.functions.invoke("create-asaas-payment", {
-          body: {
-            amount: finalAmount,
-            payment_method: "pix",
-            customer: {
-              name: customer.name,
-              email: customer.email,
-              cpf: customer.cpf,
-              phone: customer.phone,
-            },
+      const { data, error } = await supabase.functions.invoke("create-pix-payment", {
+        body: {
+          amount: finalAmount,
+          customer: {
+            name: customer.name,
+            email: customer.email,
+            cpf: customer.cpf,
+            phone: customer.phone,
           },
-        }));
-      } else {
-        // Pagar.me fallback
-        ({ data, error } = await supabase.functions.invoke("create-pix-payment", {
-          body: {
-            amount: finalAmount,
-            customer: {
-              name: customer.name,
-              email: customer.email,
-              cpf: customer.cpf,
-              phone: customer.phone,
-            },
-          },
-        }));
-      }
+        },
+      });
 
       if (error) throw error;
 
