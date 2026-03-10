@@ -72,7 +72,7 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
     if (isEditing) {
       ({ error } = await supabase.from("payment_gateways").update(payload).eq("id", form.id!));
     } else {
-      ({ error } = await supabase.from("payment_gateways").insert(payload));
+      ({ error } = await supabase.from("payment_gateways").insert({ ...payload, user_id: user?.id }));
     }
 
     setSaving(false);
