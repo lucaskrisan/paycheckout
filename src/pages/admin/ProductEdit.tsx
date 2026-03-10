@@ -106,12 +106,8 @@ const ProductEdit = () => {
         setFbDomains((data || []) as any);
       });
     }
-      setCourses(data || []);
-      if (!isNew && productId) {
-        const linked = data?.find((c) => c.product_id === productId);
-        if (linked) setSelectedCourseId(linked.id);
-      }
-    });
+
+
 
     if (!isNew && productId) {
       supabase
