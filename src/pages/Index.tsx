@@ -94,7 +94,6 @@ const Index = () => {
               amount: finalAmount,
               payment_method: "credit_card",
               installments: cardData.installments,
-              gateway_config: { ...gateway.config, environment: gateway.environment },
               customer: {
                 name: customer.name,
                 email: customer.email,
