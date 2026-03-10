@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Lock, ShieldCheck, ArrowRight, Loader2 } from "lucide-react";
@@ -21,10 +21,18 @@ const DEMO_ITEMS = [
   },
 ];
 
+interface ActiveGateway {
+  provider: string;
+  payment_methods: string[];
+  config: Record<string, any>;
+  environment: string;
+}
+
 const Index = () => {
   const [paymentMethod, setPaymentMethod] = useState<"credit_card" | "pix">("credit_card");
   const [isLoading, setIsLoading] = useState(false);
   const [pixData, setPixData] = useState<{ qrCode?: string; qrCodeUrl?: string; pixCode?: string } | null>(null);
+  const [gateways, setGateways] = useState<ActiveGateway[]>([]);
 
   const [customer, setCustomer] = useState<CustomerData>({
     name: "",
@@ -41,6 +49,24 @@ const Index = () => {
     installments: "1",
   });
 
+  useEffect(() => {
+    supabase.from("payment_gateways").select("*").eq("active", true).then(({ data }) => {
+      if (data) {
+        setGateways(data.map((g: any) => ({
+          provider: g.provider,
+          payment_methods: (g.payment_methods as string[]) || [],
+          config: (g.config as Record<string, any>) || {},
+          environment: g.environment,
+        })));
+      }
+    });
+  }, []);
+
+  // Find the gateway for a payment method
+  const getGatewayForMethod = (method: string): ActiveGateway | undefined => {
+    return gateways.find((g) => g.payment_methods.includes(method));
+  };
+
   const totalAmount = DEMO_ITEMS.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const pixDiscount = totalAmount * 0.05;
   const finalAmount = paymentMethod === "pix" ? totalAmount - pixDiscount : totalAmount;
@@ -51,12 +77,55 @@ const Index = () => {
       return;
     }
 
+    const gateway = getGatewayForMethod(paymentMethod);
+
     if (paymentMethod === "credit_card") {
       if (!cardData.number || !cardData.name || !cardData.expiry || !cardData.cvv) {
         toast.error("Preencha todos os dados do cartão");
         return;
       }
-      // TODO: Integrate credit card payment
+
+      if (gateway?.provider === "asaas") {
+        setIsLoading(true);
+        try {
+          const [expMonth, expYear] = cardData.expiry.split("/");
+          const { data, error } = await supabase.functions.invoke("create-asaas-payment", {
+            body: {
+              amount: finalAmount,
+              payment_method: "credit_card",
+              installments: cardData.installments,
+              gateway_config: { ...gateway.config, environment: gateway.environment },
+              customer: {
+                name: customer.name,
+                email: customer.email,
+                cpf: customer.cpf,
+                phone: customer.phone,
+                creditCard: {
+                  holderName: cardData.name,
+                  number: cardData.number.replace(/\s/g, ""),
+                  expiryMonth: expMonth,
+                  expiryYear: `20${expYear}`,
+                  ccv: cardData.cvv,
+                },
+              },
+            },
+          });
+          if (error) throw error;
+          if (data?.status === "CONFIRMED" || data?.status === "RECEIVED" || data?.status === "PENDING") {
+            toast.success("Pagamento processado! Redirecionando...");
+          } else {
+            toast.error("Pagamento não aprovado. Tente novamente.");
+          }
+        } catch (err: any) {
+          console.error("Credit card error:", err);
+          toast.error(err.message || "Erro ao processar pagamento.");
+        } finally {
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      // Fallback for no gateway
       setIsLoading(true);
       setTimeout(() => {
         setIsLoading(false);
@@ -65,20 +134,39 @@ const Index = () => {
       return;
     }
 
-    // PIX payment via Pagar.me
+    // PIX payment
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('create-pix-payment', {
-        body: {
-          amount: finalAmount,
-          customer: {
-            name: customer.name,
-            email: customer.email,
-            cpf: customer.cpf,
-            phone: customer.phone,
+      let data, error;
+
+      if (gateway?.provider === "asaas") {
+        ({ data, error } = await supabase.functions.invoke("create-asaas-payment", {
+          body: {
+            amount: finalAmount,
+            payment_method: "pix",
+            gateway_config: { ...gateway.config, environment: gateway.environment },
+            customer: {
+              name: customer.name,
+              email: customer.email,
+              cpf: customer.cpf,
+              phone: customer.phone,
+            },
           },
-        },
-      });
+        }));
+      } else {
+        // Pagar.me fallback
+        ({ data, error } = await supabase.functions.invoke("create-pix-payment", {
+          body: {
+            amount: finalAmount,
+            customer: {
+              name: customer.name,
+              email: customer.email,
+              cpf: customer.cpf,
+              phone: customer.phone,
+            },
+          },
+        }));
+      }
 
       if (error) throw error;
 
@@ -89,16 +177,15 @@ const Index = () => {
         });
         toast.success("PIX gerado! Escaneie o QR Code para pagar.");
       } else {
-        throw new Error('Falha ao gerar o PIX');
+        throw new Error("Falha ao gerar o PIX");
       }
     } catch (err: any) {
-      console.error('PIX error:', err);
+      console.error("PIX error:", err);
       toast.error(err.message || "Erro ao gerar PIX. Tente novamente.");
     } finally {
       setIsLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen bg-background">
 

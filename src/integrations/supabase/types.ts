@@ -134,6 +134,42 @@ export type Database = {
           },
         ]
       }
+      payment_gateways: {
+        Row: {
+          active: boolean
+          config: Json
+          created_at: string
+          environment: string
+          id: string
+          name: string
+          payment_methods: Json
+          provider: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          config?: Json
+          created_at?: string
+          environment?: string
+          id?: string
+          name?: string
+          payment_methods?: Json
+          provider: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          config?: Json
+          created_at?: string
+          environment?: string
+          id?: string
+          name?: string
+          payment_methods?: Json
+          provider?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           active: boolean

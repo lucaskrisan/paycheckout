@@ -1,4 +1,4 @@
-import { LayoutDashboard, ShoppingCart, Package, Users, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Package, Users, Settings, LogOut, CreditCard } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,6 +21,7 @@ const menuItems = [
   { title: "Pedidos", url: "/admin/orders", icon: ShoppingCart },
   { title: "Produtos", url: "/admin/products", icon: Package },
   { title: "Clientes", url: "/admin/customers", icon: Users },
+  { title: "Gateways", url: "/admin/gateways", icon: CreditCard },
   { title: "Configurações", url: "/admin/settings", icon: Settings },
 ];
 
