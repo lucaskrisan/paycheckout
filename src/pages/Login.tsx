@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +9,8 @@ import { toast } from "sonner";
 import { Lock, Mail, Eye, EyeOff, User } from "lucide-react";
 
 const Login = () => {
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [isSignUp, setIsSignUp] = useState(searchParams.get("signup") === "true");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -32,16 +33,14 @@ const Login = () => {
     try {
       if (isSignUp) {
         await signUp(email, password, fullName);
-        toast.success("Conta criada! Verifique seu e-mail para confirmar.");
-        setLoading(false);
-        return;
+        // Auto-confirm is on, so sign in immediately
+        await signIn(email, password);
       } else {
         await signIn(email, password);
       }
       // Auth state change will trigger redirect via useEffect
     } catch (err: any) {
       toast.error(err.message || "Erro na autenticação");
-    } finally {
       setLoading(false);
     }
   };
@@ -53,9 +52,9 @@ const Login = () => {
           <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
             <Lock className="w-6 h-6 text-primary" />
           </div>
-          <h1 className="font-display text-2xl font-bold text-foreground">Painel Admin</h1>
+          <h1 className="font-display text-2xl font-bold text-foreground">PayCheckout</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {isSignUp ? "Crie sua conta" : "Faça login para acessar"}
+            {isSignUp ? "Crie sua conta e comece a vender" : "Acesse seu painel de vendas"}
           </p>
         </div>
 
