@@ -61,6 +61,8 @@ const ProductEdit = () => {
   const [activePixelPlatform, setActivePixelPlatform] = useState("Facebook");
   const [savingPixels, setSavingPixels] = useState(false);
   const [showDomainManager, setShowDomainManager] = useState(false);
+  const [showBumpDialog, setShowBumpDialog] = useState(false);
+  const [orderBumps, setOrderBumps] = useState<any[]>([]);
   const [fbDomains, setFbDomains] = useState<{ id: string; domain: string; verified: boolean }[]>([]);
   const [form, setForm] = useState({
     name: "",
