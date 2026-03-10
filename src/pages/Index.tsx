@@ -24,6 +24,7 @@ const DEMO_ITEMS = [
 const Index = () => {
   const [paymentMethod, setPaymentMethod] = useState<"credit_card" | "pix">("credit_card");
   const [isLoading, setIsLoading] = useState(false);
+  const [pixData, setPixData] = useState<{ qrCode?: string; qrCodeUrl?: string; pixCode?: string } | null>(null);
 
   const [customer, setCustomer] = useState<CustomerData>({
     name: "",
