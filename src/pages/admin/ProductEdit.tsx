@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Upload, Loader2, X, Link as LinkIcon, ExternalLink, Settings2, Trash2 } from "lucide-react";
 import FacebookDomainManager from "@/components/admin/FacebookDomainManager";
+import OrderBumpDialog from "@/components/admin/OrderBumpDialog";
 
 interface PixelEntry {
   id?: string;
