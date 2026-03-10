@@ -45,7 +45,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 const PUBLISHED_URL = "https://paycheckout.lovable.app";
 const getPublicUrl = () =>
-  window.location.hostname.includes("preview") ? PUBLISHED_URL : window.location.origin;
+  window.location.hostname.includes("lovable") ? PUBLISHED_URL : window.location.origin;
 
 const tabStyle =
   "rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 pb-3 pt-1 text-sm";
