@@ -47,6 +47,7 @@ const Checkout = () => {
   const { trackPurchase } = useFacebookPixel(productId);
   const [orderBumps, setOrderBumps] = useState<OrderBump[]>([]);
   const [selectedBumps, setSelectedBumps] = useState<Set<string>>(new Set());
+  const [builderLayout, setBuilderLayout] = useState<BuilderComponent[]>([]);
 
   const [customer, setCustomer] = useState<CustomerData>({
     name: "",
