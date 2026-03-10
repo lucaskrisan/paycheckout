@@ -99,7 +99,7 @@ const Checkout = () => {
         setOrderBumps(orderBumpsRes.data as any);
       }
 
-      const layout = (builderRes.data?.layout as BuilderComponent[] | null) ?? [];
+      const layout = (builderRes.data?.layout as unknown as BuilderComponent[] | null) ?? [];
       setBuilderLayout(Array.isArray(layout) ? layout : []);
 
       setLoading(false);
@@ -115,6 +115,60 @@ const Checkout = () => {
       else next.add(bumpId);
       return next;
     });
+  };
+
+  const sortedLayout = useMemo(
+    () => [...builderLayout].sort((a, b) => a.order - b.order),
+    [builderLayout]
+  );
+
+  const headerTitle = sortedLayout.find((c) => c.type === "header")?.props?.title || product?.name;
+  const countdownMinutes = Number(sortedLayout.find((c) => c.type === "countdown")?.props?.minutes || 15);
+  const submitLabel = sortedLayout.find((c) => c.type === "button")?.props?.text || "Gerar PIX";
+
+  const renderCustomComponent = (component: BuilderComponent) => {
+    switch (component.type) {
+      case "text":
+        return <p className="text-foreground whitespace-pre-line">{component.props.content}</p>;
+      case "image":
+        return component.props.url ? <img src={component.props.url} alt="Imagem do checkout" className="w-full rounded-xl object-cover" /> : null;
+      case "header":
+        return <h1 className="font-display text-2xl font-bold text-foreground">{component.props.title || product?.name}</h1>;
+      case "advantages":
+      case "list":
+        return (
+          <ul className="space-y-2">
+            {(component.props.items || []).map((item: string, i: number) => (
+              <li key={`${component.id}-${i}`} className="flex items-center gap-2 text-sm text-foreground">
+                <ListOrdered className="w-4 h-4 text-primary" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        );
+      case "testimonial":
+        return (
+          <div className="rounded-xl border border-border bg-card p-4">
+            <div className="mb-2 flex gap-1">{[...Array(5)].map((_, i) => <Star key={i} className="w-3.5 h-3.5 text-primary fill-primary" />)}</div>
+            <p className="text-sm text-foreground italic">"{component.props.text}"</p>
+            <p className="mt-1 text-xs text-muted-foreground">— {component.props.author}</p>
+          </div>
+        );
+      case "seal":
+        return (
+          <div className="flex items-center gap-2 rounded-xl border border-border bg-card p-4">
+            <Award className="w-5 h-5 text-primary" />
+            <div>
+              <p className="text-sm font-semibold text-foreground">{component.props.title}</p>
+              <p className="text-xs text-muted-foreground">{component.props.subtitle}</p>
+            </div>
+          </div>
+        );
+      case "video":
+        return component.props.url ? <iframe src={component.props.url.replace("watch?v=", "embed/")} className="w-full h-64 rounded-xl border border-border" allowFullScreen title="Vídeo" /> : null;
+      default:
+        return null;
+    }
   };
 
   if (loading) {
