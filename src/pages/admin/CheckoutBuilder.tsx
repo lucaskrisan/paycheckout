@@ -239,16 +239,16 @@ const CheckoutBuilder = () => {
         </div>
       </div>
 
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
       {/* Main area */}
       <div className="flex-1 flex overflow-hidden">
         {/* Canvas */}
         <div className="flex-1 overflow-auto p-6">
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCorners}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-          >
             <BuilderCanvas
               components={components}
               selectedId={selectedId}
@@ -256,14 +256,6 @@ const CheckoutBuilder = () => {
               onSelect={setSelectedId}
               isMobile={isMobile}
             />
-            <DragOverlay>
-              {activeDragType && (
-                <div className="bg-card border border-primary rounded-lg px-4 py-2 shadow-lg text-sm text-foreground capitalize">
-                  {activeDragType}
-                </div>
-              )}
-            </DragOverlay>
-          </DndContext>
         </div>
 
         {/* Right panel */}
@@ -314,6 +306,14 @@ const CheckoutBuilder = () => {
           </Tabs>
         </div>
       </div>
+        <DragOverlay>
+          {activeDragType && (
+            <div className="bg-card border border-primary rounded-lg px-4 py-2 shadow-lg text-sm text-foreground capitalize">
+              {activeDragType}
+            </div>
+          )}
+        </DragOverlay>
+      </DndContext>
     </div>
   );
 };
