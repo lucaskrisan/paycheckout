@@ -115,13 +115,32 @@ const Products = () => {
                   <span className="text-sm text-muted-foreground line-through">R$ {Number(p.original_price).toFixed(2).replace(".", ",")}</span>
                 )}
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => openEdit(p)} className="gap-1">
-                  <Pencil className="w-3 h-3" /> Editar
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => handleDelete(p.id)} className="gap-1 text-destructive hover:text-destructive">
-                  <Trash2 className="w-3 h-3" /> Excluir
-                </Button>
+              <div className="space-y-2">
+                <div className="flex items-center gap-1.5 bg-muted/50 rounded-lg px-3 py-2">
+                  <Link className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-xs text-muted-foreground truncate flex-1">
+                    {window.location.origin}/checkout/{p.id}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 shrink-0"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/checkout/${p.id}`);
+                      toast.success("Link do checkout copiado!");
+                    }}
+                  >
+                    <Copy className="w-3 h-3" />
+                  </Button>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => openEdit(p)} className="gap-1">
+                    <Pencil className="w-3 h-3" /> Editar
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => handleDelete(p.id)} className="gap-1 text-destructive hover:text-destructive">
+                    <Trash2 className="w-3 h-3" /> Excluir
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
