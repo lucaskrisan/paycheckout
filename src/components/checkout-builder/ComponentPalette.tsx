@@ -19,17 +19,6 @@ const iconMap: Record<string, React.ElementType> = {
   AlignLeft, Image, ThumbsUp, Award, LayoutGrid, ListOrdered,
   Clock, Star, Video, Facebook, FileText, MousePointerClick,
 };
-  AlignLeft,
-  Image,
-  ThumbsUp,
-  Award,
-  LayoutGrid,
-  ListOrdered,
-  Clock,
-  Star,
-  Video,
-  Facebook,
-};
 
 function DraggablePaletteItem({ type, label, icon }: { type: ComponentType; label: string; icon: string }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
