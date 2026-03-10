@@ -138,7 +138,7 @@ const Courses = () => {
       if (error) { toast.error("Erro ao atualizar"); return; }
       toast.success("Curso atualizado!");
     } else {
-      const { error } = await supabase.from("courses").insert(payload);
+      const { error } = await supabase.from("courses").insert({ ...payload, user_id: user?.id });
       if (error) { toast.error("Erro ao criar"); return; }
       toast.success("Curso criado!");
     }
