@@ -20,6 +20,7 @@ import Courses from "./pages/admin/Courses";
 import Coupons from "./pages/admin/Coupons";
 import AbandonedCarts from "./pages/admin/AbandonedCarts";
 import Integrations from "./pages/admin/Integrations";
+import SuperAdminDashboard from "./pages/admin/SuperAdminDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
