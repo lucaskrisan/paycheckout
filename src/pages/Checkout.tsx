@@ -209,7 +209,7 @@ const Checkout = () => {
     .filter((b) => selectedBumps.has(b.id))
     .reduce((sum, b) => sum + (b.bump_product?.price || 0), 0);
 
-  const pixDiscount = product.price * 0.05;
+  const pixDiscount = paymentMethod === 'pix' ? product.price * 0.05 : 0;
   const finalAmount = product.price - pixDiscount + bumpTotal;
 
   const items = [
@@ -237,33 +237,76 @@ const Checkout = () => {
       return;
     }
 
+    if (paymentMethod === 'credit_card') {
+      if (!creditCard.number || !creditCard.name || !creditCard.expiry || !creditCard.cvv) {
+        toast.error("Preencha todos os dados do cartão");
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("create-pix-payment", {
-        body: {
-          amount: finalAmount,
-          product_id: product.id,
-          customer: {
-            name: customer.name,
-            email: customer.email,
-            cpf: customer.cpf,
-            phone: customer.phone,
+      if (paymentMethod === 'pix') {
+        // PIX via Pagar.me
+        const { data, error } = await supabase.functions.invoke("create-pix-payment", {
+          body: {
+            amount: finalAmount,
+            product_id: product.id,
+            customer: {
+              name: customer.name,
+              email: customer.email,
+              cpf: customer.cpf,
+              phone: customer.phone,
+            },
           },
-        },
-      });
+        });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      if (data?.qr_code_url || data?.qr_code) {
-        setPixData({ qrCodeUrl: data.qr_code_url, pixCode: data.qr_code });
-        toast.success("PIX gerado! Escaneie o QR Code para pagar.");
-        trackPurchase(finalAmount);
+        if (data?.qr_code_url || data?.qr_code) {
+          setPixData({ qrCodeUrl: data.qr_code_url, pixCode: data.qr_code });
+          toast.success("PIX gerado! Escaneie o QR Code para pagar.");
+          trackPurchase(finalAmount);
+        } else {
+          throw new Error("Falha ao gerar o PIX");
+        }
       } else {
-        throw new Error("Falha ao gerar o PIX");
+        // Cartão de crédito via Asaas
+        const [expMonth, expYear] = creditCard.expiry.split('/');
+        const { data, error } = await supabase.functions.invoke("create-asaas-payment", {
+          body: {
+            amount: finalAmount,
+            product_id: product.id,
+            payment_method: 'credit_card',
+            installments: creditCard.installments,
+            customer: {
+              name: customer.name,
+              email: customer.email,
+              cpf: customer.cpf,
+              phone: customer.phone,
+              creditCard: {
+                holderName: creditCard.name,
+                number: creditCard.number.replace(/\s/g, ''),
+                expiryMonth: expMonth,
+                expiryYear: `20${expYear}`,
+                ccv: creditCard.cvv,
+              },
+            },
+          },
+        });
+
+        if (error) throw error;
+
+        if (data?.payment_id) {
+          toast.success("Pagamento processado com sucesso!");
+          trackPurchase(finalAmount);
+        } else {
+          throw new Error("Falha ao processar pagamento");
+        }
       }
     } catch (err: any) {
-      console.error("PIX error:", err);
-      toast.error(err.message || "Erro ao gerar PIX. Tente novamente.");
+      console.error("Payment error:", err);
+      toast.error(err.message || "Erro ao processar pagamento. Tente novamente.");
     } finally {
       setIsSubmitting(false);
     }
