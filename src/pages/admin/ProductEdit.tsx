@@ -70,9 +70,17 @@ const ProductEdit = () => {
   const [showBumpDialog, setShowBumpDialog] = useState(false);
   const [orderBumps, setOrderBumps] = useState<any[]>([]);
   const [fbDomains, setFbDomains] = useState<{ id: string; domain: string; verified: boolean }[]>([]);
+  const CATEGORIES = [
+    "Saúde e Esportes", "Finanças e Investimentos", "Relacionamentos", "Negócios e Carreira",
+    "Espiritualidade", "Sexualidade", "Entretenimento", "Culinária e Gastronomia", "Idiomas",
+    "Direito", "Apps & Software", "Literatura", "Casa e Construção", "Desenvolvimento Pessoal",
+    "Moda e Beleza", "Animais e Plantas", "Educacional", "Hobbies", "Internet", "Outros",
+  ];
+
   const [form, setForm] = useState({
     name: "",
     description: "",
+    category: "",
     price: "",
     original_price: "",
     active: true,
