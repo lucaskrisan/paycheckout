@@ -91,6 +91,7 @@ const Notifications = () => {
           show_utm_campaign: data.show_utm_campaign,
           show_dashboard_name: data.show_dashboard_name,
           notification_pattern: data.notification_pattern,
+          notification_sound: data.notification_sound || 'kaching',
           report_08: data.report_08,
           report_12: data.report_12,
           report_18: data.report_18,
