@@ -299,6 +299,31 @@ const Notifications = () => {
               </div>
             </div>
 
+            {/* Sound Selector */}
+            <div className="space-y-3">
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
+                <Volume2 className="w-4 h-4 text-primary" />
+                Som da Notificação
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                {NOTIFICATION_SOUNDS.map((sound) => (
+                  <button
+                    key={sound.value}
+                    type="button"
+                    onClick={() => update("notification_sound", sound.value)}
+                    className={`flex items-center gap-2 rounded-xl border p-3 text-left text-sm transition-colors cursor-pointer ${
+                      settings.notification_sound === sound.value
+                        ? "border-primary bg-primary/5 font-medium"
+                        : "border-border hover:border-primary/40"
+                    }`}
+                  >
+                    <span className="text-lg">{sound.emoji}</span>
+                    <span>{sound.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Preview */}
             <div className="space-y-2">
               <Label className="text-muted-foreground">Prévia de Notificação</Label>
