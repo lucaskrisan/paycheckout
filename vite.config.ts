@@ -17,12 +17,12 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && componentTagger(),
     VitePWA({
+      filename: "pwa-sw.js",
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "robots.txt"],
       workbox: {
-        navigateFallbackDenylist: [/^\/~oauth/],
+        navigateFallbackDenylist: [/^\/~oauth/, /^\/sw\.js$/],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
-        // Don't cache the PushAlert sw.js
         navigateFallback: "/index.html",
       },
       manifest: {
