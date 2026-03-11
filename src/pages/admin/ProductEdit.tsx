@@ -1298,6 +1298,74 @@ const ProductEdit = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Criar novo checkout dialog */}
+      <Dialog open={showNewCheckoutDialog} onOpenChange={setShowNewCheckoutDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Criar novo checkout</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-5 pt-2">
+            <div className="space-y-1.5">
+              <Label>Nome</Label>
+              <Input value={newCheckoutName} onChange={(e) => setNewCheckoutName(e.target.value)} autoFocus />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Switch checked={newCheckoutDefault} onCheckedChange={setNewCheckoutDefault} />
+              <Label className="font-normal">Definir esse checkout como padrão</Label>
+            </div>
+
+            <div className="border border-border rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Link</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Preço</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="text-sm">
+                      <div className="flex items-center gap-2">
+                        <input type="checkbox" className="rounded border-border" defaultChecked />
+                        <span>{form.name || "Checkout"}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      R$ {form.price ? Number(form.price).toFixed(2).replace(".", ",") : "0,00"}
+                    </TableCell>
+                  </TableRow>
+                  {form.sales_page_url && (
+                    <TableRow>
+                      <TableCell className="text-sm">
+                        <div className="flex items-center gap-2">
+                          <input type="checkbox" className="rounded border-border" />
+                          <span>Sales Page</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">R$ 0,00</TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setShowNewCheckoutDialog(false)}>Cancelar</Button>
+              <Button
+                onClick={() => {
+                  toast.success("Checkout criado!");
+                  setShowNewCheckoutDialog(false);
+                }}
+                disabled={!newCheckoutName.trim()}
+              >
+                Criar novo checkout
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
