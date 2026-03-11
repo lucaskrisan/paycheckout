@@ -240,7 +240,7 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
     }
   };
 
-
+  const filtered = students.filter(
     (s) =>
       s.customer_name.toLowerCase().includes(search.toLowerCase()) ||
       s.customer_email.toLowerCase().includes(search.toLowerCase())
