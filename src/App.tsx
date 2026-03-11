@@ -23,6 +23,7 @@ import AbandonedCarts from "./pages/admin/AbandonedCarts";
 import Integrations from "./pages/admin/Integrations";
 import SuperAdminDashboard from "./pages/admin/SuperAdminDashboard";
 import CheckoutBuilder from "./pages/admin/CheckoutBuilder";
+import Notifications from "./pages/admin/Notifications";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -54,6 +55,7 @@ const App = () => (
               <Route path="abandoned" element={<AbandonedCarts />} />
               <Route path="integrations" element={<Integrations />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="notifications" element={<Notifications />} />
               <Route path="platform" element={<SuperAdminDashboard />} />
             </Route>
             <Route path="*" element={<NotFound />} />
