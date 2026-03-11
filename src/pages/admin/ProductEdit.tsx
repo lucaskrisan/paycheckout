@@ -76,6 +76,9 @@ const ProductEdit = () => {
   const [planFrequency, setPlanFrequency] = useState("monthly");
   const [planRenewal, setPlanRenewal] = useState<"until_cancel" | "fixed">("until_cancel");
   const [planDifferentFirst, setPlanDifferentFirst] = useState(false);
+  const [showNewCheckoutDialog, setShowNewCheckoutDialog] = useState(false);
+  const [newCheckoutName, setNewCheckoutName] = useState("");
+  const [newCheckoutDefault, setNewCheckoutDefault] = useState(false);
   const [orderBumps, setOrderBumps] = useState<any[]>([]);
   const [fbDomains, setFbDomains] = useState<{ id: string; domain: string; verified: boolean }[]>([]);
   const CATEGORIES = [
