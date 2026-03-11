@@ -9,8 +9,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Plus, Pencil, Trash2, GraduationCap, BookOpen, FileText, ChevronUp, ChevronDown } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Pencil, Trash2, GraduationCap, BookOpen, FileText, Users } from "lucide-react";
 import { toast } from "sonner";
+import CourseStudents from "@/components/admin/CourseStudents";
 
 interface Product {
   id: string;
@@ -365,10 +367,24 @@ const Courses = () => {
             <span className="text-xs text-muted-foreground">Produto: {linkedProduct.name}</span>
           )}
         </div>
-        <Button onClick={openNewModule} className="gap-2">
-          <Plus className="w-4 h-4" /> Novo Módulo
-        </Button>
       </div>
+
+      <Tabs defaultValue="content">
+        <TabsList>
+          <TabsTrigger value="content" className="gap-2">
+            <BookOpen className="w-4 h-4" /> Conteúdo
+          </TabsTrigger>
+          <TabsTrigger value="students" className="gap-2">
+            <Users className="w-4 h-4" /> Alunos
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="content" className="mt-6 space-y-4">
+          <div className="flex justify-end">
+            <Button onClick={openNewModule} className="gap-2">
+              <Plus className="w-4 h-4" /> Novo Módulo
+            </Button>
+          </div>
 
       {modules.length === 0 ? (
         <Card>
@@ -433,6 +449,12 @@ const Courses = () => {
           ))}
         </Accordion>
       )}
+        </TabsContent>
+
+        <TabsContent value="students" className="mt-6">
+          <CourseStudents courseId={selectedCourse.id} />
+        </TabsContent>
+      </Tabs>
 
       {/* Module Dialog */}
       <Dialog open={moduleDialogOpen} onOpenChange={setModuleDialogOpen}>
