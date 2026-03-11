@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
-import { Bell, Clock, Sparkles, FileText, TrendingUp, Loader2, Smartphone } from "lucide-react";
+import { Bell, Clock, Sparkles, FileText, TrendingUp, Loader2, Smartphone, Volume2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -18,11 +18,23 @@ interface NotifSettings {
   show_utm_campaign: boolean;
   show_dashboard_name: boolean;
   notification_pattern: string;
+  notification_sound: string;
   report_08: boolean;
   report_12: boolean;
   report_18: boolean;
   report_23: boolean;
 }
+
+const NOTIFICATION_SOUNDS = [
+  { value: "kaching", label: "Ka-ching! 💰", emoji: "💰" },
+  { value: "coin", label: "Moeda", emoji: "🪙" },
+  { value: "cash", label: "Dinheiro", emoji: "💵" },
+  { value: "bell", label: "Sino", emoji: "🔔" },
+  { value: "success", label: "Sucesso", emoji: "✅" },
+  { value: "magic", label: "Mágica", emoji: "✨" },
+  { value: "pop", label: "Pop", emoji: "🎵" },
+  { value: "none", label: "Sem som", emoji: "🔇" },
+];
 
 const defaultSettings: NotifSettings = {
   send_pending: false,
@@ -32,6 +44,7 @@ const defaultSettings: NotifSettings = {
   show_utm_campaign: false,
   show_dashboard_name: false,
   notification_pattern: "creative",
+  notification_sound: "kaching",
   report_08: false,
   report_12: false,
   report_18: false,
@@ -78,6 +91,7 @@ const Notifications = () => {
           show_utm_campaign: data.show_utm_campaign,
           show_dashboard_name: data.show_dashboard_name,
           notification_pattern: data.notification_pattern,
+          notification_sound: data.notification_sound || 'kaching',
           report_08: data.report_08,
           report_12: data.report_12,
           report_18: data.report_18,
@@ -282,6 +296,31 @@ const Notifications = () => {
                     <SelectItem value="show">Mostrar</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+
+            {/* Sound Selector */}
+            <div className="space-y-3">
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
+                <Volume2 className="w-4 h-4 text-primary" />
+                Som da Notificação
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                {NOTIFICATION_SOUNDS.map((sound) => (
+                  <button
+                    key={sound.value}
+                    type="button"
+                    onClick={() => update("notification_sound", sound.value)}
+                    className={`flex items-center gap-2 rounded-xl border p-3 text-left text-sm transition-colors cursor-pointer ${
+                      settings.notification_sound === sound.value
+                        ? "border-primary bg-primary/5 font-medium"
+                        : "border-border hover:border-primary/40"
+                    }`}
+                  >
+                    <span className="text-lg">{sound.emoji}</span>
+                    <span>{sound.label}</span>
+                  </button>
+                ))}
               </div>
             </div>
 

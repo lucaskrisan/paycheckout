@@ -367,6 +367,7 @@ export type Database = {
           created_at: string
           id: string
           notification_pattern: string
+          notification_sound: string
           report_08: boolean
           report_12: boolean
           report_18: boolean
@@ -384,6 +385,7 @@ export type Database = {
           created_at?: string
           id?: string
           notification_pattern?: string
+          notification_sound?: string
           report_08?: boolean
           report_12?: boolean
           report_18?: boolean
@@ -401,6 +403,7 @@ export type Database = {
           created_at?: string
           id?: string
           notification_pattern?: string
+          notification_sound?: string
           report_08?: boolean
           report_12?: boolean
           report_18?: boolean
