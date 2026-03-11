@@ -70,6 +70,12 @@ const ProductEdit = () => {
   const [savingPixels, setSavingPixels] = useState(false);
   const [showDomainManager, setShowDomainManager] = useState(false);
   const [showBumpDialog, setShowBumpDialog] = useState(false);
+  const [showPlanDialog, setShowPlanDialog] = useState(false);
+  const [planName, setPlanName] = useState("");
+  const [planPrice, setPlanPrice] = useState("0.00");
+  const [planFrequency, setPlanFrequency] = useState("monthly");
+  const [planRenewal, setPlanRenewal] = useState<"until_cancel" | "fixed">("until_cancel");
+  const [planDifferentFirst, setPlanDifferentFirst] = useState(false);
   const [orderBumps, setOrderBumps] = useState<any[]>([]);
   const [fbDomains, setFbDomains] = useState<{ id: string; domain: string; verified: boolean }[]>([]);
   const CATEGORIES = [
