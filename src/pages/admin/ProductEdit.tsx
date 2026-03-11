@@ -159,6 +159,8 @@ const ProductEdit = () => {
             active: data.active,
             image_url: data.image_url || "",
             sales_page_url: "",
+            is_subscription: (data as any).is_subscription || false,
+            billing_cycle: (data as any).billing_cycle || "monthly",
           });
           setLoading(false);
         });
