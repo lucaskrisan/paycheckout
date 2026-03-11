@@ -31,25 +31,30 @@ const InstallPrompt = () => {
   const [platform] = useState<Platform>(detectPlatform);
 
   useEffect(() => {
-    if (isStandalone()) {
-      console.log("[InstallPrompt] App já instalado (standalone)");
-      return;
-    }
-
+    if (isStandalone()) return;
     const dismissed = sessionStorage.getItem("install-prompt-dismissed");
     if (dismissed) return;
+
+    let promptCaptured = false;
 
     const handler = (e: Event) => {
       e.preventDefault();
       console.log("[InstallPrompt] beforeinstallprompt capturado");
+      promptCaptured = true;
       setDeferredPrompt(e as BeforeInstallPromptEvent);
+      // Show popup immediately after capturing the native prompt
+      setShowPrompt(true);
     };
 
     window.addEventListener("beforeinstallprompt", handler);
 
+    // For iOS/browsers that don't fire beforeinstallprompt, show after 2s with instructions
     const timer = setTimeout(() => {
-      console.log("[InstallPrompt] Exibindo popup após 2s");
-      setShowPrompt(true);
+      if (!promptCaptured) {
+        console.log("[InstallPrompt] Sem prompt nativo, exibindo instruções (iOS/outro)");
+        setShowPrompt(true);
+        setShowInstructions(true);
+      }
     }, 2000);
 
     return () => {
@@ -60,16 +65,21 @@ const InstallPrompt = () => {
 
   const handleInstall = useCallback(async () => {
     if (deferredPrompt) {
-      console.log("[InstallPrompt] Tentando instalação nativa...");
-      await deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      console.log("[InstallPrompt] Resultado:", outcome);
-      if (outcome === "accepted") {
-        setShowPrompt(false);
+      console.log("[InstallPrompt] Disparando prompt nativo de instalação...");
+      try {
+        await deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log("[InstallPrompt] Resultado:", outcome);
+        if (outcome === "accepted") {
+          setShowPrompt(false);
+          sessionStorage.setItem("install-prompt-dismissed", "1");
+        }
+      } catch (err) {
+        console.error("[InstallPrompt] Erro no prompt:", err);
       }
       setDeferredPrompt(null);
     } else {
-      console.log("[InstallPrompt] Sem prompt nativo, mostrando instruções");
+      // Fallback: show manual instructions
       setShowInstructions(true);
     }
   }, [deferredPrompt]);
