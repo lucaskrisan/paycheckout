@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { customer_id, order_id } = await req.json();
+    const { customer_id, course_id, access_token } = await req.json();
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
     // Get customer
     const { data: customer } = await supabase
       .from('customers')
-      .select('*')
+      .select('name, email')
       .eq('id', customer_id)
       .single();
 
@@ -32,74 +32,100 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get order with product
-    const { data: order } = await supabase
-      .from('orders')
-      .select('*, product_id')
-      .eq('id', order_id)
-      .single();
-
-    if (!order) {
-      return new Response(
-        JSON.stringify({ error: 'Order not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Find course linked to this product
+    // Get course
     const { data: course } = await supabase
       .from('courses')
-      .select('id, title')
-      .eq('product_id', order.product_id)
+      .select('title')
+      .eq('id', course_id)
       .single();
 
     if (!course) {
       return new Response(
-        JSON.stringify({ error: 'No course linked to this product' }),
+        JSON.stringify({ error: 'Course not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Create or get member access
-    const { data: existingAccess } = await supabase
-      .from('member_access')
-      .select('access_token')
-      .eq('customer_id', customer_id)
-      .eq('course_id', course.id)
-      .maybeSingle();
+    // Build access URL
+    const siteUrl = Deno.env.get('SITE_URL') || 'https://paycheckout.lovable.app';
+    const accessUrl = `${siteUrl}/membros?token=${access_token}`;
 
-    let accessToken: string;
-
-    if (existingAccess) {
-      accessToken = existingAccess.access_token;
-    } else {
-      const { data: newAccess, error } = await supabase
-        .from('member_access')
-        .insert({
-          customer_id,
-          course_id: course.id,
-          order_id,
-        })
-        .select('access_token')
-        .single();
-
-      if (error || !newAccess) {
-        return new Response(
-          JSON.stringify({ error: 'Failed to create access', details: error }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      accessToken = newAccess.access_token;
+    // Send email via Resend
+    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+    if (!RESEND_API_KEY) {
+      return new Response(
+        JSON.stringify({ error: 'RESEND_API_KEY not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    // Build access URL
-    const siteUrl = Deno.env.get('SUPABASE_URL')!.replace('.supabase.co', '.lovable.app');
-    const accessUrl = `${siteUrl}/membros?token=${accessToken}`;
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+        <div style="max-width:560px;margin:40px auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+          <div style="background:linear-gradient(135deg,#22c55e,#16a34a);padding:32px 40px;text-align:center;">
+            <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">🎉 Seu acesso está liberado!</h1>
+          </div>
+          <div style="padding:32px 40px;">
+            <p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 16px;">
+              Olá <strong>${customer.name}</strong>,
+            </p>
+            <p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 24px;">
+              Seu acesso ao curso <strong>"${course.title}"</strong> foi liberado com sucesso! Clique no botão abaixo para acessar todo o conteúdo:
+            </p>
+            <div style="text-align:center;margin:32px 0;">
+              <a href="${accessUrl}" style="display:inline-block;background:linear-gradient(135deg,#22c55e,#16a34a);color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:8px;font-size:16px;font-weight:600;box-shadow:0 4px 12px rgba(34,197,94,0.4);">
+                Acessar Curso
+              </a>
+            </div>
+            <p style="color:#6b7280;font-size:13px;line-height:1.5;margin:24px 0 0;padding-top:20px;border-top:1px solid #e5e7eb;">
+              Ou copie e cole este link no seu navegador:<br>
+              <a href="${accessUrl}" style="color:#22c55e;word-break:break-all;">${accessUrl}</a>
+            </p>
+          </div>
+          <div style="background:#f9fafb;padding:20px 40px;text-align:center;">
+            <p style="color:#9ca3af;font-size:12px;margin:0;">
+              Este é um email automático. Guarde este link para acessar seu curso.
+            </p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
 
-    // For now, return the link (email integration can be added later)
+    const resendRes = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'PayCheckout <onboarding@resend.dev>',
+        to: [customer.email],
+        subject: `Seu acesso ao curso "${course.title}" está liberado! 🎉`,
+        html: emailHtml,
+      }),
+    });
+
+    const resendData = await resendRes.json();
+
+    if (!resendRes.ok) {
+      console.error('Resend error:', resendData);
+      return new Response(
+        JSON.stringify({ error: 'Failed to send email', details: resendData }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
+        email_sent: true,
         access_url: accessUrl,
         customer_email: customer.email,
         course_title: course.title,
