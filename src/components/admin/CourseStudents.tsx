@@ -31,6 +31,7 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [addForm, setAddForm] = useState({ name: "", email: "", cpf: "", phone: "" });
   const [adding, setAdding] = useState(false);
+  const [resending, setResending] = useState<string | null>(null);
 
   useEffect(() => {
     loadStudents();
