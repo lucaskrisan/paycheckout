@@ -8,30 +8,30 @@ const corsHeaders = {
 async function sendPushNotification(title: string, message: string, url?: string) {
   const apiKey = Deno.env.get('PUSHALERT_API_KEY');
   if (!apiKey) {
-    console.warn('PUSHALERT_API_KEY not configured, skipping notification');
+    console.warn('[asaas-webhook] PUSHALERT_API_KEY not configured, skipping notification');
     return;
   }
 
-  try {
-    const body: Record<string, string> = {
-      title,
-      message,
-    };
-    if (url) body.url = url;
+  const body = new URLSearchParams();
+  body.set('title', title);
+  body.set('message', message);
+  body.set('icon', 'https://paycheckout.lovable.app/pwa-192x192.png');
+  if (url) body.set('url', url);
 
+  try {
     const response = await fetch('https://api.pushalert.co/rest/v1/send', {
       method: 'POST',
       headers: {
         'Authorization': `api_key=${apiKey}`,
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: JSON.stringify(body),
+      body: body.toString(),
     });
 
-    const data = await response.json();
-    console.log('PushAlert response:', data);
+    const raw = await response.text();
+    console.log('[asaas-webhook] PushAlert response:', { status: response.status, body: raw });
   } catch (err) {
-    console.error('PushAlert error:', err);
+    console.error('[asaas-webhook] PushAlert error:', err);
   }
 }
 
@@ -41,11 +41,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const body = await req.json();
-    const event = body.event;
-    const payment = body.payment;
+    const payload = await req.json();
+    const event = payload.event;
+    const payment = payload.payment;
 
-    console.log('Asaas webhook event:', event, 'payment:', payment?.id);
+    console.log('[asaas-webhook] event:', event, 'payment:', payment?.id);
 
     if (!payment?.id) {
       return new Response(JSON.stringify({ received: true }), {
@@ -78,47 +78,60 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (error) {
-      console.error('Error updating order:', error);
+      console.error('[asaas-webhook] Error updating order:', error);
     }
 
     // Send push notification on confirmed sale
     if ((event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED') && orderData) {
-      const amount = Number(orderData.amount).toFixed(2).replace('.', ',');
-      const method = orderData.payment_method === 'pix' ? '💠 PIX' : '💳 Cartão';
+      try {
+        const { data: notifSettings } = await supabase
+          .from('notification_settings')
+          .select('send_approved, show_product_name')
+          .eq('send_approved', true);
 
-      // Try to get product name and customer name
-      let productName = 'Produto';
-      let customerName = '';
+        console.log('[asaas-webhook] send_approved users:', notifSettings?.length || 0);
 
-      if (orderData.product_id) {
-        const { data: prod } = await supabase
-          .from('products')
-          .select('name')
-          .eq('id', orderData.product_id)
-          .single();
-        if (prod) productName = prod.name;
+        if (notifSettings && notifSettings.length > 0) {
+          const amount = Number(orderData.amount).toFixed(2).replace('.', ',');
+          const method = orderData.payment_method === 'pix' ? '💠 PIX' : '💳 Cartão';
+
+          let productName = 'Produto';
+          let customerName = '';
+
+          if (orderData.product_id) {
+            const { data: prod } = await supabase
+              .from('products')
+              .select('name')
+              .eq('id', orderData.product_id)
+              .maybeSingle();
+            if (prod) productName = prod.name;
+          }
+
+          if (orderData.customer_id) {
+            const { data: cust } = await supabase
+              .from('customers')
+              .select('name')
+              .eq('id', orderData.customer_id)
+              .maybeSingle();
+            if (cust) customerName = cust.name;
+          }
+
+          const showProductName = notifSettings.some((s) => s.show_product_name);
+          const title = '💰 Nova venda confirmada!';
+          const message = `${customerName || 'Cliente'} • ${method} R$ ${amount}${showProductName ? ` • ${productName}` : ''}`;
+
+          await sendPushNotification(title, message, 'https://paycheckout.lovable.app/admin/orders');
+        }
+      } catch (notifErr) {
+        console.error('[asaas-webhook] Notification error (non-blocking):', notifErr);
       }
-
-      if (orderData.customer_id) {
-        const { data: cust } = await supabase
-          .from('customers')
-          .select('name')
-          .eq('id', orderData.customer_id)
-          .single();
-        if (cust) customerName = cust.name;
-      }
-
-      const title = `💰 Nova venda confirmada!`;
-      const message = `${customerName ? customerName + ' comprou ' : ''}${productName}\n${method} • R$ ${amount}`;
-
-      await sendPushNotification(title, message);
     }
 
     return new Response(JSON.stringify({ received: true, status }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Webhook error:', error);
+    console.error('[asaas-webhook] Webhook error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
