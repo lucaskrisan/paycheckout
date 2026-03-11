@@ -463,29 +463,67 @@ const ProductEdit = () => {
                       <Label>Produto ativo</Label>
                     </div>
 
-                    {/* Subscription toggle */}
-                    <div className="border-t border-border pt-4 mt-4 space-y-4">
-                      <div className="flex items-center gap-2">
-                        <Switch checked={form.is_subscription} onCheckedChange={(v) => setForm({ ...form, is_subscription: v })} />
-                        <Label>Produto com assinatura recorrente</Label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Planos de assinatura section - only for subscription products */}
+              {form.is_subscription && (
+                <div className="grid lg:grid-cols-12 gap-8">
+                  <div className="lg:col-span-4">
+                    <h2 className="text-base font-semibold text-foreground">Planos de assinatura</h2>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      <a href="#" className="text-primary hover:underline">Aprenda mais sobre os planos</a>
+                    </p>
+                  </div>
+                  <div className="lg:col-span-8">
+                    <div className="border border-border rounded-lg bg-card">
+                      <div className="flex items-center justify-between p-4 border-b border-border">
+                        <h3 className="text-sm font-semibold text-foreground">Planos de assinatura</h3>
+                        <Button size="sm" onClick={() => setShowPlanDialog(true)} className="gap-1.5">
+                          <Plus className="w-3.5 h-3.5" /> Adicionar plano
+                        </Button>
                       </div>
-                      {form.is_subscription && (
-                        <div className="space-y-1.5">
-                          <Label>Ciclo de cobrança</Label>
-                          <Select value={form.billing_cycle} onValueChange={(v) => setForm({ ...form, billing_cycle: v })}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="weekly">Semanal</SelectItem>
-                              <SelectItem value="biweekly">Quinzenal</SelectItem>
-                              <SelectItem value="monthly">Mensal</SelectItem>
-                              <SelectItem value="quarterly">Trimestral</SelectItem>
-                              <SelectItem value="semiannually">Semestral</SelectItem>
-                              <SelectItem value="yearly">Anual</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="hover:bg-transparent">
+                            <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Nome</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Preço</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Primeira cobrança</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Frequência</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {/* Show current plan based on product price/cycle */}
+                          {parseFloat(form.price) > 0 ? (
+                            <TableRow>
+                              <TableCell className="text-sm">{form.name || "Plano padrão"}</TableCell>
+                              <TableCell className="text-sm">R$ {parseFloat(form.price).toFixed(2).replace(".", ",")}</TableCell>
+                              <TableCell className="text-sm">R$ {parseFloat(form.price).toFixed(2).replace(".", ",")}</TableCell>
+                              <TableCell className="text-sm capitalize">
+                                {{
+                                  weekly: "Semanal",
+                                  biweekly: "Quinzenal",
+                                  monthly: "Mensal",
+                                  quarterly: "Trimestral",
+                                  semiannually: "Semestral",
+                                  yearly: "Anual",
+                                }[form.billing_cycle] || "Mensal"}
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={4} className="text-center text-muted-foreground py-8 text-sm">
+                                Por favor crie um plano para configurar os preços
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
                     </div>
+                  </div>
+                </div>
+              )}
                   </div>
                 </div>
               </div>
