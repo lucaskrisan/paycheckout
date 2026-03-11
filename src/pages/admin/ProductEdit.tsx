@@ -79,6 +79,7 @@ const ProductEdit = () => {
   const [showNewCheckoutDialog, setShowNewCheckoutDialog] = useState(false);
   const [newCheckoutName, setNewCheckoutName] = useState("");
   const [newCheckoutDefault, setNewCheckoutDefault] = useState(false);
+  const [checkouts, setCheckouts] = useState<any[]>([]);
   const [orderBumps, setOrderBumps] = useState<any[]>([]);
   const [fbDomains, setFbDomains] = useState<{ id: string; domain: string; verified: boolean }[]>([]);
   const CATEGORIES = [
