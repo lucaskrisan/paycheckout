@@ -362,6 +362,60 @@ export type Database = {
           },
         ]
       }
+      notification_settings: {
+        Row: {
+          created_at: string
+          id: string
+          notification_pattern: string
+          report_08: boolean
+          report_12: boolean
+          report_18: boolean
+          report_23: boolean
+          send_approved: boolean
+          send_pending: boolean
+          show_dashboard_name: boolean
+          show_product_name: boolean
+          show_utm_campaign: boolean
+          show_value: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notification_pattern?: string
+          report_08?: boolean
+          report_12?: boolean
+          report_18?: boolean
+          report_23?: boolean
+          send_approved?: boolean
+          send_pending?: boolean
+          show_dashboard_name?: boolean
+          show_product_name?: boolean
+          show_utm_campaign?: boolean
+          show_value?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notification_pattern?: string
+          report_08?: boolean
+          report_12?: boolean
+          report_18?: boolean
+          report_23?: boolean
+          send_approved?: boolean
+          send_pending?: boolean
+          show_dashboard_name?: boolean
+          show_product_name?: boolean
+          show_utm_campaign?: boolean
+          show_value?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       order_bumps: {
         Row: {
           active: boolean
