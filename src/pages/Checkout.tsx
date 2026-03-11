@@ -453,7 +453,7 @@ const Checkout = () => {
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   <>
-                    {paymentMethod === 'pix' ? (submitLabel || "Gerar PIX") : "Pagar com Cartão"}
+                    {product.is_subscription ? "Assinar agora" : paymentMethod === 'pix' ? (submitLabel || "Gerar PIX") : "Pagar com Cartão"}
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </>
                 )}
