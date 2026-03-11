@@ -10,13 +10,14 @@ import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 
 interface Student {
-  id: string; // member_access id
+  id: string;
   customer_id: string;
   customer_name: string;
   customer_email: string;
   created_at: string;
   total_lessons: number;
   completed_lessons: number;
+  access_token: string;
 }
 
 interface CourseStudentsProps {
