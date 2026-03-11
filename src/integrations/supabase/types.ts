@@ -646,10 +646,12 @@ export type Database = {
       products: {
         Row: {
           active: boolean
+          billing_cycle: string
           created_at: string
           description: string | null
           id: string
           image_url: string | null
+          is_subscription: boolean
           name: string
           original_price: number | null
           price: number
@@ -658,10 +660,12 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          billing_cycle?: string
           created_at?: string
           description?: string | null
           id?: string
           image_url?: string | null
+          is_subscription?: boolean
           name: string
           original_price?: number | null
           price?: number
@@ -670,10 +674,12 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          billing_cycle?: string
           created_at?: string
           description?: string | null
           id?: string
           image_url?: string | null
+          is_subscription?: boolean
           name?: string
           original_price?: number | null
           price?: number
