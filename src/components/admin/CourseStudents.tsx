@@ -312,7 +312,7 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
             return (
               <div
                 key={s.id}
-                className="grid grid-cols-[1fr_auto_auto] gap-4 items-center px-4 py-3 border-t"
+                className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-4 py-3 border-t"
               >
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{s.customer_name}</p>
@@ -322,6 +322,16 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
                   <Progress value={pct} className="flex-1 h-2" />
                   <span className="text-xs text-muted-foreground w-10 text-right">{pct.toFixed(0)}%</span>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-primary hover:text-primary"
+                  title="Reenviar email de acesso"
+                  disabled={resending === s.id}
+                  onClick={() => resendAccess(s)}
+                >
+                  {resending === s.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon"
