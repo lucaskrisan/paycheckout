@@ -262,6 +262,8 @@ const ProductEdit = () => {
       original_price: form.original_price ? parseFloat(form.original_price) : null,
       active: form.active,
       image_url: form.image_url || null,
+      is_subscription: form.is_subscription,
+      billing_cycle: form.billing_cycle,
       updated_at: new Date().toISOString(),
     };
 
