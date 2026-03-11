@@ -188,6 +188,7 @@ const ProductEdit = () => {
         });
       loadPixels();
       loadOrderBumps();
+      loadCheckouts();
     }
   }, [productId]);
 
