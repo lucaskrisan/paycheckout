@@ -228,7 +228,7 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
   const resendAccess = async (student: Student) => {
     setResending(student.id);
     try {
-      const { error } = await supabase.functions.invoke("send-access-link", {
+      const { data, error } = await supabase.functions.invoke("send-access-link", {
         body: {
           customer_id: student.customer_id,
           course_id: courseId,
@@ -236,7 +236,16 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
         },
       });
       if (error) throw error;
-      toast.success(`Email reenviado para ${student.customer_email}!`);
+      const accessUrl = `${window.location.origin}/membros?token=${student.access_token}`;
+      if (data?.email_sent === false) {
+        navigator.clipboard.writeText(accessUrl).catch(() => {});
+        toast.success("Link copiado! (Verifique domínio no Resend para enviar emails)", {
+          duration: 8000,
+          description: accessUrl,
+        });
+      } else {
+        toast.success(`Email reenviado para ${student.customer_email}!`);
+      }
     } catch (err) {
       console.error(err);
       toast.error("Erro ao reenviar email de acesso");
