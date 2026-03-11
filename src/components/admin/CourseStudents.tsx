@@ -164,7 +164,7 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
       
       // Send access email via edge function
       try {
-        const { error: emailErr } = await supabase.functions.invoke("send-access-link", {
+        const { data: emailResult, error: emailErr } = await supabase.functions.invoke("send-access-link", {
           body: {
             customer_id: customerId,
             course_id: courseId,
@@ -173,8 +173,13 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
         });
         if (emailErr) {
           console.error("Email error:", emailErr);
-          toast.success("Aluno adicionado! Mas houve erro ao enviar email.", {
+          toast.success("Aluno adicionado! Link copiado.", {
             duration: 6000,
+            description: accessUrl,
+          });
+        } else if (emailResult?.email_sent === false) {
+          toast.success("Aluno adicionado! Link copiado. (Verifique seu domínio no Resend para enviar emails)", {
+            duration: 8000,
             description: accessUrl,
           });
         } else {
@@ -184,7 +189,7 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
           });
         }
       } catch {
-        toast.success("Aluno adicionado! Link copiado (email não enviado).", {
+        toast.success("Aluno adicionado! Link copiado.", {
           duration: 6000,
           description: accessUrl,
         });
@@ -223,7 +228,7 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
   const resendAccess = async (student: Student) => {
     setResending(student.id);
     try {
-      const { error } = await supabase.functions.invoke("send-access-link", {
+      const { data, error } = await supabase.functions.invoke("send-access-link", {
         body: {
           customer_id: student.customer_id,
           course_id: courseId,
@@ -231,7 +236,16 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
         },
       });
       if (error) throw error;
-      toast.success(`Email reenviado para ${student.customer_email}!`);
+      const accessUrl = `${window.location.origin}/membros?token=${student.access_token}`;
+      if (data?.email_sent === false) {
+        navigator.clipboard.writeText(accessUrl).catch(() => {});
+        toast.success("Link copiado! (Verifique domínio no Resend para enviar emails)", {
+          duration: 8000,
+          description: accessUrl,
+        });
+      } else {
+        toast.success(`Email reenviado para ${student.customer_email}!`);
+      }
     } catch (err) {
       console.error(err);
       toast.error("Erro ao reenviar email de acesso");

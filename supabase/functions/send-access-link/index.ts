@@ -116,9 +116,17 @@ Deno.serve(async (req) => {
 
     if (!resendRes.ok) {
       console.error('Resend error:', resendData);
+      // Return success with warning instead of failing
       return new Response(
-        JSON.stringify({ error: 'Failed to send email', details: resendData }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({
+          success: true,
+          email_sent: false,
+          email_error: resendData.message || 'Email sending failed',
+          access_url: accessUrl,
+          customer_email: customer.email,
+          course_title: course.title,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
