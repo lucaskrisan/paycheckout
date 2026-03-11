@@ -449,6 +449,12 @@ const Courses = () => {
           ))}
         </Accordion>
       )}
+        </TabsContent>
+
+        <TabsContent value="students" className="mt-6">
+          <CourseStudents courseId={selectedCourse.id} />
+        </TabsContent>
+      </Tabs>
 
       {/* Module Dialog */}
       <Dialog open={moduleDialogOpen} onOpenChange={setModuleDialogOpen}>
