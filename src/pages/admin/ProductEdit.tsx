@@ -1000,11 +1000,14 @@ const ProductEdit = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {checkoutLink ? (
+                    {/* Default checkout */}
+                    {checkoutLink && (
                       <TableRow>
                         <TableCell className="text-sm text-foreground">
                           Checkout A
-                          <span className="ml-2 text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full">Padrão</span>
+                          {checkouts.every(c => !c.is_default) && (
+                            <span className="ml-2 text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full">Padrão</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {form.price ? `R$ ${Number(form.price).toFixed(2).replace(".", ",")}` : "—"}
@@ -1030,7 +1033,58 @@ const ProductEdit = () => {
                           </DropdownMenu>
                         </TableCell>
                       </TableRow>
-                    ) : (
+                    )}
+                    {/* Dynamic checkouts from DB */}
+                    {checkouts.map((co) => (
+                      <TableRow key={co.id}>
+                        <TableCell className="text-sm text-foreground">
+                          {co.name}
+                          {co.is_default && (
+                            <span className="ml-2 text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full">Padrão</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {form.price ? `R$ ${Number(form.price).toFixed(2).replace(".", ",")}` : "—"}
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="p-1 rounded hover:bg-muted transition-colors">
+                                <MoreVertical className="w-4 h-4 text-muted-foreground" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40">
+                              <DropdownMenuItem onClick={() => navigate(`/admin/products/${productId}/checkout-builder`)} className="gap-2 text-sm">
+                                <ExternalLink className="w-3.5 h-3.5" /> Personalizar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="gap-2 text-sm">
+                                <Settings2 className="w-3.5 h-3.5" /> Configurações
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={async () => {
+                                await supabase.from("checkout_builder_configs").insert({
+                                  product_id: productId!,
+                                  name: co.name + " (cópia)",
+                                  is_default: false,
+                                  user_id: user?.id,
+                                });
+                                toast.success("Checkout duplicado!");
+                                loadCheckouts();
+                              }} className="gap-2 text-sm">
+                                <LinkIcon className="w-3.5 h-3.5" /> Duplicar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={async () => {
+                                await supabase.from("checkout_builder_configs").delete().eq("id", co.id);
+                                toast.success("Checkout excluído!");
+                                loadCheckouts();
+                              }} className="gap-2 text-sm text-destructive focus:text-destructive">
+                                <Trash2 className="w-3.5 h-3.5" /> Excluir
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {!checkoutLink && checkouts.length === 0 && (
                       <TableRow>
                         <TableCell colSpan={3} className="text-center text-sm text-muted-foreground py-8">
                           Salve o produto primeiro.
