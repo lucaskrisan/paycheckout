@@ -220,8 +220,27 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
     toast.success("Acesso removido");
     loadStudents();
   };
+  const resendAccess = async (student: Student) => {
+    setResending(student.id);
+    try {
+      const { error } = await supabase.functions.invoke("send-access-link", {
+        body: {
+          customer_id: student.customer_id,
+          course_id: courseId,
+          access_token: student.access_token,
+        },
+      });
+      if (error) throw error;
+      toast.success(`Email reenviado para ${student.customer_email}!`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao reenviar email de acesso");
+    } finally {
+      setResending(null);
+    }
+  };
 
-  const filtered = students.filter(
+
     (s) =>
       s.customer_name.toLowerCase().includes(search.toLowerCase()) ||
       s.customer_email.toLowerCase().includes(search.toLowerCase())
