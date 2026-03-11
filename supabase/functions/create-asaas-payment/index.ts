@@ -168,6 +168,23 @@ Deno.serve(async (req) => {
       });
       const pixData = await pixRes.json();
 
+      // Send push notification for PIX generated
+      try {
+        const { data: notifSettings } = await supabaseAdmin
+          .from('notification_settings')
+          .select('user_id, send_pending, show_product_name')
+          .eq('send_pending', true);
+
+        if (notifSettings && notifSettings.length > 0) {
+          const formattedAmount = Number(amount).toFixed(2).replace('.', ',');
+          const title = '💠 PIX gerado!';
+          const message = `${customer.name} gerou um PIX de R$ ${formattedAmount}`;
+          await sendPushNotification(title, message);
+        }
+      } catch (notifErr) {
+        console.error('Notification error (non-blocking):', notifErr);
+      }
+
       return new Response(
         JSON.stringify({
           payment_id: paymentData.id,
