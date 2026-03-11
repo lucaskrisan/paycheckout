@@ -460,6 +460,30 @@ const ProductEdit = () => {
                       <Switch checked={form.active} onCheckedChange={(v) => setForm({ ...form, active: v })} />
                       <Label>Produto ativo</Label>
                     </div>
+
+                    {/* Subscription toggle */}
+                    <div className="border-t border-border pt-4 mt-4 space-y-4">
+                      <div className="flex items-center gap-2">
+                        <Switch checked={form.is_subscription} onCheckedChange={(v) => setForm({ ...form, is_subscription: v })} />
+                        <Label>Produto com assinatura recorrente</Label>
+                      </div>
+                      {form.is_subscription && (
+                        <div className="space-y-1.5">
+                          <Label>Ciclo de cobrança</Label>
+                          <Select value={form.billing_cycle} onValueChange={(v) => setForm({ ...form, billing_cycle: v })}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="weekly">Semanal</SelectItem>
+                              <SelectItem value="biweekly">Quinzenal</SelectItem>
+                              <SelectItem value="monthly">Mensal</SelectItem>
+                              <SelectItem value="quarterly">Trimestral</SelectItem>
+                              <SelectItem value="semiannually">Semestral</SelectItem>
+                              <SelectItem value="yearly">Anual</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
