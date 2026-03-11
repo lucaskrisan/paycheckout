@@ -164,7 +164,7 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
       
       // Send access email via edge function
       try {
-        const { error: emailErr } = await supabase.functions.invoke("send-access-link", {
+        const { data: emailResult, error: emailErr } = await supabase.functions.invoke("send-access-link", {
           body: {
             customer_id: customerId,
             course_id: courseId,
@@ -173,8 +173,13 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
         });
         if (emailErr) {
           console.error("Email error:", emailErr);
-          toast.success("Aluno adicionado! Mas houve erro ao enviar email.", {
+          toast.success("Aluno adicionado! Link copiado.", {
             duration: 6000,
+            description: accessUrl,
+          });
+        } else if (emailResult?.email_sent === false) {
+          toast.success("Aluno adicionado! Link copiado. (Verifique seu domínio no Resend para enviar emails)", {
+            duration: 8000,
             description: accessUrl,
           });
         } else {
@@ -184,7 +189,7 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
           });
         }
       } catch {
-        toast.success("Aluno adicionado! Link copiado (email não enviado).", {
+        toast.success("Aluno adicionado! Link copiado.", {
           duration: 6000,
           description: accessUrl,
         });
