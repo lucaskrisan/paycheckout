@@ -281,6 +281,8 @@ const Checkout = () => {
             product_id: product.id,
             payment_method: 'credit_card',
             installments: creditCard.installments,
+            is_subscription: product.is_subscription,
+            billing_cycle: product.billing_cycle,
             customer: {
               name: customer.name,
               email: customer.email,
