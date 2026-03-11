@@ -9,8 +9,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Plus, Pencil, Trash2, GraduationCap, BookOpen, FileText, ChevronUp, ChevronDown } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Pencil, Trash2, GraduationCap, BookOpen, FileText, Users } from "lucide-react";
 import { toast } from "sonner";
+import CourseStudents from "@/components/admin/CourseStudents";
 
 interface Product {
   id: string;
