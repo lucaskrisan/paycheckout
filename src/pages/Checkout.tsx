@@ -23,6 +23,8 @@ interface Product {
   price: number;
   original_price: number | null;
   image_url: string | null;
+  is_subscription: boolean;
+  billing_cycle: string;
 }
 
 interface OrderBump {
