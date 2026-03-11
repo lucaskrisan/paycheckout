@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'PayCheckout <onboarding@resend.dev>',
+        from: 'PayCheckout <noreply@paolasemfiltro.com>',
         to: [customer.email],
         subject: `Seu acesso ao curso "${course.title}" está liberado! 🎉`,
         html: emailHtml,
