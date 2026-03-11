@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
-import { Bell, Clock, Sparkles, FileText, TrendingUp, Loader2, Smartphone } from "lucide-react";
+import { Bell, Clock, Sparkles, FileText, TrendingUp, Loader2, Smartphone, Volume2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -18,11 +18,23 @@ interface NotifSettings {
   show_utm_campaign: boolean;
   show_dashboard_name: boolean;
   notification_pattern: string;
+  notification_sound: string;
   report_08: boolean;
   report_12: boolean;
   report_18: boolean;
   report_23: boolean;
 }
+
+const NOTIFICATION_SOUNDS = [
+  { value: "kaching", label: "Ka-ching! 💰", emoji: "💰" },
+  { value: "coin", label: "Moeda", emoji: "🪙" },
+  { value: "cash", label: "Dinheiro", emoji: "💵" },
+  { value: "bell", label: "Sino", emoji: "🔔" },
+  { value: "success", label: "Sucesso", emoji: "✅" },
+  { value: "magic", label: "Mágica", emoji: "✨" },
+  { value: "pop", label: "Pop", emoji: "🎵" },
+  { value: "none", label: "Sem som", emoji: "🔇" },
+];
 
 const defaultSettings: NotifSettings = {
   send_pending: false,
@@ -32,6 +44,7 @@ const defaultSettings: NotifSettings = {
   show_utm_campaign: false,
   show_dashboard_name: false,
   notification_pattern: "creative",
+  notification_sound: "kaching",
   report_08: false,
   report_12: false,
   report_18: false,
