@@ -86,6 +86,8 @@ const ProductEdit = () => {
     active: true,
     image_url: "",
     sales_page_url: "",
+    is_subscription: false,
+    billing_cycle: "monthly",
   });
 
   // Load pixels for this product
@@ -157,6 +159,8 @@ const ProductEdit = () => {
             active: data.active,
             image_url: data.image_url || "",
             sales_page_url: "",
+            is_subscription: (data as any).is_subscription || false,
+            billing_cycle: (data as any).billing_cycle || "monthly",
           });
           setLoading(false);
         });
@@ -258,6 +262,8 @@ const ProductEdit = () => {
       original_price: form.original_price ? parseFloat(form.original_price) : null,
       active: form.active,
       image_url: form.image_url || null,
+      is_subscription: form.is_subscription,
+      billing_cycle: form.billing_cycle,
       updated_at: new Date().toISOString(),
     };
 
@@ -453,6 +459,30 @@ const ProductEdit = () => {
                     <div className="flex items-center gap-2">
                       <Switch checked={form.active} onCheckedChange={(v) => setForm({ ...form, active: v })} />
                       <Label>Produto ativo</Label>
+                    </div>
+
+                    {/* Subscription toggle */}
+                    <div className="border-t border-border pt-4 mt-4 space-y-4">
+                      <div className="flex items-center gap-2">
+                        <Switch checked={form.is_subscription} onCheckedChange={(v) => setForm({ ...form, is_subscription: v })} />
+                        <Label>Produto com assinatura recorrente</Label>
+                      </div>
+                      {form.is_subscription && (
+                        <div className="space-y-1.5">
+                          <Label>Ciclo de cobrança</Label>
+                          <Select value={form.billing_cycle} onValueChange={(v) => setForm({ ...form, billing_cycle: v })}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="weekly">Semanal</SelectItem>
+                              <SelectItem value="biweekly">Quinzenal</SelectItem>
+                              <SelectItem value="monthly">Mensal</SelectItem>
+                              <SelectItem value="quarterly">Trimestral</SelectItem>
+                              <SelectItem value="semiannually">Semestral</SelectItem>
+                              <SelectItem value="yearly">Anual</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

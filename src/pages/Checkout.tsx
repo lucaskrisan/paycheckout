@@ -23,6 +23,8 @@ interface Product {
   price: number;
   original_price: number | null;
   image_url: string | null;
+  is_subscription: boolean;
+  billing_cycle: string;
 }
 
 interface OrderBump {
@@ -103,7 +105,11 @@ const Checkout = () => {
       if (productRes.error || !productRes.data) {
         setNotFound(true);
       } else {
-        setProduct(productRes.data);
+        setProduct(productRes.data as any);
+        // Force credit card for subscription products
+        if ((productRes.data as any).is_subscription) {
+          setPaymentMethod('credit_card');
+        }
       }
 
       if (orderBumpsRes.data) {
@@ -279,6 +285,8 @@ const Checkout = () => {
             product_id: product.id,
             payment_method: 'credit_card',
             installments: creditCard.installments,
+            is_subscription: product.is_subscription,
+            billing_cycle: product.billing_cycle,
             customer: {
               name: customer.name,
               email: customer.email,
@@ -418,7 +426,21 @@ const Checkout = () => {
             <div className="bg-card border border-border rounded-2xl p-6 space-y-6 shadow-sm">
               <h2 className="font-display text-lg font-bold text-foreground">Forma de pagamento</h2>
 
-              <PaymentTabs activeMethod={paymentMethod} onMethodChange={setPaymentMethod} />
+              {product.is_subscription && (
+                <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 flex items-center gap-2">
+                  <span className="text-primary text-lg">🔄</span>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Assinatura {
+                      { weekly: 'Semanal', biweekly: 'Quinzenal', monthly: 'Mensal', quarterly: 'Trimestral', semiannually: 'Semestral', yearly: 'Anual' }[product.billing_cycle] || 'Mensal'
+                    }</p>
+                    <p className="text-xs text-muted-foreground">Cobrança recorrente no cartão de crédito</p>
+                  </div>
+                </div>
+              )}
+
+              {!product.is_subscription && (
+                <PaymentTabs activeMethod={paymentMethod} onMethodChange={setPaymentMethod} />
+              )}
 
               {paymentMethod === 'pix' ? (
                 <PixPayment totalAmount={finalAmount} qrCodeData={pixData?.qrCodeUrl} pixCode={pixData?.pixCode} />
@@ -435,7 +457,7 @@ const Checkout = () => {
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   <>
-                    {paymentMethod === 'pix' ? (submitLabel || "Gerar PIX") : "Pagar com Cartão"}
+                    {product.is_subscription ? "Assinar agora" : paymentMethod === 'pix' ? (submitLabel || "Gerar PIX") : "Pagar com Cartão"}
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </>
                 )}

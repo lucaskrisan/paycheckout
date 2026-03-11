@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
       status = event === 'PAYMENT_DELETED' ? 'cancelled' : 'pending';
     }
 
-    // Update order by external_id
+    // Update order by external_id (works for both one-time and subscription payments)
     const { data: orderData, error } = await supabase
       .from('orders')
       .update({ status, updated_at: new Date().toISOString() })
@@ -81,6 +81,58 @@ Deno.serve(async (req) => {
       console.error('[asaas-webhook] Error updating order:', error);
     }
 
+    // Also handle subscription-specific events
+    if (event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED') {
+      // For subscription renewals, extend member access
+      if (orderData?.product_id) {
+        const { data: product } = await supabase
+          .from('products')
+          .select('is_subscription, billing_cycle')
+          .eq('id', orderData.product_id)
+          .maybeSingle();
+
+        if (product?.is_subscription && orderData.customer_id) {
+          // Extend member access based on billing cycle
+          const cycleDays: Record<string, number> = {
+            weekly: 7,
+            biweekly: 14,
+            monthly: 30,
+            quarterly: 90,
+            semiannually: 180,
+            yearly: 365,
+          };
+          const days = cycleDays[product.billing_cycle] || 30;
+          const expiresAt = new Date();
+          expiresAt.setDate(expiresAt.getDate() + days + 3); // +3 days grace
+
+          // Find course linked to this product
+          const { data: course } = await supabase
+            .from('courses')
+            .select('id')
+            .eq('product_id', orderData.product_id)
+            .maybeSingle();
+
+          if (course) {
+            // Update or create member access
+            const { data: existing } = await supabase
+              .from('member_access')
+              .select('id')
+              .eq('customer_id', orderData.customer_id)
+              .eq('course_id', course.id)
+              .maybeSingle();
+
+            if (existing) {
+              await supabase
+                .from('member_access')
+                .update({ expires_at: expiresAt.toISOString() })
+                .eq('id', existing.id);
+              console.log('[asaas-webhook] Extended member access:', existing.id, 'until:', expiresAt.toISOString());
+            }
+          }
+        }
+      }
+    }
+
     // Send push notification on confirmed sale
     if ((event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED') && orderData) {
       try {
@@ -88,8 +140,6 @@ Deno.serve(async (req) => {
           .from('notification_settings')
           .select('send_approved, show_product_name')
           .eq('send_approved', true);
-
-        console.log('[asaas-webhook] send_approved users:', notifSettings?.length || 0);
 
         if (notifSettings && notifSettings.length > 0) {
           const amount = Number(orderData.amount).toFixed(2).replace('.', ',');
