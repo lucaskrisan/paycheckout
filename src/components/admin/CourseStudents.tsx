@@ -5,18 +5,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Users, Plus, Trash2, Search, Loader2 } from "lucide-react";
+import { Users, Plus, Trash2, Search, Loader2, Send } from "lucide-react";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 
 interface Student {
-  id: string; // member_access id
+  id: string;
   customer_id: string;
   customer_name: string;
   customer_email: string;
   created_at: string;
   total_lessons: number;
   completed_lessons: number;
+  access_token: string;
 }
 
 interface CourseStudentsProps {
@@ -30,6 +31,7 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [addForm, setAddForm] = useState({ name: "", email: "", cpf: "", phone: "" });
   const [adding, setAdding] = useState(false);
+  const [resending, setResending] = useState<string | null>(null);
 
   useEffect(() => {
     loadStudents();
@@ -41,7 +43,7 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
     // Get member_access with customer info
     const { data: accessData } = await supabase
       .from("member_access")
-      .select("id, customer_id, created_at, customers(name, email)")
+      .select("id, customer_id, created_at, access_token, customers(name, email)")
       .eq("course_id", courseId)
       .order("created_at", { ascending: false });
 
@@ -80,7 +82,7 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
       completedMap[p.member_access_id] = (completedMap[p.member_access_id] || 0) + 1;
     });
 
-    const studentList: Student[] = accessData.map((a) => {
+    const studentList: Student[] = accessData.map((a: any) => {
       const customer = a.customers as any;
       return {
         id: a.id,
@@ -90,6 +92,7 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
         created_at: a.created_at,
         total_lessons: totalLessons,
         completed_lessons: completedMap[a.id] || 0,
+        access_token: a.access_token,
       };
     });
 
@@ -217,6 +220,25 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
     toast.success("Acesso removido");
     loadStudents();
   };
+  const resendAccess = async (student: Student) => {
+    setResending(student.id);
+    try {
+      const { error } = await supabase.functions.invoke("send-access-link", {
+        body: {
+          customer_id: student.customer_id,
+          course_id: courseId,
+          access_token: student.access_token,
+        },
+      });
+      if (error) throw error;
+      toast.success(`Email reenviado para ${student.customer_email}!`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao reenviar email de acesso");
+    } finally {
+      setResending(null);
+    }
+  };
 
   const filtered = students.filter(
     (s) =>
@@ -298,17 +320,18 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
         </Card>
       ) : (
         <div className="border rounded-xl overflow-hidden">
-          <div className="grid grid-cols-[1fr_auto_auto] gap-4 px-4 py-3 bg-muted/50 text-xs font-semibold text-muted-foreground uppercase">
+          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 px-4 py-3 bg-muted/50 text-xs font-semibold text-muted-foreground uppercase">
             <span>Nome</span>
             <span className="w-32 text-center">Progresso</span>
-            <span className="w-10" />
+            <span className="w-8" />
+            <span className="w-8" />
           </div>
           {filtered.map((s) => {
             const pct = s.total_lessons > 0 ? (s.completed_lessons / s.total_lessons) * 100 : 0;
             return (
               <div
                 key={s.id}
-                className="grid grid-cols-[1fr_auto_auto] gap-4 items-center px-4 py-3 border-t"
+                className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-4 py-3 border-t"
               >
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{s.customer_name}</p>
@@ -318,6 +341,16 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
                   <Progress value={pct} className="flex-1 h-2" />
                   <span className="text-xs text-muted-foreground w-10 text-right">{pct.toFixed(0)}%</span>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-primary hover:text-primary"
+                  title="Reenviar email de acesso"
+                  disabled={resending === s.id}
+                  onClick={() => resendAccess(s)}
+                >
+                  {resending === s.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon"
