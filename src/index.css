@@ -53,6 +53,21 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 0 0% 95%;
     --sidebar-border: 0 0% 16%;
     --sidebar-ring: 145 65% 42%;
+
+    /* Member area - Netflix dark theme */
+    --member-bg: 220 20% 6%;
+    --member-surface: 220 18% 10%;
+    --member-surface-hover: 220 16% 14%;
+    --member-surface-active: 220 14% 18%;
+    --member-foreground: 0 0% 95%;
+    --member-foreground-muted: 220 10% 55%;
+    --member-accent: 145 65% 50%;
+    --member-accent-glow: 145 80% 60%;
+    --member-border: 220 15% 16%;
+    --member-gradient-start: 145 65% 42%;
+    --member-gradient-end: 160 70% 36%;
+    --member-locked: 220 10% 30%;
+    --member-gold: 45 93% 55%;
   }
 }
 
