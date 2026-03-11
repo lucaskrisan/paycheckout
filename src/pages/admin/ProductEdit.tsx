@@ -1203,6 +1203,91 @@ const ProductEdit = () => {
           onSaved={loadOrderBumps}
         />
       )}
+
+      {/* Adicionar plano dialog */}
+      <Dialog open={showPlanDialog} onOpenChange={setShowPlanDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Adicionar plano</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-5 pt-2">
+            <div className="space-y-1.5">
+              <Label>Nome</Label>
+              <Input value={planName} onChange={(e) => setPlanName(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Preço</Label>
+              <div className="flex">
+                <span className="inline-flex items-center px-3 text-sm text-muted-foreground bg-muted border border-r-0 border-input rounded-l-md">R$</span>
+                <Input type="number" step="0.01" value={planPrice} onChange={(e) => setPlanPrice(e.target.value)} className="rounded-l-none rounded-r-none" />
+                <Select defaultValue="BRL">
+                  <SelectTrigger className="w-24 rounded-l-none border-l-0">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BRL">BRL</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Frequência</Label>
+              <Select value={planFrequency} onValueChange={setPlanFrequency}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="weekly">Semanal</SelectItem>
+                  <SelectItem value="biweekly">Quinzenal</SelectItem>
+                  <SelectItem value="monthly">Mensal</SelectItem>
+                  <SelectItem value="quarterly">Trimestral</SelectItem>
+                  <SelectItem value="semiannually">Semestral</SelectItem>
+                  <SelectItem value="yearly">Anual</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-3">
+              <Label>Renovação automática</Label>
+              <RadioGroup value={planRenewal} onValueChange={(v) => setPlanRenewal(v as "until_cancel" | "fixed")}>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="until_cancel" id="until_cancel" />
+                  <Label htmlFor="until_cancel" className="font-normal cursor-pointer">Até o cliente cancelar</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="fixed" id="fixed" />
+                  <Label htmlFor="fixed" className="font-normal cursor-pointer">Número fixo de cobranças</Label>
+                </div>
+              </RadioGroup>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch checked={planDifferentFirst} onCheckedChange={setPlanDifferentFirst} />
+              <Label className="font-normal">Preço diferente na primeira cobrança</Label>
+            </div>
+            <Button
+              className="w-full"
+              onClick={() => {
+                if (!planPrice || parseFloat(planPrice) <= 0) {
+                  toast.error("Informe um preço válido");
+                  return;
+                }
+                setForm((f) => ({
+                  ...f,
+                  price: planPrice,
+                  billing_cycle: planFrequency,
+                  is_subscription: true,
+                }));
+                setShowPlanDialog(false);
+                setPlanName("");
+                setPlanPrice("0.00");
+                setPlanFrequency("monthly");
+                toast.success("Plano adicionado! Salve o produto para aplicar.");
+              }}
+            >
+              Adicionar plano
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
