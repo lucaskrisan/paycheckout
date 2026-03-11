@@ -43,7 +43,7 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
     // Get member_access with customer info
     const { data: accessData } = await supabase
       .from("member_access")
-      .select("id, customer_id, created_at, customers(name, email)")
+      .select("id, customer_id, created_at, access_token, customers(name, email)")
       .eq("course_id", courseId)
       .order("created_at", { ascending: false });
 
