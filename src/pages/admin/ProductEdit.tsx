@@ -76,6 +76,9 @@ const ProductEdit = () => {
   const [planFrequency, setPlanFrequency] = useState("monthly");
   const [planRenewal, setPlanRenewal] = useState<"until_cancel" | "fixed">("until_cancel");
   const [planDifferentFirst, setPlanDifferentFirst] = useState(false);
+  const [showNewCheckoutDialog, setShowNewCheckoutDialog] = useState(false);
+  const [newCheckoutName, setNewCheckoutName] = useState("");
+  const [newCheckoutDefault, setNewCheckoutDefault] = useState(false);
   const [orderBumps, setOrderBumps] = useState<any[]>([]);
   const [fbDomains, setFbDomains] = useState<{ id: string; domain: string; verified: boolean }[]>([]);
   const CATEGORIES = [
@@ -970,7 +973,7 @@ const ProductEdit = () => {
                   <Input placeholder="Buscar..." className="pl-9 h-9 text-sm" />
                   <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </div>
-                <Button size="sm" variant="outline" className="text-sm">
+                <Button size="sm" variant="outline" className="text-sm" onClick={() => { setNewCheckoutName(""); setNewCheckoutDefault(false); setShowNewCheckoutDialog(true); }}>
                   Criar novo checkout
                 </Button>
               </div>
@@ -1292,6 +1295,74 @@ const ProductEdit = () => {
             >
               Adicionar plano
             </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Criar novo checkout dialog */}
+      <Dialog open={showNewCheckoutDialog} onOpenChange={setShowNewCheckoutDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Criar novo checkout</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-5 pt-2">
+            <div className="space-y-1.5">
+              <Label>Nome</Label>
+              <Input value={newCheckoutName} onChange={(e) => setNewCheckoutName(e.target.value)} autoFocus />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Switch checked={newCheckoutDefault} onCheckedChange={setNewCheckoutDefault} />
+              <Label className="font-normal">Definir esse checkout como padrão</Label>
+            </div>
+
+            <div className="border border-border rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Link</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Preço</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="text-sm">
+                      <div className="flex items-center gap-2">
+                        <input type="checkbox" className="rounded border-border" defaultChecked />
+                        <span>{form.name || "Checkout"}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      R$ {form.price ? Number(form.price).toFixed(2).replace(".", ",") : "0,00"}
+                    </TableCell>
+                  </TableRow>
+                  {form.sales_page_url && (
+                    <TableRow>
+                      <TableCell className="text-sm">
+                        <div className="flex items-center gap-2">
+                          <input type="checkbox" className="rounded border-border" />
+                          <span>Sales Page</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">R$ 0,00</TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setShowNewCheckoutDialog(false)}>Cancelar</Button>
+              <Button
+                onClick={() => {
+                  toast.success("Checkout criado!");
+                  setShowNewCheckoutDialog(false);
+                }}
+                disabled={!newCheckoutName.trim()}
+              >
+                Criar novo checkout
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
