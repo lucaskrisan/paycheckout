@@ -70,9 +70,17 @@ const ProductEdit = () => {
   const [showBumpDialog, setShowBumpDialog] = useState(false);
   const [orderBumps, setOrderBumps] = useState<any[]>([]);
   const [fbDomains, setFbDomains] = useState<{ id: string; domain: string; verified: boolean }[]>([]);
+  const CATEGORIES = [
+    "Saúde e Esportes", "Finanças e Investimentos", "Relacionamentos", "Negócios e Carreira",
+    "Espiritualidade", "Sexualidade", "Entretenimento", "Culinária e Gastronomia", "Idiomas",
+    "Direito", "Apps & Software", "Literatura", "Casa e Construção", "Desenvolvimento Pessoal",
+    "Moda e Beleza", "Animais e Plantas", "Educacional", "Hobbies", "Internet", "Outros",
+  ];
+
   const [form, setForm] = useState({
     name: "",
     description: "",
+    category: "",
     price: "",
     original_price: "",
     active: true,
@@ -143,6 +151,7 @@ const ProductEdit = () => {
           setForm({
             name: data.name,
             description: data.description || "",
+            category: "",
             price: String(data.price),
             original_price: data.original_price ? String(data.original_price) : "",
             active: data.active,
@@ -341,7 +350,20 @@ const ProductEdit = () => {
                       <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={4} placeholder="Descreva seu produto..." />
                     </div>
 
-                    {/* Image upload */}
+                    <div className="space-y-1.5">
+                      <Label>Categoria</Label>
+                      <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione uma categoria" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CATEGORIES.map((cat) => (
+                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
                     <div className="space-y-1.5">
                       <Label>Imagem do produto</Label>
                       {form.image_url ? (
