@@ -6,6 +6,8 @@ import { Lock, ShieldCheck, ArrowRight, Loader2, QrCode, Award, Star, ListOrdere
 import OrderSummary from "@/components/checkout/OrderSummary";
 import CustomerForm, { type CustomerData } from "@/components/checkout/CustomerForm";
 import PixPayment from "@/components/checkout/PixPayment";
+import CreditCardForm, { type CreditCardData } from "@/components/checkout/CreditCardForm";
+import PaymentTabs from "@/components/checkout/PaymentTabs";
 import CountdownTimer from "@/components/checkout/CountdownTimer";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
