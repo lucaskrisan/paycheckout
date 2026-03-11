@@ -35,6 +35,15 @@ async function sendPushNotification(title: string, message: string, url?: string
   }
 }
 
+const BILLING_CYCLE_MAP: Record<string, string> = {
+  weekly: 'WEEKLY',
+  biweekly: 'BIWEEKLY',
+  monthly: 'MONTHLY',
+  quarterly: 'QUARTERLY',
+  semiannually: 'SEMIANNUALLY',
+  yearly: 'YEARLY',
+};
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -46,7 +55,7 @@ Deno.serve(async (req) => {
       throw new Error('ASAAS_API_KEY not configured');
     }
 
-    const { amount, customer, payment_method, installments } = await req.json();
+    const { amount, customer, payment_method, installments, product_id, is_subscription, billing_cycle } = await req.json();
 
     if (!amount || !customer?.name || !customer?.email || !customer?.cpf) {
       return new Response(
@@ -55,7 +64,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Fetch gateway config server-side
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -112,7 +120,87 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 2. Create payment
+    // 2. Check if subscription or one-time payment
+    if (is_subscription) {
+      // CREATE SUBSCRIPTION
+      const cycle = BILLING_CYCLE_MAP[billing_cycle || 'monthly'] || 'MONTHLY';
+      const nextDueDate = new Date();
+      nextDueDate.setDate(nextDueDate.getDate() + 1);
+
+      const subscriptionPayload: any = {
+        customer: customerData.id,
+        billingType: 'CREDIT_CARD',
+        value: amount,
+        cycle,
+        nextDueDate: nextDueDate.toISOString().split('T')[0],
+        description: gateway_config.billing_description || 'Assinatura',
+      };
+
+      if (customer.creditCard) {
+        subscriptionPayload.creditCard = customer.creditCard;
+        subscriptionPayload.creditCardHolderInfo = {
+          name: customer.name,
+          email: customer.email,
+          cpfCnpj: cleanCpf,
+          phone: customer.phone?.replace(/\D/g, '') || '',
+          postalCode: customer.postalCode || '00000000',
+          addressNumber: customer.addressNumber || '0',
+        };
+      }
+
+      console.log('[create-asaas-payment] Creating subscription:', { cycle, amount });
+
+      const subRes = await fetch(`${baseUrl}/subscriptions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'access_token': ASAAS_API_KEY,
+        },
+        body: JSON.stringify(subscriptionPayload),
+      });
+
+      const subData = await subRes.json();
+
+      if (!subRes.ok) {
+        console.error('Asaas subscription error:', JSON.stringify(subData));
+        return new Response(
+          JSON.stringify({ error: 'Subscription creation failed', details: subData }),
+          { status: subRes.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('[create-asaas-payment] Subscription created:', subData.id, 'status:', subData.status);
+
+      // Send push notification for new subscription
+      if (subData.status === 'ACTIVE') {
+        try {
+          const { data: notifSettings } = await supabaseAdmin
+            .from('notification_settings')
+            .select('send_approved, show_product_name')
+            .eq('send_approved', true);
+
+          if (notifSettings && notifSettings.length > 0) {
+            const formattedAmount = Number(amount).toFixed(2).replace('.', ',');
+            const title = '🔄 Nova assinatura!';
+            const message = `${customer.name} • 💳 R$ ${formattedAmount}/mês`;
+            await sendPushNotification(title, message, 'https://paycheckout.lovable.app/admin/orders');
+          }
+        } catch (notifErr) {
+          console.error('[create-asaas-payment] Notification error:', notifErr);
+        }
+      }
+
+      return new Response(
+        JSON.stringify({
+          subscription_id: subData.id,
+          status: subData.status,
+          payment_id: subData.id,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // 3. ONE-TIME PAYMENT (existing logic)
     const billingType = payment_method === 'credit_card' ? 'CREDIT_CARD' : 'PIX';
 
     const dueDate = new Date();
@@ -167,15 +255,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 3. For credit card confirmed payments, send push notification
+    // Send push notification on confirmed card payment
     if (payment_method === 'credit_card' && (paymentData.status === 'CONFIRMED' || paymentData.status === 'RECEIVED')) {
       try {
         const { data: notifSettings } = await supabaseAdmin
           .from('notification_settings')
           .select('send_approved, show_product_name')
           .eq('send_approved', true);
-
-        console.log('[create-asaas-payment] send_approved users:', notifSettings?.length || 0);
 
         if (notifSettings && notifSettings.length > 0) {
           const formattedAmount = Number(amount).toFixed(2).replace('.', ',');
@@ -185,7 +271,7 @@ Deno.serve(async (req) => {
           await sendPushNotification(title, message, 'https://paycheckout.lovable.app/admin/orders');
         }
       } catch (notifErr) {
-        console.error('[create-asaas-payment] Notification error (non-blocking):', notifErr);
+        console.error('[create-asaas-payment] Notification error:', notifErr);
       }
     }
 
