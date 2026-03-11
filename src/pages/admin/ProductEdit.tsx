@@ -151,6 +151,7 @@ const ProductEdit = () => {
           setForm({
             name: data.name,
             description: data.description || "",
+            category: "",
             price: String(data.price),
             original_price: data.original_price ? String(data.original_price) : "",
             active: data.active,
