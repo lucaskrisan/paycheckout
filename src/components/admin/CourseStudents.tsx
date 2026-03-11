@@ -82,7 +82,7 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
       completedMap[p.member_access_id] = (completedMap[p.member_access_id] || 0) + 1;
     });
 
-    const studentList: Student[] = accessData.map((a) => {
+    const studentList: Student[] = accessData.map((a: any) => {
       const customer = a.customers as any;
       return {
         id: a.id,
@@ -92,6 +92,7 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
         created_at: a.created_at,
         total_lessons: totalLessons,
         completed_lessons: completedMap[a.id] || 0,
+        access_token: a.access_token,
       };
     });
 
