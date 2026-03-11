@@ -1,6 +1,35 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
+}
+
+async function sendPushNotification(title: string, message: string, url?: string) {
+  const apiKey = Deno.env.get('PUSHALERT_API_KEY');
+  if (!apiKey) {
+    console.warn('PUSHALERT_API_KEY not configured, skipping notification');
+    return;
+  }
+
+  try {
+    const body: Record<string, string> = { title, message };
+    if (url) body.url = url;
+
+    const response = await fetch('https://api.pushalert.co/rest/v1/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `api_key=${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    const data = await response.json();
+    console.log('PushAlert response:', data);
+  } catch (err) {
+    console.error('PushAlert error:', err);
+  }
 }
 
 Deno.serve(async (req) => {
@@ -14,7 +43,7 @@ Deno.serve(async (req) => {
       throw new Error('PAGARME_API_KEY not configured');
     }
 
-    const { amount, customer } = await req.json();
+    const { amount, customer, product_id } = await req.json();
 
     if (!amount || !customer?.name || !customer?.email || !customer?.cpf) {
       return new Response(
@@ -85,6 +114,41 @@ Deno.serve(async (req) => {
     // Extract PIX data from response
     const charge = data.charges?.[0];
     const lastTransaction = charge?.last_transaction;
+
+    // Send push notification for PIX generated
+    try {
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      );
+
+      // Check if any user has send_pending enabled
+      const { data: notifSettings } = await supabase
+        .from('notification_settings')
+        .select('user_id, send_pending, notification_pattern, show_value, show_product_name')
+        .eq('send_pending', true);
+
+      if (notifSettings && notifSettings.length > 0) {
+        // Get product name if available
+        let productName = 'Produto';
+        if (product_id) {
+          const { data: prod } = await supabase
+            .from('products')
+            .select('name')
+            .eq('id', product_id)
+            .single();
+          if (prod) productName = prod.name;
+        }
+
+        const formattedAmount = Number(amount).toFixed(2).replace('.', ',');
+        const title = '💠 PIX gerado!';
+        const message = `${customer.name} gerou um PIX de R$ ${formattedAmount}${notifSettings[0].show_product_name ? ` • ${productName}` : ''}`;
+
+        await sendPushNotification(title, message);
+      }
+    } catch (notifErr) {
+      console.error('Notification error (non-blocking):', notifErr);
+    }
 
     return new Response(
       JSON.stringify({

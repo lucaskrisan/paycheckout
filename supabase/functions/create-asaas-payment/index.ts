@@ -5,6 +5,30 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+async function sendPushNotification(title: string, message: string, url?: string) {
+  const apiKey = Deno.env.get('PUSHALERT_API_KEY');
+  if (!apiKey) {
+    console.warn('PUSHALERT_API_KEY not configured, skipping notification');
+    return;
+  }
+  try {
+    const body: Record<string, string> = { title, message };
+    if (url) body.url = url;
+    const response = await fetch('https://api.pushalert.co/rest/v1/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `api_key=${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+    const data = await response.json();
+    console.log('PushAlert response:', data);
+  } catch (err) {
+    console.error('PushAlert error:', err);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -143,6 +167,23 @@ Deno.serve(async (req) => {
         headers: { 'access_token': ASAAS_API_KEY },
       });
       const pixData = await pixRes.json();
+
+      // Send push notification for PIX generated
+      try {
+        const { data: notifSettings } = await supabaseAdmin
+          .from('notification_settings')
+          .select('user_id, send_pending, show_product_name')
+          .eq('send_pending', true);
+
+        if (notifSettings && notifSettings.length > 0) {
+          const formattedAmount = Number(amount).toFixed(2).replace('.', ',');
+          const title = '💠 PIX gerado!';
+          const message = `${customer.name} gerou um PIX de R$ ${formattedAmount}`;
+          await sendPushNotification(title, message);
+        }
+      } catch (notifErr) {
+        console.error('Notification error (non-blocking):', notifErr);
+      }
 
       return new Response(
         JSON.stringify({
