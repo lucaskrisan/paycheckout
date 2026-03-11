@@ -105,7 +105,11 @@ const Checkout = () => {
       if (productRes.error || !productRes.data) {
         setNotFound(true);
       } else {
-        setProduct(productRes.data);
+        setProduct(productRes.data as any);
+        // Force credit card for subscription products
+        if ((productRes.data as any).is_subscription) {
+          setPaymentMethod('credit_card');
+        }
       }
 
       if (orderBumpsRes.data) {
