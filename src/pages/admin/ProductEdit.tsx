@@ -533,10 +533,17 @@ const ProductEdit = () => {
 
               {/* Bottom actions */}
               {!isNew && (
-                <div className="flex justify-between pt-4 border-t border-border">
-                  <Button variant="destructive" size="sm" onClick={handleDelete}>
-                    Excluir produto
-                  </Button>
+                <div className="flex items-center justify-between pt-4 border-t border-border">
+                  <div className="flex items-center gap-3">
+                    <Button variant="destructive" size="sm" onClick={handleDelete}>
+                      Excluir produto
+                    </Button>
+                    {form.is_subscription && (
+                      <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/5">
+                        Cancelar assinaturas
+                      </Button>
+                    )}
+                  </div>
                   <Button onClick={handleSave} disabled={saving}>
                     {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                     Salvar produto
