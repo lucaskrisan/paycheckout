@@ -7,7 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Upload, Loader2, X, Link as LinkIcon, ExternalLink, Settings2, Trash2, MoreVertical } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ArrowLeft, Upload, Loader2, X, Link as LinkIcon, ExternalLink, Settings2, Trash2, MoreVertical, Plus } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -68,6 +70,12 @@ const ProductEdit = () => {
   const [savingPixels, setSavingPixels] = useState(false);
   const [showDomainManager, setShowDomainManager] = useState(false);
   const [showBumpDialog, setShowBumpDialog] = useState(false);
+  const [showPlanDialog, setShowPlanDialog] = useState(false);
+  const [planName, setPlanName] = useState("");
+  const [planPrice, setPlanPrice] = useState("0.00");
+  const [planFrequency, setPlanFrequency] = useState("monthly");
+  const [planRenewal, setPlanRenewal] = useState<"until_cancel" | "fixed">("until_cancel");
+  const [planDifferentFirst, setPlanDifferentFirst] = useState(false);
   const [orderBumps, setOrderBumps] = useState<any[]>([]);
   const [fbDomains, setFbDomains] = useState<{ id: string; domain: string; verified: boolean }[]>([]);
   const CATEGORIES = [
@@ -461,39 +469,81 @@ const ProductEdit = () => {
                       <Label>Produto ativo</Label>
                     </div>
 
-                    {/* Subscription toggle */}
-                    <div className="border-t border-border pt-4 mt-4 space-y-4">
-                      <div className="flex items-center gap-2">
-                        <Switch checked={form.is_subscription} onCheckedChange={(v) => setForm({ ...form, is_subscription: v })} />
-                        <Label>Produto com assinatura recorrente</Label>
-                      </div>
-                      {form.is_subscription && (
-                        <div className="space-y-1.5">
-                          <Label>Ciclo de cobrança</Label>
-                          <Select value={form.billing_cycle} onValueChange={(v) => setForm({ ...form, billing_cycle: v })}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="weekly">Semanal</SelectItem>
-                              <SelectItem value="biweekly">Quinzenal</SelectItem>
-                              <SelectItem value="monthly">Mensal</SelectItem>
-                              <SelectItem value="quarterly">Trimestral</SelectItem>
-                              <SelectItem value="semiannually">Semestral</SelectItem>
-                              <SelectItem value="yearly">Anual</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-                    </div>
                   </div>
                 </div>
               </div>
 
+              {/* Planos de assinatura section - only for subscription products */}
+              {form.is_subscription && (
+                <div className="grid lg:grid-cols-12 gap-8">
+                  <div className="lg:col-span-4">
+                    <h2 className="text-base font-semibold text-foreground">Planos de assinatura</h2>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      <a href="#" className="text-primary hover:underline">Aprenda mais sobre os planos</a>
+                    </p>
+                  </div>
+                  <div className="lg:col-span-8">
+                    <div className="border border-border rounded-lg bg-card">
+                      <div className="flex items-center justify-between p-4 border-b border-border">
+                        <h3 className="text-sm font-semibold text-foreground">Planos de assinatura</h3>
+                        <Button size="sm" onClick={() => setShowPlanDialog(true)} className="gap-1.5">
+                          <Plus className="w-3.5 h-3.5" /> Adicionar plano
+                        </Button>
+                      </div>
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="hover:bg-transparent">
+                            <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Nome</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Preço</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Primeira cobrança</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Frequência</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {/* Show current plan based on product price/cycle */}
+                          {parseFloat(form.price) > 0 ? (
+                            <TableRow>
+                              <TableCell className="text-sm">{form.name || "Plano padrão"}</TableCell>
+                              <TableCell className="text-sm">R$ {parseFloat(form.price).toFixed(2).replace(".", ",")}</TableCell>
+                              <TableCell className="text-sm">R$ {parseFloat(form.price).toFixed(2).replace(".", ",")}</TableCell>
+                              <TableCell className="text-sm capitalize">
+                                {{
+                                  weekly: "Semanal",
+                                  biweekly: "Quinzenal",
+                                  monthly: "Mensal",
+                                  quarterly: "Trimestral",
+                                  semiannually: "Semestral",
+                                  yearly: "Anual",
+                                }[form.billing_cycle] || "Mensal"}
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={4} className="text-center text-muted-foreground py-8 text-sm">
+                                Por favor crie um plano para configurar os preços
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Bottom actions */}
               {!isNew && (
-                <div className="flex justify-between pt-4 border-t border-border">
-                  <Button variant="destructive" size="sm" onClick={handleDelete}>
-                    Excluir produto
-                  </Button>
+                <div className="flex items-center justify-between pt-4 border-t border-border">
+                  <div className="flex items-center gap-3">
+                    <Button variant="destructive" size="sm" onClick={handleDelete}>
+                      Excluir produto
+                    </Button>
+                    {form.is_subscription && (
+                      <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/5">
+                        Cancelar assinaturas
+                      </Button>
+                    )}
+                  </div>
                   <Button onClick={handleSave} disabled={saving}>
                     {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                     Salvar produto
@@ -1160,6 +1210,91 @@ const ProductEdit = () => {
           onSaved={loadOrderBumps}
         />
       )}
+
+      {/* Adicionar plano dialog */}
+      <Dialog open={showPlanDialog} onOpenChange={setShowPlanDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Adicionar plano</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-5 pt-2">
+            <div className="space-y-1.5">
+              <Label>Nome</Label>
+              <Input value={planName} onChange={(e) => setPlanName(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Preço</Label>
+              <div className="flex">
+                <span className="inline-flex items-center px-3 text-sm text-muted-foreground bg-muted border border-r-0 border-input rounded-l-md">R$</span>
+                <Input type="number" step="0.01" value={planPrice} onChange={(e) => setPlanPrice(e.target.value)} className="rounded-l-none rounded-r-none" />
+                <Select defaultValue="BRL">
+                  <SelectTrigger className="w-24 rounded-l-none border-l-0">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BRL">BRL</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Frequência</Label>
+              <Select value={planFrequency} onValueChange={setPlanFrequency}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="weekly">Semanal</SelectItem>
+                  <SelectItem value="biweekly">Quinzenal</SelectItem>
+                  <SelectItem value="monthly">Mensal</SelectItem>
+                  <SelectItem value="quarterly">Trimestral</SelectItem>
+                  <SelectItem value="semiannually">Semestral</SelectItem>
+                  <SelectItem value="yearly">Anual</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-3">
+              <Label>Renovação automática</Label>
+              <RadioGroup value={planRenewal} onValueChange={(v) => setPlanRenewal(v as "until_cancel" | "fixed")}>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="until_cancel" id="until_cancel" />
+                  <Label htmlFor="until_cancel" className="font-normal cursor-pointer">Até o cliente cancelar</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="fixed" id="fixed" />
+                  <Label htmlFor="fixed" className="font-normal cursor-pointer">Número fixo de cobranças</Label>
+                </div>
+              </RadioGroup>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch checked={planDifferentFirst} onCheckedChange={setPlanDifferentFirst} />
+              <Label className="font-normal">Preço diferente na primeira cobrança</Label>
+            </div>
+            <Button
+              className="w-full"
+              onClick={() => {
+                if (!planPrice || parseFloat(planPrice) <= 0) {
+                  toast.error("Informe um preço válido");
+                  return;
+                }
+                setForm((f) => ({
+                  ...f,
+                  price: planPrice,
+                  billing_cycle: planFrequency,
+                  is_subscription: true,
+                }));
+                setShowPlanDialog(false);
+                setPlanName("");
+                setPlanPrice("0.00");
+                setPlanFrequency("monthly");
+                toast.success("Plano adicionado! Salve o produto para aplicar.");
+              }}
+            >
+              Adicionar plano
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
