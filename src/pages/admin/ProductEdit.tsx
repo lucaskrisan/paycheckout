@@ -1420,9 +1420,18 @@ const ProductEdit = () => {
             <div className="flex justify-end gap-3">
               <Button variant="outline" onClick={() => setShowNewCheckoutDialog(false)}>Cancelar</Button>
               <Button
-                onClick={() => {
+                onClick={async () => {
+                  if (!productId || isNew) { toast.error("Salve o produto primeiro"); return; }
+                  const { error } = await supabase.from("checkout_builder_configs").insert({
+                    product_id: productId,
+                    name: newCheckoutName.trim(),
+                    is_default: newCheckoutDefault,
+                    user_id: user?.id,
+                  });
+                  if (error) { toast.error("Erro ao criar checkout"); return; }
                   toast.success("Checkout criado!");
                   setShowNewCheckoutDialog(false);
+                  loadCheckouts();
                 }}
                 disabled={!newCheckoutName.trim()}
               >
