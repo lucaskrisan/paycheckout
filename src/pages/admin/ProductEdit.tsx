@@ -945,18 +945,151 @@ const ProductEdit = () => {
 
           {/* Links */}
           <TabsContent value="links" className="mt-8">
-            <div className="border border-border rounded-lg p-6 bg-card max-w-2xl space-y-4">
-              <h2 className="text-base font-semibold text-foreground">Links do produto</h2>
-              {checkoutLink ? (
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground uppercase tracking-wider">Link de checkout</Label>
-                  <div className="flex items-center gap-2">
-                    <Input value={checkoutLink} readOnly className="bg-muted/50 text-sm" />
-                    <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(checkoutLink); toast.success("Link copiado!"); }}>Copiar</Button>
-                  </div>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="relative w-64">
+                  <Input placeholder="Buscar..." className="pl-9 h-9 text-sm" />
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">Salve o produto primeiro.</p>
+                <div className="flex items-center gap-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-1 text-sm">
+                        <MoreVertical className="w-3.5 h-3.5" /> Ações
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuItem className="text-sm">Exportar links</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <Button size="sm" className="gap-1 text-sm">
+                    + Adicionar link
+                  </Button>
+                </div>
+              </div>
+
+              <div className="border border-border rounded-lg overflow-hidden bg-card">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="w-8">
+                        <input type="checkbox" className="rounded border-border" />
+                      </TableHead>
+                      <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Nome do link</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">URL</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Tipo</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Preço</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Status</TableHead>
+                      <TableHead className="w-10"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {!isNew && checkoutLink ? (
+                      <>
+                        {form.sales_page_url && (
+                          <TableRow>
+                            <TableCell><input type="checkbox" className="rounded border-border" /></TableCell>
+                            <TableCell className="text-sm font-medium text-foreground">Sales Page</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1.5">
+                                <Input value={form.sales_page_url} readOnly className="h-8 text-xs bg-muted/50 max-w-[220px]" />
+                                <button onClick={() => { navigator.clipboard.writeText(form.sales_page_url); toast.success("Link copiado!"); }} className="text-muted-foreground hover:text-primary transition-colors shrink-0">
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-500">Página</span>
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">—</TableCell>
+                            <TableCell>
+                              <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-green-500/10 text-green-500">Ativo</span>
+                            </TableCell>
+                            <TableCell>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button className="p-1 rounded hover:bg-muted transition-colors"><MoreVertical className="w-4 h-4 text-muted-foreground" /></button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-40">
+                                  <DropdownMenuItem onClick={() => { navigator.clipboard.writeText(form.sales_page_url); toast.success("Link copiado!"); }} className="gap-2 text-sm"><LinkIcon className="w-3.5 h-3.5" /> Copiar link</DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => window.open(form.sales_page_url, "_blank")} className="gap-2 text-sm"><ExternalLink className="w-3.5 h-3.5" /> Abrir</DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                        <TableRow>
+                          <TableCell><input type="checkbox" className="rounded border-border" /></TableCell>
+                          <TableCell className="text-sm font-medium text-foreground">{form.name || "Checkout"}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1.5">
+                              <Input value={checkoutLink} readOnly className="h-8 text-xs bg-muted/50 max-w-[220px]" />
+                              <button onClick={() => { navigator.clipboard.writeText(checkoutLink); toast.success("Link copiado!"); }} className="text-muted-foreground hover:text-primary transition-colors shrink-0">
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-500">Checkout</span>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {form.price ? `R$ ${Number(form.price).toFixed(2).replace(".", ",")}` : "—"}
+                          </TableCell>
+                          <TableCell>
+                            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${form.active ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"}`}>
+                              {form.active ? "Ativo" : "Inativo"}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button className="p-1 rounded hover:bg-muted transition-colors"><MoreVertical className="w-4 h-4 text-muted-foreground" /></button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuItem onClick={() => { navigator.clipboard.writeText(checkoutLink); toast.success("Link copiado!"); }} className="gap-2 text-sm"><LinkIcon className="w-3.5 h-3.5" /> Copiar link</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => window.open(checkoutLink, "_blank")} className="gap-2 text-sm"><ExternalLink className="w-3.5 h-3.5" /> Abrir</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => navigate(`/admin/products/${productId}/checkout-builder`)} className="gap-2 text-sm"><Settings2 className="w-3.5 h-3.5" /> Personalizar</DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      </>
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">
+                          Salve o produto primeiro para gerar os links.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Pagination */}
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>Exibindo 1 de 1 página</span>
+                <div className="flex items-center gap-1">
+                  <button className="w-7 h-7 rounded border border-border flex items-center justify-center hover:bg-muted transition-colors">&lt;</button>
+                  <button className="w-7 h-7 rounded border border-primary bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium">1</button>
+                  <button className="w-7 h-7 rounded border border-border flex items-center justify-center hover:bg-muted transition-colors">&gt;</button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-center">
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <span className="text-primary">ℹ</span> Aprenda mais sobre os{" "}
+                  <a href="#" className="text-primary underline">links</a>
+                </p>
+              </div>
+
+              {!isNew && (
+                <div className="flex justify-between pt-4 border-t border-border">
+                  <Button variant="destructive" size="sm" onClick={handleDelete}>Excluir produto</Button>
+                  <Button onClick={handleSave} disabled={saving}>
+                    {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                    Salvar produto
+                  </Button>
+                </div>
               )}
             </div>
           </TabsContent>
