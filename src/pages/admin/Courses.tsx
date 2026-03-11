@@ -367,10 +367,24 @@ const Courses = () => {
             <span className="text-xs text-muted-foreground">Produto: {linkedProduct.name}</span>
           )}
         </div>
-        <Button onClick={openNewModule} className="gap-2">
-          <Plus className="w-4 h-4" /> Novo Módulo
-        </Button>
       </div>
+
+      <Tabs defaultValue="content">
+        <TabsList>
+          <TabsTrigger value="content" className="gap-2">
+            <BookOpen className="w-4 h-4" /> Conteúdo
+          </TabsTrigger>
+          <TabsTrigger value="students" className="gap-2">
+            <Users className="w-4 h-4" /> Alunos
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="content" className="mt-6 space-y-4">
+          <div className="flex justify-end">
+            <Button onClick={openNewModule} className="gap-2">
+              <Plus className="w-4 h-4" /> Novo Módulo
+            </Button>
+          </div>
 
       {modules.length === 0 ? (
         <Card>
