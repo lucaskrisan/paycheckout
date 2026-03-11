@@ -167,40 +167,26 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 3. For PIX, get QR code
-    if (payment_method === 'pix' && paymentData.id) {
-      const pixRes = await fetch(`${baseUrl}/payments/${paymentData.id}/pixQrCode`, {
-        headers: { 'access_token': ASAAS_API_KEY },
-      });
-      const pixData = await pixRes.json();
-
-      // Send push notification for PIX generated
+    // 3. For credit card confirmed payments, send push notification
+    if (payment_method === 'credit_card' && (paymentData.status === 'CONFIRMED' || paymentData.status === 'RECEIVED')) {
       try {
         const { data: notifSettings } = await supabaseAdmin
           .from('notification_settings')
-          .select('user_id, send_pending, show_product_name')
-          .eq('send_pending', true);
+          .select('send_approved, show_product_name')
+          .eq('send_approved', true);
+
+        console.log('[create-asaas-payment] send_approved users:', notifSettings?.length || 0);
 
         if (notifSettings && notifSettings.length > 0) {
           const formattedAmount = Number(amount).toFixed(2).replace('.', ',');
-          const title = '💠 PIX gerado!';
-          const message = `${customer.name} gerou um PIX de R$ ${formattedAmount}`;
-          await sendPushNotification(title, message);
+          const showProductName = notifSettings.some((s) => s.show_product_name);
+          const title = '💰 Venda aprovada!';
+          const message = `${customer.name} • 💳 Cartão R$ ${formattedAmount}${showProductName ? ` • Produto` : ''}`;
+          await sendPushNotification(title, message, 'https://paycheckout.lovable.app/admin/orders');
         }
       } catch (notifErr) {
-        console.error('Notification error (non-blocking):', notifErr);
+        console.error('[create-asaas-payment] Notification error (non-blocking):', notifErr);
       }
-
-      return new Response(
-        JSON.stringify({
-          payment_id: paymentData.id,
-          status: paymentData.status,
-          qr_code: pixData.payload,
-          qr_code_url: pixData.encodedImage,
-          expires_at: paymentData.dueDate,
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
     }
 
     return new Response(
