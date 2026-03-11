@@ -146,16 +146,33 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
       }
 
       // Create member_access
-      const { error: accessErr } = await supabase
+      const { data: newAccess, error: accessErr } = await supabase
         .from("member_access")
         .insert({
           customer_id: customerId,
           course_id: courseId,
-        });
+        })
+        .select("access_token")
+        .single();
 
       if (accessErr) throw accessErr;
 
-      toast.success("Aluno adicionado com sucesso!");
+      const accessUrl = `${window.location.origin}/membros?token=${newAccess.access_token}`;
+      
+      // Copy to clipboard
+      try {
+        await navigator.clipboard.writeText(accessUrl);
+        toast.success("Aluno adicionado! Link de acesso copiado para a área de transferência.", {
+          duration: 6000,
+          description: accessUrl,
+        });
+      } catch {
+        toast.success("Aluno adicionado com sucesso!", {
+          duration: 10000,
+          description: `Link: ${accessUrl}`,
+        });
+      }
+
       setAddDialogOpen(false);
       setAddForm({ name: "", email: "", cpf: "", phone: "" });
       loadStudents();
