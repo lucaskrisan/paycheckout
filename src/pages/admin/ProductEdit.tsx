@@ -523,10 +523,7 @@ const ProductEdit = () => {
                     </div>
                   </div>
                 </div>
-              )}
-                  </div>
-                </div>
-              </div>
+              )
 
               {/* Bottom actions */}
               {!isNew && (
