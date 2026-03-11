@@ -50,12 +50,21 @@ const Checkout = () => {
   const [orderBumps, setOrderBumps] = useState<OrderBump[]>([]);
   const [selectedBumps, setSelectedBumps] = useState<Set<string>>(new Set());
   const [builderLayout, setBuilderLayout] = useState<BuilderComponent[]>([]);
+  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'pix'>('pix');
 
   const [customer, setCustomer] = useState<CustomerData>({
     name: "",
     email: "",
     phone: "",
     cpf: "",
+  });
+
+  const [creditCard, setCreditCard] = useState<CreditCardData>({
+    number: "",
+    name: "",
+    expiry: "",
+    cvv: "",
+    installments: "1",
   });
 
   useEffect(() => {
