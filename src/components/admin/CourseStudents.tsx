@@ -301,10 +301,11 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
         </Card>
       ) : (
         <div className="border rounded-xl overflow-hidden">
-          <div className="grid grid-cols-[1fr_auto_auto] gap-4 px-4 py-3 bg-muted/50 text-xs font-semibold text-muted-foreground uppercase">
+          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 px-4 py-3 bg-muted/50 text-xs font-semibold text-muted-foreground uppercase">
             <span>Nome</span>
             <span className="w-32 text-center">Progresso</span>
-            <span className="w-10" />
+            <span className="w-8" />
+            <span className="w-8" />
           </div>
           {filtered.map((s) => {
             const pct = s.total_lessons > 0 ? (s.completed_lessons / s.total_lessons) * 100 : 0;
