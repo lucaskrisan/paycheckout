@@ -11,19 +11,25 @@ async function sendPushNotification(title: string, message: string, url?: string
     console.warn('PUSHALERT_API_KEY not configured, skipping notification');
     return;
   }
+
+  const body = new URLSearchParams();
+  body.set('title', title);
+  body.set('message', message);
+  body.set('icon', 'https://paycheckout.lovable.app/pwa-192x192.png');
+  if (url) body.set('url', url);
+
   try {
-    const body: Record<string, string> = { title, message };
-    if (url) body.url = url;
     const response = await fetch('https://api.pushalert.co/rest/v1/send', {
       method: 'POST',
       headers: {
         'Authorization': `api_key=${apiKey}`,
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: JSON.stringify(body),
+      body: body.toString(),
     });
-    const data = await response.json();
-    console.log('PushAlert response:', data);
+
+    const raw = await response.text();
+    console.log('PushAlert response:', { status: response.status, body: raw });
   } catch (err) {
     console.error('PushAlert error:', err);
   }
