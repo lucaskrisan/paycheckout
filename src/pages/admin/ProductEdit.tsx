@@ -131,6 +131,16 @@ const ProductEdit = () => {
     if (data) setOrderBumps(data);
   }, [isNew, productId]);
 
+  const loadCheckouts = useCallback(async () => {
+    if (isNew || !productId) return;
+    const { data } = await supabase
+      .from("checkout_builder_configs")
+      .select("*")
+      .eq("product_id", productId)
+      .order("created_at");
+    if (data) setCheckouts(data);
+  }, [isNew, productId]);
+
   useEffect(() => {
     // Load courses
     supabase.from("courses").select("id, title, product_id").then(({ data }) => {
