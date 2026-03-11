@@ -296,6 +296,16 @@ const Checkout = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4 }}
           >
+            {product.image_url && (
+              <div className="rounded-2xl overflow-hidden border border-border bg-card">
+                <img
+                  src={product.image_url}
+                  alt={product.name}
+                  className="w-full h-auto max-h-[280px] sm:max-h-[360px] object-cover"
+                  loading="eager"
+                />
+              </div>
+            )}
             <h1 className="font-display text-2xl font-bold text-foreground">{headerTitle}</h1>
 
             {sortedLayout
