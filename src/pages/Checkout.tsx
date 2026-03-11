@@ -6,6 +6,8 @@ import { Lock, ShieldCheck, ArrowRight, Loader2, QrCode, Award, Star, ListOrdere
 import OrderSummary from "@/components/checkout/OrderSummary";
 import CustomerForm, { type CustomerData } from "@/components/checkout/CustomerForm";
 import PixPayment from "@/components/checkout/PixPayment";
+import CreditCardForm, { type CreditCardData } from "@/components/checkout/CreditCardForm";
+import PaymentTabs from "@/components/checkout/PaymentTabs";
 import CountdownTimer from "@/components/checkout/CountdownTimer";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,12 +50,21 @@ const Checkout = () => {
   const [orderBumps, setOrderBumps] = useState<OrderBump[]>([]);
   const [selectedBumps, setSelectedBumps] = useState<Set<string>>(new Set());
   const [builderLayout, setBuilderLayout] = useState<BuilderComponent[]>([]);
+  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'pix'>('pix');
 
   const [customer, setCustomer] = useState<CustomerData>({
     name: "",
     email: "",
     phone: "",
     cpf: "",
+  });
+
+  const [creditCard, setCreditCard] = useState<CreditCardData>({
+    number: "",
+    name: "",
+    expiry: "",
+    cvv: "",
+    installments: "1",
   });
 
   useEffect(() => {
@@ -198,7 +209,7 @@ const Checkout = () => {
     .filter((b) => selectedBumps.has(b.id))
     .reduce((sum, b) => sum + (b.bump_product?.price || 0), 0);
 
-  const pixDiscount = product.price * 0.05;
+  const pixDiscount = paymentMethod === 'pix' ? product.price * 0.05 : 0;
   const finalAmount = product.price - pixDiscount + bumpTotal;
 
   const items = [
@@ -226,33 +237,76 @@ const Checkout = () => {
       return;
     }
 
+    if (paymentMethod === 'credit_card') {
+      if (!creditCard.number || !creditCard.name || !creditCard.expiry || !creditCard.cvv) {
+        toast.error("Preencha todos os dados do cartão");
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("create-pix-payment", {
-        body: {
-          amount: finalAmount,
-          product_id: product.id,
-          customer: {
-            name: customer.name,
-            email: customer.email,
-            cpf: customer.cpf,
-            phone: customer.phone,
+      if (paymentMethod === 'pix') {
+        // PIX via Pagar.me
+        const { data, error } = await supabase.functions.invoke("create-pix-payment", {
+          body: {
+            amount: finalAmount,
+            product_id: product.id,
+            customer: {
+              name: customer.name,
+              email: customer.email,
+              cpf: customer.cpf,
+              phone: customer.phone,
+            },
           },
-        },
-      });
+        });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      if (data?.qr_code_url || data?.qr_code) {
-        setPixData({ qrCodeUrl: data.qr_code_url, pixCode: data.qr_code });
-        toast.success("PIX gerado! Escaneie o QR Code para pagar.");
-        trackPurchase(finalAmount);
+        if (data?.qr_code_url || data?.qr_code) {
+          setPixData({ qrCodeUrl: data.qr_code_url, pixCode: data.qr_code });
+          toast.success("PIX gerado! Escaneie o QR Code para pagar.");
+          trackPurchase(finalAmount);
+        } else {
+          throw new Error("Falha ao gerar o PIX");
+        }
       } else {
-        throw new Error("Falha ao gerar o PIX");
+        // Cartão de crédito via Asaas
+        const [expMonth, expYear] = creditCard.expiry.split('/');
+        const { data, error } = await supabase.functions.invoke("create-asaas-payment", {
+          body: {
+            amount: finalAmount,
+            product_id: product.id,
+            payment_method: 'credit_card',
+            installments: creditCard.installments,
+            customer: {
+              name: customer.name,
+              email: customer.email,
+              cpf: customer.cpf,
+              phone: customer.phone,
+              creditCard: {
+                holderName: creditCard.name,
+                number: creditCard.number.replace(/\s/g, ''),
+                expiryMonth: expMonth,
+                expiryYear: `20${expYear}`,
+                ccv: creditCard.cvv,
+              },
+            },
+          },
+        });
+
+        if (error) throw error;
+
+        if (data?.payment_id) {
+          toast.success("Pagamento processado com sucesso!");
+          trackPurchase(finalAmount);
+        } else {
+          throw new Error("Falha ao processar pagamento");
+        }
       }
     } catch (err: any) {
-      console.error("PIX error:", err);
-      toast.error(err.message || "Erro ao gerar PIX. Tente novamente.");
+      console.error("Payment error:", err);
+      toast.error(err.message || "Erro ao processar pagamento. Tente novamente.");
     } finally {
       setIsSubmitting(false);
     }
@@ -364,13 +418,13 @@ const Checkout = () => {
             <div className="bg-card border border-border rounded-2xl p-6 space-y-6 shadow-sm">
               <h2 className="font-display text-lg font-bold text-foreground">Forma de pagamento</h2>
 
-              <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 flex items-center gap-2">
-                <QrCode className="w-5 h-5 text-primary" />
-                <span className="text-sm font-semibold text-foreground">PIX</span>
-                <span className="ml-auto bg-checkout-badge text-checkout-surface text-[10px] font-bold px-2 py-0.5 rounded-full">5% OFF</span>
-              </div>
+              <PaymentTabs activeMethod={paymentMethod} onMethodChange={setPaymentMethod} />
 
-              <PixPayment totalAmount={finalAmount} qrCodeData={pixData?.qrCodeUrl} pixCode={pixData?.pixCode} />
+              {paymentMethod === 'pix' ? (
+                <PixPayment totalAmount={finalAmount} qrCodeData={pixData?.qrCodeUrl} pixCode={pixData?.pixCode} />
+              ) : (
+                <CreditCardForm data={creditCard} onChange={setCreditCard} totalAmount={finalAmount} />
+              )}
 
               <Button
                 onClick={handleSubmit}
@@ -381,7 +435,7 @@ const Checkout = () => {
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   <>
-                    {submitLabel}
+                    {paymentMethod === 'pix' ? (submitLabel || "Gerar PIX") : "Pagar com Cartão"}
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </>
                 )}
