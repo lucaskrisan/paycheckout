@@ -86,6 +86,8 @@ const ProductEdit = () => {
     active: true,
     image_url: "",
     sales_page_url: "",
+    is_subscription: false,
+    billing_cycle: "monthly",
   });
 
   // Load pixels for this product
