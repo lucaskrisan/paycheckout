@@ -8,27 +8,45 @@ const corsHeaders = {
 async function sendPushNotification(title: string, message: string, url?: string) {
   const apiKey = Deno.env.get('PUSHALERT_API_KEY');
   if (!apiKey) {
-    console.warn('PUSHALERT_API_KEY not configured, skipping notification');
+    console.warn('[create-pix-payment] PUSHALERT_API_KEY not configured, skipping notification');
     return;
   }
 
-  try {
-    const body: Record<string, string> = { title, message };
-    if (url) body.url = url;
+  const body = new URLSearchParams();
+  body.set('title', title);
+  body.set('message', message);
+  body.set('icon', 'https://paycheckout.lovable.app/pwa-192x192.png');
+  if (url) body.set('url', url);
 
+  try {
     const response = await fetch('https://api.pushalert.co/rest/v1/send', {
       method: 'POST',
       headers: {
         'Authorization': `api_key=${apiKey}`,
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: JSON.stringify(body),
+      body: body.toString(),
     });
 
-    const data = await response.json();
-    console.log('PushAlert response:', data);
+    const raw = await response.text();
+    let parsed: Record<string, unknown> | null = null;
+
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      parsed = null;
+    }
+
+    console.log('[create-pix-payment] PushAlert response:', {
+      status: response.status,
+      body: raw,
+    });
+
+    if (!response.ok || parsed?.success === false) {
+      throw new Error(`PushAlert failed: ${raw}`);
+    }
   } catch (err) {
-    console.error('PushAlert error:', err);
+    console.error('[create-pix-payment] PushAlert error:', err);
   }
 }
 
@@ -38,6 +56,8 @@ Deno.serve(async (req) => {
   }
 
   try {
+    console.log('[create-pix-payment] request received');
+
     const PAGARME_API_KEY = Deno.env.get('PAGARME_API_KEY');
     if (!PAGARME_API_KEY) {
       throw new Error('PAGARME_API_KEY not configured');
@@ -52,15 +72,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Clean CPF - remove formatting
     const cleanCpf = customer.cpf.replace(/\D/g, '');
-    // Clean phone
     const cleanPhone = customer.phone?.replace(/\D/g, '') || '';
 
     const orderPayload = {
       items: [
         {
-          amount: Math.round(amount * 100), // Pagar.me expects amount in cents
+          amount: Math.round(amount * 100),
           description: 'Pagamento via PIX',
           quantity: 1,
           code: 'pix-payment',
@@ -86,7 +104,7 @@ Deno.serve(async (req) => {
         {
           payment_method: 'pix',
           pix: {
-            expires_in: 1800, // 30 minutes
+            expires_in: 1800,
           },
         },
       ],
@@ -104,50 +122,50 @@ Deno.serve(async (req) => {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error('Pagar.me error:', JSON.stringify(data));
+      console.error('[create-pix-payment] Pagar.me error:', JSON.stringify(data));
       return new Response(
         JSON.stringify({ error: 'Payment creation failed', details: data }),
         { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Extract PIX data from response
     const charge = data.charges?.[0];
     const lastTransaction = charge?.last_transaction;
 
-    // Send push notification for PIX generated
     try {
       const supabase = createClient(
         Deno.env.get('SUPABASE_URL')!,
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
       );
 
-      // Check if any user has send_pending enabled
       const { data: notifSettings } = await supabase
         .from('notification_settings')
-        .select('user_id, send_pending, notification_pattern, show_value, show_product_name')
+        .select('send_pending, show_product_name')
         .eq('send_pending', true);
 
+      console.log('[create-pix-payment] send_pending users:', notifSettings?.length || 0);
+
       if (notifSettings && notifSettings.length > 0) {
-        // Get product name if available
         let productName = 'Produto';
+
         if (product_id) {
           const { data: prod } = await supabase
             .from('products')
             .select('name')
             .eq('id', product_id)
-            .single();
-          if (prod) productName = prod.name;
+            .maybeSingle();
+          if (prod?.name) productName = prod.name;
         }
 
+        const showProductName = notifSettings.some((s) => s.show_product_name);
         const formattedAmount = Number(amount).toFixed(2).replace('.', ',');
         const title = '💠 PIX gerado!';
-        const message = `${customer.name} gerou um PIX de R$ ${formattedAmount}${notifSettings[0].show_product_name ? ` • ${productName}` : ''}`;
+        const message = `${customer.name} gerou um PIX de R$ ${formattedAmount}${showProductName ? ` • ${productName}` : ''}`;
 
-        await sendPushNotification(title, message);
+        await sendPushNotification(title, message, 'https://paycheckout.lovable.app/admin/notificacoes');
       }
     } catch (notifErr) {
-      console.error('Notification error (non-blocking):', notifErr);
+      console.error('[create-pix-payment] Notification error (non-blocking):', notifErr);
     }
 
     return new Response(
@@ -161,7 +179,7 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error:', error);
+    console.error('[create-pix-payment] Error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
