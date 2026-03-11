@@ -418,13 +418,13 @@ const Checkout = () => {
             <div className="bg-card border border-border rounded-2xl p-6 space-y-6 shadow-sm">
               <h2 className="font-display text-lg font-bold text-foreground">Forma de pagamento</h2>
 
-              <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 flex items-center gap-2">
-                <QrCode className="w-5 h-5 text-primary" />
-                <span className="text-sm font-semibold text-foreground">PIX</span>
-                <span className="ml-auto bg-checkout-badge text-checkout-surface text-[10px] font-bold px-2 py-0.5 rounded-full">5% OFF</span>
-              </div>
+              <PaymentTabs activeMethod={paymentMethod} onMethodChange={setPaymentMethod} />
 
-              <PixPayment totalAmount={finalAmount} qrCodeData={pixData?.qrCodeUrl} pixCode={pixData?.pixCode} />
+              {paymentMethod === 'pix' ? (
+                <PixPayment totalAmount={finalAmount} qrCodeData={pixData?.qrCodeUrl} pixCode={pixData?.pixCode} />
+              ) : (
+                <CreditCardForm data={creditCard} onChange={setCreditCard} totalAmount={finalAmount} />
+              )}
 
               <Button
                 onClick={handleSubmit}
@@ -435,7 +435,7 @@ const Checkout = () => {
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   <>
-                    {submitLabel}
+                    {paymentMethod === 'pix' ? (submitLabel || "Gerar PIX") : "Pagar com Cartão"}
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </>
                 )}
