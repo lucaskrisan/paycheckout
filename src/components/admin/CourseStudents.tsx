@@ -159,19 +159,36 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
 
       const accessUrl = `${window.location.origin}/membros?token=${newAccess.access_token}`;
       
-      // Copy to clipboard
+      // Send access email via edge function
       try {
-        await navigator.clipboard.writeText(accessUrl);
-        toast.success("Aluno adicionado! Link de acesso copiado para a área de transferência.", {
+        const { error: emailErr } = await supabase.functions.invoke("send-access-link", {
+          body: {
+            customer_id: customerId,
+            course_id: courseId,
+            access_token: newAccess.access_token,
+          },
+        });
+        if (emailErr) {
+          console.error("Email error:", emailErr);
+          toast.success("Aluno adicionado! Mas houve erro ao enviar email.", {
+            duration: 6000,
+            description: accessUrl,
+          });
+        } else {
+          toast.success(`Email de acesso enviado para ${addForm.email}!`, {
+            duration: 6000,
+            description: accessUrl,
+          });
+        }
+      } catch {
+        toast.success("Aluno adicionado! Link copiado (email não enviado).", {
           duration: 6000,
           description: accessUrl,
         });
-      } catch {
-        toast.success("Aluno adicionado com sucesso!", {
-          duration: 10000,
-          description: `Link: ${accessUrl}`,
-        });
       }
+
+      // Copy link to clipboard as backup
+      navigator.clipboard.writeText(accessUrl).catch(() => {});
 
       setAddDialogOpen(false);
       setAddForm({ name: "", email: "", cpf: "", phone: "" });
