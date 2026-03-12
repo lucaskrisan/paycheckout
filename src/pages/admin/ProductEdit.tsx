@@ -292,6 +292,7 @@ const ProductEdit = () => {
       image_url: form.image_url || null,
       is_subscription: form.is_subscription,
       billing_cycle: form.billing_cycle,
+      show_coupon: form.show_coupon,
       updated_at: new Date().toISOString(),
     };
 
