@@ -57,7 +57,8 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    const { amount, customer, payment_method, installments, product_id, is_subscription, billing_cycle, coupon_id } = await req.json();
+    const body = await req.json();
+    const { amount, customer, payment_method, installments, product_id, is_subscription, billing_cycle, coupon_id, config_id, bump_product_ids } = body;
 
     if (!amount || !customer?.name || !customer?.email || !customer?.cpf) {
       return new Response(
