@@ -235,8 +235,16 @@ const Checkout = () => {
     try {
       if (paymentMethod === "pix") {
         const bumpProductIds = orderBumps.filter((b) => selectedBumps.has(b.id)).map((b) => b.bump_product.id);
+        const utmParams = new URLSearchParams(window.location.search);
+        const utms = {
+          utm_source: utmParams.get("utm_source") || undefined,
+          utm_medium: utmParams.get("utm_medium") || undefined,
+          utm_campaign: utmParams.get("utm_campaign") || undefined,
+          utm_content: utmParams.get("utm_content") || undefined,
+          utm_term: utmParams.get("utm_term") || undefined,
+        };
         const { data, error } = await supabase.functions.invoke("create-pix-payment", {
-          body: { amount: finalAmount, product_id: product.id, config_id: requestedConfigId || null, coupon_id: coupon?.id || null, bump_product_ids: bumpProductIds, customer: { name: customer.name, email: customer.email, cpf: customer.cpf, phone: customer.phone } },
+          body: { amount: finalAmount, product_id: product.id, config_id: requestedConfigId || null, coupon_id: coupon?.id || null, bump_product_ids: bumpProductIds, checkout_url: window.location.href, utms, customer: { name: customer.name, email: customer.email, cpf: customer.cpf, phone: customer.phone } },
         });
         if (error) throw error;
         if (data?.qr_code_url || data?.qr_code) { setPixData({ qrCodeUrl: data.qr_code_url, pixCode: data.qr_code, orderId: data.order_id }); setPixModalOpen(true); trackPurchase(frontEndAmount); await markPurchased(); }
