@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
-import { Bell, Clock, Sparkles, FileText, TrendingUp, Loader2, Smartphone, Volume2 } from "lucide-react";
+import { Bell, Clock, Sparkles, FileText, TrendingUp, Loader2, Smartphone, Volume2, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -59,6 +59,26 @@ const Notifications = () => {
   const [saving, setSaving] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [sendingTest, setSendingTest] = useState(false);
+
+  const sendTestNotification = async () => {
+    setSendingTest(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('test-push');
+      if (error) throw error;
+      if (data?.errors) {
+        toast.error("Nenhum dispositivo inscrito. Aceite as notificações no navegador primeiro.");
+      } else {
+        toast.success("Notificação de teste enviada! 🔔");
+      }
+      // Play selected sound locally too
+      playNotificationSound(settings.notification_sound);
+    } catch (err: any) {
+      toast.error("Erro ao enviar teste: " + (err.message || "Tente novamente"));
+    } finally {
+      setSendingTest(false);
+    }
+  };
 
   useEffect(() => {
     // Check if already installed
@@ -169,10 +189,16 @@ const Notifications = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-bold text-foreground">Notificações</h1>
-        <Button onClick={save} disabled={saving}>
-          {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-          Salvar
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={sendTestNotification} disabled={sendingTest}>
+            {sendingTest ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+            Enviar Teste
+          </Button>
+          <Button onClick={save} disabled={saving}>
+            {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+            Salvar
+          </Button>
+        </div>
       </div>
 
       {/* Install PWA */}
