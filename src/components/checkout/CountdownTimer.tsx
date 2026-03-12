@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Clock } from "lucide-react";
 
 interface CountdownTimerProps {
   minutes?: number;
@@ -19,12 +18,26 @@ const CountdownTimer = ({ minutes = 15 }: CountdownTimerProps) => {
   const secs = seconds % 60;
 
   return (
-    <div className="w-full bg-destructive text-destructive-foreground py-2.5 flex items-center justify-center gap-2">
-      <span className="text-lg font-bold font-mono">
-        {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
-      </span>
-      <Clock className="w-4 h-4" />
-      <span className="text-sm font-medium">Oferta por tempo limitado</span>
+    <div className="fixed top-0 left-0 w-full z-[9999]">
+      <div
+        className="text-center py-2.5 px-4 text-sm font-bold tracking-wide"
+        style={{ backgroundColor: "hsl(215, 27%, 19%)", color: "#fff" }}
+      >
+        🛒 Seu pedido está reservado por{" "}
+        <span className="font-mono text-base" style={{ color: "hsl(47, 95%, 53%)" }}>
+          {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
+        </span>
+        {" "}— Complete o checkout!
+      </div>
+      <div
+        className="h-1"
+        style={{
+          background: "linear-gradient(90deg, #FFD814, #e77600, #FFD814)",
+          backgroundSize: "200% 200%",
+          animation: "gradientMove 3s ease infinite",
+        }}
+      />
+      <style>{`@keyframes gradientMove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }`}</style>
     </div>
   );
 };

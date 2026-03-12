@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CreditCard, HelpCircle } from "lucide-react";
+import { CreditCard, HelpCircle, Lock } from "lucide-react";
 
 export interface CreditCardData {
   number: string;
@@ -29,7 +29,6 @@ const CreditCardForm = ({ data, onChange, totalAmount }: CreditCardFormProps) =>
     onChange({ ...data, [field]: formatted });
   };
 
-  // Parse expiry into month/year
   const expiryParts = data.expiry.split("/");
   const expiryMonth = expiryParts[0] || "";
   const expiryYear = expiryParts[1] || "";
@@ -42,13 +41,12 @@ const CreditCardForm = ({ data, onChange, totalAmount }: CreditCardFormProps) =>
     }
   };
 
-  const INTEREST_RATE = 0.0299; // 2.99% ao mês
+  const INTEREST_RATE = 0.0299;
   const installmentOptions = Array.from({ length: 10 }, (_, i) => {
     const n = i + 1;
     if (n === 1) {
       return { value: "1", label: `1x de R$ ${totalAmount.toFixed(2).replace(".", ",")} (sem juros)` };
     }
-    // Juros compostos: PMT = PV * r / (1 - (1+r)^-n)
     const installmentValue = totalAmount * INTEREST_RATE / (1 - Math.pow(1 + INTEREST_RATE, -n));
     const totalWithInterest = installmentValue * n;
     return {
@@ -57,6 +55,8 @@ const CreditCardForm = ({ data, onChange, totalAmount }: CreditCardFormProps) =>
     };
   });
 
+  const inputClass = "h-11 bg-white border-[#D5D9D9] text-[#0F1111] placeholder:text-[#767676] rounded-lg focus:border-[#007185] focus:ring-[#007185]";
+
   return (
     <div className="space-y-3">
       <div className="relative">
@@ -64,14 +64,14 @@ const CreditCardForm = ({ data, onChange, totalAmount }: CreditCardFormProps) =>
           value={data.number}
           onChange={(e) => handleChange("number", e.target.value)}
           placeholder="Número do cartão"
-          className="h-11 bg-card border-border pr-10 font-mono tracking-wider"
+          className={`${inputClass} pr-10 font-mono tracking-wider`}
         />
-        <CreditCard className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <CreditCard className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#565959]" />
       </div>
 
       <div className="grid grid-cols-3 gap-3">
         <Select value={expiryMonth} onValueChange={(v) => handleExpiryChange("month", v)}>
-          <SelectTrigger className="h-11 bg-card border-border">
+          <SelectTrigger className={inputClass}>
             <SelectValue placeholder="Mês" />
           </SelectTrigger>
           <SelectContent>
@@ -82,7 +82,7 @@ const CreditCardForm = ({ data, onChange, totalAmount }: CreditCardFormProps) =>
           </SelectContent>
         </Select>
         <Select value={expiryYear} onValueChange={(v) => handleExpiryChange("year", v)}>
-          <SelectTrigger className="h-11 bg-card border-border">
+          <SelectTrigger className={inputClass}>
             <SelectValue placeholder="Ano" />
           </SelectTrigger>
           <SelectContent>
@@ -96,15 +96,15 @@ const CreditCardForm = ({ data, onChange, totalAmount }: CreditCardFormProps) =>
           <Input
             value={data.cvv}
             onChange={(e) => handleChange("cvv", e.target.value)}
-            placeholder="Cód. segurança"
-            className="h-11 bg-card border-border pr-8 font-mono"
+            placeholder="CVV"
+            className={`${inputClass} pr-8 font-mono`}
           />
-          <HelpCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <HelpCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#565959]" />
         </div>
       </div>
 
       <Select value={data.installments} onValueChange={(v) => handleChange("installments", v)}>
-        <SelectTrigger className="h-11 bg-card border-border">
+        <SelectTrigger className={inputClass}>
           <SelectValue placeholder="Parcelas" />
         </SelectTrigger>
         <SelectContent>
@@ -114,14 +114,9 @@ const CreditCardForm = ({ data, onChange, totalAmount }: CreditCardFormProps) =>
         </SelectContent>
       </Select>
 
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <span className="w-3 h-3 rounded border border-primary bg-primary/20 flex items-center justify-center text-[8px] text-primary">✓</span>
-        Salvar dados para as próximas compras
-      </div>
-
-      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-        <span>🔒</span>
-        Protegemos seus dados de pagamento com criptografia para garantir segurança bancária.
+      <div className="flex items-center gap-2 text-xs text-[#565959]">
+        <Lock className="w-3.5 h-3.5 text-[#007185]" />
+        Seus dados estão protegidos com criptografia SSL
       </div>
     </div>
   );

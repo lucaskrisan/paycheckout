@@ -40,29 +40,29 @@ const CustomerForm = ({ data, onChange }: CustomerFormProps) => {
       <Input
         value={data.name}
         onChange={(e) => handleChange("name", e.target.value)}
-        placeholder="Nome"
-        className="h-11 bg-card border-border"
+        placeholder="Nome completo"
+        className="h-11 bg-white border-[#D5D9D9] text-[#0F1111] placeholder:text-[#767676] rounded-lg focus:border-[#007185] focus:ring-[#007185]"
       />
       <Input
         type="email"
         value={data.email}
         onChange={(e) => handleChange("email", e.target.value)}
         placeholder="E-mail"
-        className="h-11 bg-card border-border"
+        className="h-11 bg-white border-[#D5D9D9] text-[#0F1111] placeholder:text-[#767676] rounded-lg focus:border-[#007185] focus:ring-[#007185]"
       />
       <div className="grid grid-cols-2 gap-3">
         <Input
           value={data.cpf}
           onChange={(e) => handleChange("cpf", e.target.value)}
           placeholder="CPF/CNPJ"
-          className="h-11 bg-card border-border"
+          className="h-11 bg-white border-[#D5D9D9] text-[#0F1111] placeholder:text-[#767676] rounded-lg focus:border-[#007185] focus:ring-[#007185]"
         />
         <Input
           type="tel"
           value={data.phone}
           onChange={(e) => handleChange("phone", e.target.value)}
           placeholder="Telefone"
-          className="h-11 bg-card border-border"
+          className="h-11 bg-white border-[#D5D9D9] text-[#0F1111] placeholder:text-[#767676] rounded-lg focus:border-[#007185] focus:ring-[#007185]"
         />
       </div>
     </div>

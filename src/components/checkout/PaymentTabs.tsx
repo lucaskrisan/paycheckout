@@ -15,23 +15,18 @@ const PaymentTabs = ({ activeMethod, onMethodChange }: PaymentTabsProps) => {
   ];
 
   return (
-    <div className="flex gap-0 border border-border rounded-lg overflow-hidden">
+    <div className="flex gap-0 rounded-lg overflow-hidden border border-[#D5D9D9]">
       {tabs.map((tab) => (
         <button
           key={tab.id}
           onClick={() => onMethodChange(tab.id)}
           className={cn(
-            "flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-all relative",
+            "flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-all",
             activeMethod === tab.id
-              ? "bg-card text-foreground border-2 border-primary rounded-lg shadow-sm z-10"
-              : "bg-muted/50 text-muted-foreground hover:text-foreground"
+              ? "bg-white text-[#0F1111] border-2 border-[#007185] rounded-lg shadow-sm z-10"
+              : "bg-[#F7FAFA] text-[#565959] hover:text-[#0F1111]"
           )}
         >
-          {activeMethod === tab.id && (
-            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
-              <span className="text-primary-foreground text-[10px]">✓</span>
-            </span>
-          )}
           <tab.icon className="w-4 h-4" />
           <span>{tab.label}</span>
         </button>

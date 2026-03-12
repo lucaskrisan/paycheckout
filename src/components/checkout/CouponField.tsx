@@ -38,41 +38,13 @@ const CouponField = ({ productId, productPrice, onApply }: CouponFieldProps) => 
         .maybeSingle();
 
       if (fetchError) throw fetchError;
-      if (!data) {
-        setError("Cupom não encontrado");
-        return;
-      }
+      if (!data) { setError("Cupom não encontrado"); return; }
+      if (data.product_id && data.product_id !== productId) { setError("Cupom não válido para este produto"); return; }
+      if (data.max_uses && data.used_count >= data.max_uses) { setError("Cupom esgotado"); return; }
+      if (data.expires_at && new Date(data.expires_at) < new Date()) { setError("Cupom expirado"); return; }
+      if (data.min_amount && productPrice < data.min_amount) { setError(`Valor mínimo: R$ ${data.min_amount.toFixed(2).replace(".", ",")}`); return; }
 
-      // Validate product scope
-      if (data.product_id && data.product_id !== productId) {
-        setError("Cupom não válido para este produto");
-        return;
-      }
-
-      // Validate max uses
-      if (data.max_uses && data.used_count >= data.max_uses) {
-        setError("Cupom esgotado");
-        return;
-      }
-
-      // Validate expiration
-      if (data.expires_at && new Date(data.expires_at) < new Date()) {
-        setError("Cupom expirado");
-        return;
-      }
-
-      // Validate min amount
-      if (data.min_amount && productPrice < data.min_amount) {
-        setError(`Valor mínimo: R$ ${data.min_amount.toFixed(2).replace(".", ",")}`);
-        return;
-      }
-
-      const result: CouponResult = {
-        id: data.id,
-        code: data.code,
-        discount_type: data.discount_type,
-        discount_value: data.discount_value,
-      };
+      const result: CouponResult = { id: data.id, code: data.code, discount_type: data.discount_type, discount_value: data.discount_value };
       setApplied(result);
       onApply(result);
     } catch {
@@ -82,24 +54,19 @@ const CouponField = ({ productId, productPrice, onApply }: CouponFieldProps) => 
     }
   };
 
-  const handleRemove = () => {
-    setApplied(null);
-    setCode("");
-    setError("");
-    onApply(null);
-  };
+  const handleRemove = () => { setApplied(null); setCode(""); setError(""); onApply(null); };
 
   if (applied) {
     return (
-      <div className="flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-xl px-4 py-3">
-        <Check className="w-4 h-4 text-primary shrink-0" />
-        <span className="text-sm font-medium text-foreground flex-1">
+      <div className="flex items-center gap-2 bg-[#F7FAFA] border border-[#007185] rounded-lg px-4 py-3">
+        <Check className="w-4 h-4 text-[#007185] shrink-0" />
+        <span className="text-sm font-medium text-[#0F1111] flex-1">
           Cupom <strong>{applied.code.toUpperCase()}</strong> aplicado
           {applied.discount_type === "percent"
             ? ` (${applied.discount_value}% off)`
             : ` (-R$ ${applied.discount_value.toFixed(2).replace(".", ",")})`}
         </span>
-        <button onClick={handleRemove} className="text-muted-foreground hover:text-destructive transition-colors">
+        <button onClick={handleRemove} className="text-[#565959] hover:text-[#B12704] transition-colors">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -110,12 +77,12 @@ const CouponField = ({ productId, productPrice, onApply }: CouponFieldProps) => 
     <div className="space-y-1.5">
       <div className="flex gap-2">
         <div className="relative flex-1">
-          <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#565959]" />
           <Input
             value={code}
             onChange={(e) => { setCode(e.target.value.toUpperCase()); setError(""); }}
-            placeholder="Cupom de desconto"
-            className="pl-10 h-11 bg-card border-border uppercase"
+            placeholder="CUPOM DE DESCONTO"
+            className="pl-10 h-11 bg-white border-[#D5D9D9] text-[#0F1111] uppercase placeholder:text-[#767676] rounded-lg focus:border-[#007185]"
             onKeyDown={(e) => e.key === "Enter" && handleApply()}
           />
         </div>
@@ -123,12 +90,12 @@ const CouponField = ({ productId, productPrice, onApply }: CouponFieldProps) => 
           onClick={handleApply}
           disabled={loading || !code.trim()}
           variant="outline"
-          className="h-11 px-5"
+          className="h-11 px-5 border-[#D5D9D9] text-[#0F1111] hover:bg-[#F7FAFA]"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Aplicar"}
         </Button>
       </div>
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && <p className="text-xs text-[#B12704]">{error}</p>}
     </div>
   );
 };
