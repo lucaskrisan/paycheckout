@@ -354,14 +354,18 @@ export default function Emails() {
           productName={
             EMAIL_TYPE_LABELS[previewEmail.email_type] || previewEmail.email_type
           }
+          orderId={previewEmail.order_id}
+          emailType={previewEmail.email_type}
           onSend={async (subject, body) => {
+            if (!previewEmail.order_id) {
+              toast.error("Este email não tem um pedido associado para reenvio");
+              return;
+            }
             const { error } = await supabase.functions.invoke("send-pix-reminder", {
               body: {
-                orderId: previewEmail.order_id,
-                customSubject: subject,
-                customBody: body,
-                toEmail: previewEmail.to_email,
-                toName: previewEmail.to_name,
+                order_id: previewEmail.order_id,
+                subject,
+                body,
               },
             });
             if (error) {
