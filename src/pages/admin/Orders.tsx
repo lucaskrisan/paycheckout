@@ -11,6 +11,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Search, Filter, X, ChevronLeft, ChevronRight, DollarSign, ShoppingCart, Mail, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { EmailPreviewModal } from "@/components/admin/EmailPreviewModal";
 
 interface Order {
   id: string;
