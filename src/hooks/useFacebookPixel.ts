@@ -67,7 +67,7 @@ export function useFacebookPixel(productId: string | undefined) {
 
     const loadPixels = async () => {
       const { data } = await supabase
-        .from("product_pixels")
+        .from("public_product_pixels" as any)
         .select("pixel_id, domain")
         .eq("product_id", productId)
         .eq("platform", "facebook");
