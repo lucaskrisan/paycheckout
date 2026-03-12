@@ -119,7 +119,6 @@ export default function FacebookDomainManager({ open, onClose, onDomainsChange }
       loadDomains();
     } catch {
       toast.error("Não foi possível verificar o DNS. Tente novamente em alguns minutos.");
-      }
     }
     setVerifying(null);
   };
