@@ -172,7 +172,18 @@ const Checkout = () => {
   }, [checkoutSettings]);
 
   const toggleBump = (bumpId: string) => {
-    setSelectedBumps((prev) => { const next = new Set(prev); if (next.has(bumpId)) next.delete(bumpId); else next.add(bumpId); return next; });
+    setSelectedBumps((prev) => {
+      const next = new Set(prev);
+      if (next.has(bumpId)) {
+        next.delete(bumpId);
+      } else {
+        next.add(bumpId);
+        // Fire AddToCart pixel event (front-end only, value zero)
+        const bump = orderBumps.find((b) => b.id === bumpId);
+        if (bump) trackAddToCart(bump.bump_product.id);
+      }
+      return next;
+    });
   };
 
   const sortedLayout = useMemo(() => [...builderLayout].sort((a, b) => a.order - b.order), [builderLayout]);
