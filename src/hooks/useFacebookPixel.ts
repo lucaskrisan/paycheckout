@@ -254,9 +254,10 @@ export function useFacebookPixel(productId: string | undefined) {
     if (window.fbq) {
       window.fbq("track", "Purchase", customData, { eventID: eventId });
     }
-    // Also send server-side via CAPI
+    // Also send server-side via CAPI (which also logs to pixel_events)
     sendCAPI("Purchase", eventId, customData);
-  }, [productId, sendCAPI]);
+    logPixelEvent("Purchase", eventId);
+  }, [productId, sendCAPI, logPixelEvent]);
 
   /**
    * Track custom lead/contact event (e.g., after form fill).
