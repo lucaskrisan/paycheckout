@@ -1401,12 +1401,14 @@ const ProductEdit = () => {
               <Button
                 onClick={async () => {
                   if (!productId || isNew) { toast.error("Salve o produto primeiro"); return; }
+                  const parsedPrice = newCheckoutPrice.trim() ? parseFloat(newCheckoutPrice.replace(",", ".")) : null;
                   const { error } = await supabase.from("checkout_builder_configs").insert({
                     product_id: productId,
                     name: newCheckoutName.trim(),
                     is_default: newCheckoutDefault,
                     user_id: user?.id,
-                  });
+                    price: parsedPrice,
+                  } as any);
                   if (error) { toast.error("Erro ao criar checkout"); return; }
                   toast.success("Checkout criado!");
                   setShowNewCheckoutDialog(false);
