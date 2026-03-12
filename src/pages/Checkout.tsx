@@ -130,7 +130,7 @@ const Checkout = () => {
   const renderCustomComponent = (component: BuilderComponent) => {
     switch (component.type) {
       case "text": return <p className="text-foreground whitespace-pre-line text-sm">{component.props.content}</p>;
-      case "image": return component.props.url ? <img src={component.props.url} alt="" className="w-full rounded-lg object-cover" /> : null;
+      case "image": return component.props.url ? <img src={component.props.url} alt="" className="w-full rounded-lg object-contain bg-muted/30 p-1 border border-border" loading="lazy" decoding="async" /> : null;
       case "header": return <h2 className="text-lg font-bold text-foreground">{component.props.title || product?.name}</h2>;
       case "advantages": case "list":
         return (<ul className="space-y-2">{(component.props.items || []).map((item: string, i: number) => (<li key={`${component.id}-${i}`} className="flex items-center gap-2 text-sm text-foreground"><ListOrdered className="w-4 h-4 text-primary" /><span>{item}</span></li>))}</ul>);

@@ -136,8 +136,8 @@ const BuilderCanvas = ({ components, selectedId, onRemove, onSelect, isMobile, p
       {/* Product banner image (fixed, not draggable) */}
       {productImageUrl && (
         <div className="px-4 pt-4">
-          <div className="rounded-lg overflow-hidden">
-            <img src={productImageUrl} alt={productName || ""} className="w-full h-auto max-h-[200px] object-cover" />
+          <div className="rounded-lg bg-muted/40 border border-border p-2">
+            <img src={productImageUrl} alt={productName || ""} className="w-full h-auto max-h-[320px] object-contain mx-auto" />
           </div>
         </div>
       )}
@@ -145,7 +145,7 @@ const BuilderCanvas = ({ components, selectedId, onRemove, onSelect, isMobile, p
       {/* Product name + thumbnail (fixed, not draggable) */}
       <div className="px-4 pt-3 pb-1 flex items-center gap-3">
         {productImageUrl && (
-          <img src={productImageUrl} alt="" className="w-10 h-10 rounded-md object-cover border border-border" />
+          <img src={productImageUrl} alt="" className="w-10 h-10 rounded-md object-contain bg-muted p-1 border border-border" />
         )}
         <p className="text-sm font-bold text-foreground">{productName || "TÍTULO DO PRODUTO"}</p>
       </div>
