@@ -184,7 +184,7 @@ export default function Webhooks() {
                   <Badge key={ev} variant="outline" className="text-xs">
                     {AVAILABLE_EVENTS.find((a) => a.value === ev)?.label || ev}
                   </Badge>
-                )))}
+                ))}
               </div>
 
               <div className="flex items-center gap-2">
