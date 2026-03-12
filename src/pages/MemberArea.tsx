@@ -140,7 +140,7 @@ const MemberArea = () => {
 
   const loadMemberData = async () => {
     try {
-      const { data: accessData, error: accessError } = await supabase
+      const { data: accessData, error: accessError } = await tokenClient
         .from("member_access")
         .select("id, course_id, customer_id, expires_at")
         .eq("access_token", token!)
