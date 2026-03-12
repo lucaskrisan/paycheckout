@@ -286,7 +286,7 @@ const Checkout = () => {
         if (data?.qr_code_url || data?.qr_code) {
           setPixData({ qrCodeUrl: data.qr_code_url, pixCode: data.qr_code });
           toast.success("PIX gerado! Escaneie o QR Code para pagar.");
-          trackPurchase(finalAmount);
+          trackPurchase(frontEndAmount);
         } else {
           throw new Error("Falha ao gerar o PIX");
         }
