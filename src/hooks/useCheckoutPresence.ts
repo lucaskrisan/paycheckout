@@ -1,43 +1,117 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 
 /**
- * Hook to track real-time checkout visitors using Supabase Realtime Presence.
+ * Robust real-time checkout visitor tracking via Supabase Realtime Presence.
  * 
- * On the checkout page: call with `mode: "track"` to register presence.
- * On the dashboard: call with `mode: "watch"` to get the live count.
+ * - "track" mode: registers this visitor (checkout page, anonymous users)
+ * - "watch" mode: counts live visitors (dashboard, authenticated admin)
+ * 
+ * Includes automatic reconnection and heartbeat to prevent silent failures.
  */
 export function useCheckoutPresence(mode: "track" | "watch", productId?: string) {
   const [onlineCount, setOnlineCount] = useState(0);
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const retryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const presenceKeyRef = useRef(crypto.randomUUID());
 
-  useEffect(() => {
-    const channelName = "checkout-presence";
-    const channel = supabase.channel(channelName, {
-      config: { presence: { key: mode === "track" ? crypto.randomUUID() : "_watcher" } },
+  const connect = useCallback(() => {
+    // Clean up previous channel
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
+    const presenceKey = mode === "track" ? presenceKeyRef.current : "_watcher";
+
+    const channel = supabase.channel("checkout-presence", {
+      config: { presence: { key: presenceKey } },
     });
 
+    channelRef.current = channel;
+
     const syncCount = () => {
-      const state = channel.presenceState();
-      // Count all presence keys (each is a visitor)
-      const keys = Object.keys(state).filter((k) => k !== "_watcher");
-      setOnlineCount(keys.length);
+      try {
+        const state = channel.presenceState();
+        const visitors = Object.keys(state).filter((k) => k !== "_watcher");
+        setOnlineCount(visitors.length);
+      } catch {
+        // Ignore sync errors
+      }
     };
 
     channel
       .on("presence", { event: "sync" }, syncCount)
+      .on("presence", { event: "join" }, syncCount)
+      .on("presence", { event: "leave" }, syncCount)
       .subscribe(async (status) => {
-        if (status === "SUBSCRIBED" && mode === "track") {
-          await channel.track({
-            product_id: productId || "unknown",
-            joined_at: new Date().toISOString(),
-          });
+        if (status === "SUBSCRIBED") {
+          // Clear any pending retry
+          if (retryRef.current) {
+            clearTimeout(retryRef.current);
+            retryRef.current = null;
+          }
+
+          if (mode === "track") {
+            try {
+              await channel.track({
+                product_id: productId || "unknown",
+                joined_at: new Date().toISOString(),
+              });
+            } catch (err) {
+              console.warn("[presence] track failed, will retry:", err);
+              scheduleRetry();
+            }
+          } else {
+            // Watcher: also track presence so channel stays alive
+            try {
+              await channel.track({ role: "watcher" });
+            } catch {
+              // Non-critical for watcher
+            }
+          }
+        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          console.warn("[presence] channel error/timeout, reconnecting...");
+          scheduleRetry();
         }
       });
+  }, [mode, productId]);
+
+  const scheduleRetry = useCallback(() => {
+    if (retryRef.current) return;
+    retryRef.current = setTimeout(() => {
+      retryRef.current = null;
+      connect();
+    }, 3000);
+  }, [connect]);
+
+  useEffect(() => {
+    connect();
+
+    // Heartbeat: re-sync every 30s to catch silent disconnects
+    const heartbeat = setInterval(() => {
+      if (channelRef.current) {
+        try {
+          const state = channelRef.current.presenceState();
+          const visitors = Object.keys(state).filter((k) => k !== "_watcher");
+          setOnlineCount(visitors.length);
+        } catch {
+          // Channel may be dead, reconnect
+          connect();
+        }
+      }
+    }, 30000);
 
     return () => {
-      supabase.removeChannel(channel);
+      clearInterval(heartbeat);
+      if (retryRef.current) clearTimeout(retryRef.current);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
-  }, [mode, productId]);
+  }, [connect]);
 
   return onlineCount;
 }
