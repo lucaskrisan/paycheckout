@@ -363,13 +363,13 @@ const Orders = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="py-12 text-center text-muted-foreground">
+                   <td colSpan={6} className="py-12 text-center text-muted-foreground">
                       Carregando...
                     </td>
                   </tr>
                 ) : paginated.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-12 text-center text-muted-foreground">
+                    <td colSpan={6} className="py-12 text-center text-muted-foreground">
                       Nenhuma venda encontrada.
                     </td>
                   </tr>
