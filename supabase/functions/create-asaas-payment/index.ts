@@ -66,18 +66,60 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get product info
+    // Get product info and VALIDATE price server-side
     let productOwnerId: string | null = null;
     let productName = 'Produto';
+    let serverPrice = amount;
     if (product_id) {
       const { data: prod } = await supabaseAdmin
         .from('products')
-        .select('name, user_id')
+        .select('name, user_id, price, show_coupon')
         .eq('id', product_id)
         .maybeSingle();
       if (prod) {
         productName = prod.name;
         productOwnerId = prod.user_id;
+        serverPrice = prod.price;
+
+        // Check if a config with custom price was used
+        const configId = (await req.clone().json()).config_id;
+        if (configId) {
+          const { data: config } = await supabaseAdmin
+            .from('checkout_builder_configs')
+            .select('price')
+            .eq('id', configId)
+            .eq('product_id', product_id)
+            .maybeSingle();
+          if (config?.price != null && config.price > 0) {
+            serverPrice = config.price;
+          }
+        }
+
+        // Apply coupon if provided and allowed
+        let couponDiscount = 0;
+        if (coupon_id && prod.show_coupon !== false) {
+          const { data: couponData } = await supabaseAdmin
+            .from('coupons')
+            .select('discount_type, discount_value, active')
+            .eq('id', coupon_id)
+            .eq('active', true)
+            .maybeSingle();
+          if (couponData) {
+            couponDiscount = couponData.discount_type === 'percent'
+              ? serverPrice * (couponData.discount_value / 100)
+              : couponData.discount_value;
+          }
+        }
+
+        const validatedAmount = Math.max(serverPrice - couponDiscount, 0);
+        // Allow small rounding tolerance (R$ 0.02)
+        if (Math.abs(amount - validatedAmount) > 0.02) {
+          console.warn(`[create-asaas-payment] Price mismatch: client=${amount}, server=${validatedAmount}`);
+          return new Response(
+            JSON.stringify({ error: 'Valor inválido. Recarregue a página e tente novamente.' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
       }
     }
 
