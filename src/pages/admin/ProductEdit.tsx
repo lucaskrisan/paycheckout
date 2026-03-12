@@ -764,6 +764,13 @@ const ProductEdit = () => {
                         <Switch />
                         <Label className="text-sm">Conversão automática de moedas (recomendado)</Label>
                       </div>
+                      <div className="flex items-center gap-3">
+                        <Switch
+                          checked={form.show_coupon}
+                          onCheckedChange={(v) => setForm((f) => ({ ...f, show_coupon: v }))}
+                        />
+                        <Label className="text-sm">Exibir campo de cupom de desconto no checkout</Label>
+                      </div>
                     </div>
                   </div>
                 </div>

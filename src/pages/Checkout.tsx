@@ -301,7 +301,9 @@ const Checkout = () => {
             </div>
 
             {/* Coupon */}
-            <CouponField productId={product.id} productPrice={product.price} onApply={setCoupon} />
+            {product.show_coupon !== false && (
+              <CouponField productId={product.id} productPrice={product.price} onApply={setCoupon} />
+            )}
 
             {/* Order Bumps */}
             {orderBumps.length > 0 && (
