@@ -28,6 +28,7 @@ import Notifications from "./pages/admin/Notifications";
 import Tracking from "./pages/admin/Tracking";
 import Reviews from "./pages/admin/Reviews";
 import SystemHealth from "./pages/admin/SystemHealth";
+import Webhooks from "./pages/admin/Webhooks";
 import NotFound from "./pages/NotFound";
 import InstallPrompt from "./components/InstallPrompt";
 
