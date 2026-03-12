@@ -194,12 +194,6 @@ Deno.serve(async (req) => {
 
     // Increment coupon usage
     if (coupon_id) {
-      await supabaseAdmin.rpc('', {}).catch(() => {});
-      await supabaseAdmin
-        .from('coupons')
-        .update({ used_count: supabaseAdmin.rpc ? undefined : 0 })
-        .eq('id', coupon_id);
-      // Simple increment via raw update
       const { data: couponData } = await supabaseAdmin
         .from('coupons')
         .select('used_count')
