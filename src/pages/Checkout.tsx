@@ -92,13 +92,13 @@ const Checkout = () => {
       setLoading(true);
       const builderQuery = requestedConfigId
         ? supabase
-            .from("checkout_builder_configs")
+            .from("checkout_builder_configs" as any)
             .select("layout, price")
             .eq("id", requestedConfigId)
             .eq("product_id", productId)
             .maybeSingle()
         : supabase
-            .from("checkout_builder_configs")
+            .from("checkout_builder_configs" as any)
             .select("layout, price")
             .eq("product_id", productId)
             .eq("is_default", true)
@@ -132,7 +132,7 @@ const Checkout = () => {
 
       if (!builderLayoutData) {
         const { data: fallbackConfig } = await supabase
-          .from("checkout_builder_configs")
+          .from("checkout_builder_configs" as any)
           .select("layout, price")
           .eq("product_id", productId)
           .eq("is_default", true)
@@ -144,7 +144,7 @@ const Checkout = () => {
 
       if (!builderLayoutData) {
         const { data: latestConfig } = await supabase
-          .from("checkout_builder_configs")
+          .from("checkout_builder_configs" as any)
           .select("layout, price")
           .eq("product_id", productId)
           .order("updated_at", { ascending: false })
@@ -153,7 +153,7 @@ const Checkout = () => {
         builderLayoutData = latestConfig;
       }
 
-      const layout = (builderLayoutData?.layout as unknown as BuilderComponent[] | null) ?? [];
+      const layout = ((builderLayoutData as any)?.layout as unknown as BuilderComponent[] | null) ?? [];
       setBuilderLayout(Array.isArray(layout) ? layout : []);
       setLoading(false);
     };
