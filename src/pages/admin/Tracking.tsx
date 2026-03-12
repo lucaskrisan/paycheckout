@@ -145,6 +145,103 @@ const Tracking = () => {
     }
   };
 
+  const verifyPage = useCallback(async () => {
+    const url = pageUrl.trim();
+    if (!url) { toast.error("Cole a URL da página"); return; }
+    if (!url.startsWith("http")) { toast.error("URL deve começar com http:// ou https://"); return; }
+
+    setPageChecking(true);
+    setPageChecks(null);
+
+    const checks: DiagCheck[] = [];
+
+    try {
+      // 1) Fetch page HTML via edge function proxy (avoids CORS)
+      const { data: htmlData, error: fetchErr } = await supabase.functions.invoke("meta-diagnostics", {
+        body: { action: "verify_page", url },
+      });
+
+      if (fetchErr || !htmlData?.html) {
+        // If edge function doesn't support it, do client-side checks
+        checks.push({
+          name: "Acesso à página",
+          status: "warning",
+          detail: "Não foi possível acessar a página remotamente. Verifique manualmente no navegador.",
+        });
+      } else {
+        const html: string = htmlData.html;
+
+        // Check for fbevents.js
+        if (html.includes("fbevents.js")) {
+          checks.push({ name: "Meta Pixel SDK", status: "pass", detail: "fbevents.js encontrado na página ✅" });
+        } else {
+          checks.push({ name: "Meta Pixel SDK", status: "error", detail: "fbevents.js NÃO encontrado! O script do pixel não está carregando." });
+        }
+
+        // Check for fbq('init'
+        if (html.includes("fbq('init'") || html.includes('fbq("init"') || html.includes("fbq(\"init\"")) {
+          checks.push({ name: "fbq init", status: "pass", detail: "Inicialização do Pixel encontrada na página ✅" });
+        } else if (html.includes("public_product_pixels")) {
+          checks.push({ name: "fbq init (dinâmico)", status: "pass", detail: "Pixel carregado dinamicamente via PayCheckout API ✅" });
+        } else {
+          checks.push({ name: "fbq init", status: "error", detail: "Nenhuma inicialização de Pixel encontrada." });
+        }
+
+        // Check for PageView
+        if (html.includes("PageView")) {
+          checks.push({ name: "PageView", status: "pass", detail: "Evento PageView detectado ✅" });
+        } else {
+          checks.push({ name: "PageView", status: "warning", detail: "PageView não encontrado no HTML (pode ser disparado dinamicamente)" });
+        }
+
+        // Check for UTM capture
+        if (html.includes("utm_source") || html.includes("pc_utms")) {
+          checks.push({ name: "Captura de UTMs", status: "pass", detail: "Lógica de captura de UTMs encontrada ✅" });
+        } else {
+          checks.push({ name: "Captura de UTMs", status: "error", detail: "Nenhuma lógica de captura de UTMs encontrada. Os parâmetros não serão passados ao checkout." });
+        }
+
+        // Check for goToCheckout
+        if (html.includes("goToCheckout")) {
+          checks.push({ name: "Função goToCheckout", status: "pass", detail: "Função de redirecionamento ao checkout encontrada ✅" });
+        } else {
+          checks.push({ name: "Função goToCheckout", status: "warning", detail: "Função goToCheckout não encontrada. Verifique se os botões usam links diretos." });
+        }
+
+        // Check for PayCheckout product ID
+        const productIdRegex = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+        const foundIds = html.match(productIdRegex) || [];
+        const myProductIds = pixels.map(p => p.product_id);
+        const matchedProducts = [...new Set(foundIds)].filter(id => myProductIds.includes(id));
+
+        if (matchedProducts.length > 0) {
+          const names = matchedProducts.map(id => pixels.find(p => p.product_id === id)?.product_name).filter(Boolean);
+          checks.push({ name: "Link do checkout", status: "pass", detail: `Produto(s) detectado(s): ${names.join(", ")} ✅` });
+        } else {
+          checks.push({ name: "Link do checkout", status: "error", detail: "Nenhum ID de produto do PayCheckout encontrado na página." });
+        }
+
+        // Check for config ID
+        if (html.includes("config=") || html.includes("config'") || html.includes("configId")) {
+          checks.push({ name: "Config ID", status: "pass", detail: "Referência a config de checkout encontrada ✅" });
+        } else {
+          checks.push({ name: "Config ID", status: "warning", detail: "Nenhum config ID encontrado — pode estar usando a oferta padrão." });
+        }
+      }
+    } catch (err: any) {
+      checks.push({ name: "Erro geral", status: "error", detail: err.message || "Erro desconhecido" });
+    }
+
+    setPageChecks(checks);
+    setPageChecking(false);
+
+    const errors = checks.filter(c => c.status === "error").length;
+    const warnings = checks.filter(c => c.status === "warning").length;
+    if (errors > 0) toast.error(`${errors} problema(s) encontrado(s) na página`);
+    else if (warnings > 0) toast.warning(`Página OK com ${warnings} aviso(s)`);
+    else toast.success("Página 100% configurada! 🎯");
+  }, [pageUrl, pixels]);
+
   const statusIcon = (status: string) => {
     switch (status) {
       case "pass": return <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />;
