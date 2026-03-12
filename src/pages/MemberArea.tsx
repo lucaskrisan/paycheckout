@@ -218,7 +218,7 @@ const MemberArea = () => {
         .select("id, title, description, cover_image_url, product_id");
 
       // Get all accesses for this customer
-      const { data: allAccesses } = await supabase
+      const { data: allAccesses } = await tokenClient
         .from("member_access")
         .select("course_id")
         .eq("customer_id", accessData.customer_id);
