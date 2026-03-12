@@ -1208,7 +1208,7 @@ const ProductEdit = () => {
                               <DropdownMenuContent align="end" className="w-40">
                                 <DropdownMenuItem onClick={() => { navigator.clipboard.writeText(checkoutLink); toast.success("Link copiado!"); }} className="gap-2 text-sm"><LinkIcon className="w-3.5 h-3.5" /> Copiar link</DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => window.open(checkoutLink, "_blank")} className="gap-2 text-sm"><ExternalLink className="w-3.5 h-3.5" /> Abrir</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => navigate(`/admin/products/${productId}/checkout-builder`)} className="gap-2 text-sm"><Settings2 className="w-3.5 h-3.5" /> Personalizar</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => navigate(`/admin/products/${productId}/checkout-builder${defaultCheckout?.id ? `/${defaultCheckout.id}` : ""}`)} className="gap-2 text-sm"><Settings2 className="w-3.5 h-3.5" /> Personalizar</DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>
