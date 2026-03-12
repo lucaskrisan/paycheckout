@@ -32,14 +32,16 @@ const PixModal = ({ open, onClose, totalAmount, qrCodeUrl, pixCode, externalOrde
   // Polling for payment confirmation
   const checkPayment = useCallback(async () => {
     if (!externalOrderId) return;
-    const { data } = await supabase
-      .from("orders")
-      .select("status")
-      .eq("external_id", externalOrderId)
-      .maybeSingle();
-    if (data && (data.status === "paid" || data.status === "approved" || data.status === "confirmed")) {
-      setPaymentConfirmed(true);
-      if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
+    try {
+      const { data } = await supabase.functions.invoke("check-order-status", {
+        body: { external_id: externalOrderId },
+      });
+      if (data && (data.status === "paid" || data.status === "approved" || data.status === "confirmed")) {
+        setPaymentConfirmed(true);
+        if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
+      }
+    } catch (err) {
+      console.error("[PixModal] polling error:", err);
     }
   }, [externalOrderId]);
 
