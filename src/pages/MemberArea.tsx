@@ -169,7 +169,7 @@ const MemberArea = () => {
       if (customerData) setCustomerName(customerData.name.split(" ")[0]);
 
       // Load course
-      const { data: courseData } = await supabase
+      const { data: courseData } = await tokenClient
         .from("courses")
         .select("*")
         .eq("id", accessData.course_id)
