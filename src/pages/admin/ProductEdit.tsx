@@ -186,6 +186,7 @@ const ProductEdit = () => {
             sales_page_url: "",
             is_subscription: (data as any).is_subscription || false,
             billing_cycle: (data as any).billing_cycle || "monthly",
+            show_coupon: (data as any).show_coupon !== false,
           });
           setLoading(false);
         });
