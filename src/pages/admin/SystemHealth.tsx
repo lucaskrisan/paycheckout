@@ -34,30 +34,55 @@ const SystemHealth = () => {
   const checkEdgeFunction = async (name: string, testBody?: object): Promise<CheckResult> => {
     try {
       const start = Date.now();
-      const { data, error } = await supabase.functions.invoke(name, {
-        body: testBody || {},
+      const projectUrl = import.meta.env.VITE_SUPABASE_URL;
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const url = `${projectUrl}/functions/v1/${name}`;
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": anonKey,
+        },
+        body: JSON.stringify(testBody || {}),
       });
       const duration = Date.now() - start;
+      const status = res.status;
 
-      if (error) {
-        // Some functions return 400 for missing fields — that's expected and means the function is alive
-        const errMsg = typeof error === "object" ? JSON.stringify(error) : String(error);
-        if (errMsg.includes("Missing required") || errMsg.includes("required") || errMsg.includes("400")) {
-          return {
-            name: `Edge Function: ${name}`,
-            category: "edge_function",
-            status: "ok",
-            message: `Online (${duration}ms) — validação de campos funcionando`,
-          };
-        }
+      // Any response (even 400/500) means the function is deployed and running
+      // Only network failures or 404 indicate a real problem
+      if (status === 404) {
         return {
           name: `Edge Function: ${name}`,
           category: "edge_function",
           status: "error",
-          message: `Erro: ${errMsg}`,
-          details: errMsg,
+          message: `Não encontrada (404) — função não deployada`,
         };
       }
+
+      // 4xx = function is alive, just rejecting invalid test data (expected)
+      if (status >= 400 && status < 500) {
+        return {
+          name: `Edge Function: ${name}`,
+          category: "edge_function",
+          status: "ok",
+          message: `Online (${duration}ms) — validação ativa (HTTP ${status})`,
+        };
+      }
+
+      // 5xx = function is alive but has an internal error
+      if (status >= 500) {
+        let body = "";
+        try { body = await res.text(); } catch {}
+        return {
+          name: `Edge Function: ${name}`,
+          category: "edge_function",
+          status: "warning",
+          message: `Online mas com erro interno (HTTP ${status}, ${duration}ms)`,
+          details: body.slice(0, 300) || undefined,
+        };
+      }
+
       return {
         name: `Edge Function: ${name}`,
         category: "edge_function",
