@@ -289,7 +289,7 @@ const Checkout = () => {
 
                   {/* Product image */}
                   {bump.use_product_image && bump.bump_product?.image_url && (
-                    <img src={bump.bump_product.image_url} alt="" className="w-14 h-14 rounded-md object-cover shrink-0 border border-border" />
+                    <img src={bump.bump_product.image_url} alt="" className="w-14 h-14 rounded-md object-contain bg-muted p-1 shrink-0 border border-border" />
                   )}
 
                   {/* Text */}
