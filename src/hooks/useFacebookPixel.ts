@@ -197,16 +197,20 @@ export function useFacebookPixel(productId: string | undefined) {
    * Track custom lead/contact event (e.g., after form fill).
    */
   const trackLead = useCallback(() => {
-    if (!window.fbq) return;
     if (firedEventsRef.current.has("Lead")) return;
     firedEventsRef.current.add("Lead");
 
     const eventId = generateEventId("Lead");
-    window.fbq("track", "Lead", {
+    const customData = {
       content_type: "product",
       content_ids: productId ? [productId] : [],
-    }, { eventID: eventId });
-  }, [productId]);
+    };
+
+    if (window.fbq) {
+      window.fbq("track", "Lead", customData, { eventID: eventId });
+    }
+    sendCAPI("Lead", eventId, customData);
+  }, [productId, sendCAPI]);
 
   return {
     trackPurchase,
