@@ -26,6 +26,7 @@ interface Product {
   is_subscription: boolean;
   billing_cycle: string;
   user_id: string | null;
+  show_coupon?: boolean;
 }
 
 interface OrderBump {
