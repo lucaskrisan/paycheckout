@@ -286,7 +286,11 @@ const CheckoutBuilder = () => {
             size="sm"
             variant="outline"
             className="h-7 text-xs gap-1"
-            onClick={() => window.open(`https://paycheckout.lovable.app/checkout/${productId}`, "_blank")}
+            onClick={() => {
+              const previewUrl = new URL(`https://paycheckout.lovable.app/checkout/${productId}`);
+              if (dbConfigId) previewUrl.searchParams.set("config", dbConfigId);
+              window.open(previewUrl.toString(), "_blank");
+            }}
           >
             Pré-visualizar <Eye className="w-3 h-3" />
           </Button>
