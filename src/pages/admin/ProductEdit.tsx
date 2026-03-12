@@ -79,6 +79,7 @@ const ProductEdit = () => {
   const [planDifferentFirst, setPlanDifferentFirst] = useState(false);
   const [showNewCheckoutDialog, setShowNewCheckoutDialog] = useState(false);
   const [newCheckoutName, setNewCheckoutName] = useState("");
+  const [newCheckoutPrice, setNewCheckoutPrice] = useState("");
   const [newCheckoutDefault, setNewCheckoutDefault] = useState(false);
   const [checkouts, setCheckouts] = useState<any[]>([]);
   const [orderBumps, setOrderBumps] = useState<any[]>([]);
