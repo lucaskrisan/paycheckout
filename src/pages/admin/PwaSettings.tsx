@@ -45,15 +45,24 @@ const PwaSettings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
+  const [notifSound, setNotifSound] = useState("kaching");
+  const [notifPattern, setNotifPattern] = useState("creative");
 
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const { data } = await supabase
-        .from("pwa_settings" as any)
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      const [{ data }, { data: notifData }] = await Promise.all([
+        supabase
+          .from("pwa_settings" as any)
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+        supabase
+          .from("notification_settings")
+          .select("notification_sound, notification_pattern")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+      ]);
 
       if (data) {
         setSettings({
@@ -70,6 +79,8 @@ const PwaSettings = () => {
           notification_icon_url: (data as any).notification_icon_url || "",
         });
       }
+      setNotifSound(notifData?.notification_sound || "kaching");
+      setNotifPattern(notifData?.notification_pattern || "creative");
       setLoading(false);
     };
     load();
@@ -369,6 +380,20 @@ const PwaSettings = () => {
                 field="notification_icon_url"
                 hint="Ícone exibido na notificação push. PNG, 96x96px."
               />
+
+              {/* Sync info */}
+              <div className="rounded-lg border border-border bg-muted/50 p-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-medium text-foreground">
+                    🔊 Som atual: <span className="text-primary">{notifSound === "kaching" ? "Ka-ching!" : notifSound}</span>
+                    {" · "}Padrão: <span className="text-primary">{notifPattern === "creative" ? "Criativo" : notifPattern === "detailed" ? "Detalhado" : "Lucro"}</span>
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">Configurável em Notificações</p>
+                </div>
+                <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => window.location.href = '/admin/notifications'}>
+                  Ir para Notificações
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>

@@ -367,6 +367,20 @@ const Notifications = () => {
                 </div>
               </div>
             </div>
+
+            {/* Link to PWA Settings */}
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <Smartphone className="w-5 h-5 text-primary shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-foreground">Personalizar texto e ícone da notificação</p>
+                  <p className="text-xs text-muted-foreground">Edite o template da push notification, ícone e splash screen do app</p>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => window.location.href = '/admin/pwa'}>
+                Configurar
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
