@@ -122,8 +122,32 @@ const Checkout = () => {
         }
       }
       if (bumpsRes.data) setOrderBumps(bumpsRes.data as any);
-      const layout = (builderRes.data?.layout as unknown as BuilderComponent[] | null) ?? [];
-      setBuilderLayout(Array.isArray(layout) ? layout : []);
+      let builderLayoutData = builderRes.data;
+
+      if (!builderLayoutData) {
+        const { data: fallbackConfig } = await supabase
+          .from("checkout_builder_configs")
+          .select("layout")
+          .eq("product_id", productId)
+          .eq("is_default", true)
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        builderLayoutData = fallbackConfig;
+      }
+
+      if (!builderLayoutData) {
+        const { data: latestConfig } = await supabase
+          .from("checkout_builder_configs")
+          .select("layout")
+          .eq("product_id", productId)
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        builderLayoutData = latestConfig;
+      }
+
+      const layout = (builderLayoutData?.layout as unknown as BuilderComponent[] | null) ?? [];
       setLoading(false);
     };
     load();
