@@ -2,52 +2,92 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
+function safeId() {
+  try {
+    return crypto.randomUUID();
+  } catch {
+    return `v_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  }
+}
+
 /**
- * Robust real-time checkout visitor tracking via Supabase Realtime Presence.
- * 
- * - "track" mode: registers this visitor (checkout page, anonymous users)
- * - "watch" mode: counts live visitors (dashboard, authenticated admin)
- * 
- * Includes automatic reconnection and heartbeat to prevent silent failures.
+ * Robust real-time checkout visitor tracking.
+ * Uses both Presence + Broadcast heartbeat fallback.
  */
 export function useCheckoutPresence(mode: "track" | "watch", productId?: string) {
   const [onlineCount, setOnlineCount] = useState(0);
+
   const channelRef = useRef<RealtimeChannel | null>(null);
   const retryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const presenceKeyRef = useRef(crypto.randomUUID());
+  const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const cleanupIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const connect = useCallback(() => {
-    // Clean up previous channel
+  const visitorIdRef = useRef(safeId());
+  const presenceCountRef = useRef(0);
+  const heartbeatMapRef = useRef<Map<string, number>>(new Map());
+
+  const updateCount = useCallback(() => {
+    const now = Date.now();
+    const ttlMs = 25000;
+
+    for (const [id, ts] of heartbeatMapRef.current.entries()) {
+      if (now - ts > ttlMs) heartbeatMapRef.current.delete(id);
+    }
+
+    const heartbeatCount = heartbeatMapRef.current.size;
+    setOnlineCount(Math.max(presenceCountRef.current, heartbeatCount));
+  }, []);
+
+  const cleanupChannel = useCallback(() => {
+    if (heartbeatIntervalRef.current) {
+      clearInterval(heartbeatIntervalRef.current);
+      heartbeatIntervalRef.current = null;
+    }
+    if (cleanupIntervalRef.current) {
+      clearInterval(cleanupIntervalRef.current);
+      cleanupIntervalRef.current = null;
+    }
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
     }
+  }, []);
 
-    const presenceKey = mode === "track" ? presenceKeyRef.current : "_watcher";
+  const connect = useCallback(() => {
+    cleanupChannel();
 
     const channel = supabase.channel("checkout-presence", {
-      config: { presence: { key: presenceKey } },
+      config: {
+        presence: { key: mode === "track" ? visitorIdRef.current : "_watcher" },
+        broadcast: { self: false, ack: false },
+      },
     });
 
     channelRef.current = channel;
 
-    const syncCount = () => {
+    const syncPresence = () => {
       try {
         const state = channel.presenceState();
         const visitors = Object.keys(state).filter((k) => k !== "_watcher");
-        setOnlineCount(visitors.length);
+        presenceCountRef.current = visitors.length;
+        updateCount();
       } catch {
-        // Ignore sync errors
+        // ignore sync errors
       }
     };
 
     channel
-      .on("presence", { event: "sync" }, syncCount)
-      .on("presence", { event: "join" }, syncCount)
-      .on("presence", { event: "leave" }, syncCount)
+      .on("presence", { event: "sync" }, syncPresence)
+      .on("presence", { event: "join" }, syncPresence)
+      .on("presence", { event: "leave" }, syncPresence)
+      .on("broadcast", { event: "checkout_ping" }, ({ payload }) => {
+        const id = (payload as { id?: string })?.id;
+        if (!id || id === "_watcher") return;
+        heartbeatMapRef.current.set(id, Date.now());
+        updateCount();
+      })
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
-          // Clear any pending retry
           if (retryRef.current) {
             clearTimeout(retryRef.current);
             retryRef.current = null;
@@ -59,59 +99,53 @@ export function useCheckoutPresence(mode: "track" | "watch", productId?: string)
                 product_id: productId || "unknown",
                 joined_at: new Date().toISOString(),
               });
-            } catch (err) {
-              console.warn("[presence] track failed, will retry:", err);
-              scheduleRetry();
-            }
-          } else {
-            // Watcher: also track presence so channel stays alive
-            try {
-              await channel.track({ role: "watcher" });
             } catch {
-              // Non-critical for watcher
+              // presence can fail silently on unstable connections; heartbeat fallback will still work
             }
+
+            const sendPing = async () => {
+              try {
+                await channel.send({
+                  type: "broadcast",
+                  event: "checkout_ping",
+                  payload: {
+                    id: visitorIdRef.current,
+                    product_id: productId || "unknown",
+                    ts: Date.now(),
+                  },
+                });
+              } catch {
+                // noop
+              }
+            };
+
+            await sendPing();
+            heartbeatIntervalRef.current = setInterval(sendPing, 10000);
+          } else {
+            cleanupIntervalRef.current = setInterval(updateCount, 5000);
           }
-        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-          console.warn("[presence] channel error/timeout, reconnecting...");
+        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
           scheduleRetry();
         }
       });
-  }, [mode, productId]);
+  }, [cleanupChannel, mode, productId, updateCount]);
 
   const scheduleRetry = useCallback(() => {
     if (retryRef.current) return;
     retryRef.current = setTimeout(() => {
       retryRef.current = null;
       connect();
-    }, 3000);
+    }, 2500);
   }, [connect]);
 
   useEffect(() => {
     connect();
 
-    // Heartbeat: re-sync every 30s to catch silent disconnects
-    const heartbeat = setInterval(() => {
-      if (channelRef.current) {
-        try {
-          const state = channelRef.current.presenceState();
-          const visitors = Object.keys(state).filter((k) => k !== "_watcher");
-          setOnlineCount(visitors.length);
-        } catch {
-          // Channel may be dead, reconnect
-          connect();
-        }
-      }
-    }, 30000);
-
     return () => {
-      clearInterval(heartbeat);
       if (retryRef.current) clearTimeout(retryRef.current);
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
+      cleanupChannel();
     };
-  }, [connect]);
+  }, [connect, cleanupChannel]);
 
   return onlineCount;
 }
