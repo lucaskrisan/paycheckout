@@ -34,25 +34,6 @@ import {
 } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
 import SalesGamification from "@/components/admin/SalesGamification";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import { useAuth } from "@/hooks/useAuth";
 
 type Period = "today" | "yesterday" | "7days" | "month" | "lastMonth" | "total";
 
