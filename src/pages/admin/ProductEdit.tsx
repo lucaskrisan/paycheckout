@@ -299,12 +299,12 @@ const ProductEdit = () => {
 
     if (isNew) {
       payload.user_id = user?.id;
-      const { error } = await supabase.from("products").insert(payload);
+      const { error } = await supabase.from("products" as any).insert(payload);
       if (error) { toast.error("Erro ao criar produto"); setSaving(false); return; }
       toast.success("Produto criado!");
       navigate("/admin/products");
     } else {
-      const { error } = await supabase.from("products").update(payload).eq("id", productId);
+      const { error } = await supabase.from("products" as any).update(payload).eq("id", productId);
       if (error) { toast.error("Erro ao atualizar"); setSaving(false); return; }
       toast.success("Produto salvo!");
     }
