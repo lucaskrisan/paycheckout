@@ -60,6 +60,7 @@ const Orders = () => {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState<"approved" | "all">("approved");
+  const [sendingReminder, setSendingReminder] = useState<string | null>(null);
 
   // Filters
   const [filterPeriod, setFilterPeriod] = useState("all");
@@ -67,6 +68,22 @@ const Orders = () => {
   const [filterMethods, setFilterMethods] = useState<Set<string>>(new Set());
   const [filterStatuses, setFilterStatuses] = useState<Set<string>>(new Set());
   const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const handleSendPixReminder = async (orderId: string) => {
+    setSendingReminder(orderId);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-pix-reminder", {
+        body: { order_id: orderId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`Lembrete enviado para ${data.email}! ✉️`);
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao enviar lembrete");
+    } finally {
+      setSendingReminder(null);
+    }
+  };
 
   useEffect(() => {
     const load = async () => {
