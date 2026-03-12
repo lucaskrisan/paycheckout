@@ -59,6 +59,26 @@ const Notifications = () => {
   const [saving, setSaving] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [sendingTest, setSendingTest] = useState(false);
+
+  const sendTestNotification = async () => {
+    setSendingTest(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('test-push');
+      if (error) throw error;
+      if (data?.errors) {
+        toast.error("Nenhum dispositivo inscrito. Aceite as notificações no navegador primeiro.");
+      } else {
+        toast.success("Notificação de teste enviada! 🔔");
+      }
+      // Play selected sound locally too
+      playNotificationSound(settings.notification_sound);
+    } catch (err: any) {
+      toast.error("Erro ao enviar teste: " + (err.message || "Tente novamente"));
+    } finally {
+      setSendingTest(false);
+    }
+  };
 
   useEffect(() => {
     // Check if already installed
