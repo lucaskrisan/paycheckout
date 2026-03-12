@@ -109,7 +109,7 @@ async function sendAccessEmail(supabase: any, customerId: string, course: { id: 
   }
 }
 
-
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
