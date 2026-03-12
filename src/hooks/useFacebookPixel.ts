@@ -212,6 +212,7 @@ export function useFacebookPixel(productId: string | undefined) {
       content_type: "product",
       payment_method: paymentMethod,
     }, { eventID: eventId });
+    logPixelEvent("AddPaymentInfo", eventId);
   }, []);
 
   /**
