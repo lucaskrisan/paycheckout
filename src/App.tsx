@@ -26,6 +26,7 @@ import SuperAdminDashboard from "./pages/admin/SuperAdminDashboard";
 import CheckoutBuilder from "./pages/admin/CheckoutBuilder";
 import Notifications from "./pages/admin/Notifications";
 import Tracking from "./pages/admin/Tracking";
+import Reviews from "./pages/admin/Reviews";
 import NotFound from "./pages/NotFound";
 import InstallPrompt from "./components/InstallPrompt";
 
