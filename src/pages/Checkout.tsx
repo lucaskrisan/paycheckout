@@ -432,6 +432,7 @@ const Checkout = () => {
         totalAmount={finalAmount}
         qrCodeUrl={pixData?.qrCodeUrl}
         pixCode={pixData?.pixCode}
+        externalOrderId={pixData?.orderId}
       />
     </div>
   );
