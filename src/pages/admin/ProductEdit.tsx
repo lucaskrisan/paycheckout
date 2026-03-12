@@ -1021,40 +1021,6 @@ const ProductEdit = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {/* Default checkout */}
-                    {checkoutLink && (
-                      <TableRow>
-                        <TableCell className="text-sm text-foreground">
-                          Checkout A
-                          {checkouts.every(c => !c.is_default) && (
-                            <span className="ml-2 text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full">Padrão</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {form.price ? `R$ ${Number(form.price).toFixed(2).replace(".", ",")}` : "—"}
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <button className="p-1 rounded hover:bg-muted transition-colors">
-                                <MoreVertical className="w-4 h-4 text-muted-foreground" />
-                              </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40">
-                              <DropdownMenuItem onClick={() => navigate(`/admin/products/${productId}/checkout-builder`)} className="gap-2 text-sm">
-                                <ExternalLink className="w-3.5 h-3.5" /> Personalizar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="gap-2 text-sm">
-                                <Settings2 className="w-3.5 h-3.5" /> Configurações
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => { navigator.clipboard.writeText(checkoutLink); toast.success("Link copiado!"); }} className="gap-2 text-sm">
-                                <LinkIcon className="w-3.5 h-3.5" /> Duplicar
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    )}
                     {/* Dynamic checkouts from DB */}
                     {checkouts.map((co) => (
                       <TableRow key={co.id}>
