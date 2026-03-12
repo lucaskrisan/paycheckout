@@ -162,6 +162,15 @@ const AbandonedCarts = () => {
     }
   };
 
+  // Report metrics
+  const totalFiltered = filtered.length;
+  const recoveredCount = filtered.filter(c => c.recovered).length;
+  const abandonedCount = totalFiltered - recoveredCount;
+  const recoveryRate = totalFiltered > 0 ? ((recoveredCount / totalFiltered) * 100).toFixed(1) : "0";
+  const withPhone = filtered.filter(c => c.customer_phone).length;
+  const withEmail = filtered.filter(c => c.customer_email).length;
+  const phoneRate = totalFiltered > 0 ? ((withPhone / totalFiltered) * 100).toFixed(0) : "0";
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -176,6 +185,40 @@ const AbandonedCarts = () => {
           <Download className="w-4 h-4" />
           Exportar
         </Button>
+      </div>
+
+      {/* Report cards */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <Card className="border border-border shadow-none">
+          <CardContent className="p-4">
+            <p className="text-xs text-muted-foreground">Total de carrinhos</p>
+            <p className="text-2xl font-bold text-foreground">{totalFiltered}</p>
+          </CardContent>
+        </Card>
+        <Card className="border border-border shadow-none">
+          <CardContent className="p-4">
+            <p className="text-xs text-muted-foreground">Abandonados</p>
+            <p className="text-2xl font-bold text-destructive">{abandonedCount}</p>
+          </CardContent>
+        </Card>
+        <Card className="border border-border shadow-none">
+          <CardContent className="p-4">
+            <p className="text-xs text-muted-foreground">Recuperados</p>
+            <p className="text-2xl font-bold text-primary">{recoveredCount}</p>
+          </CardContent>
+        </Card>
+        <Card className="border border-border shadow-none">
+          <CardContent className="p-4">
+            <p className="text-xs text-muted-foreground">Taxa de recuperação</p>
+            <p className="text-2xl font-bold text-foreground">{recoveryRate}%</p>
+          </CardContent>
+        </Card>
+        <Card className="border border-border shadow-none">
+          <CardContent className="p-4">
+            <p className="text-xs text-muted-foreground">Com telefone</p>
+            <p className="text-2xl font-bold text-foreground">{withPhone} <span className="text-sm font-normal text-muted-foreground">({phoneRate}%)</span></p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters row – matching Kiwify layout */}
