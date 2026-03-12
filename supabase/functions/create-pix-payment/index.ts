@@ -8,10 +8,7 @@ const corsHeaders = {
 async function sendPushNotification(title: string, message: string, url?: string) {
   const appId = Deno.env.get('ONESIGNAL_APP_ID');
   const apiKey = Deno.env.get('ONESIGNAL_REST_API_KEY');
-  if (!appId || !apiKey) {
-    console.warn('[create-pix-payment] OneSignal not configured, skipping notification');
-    return;
-  }
+  if (!appId || !apiKey) return;
 
   try {
     const payload: Record<string, unknown> = {
@@ -24,7 +21,7 @@ async function sendPushNotification(title: string, message: string, url?: string
     };
     if (url) payload.url = url;
 
-    const response = await fetch('https://api.onesignal.com/notifications', {
+    await fetch('https://api.onesignal.com/notifications', {
       method: 'POST',
       headers: {
         'Authorization': `Key ${apiKey}`,
@@ -32,9 +29,6 @@ async function sendPushNotification(title: string, message: string, url?: string
       },
       body: JSON.stringify(payload),
     });
-
-    const raw = await response.text();
-    console.log('[create-pix-payment] OneSignal response:', { status: response.status, body: raw });
   } catch (err) {
     console.error('[create-pix-payment] OneSignal error:', err);
   }
@@ -49,11 +43,14 @@ Deno.serve(async (req) => {
     console.log('[create-pix-payment] request received');
 
     const PAGARME_API_KEY = Deno.env.get('PAGARME_API_KEY');
-    if (!PAGARME_API_KEY) {
-      throw new Error('PAGARME_API_KEY not configured');
-    }
+    if (!PAGARME_API_KEY) throw new Error('PAGARME_API_KEY not configured');
 
-    const { amount, customer, product_id } = await req.json();
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+
+    const { amount, customer, product_id, coupon_id } = await req.json();
 
     if (!amount || !customer?.name || !customer?.email || !customer?.cpf) {
       return new Response(
@@ -65,6 +62,45 @@ Deno.serve(async (req) => {
     const cleanCpf = customer.cpf.replace(/\D/g, '');
     const cleanPhone = customer.phone?.replace(/\D/g, '') || '';
 
+    // Get product info (for user_id / owner)
+    let productOwnerId: string | null = null;
+    let productName = 'Produto';
+    if (product_id) {
+      const { data: prod } = await supabaseAdmin
+        .from('products')
+        .select('name, user_id')
+        .eq('id', product_id)
+        .maybeSingle();
+      if (prod) {
+        productName = prod.name;
+        productOwnerId = prod.user_id;
+      }
+    }
+
+    // Upsert customer
+    const { data: existingCustomer } = await supabaseAdmin
+      .from('customers')
+      .select('id')
+      .eq('email', customer.email)
+      .maybeSingle();
+
+    let customerId: string;
+    if (existingCustomer) {
+      customerId = existingCustomer.id;
+      await supabaseAdmin
+        .from('customers')
+        .update({ name: customer.name, phone: customer.phone, cpf: cleanCpf })
+        .eq('id', customerId);
+    } else {
+      const { data: newCustomer } = await supabaseAdmin
+        .from('customers')
+        .insert({ name: customer.name, email: customer.email, phone: customer.phone, cpf: cleanCpf, user_id: productOwnerId })
+        .select('id')
+        .single();
+      customerId = newCustomer!.id;
+    }
+
+    // Call Pagar.me API
     const orderPayload = {
       items: [
         {
@@ -93,9 +129,7 @@ Deno.serve(async (req) => {
       payments: [
         {
           payment_method: 'pix',
-          pix: {
-            expires_in: 1800,
-          },
+          pix: { expires_in: 1800 },
         },
       ],
     };
@@ -122,40 +156,79 @@ Deno.serve(async (req) => {
     const charge = data.charges?.[0];
     const lastTransaction = charge?.last_transaction;
 
-    try {
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL')!,
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-      );
+    // Get platform fee
+    const { data: platformSettings } = await supabaseAdmin
+      .from('platform_settings')
+      .select('platform_fee_percent')
+      .limit(1)
+      .maybeSingle();
+    const feePercent = Number(platformSettings?.platform_fee_percent || 0);
+    const feeAmount = Math.round(amount * feePercent) / 100;
 
-      const { data: notifSettings } = await supabase
+    // Save order to database
+    const { data: orderRecord, error: orderError } = await supabaseAdmin
+      .from('orders')
+      .insert({
+        amount,
+        payment_method: 'pix',
+        status: 'pending',
+        product_id: product_id || null,
+        customer_id: customerId,
+        user_id: productOwnerId,
+        external_id: data.id,
+        platform_fee_percent: feePercent,
+        platform_fee_amount: feeAmount,
+        metadata: {
+          gateway: 'pagarme',
+          coupon_id: coupon_id || null,
+        },
+      })
+      .select('id')
+      .single();
+
+    if (orderError) {
+      console.error('[create-pix-payment] Order save error:', orderError);
+    } else {
+      console.log('[create-pix-payment] Order saved:', orderRecord.id);
+    }
+
+    // Increment coupon usage
+    if (coupon_id) {
+      await supabaseAdmin.rpc('', {}).catch(() => {});
+      await supabaseAdmin
+        .from('coupons')
+        .update({ used_count: supabaseAdmin.rpc ? undefined : 0 })
+        .eq('id', coupon_id);
+      // Simple increment via raw update
+      const { data: couponData } = await supabaseAdmin
+        .from('coupons')
+        .select('used_count')
+        .eq('id', coupon_id)
+        .single();
+      if (couponData) {
+        await supabaseAdmin
+          .from('coupons')
+          .update({ used_count: couponData.used_count + 1 })
+          .eq('id', coupon_id);
+      }
+    }
+
+    // Push notification
+    try {
+      const { data: notifSettings } = await supabaseAdmin
         .from('notification_settings')
         .select('send_pending, show_product_name')
         .eq('send_pending', true);
 
-      console.log('[create-pix-payment] send_pending users:', notifSettings?.length || 0);
-
       if (notifSettings && notifSettings.length > 0) {
-        let productName = 'Produto';
-
-        if (product_id) {
-          const { data: prod } = await supabase
-            .from('products')
-            .select('name')
-            .eq('id', product_id)
-            .maybeSingle();
-          if (prod?.name) productName = prod.name;
-        }
-
         const showProductName = notifSettings.some((s) => s.show_product_name);
         const formattedAmount = Number(amount).toFixed(2).replace('.', ',');
         const title = '💠 PIX gerado!';
         const message = `${customer.name} gerou um PIX de R$ ${formattedAmount}${showProductName ? ` • ${productName}` : ''}`;
-
-        await sendPushNotification(title, message, 'https://paycheckout.lovable.app/admin/notificacoes');
+        await sendPushNotification(title, message, 'https://paycheckout.lovable.app/admin/orders');
       }
     } catch (notifErr) {
-      console.error('[create-pix-payment] Notification error (non-blocking):', notifErr);
+      console.error('[create-pix-payment] Notification error:', notifErr);
     }
 
     return new Response(
