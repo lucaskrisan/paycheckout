@@ -148,6 +148,7 @@ const Checkout = () => {
       }
 
       const layout = (builderLayoutData?.layout as unknown as BuilderComponent[] | null) ?? [];
+      setBuilderLayout(Array.isArray(layout) ? layout : []);
       setLoading(false);
     };
     load();
