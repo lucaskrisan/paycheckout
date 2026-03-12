@@ -276,7 +276,8 @@ export function useFacebookPixel(productId: string | undefined) {
       window.fbq("track", "Lead", customData, { eventID: eventId });
     }
     sendCAPI("Lead", eventId, customData);
-  }, [productId, sendCAPI]);
+    logPixelEvent("Lead", eventId);
+  }, [productId, sendCAPI, logPixelEvent]);
 
   return {
     trackPurchase,
