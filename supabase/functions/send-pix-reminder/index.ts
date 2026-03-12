@@ -136,6 +136,11 @@ O cliente gerou o PIX mas não pagou ainda.`,
         <p style="margin:0;font-size:14px;color:#166534;"><strong>📦 ${productName}</strong></p>
         <p style="margin:4px 0 0;font-size:20px;font-weight:bold;color:#166534;">R$ ${productPrice}</p>
       </div>
+      <div style="text-align:center;margin-top:24px;">
+        <a href="${checkoutUrl}" style="display:inline-block;background:${primaryColor};color:#fff;font-size:16px;font-weight:bold;padding:14px 32px;border-radius:8px;text-decoration:none;">
+          Finalizar pagamento →
+        </a>
+      </div>
       <p style="margin-top:24px;font-size:12px;color:#a1a1aa;text-align:center;">
         Este email foi enviado por ${companyName}
       </p>
