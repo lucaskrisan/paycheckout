@@ -290,7 +290,11 @@ const Dashboard = () => {
         {/* Metric cards grid */}
         <div className="lg:col-span-5 grid grid-cols-2 gap-3">
           {metricCards.map((card, i) => (
-            <Card key={i} className="border border-border shadow-none">
+            <Card
+              key={i}
+              className={`border border-border shadow-none ${card.onClick ? 'cursor-pointer hover:bg-muted/30 transition-colors' : ''}`}
+              onClick={card.onClick}
+            >
               <CardContent className="p-4 flex items-start gap-3">
                 <card.icon className={`w-5 h-5 mt-0.5 shrink-0 ${card.iconColor}`} />
                 <div className="min-w-0">
