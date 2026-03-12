@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
       .from('orders')
       .update({ status, updated_at: new Date().toISOString() })
       .eq('external_id', externalId)
-      .select('amount, payment_method, product_id, customer_id')
+      .select('id, amount, payment_method, product_id, customer_id, user_id, metadata')
       .maybeSingle();
 
     if (error) {
@@ -92,6 +92,21 @@ Deno.serve(async (req) => {
     }
 
     console.log('[pagarme-webhook] Order updated:', { externalId, status, found: !!orderData });
+
+    // Fire user webhooks (non-blocking)
+    if (orderData?.id && orderData?.user_id) {
+      const webhookEvent = status === 'paid' ? 'order.paid' : status === 'refunded' ? 'order.refunded' : status === 'cancelled' ? 'order.cancelled' : null;
+      if (webhookEvent) {
+        fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/fire-webhooks`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+          },
+          body: JSON.stringify({ event: webhookEvent, order_id: orderData.id, user_id: orderData.user_id }),
+        }).catch(err => console.error('[pagarme-webhook] fire-webhooks error:', err));
+      }
+    }
 
     // On confirmed payment, create member access + send email + fire CAPI Purchase
     if (status === 'paid' && orderData?.product_id && orderData?.customer_id) {
@@ -131,11 +146,13 @@ Deno.serve(async (req) => {
           }
           if (custData?.cpf) userData.external_id = [await hashSHA256(custData.cpf.replace(/\D/g, ''))];
 
+          const orderMetadata = (orderData as any)?.metadata || {};
           const capiEvent = {
             event_name: 'Purchase',
             event_time: Math.floor(Date.now() / 1000),
-            event_id: externalId, // same as browser eventId for dedup
-            event_source_url: '',
+            event_id: externalId,
+            event_source_url: orderMetadata.checkout_url || '',
+            action_source: 'website',
             action_source: 'website',
             user_data: userData,
             custom_data: {

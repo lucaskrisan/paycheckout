@@ -235,8 +235,16 @@ const Checkout = () => {
     try {
       if (paymentMethod === "pix") {
         const bumpProductIds = orderBumps.filter((b) => selectedBumps.has(b.id)).map((b) => b.bump_product.id);
+        const utmParams = new URLSearchParams(window.location.search);
+        const utms = {
+          utm_source: utmParams.get("utm_source") || undefined,
+          utm_medium: utmParams.get("utm_medium") || undefined,
+          utm_campaign: utmParams.get("utm_campaign") || undefined,
+          utm_content: utmParams.get("utm_content") || undefined,
+          utm_term: utmParams.get("utm_term") || undefined,
+        };
         const { data, error } = await supabase.functions.invoke("create-pix-payment", {
-          body: { amount: finalAmount, product_id: product.id, config_id: requestedConfigId || null, coupon_id: coupon?.id || null, bump_product_ids: bumpProductIds, customer: { name: customer.name, email: customer.email, cpf: customer.cpf, phone: customer.phone } },
+          body: { amount: finalAmount, product_id: product.id, config_id: requestedConfigId || null, coupon_id: coupon?.id || null, bump_product_ids: bumpProductIds, checkout_url: window.location.href, utms, customer: { name: customer.name, email: customer.email, cpf: customer.cpf, phone: customer.phone } },
         });
         if (error) throw error;
         if (data?.qr_code_url || data?.qr_code) { setPixData({ qrCodeUrl: data.qr_code_url, pixCode: data.qr_code, orderId: data.order_id }); setPixModalOpen(true); trackPurchase(frontEndAmount); await markPurchased(); }
@@ -244,8 +252,16 @@ const Checkout = () => {
       } else {
         const bumpProductIds2 = orderBumps.filter((b) => selectedBumps.has(b.id)).map((b) => b.bump_product.id);
         const [expMonth, expYear] = creditCard.expiry.split("/");
+        const utmParams2 = new URLSearchParams(window.location.search);
+        const utms2 = {
+          utm_source: utmParams2.get("utm_source") || undefined,
+          utm_medium: utmParams2.get("utm_medium") || undefined,
+          utm_campaign: utmParams2.get("utm_campaign") || undefined,
+          utm_content: utmParams2.get("utm_content") || undefined,
+          utm_term: utmParams2.get("utm_term") || undefined,
+        };
         const { data, error } = await supabase.functions.invoke("create-asaas-payment", {
-          body: { amount: finalAmount, product_id: product.id, payment_method: "credit_card", installments: creditCard.installments, is_subscription: product.is_subscription, billing_cycle: product.billing_cycle, config_id: requestedConfigId || null, coupon_id: coupon?.id || null, bump_product_ids: bumpProductIds2, customer: { name: customer.name, email: customer.email, cpf: customer.cpf, phone: customer.phone, creditCard: { holderName: creditCard.name, number: creditCard.number.replace(/\s/g, ""), expiryMonth: expMonth, expiryYear: `20${expYear}`, ccv: creditCard.cvv } } },
+          body: { amount: finalAmount, product_id: product.id, payment_method: "credit_card", installments: creditCard.installments, is_subscription: product.is_subscription, billing_cycle: product.billing_cycle, config_id: requestedConfigId || null, coupon_id: coupon?.id || null, bump_product_ids: bumpProductIds2, checkout_url: window.location.href, utms: utms2, customer: { name: customer.name, email: customer.email, cpf: customer.cpf, phone: customer.phone, creditCard: { holderName: creditCard.name, number: creditCard.number.replace(/\s/g, ""), expiryMonth: expMonth, expiryYear: `20${expYear}`, ccv: creditCard.cvv } } },
         });
         if (error) throw error;
         if (data?.payment_id) { toast.success("Pagamento processado com sucesso!"); trackPurchase(frontEndAmount); await markPurchased(); navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}`); }

@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
     );
 
     const body = await req.json();
-    const { amount, customer, product_id, coupon_id, config_id, bump_product_ids } = body;
+    const { amount, customer, product_id, coupon_id, config_id, bump_product_ids, checkout_url, utms } = body;
 
     if (!amount || !customer?.name || !customer?.email || !customer?.cpf) {
       return new Response(
@@ -242,6 +242,8 @@ Deno.serve(async (req) => {
         metadata: {
           gateway: 'pagarme',
           coupon_id: coupon_id || null,
+          checkout_url: checkout_url || null,
+          ...(utms || {}),
         },
       })
       .select('id')

@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
     );
 
     const body = await req.json();
-    const { amount, customer, payment_method, installments, product_id, is_subscription, billing_cycle, coupon_id, config_id, bump_product_ids } = body;
+    const { amount, customer, payment_method, installments, product_id, is_subscription, billing_cycle, coupon_id, config_id, bump_product_ids, checkout_url, utms } = body;
 
     if (!amount || !customer?.name || !customer?.email || !customer?.cpf) {
       return new Response(
@@ -235,6 +235,8 @@ Deno.serve(async (req) => {
             gateway: 'asaas',
             coupon_id: coupon_id || null,
             installments: installments || '1',
+            checkout_url: checkout_url || null,
+            ...(utms || {}),
           },
         })
         .select('id')

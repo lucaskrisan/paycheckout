@@ -21,6 +21,7 @@ import {
   Crosshair,
   MessageCircle,
   ShieldCheck,
+  Webhook,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -56,6 +57,7 @@ const mainItems = [
   { title: "Avaliações", url: "/admin/reviews", icon: MessageCircle },
   { title: "Colaboradores", url: "/admin/integrations", icon: UserPlus },
   { title: "Notificações", url: "/admin/notifications", icon: Bell },
+  { title: "Webhooks", url: "/admin/webhooks", icon: Webhook },
   { title: "Configurações", url: "/admin/settings", icon: Settings },
   { title: "Fiscalizar", url: "/admin/health", icon: ShieldCheck },
 ];
