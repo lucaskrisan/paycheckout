@@ -89,10 +89,26 @@ const Checkout = () => {
 
     const load = async () => {
       setLoading(true);
+      const builderQuery = requestedConfigId
+        ? supabase
+            .from("checkout_builder_configs")
+            .select("layout")
+            .eq("id", requestedConfigId)
+            .eq("product_id", productId)
+            .maybeSingle()
+        : supabase
+            .from("checkout_builder_configs")
+            .select("layout")
+            .eq("product_id", productId)
+            .eq("is_default", true)
+            .order("updated_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
       const [productRes, bumpsRes, builderRes] = await Promise.all([
         supabase.from("products").select("*").eq("id", productId).eq("active", true).single(),
         supabase.from("order_bumps").select("id, call_to_action, title, description, use_product_image, bump_product:products!order_bumps_bump_product_id_fkey(id, name, price, image_url)").eq("product_id", productId).eq("active", true).order("sort_order"),
-        supabase.from("checkout_builder_configs").select("layout").eq("product_id", productId).eq("is_default", true).order("created_at", { ascending: true }).limit(1).maybeSingle(),
+        builderQuery,
       ]);
 
       if (productRes.error || !productRes.data) { setNotFound(true); }
