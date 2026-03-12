@@ -80,6 +80,7 @@ export type Database = {
           is_default: boolean
           layout: Json
           name: string
+          price: number | null
           product_id: string
           settings: Json
           updated_at: string
@@ -91,6 +92,7 @@ export type Database = {
           is_default?: boolean
           layout?: Json
           name?: string
+          price?: number | null
           product_id: string
           settings?: Json
           updated_at?: string
@@ -102,6 +104,7 @@ export type Database = {
           is_default?: boolean
           layout?: Json
           name?: string
+          price?: number | null
           product_id?: string
           settings?: Json
           updated_at?: string
