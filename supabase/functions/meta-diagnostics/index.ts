@@ -196,9 +196,9 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('[meta-diagnostics] Error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
+    console.error('[meta-diagnostics] Error:', error?.message, error?.stack);
+    return new Response(JSON.stringify({ error: error?.message || 'Unknown error' }), {
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
