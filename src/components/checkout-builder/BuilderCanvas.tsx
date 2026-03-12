@@ -111,9 +111,11 @@ interface BuilderCanvasProps {
   onRemove: (id: string) => void;
   onSelect: (id: string) => void;
   isMobile: boolean;
+  productImageUrl?: string | null;
+  productName?: string;
 }
 
-const BuilderCanvas = ({ components, selectedId, onRemove, onSelect, isMobile }: BuilderCanvasProps) => {
+const BuilderCanvas = ({ components, selectedId, onRemove, onSelect, isMobile, productImageUrl, productName }: BuilderCanvasProps) => {
   const topComponents = components.filter((c) => c.zone === "top").sort((a, b) => a.order - b.order);
   const leftComponents = components.filter((c) => c.zone === "left").sort((a, b) => a.order - b.order);
   const rightComponents = components.filter((c) => c.zone === "right").sort((a, b) => a.order - b.order);
@@ -130,6 +132,23 @@ const BuilderCanvas = ({ components, selectedId, onRemove, onSelect, isMobile }:
         label="Arraste componentes aqui (topo)"
         className="rounded-none border-x-0 border-t-0"
       />
+
+      {/* Product banner image (fixed, not draggable) */}
+      {productImageUrl && (
+        <div className="px-4 pt-4">
+          <div className="rounded-lg overflow-hidden">
+            <img src={productImageUrl} alt={productName || ""} className="w-full h-auto max-h-[200px] object-cover" />
+          </div>
+        </div>
+      )}
+
+      {/* Product name + thumbnail (fixed, not draggable) */}
+      <div className="px-4 pt-3 pb-1 flex items-center gap-3">
+        {productImageUrl && (
+          <img src={productImageUrl} alt="" className="w-10 h-10 rounded-md object-cover border border-border" />
+        )}
+        <p className="text-sm font-bold text-foreground">{productName || "TÍTULO DO PRODUTO"}</p>
+      </div>
 
       {/* Two-column layout */}
       <div className={`grid gap-0 ${isMobile ? "grid-cols-1" : "grid-cols-5"}`}>
