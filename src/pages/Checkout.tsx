@@ -188,6 +188,19 @@ const Checkout = () => {
     }
   };
 
+  // Send Advanced Matching data whenever customer info changes
+  useEffect(() => {
+    if (customer.name && customer.email) {
+      setAdvancedMatching(customer);
+      trackLead();
+    }
+  }, [customer.name, customer.email, customer.phone, customer.cpf, setAdvancedMatching, trackLead]);
+
+  // Track payment method selection
+  useEffect(() => {
+    trackAddPaymentInfo(paymentMethod);
+  }, [paymentMethod, trackAddPaymentInfo]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -236,19 +249,6 @@ const Checkout = () => {
         image: b.bump_product.image_url || undefined,
       })),
   ];
-
-  // Send Advanced Matching data whenever customer info changes
-  useEffect(() => {
-    if (customer.name && customer.email) {
-      setAdvancedMatching(customer);
-      trackLead();
-    }
-  }, [customer.name, customer.email, customer.phone, customer.cpf, setAdvancedMatching, trackLead]);
-
-  // Track payment method selection
-  useEffect(() => {
-    trackAddPaymentInfo(paymentMethod);
-  }, [paymentMethod, trackAddPaymentInfo]);
 
   const handleSubmit = async () => {
     if (!customer.name || !customer.email || !customer.cpf || !customer.phone) {
