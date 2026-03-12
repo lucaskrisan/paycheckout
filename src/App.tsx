@@ -63,6 +63,7 @@ const App = () => (
               <Route path="settings" element={<Settings />} />
               <Route path="notifications" element={<Notifications />} />
               <Route path="tracking" element={<Tracking />} />
+              <Route path="reviews" element={<Reviews />} />
               <Route path="platform" element={<SuperAdminDashboard />} />
             </Route>
             <Route path="*" element={<NotFound />} />
