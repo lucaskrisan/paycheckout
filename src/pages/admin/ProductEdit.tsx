@@ -118,6 +118,7 @@ const ProductEdit = () => {
         domain: p.domain || "",
         fire_on_pix: p.fire_on_pix,
         fire_on_boleto: p.fire_on_boleto,
+        capi_token: p.capi_token || "",
       })));
     }
   }, [isNew, productId]);
