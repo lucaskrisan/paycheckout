@@ -111,11 +111,17 @@ const Dashboard = () => {
     });
   };
 
-  const filtered = useMemo(() => filterByPeriod(orders), [orders, period]);
+  const productFiltered = useMemo(() => {
+    if (selectedProductId === "all") return orders;
+    return orders.filter((o) => o.product_id === selectedProductId);
+  }, [orders, selectedProductId]);
+
+  const filtered = useMemo(() => filterByPeriod(productFiltered), [productFiltered, period]);
   const approved = useMemo(() => filtered.filter((o) => o.status === "paid" || o.status === "approved"), [filtered]);
   const refunded = useMemo(() => filtered.filter((o) => o.status === "refunded"), [filtered]);
 
-  const totalLiquido = approved.reduce((s, o) => s + Number(o.amount), 0) * 0.97;
+  const totalBruto = approved.reduce((s, o) => s + Number(o.amount), 0);
+  const totalLiquido = totalBruto * (1 - platformFee / 100);
   const totalVendas = approved.length;
 
   const cardAttempts = filtered.filter((o) => o.payment_method === "credit_card");
