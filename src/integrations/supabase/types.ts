@@ -386,6 +386,47 @@ export type Database = {
         }
         Relationships: []
       }
+      lesson_materials: {
+        Row: {
+          created_at: string
+          description: string | null
+          file_url: string | null
+          id: string
+          lesson_id: string
+          material_type: string
+          sort_order: number
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          file_url?: string | null
+          id?: string
+          lesson_id: string
+          material_type?: string
+          sort_order?: number
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          file_url?: string | null
+          id?: string
+          lesson_id?: string
+          material_type?: string
+          sort_order?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_materials_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "course_lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_progress: {
         Row: {
           completed: boolean
@@ -418,6 +459,54 @@ export type Database = {
           },
           {
             foreignKeyName: "lesson_progress_member_access_id_fkey"
+            columns: ["member_access_id"]
+            isOneToOne: false
+            referencedRelation: "member_access"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lesson_reviews: {
+        Row: {
+          approved: boolean
+          comment: string | null
+          created_at: string
+          customer_name: string
+          id: string
+          lesson_id: string
+          member_access_id: string
+          rating: number
+        }
+        Insert: {
+          approved?: boolean
+          comment?: string | null
+          created_at?: string
+          customer_name?: string
+          id?: string
+          lesson_id: string
+          member_access_id: string
+          rating?: number
+        }
+        Update: {
+          approved?: boolean
+          comment?: string | null
+          created_at?: string
+          customer_name?: string
+          id?: string
+          lesson_id?: string
+          member_access_id?: string
+          rating?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_reviews_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "course_lessons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_reviews_member_access_id_fkey"
             columns: ["member_access_id"]
             isOneToOne: false
             referencedRelation: "member_access"
