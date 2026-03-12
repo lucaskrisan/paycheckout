@@ -373,81 +373,141 @@ const PwaSettings = () => {
           </Card>
         </div>
 
-        {/* Right: Preview */}
-        <div className="space-y-4">
-          {/* Phone preview */}
-          <Card className="border border-border shadow-none sticky top-4">
-            <CardContent className="p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <Eye className="w-4 h-4 text-primary" />
-                <h3 className="font-semibold text-foreground text-sm">Preview</h3>
-              </div>
+        {/* Right: Phone Mockup Preview */}
+        <div className="space-y-4 sticky top-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Eye className="w-4 h-4 text-primary" />
+            <h3 className="font-semibold text-foreground text-sm">Preview em tempo real</h3>
+          </div>
 
-              {/* App icon preview */}
-              <div className="flex flex-col items-center gap-3 py-6 bg-muted/30 rounded-xl mb-4">
+          {/* Realistic Phone Frame */}
+          <div className="flex justify-center">
+            <div className="relative w-[280px]">
+              {/* Phone outer frame */}
+              <div className="rounded-[2.5rem] border-[3px] border-zinc-700 bg-zinc-900 p-2 shadow-2xl">
+                {/* Notch */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-6 bg-zinc-900 rounded-b-2xl z-10" />
+                
+                {/* Screen */}
+                <div className="rounded-[2rem] overflow-hidden bg-background">
+                  {/* Status bar */}
+                  <div
+                    className="h-10 flex items-end justify-between px-6 pb-1"
+                    style={{ backgroundColor: settings.theme_color }}
+                  >
+                    <span className="text-white text-[10px] font-semibold">9:41</span>
+                    <div className="flex gap-1 items-center">
+                      <div className="w-3.5 h-2 border border-white rounded-sm relative">
+                        <div className="absolute inset-[1px] right-[2px] bg-white rounded-[1px]" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* App header bar */}
+                  <div
+                    className="h-11 flex items-center px-4 gap-2"
+                    style={{ backgroundColor: settings.theme_color }}
+                  >
+                    {settings.icon_192_url ? (
+                      <img src={settings.icon_192_url} alt="" className="w-6 h-6 rounded-md" />
+                    ) : (
+                      <div className="w-6 h-6 rounded-md bg-white/20" />
+                    )}
+                    <span className="text-white text-sm font-semibold truncate">
+                      {settings.app_name || "PayCheckout"}
+                    </span>
+                  </div>
+
+                  {/* Screen content - Home screen sim */}
+                  <div className="h-[340px] bg-gradient-to-b from-zinc-950 to-zinc-900 relative">
+                    {/* Wallpaper grid dots */}
+                    <div className="absolute inset-0 opacity-5" style={{
+                      backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
+                      backgroundSize: '20px 20px'
+                    }} />
+
+                    {/* App icon on home screen */}
+                    <div className="flex flex-col items-center pt-16 gap-2 relative z-10">
+                      <div
+                        className="w-[60px] h-[60px] rounded-[14px] overflow-hidden flex items-center justify-center shadow-lg border border-white/10"
+                        style={{ backgroundColor: settings.background_color }}
+                      >
+                        {settings.icon_512_url || settings.icon_192_url ? (
+                          <img
+                            src={settings.icon_512_url || settings.icon_192_url}
+                            alt=""
+                            className="w-full h-full object-contain"
+                          />
+                        ) : (
+                          <span className="text-2xl">📱</span>
+                        )}
+                      </div>
+                      <span className="text-white text-[11px] font-medium drop-shadow">
+                        {settings.short_name || "PayCheckout"}
+                      </span>
+                    </div>
+
+                    {/* Notification overlay */}
+                    <div className="absolute top-4 left-3 right-3 z-20">
+                      <div className="bg-white/95 dark:bg-zinc-800/95 backdrop-blur-xl rounded-2xl p-3 shadow-xl border border-white/20 animate-in slide-in-from-top-2 duration-300">
+                        <div className="flex items-start gap-2.5">
+                          <div className="w-9 h-9 rounded-lg overflow-hidden flex items-center justify-center shrink-0" style={{ backgroundColor: settings.theme_color + '20' }}>
+                            {settings.notification_icon_url ? (
+                              <img src={settings.notification_icon_url} alt="" className="w-full h-full object-cover" />
+                            ) : settings.icon_192_url ? (
+                              <img src={settings.icon_192_url} alt="" className="w-6 h-6 object-contain" />
+                            ) : (
+                              <Bell className="w-4 h-4" style={{ color: settings.theme_color }} />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between">
+                              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                                {settings.short_name || "PayCheckout"}
+                              </p>
+                              <span className="text-[9px] text-muted-foreground">agora</span>
+                            </div>
+                            <p className="text-xs font-semibold text-foreground truncate mt-0.5">
+                              {settings.notification_title || "💰 Nova venda!"}
+                            </p>
+                            <p className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5">
+                              {(settings.notification_body || "Você recebeu uma nova venda")
+                                .replace("{product}", "Curso XYZ")
+                                .replace("{value}", "R$ 197,00")
+                                .replace("{customer}", "João Silva")}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Home indicator */}
+                  <div className="h-6 bg-zinc-900 flex items-center justify-center">
+                    <div className="w-28 h-1 bg-white/30 rounded-full" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Splash screen preview */}
+          {settings.splash_image_url && (
+            <Card className="border border-border shadow-none">
+              <CardContent className="p-3">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Splash Screen</p>
                 <div
-                  className="w-16 h-16 rounded-2xl border-2 border-border overflow-hidden flex items-center justify-center"
+                  className="h-32 rounded-lg overflow-hidden flex items-center justify-center"
                   style={{ backgroundColor: settings.background_color }}
                 >
-                  {settings.icon_192_url ? (
-                    <img
-                      src={settings.icon_192_url}
-                      alt="App icon"
-                      className="w-full h-full object-contain"
-                    />
-                  ) : (
-                    <span className="text-2xl">📱</span>
-                  )}
+                  <img src={settings.splash_image_url} alt="Splash" className="max-h-full max-w-full object-contain" />
                 </div>
-                <span className="text-xs font-medium text-foreground">{settings.short_name}</span>
-              </div>
-
-              {/* Notification preview */}
-              <div className="bg-card border border-border rounded-xl p-3 space-y-1">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                  Notificação Push
-                </p>
-                <div className="flex items-start gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
-                    {settings.notification_icon_url ? (
-                      <img
-                        src={settings.notification_icon_url}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <Bell className="w-4 h-4 text-muted-foreground" />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-foreground truncate">
-                      {settings.notification_title || "Título"}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground line-clamp-2">
-                      {(settings.notification_body || "Corpo da notificação")
-                        .replace("{product}", "Curso XYZ")
-                        .replace("{value}", "R$ 197,00")
-                        .replace("{customer}", "João")}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Theme bar preview */}
-              <div className="mt-4 rounded-lg overflow-hidden">
-                <div
-                  className="h-8 flex items-center justify-center"
-                  style={{ backgroundColor: settings.theme_color }}
-                >
-                  <span className="text-white text-xs font-medium">Barra de tema</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
           <p className="text-xs text-muted-foreground text-center px-2">
-            ⚡ As mudanças são aplicadas automaticamente. No mobile, feche e reabra o app para ver
-            as atualizações.
+            ⚡ Edite os campos e veja as mudanças aqui em tempo real. No mobile, feche e reabra o app.
           </p>
         </div>
       </div>
