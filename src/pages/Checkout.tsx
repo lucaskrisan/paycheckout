@@ -152,7 +152,7 @@ const Checkout = () => {
       setLoading(false);
     };
     load();
-  }, [productId]);
+  }, [productId, requestedConfigId]);
 
   useEffect(() => {
     if (!checkoutSettings) return;
