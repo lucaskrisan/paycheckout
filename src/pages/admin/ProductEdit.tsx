@@ -81,6 +81,7 @@ const ProductEdit = () => {
   const [newCheckoutName, setNewCheckoutName] = useState("");
   const [newCheckoutPrice, setNewCheckoutPrice] = useState("");
   const [newCheckoutDefault, setNewCheckoutDefault] = useState(false);
+  const [creatingCheckout, setCreatingCheckout] = useState(false);
   const [checkouts, setCheckouts] = useState<any[]>([]);
   const [orderBumps, setOrderBumps] = useState<any[]>([]);
   const [fbDomains, setFbDomains] = useState<{ id: string; domain: string; verified: boolean }[]>([]);
@@ -137,13 +138,82 @@ const ProductEdit = () => {
 
   const loadCheckouts = useCallback(async () => {
     if (isNew || !productId) return;
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("checkout_builder_configs")
       .select("*")
       .eq("product_id", productId)
-      .order("created_at");
-    if (data) setCheckouts(data);
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Erro ao carregar checkouts:", error);
+      toast.error("Erro ao carregar checkouts");
+      return;
+    }
+
+    setCheckouts(data || []);
   }, [isNew, productId]);
+
+  const createCheckoutConfig = async () => {
+    if (!productId || isNew) {
+      toast.error("Salve o produto primeiro");
+      return;
+    }
+
+    const checkoutName = newCheckoutName.trim();
+    if (!checkoutName) {
+      toast.error("Informe o nome do checkout");
+      return;
+    }
+
+    setCreatingCheckout(true);
+    try {
+      const {
+        data: { user: authUser },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !authUser) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        return;
+      }
+
+      if (newCheckoutDefault) {
+        const { error: unsetDefaultError } = await supabase
+          .from("checkout_builder_configs")
+          .update({ is_default: false })
+          .eq("product_id", productId)
+          .eq("user_id", authUser.id);
+
+        if (unsetDefaultError) throw unsetDefaultError;
+      }
+
+      const parsedPrice = newCheckoutPrice.trim()
+        ? parseFloat(newCheckoutPrice.replace(",", "."))
+        : null;
+
+      const { error } = await supabase.from("checkout_builder_configs").insert({
+        product_id: productId,
+        name: checkoutName,
+        is_default: newCheckoutDefault,
+        user_id: authUser.id,
+        price: parsedPrice,
+      } as any);
+
+      if (error) throw error;
+
+      await loadCheckouts();
+      toast.success("Checkout criado!");
+      setShowNewCheckoutDialog(false);
+      setNewCheckoutName("");
+      setNewCheckoutPrice("");
+      setNewCheckoutDefault(false);
+    } catch (err: any) {
+      console.error("Erro ao criar checkout:", err);
+      toast.error(err?.message || "Erro ao criar checkout");
+    } finally {
+      setCreatingCheckout(false);
+    }
+  };
 
   useEffect(() => {
     // Load courses
@@ -1409,23 +1479,10 @@ const ProductEdit = () => {
             <div className="flex justify-end gap-3">
               <Button variant="outline" onClick={() => setShowNewCheckoutDialog(false)}>Cancelar</Button>
               <Button
-                onClick={async () => {
-                  if (!productId || isNew) { toast.error("Salve o produto primeiro"); return; }
-                  const parsedPrice = newCheckoutPrice.trim() ? parseFloat(newCheckoutPrice.replace(",", ".")) : null;
-                  const { error } = await supabase.from("checkout_builder_configs").insert({
-                    product_id: productId,
-                    name: newCheckoutName.trim(),
-                    is_default: newCheckoutDefault,
-                    user_id: user?.id,
-                    price: parsedPrice,
-                  } as any);
-                  if (error) { toast.error("Erro ao criar checkout"); return; }
-                  toast.success("Checkout criado!");
-                  setShowNewCheckoutDialog(false);
-                  loadCheckouts();
-                }}
-                disabled={!newCheckoutName.trim()}
+                onClick={createCheckoutConfig}
+                disabled={!newCheckoutName.trim() || creatingCheckout}
               >
+                {creatingCheckout && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                 Criar novo checkout
               </Button>
             </div>
