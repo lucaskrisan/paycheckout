@@ -321,7 +321,7 @@ const Checkout = () => {
 
         if (data?.payment_id) {
           toast.success("Pagamento processado com sucesso!");
-          trackPurchase(finalAmount);
+          trackPurchase(frontEndAmount);
         } else {
           throw new Error("Falha ao processar pagamento");
         }
