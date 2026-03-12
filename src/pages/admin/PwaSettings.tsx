@@ -394,6 +394,7 @@ const PwaSettings = () => {
                   Ir para Notificações
                 </Button>
               </div>
+            </CardContent>
           </Card>
         </div>
 
