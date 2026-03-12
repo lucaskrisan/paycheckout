@@ -356,9 +356,29 @@ Deno.serve(async (req) => {
           }),
         });
 
+        const resendData = await resendRes.json();
+        // Log email
+        try {
+          await supabaseAdmin.from('email_logs').insert({
+            user_id: productOwnerId,
+            to_email: customer.email,
+            to_name: customer.name,
+            subject: `💠 Seu PIX de ${formattedAmount} foi gerado — finalize agora!`,
+            html_body: emailHtml,
+            email_type: 'pix_generated',
+            status: resendRes.ok ? 'sent' : 'failed',
+            resend_id: resendData?.id || null,
+            order_id: orderRecord?.id || null,
+            customer_id: customerId,
+            product_id: product_id || null,
+            source: 'create-pix-payment',
+          });
+        } catch (logErr) {
+          console.error('[create-pix-payment] Email log error:', logErr);
+        }
+
         if (!resendRes.ok) {
-          const resendErr = await resendRes.json();
-          console.error('[create-pix-payment] Resend error:', resendErr);
+          console.error('[create-pix-payment] Resend error:', resendData);
         } else {
           console.log('[create-pix-payment] PIX email sent to', customer.email);
         }
