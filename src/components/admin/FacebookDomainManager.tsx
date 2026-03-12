@@ -53,8 +53,10 @@ export default function FacebookDomainManager({ open, onClose, onDomainsChange }
   }, [open, user]);
 
   const handleAdd = async () => {
-    const clean = newDomain.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/+$/, "");
+    let clean = newDomain.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/+$/, "");
     if (!clean) { toast.error("Digite um domínio válido"); return; }
+    // Auto-append .com if no TLD
+    if (!clean.includes(".")) clean = clean + ".com";
     setAdding(true);
     const { error } = await supabase.from("facebook_domains").insert({
       domain: clean,
