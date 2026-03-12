@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Lock, ArrowRight, Loader2, Award, Star, ListOrdered } from "lucide-react";
 import CustomerForm, { type CustomerData } from "@/components/checkout/CustomerForm";
