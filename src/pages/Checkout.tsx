@@ -144,7 +144,7 @@ const Checkout = () => {
 
       if (!builderLayoutData) {
         const { data: latestConfig } = await supabase
-          .from("checkout_builder_configs")
+          .from("checkout_builder_configs" as any)
           .select("layout, price")
           .eq("product_id", productId)
           .order("updated_at", { ascending: false })
