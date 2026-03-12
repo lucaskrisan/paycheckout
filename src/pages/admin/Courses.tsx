@@ -494,6 +494,7 @@ const Courses = () => {
                 <SelectContent>
                   <SelectItem value="text">Texto</SelectItem>
                   <SelectItem value="video">Vídeo (URL)</SelectItem>
+                  <SelectItem value="video_embed">Vídeo YouTube</SelectItem>
                   <SelectItem value="pdf">PDF (URL)</SelectItem>
                 </SelectContent>
               </Select>
