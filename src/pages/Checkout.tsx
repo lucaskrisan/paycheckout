@@ -93,13 +93,13 @@ const Checkout = () => {
       const builderQuery = requestedConfigId
         ? supabase
             .from("checkout_builder_configs")
-            .select("layout")
+            .select("layout, price")
             .eq("id", requestedConfigId)
             .eq("product_id", productId)
             .maybeSingle()
         : supabase
             .from("checkout_builder_configs")
-            .select("layout")
+            .select("layout, price")
             .eq("product_id", productId)
             .eq("is_default", true)
             .order("updated_at", { ascending: false })
@@ -115,6 +115,11 @@ const Checkout = () => {
       if (productRes.error || !productRes.data) { setNotFound(true); }
       else {
         const p = productRes.data as any;
+        // Override price if config has a custom price
+        const configPrice = (builderRes.data as any)?.price;
+        if (configPrice != null && configPrice > 0) {
+          p.price = Number(configPrice);
+        }
         setProduct(p);
         if (p.is_subscription) setPaymentMethod("credit_card");
         if (p.user_id) {
@@ -128,7 +133,7 @@ const Checkout = () => {
       if (!builderLayoutData) {
         const { data: fallbackConfig } = await supabase
           .from("checkout_builder_configs")
-          .select("layout")
+          .select("layout, price")
           .eq("product_id", productId)
           .eq("is_default", true)
           .order("updated_at", { ascending: false })
@@ -140,7 +145,7 @@ const Checkout = () => {
       if (!builderLayoutData) {
         const { data: latestConfig } = await supabase
           .from("checkout_builder_configs")
-          .select("layout")
+          .select("layout, price")
           .eq("product_id", productId)
           .order("updated_at", { ascending: false })
           .limit(1)

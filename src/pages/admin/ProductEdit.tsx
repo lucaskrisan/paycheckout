@@ -79,6 +79,7 @@ const ProductEdit = () => {
   const [planDifferentFirst, setPlanDifferentFirst] = useState(false);
   const [showNewCheckoutDialog, setShowNewCheckoutDialog] = useState(false);
   const [newCheckoutName, setNewCheckoutName] = useState("");
+  const [newCheckoutPrice, setNewCheckoutPrice] = useState("");
   const [newCheckoutDefault, setNewCheckoutDefault] = useState(false);
   const [checkouts, setCheckouts] = useState<any[]>([]);
   const [orderBumps, setOrderBumps] = useState<any[]>([]);
@@ -1016,7 +1017,7 @@ const ProductEdit = () => {
                   <Input placeholder="Buscar..." className="pl-9 h-9 text-sm" />
                   <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </div>
-                <Button size="sm" variant="outline" className="text-sm" onClick={() => { setNewCheckoutName(""); setNewCheckoutDefault(false); setShowNewCheckoutDialog(true); }}>
+                <Button size="sm" variant="outline" className="text-sm" onClick={() => { setNewCheckoutName(""); setNewCheckoutPrice(""); setNewCheckoutDefault(false); setShowNewCheckoutDialog(true); }}>
                   Criar novo checkout
                 </Button>
               </div>
@@ -1027,6 +1028,7 @@ const ProductEdit = () => {
                     <TableRow className="hover:bg-transparent">
                       <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Nome</TableHead>
                       <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Oferta</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Link</TableHead>
                       <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider w-10"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -1041,7 +1043,15 @@ const ProductEdit = () => {
                           )}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {form.price ? `R$ ${Number(form.price).toFixed(2).replace(".", ",")}` : "—"}
+                          {co.price != null ? `R$ ${Number(co.price).toFixed(2).replace(".", ",")}` : `R$ ${Number(form.price).toFixed(2).replace(".", ",")} (padrão)`}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1.5">
+                            <Input value={`${getPublicUrl()}/checkout/${productId}?config=${co.id}`} readOnly className="h-7 text-[10px] bg-muted/50 max-w-[180px]" />
+                            <button onClick={() => { navigator.clipboard.writeText(`${getPublicUrl()}/checkout/${productId}?config=${co.id}`); toast.success("Link copiado!"); }} className="text-muted-foreground hover:text-primary transition-colors shrink-0">
+                              <LinkIcon className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </TableCell>
                         <TableCell>
                           <DropdownMenu>
@@ -1065,7 +1075,8 @@ const ProductEdit = () => {
                                   settings: co.settings || {},
                                   is_default: false,
                                   user_id: user?.id,
-                                });
+                                  price: co.price || null,
+                                } as any);
                                 toast.success("Checkout duplicado!");
                                 loadCheckouts();
                               }} className="gap-2 text-sm">
@@ -1085,7 +1096,7 @@ const ProductEdit = () => {
                     ))}
                     {!checkoutLink && checkouts.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={3} className="text-center text-sm text-muted-foreground py-8">
+                        <TableCell colSpan={4} className="text-center text-sm text-muted-foreground py-8">
                           Salve o produto primeiro.
                         </TableCell>
                       </TableRow>
@@ -1376,44 +1387,23 @@ const ProductEdit = () => {
               <Input value={newCheckoutName} onChange={(e) => setNewCheckoutName(e.target.value)} autoFocus />
             </div>
 
+            <div className="space-y-1.5">
+              <Label>Preço personalizado (opcional)</Label>
+              <div className="flex items-center">
+                <span className="inline-flex items-center px-3 text-xs text-muted-foreground bg-muted border border-r-0 border-input rounded-l-md h-10 font-semibold">R$</span>
+                <Input
+                  value={newCheckoutPrice}
+                  onChange={(e) => setNewCheckoutPrice(e.target.value)}
+                  placeholder={form.price ? Number(form.price).toFixed(2).replace(".", ",") : "0,00"}
+                  className="rounded-l-none"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">Deixe vazio para usar o preço padrão do produto</p>
+            </div>
+
             <div className="flex items-center gap-2">
               <Switch checked={newCheckoutDefault} onCheckedChange={setNewCheckoutDefault} />
               <Label className="font-normal">Definir esse checkout como padrão</Label>
-            </div>
-
-            <div className="border border-border rounded-lg overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Link</TableHead>
-                    <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Preço</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow>
-                    <TableCell className="text-sm">
-                      <div className="flex items-center gap-2">
-                        <input type="checkbox" className="rounded border-border" defaultChecked />
-                        <span>{form.name || "Checkout"}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      R$ {form.price ? Number(form.price).toFixed(2).replace(".", ",") : "0,00"}
-                    </TableCell>
-                  </TableRow>
-                  {form.sales_page_url && (
-                    <TableRow>
-                      <TableCell className="text-sm">
-                        <div className="flex items-center gap-2">
-                          <input type="checkbox" className="rounded border-border" />
-                          <span>Sales Page</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">R$ 0,00</TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
             </div>
 
             <div className="flex justify-end gap-3">
@@ -1421,12 +1411,14 @@ const ProductEdit = () => {
               <Button
                 onClick={async () => {
                   if (!productId || isNew) { toast.error("Salve o produto primeiro"); return; }
+                  const parsedPrice = newCheckoutPrice.trim() ? parseFloat(newCheckoutPrice.replace(",", ".")) : null;
                   const { error } = await supabase.from("checkout_builder_configs").insert({
                     product_id: productId,
                     name: newCheckoutName.trim(),
                     is_default: newCheckoutDefault,
                     user_id: user?.id,
-                  });
+                    price: parsedPrice,
+                  } as any);
                   if (error) { toast.error("Erro ao criar checkout"); return; }
                   toast.success("Checkout criado!");
                   setShowNewCheckoutDialog(false);
