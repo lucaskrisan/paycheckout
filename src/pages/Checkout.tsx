@@ -221,7 +221,7 @@ const Checkout = () => {
     try {
       if (paymentMethod === "pix") {
         const { data, error } = await supabase.functions.invoke("create-pix-payment", {
-          body: { amount: finalAmount, product_id: product.id, coupon_id: coupon?.id || null, customer: { name: customer.name, email: customer.email, cpf: customer.cpf, phone: customer.phone } },
+          body: { amount: finalAmount, product_id: product.id, config_id: requestedConfigId || null, coupon_id: coupon?.id || null, customer: { name: customer.name, email: customer.email, cpf: customer.cpf, phone: customer.phone } },
         });
         if (error) throw error;
         if (data?.qr_code_url || data?.qr_code) { setPixData({ qrCodeUrl: data.qr_code_url, pixCode: data.qr_code }); toast.success("PIX gerado! Escaneie o QR Code para pagar."); trackPurchase(frontEndAmount); await markPurchased(); }
