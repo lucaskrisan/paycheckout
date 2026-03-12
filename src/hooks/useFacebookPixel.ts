@@ -244,18 +244,21 @@ export function useFacebookPixel(productId: string | undefined) {
    * Front-end only — value zero to avoid CPA inflation.
    */
   const trackAddToCart = useCallback((bumpProductId: string) => {
-    if (!window.fbq) return;
     const dedupKey = `AddToCart_${bumpProductId}`;
     if (firedEventsRef.current.has(dedupKey)) return;
     firedEventsRef.current.add(dedupKey);
 
     const eventId = generateEventId("AddToCart");
-    window.fbq("track", "AddToCart", {
+    const customData = {
       content_type: "product",
       content_ids: [productId],
       value: 0,
       currency: "BRL",
-    }, { eventID: eventId });
+    };
+
+    if (window.fbq) {
+      window.fbq("track", "AddToCart", customData, { eventID: eventId });
+    }
     logPixelEvent("AddToCart", eventId);
   }, [productId, logPixelEvent]);
 
