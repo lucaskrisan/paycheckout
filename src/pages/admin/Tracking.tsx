@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import TrackingScriptGenerator from "@/components/admin/TrackingScriptGenerator";
 import UtmAttributionTable from "@/components/admin/UtmAttributionTable";
+import PixelEventsDashboard from "@/components/admin/PixelEventsDashboard";
 import {
   Select,
   SelectContent,
