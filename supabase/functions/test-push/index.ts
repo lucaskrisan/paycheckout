@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
 
     const payload = {
       app_id: appId,
-      included_segments: ['Subscribed Users'],
+      included_segments: ['All'],
       target_channel: 'push',
       headings: { en: '🎉 Ka-ching! Mais uma venda!' },
       contents: { en: 'João Silva • 💠 PIX R$ 197,00 • Curso Premium' },
