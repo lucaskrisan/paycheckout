@@ -504,6 +504,12 @@ const Courses = () => {
                 <Label>Conteúdo</Label>
                 <Textarea value={lessonForm.content} onChange={(e) => setLessonForm({ ...lessonForm, content: e.target.value })} rows={6} />
               </div>
+            ) : lessonForm.content_type === "video_embed" ? (
+              <div className="space-y-1.5">
+                <Label>URL do YouTube</Label>
+                <Input value={lessonForm.content} onChange={(e) => setLessonForm({ ...lessonForm, content: e.target.value })} placeholder="https://www.youtube.com/watch?v=..." />
+                <p className="text-xs text-muted-foreground">Cole a URL do vídeo do YouTube. A conversão para embed é automática.</p>
+              </div>
             ) : (
               <div className="space-y-1.5">
                 <Label>{lessonForm.content_type === "video" ? "URL do Vídeo" : "URL do PDF"}</Label>
