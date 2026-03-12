@@ -6,8 +6,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import HeaderGamification from "./HeaderGamification";
+import { playNotificationSound } from "@/lib/notificationSounds";
 
 const SUPER_ADMIN_EMAIL = "trafegocomkrisan@gmail.com";
+const PAID_STATUSES = new Set(["paid", "approved"]);
 
 function useOneSignalInit(email: string | undefined) {
   useEffect(() => {
@@ -52,21 +54,84 @@ function useOneSignalInit(email: string | undefined) {
 export default function AdminLayout() {
   const { user, isAdmin, loading } = useAuth();
   const [totalRevenue, setTotalRevenue] = useState(0);
+  const [notificationSound, setNotificationSound] = useState("kaching");
+  const [playApprovedSaleSound, setPlayApprovedSaleSound] = useState(true);
 
   useOneSignalInit(user?.email ?? undefined);
 
   useEffect(() => {
-    if (!user) return;
-    supabase
-      .from("orders")
-      .select("amount, status")
-      .then(({ data }) => {
-        const revenue = (data || [])
-          .filter((o) => o.status === "paid" || o.status === "approved")
-          .reduce((s, o) => s + Number(o.amount), 0);
-        setTotalRevenue(revenue);
-      });
-  }, [user]);
+    if (!user?.id) return;
+
+    const loadRevenueAndSound = async () => {
+      const [{ data: orders }, { data: settings }] = await Promise.all([
+        supabase
+          .from("orders")
+          .select("amount, status")
+          .eq("user_id", user.id),
+        supabase
+          .from("notification_settings")
+          .select("notification_sound, send_approved")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+      ]);
+
+      const revenue = (orders || [])
+        .filter((o) => PAID_STATUSES.has(String(o.status).toLowerCase()))
+        .reduce((s, o) => s + Number(o.amount), 0);
+
+      setTotalRevenue(revenue);
+      setNotificationSound(settings?.notification_sound || "kaching");
+      setPlayApprovedSaleSound(settings?.send_approved ?? true);
+    };
+
+    loadRevenueAndSound();
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel(`admin-orders-sound-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "orders",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload: any) => {
+          const newStatus = String(payload?.new?.status || "").toLowerCase();
+          const oldStatus = String(payload?.old?.status || "").toLowerCase();
+
+          const becamePaid =
+            (payload?.eventType === "INSERT" && PAID_STATUSES.has(newStatus)) ||
+            (payload?.eventType === "UPDATE" && PAID_STATUSES.has(newStatus) && !PAID_STATUSES.has(oldStatus));
+
+          if (becamePaid && playApprovedSaleSound) {
+            playNotificationSound(notificationSound);
+          }
+
+          if (payload?.eventType === "INSERT" || payload?.eventType === "UPDATE") {
+            supabase
+              .from("orders")
+              .select("amount, status")
+              .eq("user_id", user.id)
+              .then(({ data }) => {
+                const revenue = (data || [])
+                  .filter((o) => PAID_STATUSES.has(String(o.status).toLowerCase()))
+                  .reduce((s, o) => s + Number(o.amount), 0);
+                setTotalRevenue(revenue);
+              });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, notificationSound, playApprovedSaleSound]);
 
   if (loading) {
     return (
