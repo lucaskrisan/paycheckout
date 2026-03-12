@@ -225,14 +225,31 @@ const Courses = () => {
     setLessonDialogOpen(true);
   };
 
+  const youtubeToEmbed = (url: string): string => {
+    try {
+      const u = new URL(url);
+      let videoId = "";
+      if (u.hostname.includes("youtu.be")) {
+        videoId = u.pathname.slice(1);
+      } else if (u.searchParams.get("v")) {
+        videoId = u.searchParams.get("v")!;
+      }
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+    } catch { return url; }
+  };
+
   const saveLesson = async () => {
     if (!lessonForm.title) { toast.error("Título obrigatório"); return; }
     if (!selectedCourse) return;
 
+    const contentValue = lessonForm.content_type === "video_embed"
+      ? youtubeToEmbed(lessonForm.content || "")
+      : (lessonForm.content || null);
+
     if (editingLesson) {
       const { error } = await supabase.from("course_lessons").update({
         title: lessonForm.title,
-        content: lessonForm.content || null,
+        content: contentValue,
         content_type: lessonForm.content_type,
         file_url: lessonForm.file_url || null,
       }).eq("id", editingLesson.id);
@@ -243,7 +260,7 @@ const Courses = () => {
       const maxOrder = mod && mod.lessons.length > 0 ? Math.max(...mod.lessons.map((l) => l.sort_order)) + 1 : 0;
       const { error } = await supabase.from("course_lessons").insert({
         title: lessonForm.title,
-        content: lessonForm.content || null,
+        content: contentValue,
         content_type: lessonForm.content_type,
         file_url: lessonForm.file_url || null,
         module_id: parentModuleId,
