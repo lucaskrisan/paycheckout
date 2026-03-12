@@ -204,6 +204,14 @@ const Dashboard = () => {
       value: String(boletoGenerated),
       iconColor: "text-muted-foreground",
     },
+    {
+      icon: ShoppingCart,
+      label: "Carrinhos abandonados",
+      value: String(totalAbandoned),
+      sub: `${recoveryRate}% recuperados`,
+      iconColor: "text-yellow-500",
+      onClick: () => navigate("/admin/abandoned"),
+    },
   ];
 
   return (
