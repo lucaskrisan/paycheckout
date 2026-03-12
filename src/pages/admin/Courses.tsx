@@ -225,14 +225,31 @@ const Courses = () => {
     setLessonDialogOpen(true);
   };
 
+  const youtubeToEmbed = (url: string): string => {
+    try {
+      const u = new URL(url);
+      let videoId = "";
+      if (u.hostname.includes("youtu.be")) {
+        videoId = u.pathname.slice(1);
+      } else if (u.searchParams.get("v")) {
+        videoId = u.searchParams.get("v")!;
+      }
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+    } catch { return url; }
+  };
+
   const saveLesson = async () => {
     if (!lessonForm.title) { toast.error("Título obrigatório"); return; }
     if (!selectedCourse) return;
 
+    const contentValue = lessonForm.content_type === "video_embed"
+      ? youtubeToEmbed(lessonForm.content || "")
+      : (lessonForm.content || null);
+
     if (editingLesson) {
       const { error } = await supabase.from("course_lessons").update({
         title: lessonForm.title,
-        content: lessonForm.content || null,
+        content: contentValue,
         content_type: lessonForm.content_type,
         file_url: lessonForm.file_url || null,
       }).eq("id", editingLesson.id);
@@ -243,7 +260,7 @@ const Courses = () => {
       const maxOrder = mod && mod.lessons.length > 0 ? Math.max(...mod.lessons.map((l) => l.sort_order)) + 1 : 0;
       const { error } = await supabase.from("course_lessons").insert({
         title: lessonForm.title,
-        content: lessonForm.content || null,
+        content: contentValue,
         content_type: lessonForm.content_type,
         file_url: lessonForm.file_url || null,
         module_id: parentModuleId,
@@ -430,7 +447,7 @@ const Courses = () => {
                         <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">{lesson.title}</p>
-                          <p className="text-xs text-muted-foreground capitalize">{lesson.content_type === "text" ? "Texto" : lesson.content_type === "video" ? "Vídeo" : lesson.content_type}</p>
+                          <p className="text-xs text-muted-foreground capitalize">{lesson.content_type === "text" ? "Texto" : lesson.content_type === "video" ? "Vídeo" : lesson.content_type === "video_embed" ? "YouTube" : lesson.content_type === "pdf" ? "PDF" : lesson.content_type}</p>
                         </div>
                         <div className="flex gap-1 shrink-0">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditLesson(lesson)}>
@@ -494,6 +511,7 @@ const Courses = () => {
                 <SelectContent>
                   <SelectItem value="text">Texto</SelectItem>
                   <SelectItem value="video">Vídeo (URL)</SelectItem>
+                  <SelectItem value="video_embed">Vídeo YouTube</SelectItem>
                   <SelectItem value="pdf">PDF (URL)</SelectItem>
                 </SelectContent>
               </Select>
@@ -502,6 +520,12 @@ const Courses = () => {
               <div className="space-y-1.5">
                 <Label>Conteúdo</Label>
                 <Textarea value={lessonForm.content} onChange={(e) => setLessonForm({ ...lessonForm, content: e.target.value })} rows={6} />
+              </div>
+            ) : lessonForm.content_type === "video_embed" ? (
+              <div className="space-y-1.5">
+                <Label>URL do YouTube</Label>
+                <Input value={lessonForm.content} onChange={(e) => setLessonForm({ ...lessonForm, content: e.target.value })} placeholder="https://www.youtube.com/watch?v=..." />
+                <p className="text-xs text-muted-foreground">Cole a URL do vídeo do YouTube. A conversão para embed é automática.</p>
               </div>
             ) : (
               <div className="space-y-1.5">
