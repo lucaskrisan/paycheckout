@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { createClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -99,6 +101,24 @@ const MemberArea = () => {
   const navigate = useNavigate();
   const token = searchParams.get("token");
 
+  // Create a supabase client that sends x-access-token header for RLS
+  const tokenClient = useMemo(() => {
+    if (!token) return supabase;
+    return createClient<Database>(
+      import.meta.env.VITE_SUPABASE_URL,
+      import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      {
+        global: {
+          headers: { "x-access-token": token },
+        },
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+      }
+    );
+  }, [token]);
+
   const [loading, setLoading] = useState(true);
   const [access, setAccess] = useState<MemberAccess | null>(null);
   const [course, setCourse] = useState<Course | null>(null);
@@ -120,7 +140,7 @@ const MemberArea = () => {
 
   const loadMemberData = async () => {
     try {
-      const { data: accessData, error: accessError } = await supabase
+      const { data: accessData, error: accessError } = await tokenClient
         .from("member_access")
         .select("id, course_id, customer_id, expires_at")
         .eq("access_token", token!)
@@ -141,7 +161,7 @@ const MemberArea = () => {
       setAccess(accessData);
 
       // Load customer name
-      const { data: customerData } = await supabase
+      const { data: customerData } = await tokenClient
         .from("customers")
         .select("name")
         .eq("id", accessData.customer_id)
@@ -149,7 +169,7 @@ const MemberArea = () => {
       if (customerData) setCustomerName(customerData.name.split(" ")[0]);
 
       // Load course
-      const { data: courseData } = await supabase
+      const { data: courseData } = await tokenClient
         .from("courses")
         .select("*")
         .eq("id", accessData.course_id)
@@ -157,7 +177,7 @@ const MemberArea = () => {
       if (courseData) setCourse(courseData);
 
       // Load modules + lessons
-      const { data: modulesData } = await supabase
+      const { data: modulesData } = await tokenClient
         .from("course_modules")
         .select("*")
         .eq("course_id", accessData.course_id)
@@ -166,7 +186,7 @@ const MemberArea = () => {
       if (modulesData) {
         const modulesWithLessons: Module[] = [];
         for (const mod of modulesData) {
-          const { data: lessonsData } = await supabase
+          const { data: lessonsData } = await tokenClient
             .from("course_lessons")
             .select("*")
             .eq("module_id", mod.id)
@@ -183,7 +203,7 @@ const MemberArea = () => {
       }
 
       // Load progress
-      const { data: progressData } = await supabase
+      const { data: progressData } = await tokenClient
         .from("lesson_progress")
         .select("lesson_id")
         .eq("member_access_id", accessData.id)
@@ -193,12 +213,12 @@ const MemberArea = () => {
       }
 
       // Load other courses (catalog) - all courses from the system
-      const { data: allCourses } = await supabase
+      const { data: allCourses } = await tokenClient
         .from("courses")
         .select("id, title, description, cover_image_url, product_id");
 
       // Get all accesses for this customer
-      const { data: allAccesses } = await supabase
+      const { data: allAccesses } = await tokenClient
         .from("member_access")
         .select("course_id")
         .eq("customer_id", accessData.customer_id);
@@ -211,7 +231,7 @@ const MemberArea = () => {
           if (c.id === accessData.course_id) continue;
           let product: Product | null = null;
           if (c.product_id) {
-            const { data: prodData } = await supabase
+            const { data: prodData } = await tokenClient
               .from("products")
               .select("*")
               .eq("id", c.product_id)
@@ -239,7 +259,7 @@ const MemberArea = () => {
     const isCompleted = completedLessons.has(lessonId);
 
     if (isCompleted) {
-      await supabase
+      await tokenClient
         .from("lesson_progress")
         .update({ completed: false, completed_at: null })
         .eq("member_access_id", access.id)
@@ -250,7 +270,7 @@ const MemberArea = () => {
         return next;
       });
     } else {
-      await supabase.from("lesson_progress").upsert(
+      await tokenClient.from("lesson_progress").upsert(
         {
           member_access_id: access.id,
           lesson_id: lessonId,
