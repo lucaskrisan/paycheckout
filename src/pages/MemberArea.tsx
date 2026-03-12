@@ -270,7 +270,7 @@ const MemberArea = () => {
         return next;
       });
     } else {
-      await supabase.from("lesson_progress").upsert(
+      await tokenClient.from("lesson_progress").upsert(
         {
           member_access_id: access.id,
           lesson_id: lessonId,
