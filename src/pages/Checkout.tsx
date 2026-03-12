@@ -8,6 +8,7 @@ import CreditCardForm, { type CreditCardData } from "@/components/checkout/Credi
 import PaymentTabs from "@/components/checkout/PaymentTabs";
 import CountdownTimer from "@/components/checkout/CountdownTimer";
 import CouponField from "@/components/checkout/CouponField";
+import PriceSummary from "@/components/checkout/PriceSummary";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
