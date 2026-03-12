@@ -70,10 +70,20 @@ Deno.serve(async (req) => {
     // Get pixels with CAPI tokens for this product
     const { data: pixels } = await supabase
       .from('product_pixels')
-      .select('pixel_id, capi_token')
+      .select('pixel_id, capi_token, user_id')
       .eq('product_id', product_id)
       .eq('platform', 'facebook')
       .not('capi_token', 'is', null);
+
+    // Log event to pixel_events for dashboard (non-blocking)
+    const productOwnerId = pixels?.[0]?.user_id || null;
+    supabase.from('pixel_events').insert({
+      product_id,
+      event_name,
+      source: 'server',
+      event_id: event_id || null,
+      user_id: productOwnerId,
+    }).then(() => {});
 
     if (!pixels || pixels.length === 0) {
       return new Response(

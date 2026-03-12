@@ -140,12 +140,14 @@ export function useFacebookPixel(productId: string | undefined) {
           // Fire PageView + InitiateCheckout with dedup
           const pvId = generateEventId("PageView");
           window.fbq("track", "PageView", {}, { eventID: pvId });
+          logPixelEvent("PageView", pvId);
 
           const icId = generateEventId("InitiateCheckout");
           window.fbq("track", "InitiateCheckout", {
             content_type: "product",
             content_ids: [productId],
           }, { eventID: icId });
+          logPixelEvent("InitiateCheckout", icId);
         }
       }, 100);
 
