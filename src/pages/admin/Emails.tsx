@@ -91,6 +91,14 @@ export default function Emails() {
     (e) => new Date(e.created_at).toDateString() === new Date().toDateString()
   ).length;
 
+  const deliveredCount = periodEmails.filter((e) => ["delivered", "opened", "clicked"].includes(e.status)).length;
+  const openedCount = periodEmails.filter((e) => ["opened", "clicked"].includes(e.status)).length;
+  const clickedCount = periodEmails.filter((e) => e.status === "clicked").length;
+  const bouncedCount = periodEmails.filter((e) => e.status === "bounced").length;
+  const deliveryRate = totalEmails > 0 ? ((deliveredCount / totalEmails) * 100).toFixed(1) : "0";
+  const openRate = deliveredCount > 0 ? ((openedCount / deliveredCount) * 100).toFixed(1) : "0";
+  const clickRate = openedCount > 0 ? ((clickedCount / openedCount) * 100).toFixed(1) : "0";
+
   return (
     <div className="space-y-6">
       <div>
@@ -155,6 +163,46 @@ export default function Emails() {
                   ))}
                 </div>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Delivery Tracking Metrics */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="border-dashed">
+          <CardContent className="pt-4 pb-4">
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Entrega</p>
+              <p className="text-xl font-bold text-foreground">{deliveryRate}%</p>
+              <p className="text-xs text-muted-foreground">{deliveredCount} de {totalEmails}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-dashed">
+          <CardContent className="pt-4 pb-4">
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Abertura</p>
+              <p className="text-xl font-bold text-foreground">{openRate}%</p>
+              <p className="text-xs text-muted-foreground">{openedCount} abertos</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-dashed">
+          <CardContent className="pt-4 pb-4">
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Cliques</p>
+              <p className="text-xl font-bold text-foreground">{clickRate}%</p>
+              <p className="text-xs text-muted-foreground">{clickedCount} clicados</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-dashed">
+          <CardContent className="pt-4 pb-4">
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Bounce</p>
+              <p className="text-xl font-bold text-destructive">{bouncedCount}</p>
+              <p className="text-xs text-muted-foreground">rejeitados</p>
             </div>
           </CardContent>
         </Card>
@@ -253,10 +301,23 @@ export default function Emails() {
                       </TableCell>
                       <TableCell>
                         <Badge
-                          variant={email.status === "sent" ? "default" : "destructive"}
+                          variant={
+                            email.status === "clicked" || email.status === "opened" ? "default" :
+                            email.status === "delivered" ? "secondary" :
+                            email.status === "sent" ? "outline" :
+                            email.status === "bounced" || email.status === "failed" || email.status === "complained" ? "destructive" :
+                            "outline"
+                          }
                           className="text-xs"
                         >
-                          {email.status === "sent" ? "Enviado" : email.status === "failed" ? "Falhou" : email.status}
+                          {email.status === "sent" ? "📤 Enviado" :
+                           email.status === "delivered" ? "✅ Entregue" :
+                           email.status === "opened" ? "👁 Aberto" :
+                           email.status === "clicked" ? "🔗 Clicado" :
+                           email.status === "bounced" ? "❌ Bounce" :
+                           email.status === "failed" ? "⚠️ Falhou" :
+                           email.status === "complained" ? "🚫 Spam" :
+                           email.status}
                         </Badge>
                       </TableCell>
                       <TableCell>
