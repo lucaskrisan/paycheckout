@@ -136,6 +136,7 @@ const PixModal = ({ open, onClose, totalAmount, qrCodeUrl, pixCode }: PixModalPr
               {pixCode && (
                 <Button
                   onClick={handleCopy}
+                  disabled={copying}
                   className={`w-full h-12 gap-2 rounded-xl font-bold text-base transition-all ${
                     copied
                       ? "bg-[#067D62] hover:bg-[#067D62] text-white"
