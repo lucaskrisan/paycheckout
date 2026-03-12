@@ -138,12 +138,19 @@ const ProductEdit = () => {
 
   const loadCheckouts = useCallback(async () => {
     if (isNew || !productId) return;
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("checkout_builder_configs")
       .select("*")
       .eq("product_id", productId)
-      .order("created_at");
-    if (data) setCheckouts(data);
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Erro ao carregar checkouts:", error);
+      toast.error("Erro ao carregar checkouts");
+      return;
+    }
+
+    setCheckouts(data || []);
   }, [isNew, productId]);
 
   useEffect(() => {
