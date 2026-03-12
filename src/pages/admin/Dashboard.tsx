@@ -279,6 +279,13 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Gamification */}
+      <SalesGamification
+        approvedToday={approvedToday}
+        approvedTotal={allApproved.length}
+        totalRevenue={allTimeRevenue}
+      />
+
       {/* Main grid: Chart left + Cards right */}
       <div className="grid lg:grid-cols-12 gap-4">
         {/* Chart */}
