@@ -8,10 +8,7 @@ const corsHeaders = {
 async function sendPushNotification(title: string, message: string, url?: string) {
   const appId = Deno.env.get('ONESIGNAL_APP_ID');
   const apiKey = Deno.env.get('ONESIGNAL_REST_API_KEY');
-  if (!appId || !apiKey) {
-    console.warn('[create-asaas-payment] OneSignal not configured, skipping notification');
-    return;
-  }
+  if (!appId || !apiKey) return;
 
   try {
     const payload: Record<string, unknown> = {
@@ -24,7 +21,7 @@ async function sendPushNotification(title: string, message: string, url?: string
     };
     if (url) payload.url = url;
 
-    const response = await fetch('https://api.onesignal.com/notifications', {
+    await fetch('https://api.onesignal.com/notifications', {
       method: 'POST',
       headers: {
         'Authorization': `Key ${apiKey}`,
@@ -32,9 +29,6 @@ async function sendPushNotification(title: string, message: string, url?: string
       },
       body: JSON.stringify(payload),
     });
-
-    const raw = await response.text();
-    console.log('[create-asaas-payment] OneSignal response:', { status: response.status, body: raw });
   } catch (err) {
     console.error('[create-asaas-payment] OneSignal error:', err);
   }
@@ -56,11 +50,14 @@ Deno.serve(async (req) => {
 
   try {
     const ASAAS_API_KEY = Deno.env.get('ASAAS_API_KEY');
-    if (!ASAAS_API_KEY) {
-      throw new Error('ASAAS_API_KEY not configured');
-    }
+    if (!ASAAS_API_KEY) throw new Error('ASAAS_API_KEY not configured');
 
-    const { amount, customer, payment_method, installments, product_id, is_subscription, billing_cycle } = await req.json();
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+
+    const { amount, customer, payment_method, installments, product_id, is_subscription, billing_cycle, coupon_id } = await req.json();
 
     if (!amount || !customer?.name || !customer?.email || !customer?.cpf) {
       return new Response(
@@ -69,10 +66,45 @@ Deno.serve(async (req) => {
       );
     }
 
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    );
+    // Get product info
+    let productOwnerId: string | null = null;
+    let productName = 'Produto';
+    if (product_id) {
+      const { data: prod } = await supabaseAdmin
+        .from('products')
+        .select('name, user_id')
+        .eq('id', product_id)
+        .maybeSingle();
+      if (prod) {
+        productName = prod.name;
+        productOwnerId = prod.user_id;
+      }
+    }
+
+    // Upsert customer
+    const { data: existingCustomer } = await supabaseAdmin
+      .from('customers')
+      .select('id')
+      .eq('email', customer.email)
+      .maybeSingle();
+
+    let customerId: string;
+    if (existingCustomer) {
+      customerId = existingCustomer.id;
+      await supabaseAdmin
+        .from('customers')
+        .update({ name: customer.name, phone: customer.phone, cpf: customer.cpf.replace(/\D/g, '') })
+        .eq('id', customerId);
+    } else {
+      const { data: newCustomer } = await supabaseAdmin
+        .from('customers')
+        .insert({ name: customer.name, email: customer.email, phone: customer.phone, cpf: customer.cpf.replace(/\D/g, ''), user_id: productOwnerId })
+        .select('id')
+        .single();
+      customerId = newCustomer!.id;
+    }
+
+    const cleanCpf = customer.cpf.replace(/\D/g, '');
 
     const { data: gatewayData } = await supabaseAdmin
       .from('payment_gateways')
@@ -85,12 +117,11 @@ Deno.serve(async (req) => {
     const gateway_config = gatewayData?.config as Record<string, any> || {};
     const environment = gatewayData?.environment || 'sandbox';
 
-    const cleanCpf = customer.cpf.replace(/\D/g, '');
     const baseUrl = environment === 'production'
       ? 'https://api.asaas.com/v3'
       : 'https://sandbox.asaas.com/api/v3';
 
-    // 1. Create or find customer in Asaas
+    // Create or find customer in Asaas
     const customerPayload = {
       name: customer.name,
       email: customer.email,
@@ -100,15 +131,12 @@ Deno.serve(async (req) => {
 
     const customerRes = await fetch(`${baseUrl}/customers`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'access_token': ASAAS_API_KEY,
-      },
+      headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
       body: JSON.stringify(customerPayload),
     });
 
     const customerData = await customerRes.json();
-    
+
     if (!customerRes.ok && !customerData.id) {
       const searchRes = await fetch(`${baseUrl}/customers?cpfCnpj=${cleanCpf}`, {
         headers: { 'access_token': ASAAS_API_KEY },
@@ -125,9 +153,62 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 2. Check if subscription or one-time payment
+    // Platform fee
+    const { data: platformSettings } = await supabaseAdmin
+      .from('platform_settings')
+      .select('platform_fee_percent')
+      .limit(1)
+      .maybeSingle();
+    const feePercent = Number(platformSettings?.platform_fee_percent || 0);
+    const feeAmount = Math.round(amount * feePercent) / 100;
+
+    // Helper to save order
+    const saveOrder = async (externalId: string, status: string, method: string) => {
+      const { data: orderRecord, error: orderError } = await supabaseAdmin
+        .from('orders')
+        .insert({
+          amount,
+          payment_method: method,
+          status,
+          product_id: product_id || null,
+          customer_id: customerId,
+          user_id: productOwnerId,
+          external_id: externalId,
+          platform_fee_percent: feePercent,
+          platform_fee_amount: feeAmount,
+          metadata: {
+            gateway: 'asaas',
+            coupon_id: coupon_id || null,
+            installments: installments || '1',
+          },
+        })
+        .select('id')
+        .single();
+
+      if (orderError) {
+        console.error('[create-asaas-payment] Order save error:', orderError);
+      } else {
+        console.log('[create-asaas-payment] Order saved:', orderRecord.id);
+      }
+
+      // Increment coupon usage
+      if (coupon_id) {
+        const { data: couponData } = await supabaseAdmin
+          .from('coupons')
+          .select('used_count')
+          .eq('id', coupon_id)
+          .single();
+        if (couponData) {
+          await supabaseAdmin
+            .from('coupons')
+            .update({ used_count: couponData.used_count + 1 })
+            .eq('id', coupon_id);
+        }
+      }
+    };
+
+    // SUBSCRIPTION
     if (is_subscription) {
-      // CREATE SUBSCRIPTION
       const cycle = BILLING_CYCLE_MAP[billing_cycle || 'monthly'] || 'MONTHLY';
       const nextDueDate = new Date();
       nextDueDate.setDate(nextDueDate.getDate() + 1);
@@ -153,14 +234,9 @@ Deno.serve(async (req) => {
         };
       }
 
-      console.log('[create-asaas-payment] Creating subscription:', { cycle, amount });
-
       const subRes = await fetch(`${baseUrl}/subscriptions`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'access_token': ASAAS_API_KEY,
-        },
+        headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
         body: JSON.stringify(subscriptionPayload),
       });
 
@@ -174,9 +250,9 @@ Deno.serve(async (req) => {
         );
       }
 
-      console.log('[create-asaas-payment] Subscription created:', subData.id, 'status:', subData.status);
+      const status = subData.status === 'ACTIVE' ? 'approved' : 'pending';
+      await saveOrder(subData.id, status, 'credit_card');
 
-      // Send push notification for new subscription
       if (subData.status === 'ACTIVE') {
         try {
           const { data: notifSettings } = await supabaseAdmin
@@ -187,7 +263,8 @@ Deno.serve(async (req) => {
           if (notifSettings && notifSettings.length > 0) {
             const formattedAmount = Number(amount).toFixed(2).replace('.', ',');
             const title = '🔄 Nova assinatura!';
-            const message = `${customer.name} • 💳 R$ ${formattedAmount}/mês`;
+            const showProductName = notifSettings.some((s) => s.show_product_name);
+            const message = `${customer.name} • 💳 R$ ${formattedAmount}/mês${showProductName ? ` • ${productName}` : ''}`;
             await sendPushNotification(title, message, 'https://paycheckout.lovable.app/admin/orders');
           }
         } catch (notifErr) {
@@ -205,9 +282,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 3. ONE-TIME PAYMENT (existing logic)
+    // ONE-TIME PAYMENT
     const billingType = payment_method === 'credit_card' ? 'CREDIT_CARD' : 'PIX';
-
     const dueDate = new Date();
     if (payment_method === 'pix') {
       dueDate.setDate(dueDate.getDate() + (gateway_config.pix_validity_days || 1));
@@ -243,10 +319,7 @@ Deno.serve(async (req) => {
 
     const paymentRes = await fetch(`${baseUrl}/payments`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'access_token': ASAAS_API_KEY,
-      },
+      headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
       body: JSON.stringify(paymentPayload),
     });
 
@@ -260,7 +333,20 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Send push notification on confirmed card payment
+    // Map Asaas status
+    const statusMap: Record<string, string> = {
+      CONFIRMED: 'approved',
+      RECEIVED: 'approved',
+      PENDING: 'pending',
+      OVERDUE: 'pending',
+      REFUNDED: 'refunded',
+      REFUND_REQUESTED: 'refunded',
+    };
+    const orderStatus = statusMap[paymentData.status] || 'pending';
+
+    await saveOrder(paymentData.id, orderStatus, payment_method || 'credit_card');
+
+    // Push notification on confirmed card
     if (payment_method === 'credit_card' && (paymentData.status === 'CONFIRMED' || paymentData.status === 'RECEIVED')) {
       try {
         const { data: notifSettings } = await supabaseAdmin
@@ -272,7 +358,7 @@ Deno.serve(async (req) => {
           const formattedAmount = Number(amount).toFixed(2).replace('.', ',');
           const showProductName = notifSettings.some((s) => s.show_product_name);
           const title = '💰 Venda aprovada!';
-          const message = `${customer.name} • 💳 Cartão R$ ${formattedAmount}${showProductName ? ` • Produto` : ''}`;
+          const message = `${customer.name} • 💳 Cartão R$ ${formattedAmount}${showProductName ? ` • ${productName}` : ''}`;
           await sendPushNotification(title, message, 'https://paycheckout.lovable.app/admin/orders');
         }
       } catch (notifErr) {
