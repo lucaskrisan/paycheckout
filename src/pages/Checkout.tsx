@@ -1,18 +1,20 @@
 import { useState, useEffect, useMemo } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Lock, ShieldCheck, ArrowRight, Loader2, QrCode, Award, Star, ListOrdered } from "lucide-react";
+import { Lock, ShieldCheck, ArrowRight, Loader2, Award, Star, ListOrdered } from "lucide-react";
 import OrderSummary from "@/components/checkout/OrderSummary";
 import CustomerForm, { type CustomerData } from "@/components/checkout/CustomerForm";
 import PixPayment from "@/components/checkout/PixPayment";
 import CreditCardForm, { type CreditCardData } from "@/components/checkout/CreditCardForm";
 import PaymentTabs from "@/components/checkout/PaymentTabs";
 import CountdownTimer from "@/components/checkout/CountdownTimer";
+import CouponField from "@/components/checkout/CouponField";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFacebookPixel } from "@/hooks/useFacebookPixel";
+import { useAbandonedCart } from "@/hooks/useAbandonedCart";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { BuilderComponent } from "@/components/checkout-builder/types";
 
@@ -25,6 +27,7 @@ interface Product {
   image_url: string | null;
   is_subscription: boolean;
   billing_cycle: string;
+  user_id: string | null;
 }
 
 interface OrderBump {
@@ -41,8 +44,24 @@ interface OrderBump {
   };
 }
 
+interface CheckoutSettings {
+  logo_url: string | null;
+  primary_color: string | null;
+  custom_css: string | null;
+  company_name: string | null;
+}
+
+interface CouponData {
+  id: string;
+  code: string;
+  discount_type: string;
+  discount_value: number;
+}
+
 const Checkout = () => {
   const { productId } = useParams<{ productId: string }>();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -53,6 +72,8 @@ const Checkout = () => {
   const [selectedBumps, setSelectedBumps] = useState<Set<string>>(new Set());
   const [builderLayout, setBuilderLayout] = useState<BuilderComponent[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'pix'>('pix');
+  const [checkoutSettings, setCheckoutSettings] = useState<CheckoutSettings | null>(null);
+  const [coupon, setCoupon] = useState<CouponData | null>(null);
 
   const [customer, setCustomer] = useState<CustomerData>({
     name: "",
@@ -67,6 +88,14 @@ const Checkout = () => {
     expiry: "",
     cvv: "",
     installments: "1",
+  });
+
+  // Abandoned cart tracking
+  const { markPurchased } = useAbandonedCart({
+    productId: productId || "",
+    customer,
+    paymentMethod,
+    productOwnerId: product?.user_id,
   });
 
   useEffect(() => {
@@ -105,16 +134,22 @@ const Checkout = () => {
       if (productRes.error || !productRes.data) {
         setNotFound(true);
       } else {
-        setProduct(productRes.data as any);
-        // Force credit card for subscription products
-        if ((productRes.data as any).is_subscription) {
-          setPaymentMethod('credit_card');
+        const p = productRes.data as any;
+        setProduct(p);
+        if (p.is_subscription) setPaymentMethod('credit_card');
+
+        // Load checkout settings for product owner
+        if (p.user_id) {
+          const { data: settings } = await supabase
+            .from("checkout_settings")
+            .select("logo_url, primary_color, custom_css, company_name")
+            .eq("user_id", p.user_id)
+            .maybeSingle();
+          if (settings) setCheckoutSettings(settings);
         }
       }
 
-      if (orderBumpsRes.data) {
-        setOrderBumps(orderBumpsRes.data as any);
-      }
+      if (orderBumpsRes.data) setOrderBumps(orderBumpsRes.data as any);
 
       const layout = (builderRes.data?.layout as unknown as BuilderComponent[] | null) ?? [];
       setBuilderLayout(Array.isArray(layout) ? layout : []);
@@ -124,6 +159,29 @@ const Checkout = () => {
 
     loadCheckoutData();
   }, [productId]);
+
+  // Apply custom CSS and primary color
+  useEffect(() => {
+    if (!checkoutSettings) return;
+
+    // Apply primary color as CSS variable
+    if (checkoutSettings.primary_color) {
+      document.documentElement.style.setProperty("--checkout-brand", checkoutSettings.primary_color);
+    }
+
+    // Inject custom CSS
+    let styleEl: HTMLStyleElement | null = null;
+    if (checkoutSettings.custom_css) {
+      styleEl = document.createElement("style");
+      styleEl.textContent = checkoutSettings.custom_css;
+      document.head.appendChild(styleEl);
+    }
+
+    return () => {
+      document.documentElement.style.removeProperty("--checkout-brand");
+      if (styleEl) styleEl.remove();
+    };
+  }, [checkoutSettings]);
 
   const toggleBump = (bumpId: string) => {
     setSelectedBumps((prev) => {
@@ -224,13 +282,22 @@ const Checkout = () => {
     );
   }
 
+  // Calculate coupon discount
+  const couponDiscount = coupon
+    ? coupon.discount_type === "percent"
+      ? product.price * (coupon.discount_value / 100)
+      : coupon.discount_value
+    : 0;
+
   const bumpTotal = orderBumps
     .filter((b) => selectedBumps.has(b.id))
     .reduce((sum, b) => sum + (b.bump_product?.price || 0), 0);
 
   const pixDiscount = paymentMethod === 'pix' ? product.price * 0.05 : 0;
-  const frontEndAmount = product.price - pixDiscount; // Valor do produto principal (para tracking)
-  const finalAmount = frontEndAmount + bumpTotal; // Valor total cobrado (com bumps)
+  const frontEndAmount = product.price - pixDiscount - couponDiscount;
+  const finalAmount = Math.max(frontEndAmount, 0) + bumpTotal;
+
+  const totalDiscount = pixDiscount + couponDiscount;
 
   const items = [
     {
@@ -267,11 +334,11 @@ const Checkout = () => {
     setIsSubmitting(true);
     try {
       if (paymentMethod === 'pix') {
-        // PIX via Pagar.me
         const { data, error } = await supabase.functions.invoke("create-pix-payment", {
           body: {
             amount: finalAmount,
             product_id: product.id,
+            coupon_id: coupon?.id || null,
             customer: {
               name: customer.name,
               email: customer.email,
@@ -287,11 +354,11 @@ const Checkout = () => {
           setPixData({ qrCodeUrl: data.qr_code_url, pixCode: data.qr_code });
           toast.success("PIX gerado! Escaneie o QR Code para pagar.");
           trackPurchase(frontEndAmount);
+          await markPurchased();
         } else {
           throw new Error("Falha ao gerar o PIX");
         }
       } else {
-        // Cartão de crédito via Asaas
         const [expMonth, expYear] = creditCard.expiry.split('/');
         const { data, error } = await supabase.functions.invoke("create-asaas-payment", {
           body: {
@@ -301,6 +368,7 @@ const Checkout = () => {
             installments: creditCard.installments,
             is_subscription: product.is_subscription,
             billing_cycle: product.billing_cycle,
+            coupon_id: coupon?.id || null,
             customer: {
               name: customer.name,
               email: customer.email,
@@ -322,6 +390,9 @@ const Checkout = () => {
         if (data?.payment_id) {
           toast.success("Pagamento processado com sucesso!");
           trackPurchase(frontEndAmount);
+          await markPurchased();
+          // Redirect to success page
+          navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}`);
         } else {
           throw new Error("Falha ao processar pagamento");
         }
@@ -338,6 +409,9 @@ const Checkout = () => {
     <div className="min-h-screen bg-background">
       <div className="bg-checkout-surface text-checkout-surface-foreground py-2.5">
         <div className="container max-w-5xl mx-auto flex items-center justify-center gap-4 text-xs">
+          {checkoutSettings?.logo_url && (
+            <img src={checkoutSettings.logo_url} alt={checkoutSettings.company_name || ""} className="h-6 object-contain" />
+          )}
           <div className="flex items-center gap-1.5">
             <Lock className="w-3.5 h-3.5 text-checkout-highlight" />
             <span>Checkout Seguro</span>
@@ -395,6 +469,13 @@ const Checkout = () => {
             <div className="bg-card border border-border rounded-2xl p-6 space-y-6 shadow-sm">
               <CustomerForm data={customer} onChange={setCustomer} />
             </div>
+
+            {/* Coupon Field */}
+            <CouponField
+              productId={product.id}
+              productPrice={product.price}
+              onApply={setCoupon}
+            />
 
             {/* Order Bumps */}
             {orderBumps.length > 0 && (
@@ -499,7 +580,7 @@ const Checkout = () => {
                     {renderCustomComponent(component)}
                   </div>
                 ))}
-              <OrderSummary items={items} discount={pixDiscount} />
+              <OrderSummary items={items} discount={totalDiscount} />
             </div>
           </motion.div>
         </div>
