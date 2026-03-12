@@ -53,22 +53,30 @@ const Dashboard = () => {
   const [period, setPeriod] = useState<Period>("today");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [platformFee, setPlatformFee] = useState(4.99);
+  const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
+  const [selectedProductId, setSelectedProductId] = useState("all");
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [user]);
 
   const loadData = useCallback(async (isRefresh = false) => {
+    if (!user) return;
     if (isRefresh) setRefreshing(true);
-    const [ordersRes, cartsRes] = await Promise.all([
-      supabase.from("orders").select("*"),
-      supabase.from("abandoned_carts").select("*").order("created_at", { ascending: false }).limit(500),
+    const [ordersRes, cartsRes, feeRes, productsRes] = await Promise.all([
+      supabase.from("orders").select("*").eq("user_id", user.id),
+      supabase.from("abandoned_carts").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(500),
+      supabase.from("platform_settings").select("platform_fee_percent").limit(1).single(),
+      supabase.from("products").select("id, name").eq("user_id", user.id),
     ]);
     setOrders(ordersRes.data || []);
     setAbandonedCarts(cartsRes.data || []);
+    if (feeRes.data?.platform_fee_percent != null) setPlatformFee(Number(feeRes.data.platform_fee_percent));
+    setProducts(productsRes.data || []);
     setLoading(false);
     if (isRefresh) setRefreshing(false);
-  }, []);
+  }, [user]);
 
   const filterByPeriod = (items: any[]) => {
     const now = new Date();
