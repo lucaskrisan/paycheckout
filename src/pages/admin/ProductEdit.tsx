@@ -1042,7 +1042,7 @@ const ProductEdit = () => {
                           )}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {form.price ? `R$ ${Number(form.price).toFixed(2).replace(".", ",")}` : "—"}
+                          {co.price != null ? `R$ ${Number(co.price).toFixed(2).replace(".", ",")}` : `R$ ${Number(form.price).toFixed(2).replace(".", ",")} (padrão)`}
                         </TableCell>
                         <TableCell>
                           <DropdownMenu>
