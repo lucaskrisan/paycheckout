@@ -83,20 +83,36 @@ const CheckoutBuilder = () => {
           loaded = true;
         }
       } else {
-        const { data } = await supabase
+        const { data: defaultConfig } = await supabase
           .from("checkout_builder_configs")
           .select("*")
           .eq("product_id", productId)
-          .order("created_at")
-          .limit(1);
-        if (data && data.length > 0) {
-          setCheckoutName(data[0].name);
-          let layout = (data[0].layout as any) || [];
+          .eq("is_default", true)
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        let chosenConfig = defaultConfig;
+
+        if (!chosenConfig) {
+          const { data: latestConfig } = await supabase
+            .from("checkout_builder_configs")
+            .select("*")
+            .eq("product_id", productId)
+            .order("updated_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          chosenConfig = latestConfig;
+        }
+
+        if (chosenConfig) {
+          setCheckoutName(chosenConfig.name);
+          let layout = (chosenConfig.layout as any) || [];
           layout = layout.length > 0
             ? layout.map((c: any) => c.type === "header" ? { ...c, props: { ...c.props, title: productName.toUpperCase() } } : c)
             : defaults;
           setComponents(layout);
-          setDbConfigId(data[0].id);
+          setDbConfigId(chosenConfig.id);
           loaded = true;
         }
       }
