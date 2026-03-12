@@ -177,7 +177,7 @@ const MemberArea = () => {
       if (courseData) setCourse(courseData);
 
       // Load modules + lessons
-      const { data: modulesData } = await supabase
+      const { data: modulesData } = await tokenClient
         .from("course_modules")
         .select("*")
         .eq("course_id", accessData.course_id)
