@@ -205,15 +205,21 @@ const Checkout = () => {
 
         {/* Product banner image */}
         {product.image_url && (
-          <div className="rounded-lg overflow-hidden">
-            <img src={product.image_url} alt={product.name} className="w-full h-auto object-contain" loading="eager" />
+          <div className="rounded-xl border border-border bg-card/60 p-2 overflow-hidden">
+            <img
+              src={product.image_url}
+              alt={product.name}
+              className="w-full h-auto max-h-[420px] object-contain mx-auto"
+              loading="eager"
+              decoding="async"
+            />
           </div>
         )}
 
         {/* Product name + thumbnail */}
         <div className="flex items-center gap-3">
           {product.image_url && (
-            <img src={product.image_url} alt="" className="w-12 h-12 rounded-md object-cover border border-border" />
+            <img src={product.image_url} alt="" className="w-12 h-12 rounded-md object-contain bg-muted p-1 border border-border" />
           )}
           <h1 className="text-lg font-bold text-foreground">{product.name}</h1>
         </div>
@@ -283,7 +289,7 @@ const Checkout = () => {
 
                   {/* Product image */}
                   {bump.use_product_image && bump.bump_product?.image_url && (
-                    <img src={bump.bump_product.image_url} alt="" className="w-14 h-14 rounded-md object-cover shrink-0 border border-border" />
+                    <img src={bump.bump_product.image_url} alt="" className="w-14 h-14 rounded-md object-contain bg-muted p-1 shrink-0 border border-border" />
                   )}
 
                   {/* Text */}
