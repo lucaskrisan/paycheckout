@@ -115,6 +115,11 @@ const Checkout = () => {
       if (productRes.error || !productRes.data) { setNotFound(true); }
       else {
         const p = productRes.data as any;
+        // Override price if config has a custom price
+        const configPrice = (builderRes.data as any)?.price;
+        if (configPrice != null && configPrice > 0) {
+          p.price = Number(configPrice);
+        }
         setProduct(p);
         if (p.is_subscription) setPaymentMethod("credit_card");
         if (p.user_id) {
