@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Lock, ArrowRight, Loader2, Award, Star, ListOrdered, Shield, ShieldCheck } from "lucide-react";
 import CustomerForm, { type CustomerData } from "@/components/checkout/CustomerForm";
 import PixPayment from "@/components/checkout/PixPayment";
+import PixModal from "@/components/checkout/PixModal";
 import CreditCardForm, { type CreditCardData } from "@/components/checkout/CreditCardForm";
 import PaymentTabs from "@/components/checkout/PaymentTabs";
 import CountdownTimer from "@/components/checkout/CountdownTimer";
@@ -68,6 +69,7 @@ const Checkout = () => {
   const [notFound, setNotFound] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pixData, setPixData] = useState<{ qrCodeUrl?: string; pixCode?: string } | null>(null);
+  const [pixModalOpen, setPixModalOpen] = useState(false);
   const { trackPurchase, trackAddPaymentInfo, trackLead, setAdvancedMatching } = useFacebookPixel(productId);
   const [orderBumps, setOrderBumps] = useState<OrderBump[]>([]);
   const [selectedBumps, setSelectedBumps] = useState<Set<string>>(new Set());
@@ -226,7 +228,7 @@ const Checkout = () => {
           body: { amount: finalAmount, product_id: product.id, config_id: requestedConfigId || null, coupon_id: coupon?.id || null, bump_product_ids: bumpProductIds, customer: { name: customer.name, email: customer.email, cpf: customer.cpf, phone: customer.phone } },
         });
         if (error) throw error;
-        if (data?.qr_code_url || data?.qr_code) { setPixData({ qrCodeUrl: data.qr_code_url, pixCode: data.qr_code }); toast.success("PIX gerado! Escaneie o QR Code para pagar."); trackPurchase(frontEndAmount); await markPurchased(); }
+        if (data?.qr_code_url || data?.qr_code) { setPixData({ qrCodeUrl: data.qr_code_url, pixCode: data.qr_code }); setPixModalOpen(true); trackPurchase(frontEndAmount); await markPurchased(); }
         else throw new Error("Falha ao gerar o PIX");
       } else {
         const bumpProductIds2 = orderBumps.filter((b) => selectedBumps.has(b.id)).map((b) => b.bump_product.id);
@@ -424,6 +426,13 @@ const Checkout = () => {
           </div>
         </div>
       </div>
+      <PixModal
+        open={pixModalOpen}
+        onClose={() => setPixModalOpen(false)}
+        totalAmount={finalAmount}
+        qrCodeUrl={pixData?.qrCodeUrl}
+        pixCode={pixData?.pixCode}
+      />
     </div>
   );
 };
