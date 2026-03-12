@@ -71,6 +71,7 @@ const App = () => (
               <Route path="health" element={<SystemHealth />} />
               <Route path="webhooks" element={<Webhooks />} />
               <Route path="emails" element={<Emails />} />
+              <Route path="pwa" element={<PwaSettings />} />
               <Route path="platform" element={<SuperAdminDashboard />} />
             </Route>
             <Route path="*" element={<NotFound />} />
