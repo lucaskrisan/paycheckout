@@ -213,7 +213,7 @@ export function useFacebookPixel(productId: string | undefined) {
       payment_method: paymentMethod,
     }, { eventID: eventId });
     logPixelEvent("AddPaymentInfo", eventId);
-  }, []);
+  }, [logPixelEvent]);
 
   /**
    * Track AddToCart event (Order Bump selected).
