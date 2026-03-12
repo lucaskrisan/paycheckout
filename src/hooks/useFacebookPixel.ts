@@ -232,7 +232,8 @@ export function useFacebookPixel(productId: string | undefined) {
       value: 0,
       currency: "BRL",
     }, { eventID: eventId });
-  }, [productId]);
+    logPixelEvent("AddToCart", eventId);
+  }, [productId, logPixelEvent]);
 
   /**
    * Track Purchase event with full data and deduplication.
