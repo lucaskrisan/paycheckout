@@ -513,6 +513,23 @@ const Orders = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Email Preview Modal */}
+      {emailPreview && (
+        <EmailPreviewModal
+          open={emailPreview.open}
+          onOpenChange={(open) => {
+            if (!open) setEmailPreview(null);
+          }}
+          subject={emailPreview.subject}
+          body={emailPreview.body}
+          fullHtml={emailPreview.fullHtml}
+          to={emailPreview.to}
+          customerName={emailPreview.customerName}
+          productName={emailPreview.productName}
+          onSend={handleConfirmSend}
+        />
+      )}
     </div>
   );
 };
