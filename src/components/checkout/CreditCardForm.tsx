@@ -42,12 +42,18 @@ const CreditCardForm = ({ data, onChange, totalAmount }: CreditCardFormProps) =>
     }
   };
 
-  const installmentOptions = Array.from({ length: 12 }, (_, i) => {
+  const INTEREST_RATE = 0.0299; // 2.99% ao mês
+  const installmentOptions = Array.from({ length: 10 }, (_, i) => {
     const n = i + 1;
-    const value = totalAmount / n;
+    if (n === 1) {
+      return { value: "1", label: `1x de R$ ${totalAmount.toFixed(2).replace(".", ",")} (sem juros)` };
+    }
+    // Juros compostos: PMT = PV * r / (1 - (1+r)^-n)
+    const installmentValue = totalAmount * INTEREST_RATE / (1 - Math.pow(1 + INTEREST_RATE, -n));
+    const totalWithInterest = installmentValue * n;
     return {
       value: String(n),
-      label: `${n}x de R$ ${value.toFixed(2).replace(".", ",")}`,
+      label: `${n}x de R$ ${installmentValue.toFixed(2).replace(".", ",")} (R$ ${totalWithInterest.toFixed(2).replace(".", ",")})`,
     };
   });
 
