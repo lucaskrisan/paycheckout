@@ -358,7 +358,7 @@ const Orders = () => {
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">CLIENTE</th>
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">STATUS</th>
                   <th className="text-right py-3 px-4 font-medium text-muted-foreground">VALOR LÍQUIDO</th>
-                </tr>
+                  <th className="text-center py-3 px-4 font-medium text-muted-foreground">AÇÕES</th>
               </thead>
               <tbody>
                 {loading ? (
