@@ -213,7 +213,7 @@ const MemberArea = () => {
       }
 
       // Load other courses (catalog) - all courses from the system
-      const { data: allCourses } = await supabase
+      const { data: allCourses } = await tokenClient
         .from("courses")
         .select("id, title, description, cover_image_url, product_id");
 
