@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Lock, ArrowRight, Loader2, Award, Star, ListOrdered } from "lucide-react";
 import CustomerForm, { type CustomerData } from "@/components/checkout/CustomerForm";
@@ -59,6 +59,8 @@ interface CouponData {
 const Checkout = () => {
   const { productId } = useParams<{ productId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const requestedConfigId = useMemo(() => new URLSearchParams(location.search).get("config"), [location.search]);
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -87,10 +89,26 @@ const Checkout = () => {
 
     const load = async () => {
       setLoading(true);
+      const builderQuery = requestedConfigId
+        ? supabase
+            .from("checkout_builder_configs")
+            .select("layout")
+            .eq("id", requestedConfigId)
+            .eq("product_id", productId)
+            .maybeSingle()
+        : supabase
+            .from("checkout_builder_configs")
+            .select("layout")
+            .eq("product_id", productId)
+            .eq("is_default", true)
+            .order("updated_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
       const [productRes, bumpsRes, builderRes] = await Promise.all([
         supabase.from("products").select("*").eq("id", productId).eq("active", true).single(),
         supabase.from("order_bumps").select("id, call_to_action, title, description, use_product_image, bump_product:products!order_bumps_bump_product_id_fkey(id, name, price, image_url)").eq("product_id", productId).eq("active", true).order("sort_order"),
-        supabase.from("checkout_builder_configs").select("layout").eq("product_id", productId).eq("is_default", true).order("created_at", { ascending: true }).limit(1).maybeSingle(),
+        builderQuery,
       ]);
 
       if (productRes.error || !productRes.data) { setNotFound(true); }
@@ -104,12 +122,37 @@ const Checkout = () => {
         }
       }
       if (bumpsRes.data) setOrderBumps(bumpsRes.data as any);
-      const layout = (builderRes.data?.layout as unknown as BuilderComponent[] | null) ?? [];
+      let builderLayoutData = builderRes.data;
+
+      if (!builderLayoutData) {
+        const { data: fallbackConfig } = await supabase
+          .from("checkout_builder_configs")
+          .select("layout")
+          .eq("product_id", productId)
+          .eq("is_default", true)
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        builderLayoutData = fallbackConfig;
+      }
+
+      if (!builderLayoutData) {
+        const { data: latestConfig } = await supabase
+          .from("checkout_builder_configs")
+          .select("layout")
+          .eq("product_id", productId)
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        builderLayoutData = latestConfig;
+      }
+
+      const layout = (builderLayoutData?.layout as unknown as BuilderComponent[] | null) ?? [];
       setBuilderLayout(Array.isArray(layout) ? layout : []);
       setLoading(false);
     };
     load();
-  }, [productId]);
+  }, [productId, requestedConfigId]);
 
   useEffect(() => {
     if (!checkoutSettings) return;

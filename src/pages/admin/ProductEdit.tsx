@@ -322,7 +322,8 @@ const ProductEdit = () => {
     );
   }
 
-  const checkoutLink = isNew ? "" : `${getPublicUrl()}/checkout/${productId}`;
+  const defaultCheckout = checkouts.find((c: any) => c.is_default) || checkouts[0] || null;
+  const checkoutLink = isNew ? "" : `${getPublicUrl()}/checkout/${productId}${defaultCheckout?.id ? `?config=${defaultCheckout.id}` : ""}`;
 
   return (
     <div className="space-y-0 -m-6">
@@ -1020,40 +1021,6 @@ const ProductEdit = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {/* Default checkout */}
-                    {checkoutLink && (
-                      <TableRow>
-                        <TableCell className="text-sm text-foreground">
-                          Checkout A
-                          {checkouts.every(c => !c.is_default) && (
-                            <span className="ml-2 text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full">Padrão</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {form.price ? `R$ ${Number(form.price).toFixed(2).replace(".", ",")}` : "—"}
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <button className="p-1 rounded hover:bg-muted transition-colors">
-                                <MoreVertical className="w-4 h-4 text-muted-foreground" />
-                              </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40">
-                              <DropdownMenuItem onClick={() => navigate(`/admin/products/${productId}/checkout-builder`)} className="gap-2 text-sm">
-                                <ExternalLink className="w-3.5 h-3.5" /> Personalizar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="gap-2 text-sm">
-                                <Settings2 className="w-3.5 h-3.5" /> Configurações
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => { navigator.clipboard.writeText(checkoutLink); toast.success("Link copiado!"); }} className="gap-2 text-sm">
-                                <LinkIcon className="w-3.5 h-3.5" /> Duplicar
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    )}
                     {/* Dynamic checkouts from DB */}
                     {checkouts.map((co) => (
                       <TableRow key={co.id}>
@@ -1074,7 +1041,7 @@ const ProductEdit = () => {
                               </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-40">
-                              <DropdownMenuItem onClick={() => navigate(`/admin/products/${productId}/checkout-builder`)} className="gap-2 text-sm">
+                              <DropdownMenuItem onClick={() => navigate(`/admin/products/${productId}/checkout-builder/${co.id}`)} className="gap-2 text-sm">
                                 <ExternalLink className="w-3.5 h-3.5" /> Personalizar
                               </DropdownMenuItem>
                               <DropdownMenuItem className="gap-2 text-sm">
@@ -1084,6 +1051,8 @@ const ProductEdit = () => {
                                 await supabase.from("checkout_builder_configs").insert({
                                   product_id: productId!,
                                   name: co.name + " (cópia)",
+                                  layout: co.layout || [],
+                                  settings: co.settings || {},
                                   is_default: false,
                                   user_id: user?.id,
                                 });
@@ -1239,7 +1208,7 @@ const ProductEdit = () => {
                               <DropdownMenuContent align="end" className="w-40">
                                 <DropdownMenuItem onClick={() => { navigator.clipboard.writeText(checkoutLink); toast.success("Link copiado!"); }} className="gap-2 text-sm"><LinkIcon className="w-3.5 h-3.5" /> Copiar link</DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => window.open(checkoutLink, "_blank")} className="gap-2 text-sm"><ExternalLink className="w-3.5 h-3.5" /> Abrir</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => navigate(`/admin/products/${productId}/checkout-builder`)} className="gap-2 text-sm"><Settings2 className="w-3.5 h-3.5" /> Personalizar</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => navigate(`/admin/products/${productId}/checkout-builder${defaultCheckout?.id ? `/${defaultCheckout.id}` : ""}`)} className="gap-2 text-sm"><Settings2 className="w-3.5 h-3.5" /> Personalizar</DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>
