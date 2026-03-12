@@ -79,12 +79,11 @@ Deno.serve(async (req) => {
         serverPrice = prod.price;
 
         // Check if a config with custom price was used
-        const configId = (await req.clone().json()).config_id;
-        if (configId) {
+        if (config_id) {
           const { data: config } = await supabaseAdmin
             .from('checkout_builder_configs')
             .select('price')
-            .eq('id', configId)
+            .eq('id', config_id)
             .eq('product_id', product_id)
             .maybeSingle();
           if (config?.price != null && config.price > 0) {
@@ -111,10 +110,23 @@ Deno.serve(async (req) => {
           }
         }
 
-        const validatedAmount = Math.max(pixPrice - couponDiscount, 0);
+        // Calculate bump total server-side
+        let bumpTotal = 0;
+        if (bump_product_ids && Array.isArray(bump_product_ids) && bump_product_ids.length > 0) {
+          const { data: bumpProducts } = await supabaseAdmin
+            .from('products')
+            .select('price')
+            .in('id', bump_product_ids)
+            .eq('active', true);
+          if (bumpProducts) {
+            bumpTotal = bumpProducts.reduce((sum: number, bp: any) => sum + Number(bp.price), 0);
+          }
+        }
+
+        const validatedAmount = Math.max(pixPrice - couponDiscount, 0) + bumpTotal;
         // Allow small rounding tolerance (R$ 0.02)
         if (Math.abs(amount - validatedAmount) > 0.02) {
-          console.warn(`[create-pix-payment] Price mismatch: client=${amount}, server=${validatedAmount}`);
+          console.warn(`[create-pix-payment] Price mismatch: client=${amount}, server=${validatedAmount} (product=${pixPrice}, coupon=${couponDiscount}, bumps=${bumpTotal})`);
           return new Response(
             JSON.stringify({ error: 'Valor inválido. Recarregue a página e tente novamente.' }),
             { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
