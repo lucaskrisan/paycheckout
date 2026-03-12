@@ -40,7 +40,76 @@ async function sendPushNotification(title: string, message: string, url?: string
   }
 }
 
-Deno.serve(async (req) => {
+async function sendAccessEmail(supabase: any, customerId: string, course: { id: string; title: string }, accessToken: string) {
+  try {
+    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+    if (!RESEND_API_KEY) return;
+
+    const { data: customer } = await supabase
+      .from('customers')
+      .select('name, email')
+      .eq('id', customerId)
+      .single();
+
+    if (!customer) return;
+
+    const siteUrl = 'https://paycheckout.lovable.app';
+    const accessUrl = `${siteUrl}/membros?token=${accessToken}`;
+
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+      <body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+        <div style="max-width:560px;margin:40px auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+          <div style="background:linear-gradient(135deg,#22c55e,#16a34a);padding:32px 40px;text-align:center;">
+            <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">🎉 Pagamento confirmado!</h1>
+          </div>
+          <div style="padding:32px 40px;">
+            <p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 16px;">
+              Olá <strong>${customer.name.split(' ')[0]}</strong>,
+            </p>
+            <p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 24px;">
+              Seu pagamento foi confirmado e seu acesso ao curso <strong>"${course.title}"</strong> está liberado! 🚀
+            </p>
+            <div style="text-align:center;margin:32px 0;">
+              <a href="${accessUrl}" style="display:inline-block;background:linear-gradient(135deg,#22c55e,#16a34a);color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:8px;font-size:16px;font-weight:600;box-shadow:0 4px 12px rgba(34,197,94,0.4);">
+                Acessar Curso
+              </a>
+            </div>
+            <p style="color:#6b7280;font-size:13px;line-height:1.5;margin:24px 0 0;padding-top:20px;border-top:1px solid #e5e7eb;">
+              Ou copie e cole este link:<br>
+              <a href="${accessUrl}" style="color:#22c55e;word-break:break-all;">${accessUrl}</a>
+            </p>
+          </div>
+          <div style="background:#f9fafb;padding:20px 40px;text-align:center;">
+            <p style="color:#9ca3af;font-size:12px;margin:0;">Guarde este email — ele contém seu link de acesso.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'PayCheckout <noreply@paolasemfiltro.com>',
+        to: [customer.email],
+        subject: `🎉 Acesso liberado — "${course.title}"`,
+        html: emailHtml,
+      }),
+    });
+    console.log('[asaas-webhook] Access email sent to', customer.email);
+  } catch (err) {
+    console.error('[asaas-webhook] Email error (non-blocking):', err);
+  }
+}
+
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
