@@ -19,43 +19,68 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Use REST API v1 with Basic auth
     const payload = {
       app_id: appId,
       included_segments: ['Total Subscriptions'],
+      target_channel: 'push',
       headings: { en: '🎉 Ka-ching! Mais uma venda!' },
       contents: { en: 'João Silva • 💠 PIX R$ 197,00 • Curso Premium' },
       chrome_web_icon: 'https://paycheckout.lovable.app/pwa-192x192.png',
       url: 'https://paycheckout.lovable.app/admin/orders',
     };
 
-    console.log('[test-push] Sending with payload:', JSON.stringify(payload));
-    console.log('[test-push] Using API key (first 10 chars):', apiKey.substring(0, 10));
+    console.log('[test-push] Sending notification...');
+    console.log('[test-push] API Key prefix:', apiKey.substring(0, 15) + '...');
 
-    const response = await fetch('https://onesignal.com/api/v1/notifications', {
+    // Try new API format first (Key auth)
+    let response = await fetch('https://api.onesignal.com/notifications', {
       method: 'POST',
       headers: {
-        'Authorization': `Basic ${apiKey}`,
+        'Authorization': `Key ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
     });
 
-    const data = await response.json();
-    console.log('[test-push] OneSignal response status:', response.status);
-    console.log('[test-push] OneSignal response:', JSON.stringify(data));
+    let data = await response.json();
+    console.log('[test-push] New API response:', response.status, JSON.stringify(data));
 
-    // If that fails, try listing players to debug
+    // If new API fails, try legacy API format (Basic auth)
+    if (data.errors || response.status !== 200) {
+      console.log('[test-push] Trying legacy API format...');
+      
+      // Try with "Subscribed Users" segment
+      const legacyPayload = {
+        ...payload,
+        included_segments: ['Subscribed Users'],
+      };
+      delete (legacyPayload as any).target_channel;
+
+      response = await fetch('https://onesignal.com/api/v1/notifications', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(legacyPayload),
+      });
+
+      data = await response.json();
+      console.log('[test-push] Legacy API response:', response.status, JSON.stringify(data));
+    }
+
+    // Debug: list players/subscriptions
     if (data.errors) {
-      console.log('[test-push] Attempting to list players for debugging...');
-      const playersRes = await fetch(
-        `https://onesignal.com/api/v1/players?app_id=${appId}&limit=10`,
-        {
-          headers: { 'Authorization': `Basic ${apiKey}` },
-        }
-      );
-      const playersData = await playersRes.json();
-      console.log('[test-push] Players list:', JSON.stringify(playersData));
+      try {
+        const viewRes = await fetch(
+          `https://api.onesignal.com/apps/${appId}/subscriptions`,
+          { headers: { 'Authorization': `Key ${apiKey}` } }
+        );
+        const viewData = await viewRes.text();
+        console.log('[test-push] Subscriptions debug:', viewRes.status, viewData.substring(0, 500));
+      } catch (e) {
+        console.log('[test-push] Debug fetch failed:', e);
+      }
     }
 
     return new Response(JSON.stringify({ success: !data.errors, onesignal: data }), {
