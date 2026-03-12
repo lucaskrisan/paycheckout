@@ -227,6 +227,14 @@ const Dashboard = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <h1 className="text-xl font-bold text-foreground">Dashboard</h1>
         <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 px-3 h-9 rounded-md border border-border bg-background text-sm">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+            <span className="text-foreground font-medium">{liveVisitors}</span>
+            <span className="text-muted-foreground">visitantes ao vivo</span>
+          </div>
           <Button
             variant="ghost"
             size="icon"
