@@ -30,16 +30,17 @@
   <meta property="og:description" content="Lovable Generated Project">
   <meta name="twitter:description" content="Lovable Generated Project">
 
-  <!-- PushAlert -->
-  <script type="text/javascript">
-    (function(d, t) {
-      var g = d.createElement(t),
-        s = d.getElementsByTagName(t)[0];
-      g.src = "https://cdn.pushalert.co/integrate_5626c9564deb2bcf9c5f7b833bd991d7.js";
-      s.parentNode.insertBefore(g, s);
-    }(document, "script"));
+  <!-- OneSignal -->
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <script>
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+      await OneSignal.init({
+        appId: "5ba5218a-5026-4270-92ce-d2e0ab5509e0",
+      });
+    });
   </script>
-  <!-- End PushAlert -->
+  <!-- End OneSignal -->
 </head>
 
   <body>
