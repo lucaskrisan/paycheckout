@@ -13,7 +13,7 @@ import {
   Info,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import {
+import { Button } from "@/components/ui/button";
   Select,
   SelectContent,
   SelectItem,
