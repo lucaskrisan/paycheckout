@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import TrackingScriptGenerator from "@/components/admin/TrackingScriptGenerator";
 import UtmAttributionTable from "@/components/admin/UtmAttributionTable";
+import PixelEventsDashboard from "@/components/admin/PixelEventsDashboard";
 import {
   Select,
   SelectContent,
@@ -349,6 +350,9 @@ const Tracking = () => {
           </div>
         </Card>
       </div>
+
+      {/* ========= REAL-TIME EVENTS DASHBOARD ========= */}
+      <PixelEventsDashboard products={products} />
 
       {/* ========= DIAGNOSTICS ========= */}
       <Card className="overflow-hidden">

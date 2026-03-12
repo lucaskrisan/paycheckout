@@ -89,6 +89,17 @@ export function useFacebookPixel(productId: string | undefined) {
     }).catch((err) => console.warn("[CAPI] non-blocking error:", err));
   }, [productId]);
 
+  /** Log pixel event to database for real-time dashboard (non-blocking) */
+  const logPixelEvent = useCallback((eventName: string, eventId?: string) => {
+    if (!productId) return;
+    supabase.from("pixel_events" as any).insert({
+      product_id: productId,
+      event_name: eventName,
+      source: "browser",
+      event_id: eventId || null,
+    }).then(() => {});
+  }, [productId]);
+
   useEffect(() => {
     if (!productId || initializedRef.current) return;
 
@@ -140,12 +151,14 @@ export function useFacebookPixel(productId: string | undefined) {
           // Fire PageView + InitiateCheckout with dedup
           const pvId = generateEventId("PageView");
           window.fbq("track", "PageView", {}, { eventID: pvId });
+          logPixelEvent("PageView", pvId);
 
           const icId = generateEventId("InitiateCheckout");
           window.fbq("track", "InitiateCheckout", {
             content_type: "product",
             content_ids: [productId],
           }, { eventID: icId });
+          logPixelEvent("InitiateCheckout", icId);
         }
       }, 100);
 
@@ -199,7 +212,8 @@ export function useFacebookPixel(productId: string | undefined) {
       content_type: "product",
       payment_method: paymentMethod,
     }, { eventID: eventId });
-  }, []);
+    logPixelEvent("AddPaymentInfo", eventId);
+  }, [logPixelEvent]);
 
   /**
    * Track AddToCart event (Order Bump selected).
@@ -218,7 +232,8 @@ export function useFacebookPixel(productId: string | undefined) {
       value: 0,
       currency: "BRL",
     }, { eventID: eventId });
-  }, [productId]);
+    logPixelEvent("AddToCart", eventId);
+  }, [productId, logPixelEvent]);
 
   /**
    * Track Purchase event with full data and deduplication.
@@ -239,9 +254,10 @@ export function useFacebookPixel(productId: string | undefined) {
     if (window.fbq) {
       window.fbq("track", "Purchase", customData, { eventID: eventId });
     }
-    // Also send server-side via CAPI
+    // Also send server-side via CAPI (which also logs to pixel_events)
     sendCAPI("Purchase", eventId, customData);
-  }, [productId, sendCAPI]);
+    logPixelEvent("Purchase", eventId);
+  }, [productId, sendCAPI, logPixelEvent]);
 
   /**
    * Track custom lead/contact event (e.g., after form fill).
@@ -260,7 +276,8 @@ export function useFacebookPixel(productId: string | undefined) {
       window.fbq("track", "Lead", customData, { eventID: eventId });
     }
     sendCAPI("Lead", eventId, customData);
-  }, [productId, sendCAPI]);
+    logPixelEvent("Lead", eventId);
+  }, [productId, sendCAPI, logPixelEvent]);
 
   return {
     trackPurchase,

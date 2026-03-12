@@ -860,6 +860,36 @@ export type Database = {
         }
         Relationships: []
       }
+      pixel_events: {
+        Row: {
+          created_at: string
+          event_id: string | null
+          event_name: string
+          id: string
+          product_id: string
+          source: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_id?: string | null
+          event_name: string
+          id?: string
+          product_id: string
+          source?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_id?: string | null
+          event_name?: string
+          id?: string
+          product_id?: string
+          source?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       platform_settings: {
         Row: {
           id: string
