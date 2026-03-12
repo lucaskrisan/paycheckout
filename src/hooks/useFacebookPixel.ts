@@ -131,6 +131,8 @@ export function useFacebookPixel(productId: string | undefined) {
    * This updates all initialized pixels with user data for better matching.
    */
   const setAdvancedMatching = useCallback((customer: CustomerInfo) => {
+    customerRef.current = customer;
+
     if (!window.fbq || pixelIdsRef.current.length === 0) return;
 
     const nameParts = normalizeParam(customer.name).split(" ");
@@ -146,7 +148,6 @@ export function useFacebookPixel(productId: string | undefined) {
     if (formattedPhone) userData.ph = formattedPhone;
     if (customer.cpf) userData.external_id = digitsOnly(customer.cpf);
 
-    // Re-init each pixel with Advanced Matching data
     pixelIdsRef.current.forEach((pixelId) => {
       window.fbq("init", pixelId, userData);
     });
