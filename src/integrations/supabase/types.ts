@@ -368,6 +368,63 @@ export type Database = {
         }
         Relationships: []
       }
+      email_logs: {
+        Row: {
+          cost_estimate: number | null
+          created_at: string
+          customer_id: string | null
+          email_type: string
+          html_body: string | null
+          id: string
+          metadata: Json | null
+          order_id: string | null
+          product_id: string | null
+          resend_id: string | null
+          source: string | null
+          status: string
+          subject: string
+          to_email: string
+          to_name: string | null
+          user_id: string | null
+        }
+        Insert: {
+          cost_estimate?: number | null
+          created_at?: string
+          customer_id?: string | null
+          email_type?: string
+          html_body?: string | null
+          id?: string
+          metadata?: Json | null
+          order_id?: string | null
+          product_id?: string | null
+          resend_id?: string | null
+          source?: string | null
+          status?: string
+          subject: string
+          to_email: string
+          to_name?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          cost_estimate?: number | null
+          created_at?: string
+          customer_id?: string | null
+          email_type?: string
+          html_body?: string | null
+          id?: string
+          metadata?: Json | null
+          order_id?: string | null
+          product_id?: string | null
+          resend_id?: string | null
+          source?: string | null
+          status?: string
+          subject?: string
+          to_email?: string
+          to_name?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       facebook_domains: {
         Row: {
           created_at: string
