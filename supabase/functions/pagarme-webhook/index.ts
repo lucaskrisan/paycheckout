@@ -93,8 +93,79 @@ Deno.serve(async (req) => {
 
     console.log('[pagarme-webhook] Order updated:', { externalId, status, found: !!orderData });
 
-    // On confirmed payment, create member access + send email
+    // On confirmed payment, create member access + send email + fire CAPI Purchase
     if (status === 'paid' && orderData?.product_id && orderData?.customer_id) {
+      // --- CAPI Purchase (server-side, deduped by order external_id) ---
+      try {
+        const { data: pixels } = await supabase
+          .from('product_pixels')
+          .select('pixel_id, capi_token')
+          .eq('product_id', orderData.product_id)
+          .eq('platform', 'facebook')
+          .not('capi_token', 'is', null);
+
+        if (pixels && pixels.length > 0) {
+          // Get customer info for hashing
+          const { data: custData } = await supabase
+            .from('customers')
+            .select('name, email, phone, cpf')
+            .eq('id', orderData.customer_id)
+            .maybeSingle();
+
+          const hashSHA256 = async (v: string) => {
+            const data = new TextEncoder().encode(v.trim().toLowerCase());
+            const hash = await crypto.subtle.digest('SHA-256', data);
+            return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+          };
+
+          const userData: Record<string, any> = {};
+          if (custData?.email) userData.em = [await hashSHA256(custData.email)];
+          if (custData?.phone) {
+            const ph = custData.phone.replace(/\D/g, '');
+            userData.ph = [await hashSHA256(ph.startsWith('55') ? ph : `55${ph}`)];
+          }
+          if (custData?.name) {
+            const parts = custData.name.trim().toLowerCase().split(' ');
+            userData.fn = [await hashSHA256(parts[0])];
+            if (parts.length > 1) userData.ln = [await hashSHA256(parts.slice(1).join(' '))];
+          }
+          if (custData?.cpf) userData.external_id = [await hashSHA256(custData.cpf.replace(/\D/g, ''))];
+
+          const capiEvent = {
+            event_name: 'Purchase',
+            event_time: Math.floor(Date.now() / 1000),
+            event_id: externalId, // same as browser eventId for dedup
+            event_source_url: '',
+            action_source: 'website',
+            user_data: userData,
+            custom_data: {
+              value: Number(orderData.amount),
+              currency: 'BRL',
+              content_type: 'product',
+              content_ids: [orderData.product_id],
+            },
+          };
+
+          for (const pixel of pixels) {
+            if (!pixel.capi_token) continue;
+            try {
+              const resp = await fetch(`https://graph.facebook.com/v21.0/${pixel.pixel_id}/events`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: [capiEvent], access_token: pixel.capi_token }),
+              });
+              const respData = await resp.json();
+              console.log(`[pagarme-webhook] CAPI Purchase pixel ${pixel.pixel_id}:`, JSON.stringify(respData));
+            } catch (capiErr) {
+              console.error(`[pagarme-webhook] CAPI error pixel ${pixel.pixel_id}:`, capiErr);
+            }
+          }
+        }
+      } catch (capiErr) {
+        console.error('[pagarme-webhook] CAPI Purchase error (non-blocking):', capiErr);
+      }
+
+      // --- Member access ---
       try {
         // Find course linked to this product
         const { data: course } = await supabase

@@ -23,6 +23,41 @@ function digitsOnly(value: string | undefined | null): string {
   return (value || "").replace(/\D/g, "");
 }
 
+/** Read a cookie by name */
+function getCookie(name: string): string | null {
+  const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+/** Set a first-party cookie */
+function setCookie(name: string, value: string, days: number) {
+  const expires = new Date(Date.now() + days * 864e5).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires};path=/;SameSite=Lax`;
+}
+
+/**
+ * Capture fbclid / fbp from URL params (cross-domain propagation).
+ * If fbclid is present in the URL, generate _fbc cookie.
+ * If fbp is present in the URL and no _fbp cookie exists, set it.
+ */
+function hydrateClickParams() {
+  const params = new URLSearchParams(window.location.search);
+
+  // fbclid → _fbc cookie
+  const fbclid = params.get("fbclid");
+  if (fbclid && !getCookie("_fbc")) {
+    // _fbc format: fb.1.<creation_time>.<fbclid>
+    const fbc = `fb.1.${Date.now()}.${fbclid}`;
+    setCookie("_fbc", fbc, 90);
+  }
+
+  // fbp passed cross-domain → _fbp cookie
+  const fbpParam = params.get("fbp");
+  if (fbpParam && !getCookie("_fbp")) {
+    setCookie("_fbp", fbpParam, 390);
+  }
+}
+
 interface CustomerInfo {
   name?: string;
   email?: string;
@@ -39,12 +74,6 @@ export function useFacebookPixel(productId: string | undefined) {
   /** Send event to CAPI edge function (server-side, non-blocking) */
   const sendCAPI = useCallback((eventName: string, eventId: string, customData?: Record<string, unknown>) => {
     if (!productId) return;
-    // Get fbp/fbc cookies for matching
-    const cookies = document.cookie.split(';').reduce((acc, c) => {
-      const [k, v] = c.trim().split('=');
-      if (k) acc[k] = v;
-      return acc;
-    }, {} as Record<string, string>);
 
     supabase.functions.invoke("facebook-capi", {
       body: {
@@ -54,14 +83,17 @@ export function useFacebookPixel(productId: string | undefined) {
         event_source_url: window.location.href,
         customer: customerRef.current,
         custom_data: customData,
-        fbc: cookies._fbc || null,
-        fbp: cookies._fbp || null,
+        fbc: getCookie("_fbc") || null,
+        fbp: getCookie("_fbp") || null,
       },
     }).catch((err) => console.warn("[CAPI] non-blocking error:", err));
   }, [productId]);
 
   useEffect(() => {
     if (!productId || initializedRef.current) return;
+
+    // Hydrate fbclid/fbp from URL params (cross-domain decorator)
+    hydrateClickParams();
 
     let cancelled = false;
 
@@ -128,7 +160,6 @@ export function useFacebookPixel(productId: string | undefined) {
 
   /**
    * Set Advanced Matching data (call when customer fills the form).
-   * This updates all initialized pixels with user data for better matching.
    */
   const setAdvancedMatching = useCallback((customer: CustomerInfo) => {
     customerRef.current = customer;
@@ -169,6 +200,25 @@ export function useFacebookPixel(productId: string | undefined) {
       payment_method: paymentMethod,
     }, { eventID: eventId });
   }, []);
+
+  /**
+   * Track AddToCart event (Order Bump selected).
+   * Front-end only — value zero to avoid CPA inflation.
+   */
+  const trackAddToCart = useCallback((bumpProductId: string) => {
+    if (!window.fbq) return;
+    const dedupKey = `AddToCart_${bumpProductId}`;
+    if (firedEventsRef.current.has(dedupKey)) return;
+    firedEventsRef.current.add(dedupKey);
+
+    const eventId = generateEventId("AddToCart");
+    window.fbq("track", "AddToCart", {
+      content_type: "product",
+      content_ids: [productId],
+      value: 0,
+      currency: "BRL",
+    }, { eventID: eventId });
+  }, [productId]);
 
   /**
    * Track Purchase event with full data and deduplication.
@@ -215,6 +265,7 @@ export function useFacebookPixel(productId: string | undefined) {
   return {
     trackPurchase,
     trackAddPaymentInfo,
+    trackAddToCart,
     trackLead,
     setAdvancedMatching,
   };
