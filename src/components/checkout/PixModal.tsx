@@ -13,6 +13,7 @@ interface PixModalProps {
 
 const PixModal = ({ open, onClose, totalAmount, qrCodeUrl, pixCode }: PixModalProps) => {
   const [copied, setCopied] = useState(false);
+  const [copying, setCopying] = useState(false);
   const [timeLeft, setTimeLeft] = useState(1800); // 30 min
 
   useEffect(() => {
@@ -24,11 +25,25 @@ const PixModal = ({ open, onClose, totalAmount, qrCodeUrl, pixCode }: PixModalPr
     return () => clearInterval(interval);
   }, [open]);
 
-  const handleCopy = () => {
-    if (pixCode) {
-      navigator.clipboard.writeText(pixCode);
+  const handleCopy = async () => {
+    if (!pixCode || copying) return;
+    setCopying(true);
+    try {
+      await navigator.clipboard.writeText(pixCode);
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
+    } catch {
+      // fallback
+      const ta = document.createElement("textarea");
+      ta.value = pixCode;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } finally {
+      setTimeout(() => setCopying(false), 1000);
     }
   };
 
@@ -121,6 +136,7 @@ const PixModal = ({ open, onClose, totalAmount, qrCodeUrl, pixCode }: PixModalPr
               {pixCode && (
                 <Button
                   onClick={handleCopy}
+                  disabled={copying}
                   className={`w-full h-12 gap-2 rounded-xl font-bold text-base transition-all ${
                     copied
                       ? "bg-[#067D62] hover:bg-[#067D62] text-white"
