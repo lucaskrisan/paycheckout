@@ -229,7 +229,8 @@ const Checkout = () => {
     .reduce((sum, b) => sum + (b.bump_product?.price || 0), 0);
 
   const pixDiscount = paymentMethod === 'pix' ? product.price * 0.05 : 0;
-  const finalAmount = product.price - pixDiscount + bumpTotal;
+  const frontEndAmount = product.price - pixDiscount; // Valor do produto principal (para tracking)
+  const finalAmount = frontEndAmount + bumpTotal; // Valor total cobrado (com bumps)
 
   const items = [
     {
