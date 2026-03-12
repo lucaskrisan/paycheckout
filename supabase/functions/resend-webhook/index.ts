@@ -2,8 +2,54 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, svix-id, svix-timestamp, svix-signature',
 };
+
+async function verifyWebhookSignature(payload: string, headers: Headers, secret: string): Promise<boolean> {
+  const svixId = headers.get('svix-id');
+  const svixTimestamp = headers.get('svix-timestamp');
+  const svixSignature = headers.get('svix-signature');
+
+  if (!svixId || !svixTimestamp || !svixSignature) {
+    console.error('[resend-webhook] Missing svix headers');
+    return false;
+  }
+
+  // Check timestamp (5 min tolerance)
+  const ts = parseInt(svixTimestamp);
+  const now = Math.floor(Date.now() / 1000);
+  if (Math.abs(now - ts) > 300) {
+    console.error('[resend-webhook] Timestamp too old');
+    return false;
+  }
+
+  // Decode secret (remove "whsec_" prefix, base64 decode)
+  const secretBytes = Uint8Array.from(atob(secret.replace('whsec_', '')), c => c.charCodeAt(0));
+
+  // Sign: "msg_id.timestamp.body"
+  const toSign = `${svixId}.${svixTimestamp}.${payload}`;
+  const key = await crypto.subtle.importKey(
+    'raw',
+    secretBytes,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(toSign));
+  const computed = btoa(String.fromCharCode(...new Uint8Array(signature)));
+
+  // svix-signature can have multiple sigs separated by space, each prefixed with "v1,"
+  const signatures = svixSignature.split(' ');
+  for (const sig of signatures) {
+    const [version, value] = sig.split(',');
+    if (version === 'v1' && value === computed) {
+      return true;
+    }
+  }
+
+  console.error('[resend-webhook] Signature mismatch');
+  return false;
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -11,7 +57,21 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const payload = await req.json();
+    const rawBody = await req.text();
+    
+    // Verify signature
+    const webhookSecret = Deno.env.get('RESEND_WEBHOOK_SECRET');
+    if (webhookSecret) {
+      const isValid = await verifyWebhookSignature(rawBody, req.headers, webhookSecret);
+      if (!isValid) {
+        return new Response(JSON.stringify({ error: 'Invalid signature' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    const payload = JSON.parse(rawBody);
     console.log('[resend-webhook] event:', payload.type, 'email_id:', payload.data?.email_id);
 
     const eventType = payload.type;
