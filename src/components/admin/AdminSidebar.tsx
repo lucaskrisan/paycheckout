@@ -20,6 +20,7 @@ import {
   Bell,
   Crosshair,
   MessageCircle,
+  ShieldCheck,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -56,6 +57,7 @@ const mainItems = [
   { title: "Colaboradores", url: "/admin/integrations", icon: UserPlus },
   { title: "Notificações", url: "/admin/notifications", icon: Bell },
   { title: "Configurações", url: "/admin/settings", icon: Settings },
+  { title: "Fiscalizar", url: "/admin/health", icon: ShieldCheck },
 ];
 
 export function AdminSidebar() {
