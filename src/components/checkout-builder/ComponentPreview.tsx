@@ -6,7 +6,7 @@ const ComponentPreview = ({ component }: { component: BuilderComponent }) => {
     case "text":
       return (
         <div className="py-2">
-          <p className="text-sm text-foreground">{component.props.content || "Texto personalizado aqui..."}</p>
+          <p className="text-sm text-[#0F1111]">{component.props.content || "Texto personalizado aqui..."}</p>
         </div>
       );
 
@@ -14,10 +14,10 @@ const ComponentPreview = ({ component }: { component: BuilderComponent }) => {
       return (
         <div className="py-1">
           {component.props.url ? (
-            <img src={component.props.url} alt="" className="w-full h-32 object-contain bg-muted/40 border border-border/30 rounded-lg p-1" />
+            <img src={component.props.url} alt="" className="w-full h-32 object-contain bg-[#F7FAFA] border border-[#D5D9D9] rounded-lg p-1" />
           ) : (
-            <div className="w-full h-28 bg-muted/50 border border-border/30 rounded-lg flex flex-col items-center justify-center gap-1">
-              <Image className="w-10 h-10 text-muted-foreground/50" />
+            <div className="w-full h-28 bg-[#F7FAFA] border border-[#D5D9D9] rounded-lg flex flex-col items-center justify-center gap-1">
+              <Image className="w-10 h-10 text-[#D5D9D9]" />
             </div>
           )}
         </div>
@@ -26,28 +26,22 @@ const ComponentPreview = ({ component }: { component: BuilderComponent }) => {
     case "advantages":
       return (
         <div className="py-2 space-y-1.5">
-          <div className="flex items-center gap-2 text-xs text-foreground">
-            <ThumbsUp className="w-3.5 h-3.5 text-primary" />
-            <span>{component.props.items?.[0] || "Acesso imediato"}</span>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-foreground">
-            <ThumbsUp className="w-3.5 h-3.5 text-primary" />
-            <span>{component.props.items?.[1] || "Suporte 24h"}</span>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-foreground">
-            <ThumbsUp className="w-3.5 h-3.5 text-primary" />
-            <span>{component.props.items?.[2] || "Garantia de 7 dias"}</span>
-          </div>
+          {(component.props.items || ["Acesso imediato", "Suporte 24h", "Garantia de 7 dias"]).slice(0, 3).map((item: string, i: number) => (
+            <div key={i} className="flex items-center gap-2 text-xs text-[#0F1111]">
+              <ThumbsUp className="w-3.5 h-3.5 text-[#007185]" />
+              <span>{item}</span>
+            </div>
+          ))}
         </div>
       );
 
     case "seal":
       return (
         <div className="py-2 flex items-center justify-center gap-2">
-          <Award className="w-8 h-8 text-primary" />
+          <Award className="w-8 h-8 text-[#007185]" />
           <div>
-            <p className="text-xs font-bold text-foreground">{component.props.title || "Compra Segura"}</p>
-            <p className="text-[10px] text-muted-foreground">{component.props.subtitle || "Ambiente protegido"}</p>
+            <p className="text-xs font-bold text-[#0F1111]">{component.props.title || "Compra Segura"}</p>
+            <p className="text-[10px] text-[#565959]">{component.props.subtitle || "Ambiente protegido"}</p>
           </div>
         </div>
       );
@@ -55,10 +49,10 @@ const ComponentPreview = ({ component }: { component: BuilderComponent }) => {
     case "header":
       return (
         <div className="py-2 flex items-center gap-3">
-          <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
-            <LayoutGrid className="w-4 h-4 text-muted-foreground" />
+          <div className="w-10 h-10 bg-[#F7FAFA] rounded border border-[#D5D9D9] flex items-center justify-center">
+            <LayoutGrid className="w-4 h-4 text-[#565959]" />
           </div>
-          <p className="text-sm font-bold text-foreground">{component.props.title || "TÍTULO DO PRODUTO"}</p>
+          <p className="text-sm font-bold text-[#0F1111]">{component.props.title || "TÍTULO DO PRODUTO"}</p>
         </div>
       );
 
@@ -66,8 +60,8 @@ const ComponentPreview = ({ component }: { component: BuilderComponent }) => {
       return (
         <div className="py-2 space-y-1">
           {(component.props.items || ["Item 1", "Item 2", "Item 3"]).map((item: string, i: number) => (
-            <div key={i} className="flex items-center gap-2 text-xs text-foreground">
-              <ListOrdered className="w-3 h-3 text-primary" />
+            <div key={i} className="flex items-center gap-2 text-xs text-[#0F1111]">
+              <ListOrdered className="w-3 h-3 text-[#007185]" />
               <span>{item}</span>
             </div>
           ))}
@@ -77,30 +71,30 @@ const ComponentPreview = ({ component }: { component: BuilderComponent }) => {
     case "countdown":
       return (
         <div className="py-2 text-center">
-          <Clock className="w-5 h-5 text-primary mx-auto mb-1" />
-          <p className="text-xs font-semibold text-foreground">{component.props.text || "Oferta termina em:"}</p>
-          <p className="text-lg font-bold text-primary">15:00</p>
+          <Clock className="w-5 h-5 text-[#B12704] mx-auto mb-1" />
+          <p className="text-xs font-semibold text-[#0F1111]">{component.props.text || "Oferta termina em:"}</p>
+          <p className="text-lg font-bold text-[#B12704]">15:00</p>
         </div>
       );
 
     case "testimonial":
       return (
-        <div className="py-2 border border-border/30 rounded-lg p-3">
+        <div className="py-2 border border-[#D5D9D9] rounded-lg p-3 bg-white">
           <div className="flex gap-0.5 mb-1">
             {[...Array(5)].map((_, i) => (
-              <Star key={i} className="w-3 h-3 fill-primary text-primary" />
+              <Star key={i} className="w-3 h-3 fill-[#FFA41C] text-[#FFA41C]" />
             ))}
           </div>
-          <p className="text-xs text-foreground italic">"{component.props.text || "Produto incrível! Recomendo."}"</p>
-          <p className="text-[10px] text-muted-foreground mt-1">— {component.props.author || "Cliente"}</p>
+          <p className="text-xs text-[#0F1111] italic">"{component.props.text || "Produto incrível! Recomendo."}"</p>
+          <p className="text-[10px] text-[#565959] mt-1">— {component.props.author || "Cliente"}</p>
         </div>
       );
 
     case "video":
       return (
         <div className="py-2">
-          <div className="w-full h-28 bg-muted rounded-lg flex items-center justify-center">
-            <Video className="w-8 h-8 text-muted-foreground" />
+          <div className="w-full h-28 bg-[#F7FAFA] border border-[#D5D9D9] rounded-lg flex items-center justify-center">
+            <Video className="w-8 h-8 text-[#565959]" />
           </div>
         </div>
       );
@@ -109,57 +103,42 @@ const ComponentPreview = ({ component }: { component: BuilderComponent }) => {
       return (
         <div className="py-2 flex items-center gap-2 justify-center">
           <Facebook className="w-5 h-5 text-blue-600" />
-          <span className="text-xs text-muted-foreground">Facebook Comments</span>
+          <span className="text-xs text-[#565959]">Facebook Comments</span>
         </div>
       );
 
     case "form":
       return (
-        <div className="group/form relative -mx-3 -my-3 p-4 bg-muted/40 hover:bg-muted/70 transition-colors cursor-default">
-          {/* Tooltip on hover */}
+        <div className="group/form relative -mx-3 -my-3 p-4 bg-[#F7FAFA] hover:bg-[#EEF1F4] transition-colors cursor-default">
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/form:opacity-100 transition-opacity z-10 pointer-events-none">
-            <div className="bg-foreground text-background text-xs font-semibold px-3 py-1.5 rounded-md shadow-lg">
+            <div className="bg-[#232F3E] text-white text-xs font-semibold px-3 py-1.5 rounded-md shadow-lg">
               <p className="text-center">Checkout</p>
               <p className="text-center text-[10px] font-normal opacity-80">Será exibido aqui</p>
             </div>
           </div>
-          {/* Simulated form */}
           <div className="space-y-2.5 group-hover/form:opacity-60 transition-opacity">
-            <div className="h-9 w-full bg-foreground/10 rounded-md" />
-            <div className="h-9 w-full bg-foreground/10 rounded-md" />
-            <div className="h-9 w-full bg-foreground/10 rounded-md" />
+            <div className="h-9 w-full bg-white border border-[#D5D9D9] rounded-lg" />
+            <div className="h-9 w-full bg-white border border-[#D5D9D9] rounded-lg" />
             <div className="grid grid-cols-2 gap-2">
-              <div className="h-9 bg-foreground/10 rounded-md" />
-              <div className="h-9 bg-foreground/10 rounded-md" />
+              <div className="h-9 bg-white border border-[#D5D9D9] rounded-lg" />
+              <div className="h-9 bg-white border border-[#D5D9D9] rounded-lg" />
             </div>
-            {/* Payment method tabs */}
             <div className="flex gap-2 pt-1">
-              <div className="h-8 w-16 bg-foreground/8 rounded" />
-              <div className="h-8 w-16 bg-foreground/8 rounded" />
-              <div className="h-8 w-16 bg-foreground/8 rounded" />
-              <div className="h-8 w-16 bg-foreground/8 rounded" />
+              <div className="h-8 flex-1 bg-white border border-[#D5D9D9] rounded-lg" />
+              <div className="h-8 flex-1 bg-white border-2 border-[#007185] rounded-lg" />
             </div>
-            {/* Card form */}
-            <div className="border border-foreground/10 rounded-lg p-3 space-y-2">
-              <div className="h-8 w-full bg-foreground/8 rounded" />
+            <div className="border border-[#D5D9D9] rounded-lg p-3 space-y-2">
+              <div className="h-8 w-full bg-[#F7FAFA] border border-[#D5D9D9] rounded" />
               <div className="grid grid-cols-3 gap-2">
-                <div className="h-8 bg-foreground/8 rounded" />
-                <div className="h-8 bg-foreground/8 rounded" />
-                <div className="h-8 bg-foreground/8 rounded" />
+                <div className="h-8 bg-[#F7FAFA] border border-[#D5D9D9] rounded" />
+                <div className="h-8 bg-[#F7FAFA] border border-[#D5D9D9] rounded" />
+                <div className="h-8 bg-[#F7FAFA] border border-[#D5D9D9] rounded" />
               </div>
-              <div className="h-8 w-full bg-foreground/8 rounded" />
             </div>
-            {/* Price info */}
-            <div className="space-y-1 pt-1">
-              <div className="h-3 w-24 bg-foreground/12 rounded" />
-              <div className="h-3 w-40 bg-foreground/8 rounded" />
-            </div>
-            {/* CTA */}
-            <div className="h-12 w-full bg-primary/80 rounded-lg" />
-            {/* Footer links */}
+            <div className="h-12 w-full rounded-lg" style={{ backgroundColor: "#FFD814", border: "1px solid #FCD200" }} />
             <div className="flex justify-center gap-4 pt-1">
-              <div className="h-3 w-20 bg-foreground/6 rounded" />
-              <div className="h-3 w-20 bg-foreground/6 rounded" />
+              <div className="h-3 w-20 bg-[#D5D9D9]/40 rounded" />
+              <div className="h-3 w-20 bg-[#D5D9D9]/40 rounded" />
             </div>
           </div>
         </div>
@@ -168,8 +147,11 @@ const ComponentPreview = ({ component }: { component: BuilderComponent }) => {
     case "button":
       return (
         <div className="py-2">
-          <div className="h-12 w-full bg-primary rounded-lg flex items-center justify-center">
-            <span className="text-primary-foreground text-sm font-bold">
+          <div
+            className="h-12 w-full rounded-lg flex items-center justify-center"
+            style={{ backgroundColor: "#FFD814", border: "1px solid #FCD200" }}
+          >
+            <span className="text-[#0F1111] text-sm font-medium">
               {component.props.text || "Finalizar compra"}
             </span>
           </div>
@@ -177,7 +159,7 @@ const ComponentPreview = ({ component }: { component: BuilderComponent }) => {
       );
 
     default:
-      return <div className="py-2 text-xs text-muted-foreground">Componente desconhecido</div>;
+      return <div className="py-2 text-xs text-[#565959]">Componente desconhecido</div>;
   }
 };
 
