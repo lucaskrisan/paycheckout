@@ -57,6 +57,7 @@ const mainItems = [
   { title: "Rastreamento", url: "/admin/tracking", icon: Crosshair },
   { title: "Avaliações", url: "/admin/reviews", icon: MessageCircle },
   { title: "Colaboradores", url: "/admin/integrations", icon: UserPlus },
+  { title: "Emails", url: "/admin/emails", icon: Mail },
   { title: "Notificações", url: "/admin/notifications", icon: Bell },
   { title: "Webhooks", url: "/admin/webhooks", icon: Webhook },
   { title: "Configurações", url: "/admin/settings", icon: Settings },
