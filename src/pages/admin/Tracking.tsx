@@ -200,6 +200,13 @@ const Tracking = () => {
           checks.push({ name: "PageView", status: "warning", detail: "PageView não encontrado no HTML (pode ser disparado dinamicamente)" });
         }
 
+        // Check for ViewContent
+        if (html.includes("ViewContent")) {
+          checks.push({ name: "ViewContent", status: "pass", detail: "Evento ViewContent detectado — público de topo de funil ativo ✅" });
+        } else {
+          checks.push({ name: "ViewContent", status: "warning", detail: "ViewContent não encontrado. Recomendado para criar público 'viu a oferta mas não abriu checkout'." });
+        }
+
         // Check for UTM capture
         if (html.includes("utm_source") || html.includes("pc_utms")) {
           checks.push({ name: "Captura de UTMs", status: "pass", detail: "Lógica de captura de UTMs encontrada ✅" });
@@ -207,11 +214,32 @@ const Tracking = () => {
           checks.push({ name: "Captura de UTMs", status: "error", detail: "Nenhuma lógica de captura de UTMs encontrada. Os parâmetros não serão passados ao checkout." });
         }
 
+        // Check for fbclid cross-domain propagation
+        if (html.includes("fbclid")) {
+          checks.push({ name: "Cross-domain fbclid", status: "pass", detail: "Propagação de fbclid para o checkout detectada — atribuição cross-domain ativa ✅" });
+        } else {
+          checks.push({ name: "Cross-domain fbclid", status: "warning", detail: "fbclid não está sendo propagado. A atribuição pode ser perdida na troca de domínio." });
+        }
+
+        // Check for _fbp cross-domain propagation
+        if (html.includes("_fbp") || html.includes("fbp=") || html.includes("fbpCookie")) {
+          checks.push({ name: "Cross-domain _fbp", status: "pass", detail: "Propagação de _fbp para o checkout detectada — cookie restaurado cross-domain ✅" });
+        } else {
+          checks.push({ name: "Cross-domain _fbp", status: "warning", detail: "_fbp não está sendo passado ao checkout. O Match Quality pode ser reduzido." });
+        }
+
+        // Check for _fbc cookie creation
+        if (html.includes("_fbc")) {
+          checks.push({ name: "Cookie _fbc", status: "pass", detail: "Criação de cookie _fbc na LP detectada ✅" });
+        } else {
+          checks.push({ name: "Cookie _fbc", status: "warning", detail: "Cookie _fbc não está sendo criado na LP. Será gerado apenas no checkout." });
+        }
+
         // Check for goToCheckout
         if (html.includes("goToCheckout")) {
-          checks.push({ name: "Função goToCheckout", status: "pass", detail: "Função de redirecionamento ao checkout encontrada ✅" });
+          checks.push({ name: "URL Decorator (goToCheckout)", status: "pass", detail: "Função de redirecionamento com propagação de parâmetros encontrada ✅" });
         } else {
-          checks.push({ name: "Função goToCheckout", status: "warning", detail: "Função goToCheckout não encontrada. Verifique se os botões usam links diretos." });
+          checks.push({ name: "URL Decorator (goToCheckout)", status: "warning", detail: "Função goToCheckout não encontrada. Verifique se os botões usam links diretos." });
         }
 
         // Check for PayCheckout product ID
