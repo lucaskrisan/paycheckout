@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => ({
       includeAssets: ["favicon.ico", "robots.txt"],
       workbox: {
         importScripts: ["https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js"],
-        navigateFallbackDenylist: [/^\/~oauth/, /^\/sw\.js$/],
+        navigateFallbackDenylist: [/^\/~oauth/, /^\/pwa-sw\.js$/],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         navigateFallback: "/index.html",
       },
