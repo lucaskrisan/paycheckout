@@ -255,12 +255,15 @@ const Dashboard = () => {
               ))}
             </SelectContent>
           </Select>
-          <Select defaultValue="all">
+          <Select value={selectedProductId} onValueChange={setSelectedProductId}>
             <SelectTrigger className="w-[160px] h-9 text-sm">
               <SelectValue placeholder="Todos os produtos" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os produtos</SelectItem>
+              {products.map((p) => (
+                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
