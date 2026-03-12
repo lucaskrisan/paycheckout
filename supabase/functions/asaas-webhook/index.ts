@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
       .from('orders')
       .update({ status, updated_at: new Date().toISOString() })
       .eq('external_id', payment.id)
-      .select('amount, payment_method, product_id, customer_id')
+      .select('amount, payment_method, product_id, customer_id, metadata')
       .maybeSingle();
 
     if (error) {
