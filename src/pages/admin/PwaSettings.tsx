@@ -49,11 +49,18 @@ const PwaSettings = () => {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const { data } = await supabase
-        .from("pwa_settings" as any)
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      const [{ data }, { data: notifData }] = await Promise.all([
+        supabase
+          .from("pwa_settings" as any)
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+        supabase
+          .from("notification_settings")
+          .select("notification_sound, notification_pattern")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+      ]);
 
       if (data) {
         setSettings({
@@ -70,6 +77,8 @@ const PwaSettings = () => {
           notification_icon_url: (data as any).notification_icon_url || "",
         });
       }
+      setNotifSound(notifData?.notification_sound || "kaching");
+      setNotifPattern(notifData?.notification_pattern || "creative");
       setLoading(false);
     };
     load();
