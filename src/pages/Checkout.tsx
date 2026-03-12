@@ -59,6 +59,8 @@ interface CouponData {
 const Checkout = () => {
   const { productId } = useParams<{ productId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const requestedConfigId = useMemo(() => new URLSearchParams(location.search).get("config"), [location.search]);
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
