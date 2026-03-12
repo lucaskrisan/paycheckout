@@ -5,8 +5,6 @@ import {
   DollarSign,
   TrendingUp,
   CreditCard,
-  Percent,
-  Banknote,
   FileText,
   RefreshCcw,
   AlertOctagon,
@@ -32,7 +30,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
-import SalesGamification from "@/components/admin/SalesGamification";
+
 
 type Period = "today" | "yesterday" | "7days" | "month" | "lastMonth" | "total";
 
@@ -265,12 +263,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Gamification strip */}
-      <SalesGamification
-        approvedToday={approvedToday}
-        approvedTotal={allApproved.length}
-        totalRevenue={allTimeRevenue}
-      />
 
       {/* Kiwify layout: chart left + 2 tall metric cards right on first row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

@@ -1,9 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import HeaderGamification from "./HeaderGamification";
 
 const SUPER_ADMIN_EMAIL = "trafegocomkrisan@gmail.com";
 
@@ -49,8 +51,22 @@ function useOneSignalInit(email: string | undefined) {
 
 export default function AdminLayout() {
   const { user, isAdmin, loading } = useAuth();
+  const [totalRevenue, setTotalRevenue] = useState(0);
 
   useOneSignalInit(user?.email ?? undefined);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("orders")
+      .select("amount, status")
+      .then(({ data }) => {
+        const revenue = (data || [])
+          .filter((o) => o.status === "paid" || o.status === "approved")
+          .reduce((s, o) => s + Number(o.amount), 0);
+        setTotalRevenue(revenue);
+      });
+  }, [user]);
 
   if (loading) {
     return (
@@ -77,6 +93,10 @@ export default function AdminLayout() {
       <div className="min-h-screen flex w-full">
         <AdminSidebar />
         <div className="flex-1 flex flex-col">
+          {/* Green top bar with gamification — Kiwify style */}
+          <div className="h-10 bg-primary flex items-center justify-end px-4 gap-3">
+            <HeaderGamification totalRevenue={totalRevenue} />
+          </div>
           <header className="h-14 flex items-center border-b border-border px-4 bg-card">
             <SidebarTrigger className="mr-4" />
             <span className="font-display font-bold text-foreground">Painel Admin</span>
