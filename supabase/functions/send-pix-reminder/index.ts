@@ -23,7 +23,7 @@ serve(async (req) => {
     // Fetch order with customer and product info
     const { data: order, error: orderErr } = await supabase
       .from("orders")
-      .select("*, customers(name, email), products(name, price, description)")
+      .select("*, customers(name, email, phone, cpf), products(name, price, description)")
       .eq("id", order_id)
       .single();
 
@@ -34,9 +34,19 @@ serve(async (req) => {
 
     const customerName = order.customers.name || "Cliente";
     const customerEmail = order.customers.email;
+    const customerPhone = order.customers.phone || "";
+    const customerCpf = order.customers.cpf || "";
     const productName = order.products?.name || "seu produto";
     const productPrice = Number(order.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 });
     const productDescription = order.products?.description || "";
+
+    // Build pre-filled checkout link
+    const checkoutParams = new URLSearchParams();
+    if (customerName) checkoutParams.set("name", customerName);
+    if (customerEmail) checkoutParams.set("email", customerEmail);
+    if (customerPhone) checkoutParams.set("phone", customerPhone);
+    if (customerCpf) checkoutParams.set("cpf", customerCpf);
+    const checkoutUrl = `https://paycheckout.lovable.app/checkout/${order.product_id}?${checkoutParams.toString()}`;
 
     // Use AI to generate personalized reminder email
     let emailSubject = `⏰ Seu PIX de R$ ${productPrice} está aguardando pagamento`;
@@ -125,6 +135,11 @@ O cliente gerou o PIX mas não pagou ainda.`,
       <div style="margin-top:24px;padding:16px;background:#f0fdf4;border-radius:8px;border-left:4px solid ${primaryColor};">
         <p style="margin:0;font-size:14px;color:#166534;"><strong>📦 ${productName}</strong></p>
         <p style="margin:4px 0 0;font-size:20px;font-weight:bold;color:#166534;">R$ ${productPrice}</p>
+      </div>
+      <div style="text-align:center;margin-top:24px;">
+        <a href="${checkoutUrl}" style="display:inline-block;background:${primaryColor};color:#fff;font-size:16px;font-weight:bold;padding:14px 32px;border-radius:8px;text-decoration:none;">
+          Finalizar pagamento →
+        </a>
       </div>
       <p style="margin-top:24px;font-size:12px;color:#a1a1aa;text-align:center;">
         Este email foi enviado por ${companyName}
