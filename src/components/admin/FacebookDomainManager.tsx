@@ -53,8 +53,10 @@ export default function FacebookDomainManager({ open, onClose, onDomainsChange }
   }, [open, user]);
 
   const handleAdd = async () => {
-    const clean = newDomain.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/+$/, "");
+    let clean = newDomain.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/+$/, "");
     if (!clean) { toast.error("Digite um domínio válido"); return; }
+    // Auto-append .com if no TLD
+    if (!clean.includes(".")) clean = clean + ".com";
     setAdding(true);
     const { error } = await supabase.from("facebook_domains").insert({
       domain: clean,
@@ -234,7 +236,7 @@ export default function FacebookDomainManager({ open, onClose, onDomainsChange }
               </div>
               <div className="bg-muted/50 rounded-lg px-4 py-3 text-sm text-foreground">
                 <span className="font-medium">2.2.</span> Crie um registro CNAME com o valor{" "}
-                <strong>pixels.{newDomain || "seudominio.com"}</strong> apontando para{" "}
+                <strong>pixels.{(newDomain && !newDomain.includes(".") ? newDomain + ".com" : newDomain) || "seudominio.com"}</strong> apontando para{" "}
                 <strong>pixels.paycheckout.lovable.app</strong>
               </div>
               <div className="bg-muted/50 rounded-lg px-4 py-3 text-sm text-foreground">
