@@ -34,9 +34,28 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { product_id } = await req.json();
+    const body = await req.json();
+    const { action, url, product_id } = body;
 
-    // Get all Facebook pixels for this product
+    // ========== Page verification mode ==========
+    if (action === 'verify_page' && url) {
+      try {
+        const pageRes = await fetch(url, {
+          headers: { 'User-Agent': 'PayCheckout-PageVerifier/1.0' },
+        });
+        const html = await pageRes.text();
+        return new Response(JSON.stringify({ html: html.substring(0, 50000) }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } catch (fetchErr) {
+        return new Response(JSON.stringify({ error: fetchErr.message, html: null }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // ========== Standard pixel diagnostics ==========
     const { data: pixels } = await supabase
       .from('product_pixels')
       .select('pixel_id, capi_token, domain')
