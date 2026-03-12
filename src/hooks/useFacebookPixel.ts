@@ -34,6 +34,31 @@ export function useFacebookPixel(productId: string | undefined) {
   const initializedRef = useRef(false);
   const pixelIdsRef = useRef<string[]>([]);
   const firedEventsRef = useRef<Set<string>>(new Set());
+  const customerRef = useRef<CustomerInfo>({});
+
+  /** Send event to CAPI edge function (server-side, non-blocking) */
+  const sendCAPI = useCallback((eventName: string, eventId: string, customData?: Record<string, unknown>) => {
+    if (!productId) return;
+    // Get fbp/fbc cookies for matching
+    const cookies = document.cookie.split(';').reduce((acc, c) => {
+      const [k, v] = c.trim().split('=');
+      if (k) acc[k] = v;
+      return acc;
+    }, {} as Record<string, string>);
+
+    supabase.functions.invoke("facebook-capi", {
+      body: {
+        product_id: productId,
+        event_name: eventName,
+        event_id: eventId,
+        event_source_url: window.location.href,
+        customer: customerRef.current,
+        custom_data: customData,
+        fbc: cookies._fbc || null,
+        fbp: cookies._fbp || null,
+      },
+    }).catch((err) => console.warn("[CAPI] non-blocking error:", err));
+  }, [productId]);
 
   useEffect(() => {
     if (!productId || initializedRef.current) return;
