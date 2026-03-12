@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFacebookPixel } from "@/hooks/useFacebookPixel";
 import { useAbandonedCart } from "@/hooks/useAbandonedCart";
+import { useCheckoutPresence } from "@/hooks/useCheckoutPresence";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { BuilderComponent } from "@/components/checkout-builder/types";
 
@@ -87,6 +88,9 @@ const Checkout = () => {
     paymentMethod,
     productOwnerId: product?.user_id,
   });
+
+  // Track this visitor in real-time presence
+  useCheckoutPresence("track", productId);
 
   useEffect(() => {
     if (!productId) { setNotFound(true); setLoading(false); return; }
