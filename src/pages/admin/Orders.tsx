@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Search, Filter, X, ChevronLeft, ChevronRight, DollarSign, ShoppingCart } from "lucide-react";
+import { Search, Filter, X, ChevronLeft, ChevronRight, DollarSign, ShoppingCart, Mail, Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 interface Order {
   id: string;
@@ -59,6 +60,7 @@ const Orders = () => {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState<"approved" | "all">("approved");
+  const [sendingReminder, setSendingReminder] = useState<string | null>(null);
 
   // Filters
   const [filterPeriod, setFilterPeriod] = useState("all");
@@ -66,6 +68,22 @@ const Orders = () => {
   const [filterMethods, setFilterMethods] = useState<Set<string>>(new Set());
   const [filterStatuses, setFilterStatuses] = useState<Set<string>>(new Set());
   const [filtersOpen, setFiltersOpen] = useState(false);
+
+  const handleSendPixReminder = async (orderId: string) => {
+    setSendingReminder(orderId);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-pix-reminder", {
+        body: { order_id: orderId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`Lembrete enviado para ${data.email}! ✉️`);
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao enviar lembrete");
+    } finally {
+      setSendingReminder(null);
+    }
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -340,18 +358,19 @@ const Orders = () => {
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">CLIENTE</th>
                   <th className="text-left py-3 px-4 font-medium text-muted-foreground">STATUS</th>
                   <th className="text-right py-3 px-4 font-medium text-muted-foreground">VALOR LÍQUIDO</th>
+                  <th className="text-center py-3 px-4 font-medium text-muted-foreground">AÇÕES</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="py-12 text-center text-muted-foreground">
+                   <td colSpan={6} className="py-12 text-center text-muted-foreground">
                       Carregando...
                     </td>
                   </tr>
                 ) : paginated.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-12 text-center text-muted-foreground">
+                    <td colSpan={6} className="py-12 text-center text-muted-foreground">
                       Nenhuma venda encontrada.
                     </td>
                   </tr>
@@ -379,6 +398,26 @@ const Orders = () => {
                         </td>
                         <td className="py-3 px-4 text-right font-medium whitespace-nowrap">
                           R$ {Number(order.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          {order.status === "pending" && order.payment_method === "pix" && order.customers?.email ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="gap-1.5 text-xs h-8"
+                              disabled={sendingReminder === order.id}
+                              onClick={() => handleSendPixReminder(order.id)}
+                            >
+                              {sendingReminder === order.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Mail className="w-3.5 h-3.5" />
+                              )}
+                              Lembrete
+                            </Button>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
                         </td>
                       </tr>
                     );
