@@ -82,6 +82,10 @@ const ProductEdit = () => {
   const [newCheckoutPrice, setNewCheckoutPrice] = useState("");
   const [newCheckoutDefault, setNewCheckoutDefault] = useState(false);
   const [creatingCheckout, setCreatingCheckout] = useState(false);
+  const [editingCheckout, setEditingCheckout] = useState<any>(null);
+  const [editCheckoutName, setEditCheckoutName] = useState("");
+  const [editCheckoutPrice, setEditCheckoutPrice] = useState("");
+  const [savingCheckoutEdit, setSavingCheckoutEdit] = useState(false);
   const [checkouts, setCheckouts] = useState<any[]>([]);
   const [orderBumps, setOrderBumps] = useState<any[]>([]);
   const [fbDomains, setFbDomains] = useState<{ id: string; domain: string; verified: boolean }[]>([]);
@@ -1139,12 +1143,16 @@ const ProductEdit = () => {
                                 <MoreVertical className="w-4 h-4 text-muted-foreground" />
                               </button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40">
+                            <DropdownMenuContent align="end" className="w-44">
+                              <DropdownMenuItem onClick={() => {
+                                setEditingCheckout(co);
+                                setEditCheckoutName(co.name);
+                                setEditCheckoutPrice(co.price != null ? String(co.price).replace(".", ",") : "");
+                              }} className="gap-2 text-sm">
+                                <Settings2 className="w-3.5 h-3.5" /> Editar
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => navigate(`/admin/products/${productId}/checkout-builder/${co.id}`)} className="gap-2 text-sm">
                                 <ExternalLink className="w-3.5 h-3.5" /> Personalizar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="gap-2 text-sm">
-                                <Settings2 className="w-3.5 h-3.5" /> Configurações
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={async () => {
                                 await supabase.from("checkout_builder_configs").insert({
@@ -1493,6 +1501,63 @@ const ProductEdit = () => {
               >
                 {creatingCheckout && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                 Criar novo checkout
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Editar checkout dialog */}
+      <Dialog open={!!editingCheckout} onOpenChange={(open) => { if (!open) setEditingCheckout(null); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Editar checkout</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-5 pt-2">
+            <div className="space-y-1.5">
+              <Label>Nome</Label>
+              <Input value={editCheckoutName} onChange={(e) => setEditCheckoutName(e.target.value)} autoFocus />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Preço personalizado</Label>
+              <div className="flex items-center">
+                <span className="inline-flex items-center px-3 text-xs text-muted-foreground bg-muted border border-r-0 border-input rounded-l-md h-10 font-semibold">R$</span>
+                <Input
+                  value={editCheckoutPrice}
+                  onChange={(e) => setEditCheckoutPrice(e.target.value)}
+                  placeholder={form.price ? Number(form.price).toFixed(2).replace(".", ",") : "0,00"}
+                  className="rounded-l-none"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">Deixe vazio para usar o preço padrão do produto</p>
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setEditingCheckout(null)}>Cancelar</Button>
+              <Button
+                disabled={!editCheckoutName.trim() || savingCheckoutEdit}
+                onClick={async () => {
+                  setSavingCheckoutEdit(true);
+                  try {
+                    const parsedPrice = editCheckoutPrice.trim()
+                      ? parseFloat(editCheckoutPrice.replace(",", "."))
+                      : null;
+                    const { error } = await supabase
+                      .from("checkout_builder_configs")
+                      .update({ name: editCheckoutName.trim(), price: parsedPrice } as any)
+                      .eq("id", editingCheckout.id);
+                    if (error) throw error;
+                    toast.success("Checkout atualizado!");
+                    setEditingCheckout(null);
+                    await loadCheckouts();
+                  } catch (err: any) {
+                    toast.error(err?.message || "Erro ao atualizar");
+                  } finally {
+                    setSavingCheckoutEdit(false);
+                  }
+                }}
+              >
+                {savingCheckoutEdit && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                Salvar
               </Button>
             </div>
           </div>
