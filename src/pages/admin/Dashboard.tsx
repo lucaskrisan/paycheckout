@@ -60,8 +60,12 @@ const Dashboard = () => {
 
   const loadData = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
-    const { data } = await supabase.from("orders").select("*");
-    setOrders(data || []);
+    const [ordersRes, cartsRes] = await Promise.all([
+      supabase.from("orders").select("*"),
+      supabase.from("abandoned_carts").select("*").order("created_at", { ascending: false }).limit(500),
+    ]);
+    setOrders(ordersRes.data || []);
+    setAbandonedCarts(cartsRes.data || []);
     setLoading(false);
     if (isRefresh) setRefreshing(false);
   }, []);
