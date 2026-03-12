@@ -24,6 +24,7 @@ export default defineConfig(({ mode }) => ({
         navigateFallbackDenylist: [/^\/~oauth/, /^\/pwa-sw\.js$/],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         navigateFallback: "/index.html",
+        importScripts: ["https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js"],
       },
       manifest: {
         name: "PayCheckout - Painel de Vendas",
