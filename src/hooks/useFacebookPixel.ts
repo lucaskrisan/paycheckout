@@ -174,20 +174,24 @@ export function useFacebookPixel(productId: string | undefined) {
    * Track Purchase event with full data and deduplication.
    */
   const trackPurchase = useCallback((value: number, currency = "BRL", orderId?: string) => {
-    if (!window.fbq) return;
-    // Dedup by orderId if available, otherwise by event name
     const dedupKey = orderId ? `Purchase_${orderId}` : "Purchase";
     if (firedEventsRef.current.has(dedupKey)) return;
     firedEventsRef.current.add(dedupKey);
 
     const eventId = orderId || generateEventId("Purchase");
-    window.fbq("track", "Purchase", {
+    const customData = {
       value,
       currency,
       content_type: "product",
       content_ids: productId ? [productId] : [],
-    }, { eventID: eventId });
-  }, [productId]);
+    };
+
+    if (window.fbq) {
+      window.fbq("track", "Purchase", customData, { eventID: eventId });
+    }
+    // Also send server-side via CAPI
+    sendCAPI("Purchase", eventId, customData);
+  }, [productId, sendCAPI]);
 
   /**
    * Track custom lead/contact event (e.g., after form fill).
