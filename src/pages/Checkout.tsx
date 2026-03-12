@@ -363,23 +363,35 @@ const Checkout = () => {
               <div key={component.id}>{renderCustomComponent(component)}</div>
             ))}
 
+            {/* Price summary breakdown */}
+            <PriceSummary
+              originalPrice={product.price}
+              pixDiscount={pixDiscount}
+              couponDiscount={couponDiscount}
+              bumpTotal={bumpTotal}
+              finalAmount={finalAmount}
+              paymentMethod={paymentMethod}
+              couponCode={coupon?.code}
+            />
+
             {/* Submit button - Amazon gold */}
             <button
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="w-full py-4 rounded-lg text-base font-medium transition-colors disabled:opacity-50"
+              className="w-full py-4 rounded-xl text-base font-bold transition-all duration-200 disabled:opacity-50 active:scale-[0.98]"
               style={{
                 backgroundColor: isSubmitting ? "#E8D38A" : "#FFD814",
                 border: "1px solid #FCD200",
                 color: "#0F1111",
-                boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+                boxShadow: isSubmitting ? "none" : "0 3px 8px rgba(255,216,20,0.35), 0 1px 2px rgba(0,0,0,0.08)",
               }}
             >
               {isSubmitting ? (
                 <Loader2 className="w-5 h-5 animate-spin mx-auto" />
               ) : (
                 <span className="flex items-center justify-center gap-2">
-                  {product.is_subscription ? "Assinar agora" : submitLabel || "Finalizar compra"}
+                  <Lock className="w-4 h-4" />
+                  {product.is_subscription ? "Assinar agora" : paymentMethod === "pix" ? `Pagar ${finalAmount.toFixed(2).replace(".", ",")} com PIX` : submitLabel || "Finalizar compra"}
                   <ArrowRight className="w-5 h-5" />
                 </span>
               )}
