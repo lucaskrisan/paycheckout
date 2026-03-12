@@ -101,6 +101,7 @@ const ProductEdit = () => {
     sales_page_url: "",
     is_subscription: false,
     billing_cycle: "monthly",
+    show_coupon: true,
   });
 
   // Load pixels for this product
