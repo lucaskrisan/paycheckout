@@ -1051,6 +1051,8 @@ const ProductEdit = () => {
                                 await supabase.from("checkout_builder_configs").insert({
                                   product_id: productId!,
                                   name: co.name + " (cópia)",
+                                  layout: co.layout || [],
+                                  settings: co.settings || {},
                                   is_default: false,
                                   user_id: user?.id,
                                 });
