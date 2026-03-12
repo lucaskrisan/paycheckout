@@ -186,7 +186,7 @@ const MemberArea = () => {
       if (modulesData) {
         const modulesWithLessons: Module[] = [];
         for (const mod of modulesData) {
-          const { data: lessonsData } = await supabase
+          const { data: lessonsData } = await tokenClient
             .from("course_lessons")
             .select("*")
             .eq("module_id", mod.id)
