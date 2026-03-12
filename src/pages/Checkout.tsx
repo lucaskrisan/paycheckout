@@ -206,7 +206,7 @@ const Checkout = () => {
         {/* Product banner image */}
         {product.image_url && (
           <div className="rounded-lg overflow-hidden">
-            <img src={product.image_url} alt={product.name} className="w-full h-auto max-h-[300px] object-cover" loading="eager" />
+            <img src={product.image_url} alt={product.name} className="w-full h-auto object-contain" loading="eager" />
           </div>
         )}
 
