@@ -9,8 +9,9 @@ import { Progress } from "@/components/ui/progress";
 import {
   Loader2, ExternalLink, CheckCircle2, AlertCircle, Globe, Code2, Zap,
   Activity, XCircle, AlertTriangle, Play, RefreshCw, Search, Link2, FileCode,
-  ClipboardCopy,
 } from "lucide-react";
+import TrackingScriptGenerator from "@/components/admin/TrackingScriptGenerator";
+import UtmAttributionTable from "@/components/admin/UtmAttributionTable";
 import {
   Select,
   SelectContent,
@@ -503,6 +504,16 @@ const Tracking = () => {
           )}
         </div>
       </Card>
+
+      {/* ========= SCRIPT GENERATOR + UTM TEMPLATE ========= */}
+      <TrackingScriptGenerator
+        pixels={pixels}
+        products={products}
+        checkoutBaseUrl={window.location.origin}
+      />
+
+      {/* ========= UTM ATTRIBUTION ========= */}
+      <UtmAttributionTable />
 
       {/* ========= PIXELS BY PRODUCT ========= */}
       <div>
