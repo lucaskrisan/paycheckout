@@ -72,9 +72,9 @@ export function useFacebookPixel(productId: string | undefined) {
         .eq("product_id", productId)
         .eq("platform", "facebook");
 
-      if (cancelled || !data || data.length === 0) return;
+      if (cancelled || !data || (data as any[]).length === 0) return;
 
-      pixelIdsRef.current = data.map((px) => px.pixel_id);
+      pixelIdsRef.current = (data as any[]).map((px: any) => px.pixel_id);
 
       // Inject FB Pixel base code if not already present
       if (!window.fbq) {
