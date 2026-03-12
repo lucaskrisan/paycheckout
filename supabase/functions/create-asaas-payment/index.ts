@@ -235,6 +235,8 @@ Deno.serve(async (req) => {
             gateway: 'asaas',
             coupon_id: coupon_id || null,
             installments: installments || '1',
+            checkout_url: checkout_url || null,
+            ...(utms || {}),
           },
         })
         .select('id')

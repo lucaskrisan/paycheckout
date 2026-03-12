@@ -242,6 +242,8 @@ Deno.serve(async (req) => {
         metadata: {
           gateway: 'pagarme',
           coupon_id: coupon_id || null,
+          checkout_url: checkout_url || null,
+          ...(utms || {}),
         },
       })
       .select('id')
