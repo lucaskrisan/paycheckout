@@ -62,6 +62,11 @@ const Tracking = () => {
   const [diagResults, setDiagResults] = useState<DiagResult[] | null>(null);
   const [diagSummary, setDiagSummary] = useState<DiagSummary | null>(null);
 
+  // Page verification state
+  const [pageUrl, setPageUrl] = useState("");
+  const [pageChecking, setPageChecking] = useState(false);
+  const [pageChecks, setPageChecks] = useState<DiagCheck[] | null>(null);
+
   useEffect(() => {
     if (!user) return;
 
