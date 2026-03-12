@@ -946,6 +946,39 @@ export type Database = {
         }
         Relationships: []
       }
+      webhook_endpoints: {
+        Row: {
+          active: boolean
+          created_at: string
+          events: string[]
+          id: string
+          secret: string
+          updated_at: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          events?: string[]
+          id?: string
+          secret?: string
+          updated_at?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          events?: string[]
+          id?: string
+          secret?: string
+          updated_at?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       active_gateways: {
