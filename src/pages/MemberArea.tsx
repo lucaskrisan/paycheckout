@@ -31,6 +31,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import LessonMaterials from "@/components/member/LessonMaterials";
+import LessonReviews from "@/components/member/LessonReviews";
 
 interface Lesson {
   id: string;
