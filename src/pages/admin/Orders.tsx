@@ -62,6 +62,16 @@ const Orders = () => {
   const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState<"approved" | "all">("approved");
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
+  const [emailPreview, setEmailPreview] = useState<{
+    open: boolean;
+    orderId: string;
+    subject: string;
+    body: string;
+    fullHtml: string;
+    to: string;
+    customerName: string;
+    productName: string;
+  } | null>(null);
 
   // Filters
   const [filterPeriod, setFilterPeriod] = useState("all");
@@ -70,20 +80,39 @@ const Orders = () => {
   const [filterStatuses, setFilterStatuses] = useState<Set<string>>(new Set());
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const handleSendPixReminder = async (orderId: string) => {
+  const handlePreviewReminder = async (orderId: string) => {
     setSendingReminder(orderId);
     try {
       const { data, error } = await supabase.functions.invoke("send-pix-reminder", {
-        body: { order_id: orderId },
+        body: { order_id: orderId, preview: true },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      toast.success(`Lembrete enviado para ${data.email}! ✉️`);
+      setEmailPreview({
+        open: true,
+        orderId,
+        subject: data.subject,
+        body: data.body,
+        fullHtml: data.fullHtml,
+        to: data.to,
+        customerName: data.customerName,
+        productName: data.productName,
+      });
     } catch (e: any) {
-      toast.error(e.message || "Erro ao enviar lembrete");
+      toast.error(e.message || "Erro ao gerar preview do email");
     } finally {
       setSendingReminder(null);
     }
+  };
+
+  const handleConfirmSend = async (subject: string, body: string) => {
+    if (!emailPreview) return;
+    const { data, error } = await supabase.functions.invoke("send-pix-reminder", {
+      body: { order_id: emailPreview.orderId, subject, body },
+    });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    toast.success(`Lembrete enviado para ${data.email}! ✉️`);
   };
 
   useEffect(() => {
