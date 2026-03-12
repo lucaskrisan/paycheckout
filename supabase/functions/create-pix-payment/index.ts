@@ -21,7 +21,7 @@ async function sendPushNotification(title: string, message: string, url?: string
     };
     if (url) payload.url = url;
 
-    await fetch('https://api.onesignal.com/notifications', {
+    const response = await fetch('https://api.onesignal.com/notifications', {
       method: 'POST',
       headers: {
         'Authorization': `Key ${apiKey}`,
@@ -29,6 +29,9 @@ async function sendPushNotification(title: string, message: string, url?: string
       },
       body: JSON.stringify(payload),
     });
+
+    const raw = await response.text();
+    console.log('[create-pix-payment] OneSignal response:', { status: response.status, body: raw });
   } catch (err) {
     console.error('[create-pix-payment] OneSignal error:', err);
   }
