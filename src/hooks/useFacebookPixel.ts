@@ -108,6 +108,10 @@ export function useFacebookPixel(productId: string | undefined) {
 
     let cancelled = false;
 
+    // Generate dedup IDs upfront so CAPI fallback uses same IDs
+    const pvId = generateEventId("PageView");
+    const icId = generateEventId("InitiateCheckout");
+
     const loadPixels = async () => {
       const { data } = await supabase
         .from("public_product_pixels" as any)
@@ -115,7 +119,22 @@ export function useFacebookPixel(productId: string | undefined) {
         .eq("product_id", productId)
         .eq("platform", "facebook");
 
-      if (cancelled || !data || (data as any[]).length === 0) return;
+      if (cancelled) return;
+
+      // Always log + send CAPI for PageView & InitiateCheckout (even if no pixels or fbq blocked)
+      logPixelEvent("PageView", pvId);
+      sendCAPI("PageView", pvId);
+
+      logPixelEvent("InitiateCheckout", icId);
+      sendCAPI("InitiateCheckout", icId, {
+        content_type: "product",
+        content_ids: [productId],
+      });
+
+      if (!data || (data as any[]).length === 0) {
+        initializedRef.current = true;
+        return;
+      }
 
       pixelIdsRef.current = (data as any[]).map((px: any) => px.pixel_id);
 
@@ -135,7 +154,7 @@ export function useFacebookPixel(productId: string | undefined) {
         document.head.appendChild(script);
       }
 
-      // Wait for fbq to be available then init each pixel (NO auto PageView yet)
+      // Wait for fbq to be available then init each pixel
       const waitForFbq = setInterval(() => {
         if (window.fbq) {
           clearInterval(waitForFbq);
@@ -148,28 +167,27 @@ export function useFacebookPixel(productId: string | undefined) {
 
           initializedRef.current = true;
 
-          // Fire PageView + InitiateCheckout with dedup
-          const pvId = generateEventId("PageView");
+          // Fire browser-side PageView + InitiateCheckout (same eventIDs for dedup)
           window.fbq("track", "PageView", {}, { eventID: pvId });
-          logPixelEvent("PageView", pvId);
-
-          const icId = generateEventId("InitiateCheckout");
           window.fbq("track", "InitiateCheckout", {
             content_type: "product",
             content_ids: [productId],
           }, { eventID: icId });
-          logPixelEvent("InitiateCheckout", icId);
         }
       }, 100);
 
-      setTimeout(() => clearInterval(waitForFbq), 5000);
+      // If fbq never loads (adblock), still mark as initialized
+      setTimeout(() => {
+        clearInterval(waitForFbq);
+        initializedRef.current = true;
+      }, 5000);
     };
 
     loadPixels();
     return () => {
       cancelled = true;
     };
-  }, [productId]);
+  }, [productId, logPixelEvent, sendCAPI]);
 
   /**
    * Set Advanced Matching data (call when customer fills the form).
@@ -202,36 +220,45 @@ export function useFacebookPixel(productId: string | undefined) {
    * Fires only once per session.
    */
   const trackAddPaymentInfo = useCallback((paymentMethod: string) => {
-    if (!window.fbq) return;
     const dedup = "AddPaymentInfo";
     if (firedEventsRef.current.has(dedup)) return;
     firedEventsRef.current.add(dedup);
 
     const eventId = generateEventId("AddPaymentInfo");
-    window.fbq("track", "AddPaymentInfo", {
+
+    if (window.fbq) {
+      window.fbq("track", "AddPaymentInfo", {
+        content_type: "product",
+        payment_method: paymentMethod,
+      }, { eventID: eventId });
+    }
+    logPixelEvent("AddPaymentInfo", eventId);
+    sendCAPI("AddPaymentInfo", eventId, {
       content_type: "product",
       payment_method: paymentMethod,
-    }, { eventID: eventId });
-    logPixelEvent("AddPaymentInfo", eventId);
-  }, [logPixelEvent]);
+    });
+  }, [logPixelEvent, sendCAPI]);
 
   /**
    * Track AddToCart event (Order Bump selected).
    * Front-end only — value zero to avoid CPA inflation.
    */
   const trackAddToCart = useCallback((bumpProductId: string) => {
-    if (!window.fbq) return;
     const dedupKey = `AddToCart_${bumpProductId}`;
     if (firedEventsRef.current.has(dedupKey)) return;
     firedEventsRef.current.add(dedupKey);
 
     const eventId = generateEventId("AddToCart");
-    window.fbq("track", "AddToCart", {
+    const customData = {
       content_type: "product",
       content_ids: [productId],
       value: 0,
       currency: "BRL",
-    }, { eventID: eventId });
+    };
+
+    if (window.fbq) {
+      window.fbq("track", "AddToCart", customData, { eventID: eventId });
+    }
     logPixelEvent("AddToCart", eventId);
   }, [productId, logPixelEvent]);
 
