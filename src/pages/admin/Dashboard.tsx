@@ -30,7 +30,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
-
+import { useCheckoutPresence } from "@/hooks/useCheckoutPresence";
 
 type Period = "today" | "yesterday" | "7days" | "month" | "lastMonth" | "total";
 
