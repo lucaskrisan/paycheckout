@@ -14,7 +14,7 @@ const ComponentPreview = ({ component }: { component: BuilderComponent }) => {
       return (
         <div className="py-1">
           {component.props.url ? (
-            <img src={component.props.url} alt="" className="w-full h-32 object-cover rounded-lg" />
+            <img src={component.props.url} alt="" className="w-full h-32 object-contain bg-muted/40 border border-border/30 rounded-lg p-1" />
           ) : (
             <div className="w-full h-28 bg-muted/50 border border-border/30 rounded-lg flex flex-col items-center justify-center gap-1">
               <Image className="w-10 h-10 text-muted-foreground/50" />
