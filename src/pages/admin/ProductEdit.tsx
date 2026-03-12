@@ -151,6 +151,7 @@ const ProductEdit = () => {
     }
 
     setCheckouts(data || []);
+  }, [isNew, productId]);
 
   const createCheckoutConfig = async () => {
     if (!productId || isNew) {
