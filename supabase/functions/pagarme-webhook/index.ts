@@ -131,11 +131,13 @@ Deno.serve(async (req) => {
           }
           if (custData?.cpf) userData.external_id = [await hashSHA256(custData.cpf.replace(/\D/g, ''))];
 
+          const orderMetadata = (orderData as any)?.metadata || {};
           const capiEvent = {
             event_name: 'Purchase',
             event_time: Math.floor(Date.now() / 1000),
-            event_id: externalId, // same as browser eventId for dedup
-            event_source_url: '',
+            event_id: externalId,
+            event_source_url: orderMetadata.checkout_url || '',
+            action_source: 'website',
             action_source: 'website',
             user_data: userData,
             custom_data: {
