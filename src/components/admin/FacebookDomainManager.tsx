@@ -19,6 +19,21 @@ interface FacebookDomain {
   verified: boolean;
 }
 
+interface VerifyResult {
+  status: "ok" | "error" | "loading";
+  message: string;
+}
+
+// Re-export for use
+export type { FacebookDomain };
+
+// Minimal inline interface used below
+interface FacebookDomainLocal {
+  id: string;
+  domain: string;
+  verified: boolean;
+}
+
 interface Props {
   open: boolean;
   onClose: () => void;
