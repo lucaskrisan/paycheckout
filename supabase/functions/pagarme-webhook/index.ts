@@ -265,7 +265,7 @@ Deno.serve(async (req) => {
                       </html>
                     `;
 
-                    await fetch('https://api.resend.com/emails', {
+                    const emailRes = await fetch('https://api.resend.com/emails', {
                       method: 'POST',
                       headers: {
                         'Authorization': `Bearer ${RESEND_API_KEY}`,
@@ -278,6 +278,27 @@ Deno.serve(async (req) => {
                         html: emailHtml,
                       }),
                     });
+                    const emailData = await emailRes.json();
+
+                    // Log email
+                    try {
+                      await supabase.from('email_logs').insert({
+                        user_id: orderData.user_id,
+                        to_email: customerData.email,
+                        to_name: customerData.name,
+                        subject: `🎉 Acesso liberado — "${course.title}"`,
+                        html_body: emailHtml,
+                        email_type: 'payment_confirmed',
+                        status: emailRes.ok ? 'sent' : 'failed',
+                        resend_id: emailData?.id || null,
+                        customer_id: orderData.customer_id,
+                        product_id: orderData.product_id,
+                        source: 'pagarme-webhook',
+                      });
+                    } catch (logErr) {
+                      console.error('[pagarme-webhook] Email log error:', logErr);
+                    }
+
                     console.log('[pagarme-webhook] Access email sent to', customerData.email);
                   }
                 }
