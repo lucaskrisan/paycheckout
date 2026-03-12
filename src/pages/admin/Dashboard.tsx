@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   DollarSign,
@@ -13,6 +13,7 @@ import {
   Info,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -47,16 +48,19 @@ const Dashboard = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [period, setPeriod] = useState<Period>("today");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadData();
   }, []);
 
-  const loadData = async () => {
+  const loadData = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
     const { data } = await supabase.from("orders").select("*");
     setOrders(data || []);
     setLoading(false);
-  };
+    if (isRefresh) setRefreshing(false);
+  }, []);
 
   const filterByPeriod = (items: any[]) => {
     const now = new Date();
@@ -193,7 +197,16 @@ const Dashboard = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-foreground">Dashboard</h1>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-9 w-9"
+            onClick={() => loadData(true)}
+            disabled={refreshing}
+          >
+            <RefreshCcw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+          </Button>
           <Select value={period} onValueChange={(v) => setPeriod(v as Period)}>
             <SelectTrigger className="w-[140px] h-9 text-sm">
               <SelectValue />
