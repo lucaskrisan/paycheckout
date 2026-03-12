@@ -52,6 +52,7 @@ const mainItems = [
   { title: "Financeiro", url: "/admin/gateways", icon: Wallet },
   { title: "Relatórios", url: "/admin/abandoned", icon: BarChart3 },
   { title: "Rastreamento", url: "/admin/tracking", icon: Crosshair },
+  { title: "Avaliações", url: "/admin/reviews", icon: MessageCircle },
   { title: "Colaboradores", url: "/admin/integrations", icon: UserPlus },
   { title: "Notificações", url: "/admin/notifications", icon: Bell },
   { title: "Configurações", url: "/admin/settings", icon: Settings },
