@@ -57,6 +57,7 @@ const mainItems = [
   { title: "Colaboradores", url: "/admin/integrations", icon: UserPlus },
   { title: "Notificações", url: "/admin/notifications", icon: Bell },
   { title: "Configurações", url: "/admin/settings", icon: Settings },
+  { title: "Fiscalizar", url: "/admin/health", icon: ShieldCheck },
 ];
 
 export function AdminSidebar() {
