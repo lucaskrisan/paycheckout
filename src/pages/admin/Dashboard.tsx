@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 import {
   DollarSign,
   TrendingUp,
@@ -11,6 +12,7 @@ import {
   RefreshCcw,
   AlertOctagon,
   Info,
+  ShoppingCart,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,8 +46,10 @@ const periodLabels: Record<Period, string> = {
 };
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [orders, setOrders] = useState<any[]>([]);
+  const [abandonedCarts, setAbandonedCarts] = useState<any[]>([]);
   const [period, setPeriod] = useState<Period>("today");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -56,8 +60,12 @@ const Dashboard = () => {
 
   const loadData = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
-    const { data } = await supabase.from("orders").select("*");
-    setOrders(data || []);
+    const [ordersRes, cartsRes] = await Promise.all([
+      supabase.from("orders").select("*"),
+      supabase.from("abandoned_carts").select("*").order("created_at", { ascending: false }).limit(500),
+    ]);
+    setOrders(ordersRes.data || []);
+    setAbandonedCarts(cartsRes.data || []);
     setLoading(false);
     if (isRefresh) setRefreshing(false);
   }, []);
@@ -119,6 +127,12 @@ const Dashboard = () => {
 
   const chargebackOrders = filtered.filter((o) => o.status === "chargeback");
   const chargebackRate = filtered.length > 0 ? ((chargebackOrders.length / filtered.length) * 100).toFixed(0) : "0";
+
+  // Abandoned carts metrics
+  const filteredCarts = useMemo(() => filterByPeriod(abandonedCarts), [abandonedCarts, period]);
+  const totalAbandoned = filteredCarts.length;
+  const recoveredCarts = filteredCarts.filter((c) => c.recovered);
+  const recoveryRate = totalAbandoned > 0 ? ((recoveredCarts.length / totalAbandoned) * 100).toFixed(0) : "0";
 
   // Chart data
   const chartData = useMemo(() => {
@@ -189,6 +203,14 @@ const Dashboard = () => {
       label: "Boletos gerados",
       value: String(boletoGenerated),
       iconColor: "text-muted-foreground",
+    },
+    {
+      icon: ShoppingCart,
+      label: "Carrinhos abandonados",
+      value: String(totalAbandoned),
+      sub: `${recoveryRate}% recuperados`,
+      iconColor: "text-yellow-500",
+      onClick: () => navigate("/admin/abandoned"),
     },
   ];
 
@@ -268,7 +290,11 @@ const Dashboard = () => {
         {/* Metric cards grid */}
         <div className="lg:col-span-5 grid grid-cols-2 gap-3">
           {metricCards.map((card, i) => (
-            <Card key={i} className="border border-border shadow-none">
+            <Card
+              key={i}
+              className={`border border-border shadow-none ${card.onClick ? 'cursor-pointer hover:bg-muted/30 transition-colors' : ''}`}
+              onClick={card.onClick}
+            >
               <CardContent className="p-4 flex items-start gap-3">
                 <card.icon className={`w-5 h-5 mt-0.5 shrink-0 ${card.iconColor}`} />
                 <div className="min-w-0">
