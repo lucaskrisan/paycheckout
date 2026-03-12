@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { X, Trash2, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { X, Trash2, CheckCircle2, AlertCircle, Loader2, RefreshCw } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -14,21 +14,6 @@ import {
 import { toast } from "sonner";
 
 interface FacebookDomain {
-  id: string;
-  domain: string;
-  verified: boolean;
-}
-
-interface VerifyResult {
-  status: "ok" | "error" | "loading";
-  message: string;
-}
-
-// Re-export for use
-export type { FacebookDomain };
-
-// Minimal inline interface used below
-interface FacebookDomainLocal {
   id: string;
   domain: string;
   verified: boolean;
@@ -47,6 +32,7 @@ export default function FacebookDomainManager({ open, onClose, onDomainsChange }
   const [showAddModal, setShowAddModal] = useState(false);
   const [newDomain, setNewDomain] = useState("");
   const [adding, setAdding] = useState(false);
+  const [verifying, setVerifying] = useState<string | null>(null);
 
   const loadDomains = async () => {
     if (!user) return;
@@ -89,6 +75,59 @@ export default function FacebookDomainManager({ open, onClose, onDomainsChange }
     await supabase.from("facebook_domains").delete().eq("id", id);
     toast.success("Domínio removido");
     loadDomains();
+  };
+
+  const handleVerify = async (domain: FacebookDomain) => {
+    setVerifying(domain.id);
+    try {
+      // Check DNS resolution by fetching meta-diagnostics edge function
+      const { data, error } = await supabase.functions.invoke("meta-diagnostics", {
+        body: { action: "check_dns", domain: `pixels.${domain.domain}`, expected: "pixels.paycheckout.lovable.app" },
+      });
+
+      if (error) throw error;
+
+      const resolved = data?.resolved === true;
+
+      // Update verified status in DB
+      await supabase
+        .from("facebook_domains")
+        .update({ verified: resolved })
+        .eq("id", domain.id);
+
+      if (resolved) {
+        toast.success(`✅ DNS de pixels.${domain.domain} está apontando corretamente!`);
+      } else {
+        toast.error(`❌ DNS de pixels.${domain.domain} ainda não está propagado. Aguarde até 72h ou verifique o CNAME.`);
+      }
+
+      loadDomains();
+    } catch {
+      // Fallback: simple DNS check via fetch
+      try {
+        const resp = await fetch(`https://dns.google/resolve?name=pixels.${domain.domain}&type=CNAME`);
+        const json = await resp.json();
+        const answers = json.Answer || [];
+        const hasCname = answers.some((a: any) =>
+          a.type === 5 && a.data?.includes("paycheckout")
+        );
+
+        await supabase
+          .from("facebook_domains")
+          .update({ verified: hasCname })
+          .eq("id", domain.id);
+
+        if (hasCname) {
+          toast.success(`✅ CNAME de pixels.${domain.domain} verificado com sucesso!`);
+        } else {
+          toast.error(`❌ CNAME de pixels.${domain.domain} não encontrado. Verifique no Cloudflare.`);
+        }
+        loadDomains();
+      } catch {
+        toast.error("Não foi possível verificar o DNS. Tente novamente em alguns minutos.");
+      }
+    }
+    setVerifying(null);
   };
 
   if (!open) return null;
@@ -134,9 +173,23 @@ export default function FacebookDomainManager({ open, onClose, onDomainsChange }
                       <AlertCircle className="w-4 h-4 text-amber-500" />
                     )}
                   </div>
-                  <button onClick={() => handleDelete(d.id)} className="text-destructive hover:text-destructive/80">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => handleVerify(d)}
+                      disabled={verifying === d.id}
+                      className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-muted transition-colors disabled:opacity-50"
+                      title="Verificar DNS"
+                    >
+                      {verifying === d.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-4 h-4" />
+                      )}
+                    </button>
+                    <button onClick={() => handleDelete(d.id)} className="p-1.5 rounded-md text-destructive hover:text-destructive/80 hover:bg-muted transition-colors">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               ))
             )}
@@ -185,7 +238,7 @@ export default function FacebookDomainManager({ open, onClose, onDomainsChange }
                 <strong>pixels.paycheckout.lovable.app</strong>
               </div>
               <div className="bg-muted/50 rounded-lg px-4 py-3 text-sm text-foreground">
-                <span className="font-medium">2.3.</span> Salve o DNS
+                <span className="font-medium">2.3.</span> Salve o DNS e clique no botão 🔄 para verificar
               </div>
             </div>
 
