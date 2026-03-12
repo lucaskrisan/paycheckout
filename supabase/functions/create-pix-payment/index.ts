@@ -6,47 +6,36 @@ const corsHeaders = {
 }
 
 async function sendPushNotification(title: string, message: string, url?: string) {
-  const apiKey = Deno.env.get('PUSHALERT_API_KEY');
-  if (!apiKey) {
-    console.warn('[create-pix-payment] PUSHALERT_API_KEY not configured, skipping notification');
+  const appId = Deno.env.get('ONESIGNAL_APP_ID');
+  const apiKey = Deno.env.get('ONESIGNAL_REST_API_KEY');
+  if (!appId || !apiKey) {
+    console.warn('[create-pix-payment] OneSignal not configured, skipping notification');
     return;
   }
 
-  const body = new URLSearchParams();
-  body.set('title', title);
-  body.set('message', message);
-  body.set('icon', 'https://paycheckout.lovable.app/pwa-192x192.png');
-  if (url) body.set('url', url);
-
   try {
-    const response = await fetch('https://api.pushalert.co/rest/v1/send', {
+    const payload: Record<string, unknown> = {
+      app_id: appId,
+      included_segments: ['Subscribed Users'],
+      headings: { en: title },
+      contents: { en: message },
+      chrome_web_icon: 'https://paycheckout.lovable.app/pwa-192x192.png',
+    };
+    if (url) payload.url = url;
+
+    const response = await fetch('https://api.onesignal.com/notifications', {
       method: 'POST',
       headers: {
-        'Authorization': `api_key=${apiKey}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Key ${apiKey}`,
+        'Content-Type': 'application/json',
       },
-      body: body.toString(),
+      body: JSON.stringify(payload),
     });
 
     const raw = await response.text();
-    let parsed: Record<string, unknown> | null = null;
-
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      parsed = null;
-    }
-
-    console.log('[create-pix-payment] PushAlert response:', {
-      status: response.status,
-      body: raw,
-    });
-
-    if (!response.ok || parsed?.success === false) {
-      throw new Error(`PushAlert failed: ${raw}`);
-    }
+    console.log('[create-pix-payment] OneSignal response:', { status: response.status, body: raw });
   } catch (err) {
-    console.error('[create-pix-payment] PushAlert error:', err);
+    console.error('[create-pix-payment] OneSignal error:', err);
   }
 }
 
