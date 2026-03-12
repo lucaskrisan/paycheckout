@@ -90,7 +90,7 @@ async function sendAccessEmail(supabase: any, customerId: string, course: { id: 
       </html>
     `;
 
-    await fetch('https://api.resend.com/emails', {
+    const emailRes = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${RESEND_API_KEY}`,
@@ -103,6 +103,25 @@ async function sendAccessEmail(supabase: any, customerId: string, course: { id: 
         html: emailHtml,
       }),
     });
+    const emailData = await emailRes.json();
+
+    // Log email
+    try {
+      await supabase.from('email_logs').insert({
+        to_email: customer.email,
+        to_name: customer.name,
+        subject: `🎉 Acesso liberado — "${course.title}"`,
+        html_body: emailHtml,
+        email_type: 'payment_confirmed',
+        status: emailRes.ok ? 'sent' : 'failed',
+        resend_id: emailData?.id || null,
+        customer_id: customerId,
+        source: 'asaas-webhook',
+      });
+    } catch (logErr) {
+      console.error('[asaas-webhook] Email log error:', logErr);
+    }
+
     console.log('[asaas-webhook] Access email sent to', customer.email);
   } catch (err) {
     console.error('[asaas-webhook] Email error (non-blocking):', err);

@@ -114,9 +114,25 @@ Deno.serve(async (req) => {
 
     const resendData = await resendRes.json();
 
+    // Log email
+    try {
+      await supabase.from('email_logs').insert({
+        to_email: customer.email,
+        to_name: customer.name,
+        subject: `Seu acesso ao curso "${course.title}" está liberado! 🎉`,
+        html_body: emailHtml,
+        email_type: 'access_link',
+        status: resendRes.ok ? 'sent' : 'failed',
+        resend_id: resendData?.id || null,
+        customer_id: customer_id,
+        source: 'send-access-link',
+      });
+    } catch (logErr) {
+      console.error('[send-access-link] Email log error:', logErr);
+    }
+
     if (!resendRes.ok) {
       console.error('Resend error:', resendData);
-      // Return success with warning instead of failing
       return new Response(
         JSON.stringify({
           success: true,

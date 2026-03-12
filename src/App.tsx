@@ -29,6 +29,7 @@ import Tracking from "./pages/admin/Tracking";
 import Reviews from "./pages/admin/Reviews";
 import SystemHealth from "./pages/admin/SystemHealth";
 import Webhooks from "./pages/admin/Webhooks";
+import Emails from "./pages/admin/Emails";
 import NotFound from "./pages/NotFound";
 import InstallPrompt from "./components/InstallPrompt";
 
@@ -68,6 +69,7 @@ const App = () => (
               <Route path="reviews" element={<Reviews />} />
               <Route path="health" element={<SystemHealth />} />
               <Route path="webhooks" element={<Webhooks />} />
+              <Route path="emails" element={<Emails />} />
               <Route path="platform" element={<SuperAdminDashboard />} />
             </Route>
             <Route path="*" element={<NotFound />} />
