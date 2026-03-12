@@ -342,30 +342,37 @@ export default function Emails() {
         </CardContent>
       </Card>
 
-      {/* Email Preview Modal */}
-      <Dialog open={!!previewEmail} onOpenChange={() => setPreviewEmail(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Mail className="h-5 w-5" /> {previewEmail?.subject}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div className="flex gap-4 text-sm text-muted-foreground">
-              <span><strong>Para:</strong> {previewEmail?.to_email}</span>
-              <span><strong>Data:</strong> {previewEmail && format(new Date(previewEmail.created_at), "dd/MM/yyyy HH:mm")}</span>
-            </div>
-            <div className="border rounded-lg overflow-hidden">
-              <iframe
-                srcDoc={previewEmail?.html_body || ""}
-                className="w-full h-[400px] bg-white"
-                sandbox="allow-same-origin"
-                title="Email Preview"
-              />
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Email Preview & Edit Modal */}
+      {previewEmail && (
+        <EmailPreviewModal
+          open={!!previewEmail}
+          onOpenChange={(open) => { if (!open) setPreviewEmail(null); }}
+          subject={previewEmail.subject || ""}
+          body={previewEmail.html_body || ""}
+          fullHtml={previewEmail.html_body || ""}
+          to={previewEmail.to_email || ""}
+          customerName={previewEmail.to_name || "Cliente"}
+          productName={
+            EMAIL_TYPE_LABELS[previewEmail.email_type] || previewEmail.email_type
+          }
+          onSend={async (subject, body) => {
+            const { error } = await supabase.functions.invoke("send-pix-reminder", {
+              body: {
+                orderId: previewEmail.order_id,
+                customSubject: subject,
+                customBody: body,
+                toEmail: previewEmail.to_email,
+                toName: previewEmail.to_name,
+              },
+            });
+            if (error) {
+              toast.error("Falha ao reenviar email");
+              throw error;
+            }
+            toast.success("Email reenviado com sucesso!");
+          }}
+        />
+      )}
     </div>
   );
 }
