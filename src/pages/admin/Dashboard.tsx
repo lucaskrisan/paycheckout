@@ -47,16 +47,19 @@ const Dashboard = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [period, setPeriod] = useState<Period>("today");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadData();
   }, []);
 
-  const loadData = async () => {
+  const loadData = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
     const { data } = await supabase.from("orders").select("*");
     setOrders(data || []);
     setLoading(false);
-  };
+    if (isRefresh) setRefreshing(false);
+  }, []);
 
   const filterByPeriod = (items: any[]) => {
     const now = new Date();
