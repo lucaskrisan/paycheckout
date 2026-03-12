@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Pencil, Trash2, GraduationCap, BookOpen, FileText, Users } from "lucide-react";
+import LessonMaterialsManager from "@/components/admin/LessonMaterialsManager";
 import { toast } from "sonner";
 import CourseStudents from "@/components/admin/CourseStudents";
 
