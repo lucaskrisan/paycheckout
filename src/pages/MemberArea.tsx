@@ -259,7 +259,7 @@ const MemberArea = () => {
     const isCompleted = completedLessons.has(lessonId);
 
     if (isCompleted) {
-      await supabase
+      await tokenClient
         .from("lesson_progress")
         .update({ completed: false, completed_at: null })
         .eq("member_access_id", access.id)
