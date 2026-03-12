@@ -168,6 +168,46 @@ export default function Emails() {
         </Card>
       </div>
 
+      {/* Delivery Tracking Metrics */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="border-dashed">
+          <CardContent className="pt-4 pb-4">
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Entrega</p>
+              <p className="text-xl font-bold text-foreground">{deliveryRate}%</p>
+              <p className="text-xs text-muted-foreground">{deliveredCount} de {totalEmails}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-dashed">
+          <CardContent className="pt-4 pb-4">
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Abertura</p>
+              <p className="text-xl font-bold text-foreground">{openRate}%</p>
+              <p className="text-xs text-muted-foreground">{openedCount} abertos</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-dashed">
+          <CardContent className="pt-4 pb-4">
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Cliques</p>
+              <p className="text-xl font-bold text-foreground">{clickRate}%</p>
+              <p className="text-xs text-muted-foreground">{clickedCount} clicados</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-dashed">
+          <CardContent className="pt-4 pb-4">
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Bounce</p>
+              <p className="text-xl font-bold text-destructive">{bouncedCount}</p>
+              <p className="text-xs text-muted-foreground">rejeitados</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Period Selector */}
       <div className="flex items-center gap-3">
         <Select value={period} onValueChange={setPeriod}>
