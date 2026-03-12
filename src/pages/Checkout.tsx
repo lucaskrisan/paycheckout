@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Lock, ArrowRight, Loader2, Award, Star, ListOrdered } from "lucide-react";
+import { Lock, ArrowRight, Loader2, Award, Star, ListOrdered, Shield, ShieldCheck } from "lucide-react";
 import CustomerForm, { type CustomerData } from "@/components/checkout/CustomerForm";
 import PixPayment from "@/components/checkout/PixPayment";
 import CreditCardForm, { type CreditCardData } from "@/components/checkout/CreditCardForm";
@@ -172,16 +172,16 @@ const Checkout = () => {
 
   const renderCustomComponent = (component: BuilderComponent) => {
     switch (component.type) {
-      case "text": return <p className="text-foreground whitespace-pre-line text-sm">{component.props.content}</p>;
-      case "image": return component.props.url ? <img src={component.props.url} alt="" className="w-full rounded-lg object-contain bg-muted/30 p-1 border border-border" loading="lazy" decoding="async" /> : null;
-      case "header": return <h2 className="text-lg font-bold text-foreground">{component.props.title || product?.name}</h2>;
+      case "text": return <p className="text-[#0F1111] whitespace-pre-line text-sm">{component.props.content}</p>;
+      case "image": return component.props.url ? <img src={component.props.url} alt="" className="w-full rounded-lg object-contain bg-[#F7FAFA] p-1 border border-[#D5D9D9]" loading="lazy" decoding="async" /> : null;
+      case "header": return <h2 className="text-lg font-bold text-[#0F1111]">{component.props.title || product?.name}</h2>;
       case "advantages": case "list":
-        return (<ul className="space-y-2">{(component.props.items || []).map((item: string, i: number) => (<li key={`${component.id}-${i}`} className="flex items-center gap-2 text-sm text-foreground"><ListOrdered className="w-4 h-4 text-primary" /><span>{item}</span></li>))}</ul>);
+        return (<ul className="space-y-2">{(component.props.items || []).map((item: string, i: number) => (<li key={`${component.id}-${i}`} className="flex items-center gap-2 text-sm text-[#0F1111]"><ListOrdered className="w-4 h-4 text-[#007185]" /><span>{item}</span></li>))}</ul>);
       case "testimonial":
-        return (<div className="rounded-lg border border-border bg-card p-3"><div className="mb-1 flex gap-0.5">{[...Array(5)].map((_, i) => <Star key={i} className="w-3 h-3 text-primary fill-primary" />)}</div><p className="text-sm text-foreground italic">"{component.props.text}"</p><p className="mt-1 text-xs text-muted-foreground">— {component.props.author}</p></div>);
+        return (<div className="rounded-lg border border-[#D5D9D9] bg-white p-3"><div className="mb-1 flex gap-0.5">{[...Array(5)].map((_, i) => <Star key={i} className="w-3 h-3 text-[#FFA41C] fill-[#FFA41C]" />)}</div><p className="text-sm text-[#0F1111] italic">"{component.props.text}"</p><p className="mt-1 text-xs text-[#565959]">— {component.props.author}</p></div>);
       case "seal":
-        return (<div className="flex items-center gap-2 rounded-lg border border-border bg-card p-3"><Award className="w-5 h-5 text-primary" /><div><p className="text-sm font-semibold text-foreground">{component.props.title}</p><p className="text-xs text-muted-foreground">{component.props.subtitle}</p></div></div>);
-      case "video": return component.props.url ? <iframe src={component.props.url.replace("watch?v=", "embed/")} className="w-full h-56 rounded-lg border border-border" allowFullScreen title="Vídeo" /> : null;
+        return (<div className="flex items-center gap-2 rounded-lg border border-[#D5D9D9] bg-white p-3"><Award className="w-5 h-5 text-[#007185]" /><div><p className="text-sm font-semibold text-[#0F1111]">{component.props.title}</p><p className="text-xs text-[#565959]">{component.props.subtitle}</p></div></div>);
+      case "video": return component.props.url ? <iframe src={component.props.url.replace("watch?v=", "embed/")} className="w-full h-56 rounded-lg border border-[#D5D9D9]" allowFullScreen title="Vídeo" /> : null;
       default: return null;
     }
   };
@@ -190,14 +190,14 @@ const Checkout = () => {
   useEffect(() => { trackAddPaymentInfo(paymentMethod); }, [paymentMethod, trackAddPaymentInfo]);
 
   if (loading) return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
+    <div className="min-h-screen bg-[#F2F4F8] flex items-center justify-center">
       <div className="space-y-4 w-full max-w-lg px-4"><Skeleton className="h-8 w-3/4" /><Skeleton className="h-40 w-full" /><Skeleton className="h-40 w-full" /></div>
     </div>
   );
 
   if (notFound || !product) return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="text-center space-y-3"><h1 className="text-2xl font-bold text-foreground">Produto não encontrado</h1><p className="text-muted-foreground">Este produto não existe ou não está disponível.</p></div>
+    <div className="min-h-screen bg-[#F2F4F8] flex items-center justify-center">
+      <div className="text-center space-y-3"><h1 className="text-2xl font-bold text-[#0F1111]">Produto não encontrado</h1><p className="text-[#565959]">Este produto não existe ou não está disponível.</p></div>
     </div>
   );
 
@@ -234,159 +234,171 @@ const Checkout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5]">
-      {/* Countdown bar */}
+    <div className="min-h-screen" style={{ backgroundColor: "#F2F4F8", fontFamily: "Arial, sans-serif" }}>
+      {/* Fixed topbar */}
       <CountdownTimer minutes={countdownMinutes} />
 
-      {/* Main content - single column centered */}
-      <div className="max-w-[620px] mx-auto px-4 py-6 space-y-5">
+      {/* Main content - white card */}
+      <div className="max-w-[620px] mx-auto px-4 pt-16 pb-8">
+        <div className="bg-white rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.05)] overflow-hidden">
+          <div className="p-5 sm:p-6 space-y-5">
 
-        {/* Builder: top zone */}
-        {sortedLayout.filter((c) => c.zone === "top").map((component) => (
-          <div key={component.id}>{renderCustomComponent(component)}</div>
-        ))}
-
-        {/* Product banner image */}
-        {product.image_url && (
-          <div className="rounded-xl border border-border bg-card/60 p-2 overflow-hidden">
-            <img
-              src={product.image_url}
-              alt={product.name}
-              className="w-full h-auto max-h-[420px] object-contain mx-auto"
-              loading="eager"
-              decoding="async"
-            />
-          </div>
-        )}
-
-        {/* Product name + thumbnail */}
-        <div className="flex items-center gap-3">
-          {product.image_url && (
-            <img src={product.image_url} alt="" className="w-12 h-12 rounded-md object-contain bg-muted p-1 border border-border" />
-          )}
-          <h1 className="text-lg font-bold text-foreground">{product.name}</h1>
-        </div>
-
-        {/* Builder: left zone components */}
-        {sortedLayout.filter((c) => c.zone === "left" && !["form", "button", "countdown", "facebook"].includes(c.type)).map((component) => (
-          <div key={component.id}>{renderCustomComponent(component)}</div>
-        ))}
-
-        {/* Customer form */}
-        <div className="bg-card border border-border rounded-lg p-5 space-y-4">
-          <CustomerForm data={customer} onChange={setCustomer} />
-
-          {/* Payment tabs */}
-          {product.is_subscription ? (
-            <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 flex items-center gap-2">
-              <span className="text-primary text-lg">🔄</span>
-              <div>
-                <p className="text-sm font-semibold text-foreground">Assinatura {{ weekly: "Semanal", biweekly: "Quinzenal", monthly: "Mensal", quarterly: "Trimestral", semiannually: "Semestral", yearly: "Anual" }[product.billing_cycle] || "Mensal"}</p>
-                <p className="text-xs text-muted-foreground">Cobrança recorrente no cartão de crédito</p>
-              </div>
-            </div>
-          ) : (
-            <PaymentTabs activeMethod={paymentMethod} onMethodChange={setPaymentMethod} />
-          )}
-
-          {/* Payment form */}
-          {paymentMethod === "pix" ? (
-            <PixPayment totalAmount={finalAmount} qrCodeData={pixData?.qrCodeUrl} pixCode={pixData?.pixCode} />
-          ) : (
-            <CreditCardForm data={creditCard} onChange={setCreditCard} totalAmount={finalAmount} />
-          )}
-        </div>
-
-        {/* Coupon */}
-        <CouponField productId={product.id} productPrice={product.price} onApply={setCoupon} />
-
-        {/* Order Bumps - Kiwify style */}
-        {orderBumps.length > 0 && (
-          <div className="space-y-3">
-            {orderBumps.map((bump) => (
-              <div
-                key={bump.id}
-                onClick={() => toggleBump(bump.id)}
-                className={`border-2 border-dashed rounded-lg overflow-hidden cursor-pointer transition-all ${
-                  selectedBumps.has(bump.id)
-                    ? "border-primary bg-primary/5"
-                    : "border-primary/40 bg-card"
-                }`}
-              >
-                {/* CTA header */}
-                <div className="bg-primary/10 text-primary text-center text-xs font-bold py-2 uppercase tracking-wide">
-                  {bump.call_to_action}
-                </div>
-
-                {/* Content */}
-                <div className="flex items-start gap-3 p-4">
-                  {/* Red arrow checkbox area */}
-                  <div className="flex flex-col items-center gap-1 shrink-0 pt-1">
-                    <span className="text-destructive text-lg leading-none">➜</span>
-                    <Checkbox
-                      checked={selectedBumps.has(bump.id)}
-                      onCheckedChange={() => toggleBump(bump.id)}
-                      className="border-primary data-[state=checked]:bg-primary"
-                    />
-                  </div>
-
-                  {/* Product image */}
-                  {bump.use_product_image && bump.bump_product?.image_url && (
-                    <img src={bump.bump_product.image_url} alt="" className="w-14 h-14 rounded-md object-contain bg-muted p-1 shrink-0 border border-border" />
-                  )}
-
-                  {/* Text */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm">
-                      <strong className="text-primary underline">{bump.title || bump.bump_product?.name}:</strong>{" "}
-                      <span className="text-foreground">{bump.description}</span>
-                      {bump.bump_product?.price && (
-                        <span className="text-muted-foreground">
-                          {" "}— Adicionar a compra · {creditCard.installments !== "1"
-                            ? `${creditCard.installments}x de R$ ${(bump.bump_product.price / Number(creditCard.installments || 1)).toFixed(2).replace(".", ",")}`
-                            : `R$ ${bump.bump_product.price.toFixed(2).replace(".", ",")}`}
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                </div>
-              </div>
+            {/* Builder: top zone */}
+            {sortedLayout.filter((c) => c.zone === "top").map((component) => (
+              <div key={component.id}>{renderCustomComponent(component)}</div>
             ))}
+
+            {/* Product banner image */}
+            {product.image_url && (
+              <div className="rounded-lg overflow-hidden bg-[#F7FAFA]">
+                <img
+                  src={product.image_url}
+                  alt={product.name}
+                  className="w-full h-auto max-h-[420px] object-contain mx-auto"
+                  loading="eager"
+                  decoding="async"
+                />
+              </div>
+            )}
+
+            {/* Product name + thumbnail */}
+            <div className="flex items-center gap-3">
+              {product.image_url && (
+                <img src={product.image_url} alt="" className="w-10 h-10 rounded-md object-contain bg-[#F7FAFA] p-0.5 border border-[#D5D9D9]" />
+              )}
+              <h1 className="text-base font-bold text-[#0F1111]">{product.name}</h1>
+            </div>
+
+            {/* Builder: left zone components */}
+            {sortedLayout.filter((c) => c.zone === "left" && !["form", "button", "countdown", "facebook"].includes(c.type)).map((component) => (
+              <div key={component.id}>{renderCustomComponent(component)}</div>
+            ))}
+
+            {/* Customer form */}
+            <div className="space-y-4">
+              <CustomerForm data={customer} onChange={setCustomer} />
+
+              {/* Payment tabs */}
+              {product.is_subscription ? (
+                <div className="bg-[#F7FAFA] border border-[#D5D9D9] rounded-lg p-3 flex items-center gap-2">
+                  <span className="text-lg">🔄</span>
+                  <div>
+                    <p className="text-sm font-bold text-[#0F1111]">Assinatura {{ weekly: "Semanal", biweekly: "Quinzenal", monthly: "Mensal", quarterly: "Trimestral", semiannually: "Semestral", yearly: "Anual" }[product.billing_cycle] || "Mensal"}</p>
+                    <p className="text-xs text-[#565959]">Cobrança recorrente no cartão de crédito</p>
+                  </div>
+                </div>
+              ) : (
+                <PaymentTabs activeMethod={paymentMethod} onMethodChange={setPaymentMethod} />
+              )}
+
+              {/* Payment form */}
+              {paymentMethod === "pix" ? (
+                <PixPayment totalAmount={finalAmount} qrCodeData={pixData?.qrCodeUrl} pixCode={pixData?.pixCode} />
+              ) : (
+                <CreditCardForm data={creditCard} onChange={setCreditCard} totalAmount={finalAmount} />
+              )}
+            </div>
+
+            {/* Coupon */}
+            <CouponField productId={product.id} productPrice={product.price} onApply={setCoupon} />
+
+            {/* Order Bumps */}
+            {orderBumps.length > 0 && (
+              <div className="space-y-3">
+                {orderBumps.map((bump) => (
+                  <div
+                    key={bump.id}
+                    onClick={() => toggleBump(bump.id)}
+                    className={`border-2 border-dashed rounded-lg overflow-hidden cursor-pointer transition-all ${
+                      selectedBumps.has(bump.id)
+                        ? "border-[#007185] bg-[#F7FAFA]"
+                        : "border-[#D5D9D9] bg-white"
+                    }`}
+                  >
+                    <div className="bg-[#FFF8E1] text-[#B12704] text-center text-xs font-bold py-2 uppercase tracking-wide">
+                      {bump.call_to_action}
+                    </div>
+                    <div className="flex items-start gap-3 p-4">
+                      <div className="flex flex-col items-center gap-1 shrink-0 pt-1">
+                        <span className="text-[#B12704] text-lg leading-none">➜</span>
+                        <Checkbox
+                          checked={selectedBumps.has(bump.id)}
+                          onCheckedChange={() => toggleBump(bump.id)}
+                          className="border-[#007185] data-[state=checked]:bg-[#007185]"
+                        />
+                      </div>
+                      {bump.use_product_image && bump.bump_product?.image_url && (
+                        <img src={bump.bump_product.image_url} alt="" className="w-14 h-14 rounded-md object-contain bg-[#F7FAFA] p-1 shrink-0 border border-[#D5D9D9]" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm">
+                          <strong className="text-[#007185] underline">{bump.title || bump.bump_product?.name}:</strong>{" "}
+                          <span className="text-[#0F1111]">{bump.description}</span>
+                          {bump.bump_product?.price && (
+                            <span className="text-[#565959]">
+                              {" "}— Adicionar a compra · {creditCard.installments !== "1"
+                                ? `${creditCard.installments}x de R$ ${(bump.bump_product.price / Number(creditCard.installments || 1)).toFixed(2).replace(".", ",")}`
+                                : `R$ ${bump.bump_product.price.toFixed(2).replace(".", ",")}`}
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Builder: right zone */}
+            {sortedLayout.filter((c) => c.zone === "right" && !["form", "button", "countdown", "facebook"].includes(c.type)).map((component) => (
+              <div key={component.id}>{renderCustomComponent(component)}</div>
+            ))}
+
+            {/* Submit button - Amazon gold */}
+            <button
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="w-full py-4 rounded-lg text-base font-medium transition-colors disabled:opacity-50"
+              style={{
+                backgroundColor: isSubmitting ? "#E8D38A" : "#FFD814",
+                border: "1px solid #FCD200",
+                color: "#0F1111",
+                boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+              }}
+            >
+              {isSubmitting ? (
+                <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+              ) : (
+                <span className="flex items-center justify-center gap-2">
+                  {product.is_subscription ? "Assinar agora" : submitLabel || "Finalizar compra"}
+                  <ArrowRight className="w-5 h-5" />
+                </span>
+              )}
+            </button>
+
+            {/* Trust footer */}
+            <div className="text-center space-y-3 pt-2 pb-2">
+              <div className="flex items-center justify-center gap-4 text-xs text-[#565959]">
+                <div className="flex items-center gap-1">
+                  <Lock className="w-3.5 h-3.5 text-[#007185]" />
+                  <span>Pagamento seguro</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#007185]" />
+                  <span>Dados protegidos</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Shield className="w-3.5 h-3.5 text-[#007185]" />
+                  <span>SSL 256 bits</span>
+                </div>
+              </div>
+              <p className="text-[11px] text-[#565959]">
+                Ao continuar, você concorda com os{" "}
+                <a href="#" className="underline text-[#007185]">termos de uso</a> e{" "}
+                <a href="#" className="underline text-[#007185]">política de privacidade</a>.
+              </p>
+            </div>
           </div>
-        )}
-
-        {/* Builder: right zone */}
-        {sortedLayout.filter((c) => c.zone === "right" && !["form", "button", "countdown", "facebook"].includes(c.type)).map((component) => (
-          <div key={component.id}>{renderCustomComponent(component)}</div>
-        ))}
-
-        {/* Submit button */}
-        <Button
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-          className="w-full h-14 text-base font-bold bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.01] active:scale-[0.99]"
-        >
-          {isSubmitting ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            <>
-              {product.is_subscription ? "Assinar agora" : submitLabel || (paymentMethod === "pix" ? "Pagar agora" : "Pagar agora")}
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </>
-          )}
-        </Button>
-
-        {/* Footer */}
-        <div className="text-center space-y-2 pb-6">
-          <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
-            <Lock className="w-3.5 h-3.5" />
-            <span>Pagamento 100% seguro</span>
-          </div>
-          <p className="text-[11px] text-muted-foreground">
-            Ao continuar, você concorda com os{" "}
-            <a href="#" className="underline">termos de uso</a> e{" "}
-            <a href="#" className="underline">política de privacidade</a>.
-          </p>
         </div>
       </div>
     </div>
