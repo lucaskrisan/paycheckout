@@ -68,7 +68,7 @@ const Checkout = () => {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [pixData, setPixData] = useState<{ qrCodeUrl?: string; pixCode?: string } | null>(null);
+  const [pixData, setPixData] = useState<{ qrCodeUrl?: string; pixCode?: string; orderId?: string } | null>(null);
   const [pixModalOpen, setPixModalOpen] = useState(false);
   const { trackPurchase, trackAddPaymentInfo, trackLead, setAdvancedMatching } = useFacebookPixel(productId);
   const [orderBumps, setOrderBumps] = useState<OrderBump[]>([]);
@@ -228,7 +228,7 @@ const Checkout = () => {
           body: { amount: finalAmount, product_id: product.id, config_id: requestedConfigId || null, coupon_id: coupon?.id || null, bump_product_ids: bumpProductIds, customer: { name: customer.name, email: customer.email, cpf: customer.cpf, phone: customer.phone } },
         });
         if (error) throw error;
-        if (data?.qr_code_url || data?.qr_code) { setPixData({ qrCodeUrl: data.qr_code_url, pixCode: data.qr_code }); setPixModalOpen(true); trackPurchase(frontEndAmount); await markPurchased(); }
+        if (data?.qr_code_url || data?.qr_code) { setPixData({ qrCodeUrl: data.qr_code_url, pixCode: data.qr_code, orderId: data.order_id }); setPixModalOpen(true); trackPurchase(frontEndAmount); await markPurchased(); }
         else throw new Error("Falha ao gerar o PIX");
       } else {
         const bumpProductIds2 = orderBumps.filter((b) => selectedBumps.has(b.id)).map((b) => b.bump_product.id);
@@ -432,6 +432,7 @@ const Checkout = () => {
         totalAmount={finalAmount}
         qrCodeUrl={pixData?.qrCodeUrl}
         pixCode={pixData?.pixCode}
+        externalOrderId={pixData?.orderId}
       />
     </div>
   );
