@@ -5,8 +5,6 @@ import {
   DollarSign,
   TrendingUp,
   CreditCard,
-  Percent,
-  Banknote,
   FileText,
   RefreshCcw,
   AlertOctagon,
