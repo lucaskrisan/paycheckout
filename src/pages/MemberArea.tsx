@@ -101,6 +101,24 @@ const MemberArea = () => {
   const navigate = useNavigate();
   const token = searchParams.get("token");
 
+  // Create a supabase client that sends x-access-token header for RLS
+  const tokenClient = useMemo(() => {
+    if (!token) return supabase;
+    return createClient<Database>(
+      import.meta.env.VITE_SUPABASE_URL,
+      import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      {
+        global: {
+          headers: { "x-access-token": token },
+        },
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+      }
+    );
+  }, [token]);
+
   const [loading, setLoading] = useState(true);
   const [access, setAccess] = useState<MemberAccess | null>(null);
   const [course, setCourse] = useState<Course | null>(null);
