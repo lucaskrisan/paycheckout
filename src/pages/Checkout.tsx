@@ -79,7 +79,18 @@ const Checkout = () => {
   const [checkoutSettings, setCheckoutSettings] = useState<CheckoutSettings | null>(null);
   const [coupon, setCoupon] = useState<CouponData | null>(null);
 
-  const [customer, setCustomer] = useState<CustomerData>({ name: "", email: "", phone: "", cpf: "" });
+  // Pre-fill customer data from query params (for reminder emails)
+  const prefill = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return {
+      name: params.get("name") || "",
+      email: params.get("email") || "",
+      phone: params.get("phone") || "",
+      cpf: params.get("cpf") || "",
+    };
+  }, [location.search]);
+
+  const [customer, setCustomer] = useState<CustomerData>({ name: prefill.name, email: prefill.email, phone: prefill.phone, cpf: prefill.cpf });
   const [creditCard, setCreditCard] = useState<CreditCardData>({ number: "", name: "", expiry: "", cvv: "", installments: "1" });
 
   const { markPurchased } = useAbandonedCart({
