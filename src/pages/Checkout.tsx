@@ -427,7 +427,15 @@ const Checkout = () => {
         </div>
       </div>
     </div>
+
+      <PixModal
+        open={pixModalOpen}
+        onClose={() => setPixModalOpen(false)}
+        totalAmount={finalAmount}
+        qrCodeUrl={pixData?.qrCodeUrl}
+        pixCode={pixData?.pixCode}
+      />
+    </div>
   );
-};
 
 export default Checkout;
