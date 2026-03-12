@@ -7,7 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { ShoppingBag, ChevronLeft, ChevronRight, Download, Copy, Check, MessageCircle, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { format, startOfDay, isAfter, isBefore, addDays } from "date-fns";
+import { format, startOfDay, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 
