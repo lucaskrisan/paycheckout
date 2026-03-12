@@ -45,6 +45,8 @@ const PwaSettings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
+  const [notifSound, setNotifSound] = useState("kaching");
+  const [notifPattern, setNotifPattern] = useState("creative");
 
   useEffect(() => {
     if (!user) return;
