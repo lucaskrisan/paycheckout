@@ -322,7 +322,8 @@ const ProductEdit = () => {
     );
   }
 
-  const checkoutLink = isNew ? "" : `${getPublicUrl()}/checkout/${productId}`;
+  const defaultCheckout = checkouts.find((c: any) => c.is_default) || checkouts[0] || null;
+  const checkoutLink = isNew ? "" : `${getPublicUrl()}/checkout/${productId}${defaultCheckout?.id ? `?config=${defaultCheckout.id}` : ""}`;
 
   return (
     <div className="space-y-0 -m-6">
