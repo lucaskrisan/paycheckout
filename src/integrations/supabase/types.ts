@@ -770,6 +770,7 @@ export type Database = {
           name: string
           original_price: number | null
           price: number
+          show_coupon: boolean
           updated_at: string
           user_id: string | null
         }
@@ -784,6 +785,7 @@ export type Database = {
           name: string
           original_price?: number | null
           price?: number
+          show_coupon?: boolean
           updated_at?: string
           user_id?: string | null
         }
@@ -798,6 +800,7 @@ export type Database = {
           name?: string
           original_price?: number | null
           price?: number
+          show_coupon?: boolean
           updated_at?: string
           user_id?: string | null
         }

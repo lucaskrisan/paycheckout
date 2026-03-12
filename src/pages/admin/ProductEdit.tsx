@@ -101,6 +101,7 @@ const ProductEdit = () => {
     sales_page_url: "",
     is_subscription: false,
     billing_cycle: "monthly",
+    show_coupon: true,
   });
 
   // Load pixels for this product
@@ -185,6 +186,7 @@ const ProductEdit = () => {
             sales_page_url: "",
             is_subscription: (data as any).is_subscription || false,
             billing_cycle: (data as any).billing_cycle || "monthly",
+            show_coupon: (data as any).show_coupon !== false,
           });
           setLoading(false);
         });
@@ -290,6 +292,7 @@ const ProductEdit = () => {
       image_url: form.image_url || null,
       is_subscription: form.is_subscription,
       billing_cycle: form.billing_cycle,
+      show_coupon: form.show_coupon,
       updated_at: new Date().toISOString(),
     };
 
@@ -760,6 +763,13 @@ const ProductEdit = () => {
                       <div className="flex items-center gap-3">
                         <Switch />
                         <Label className="text-sm">Conversão automática de moedas (recomendado)</Label>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Switch
+                          checked={form.show_coupon}
+                          onCheckedChange={(v) => setForm((f) => ({ ...f, show_coupon: v }))}
+                        />
+                        <Label className="text-sm">Exibir campo de cupom de desconto no checkout</Label>
                       </div>
                     </div>
                   </div>

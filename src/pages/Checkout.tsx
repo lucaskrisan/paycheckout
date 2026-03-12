@@ -26,6 +26,7 @@ interface Product {
   is_subscription: boolean;
   billing_cycle: string;
   user_id: string | null;
+  show_coupon?: boolean;
 }
 
 interface OrderBump {
@@ -300,7 +301,9 @@ const Checkout = () => {
             </div>
 
             {/* Coupon */}
-            <CouponField productId={product.id} productPrice={product.price} onApply={setCoupon} />
+            {product.show_coupon !== false && (
+              <CouponField productId={product.id} productPrice={product.price} onApply={setCoupon} />
+            )}
 
             {/* Order Bumps */}
             {orderBumps.length > 0 && (
