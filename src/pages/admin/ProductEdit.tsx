@@ -26,6 +26,7 @@ interface PixelEntry {
   domain: string;
   fire_on_pix: boolean;
   fire_on_boleto: boolean;
+  capi_token: string;
 }
 import {
   Select,
@@ -117,6 +118,7 @@ const ProductEdit = () => {
         domain: p.domain || "",
         fire_on_pix: p.fire_on_pix,
         fire_on_boleto: p.fire_on_boleto,
+        capi_token: p.capi_token || "",
       })));
     }
   }, [isNew, productId]);
@@ -194,7 +196,7 @@ const ProductEdit = () => {
 
   const addPixel = () => {
     if (pixels.length >= 50) { toast.error("Máximo de 50 pixels"); return; }
-    setPixels((prev) => [...prev, { platform: activePixelPlatform.toLowerCase(), pixel_id: "", domain: "", fire_on_pix: false, fire_on_boleto: false }]);
+    setPixels((prev) => [...prev, { platform: activePixelPlatform.toLowerCase(), pixel_id: "", domain: "", fire_on_pix: false, fire_on_boleto: false, capi_token: "" }]);
   };
 
   const updatePixel = (index: number, field: keyof PixelEntry, value: any) => {
@@ -227,6 +229,7 @@ const ProductEdit = () => {
             domain: p.domain.trim() || null,
             fire_on_pix: p.fire_on_pix,
             fire_on_boleto: p.fire_on_boleto,
+            capi_token: p.capi_token.trim() || null,
             user_id: user?.id,
           }))
         );
@@ -851,6 +854,23 @@ const ProductEdit = () => {
                               </div>
                             </div>
                           </div>
+                          {px.platform === "facebook" && (
+                            <div className="space-y-1.5">
+                              <Label>
+                                Token da API de Conversão (opcional){" "}
+                                <a href="https://developers.facebook.com/docs/marketing-api/conversions-api/get-started" target="_blank" rel="noopener noreferrer" className="text-primary text-xs hover:underline">
+                                  O que é isso?
+                                </a>
+                              </Label>
+                              <Textarea
+                                value={px.capi_token}
+                                onChange={(e) => updatePixel(idx, "capi_token", e.target.value)}
+                                placeholder="EAAxxxxxxxxx..."
+                                rows={2}
+                                className="font-mono text-xs"
+                              />
+                            </div>
+                          )}
                           <div className="space-y-2">
                             <div className="flex items-center gap-3">
                               <Switch checked={px.fire_on_pix} onCheckedChange={(v) => updatePixel(idx, "fire_on_pix", v)} />

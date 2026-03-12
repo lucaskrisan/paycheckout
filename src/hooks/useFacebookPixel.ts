@@ -34,6 +34,31 @@ export function useFacebookPixel(productId: string | undefined) {
   const initializedRef = useRef(false);
   const pixelIdsRef = useRef<string[]>([]);
   const firedEventsRef = useRef<Set<string>>(new Set());
+  const customerRef = useRef<CustomerInfo>({});
+
+  /** Send event to CAPI edge function (server-side, non-blocking) */
+  const sendCAPI = useCallback((eventName: string, eventId: string, customData?: Record<string, unknown>) => {
+    if (!productId) return;
+    // Get fbp/fbc cookies for matching
+    const cookies = document.cookie.split(';').reduce((acc, c) => {
+      const [k, v] = c.trim().split('=');
+      if (k) acc[k] = v;
+      return acc;
+    }, {} as Record<string, string>);
+
+    supabase.functions.invoke("facebook-capi", {
+      body: {
+        product_id: productId,
+        event_name: eventName,
+        event_id: eventId,
+        event_source_url: window.location.href,
+        customer: customerRef.current,
+        custom_data: customData,
+        fbc: cookies._fbc || null,
+        fbp: cookies._fbp || null,
+      },
+    }).catch((err) => console.warn("[CAPI] non-blocking error:", err));
+  }, [productId]);
 
   useEffect(() => {
     if (!productId || initializedRef.current) return;
@@ -106,6 +131,8 @@ export function useFacebookPixel(productId: string | undefined) {
    * This updates all initialized pixels with user data for better matching.
    */
   const setAdvancedMatching = useCallback((customer: CustomerInfo) => {
+    customerRef.current = customer;
+
     if (!window.fbq || pixelIdsRef.current.length === 0) return;
 
     const nameParts = normalizeParam(customer.name).split(" ");
@@ -121,7 +148,6 @@ export function useFacebookPixel(productId: string | undefined) {
     if (formattedPhone) userData.ph = formattedPhone;
     if (customer.cpf) userData.external_id = digitsOnly(customer.cpf);
 
-    // Re-init each pixel with Advanced Matching data
     pixelIdsRef.current.forEach((pixelId) => {
       window.fbq("init", pixelId, userData);
     });
@@ -148,35 +174,43 @@ export function useFacebookPixel(productId: string | undefined) {
    * Track Purchase event with full data and deduplication.
    */
   const trackPurchase = useCallback((value: number, currency = "BRL", orderId?: string) => {
-    if (!window.fbq) return;
-    // Dedup by orderId if available, otherwise by event name
     const dedupKey = orderId ? `Purchase_${orderId}` : "Purchase";
     if (firedEventsRef.current.has(dedupKey)) return;
     firedEventsRef.current.add(dedupKey);
 
     const eventId = orderId || generateEventId("Purchase");
-    window.fbq("track", "Purchase", {
+    const customData = {
       value,
       currency,
       content_type: "product",
       content_ids: productId ? [productId] : [],
-    }, { eventID: eventId });
-  }, [productId]);
+    };
+
+    if (window.fbq) {
+      window.fbq("track", "Purchase", customData, { eventID: eventId });
+    }
+    // Also send server-side via CAPI
+    sendCAPI("Purchase", eventId, customData);
+  }, [productId, sendCAPI]);
 
   /**
    * Track custom lead/contact event (e.g., after form fill).
    */
   const trackLead = useCallback(() => {
-    if (!window.fbq) return;
     if (firedEventsRef.current.has("Lead")) return;
     firedEventsRef.current.add("Lead");
 
     const eventId = generateEventId("Lead");
-    window.fbq("track", "Lead", {
+    const customData = {
       content_type: "product",
       content_ids: productId ? [productId] : [],
-    }, { eventID: eventId });
-  }, [productId]);
+    };
+
+    if (window.fbq) {
+      window.fbq("track", "Lead", customData, { eventID: eventId });
+    }
+    sendCAPI("Lead", eventId, customData);
+  }, [productId, sendCAPI]);
 
   return {
     trackPurchase,

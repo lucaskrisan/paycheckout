@@ -24,6 +24,7 @@ import Integrations from "./pages/admin/Integrations";
 import SuperAdminDashboard from "./pages/admin/SuperAdminDashboard";
 import CheckoutBuilder from "./pages/admin/CheckoutBuilder";
 import Notifications from "./pages/admin/Notifications";
+import Tracking from "./pages/admin/Tracking";
 import NotFound from "./pages/NotFound";
 import InstallPrompt from "./components/InstallPrompt";
 
@@ -58,6 +59,7 @@ const App = () => (
               <Route path="integrations" element={<Integrations />} />
               <Route path="settings" element={<Settings />} />
               <Route path="notifications" element={<Notifications />} />
+              <Route path="tracking" element={<Tracking />} />
               <Route path="platform" element={<SuperAdminDashboard />} />
             </Route>
             <Route path="*" element={<NotFound />} />
