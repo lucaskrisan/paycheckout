@@ -1030,6 +1030,57 @@ export type Database = {
         }
         Relationships: []
       }
+      pwa_settings: {
+        Row: {
+          app_name: string
+          background_color: string
+          description: string | null
+          icon_192_url: string | null
+          icon_512_url: string | null
+          id: string
+          notification_body: string | null
+          notification_icon_url: string | null
+          notification_title: string | null
+          short_name: string
+          splash_image_url: string | null
+          theme_color: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          app_name?: string
+          background_color?: string
+          description?: string | null
+          icon_192_url?: string | null
+          icon_512_url?: string | null
+          id?: string
+          notification_body?: string | null
+          notification_icon_url?: string | null
+          notification_title?: string | null
+          short_name?: string
+          splash_image_url?: string | null
+          theme_color?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          app_name?: string
+          background_color?: string
+          description?: string | null
+          icon_192_url?: string | null
+          icon_512_url?: string | null
+          id?: string
+          notification_body?: string | null
+          notification_icon_url?: string | null
+          notification_title?: string | null
+          short_name?: string
+          splash_image_url?: string | null
+          theme_color?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string

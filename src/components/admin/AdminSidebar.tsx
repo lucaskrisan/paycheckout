@@ -23,6 +23,7 @@ import {
   ShieldCheck,
   Webhook,
   Mail,
+  Smartphone,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -61,6 +62,7 @@ const mainItems = [
   { title: "Notificações", url: "/admin/notifications", icon: Bell },
   { title: "Webhooks", url: "/admin/webhooks", icon: Webhook },
   { title: "Configurações", url: "/admin/settings", icon: Settings },
+  { title: "App Mobile", url: "/admin/pwa", icon: Smartphone },
   { title: "Fiscalizar", url: "/admin/health", icon: ShieldCheck },
 ];
 
