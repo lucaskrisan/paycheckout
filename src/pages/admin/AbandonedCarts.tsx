@@ -1,12 +1,14 @@
 import { useEffect, useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShoppingBag, ChevronLeft, ChevronRight, Download, Copy, Check, MessageCircle } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { ShoppingBag, ChevronLeft, ChevronRight, Download, Copy, Check, MessageCircle, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
+import { format, startOfDay, isAfter, isBefore, addDays } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 
 interface AbandonedCart {
@@ -36,6 +38,8 @@ const AbandonedCarts = () => {
   const [filterProduct, setFilterProduct] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterPeriod, setFilterPeriod] = useState("7d");
+  const [customDate, setCustomDate] = useState<Date | undefined>(undefined);
+  const [periodOpen, setPeriodOpen] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -54,22 +58,39 @@ const AbandonedCarts = () => {
     load();
   }, []);
 
+  const periodLabel = useMemo(() => {
+    if (filterPeriod === "today") return "Hoje";
+    if (filterPeriod === "7d") return "Últimos 7 dias";
+    if (filterPeriod === "30d") return "Últimos 30 dias";
+    if (filterPeriod === "all") return "Tempo todo";
+    if (filterPeriod === "custom" && customDate) return format(customDate, "dd/MM/yyyy");
+    return "Últimos 7 dias";
+  }, [filterPeriod, customDate]);
+
   const filtered = useMemo(() => {
     let result = carts;
 
     // Period
-    if (filterPeriod !== "all") {
-      const days = filterPeriod === "7d" ? 7 : filterPeriod === "30d" ? 30 : 90;
+    if (filterPeriod === "today") {
+      const today = startOfDay(new Date());
+      result = result.filter(c => new Date(c.created_at) >= today);
+    } else if (filterPeriod === "custom" && customDate) {
+      const dayStart = startOfDay(customDate);
+      const dayEnd = addDays(dayStart, 1);
+      result = result.filter(c => {
+        const d = new Date(c.created_at);
+        return d >= dayStart && d < dayEnd;
+      });
+    } else if (filterPeriod !== "all") {
+      const days = filterPeriod === "7d" ? 7 : 30;
       const from = new Date(Date.now() - days * 86400000);
       result = result.filter(c => new Date(c.created_at) >= from);
     }
 
-    // Product
     if (filterProduct !== "all") {
       result = result.filter(c => c.product_id === filterProduct);
     }
 
-    // Status
     if (filterStatus === "recovered") {
       result = result.filter(c => c.recovered);
     } else if (filterStatus === "abandoned") {
@@ -77,12 +98,12 @@ const AbandonedCarts = () => {
     }
 
     return result;
-  }, [carts, filterProduct, filterStatus, filterPeriod]);
+  }, [carts, filterProduct, filterStatus, filterPeriod, customDate]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
-  useEffect(() => { setPage(1); }, [filterProduct, filterStatus, filterPeriod]);
+  useEffect(() => { setPage(1); }, [filterProduct, filterStatus, filterPeriod, customDate]);
 
   const buildCheckoutUrl = (cart: AbandonedCart) => {
     const base = `${window.location.origin}/checkout/${cart.product_id}`;
@@ -127,20 +148,40 @@ const AbandonedCarts = () => {
     a.click();
   };
 
+  const selectPreset = (preset: string) => {
+    setFilterPeriod(preset);
+    setCustomDate(undefined);
+    if (preset !== "custom") setPeriodOpen(false);
+  };
+
+  const selectDate = (date: Date | undefined) => {
+    if (date) {
+      setCustomDate(date);
+      setFilterPeriod("custom");
+      setPeriodOpen(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold text-foreground">Vendas abandonadas</h1>
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => window.history.back()}>
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+          <h1 className="text-2xl font-bold text-foreground">Vendas abandonadas</h1>
+        </div>
         <Button variant="outline" className="gap-2" onClick={exportCSV}>
           <Download className="w-4 h-4" />
           Exportar
         </Button>
       </div>
 
-      {/* Filters */}
+      {/* Filters row – matching Kiwify layout */}
       <div className="flex flex-wrap items-center gap-3">
         <Select value={filterProduct} onValueChange={setFilterProduct}>
-          <SelectTrigger className="w-[200px]"><SelectValue placeholder="Todos os produtos" /></SelectTrigger>
+          <SelectTrigger className="w-[200px] bg-card"><SelectValue placeholder="Todos os produtos" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os produtos</SelectItem>
             {products.map(p => (
@@ -149,8 +190,10 @@ const AbandonedCarts = () => {
           </SelectContent>
         </Select>
 
+        <div className="flex-1" />
+
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Todos" /></SelectTrigger>
+          <SelectTrigger className="w-[160px] bg-card"><SelectValue placeholder="Todos" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="abandoned">Abandonados</SelectItem>
@@ -158,15 +201,45 @@ const AbandonedCarts = () => {
           </SelectContent>
         </Select>
 
-        <Select value={filterPeriod} onValueChange={setFilterPeriod}>
-          <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="7d">Últimos 7 dias</SelectItem>
-            <SelectItem value="30d">Últimos 30 dias</SelectItem>
-            <SelectItem value="90d">Últimos 90 dias</SelectItem>
-            <SelectItem value="all">Tempo todo</SelectItem>
-          </SelectContent>
-        </Select>
+        {/* Period with calendar popover */}
+        <Popover open={periodOpen} onOpenChange={setPeriodOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="w-[200px] justify-between bg-card font-normal">
+              {periodLabel}
+              <ChevronRight className="w-4 h-4 rotate-90 text-muted-foreground" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="end">
+            <div className="flex flex-col">
+              {/* Preset options */}
+              <div className="border-b border-border">
+                {[
+                  { value: "today", label: "Hoje" },
+                  { value: "7d", label: "Últimos 7 dias" },
+                  { value: "30d", label: "Últimos 30 dias" },
+                  { value: "all", label: "Tempo todo" },
+                ].map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => selectPreset(opt.value)}
+                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-muted/50 transition-colors ${filterPeriod === opt.value ? "text-primary font-medium" : "text-foreground"}`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              {/* Calendar */}
+              <Calendar
+                mode="single"
+                selected={customDate}
+                onSelect={selectDate}
+                locale={ptBR}
+                disabled={(date) => date > new Date()}
+                className="p-3"
+              />
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
 
       {/* Table */}
@@ -246,11 +319,11 @@ const AbandonedCarts = () => {
               </div>
 
               {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between px-4 py-3 border-t border-border">
-                  <p className="text-sm text-muted-foreground">
-                    Exibindo {page} de {totalPages} páginas
-                  </p>
+              <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+                <p className="text-sm text-muted-foreground">
+                  Exibindo {page} de {totalPages} página{totalPages > 1 ? "s" : ""}
+                </p>
+                {totalPages > 1 && (
                   <div className="flex items-center gap-1">
                     <Button variant="outline" size="icon" className="h-8 w-8" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
                       <ChevronLeft className="w-4 h-4" />
@@ -267,8 +340,8 @@ const AbandonedCarts = () => {
                       <ChevronRight className="w-4 h-4" />
                     </Button>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </>
           )}
         </CardContent>
