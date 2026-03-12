@@ -168,7 +168,7 @@ const AbandonedCarts = () => {
   const abandonedCount = totalFiltered - recoveredCount;
   const recoveryRate = totalFiltered > 0 ? ((recoveredCount / totalFiltered) * 100).toFixed(1) : "0";
   const withPhone = filtered.filter(c => c.customer_phone).length;
-  const withEmail = filtered.filter(c => c.customer_email).length;
+  
   const phoneRate = totalFiltered > 0 ? ((withPhone / totalFiltered) * 100).toFixed(0) : "0";
 
   return (
