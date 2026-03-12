@@ -11,6 +11,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Search, Filter, X, ChevronLeft, ChevronRight, DollarSign, ShoppingCart, Mail, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { EmailPreviewModal } from "@/components/admin/EmailPreviewModal";
 
 interface Order {
   id: string;
@@ -61,6 +62,16 @@ const Orders = () => {
   const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState<"approved" | "all">("approved");
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
+  const [emailPreview, setEmailPreview] = useState<{
+    open: boolean;
+    orderId: string;
+    subject: string;
+    body: string;
+    fullHtml: string;
+    to: string;
+    customerName: string;
+    productName: string;
+  } | null>(null);
 
   // Filters
   const [filterPeriod, setFilterPeriod] = useState("all");
@@ -69,20 +80,39 @@ const Orders = () => {
   const [filterStatuses, setFilterStatuses] = useState<Set<string>>(new Set());
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const handleSendPixReminder = async (orderId: string) => {
+  const handlePreviewReminder = async (orderId: string) => {
     setSendingReminder(orderId);
     try {
       const { data, error } = await supabase.functions.invoke("send-pix-reminder", {
-        body: { order_id: orderId },
+        body: { order_id: orderId, preview: true },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      toast.success(`Lembrete enviado para ${data.email}! ✉️`);
+      setEmailPreview({
+        open: true,
+        orderId,
+        subject: data.subject,
+        body: data.body,
+        fullHtml: data.fullHtml,
+        to: data.to,
+        customerName: data.customerName,
+        productName: data.productName,
+      });
     } catch (e: any) {
-      toast.error(e.message || "Erro ao enviar lembrete");
+      toast.error(e.message || "Erro ao gerar preview do email");
     } finally {
       setSendingReminder(null);
     }
+  };
+
+  const handleConfirmSend = async (subject: string, body: string) => {
+    if (!emailPreview) return;
+    const { data, error } = await supabase.functions.invoke("send-pix-reminder", {
+      body: { order_id: emailPreview.orderId, subject, body },
+    });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    toast.success(`Lembrete enviado para ${data.email}! ✉️`);
   };
 
   useEffect(() => {
@@ -406,7 +436,7 @@ const Orders = () => {
                               size="sm"
                               className="gap-1.5 text-xs h-8"
                               disabled={sendingReminder === order.id}
-                              onClick={() => handleSendPixReminder(order.id)}
+                              onClick={() => handlePreviewReminder(order.id)}
                             >
                               {sendingReminder === order.id ? (
                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -483,6 +513,23 @@ const Orders = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Email Preview Modal */}
+      {emailPreview && (
+        <EmailPreviewModal
+          open={emailPreview.open}
+          onOpenChange={(open) => {
+            if (!open) setEmailPreview(null);
+          }}
+          subject={emailPreview.subject}
+          body={emailPreview.body}
+          fullHtml={emailPreview.fullHtml}
+          to={emailPreview.to}
+          customerName={emailPreview.customerName}
+          productName={emailPreview.productName}
+          onSend={handleConfirmSend}
+        />
+      )}
     </div>
   );
 };
