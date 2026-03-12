@@ -237,6 +237,19 @@ const Checkout = () => {
       })),
   ];
 
+  // Send Advanced Matching data whenever customer info changes
+  useEffect(() => {
+    if (customer.name && customer.email) {
+      setAdvancedMatching(customer);
+      trackLead();
+    }
+  }, [customer.name, customer.email, customer.phone, customer.cpf, setAdvancedMatching, trackLead]);
+
+  // Track payment method selection
+  useEffect(() => {
+    trackAddPaymentInfo(paymentMethod);
+  }, [paymentMethod, trackAddPaymentInfo]);
+
   const handleSubmit = async () => {
     if (!customer.name || !customer.email || !customer.cpf || !customer.phone) {
       toast.error("Preencha todos os campos obrigatórios");
