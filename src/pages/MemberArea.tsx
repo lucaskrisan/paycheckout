@@ -31,6 +31,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import LessonMaterials from "@/components/member/LessonMaterials";
+import LessonReviews from "@/components/member/LessonReviews";
 
 interface Lesson {
   id: string;
@@ -863,7 +865,18 @@ const MemberArea = () => {
                   </div>
                 </div>
 
-                {/* Next lesson navigation */}
+                {/* Complementary Materials */}
+                <LessonMaterials lessonId={activeLesson.id} client={tokenClient} />
+
+                {/* Reviews & Comments */}
+                <LessonReviews
+                  lessonId={activeLesson.id}
+                  memberAccessId={access!.id}
+                  customerName={customerName || "Aluno"}
+                  client={tokenClient}
+                />
+
+
                 {(() => {
                   const allLessons = modules.flatMap((m) => m.lessons);
                   const currentIndex = allLessons.findIndex((l) => l.id === activeLesson.id);
