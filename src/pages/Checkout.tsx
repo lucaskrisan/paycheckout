@@ -133,7 +133,7 @@ const Checkout = () => {
       if (!builderLayoutData) {
         const { data: fallbackConfig } = await supabase
           .from("checkout_builder_configs")
-          .select("layout")
+          .select("layout, price")
           .eq("product_id", productId)
           .eq("is_default", true)
           .order("updated_at", { ascending: false })
