@@ -1075,7 +1075,8 @@ const ProductEdit = () => {
                                   settings: co.settings || {},
                                   is_default: false,
                                   user_id: user?.id,
-                                });
+                                  price: co.price || null,
+                                } as any);
                                 toast.success("Checkout duplicado!");
                                 loadCheckouts();
                               }} className="gap-2 text-sm">
