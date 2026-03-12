@@ -69,6 +69,7 @@ const Checkout = () => {
   const [notFound, setNotFound] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pixData, setPixData] = useState<{ qrCodeUrl?: string; pixCode?: string } | null>(null);
+  const [pixModalOpen, setPixModalOpen] = useState(false);
   const { trackPurchase, trackAddPaymentInfo, trackLead, setAdvancedMatching } = useFacebookPixel(productId);
   const [orderBumps, setOrderBumps] = useState<OrderBump[]>([]);
   const [selectedBumps, setSelectedBumps] = useState<Set<string>>(new Set());
