@@ -19,15 +19,17 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Try multiple targeting methods for debugging
     const payload = {
       app_id: appId,
-      included_segments: ['All'],
-      target_channel: 'push',
+      include_player_ids: ['881309ab-9f48-4853-8446-6e12e8f819dd', '9c0e8a9a-d5d2-4a5d-9782-6386c2786f19'],
       headings: { en: '🎉 Ka-ching! Mais uma venda!' },
       contents: { en: 'João Silva • 💠 PIX R$ 197,00 • Curso Premium' },
       chrome_web_icon: 'https://paycheckout.lovable.app/pwa-192x192.png',
       url: 'https://paycheckout.lovable.app/admin/orders',
     };
+
+    console.log('[test-push] Sending payload:', JSON.stringify(payload));
 
     const response = await fetch('https://onesignal.com/api/v1/notifications', {
       method: 'POST',
