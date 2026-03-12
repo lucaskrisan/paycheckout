@@ -419,6 +419,57 @@ const Tracking = () => {
         </div>
       </Card>
 
+      {/* ========= PAGE VERIFICATION ========= */}
+      <Card className="overflow-hidden">
+        <div className="px-5 py-4 border-b border-border bg-muted/30 flex items-center gap-3">
+          <FileCode className="w-5 h-5 text-primary" />
+          <div>
+            <h2 className="font-semibold text-foreground text-sm">Verificação de Página Externa</h2>
+            <p className="text-xs text-muted-foreground">Cole a URL da sua página de vendas para verificar se o tracking está 100%</p>
+          </div>
+        </div>
+        <div className="p-5 space-y-4">
+          <div className="flex items-end gap-3">
+            <div className="flex-1 space-y-1.5">
+              <label className="text-sm font-medium text-foreground">URL da página</label>
+              <div className="relative">
+                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  value={pageUrl}
+                  onChange={(e) => setPageUrl(e.target.value)}
+                  placeholder="https://suapagina.com"
+                  className="pl-9"
+                />
+              </div>
+            </div>
+            <Button onClick={verifyPage} disabled={pageChecking} className="gap-2">
+              {pageChecking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              {pageChecking ? "Verificando..." : "Verificar página"}
+            </Button>
+          </div>
+
+          {pageChecks && (
+            <Card className="overflow-hidden border-border">
+              <div className="px-4 py-2.5 border-b border-border bg-muted/20 flex items-center gap-2">
+                <Globe className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-foreground truncate">{pageUrl}</span>
+              </div>
+              <div className="divide-y divide-border">
+                {pageChecks.map((check, i) => (
+                  <div key={i} className="px-4 py-3 flex items-start gap-3">
+                    {statusIcon(check.status)}
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground">{check.name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{check.detail}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+        </div>
+      </Card>
+
       {/* ========= PIXELS BY PRODUCT ========= */}
       <div>
         <h2 className="text-lg font-semibold text-foreground mb-3">Pixels por produto</h2>
