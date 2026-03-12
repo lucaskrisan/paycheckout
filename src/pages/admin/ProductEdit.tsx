@@ -1028,6 +1028,7 @@ const ProductEdit = () => {
                     <TableRow className="hover:bg-transparent">
                       <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Nome</TableHead>
                       <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Oferta</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Link</TableHead>
                       <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider w-10"></TableHead>
                     </TableRow>
                   </TableHeader>
