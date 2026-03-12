@@ -399,6 +399,26 @@ const Orders = () => {
                         <td className="py-3 px-4 text-right font-medium whitespace-nowrap">
                           R$ {Number(order.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                         </td>
+                        <td className="py-3 px-4 text-center">
+                          {order.status === "pending" && order.payment_method === "pix" && order.customers?.email ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="gap-1.5 text-xs h-8"
+                              disabled={sendingReminder === order.id}
+                              onClick={() => handleSendPixReminder(order.id)}
+                            >
+                              {sendingReminder === order.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Mail className="w-3.5 h-3.5" />
+                              )}
+                              Lembrete
+                            </Button>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </td>
                       </tr>
                     );
                   })
