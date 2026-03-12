@@ -19,17 +19,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Try multiple targeting methods for debugging
+    // Use REST API v1 with Basic auth
     const payload = {
       app_id: appId,
-      include_player_ids: ['881309ab-9f48-4853-8446-6e12e8f819dd', '9c0e8a9a-d5d2-4a5d-9782-6386c2786f19'],
+      included_segments: ['Total Subscriptions'],
       headings: { en: '🎉 Ka-ching! Mais uma venda!' },
       contents: { en: 'João Silva • 💠 PIX R$ 197,00 • Curso Premium' },
       chrome_web_icon: 'https://paycheckout.lovable.app/pwa-192x192.png',
       url: 'https://paycheckout.lovable.app/admin/orders',
     };
 
-    console.log('[test-push] Sending payload:', JSON.stringify(payload));
+    console.log('[test-push] Sending with payload:', JSON.stringify(payload));
+    console.log('[test-push] Using API key (first 10 chars):', apiKey.substring(0, 10));
 
     const response = await fetch('https://onesignal.com/api/v1/notifications', {
       method: 'POST',
@@ -41,12 +42,27 @@ Deno.serve(async (req) => {
     });
 
     const data = await response.json();
-    console.log('[test-push] OneSignal response:', data);
+    console.log('[test-push] OneSignal response status:', response.status);
+    console.log('[test-push] OneSignal response:', JSON.stringify(data));
 
-    return new Response(JSON.stringify({ success: true, onesignal: data }), {
+    // If that fails, try listing players to debug
+    if (data.errors) {
+      console.log('[test-push] Attempting to list players for debugging...');
+      const playersRes = await fetch(
+        `https://onesignal.com/api/v1/players?app_id=${appId}&limit=10`,
+        {
+          headers: { 'Authorization': `Basic ${apiKey}` },
+        }
+      );
+      const playersData = await playersRes.json();
+      console.log('[test-push] Players list:', JSON.stringify(playersData));
+    }
+
+    return new Response(JSON.stringify({ success: !data.errors, onesignal: data }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
+    console.error('[test-push] Error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
