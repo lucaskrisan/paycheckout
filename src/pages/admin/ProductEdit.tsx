@@ -153,8 +153,16 @@ const ProductEdit = () => {
     setCheckouts(data || []);
   }, [isNew, productId]);
 
+  const openNewCheckoutDialog = () => {
+    setNewCheckoutName("");
+    setNewCheckoutPrice("");
+    setNewCheckoutDefault(false);
+
+    // Evita conflito de evento que pode fechar o dialog no mesmo clique
+    window.setTimeout(() => setShowNewCheckoutDialog(true), 0);
+  };
+
   const createCheckoutConfig = async () => {
-    console.log("[createCheckout] called", { productId, isNew, newCheckoutName, newCheckoutPrice, newCheckoutDefault });
     if (!productId || isNew) {
       toast.error("Salve o produto primeiro");
       return;
@@ -173,8 +181,6 @@ const ProductEdit = () => {
         error: authError,
       } = await supabase.auth.getUser();
 
-      console.log("[createCheckout] auth result", { userId: authUser?.id, authError });
-
       if (authError || !authUser) {
         toast.error("Sessão expirada. Faça login novamente.");
         return;
@@ -187,31 +193,20 @@ const ProductEdit = () => {
           .eq("product_id", productId)
           .eq("user_id", authUser.id);
 
-        if (unsetDefaultError) {
-          console.error("[createCheckout] unset default error:", unsetDefaultError);
-          throw unsetDefaultError;
-        }
+        if (unsetDefaultError) throw unsetDefaultError;
       }
 
       const parsedPrice = newCheckoutPrice.trim()
         ? parseFloat(newCheckoutPrice.replace(",", "."))
         : null;
 
-      const insertPayload = {
+      const { error } = await supabase.from("checkout_builder_configs").insert({
         product_id: productId,
         name: checkoutName,
         is_default: newCheckoutDefault,
         user_id: authUser.id,
         price: parsedPrice,
-      };
-      console.log("[createCheckout] inserting:", insertPayload);
-
-      const { data: insertData, error } = await supabase
-        .from("checkout_builder_configs")
-        .insert(insertPayload as any)
-        .select();
-
-      console.log("[createCheckout] insert result:", { insertData, error });
+      } as any);
 
       if (error) throw error;
 
@@ -222,7 +217,7 @@ const ProductEdit = () => {
       setNewCheckoutPrice("");
       setNewCheckoutDefault(false);
     } catch (err: any) {
-      console.error("[createCheckout] Erro ao criar checkout:", err);
+      console.error("Erro ao criar checkout:", err);
       toast.error(err?.message || "Erro ao criar checkout");
     } finally {
       setCreatingCheckout(false);
@@ -1101,7 +1096,7 @@ const ProductEdit = () => {
                   <Input placeholder="Buscar..." className="pl-9 h-9 text-sm" />
                   <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </div>
-                <Button size="sm" variant="outline" className="text-sm" onClick={() => { setNewCheckoutName(""); setNewCheckoutPrice(""); setNewCheckoutDefault(false); setShowNewCheckoutDialog(true); }}>
+                <Button type="button" size="sm" variant="outline" className="text-sm relative z-10" onClick={openNewCheckoutDialog}>
                   Criar novo checkout
                 </Button>
               </div>
