@@ -351,6 +351,9 @@ const Tracking = () => {
         </Card>
       </div>
 
+      {/* ========= REAL-TIME EVENTS DASHBOARD ========= */}
+      <PixelEventsDashboard products={products} />
+
       {/* ========= DIAGNOSTICS ========= */}
       <Card className="overflow-hidden">
         <div className="px-5 py-4 border-b border-border bg-muted/30 flex items-center gap-3">
