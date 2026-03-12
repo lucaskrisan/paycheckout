@@ -203,7 +203,7 @@ const MemberArea = () => {
       }
 
       // Load progress
-      const { data: progressData } = await supabase
+      const { data: progressData } = await tokenClient
         .from("lesson_progress")
         .select("lesson_id")
         .eq("member_access_id", accessData.id)
