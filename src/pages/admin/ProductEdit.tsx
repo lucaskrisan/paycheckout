@@ -871,6 +871,7 @@ const ProductEdit = () => {
                               />
                             </div>
                           )}
+                          <div className="space-y-2">
                             <div className="flex items-center gap-3">
                               <Switch checked={px.fire_on_pix} onCheckedChange={(v) => updatePixel(idx, "fire_on_pix", v)} />
                               <Label className="text-sm">Disparar evento "Purchase" ao gerar um pix?</Label>
