@@ -37,6 +37,7 @@ const CheckoutBuilder = () => {
   const [activeTab, setActiveTab] = useState("components");
   const [activeDragType, setActiveDragType] = useState<ComponentType | null>(null);
   const [dbConfigId, setDbConfigId] = useState<string | null>(configId || null);
+  const [product, setProduct] = useState<{ name: string; image_url: string | null } | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
