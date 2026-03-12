@@ -196,7 +196,7 @@ const ProductEdit = () => {
 
   const addPixel = () => {
     if (pixels.length >= 50) { toast.error("Máximo de 50 pixels"); return; }
-    setPixels((prev) => [...prev, { platform: activePixelPlatform.toLowerCase(), pixel_id: "", domain: "", fire_on_pix: false, fire_on_boleto: false }]);
+    setPixels((prev) => [...prev, { platform: activePixelPlatform.toLowerCase(), pixel_id: "", domain: "", fire_on_pix: false, fire_on_boleto: false, capi_token: "" }]);
   };
 
   const updatePixel = (index: number, field: keyof PixelEntry, value: any) => {
