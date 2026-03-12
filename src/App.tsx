@@ -34,7 +34,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <InstallPrompt />
+      
       <BrowserRouter>
         <AuthProvider>
           <Routes>
@@ -45,7 +45,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/admin/products/:productId/checkout-builder" element={<CheckoutBuilder />} />
             <Route path="/admin/products/:productId/checkout-builder/:configId" element={<CheckoutBuilder />} />
-            <Route path="/admin" element={<AdminLayout />}>
+            <Route path="/admin" element={<><InstallPrompt /><AdminLayout /></>}>
               <Route index element={<Dashboard />} />
               <Route path="orders" element={<Orders />} />
               <Route path="products" element={<Products />} />
