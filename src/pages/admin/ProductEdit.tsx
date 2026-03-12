@@ -1054,6 +1054,7 @@ const ProductEdit = () => {
                           </div>
                         </TableCell>
                         <TableCell>
+                          <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <button className="p-1 rounded hover:bg-muted transition-colors">
                                 <MoreVertical className="w-4 h-4 text-muted-foreground" />
