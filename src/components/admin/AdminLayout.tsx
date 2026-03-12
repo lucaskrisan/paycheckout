@@ -1,11 +1,56 @@
+import { useEffect } from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 
+const SUPER_ADMIN_EMAIL = "trafegocomkrisan@gmail.com";
+
+function useOneSignalInit(email: string | undefined) {
+  useEffect(() => {
+    if (!email || email !== SUPER_ADMIN_EMAIL) return;
+    if ((window as any).__oneSignalLoaded) return;
+    (window as any).__oneSignalLoaded = true;
+
+    const script = document.createElement("script");
+    script.src = "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js";
+    script.defer = true;
+    script.onload = () => {
+      (window as any).OneSignalDeferred = (window as any).OneSignalDeferred || [];
+      (window as any).OneSignalDeferred.push(async (OneSignal: any) => {
+        await OneSignal.init({
+          appId: "5ba5218a-5026-4270-92ce-d2e0ab5509e0",
+          serviceWorkerParam: { scope: "/" },
+          serviceWorkerPath: "/pwa-sw.js",
+          serviceWorkerUpdaterPath: "/pwa-sw.js",
+          notifyButton: { enable: true },
+          allowLocalhostAsSecureOrigin: true,
+          promptOptions: {
+            slidedown: {
+              prompts: [{
+                type: "push",
+                autoPrompt: true,
+                text: {
+                  actionMessage: "Deseja receber notificações de vendas em tempo real?",
+                  acceptButton: "Permitir",
+                  cancelButton: "Agora não",
+                },
+                delay: { pageViews: 1, timeDelay: 3 },
+              }],
+            },
+          },
+        });
+      });
+    };
+    document.head.appendChild(script);
+  }, [email]);
+}
+
 export default function AdminLayout() {
   const { user, isAdmin, loading } = useAuth();
+
+  useOneSignalInit(user?.email ?? undefined);
 
   if (loading) {
     return (
