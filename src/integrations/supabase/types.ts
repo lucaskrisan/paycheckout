@@ -880,6 +880,44 @@ export type Database = {
         }
         Relationships: []
       }
+      public_product_pixels: {
+        Row: {
+          domain: string | null
+          fire_on_boleto: boolean | null
+          fire_on_pix: boolean | null
+          id: string | null
+          pixel_id: string | null
+          platform: string | null
+          product_id: string | null
+        }
+        Insert: {
+          domain?: string | null
+          fire_on_boleto?: boolean | null
+          fire_on_pix?: boolean | null
+          id?: string | null
+          pixel_id?: string | null
+          platform?: string | null
+          product_id?: string | null
+        }
+        Update: {
+          domain?: string | null
+          fire_on_boleto?: boolean | null
+          fire_on_pix?: boolean | null
+          id?: string | null
+          pixel_id?: string | null
+          platform?: string | null
+          product_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_pixels_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       has_role: {

@@ -67,14 +67,14 @@ export function useFacebookPixel(productId: string | undefined) {
 
     const loadPixels = async () => {
       const { data } = await supabase
-        .from("product_pixels")
+        .from("public_product_pixels" as any)
         .select("pixel_id, domain")
         .eq("product_id", productId)
         .eq("platform", "facebook");
 
-      if (cancelled || !data || data.length === 0) return;
+      if (cancelled || !data || (data as any[]).length === 0) return;
 
-      pixelIdsRef.current = data.map((px) => px.pixel_id);
+      pixelIdsRef.current = (data as any[]).map((px: any) => px.pixel_id);
 
       // Inject FB Pixel base code if not already present
       if (!window.fbq) {
@@ -98,7 +98,7 @@ export function useFacebookPixel(productId: string | undefined) {
           clearInterval(waitForFbq);
 
           // Init each pixel WITHOUT automatic config PageView
-          data.forEach((px) => {
+          (data as any[]).forEach((px: any) => {
             window.fbq("set", "autoConfig", false, px.pixel_id);
             window.fbq("init", px.pixel_id);
           });
