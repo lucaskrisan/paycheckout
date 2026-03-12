@@ -231,7 +231,7 @@ const MemberArea = () => {
           if (c.id === accessData.course_id) continue;
           let product: Product | null = null;
           if (c.product_id) {
-            const { data: prodData } = await supabase
+            const { data: prodData } = await tokenClient
               .from("products")
               .select("*")
               .eq("id", c.product_id)
