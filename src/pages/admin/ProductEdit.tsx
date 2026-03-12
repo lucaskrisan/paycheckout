@@ -1046,6 +1046,13 @@ const ProductEdit = () => {
                           {co.price != null ? `R$ ${Number(co.price).toFixed(2).replace(".", ",")}` : `R$ ${Number(form.price).toFixed(2).replace(".", ",")} (padrão)`}
                         </TableCell>
                         <TableCell>
+                          <div className="flex items-center gap-1.5">
+                            <Input value={`${getPublicUrl()}/checkout/${productId}?config=${co.id}`} readOnly className="h-7 text-[10px] bg-muted/50 max-w-[180px]" />
+                            <button onClick={() => { navigator.clipboard.writeText(`${getPublicUrl()}/checkout/${productId}?config=${co.id}`); toast.success("Link copiado!"); }} className="text-muted-foreground hover:text-primary transition-colors shrink-0">
+                              <LinkIcon className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </TableCell>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <button className="p-1 rounded hover:bg-muted transition-colors">
