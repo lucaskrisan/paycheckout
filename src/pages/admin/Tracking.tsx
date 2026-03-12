@@ -505,6 +505,16 @@ const Tracking = () => {
         </div>
       </Card>
 
+      {/* ========= SCRIPT GENERATOR + UTM TEMPLATE ========= */}
+      <TrackingScriptGenerator
+        pixels={pixels}
+        products={products}
+        checkoutBaseUrl={window.location.origin}
+      />
+
+      {/* ========= UTM ATTRIBUTION ========= */}
+      <UtmAttributionTable />
+
       {/* ========= PIXELS BY PRODUCT ========= */}
       <div>
         <h2 className="text-lg font-semibold text-foreground mb-3">Pixels por produto</h2>
