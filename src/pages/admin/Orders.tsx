@@ -436,7 +436,7 @@ const Orders = () => {
                               size="sm"
                               className="gap-1.5 text-xs h-8"
                               disabled={sendingReminder === order.id}
-                              onClick={() => handleSendPixReminder(order.id)}
+                              onClick={() => handlePreviewReminder(order.id)}
                             >
                               {sendingReminder === order.id ? (
                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
