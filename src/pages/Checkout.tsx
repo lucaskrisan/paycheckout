@@ -89,6 +89,9 @@ const Checkout = () => {
     productOwnerId: product?.user_id,
   });
 
+  // Track this visitor in real-time presence
+  useCheckoutPresence("track", productId);
+
   useEffect(() => {
     if (!productId) { setNotFound(true); setLoading(false); return; }
 
