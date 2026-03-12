@@ -153,7 +153,7 @@ const Checkout = () => {
         builderLayoutData = latestConfig;
       }
 
-      const layout = (builderLayoutData?.layout as unknown as BuilderComponent[] | null) ?? [];
+      const layout = ((builderLayoutData as any)?.layout as unknown as BuilderComponent[] | null) ?? [];
       setBuilderLayout(Array.isArray(layout) ? layout : []);
       setLoading(false);
     };
