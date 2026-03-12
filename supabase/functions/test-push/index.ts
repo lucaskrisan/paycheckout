@@ -19,46 +19,29 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Use REST API v1 with Basic auth
     const payload = {
       app_id: appId,
       included_segments: ['Total Subscriptions'],
+      target_channel: 'push',
       headings: { en: '🎉 Ka-ching! Mais uma venda!' },
       contents: { en: 'João Silva • 💠 PIX R$ 197,00 • Curso Premium' },
       chrome_web_icon: 'https://paycheckout.lovable.app/pwa-192x192.png',
       url: 'https://paycheckout.lovable.app/admin/orders',
     };
 
-    console.log('[test-push] Sending with payload:', JSON.stringify(payload));
-    console.log('[test-push] Using API key (first 10 chars):', apiKey.substring(0, 10));
-
-    const response = await fetch('https://onesignal.com/api/v1/notifications', {
+    const response = await fetch('https://api.onesignal.com/notifications', {
       method: 'POST',
       headers: {
-        'Authorization': `Basic ${apiKey}`,
+        'Authorization': `Key ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
     });
 
     const data = await response.json();
-    console.log('[test-push] OneSignal response status:', response.status);
     console.log('[test-push] OneSignal response:', JSON.stringify(data));
 
-    // If that fails, try listing players to debug
-    if (data.errors) {
-      console.log('[test-push] Attempting to list players for debugging...');
-      const playersRes = await fetch(
-        `https://onesignal.com/api/v1/players?app_id=${appId}&limit=10`,
-        {
-          headers: { 'Authorization': `Basic ${apiKey}` },
-        }
-      );
-      const playersData = await playersRes.json();
-      console.log('[test-push] Players list:', JSON.stringify(playersData));
-    }
-
-    return new Response(JSON.stringify({ success: !data.errors, onesignal: data }), {
+    return new Response(JSON.stringify({ success: !!data.id, onesignal: data }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {

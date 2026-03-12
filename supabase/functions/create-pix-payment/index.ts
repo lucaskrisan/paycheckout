@@ -16,7 +16,8 @@ async function sendPushNotification(title: string, message: string, url?: string
   try {
     const payload: Record<string, unknown> = {
       app_id: appId,
-      included_segments: ['Subscribed Users'],
+      included_segments: ['Total Subscriptions'],
+      target_channel: 'push',
       headings: { en: title },
       contents: { en: message },
       chrome_web_icon: 'https://paycheckout.lovable.app/pwa-192x192.png',
