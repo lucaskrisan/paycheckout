@@ -46,6 +46,7 @@ const periodLabels: Record<Period, string> = {
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const liveVisitors = useCheckoutPresence("watch");
   const [orders, setOrders] = useState<any[]>([]);
   const [abandonedCarts, setAbandonedCarts] = useState<any[]>([]);
   const [period, setPeriod] = useState<Period>("today");
