@@ -1377,44 +1377,23 @@ const ProductEdit = () => {
               <Input value={newCheckoutName} onChange={(e) => setNewCheckoutName(e.target.value)} autoFocus />
             </div>
 
+            <div className="space-y-1.5">
+              <Label>Preço personalizado (opcional)</Label>
+              <div className="flex items-center">
+                <span className="inline-flex items-center px-3 text-xs text-muted-foreground bg-muted border border-r-0 border-input rounded-l-md h-10 font-semibold">R$</span>
+                <Input
+                  value={newCheckoutPrice}
+                  onChange={(e) => setNewCheckoutPrice(e.target.value)}
+                  placeholder={form.price ? Number(form.price).toFixed(2).replace(".", ",") : "0,00"}
+                  className="rounded-l-none"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">Deixe vazio para usar o preço padrão do produto</p>
+            </div>
+
             <div className="flex items-center gap-2">
               <Switch checked={newCheckoutDefault} onCheckedChange={setNewCheckoutDefault} />
               <Label className="font-normal">Definir esse checkout como padrão</Label>
-            </div>
-
-            <div className="border border-border rounded-lg overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Link</TableHead>
-                    <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Preço</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow>
-                    <TableCell className="text-sm">
-                      <div className="flex items-center gap-2">
-                        <input type="checkbox" className="rounded border-border" defaultChecked />
-                        <span>{form.name || "Checkout"}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      R$ {form.price ? Number(form.price).toFixed(2).replace(".", ",") : "0,00"}
-                    </TableCell>
-                  </TableRow>
-                  {form.sales_page_url && (
-                    <TableRow>
-                      <TableCell className="text-sm">
-                        <div className="flex items-center gap-2">
-                          <input type="checkbox" className="rounded border-border" />
-                          <span>Sales Page</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">R$ 0,00</TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
             </div>
 
             <div className="flex justify-end gap-3">
