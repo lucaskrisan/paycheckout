@@ -447,7 +447,7 @@ const Courses = () => {
                         <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">{lesson.title}</p>
-                          <p className="text-xs text-muted-foreground capitalize">{lesson.content_type === "text" ? "Texto" : lesson.content_type === "video" ? "Vídeo" : lesson.content_type}</p>
+                          <p className="text-xs text-muted-foreground capitalize">{lesson.content_type === "text" ? "Texto" : lesson.content_type === "video" ? "Vídeo" : lesson.content_type === "video_embed" ? "YouTube" : lesson.content_type === "pdf" ? "PDF" : lesson.content_type}</p>
                         </div>
                         <div className="flex gap-1 shrink-0">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditLesson(lesson)}>
