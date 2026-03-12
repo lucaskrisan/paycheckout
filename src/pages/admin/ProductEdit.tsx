@@ -1143,12 +1143,16 @@ const ProductEdit = () => {
                                 <MoreVertical className="w-4 h-4 text-muted-foreground" />
                               </button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40">
+                            <DropdownMenuContent align="end" className="w-44">
+                              <DropdownMenuItem onClick={() => {
+                                setEditingCheckout(co);
+                                setEditCheckoutName(co.name);
+                                setEditCheckoutPrice(co.price != null ? String(co.price).replace(".", ",") : "");
+                              }} className="gap-2 text-sm">
+                                <Settings2 className="w-3.5 h-3.5" /> Editar
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => navigate(`/admin/products/${productId}/checkout-builder/${co.id}`)} className="gap-2 text-sm">
                                 <ExternalLink className="w-3.5 h-3.5" /> Personalizar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="gap-2 text-sm">
-                                <Settings2 className="w-3.5 h-3.5" /> Configurações
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={async () => {
                                 await supabase.from("checkout_builder_configs").insert({
