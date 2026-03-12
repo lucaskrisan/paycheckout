@@ -189,10 +189,16 @@ const Notifications = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-bold text-foreground">Notificações</h1>
-        <Button onClick={save} disabled={saving}>
-          {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-          Salvar
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={sendTestNotification} disabled={sendingTest}>
+            {sendingTest ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+            Enviar Teste
+          </Button>
+          <Button onClick={save} disabled={saving}>
+            {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+            Salvar
+          </Button>
+        </div>
       </div>
 
       {/* Install PWA */}
