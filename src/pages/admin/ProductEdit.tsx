@@ -854,7 +854,23 @@ const ProductEdit = () => {
                               </div>
                             </div>
                           </div>
-                          <div className="space-y-2">
+                          {px.platform === "facebook" && (
+                            <div className="space-y-1.5">
+                              <Label>
+                                Token da API de Conversão (opcional){" "}
+                                <a href="https://developers.facebook.com/docs/marketing-api/conversions-api/get-started" target="_blank" rel="noopener noreferrer" className="text-primary text-xs hover:underline">
+                                  O que é isso?
+                                </a>
+                              </Label>
+                              <Textarea
+                                value={px.capi_token}
+                                onChange={(e) => updatePixel(idx, "capi_token", e.target.value)}
+                                placeholder="EAAxxxxxxxxx..."
+                                rows={2}
+                                className="font-mono text-xs"
+                              />
+                            </div>
+                          )}
                             <div className="flex items-center gap-3">
                               <Switch checked={px.fire_on_pix} onCheckedChange={(v) => updatePixel(idx, "fire_on_pix", v)} />
                               <Label className="text-sm">Disparar evento "Purchase" ao gerar um pix?</Label>
