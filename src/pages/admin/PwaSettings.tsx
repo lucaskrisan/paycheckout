@@ -380,7 +380,20 @@ const PwaSettings = () => {
                 field="notification_icon_url"
                 hint="Ícone exibido na notificação push. PNG, 96x96px."
               />
-            </CardContent>
+
+              {/* Sync info */}
+              <div className="rounded-lg border border-border bg-muted/50 p-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-medium text-foreground">
+                    🔊 Som atual: <span className="text-primary">{notifSound === "kaching" ? "Ka-ching!" : notifSound}</span>
+                    {" · "}Padrão: <span className="text-primary">{notifPattern === "creative" ? "Criativo" : notifPattern === "detailed" ? "Detalhado" : "Lucro"}</span>
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">Configurável em Notificações</p>
+                </div>
+                <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => window.location.href = '/admin/notifications'}>
+                  Ir para Notificações
+                </Button>
+              </div>
           </Card>
         </div>
 
