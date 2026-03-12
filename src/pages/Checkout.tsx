@@ -426,8 +426,6 @@ const Checkout = () => {
           </div>
         </div>
       </div>
-    </div>
-
       <PixModal
         open={pixModalOpen}
         onClose={() => setPixModalOpen(false)}
@@ -437,5 +435,6 @@ const Checkout = () => {
       />
     </div>
   );
+};
 
 export default Checkout;
