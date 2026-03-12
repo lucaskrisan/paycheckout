@@ -93,6 +93,21 @@ Deno.serve(async (req) => {
 
     console.log('[pagarme-webhook] Order updated:', { externalId, status, found: !!orderData });
 
+    // Fire user webhooks (non-blocking)
+    if (orderData?.id && orderData?.user_id) {
+      const webhookEvent = status === 'paid' ? 'order.paid' : status === 'refunded' ? 'order.refunded' : status === 'cancelled' ? 'order.cancelled' : null;
+      if (webhookEvent) {
+        fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/fire-webhooks`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+          },
+          body: JSON.stringify({ event: webhookEvent, order_id: orderData.id, user_id: orderData.user_id }),
+        }).catch(err => console.error('[pagarme-webhook] fire-webhooks error:', err));
+      }
+    }
+
     // On confirmed payment, create member access + send email + fire CAPI Purchase
     if (status === 'paid' && orderData?.product_id && orderData?.customer_id) {
       // --- CAPI Purchase (server-side, deduped by order external_id) ---
