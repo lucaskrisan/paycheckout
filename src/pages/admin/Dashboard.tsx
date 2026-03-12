@@ -33,6 +33,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
+import SalesGamification from "@/components/admin/SalesGamification";
 
 type Period = "today" | "yesterday" | "7days" | "month" | "lastMonth" | "total";
 
@@ -53,22 +54,30 @@ const Dashboard = () => {
   const [period, setPeriod] = useState<Period>("today");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [platformFee, setPlatformFee] = useState(4.99);
+  const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
+  const [selectedProductId, setSelectedProductId] = useState("all");
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [user]);
 
   const loadData = useCallback(async (isRefresh = false) => {
+    if (!user) return;
     if (isRefresh) setRefreshing(true);
-    const [ordersRes, cartsRes] = await Promise.all([
-      supabase.from("orders").select("*"),
-      supabase.from("abandoned_carts").select("*").order("created_at", { ascending: false }).limit(500),
+    const [ordersRes, cartsRes, feeRes, productsRes] = await Promise.all([
+      supabase.from("orders").select("*").eq("user_id", user.id),
+      supabase.from("abandoned_carts").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(500),
+      supabase.from("platform_settings").select("platform_fee_percent").limit(1).single(),
+      supabase.from("products").select("id, name").eq("user_id", user.id),
     ]);
     setOrders(ordersRes.data || []);
     setAbandonedCarts(cartsRes.data || []);
+    if (feeRes.data?.platform_fee_percent != null) setPlatformFee(Number(feeRes.data.platform_fee_percent));
+    setProducts(productsRes.data || []);
     setLoading(false);
     if (isRefresh) setRefreshing(false);
-  }, []);
+  }, [user]);
 
   const filterByPeriod = (items: any[]) => {
     const now = new Date();
@@ -103,12 +112,27 @@ const Dashboard = () => {
     });
   };
 
-  const filtered = useMemo(() => filterByPeriod(orders), [orders, period]);
+  const productFiltered = useMemo(() => {
+    if (selectedProductId === "all") return orders;
+    return orders.filter((o) => o.product_id === selectedProductId);
+  }, [orders, selectedProductId]);
+
+  const filtered = useMemo(() => filterByPeriod(productFiltered), [productFiltered, period]);
   const approved = useMemo(() => filtered.filter((o) => o.status === "paid" || o.status === "approved"), [filtered]);
   const refunded = useMemo(() => filtered.filter((o) => o.status === "refunded"), [filtered]);
 
-  const totalLiquido = approved.reduce((s, o) => s + Number(o.amount), 0) * 0.97;
+  const totalBruto = approved.reduce((s, o) => s + Number(o.amount), 0);
+  const totalLiquido = totalBruto * (1 - platformFee / 100);
   const totalVendas = approved.length;
+
+  // Gamification data (always from ALL orders, not period-filtered)
+  const allApproved = useMemo(() => orders.filter((o) => o.status === "paid" || o.status === "approved"), [orders]);
+  const approvedToday = useMemo(() => {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    return allApproved.filter((o) => new Date(o.created_at) >= startOfDay).length;
+  }, [allApproved]);
+  const allTimeRevenue = useMemo(() => allApproved.reduce((s, o) => s + Number(o.amount), 0), [allApproved]);
 
   const cardAttempts = filtered.filter((o) => o.payment_method === "credit_card");
   const cardApproved = cardAttempts.filter((o) => o.status === "paid" || o.status === "approved");
@@ -241,16 +265,26 @@ const Dashboard = () => {
               ))}
             </SelectContent>
           </Select>
-          <Select defaultValue="all">
+          <Select value={selectedProductId} onValueChange={setSelectedProductId}>
             <SelectTrigger className="w-[160px] h-9 text-sm">
               <SelectValue placeholder="Todos os produtos" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os produtos</SelectItem>
+              {products.map((p) => (
+                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
       </div>
+
+      {/* Gamification */}
+      <SalesGamification
+        approvedToday={approvedToday}
+        approvedTotal={allApproved.length}
+        totalRevenue={allTimeRevenue}
+      />
 
       {/* Main grid: Chart left + Cards right */}
       <div className="grid lg:grid-cols-12 gap-4">
