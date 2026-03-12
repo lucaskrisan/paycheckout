@@ -30,34 +30,41 @@
   <meta property="og:description" content="Lovable Generated Project">
   <meta name="twitter:description" content="Lovable Generated Project">
 
-  <!-- OneSignal -->
-  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <!-- OneSignal — only on admin pages -->
   <script>
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
-    OneSignalDeferred.push(async function(OneSignal) {
-      await OneSignal.init({
-        appId: "5ba5218a-5026-4270-92ce-d2e0ab5509e0",
-        serviceWorkerParam: { scope: "/" },
-        serviceWorkerPath: "/pwa-sw.js",
-        serviceWorkerUpdaterPath: "/pwa-sw.js",
-        notifyButton: { enable: true },
-        allowLocalhostAsSecureOrigin: true,
-        promptOptions: {
-          slidedown: {
-            prompts: [{
-              type: "push",
-              autoPrompt: true,
-              text: {
-                actionMessage: "Deseja receber notificações de vendas em tempo real?",
-                acceptButton: "Permitir",
-                cancelButton: "Agora não"
-              },
-              delay: { pageViews: 1, timeDelay: 3 }
-            }]
-          }
-        }
-      });
-    });
+    if (window.location.pathname.startsWith('/admin')) {
+      var s = document.createElement('script');
+      s.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
+      s.defer = true;
+      s.onload = function() {
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        OneSignalDeferred.push(async function(OneSignal) {
+          await OneSignal.init({
+            appId: "5ba5218a-5026-4270-92ce-d2e0ab5509e0",
+            serviceWorkerParam: { scope: "/" },
+            serviceWorkerPath: "/pwa-sw.js",
+            serviceWorkerUpdaterPath: "/pwa-sw.js",
+            notifyButton: { enable: true },
+            allowLocalhostAsSecureOrigin: true,
+            promptOptions: {
+              slidedown: {
+                prompts: [{
+                  type: "push",
+                  autoPrompt: true,
+                  text: {
+                    actionMessage: "Deseja receber notificações de vendas em tempo real?",
+                    acceptButton: "Permitir",
+                    cancelButton: "Agora não"
+                  },
+                  delay: { pageViews: 1, timeDelay: 3 }
+                }]
+              }
+            }
+          });
+        });
+      };
+      document.head.appendChild(s);
+    }
   </script>
   <!-- End OneSignal -->
 </head>
