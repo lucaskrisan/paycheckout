@@ -293,6 +293,8 @@ const CheckoutBuilder = () => {
               onRemove={removeComponent}
               onSelect={(id) => { setSelectedId(id); setActiveTab("config"); }}
               isMobile={isMobile}
+              productImageUrl={product?.image_url || null}
+              productName={product?.name || ""}
             />
         </div>
 
