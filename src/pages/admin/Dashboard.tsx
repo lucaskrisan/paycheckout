@@ -263,12 +263,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Gamification strip */}
-      <SalesGamification
-        approvedToday={approvedToday}
-        approvedTotal={allApproved.length}
-        totalRevenue={allTimeRevenue}
-      />
 
       {/* Kiwify layout: chart left + 2 tall metric cards right on first row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
