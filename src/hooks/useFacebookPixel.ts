@@ -98,7 +98,7 @@ export function useFacebookPixel(productId: string | undefined) {
           clearInterval(waitForFbq);
 
           // Init each pixel WITHOUT automatic config PageView
-          data.forEach((px) => {
+          (data as any[]).forEach((px: any) => {
             window.fbq("set", "autoConfig", false, px.pixel_id);
             window.fbq("init", px.pixel_id);
           });
