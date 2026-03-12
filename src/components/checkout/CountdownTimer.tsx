@@ -19,11 +19,12 @@ const CountdownTimer = ({ minutes = 15 }: CountdownTimerProps) => {
   const secs = seconds % 60;
 
   return (
-    <div className="flex items-center justify-center gap-2 bg-destructive/10 text-destructive rounded-lg px-4 py-2.5">
-      <Clock className="w-4 h-4" />
-      <span className="text-sm font-semibold">
-        Oferta expira em {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
+    <div className="w-full bg-destructive text-destructive-foreground py-2.5 flex items-center justify-center gap-2">
+      <span className="text-lg font-bold font-mono">
+        {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
       </span>
+      <Clock className="w-4 h-4" />
+      <span className="text-sm font-medium">Oferta por tempo limitado</span>
     </div>
   );
 };
