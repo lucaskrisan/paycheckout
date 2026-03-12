@@ -1041,7 +1041,7 @@ const ProductEdit = () => {
                               </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-40">
-                              <DropdownMenuItem onClick={() => navigate(`/admin/products/${productId}/checkout-builder`)} className="gap-2 text-sm">
+                              <DropdownMenuItem onClick={() => navigate(`/admin/products/${productId}/checkout-builder/${co.id}`)} className="gap-2 text-sm">
                                 <ExternalLink className="w-3.5 h-3.5" /> Personalizar
                               </DropdownMenuItem>
                               <DropdownMenuItem className="gap-2 text-sm">
