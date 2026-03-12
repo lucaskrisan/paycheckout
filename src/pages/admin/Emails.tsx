@@ -91,6 +91,14 @@ export default function Emails() {
     (e) => new Date(e.created_at).toDateString() === new Date().toDateString()
   ).length;
 
+  const deliveredCount = periodEmails.filter((e) => ["delivered", "opened", "clicked"].includes(e.status)).length;
+  const openedCount = periodEmails.filter((e) => ["opened", "clicked"].includes(e.status)).length;
+  const clickedCount = periodEmails.filter((e) => e.status === "clicked").length;
+  const bouncedCount = periodEmails.filter((e) => e.status === "bounced").length;
+  const deliveryRate = totalEmails > 0 ? ((deliveredCount / totalEmails) * 100).toFixed(1) : "0";
+  const openRate = deliveredCount > 0 ? ((openedCount / deliveredCount) * 100).toFixed(1) : "0";
+  const clickRate = openedCount > 0 ? ((clickedCount / openedCount) * 100).toFixed(1) : "0";
+
   return (
     <div className="space-y-6">
       <div>
