@@ -12,10 +12,12 @@ interface UseAbandonedCartProps {
 export function useAbandonedCart({ productId, customer, paymentMethod, productOwnerId }: UseAbandonedCartProps) {
   const cartIdRef = useRef<string | null>(null);
   const purchasedRef = useRef(false);
+  const initializedRef = useRef(false);
 
-  const saveCart = useCallback(async () => {
+  const saveCart = useCallback(async (force = false) => {
     if (purchasedRef.current) return;
-    if (!customer.email && !customer.phone) return;
+    // Allow saving even without email/phone when forced (initial mount)
+    if (!force && !customer.email && !customer.phone) return;
 
     try {
       const params = new URLSearchParams(window.location.search);
@@ -61,23 +63,32 @@ export function useAbandonedCart({ productId, customer, paymentMethod, productOw
     }
   }, [productId, customer, paymentMethod, productOwnerId]);
 
-  // Save on blur (tab switch / close)
+  // Create cart immediately on mount (captures even visitors who leave without filling anything)
+  useEffect(() => {
+    if (!productId || initializedRef.current) return;
+    initializedRef.current = true;
+    saveCart(true);
+  }, [productId, saveCart]);
+
+  // Save on blur (tab switch / close) — use pagehide for mobile reliability
   useEffect(() => {
     const handler = () => saveCart();
     document.addEventListener("visibilitychange", handler);
     window.addEventListener("beforeunload", handler);
+    window.addEventListener("pagehide", handler);
     return () => {
       document.removeEventListener("visibilitychange", handler);
       window.removeEventListener("beforeunload", handler);
+      window.removeEventListener("pagehide", handler);
     };
   }, [saveCart]);
 
   // Debounced save when customer data changes
   useEffect(() => {
-    if (!customer.email) return;
-    const t = setTimeout(saveCart, 3000);
+    if (!customer.email && !customer.phone) return;
+    const t = setTimeout(saveCart, 2000);
     return () => clearTimeout(t);
-  }, [customer.email, customer.phone, saveCart]);
+  }, [customer.email, customer.phone, customer.name, saveCart]);
 
   const markPurchased = useCallback(async () => {
     purchasedRef.current = true;
