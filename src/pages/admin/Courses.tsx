@@ -535,9 +535,14 @@ const Courses = () => {
               </div>
             )}
             <Button onClick={saveLesson} className="w-full">Salvar</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+
+            {/* Materials manager - only show when editing existing lesson */}
+            {editingLesson && (
+              <LessonMaterialsManager lessonId={editingLesson.id} />
+            )}
+           </div>
+         </DialogContent>
+       </Dialog>
 
       {/* Course Dialog (for edit from detail) */}
       <Dialog open={courseDialogOpen} onOpenChange={setCourseDialogOpen}>
