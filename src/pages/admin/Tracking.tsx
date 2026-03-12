@@ -1,13 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import {
   Loader2, ExternalLink, CheckCircle2, AlertCircle, Globe, Code2, Zap,
-  Activity, XCircle, AlertTriangle, Play, RefreshCw,
+  Activity, XCircle, AlertTriangle, Play, RefreshCw, Search, Link2, FileCode,
+  ClipboardCopy,
 } from "lucide-react";
 import {
   Select,
