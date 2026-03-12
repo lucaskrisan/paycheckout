@@ -253,10 +253,23 @@ export default function Emails() {
                       </TableCell>
                       <TableCell>
                         <Badge
-                          variant={email.status === "sent" ? "default" : "destructive"}
+                          variant={
+                            email.status === "clicked" || email.status === "opened" ? "default" :
+                            email.status === "delivered" ? "secondary" :
+                            email.status === "sent" ? "outline" :
+                            email.status === "bounced" || email.status === "failed" || email.status === "complained" ? "destructive" :
+                            "outline"
+                          }
                           className="text-xs"
                         >
-                          {email.status === "sent" ? "Enviado" : email.status === "failed" ? "Falhou" : email.status}
+                          {email.status === "sent" ? "📤 Enviado" :
+                           email.status === "delivered" ? "✅ Entregue" :
+                           email.status === "opened" ? "👁 Aberto" :
+                           email.status === "clicked" ? "🔗 Clicado" :
+                           email.status === "bounced" ? "❌ Bounce" :
+                           email.status === "failed" ? "⚠️ Falhou" :
+                           email.status === "complained" ? "🚫 Spam" :
+                           email.status}
                         </Badge>
                       </TableCell>
                       <TableCell>
