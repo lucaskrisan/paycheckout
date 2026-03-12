@@ -155,6 +155,21 @@ Deno.serve(async (req) => {
       console.error('[asaas-webhook] Error updating order:', error);
     }
 
+    // Fire user webhooks (non-blocking)
+    if (orderData?.id && orderData?.user_id) {
+      const webhookEvent = status === 'paid' ? 'order.paid' : status === 'refunded' ? 'order.refunded' : status === 'cancelled' ? 'order.cancelled' : null;
+      if (webhookEvent) {
+        fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/fire-webhooks`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+          },
+          body: JSON.stringify({ event: webhookEvent, order_id: orderData.id, user_id: orderData.user_id }),
+        }).catch(err => console.error('[asaas-webhook] fire-webhooks error:', err));
+      }
+    }
+
     // On confirmed payment, handle member access + fire CAPI Purchase
     if ((event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED') && orderData?.product_id && orderData?.customer_id) {
       // --- CAPI Purchase (server-side, deduped by payment.id) ---
