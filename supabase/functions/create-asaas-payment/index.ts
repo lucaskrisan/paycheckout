@@ -57,7 +57,8 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    const { amount, customer, payment_method, installments, product_id, is_subscription, billing_cycle, coupon_id } = await req.json();
+    const body = await req.json();
+    const { amount, customer, payment_method, installments, product_id, is_subscription, billing_cycle, coupon_id, config_id, bump_product_ids } = body;
 
     if (!amount || !customer?.name || !customer?.email || !customer?.cpf) {
       return new Response(
@@ -82,12 +83,11 @@ Deno.serve(async (req) => {
         serverPrice = prod.price;
 
         // Check if a config with custom price was used
-        const configId = (await req.clone().json()).config_id;
-        if (configId) {
+        if (config_id) {
           const { data: config } = await supabaseAdmin
             .from('checkout_builder_configs')
             .select('price')
-            .eq('id', configId)
+            .eq('id', config_id)
             .eq('product_id', product_id)
             .maybeSingle();
           if (config?.price != null && config.price > 0) {
@@ -111,10 +111,23 @@ Deno.serve(async (req) => {
           }
         }
 
-        const validatedAmount = Math.max(serverPrice - couponDiscount, 0);
+        // Calculate bump total server-side
+        let bumpTotal = 0;
+        if (bump_product_ids && Array.isArray(bump_product_ids) && bump_product_ids.length > 0) {
+          const { data: bumpProducts } = await supabaseAdmin
+            .from('products')
+            .select('price')
+            .in('id', bump_product_ids)
+            .eq('active', true);
+          if (bumpProducts) {
+            bumpTotal = bumpProducts.reduce((sum: number, bp: any) => sum + Number(bp.price), 0);
+          }
+        }
+
+        const validatedAmount = Math.max(serverPrice - couponDiscount, 0) + bumpTotal;
         // Allow small rounding tolerance (R$ 0.02)
         if (Math.abs(amount - validatedAmount) > 0.02) {
-          console.warn(`[create-asaas-payment] Price mismatch: client=${amount}, server=${validatedAmount}`);
+          console.warn(`[create-asaas-payment] Price mismatch: client=${amount}, server=${validatedAmount} (product=${serverPrice}, coupon=${couponDiscount}, bumps=${bumpTotal})`);
           return new Response(
             JSON.stringify({ error: 'Valor inválido. Recarregue a página e tente novamente.' }),
             { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
