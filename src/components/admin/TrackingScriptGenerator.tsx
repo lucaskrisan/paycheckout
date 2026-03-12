@@ -45,7 +45,6 @@ export default function TrackingScriptGenerator({ pixels, products, checkoutBase
       .map((p) => `    fbq('set','autoConfig',false,'${p.pixel_id}');\n    fbq('init','${p.pixel_id}');`)
       .join("\n");
 
-    const pixelIds = productPixels.map((p) => `'${p.pixel_id}'`).join(", ");
     const domain = productPixels[0]?.domain || "";
     const fbSrc = domain
       ? `https://${domain}/en_US/fbevents.js`
