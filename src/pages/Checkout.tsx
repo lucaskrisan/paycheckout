@@ -295,7 +295,7 @@ const Checkout = () => {
                   </div>
                 </div>
               ) : (
-                <PaymentTabs activeMethod={paymentMethod} onMethodChange={setPaymentMethod} />
+                <PaymentTabs activeMethod={paymentMethod} onMethodChange={setPaymentMethod} pixDiscountPercent={5} />
               )}
 
               {/* Payment form */}
