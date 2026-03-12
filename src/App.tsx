@@ -69,6 +69,7 @@ const App = () => (
               <Route path="reviews" element={<Reviews />} />
               <Route path="health" element={<SystemHealth />} />
               <Route path="webhooks" element={<Webhooks />} />
+              <Route path="emails" element={<Emails />} />
               <Route path="platform" element={<SuperAdminDashboard />} />
             </Route>
             <Route path="*" element={<NotFound />} />
