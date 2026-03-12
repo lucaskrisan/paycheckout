@@ -270,7 +270,7 @@ const CheckoutBuilder = () => {
             size="sm"
             variant="outline"
             className="h-7 text-xs gap-1"
-            onClick={() => window.open(`/checkout/${productId}`, "_blank")}
+            onClick={() => window.open(`https://paycheckout.lovable.app/checkout/${productId}`, "_blank")}
           >
             Pré-visualizar <Eye className="w-3 h-3" />
           </Button>
