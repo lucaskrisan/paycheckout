@@ -229,7 +229,8 @@ const Checkout = () => {
     .reduce((sum, b) => sum + (b.bump_product?.price || 0), 0);
 
   const pixDiscount = paymentMethod === 'pix' ? product.price * 0.05 : 0;
-  const finalAmount = product.price - pixDiscount + bumpTotal;
+  const frontEndAmount = product.price - pixDiscount; // Valor do produto principal (para tracking)
+  const finalAmount = frontEndAmount + bumpTotal; // Valor total cobrado (com bumps)
 
   const items = [
     {
@@ -285,7 +286,7 @@ const Checkout = () => {
         if (data?.qr_code_url || data?.qr_code) {
           setPixData({ qrCodeUrl: data.qr_code_url, pixCode: data.qr_code });
           toast.success("PIX gerado! Escaneie o QR Code para pagar.");
-          trackPurchase(finalAmount);
+          trackPurchase(frontEndAmount);
         } else {
           throw new Error("Falha ao gerar o PIX");
         }
@@ -320,7 +321,7 @@ const Checkout = () => {
 
         if (data?.payment_id) {
           toast.success("Pagamento processado com sucesso!");
-          trackPurchase(finalAmount);
+          trackPurchase(frontEndAmount);
         } else {
           throw new Error("Falha ao processar pagamento");
         }
