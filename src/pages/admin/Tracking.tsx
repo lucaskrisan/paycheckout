@@ -126,7 +126,13 @@ const Tracking = () => {
         body: { product_id: selectedProduct },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("[Diagnostics] invoke error:", error);
+        throw new Error(typeof error === 'object' && error.message ? error.message : 'Falha na conexão com o servidor');
+      }
+      if (data?.error) {
+        throw new Error(data.error);
+      }
 
       setDiagResults(data.results || []);
       setDiagSummary(data.summary || null);
