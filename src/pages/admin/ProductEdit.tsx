@@ -1094,7 +1094,7 @@ const ProductEdit = () => {
                     ))}
                     {!checkoutLink && checkouts.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={3} className="text-center text-sm text-muted-foreground py-8">
+                        <TableCell colSpan={4} className="text-center text-sm text-muted-foreground py-8">
                           Salve o produto primeiro.
                         </TableCell>
                       </TableRow>
