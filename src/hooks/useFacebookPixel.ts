@@ -89,6 +89,17 @@ export function useFacebookPixel(productId: string | undefined) {
     }).catch((err) => console.warn("[CAPI] non-blocking error:", err));
   }, [productId]);
 
+  /** Log pixel event to database for real-time dashboard (non-blocking) */
+  const logPixelEvent = useCallback((eventName: string, eventId?: string) => {
+    if (!productId) return;
+    supabase.from("pixel_events" as any).insert({
+      product_id: productId,
+      event_name: eventName,
+      source: "browser",
+      event_id: eventId || null,
+    }).then(() => {});
+  }, [productId]);
+
   useEffect(() => {
     if (!productId || initializedRef.current) return;
 
