@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Checkout from "./pages/Checkout";
+import CheckoutSuccess from "./pages/CheckoutSuccess";
 import MemberArea from "./pages/MemberArea";
 import CustomerPortal from "./pages/CustomerPortal";
 import Login from "./pages/Login";
@@ -40,6 +41,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/checkout/sucesso" element={<CheckoutSuccess />} />
             <Route path="/checkout/:productId" element={<Checkout />} />
             <Route path="/membros" element={<MemberArea />} />
             <Route path="/minha-conta" element={<CustomerPortal />} />
