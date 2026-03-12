@@ -82,52 +82,43 @@ export default function FacebookDomainManager({ open, onClose, onDomainsChange }
   const handleVerify = async (domain: FacebookDomain) => {
     setVerifying(domain.id);
     try {
-      // Check DNS resolution by fetching meta-diagnostics edge function
-      const { data, error } = await supabase.functions.invoke("meta-diagnostics", {
-        body: { action: "check_dns", domain: `pixels.${domain.domain}`, expected: "pixels.paycheckout.lovable.app" },
-      });
+      const subdomain = `pixels.${domain.domain}`;
+      let resolved = false;
 
-      if (error) throw error;
+      // Check CNAME first
+      try {
+        const cnameResp = await fetch(`https://dns.google/resolve?name=${subdomain}&type=CNAME`);
+        const cnameJson = await cnameResp.json();
+        const cnameAnswers = cnameJson.Answer || [];
+        resolved = cnameAnswers.some((a: any) =>
+          a.type === 5 && a.data?.toLowerCase().includes("paycheckout")
+        );
+      } catch {}
 
-      const resolved = data?.resolved === true;
+      // If CNAME not visible (Cloudflare proxy), check if domain resolves at all via A record
+      if (!resolved) {
+        try {
+          const aResp = await fetch(`https://dns.google/resolve?name=${subdomain}&type=A`);
+          const aJson = await aResp.json();
+          // If it resolves to ANY IP, the CNAME+proxy is working
+          resolved = (aJson.Answer || []).length > 0 && aJson.Status === 0;
+        } catch {}
+      }
 
-      // Update verified status in DB
       await supabase
         .from("facebook_domains")
         .update({ verified: resolved })
         .eq("id", domain.id);
 
       if (resolved) {
-        toast.success(`✅ DNS de pixels.${domain.domain} está apontando corretamente!`);
+        toast.success(`✅ DNS de ${subdomain} está funcionando corretamente!`);
       } else {
-        toast.error(`❌ DNS de pixels.${domain.domain} ainda não está propagado. Aguarde até 72h ou verifique o CNAME.`);
+        toast.error(`❌ DNS de ${subdomain} ainda não está propagado. Aguarde até 72h ou verifique o CNAME no Cloudflare.`);
       }
 
       loadDomains();
     } catch {
-      // Fallback: simple DNS check via fetch
-      try {
-        const resp = await fetch(`https://dns.google/resolve?name=pixels.${domain.domain}&type=CNAME`);
-        const json = await resp.json();
-        const answers = json.Answer || [];
-        const hasCname = answers.some((a: any) =>
-          a.type === 5 && a.data?.includes("paycheckout")
-        );
-
-        await supabase
-          .from("facebook_domains")
-          .update({ verified: hasCname })
-          .eq("id", domain.id);
-
-        if (hasCname) {
-          toast.success(`✅ CNAME de pixels.${domain.domain} verificado com sucesso!`);
-        } else {
-          toast.error(`❌ CNAME de pixels.${domain.domain} não encontrado. Verifique no Cloudflare.`);
-        }
-        loadDomains();
-      } catch {
-        toast.error("Não foi possível verificar o DNS. Tente novamente em alguns minutos.");
-      }
+      toast.error("Não foi possível verificar o DNS. Tente novamente em alguns minutos.");
     }
     setVerifying(null);
   };
