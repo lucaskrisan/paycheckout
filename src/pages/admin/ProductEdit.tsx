@@ -151,7 +151,68 @@ const ProductEdit = () => {
     }
 
     setCheckouts(data || []);
-  }, [isNew, productId]);
+
+  const createCheckoutConfig = async () => {
+    if (!productId || isNew) {
+      toast.error("Salve o produto primeiro");
+      return;
+    }
+
+    const checkoutName = newCheckoutName.trim();
+    if (!checkoutName) {
+      toast.error("Informe o nome do checkout");
+      return;
+    }
+
+    setCreatingCheckout(true);
+    try {
+      const {
+        data: { user: authUser },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !authUser) {
+        toast.error("Sessão expirada. Faça login novamente.");
+        return;
+      }
+
+      if (newCheckoutDefault) {
+        const { error: unsetDefaultError } = await supabase
+          .from("checkout_builder_configs")
+          .update({ is_default: false })
+          .eq("product_id", productId)
+          .eq("user_id", authUser.id);
+
+        if (unsetDefaultError) throw unsetDefaultError;
+      }
+
+      const parsedPrice = newCheckoutPrice.trim()
+        ? parseFloat(newCheckoutPrice.replace(",", "."))
+        : null;
+
+      const { error } = await supabase.from("checkout_builder_configs").insert({
+        product_id: productId,
+        name: checkoutName,
+        is_default: newCheckoutDefault,
+        user_id: authUser.id,
+        price: parsedPrice,
+      } as any);
+
+      if (error) throw error;
+
+      await loadCheckouts();
+      toast.success("Checkout criado!");
+      setShowNewCheckoutDialog(false);
+      setNewCheckoutName("");
+      setNewCheckoutPrice("");
+      setNewCheckoutDefault(false);
+    } catch (err: any) {
+      console.error("Erro ao criar checkout:", err);
+      toast.error(err?.message || "Erro ao criar checkout");
+    } finally {
+      setCreatingCheckout(false);
+    }
+  };
 
   useEffect(() => {
     // Load courses
