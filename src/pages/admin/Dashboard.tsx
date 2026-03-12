@@ -12,6 +12,7 @@ import {
   RefreshCcw,
   AlertOctagon,
   Info,
+  ShoppingCart,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
