@@ -93,13 +93,13 @@ const Checkout = () => {
       const builderQuery = requestedConfigId
         ? supabase
             .from("checkout_builder_configs")
-            .select("layout")
+            .select("layout, price")
             .eq("id", requestedConfigId)
             .eq("product_id", productId)
             .maybeSingle()
         : supabase
             .from("checkout_builder_configs")
-            .select("layout")
+            .select("layout, price")
             .eq("product_id", productId)
             .eq("is_default", true)
             .order("updated_at", { ascending: false })
