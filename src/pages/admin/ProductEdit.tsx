@@ -304,7 +304,7 @@ const ProductEdit = () => {
       toast.success("Produto criado!");
       navigate("/admin/products");
     } else {
-      const { error } = await supabase.from("products").update(payload).eq("id", productId);
+      const { error } = await supabase.from("products" as any).update(payload).eq("id", productId);
       if (error) { toast.error("Erro ao atualizar"); setSaving(false); return; }
       toast.success("Produto salvo!");
     }
