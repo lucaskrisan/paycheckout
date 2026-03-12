@@ -601,6 +601,7 @@ export type Database = {
       }
       product_pixels: {
         Row: {
+          capi_token: string | null
           created_at: string
           domain: string | null
           fire_on_boleto: boolean
@@ -612,6 +613,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          capi_token?: string | null
           created_at?: string
           domain?: string | null
           fire_on_boleto?: boolean
@@ -623,6 +625,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          capi_token?: string | null
           created_at?: string
           domain?: string | null
           fire_on_boleto?: boolean
