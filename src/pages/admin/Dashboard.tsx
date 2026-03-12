@@ -128,6 +128,12 @@ const Dashboard = () => {
   const chargebackOrders = filtered.filter((o) => o.status === "chargeback");
   const chargebackRate = filtered.length > 0 ? ((chargebackOrders.length / filtered.length) * 100).toFixed(0) : "0";
 
+  // Abandoned carts metrics
+  const filteredCarts = useMemo(() => filterByPeriod(abandonedCarts), [abandonedCarts, period]);
+  const totalAbandoned = filteredCarts.length;
+  const recoveredCarts = filteredCarts.filter((c) => c.recovered);
+  const recoveryRate = totalAbandoned > 0 ? ((recoveredCarts.length / totalAbandoned) * 100).toFixed(0) : "0";
+
   // Chart data
   const chartData = useMemo(() => {
     const days: Record<string, number> = {};
