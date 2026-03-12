@@ -103,9 +103,30 @@ serve(async (req) => {
         }),
       });
 
+      const emailData = await emailRes.json();
+
+      // Log email
+      try {
+        await supabase.from('email_logs').insert({
+          user_id: order.user_id,
+          to_email: customerEmail,
+          to_name: customerName,
+          subject: editedSubject,
+          html_body: fullHtml,
+          email_type: 'pix_reminder',
+          status: emailRes.ok ? 'sent' : 'failed',
+          resend_id: emailData?.id || null,
+          order_id: order_id,
+          customer_id: order.customer_id,
+          product_id: order.product_id,
+          source: 'send-pix-reminder',
+        });
+      } catch (logErr) {
+        console.error('[send-pix-reminder] Email log error:', logErr);
+      }
+
       if (!emailRes.ok) {
-        const errText = await emailRes.text();
-        console.error("Resend error:", errText);
+        console.error("Resend error:", JSON.stringify(emailData));
         throw new Error("Failed to send email");
       }
 
