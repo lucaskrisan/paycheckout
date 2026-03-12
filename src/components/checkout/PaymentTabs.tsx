@@ -1,8 +1,7 @@
-import { CreditCard, QrCode } from "lucide-react";
-import { motion } from "framer-motion";
+import { CreditCard, Diamond } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type PaymentMethod = 'credit_card' | 'pix';
+type PaymentMethod = "credit_card" | "pix";
 
 interface PaymentTabsProps {
   activeMethod: PaymentMethod;
@@ -11,45 +10,30 @@ interface PaymentTabsProps {
 
 const PaymentTabs = ({ activeMethod, onMethodChange }: PaymentTabsProps) => {
   const tabs = [
-    { id: 'credit_card' as const, label: 'Cartão de Crédito', icon: CreditCard },
-    { id: 'pix' as const, label: 'PIX', icon: QrCode, badge: '5% OFF' },
+    { id: "credit_card" as const, label: "Cartão", icon: CreditCard },
+    { id: "pix" as const, label: "Pix", icon: Diamond },
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="flex gap-0 border border-border rounded-lg overflow-hidden">
       {tabs.map((tab) => (
         <button
           key={tab.id}
           onClick={() => onMethodChange(tab.id)}
           className={cn(
-            "relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200",
+            "flex-1 flex items-center justify-center gap-2 py-3 text-sm font-medium transition-all relative",
             activeMethod === tab.id
-              ? "border-primary bg-primary/5 shadow-sm"
-              : "border-border bg-card hover:border-muted-foreground/30"
+              ? "bg-card text-foreground border-2 border-primary rounded-lg shadow-sm z-10"
+              : "bg-muted/50 text-muted-foreground hover:text-foreground"
           )}
         >
           {activeMethod === tab.id && (
-            <motion.div
-              layoutId="activeTab"
-              className="absolute inset-0 border-2 border-primary rounded-xl"
-              transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            />
-          )}
-          <tab.icon className={cn(
-            "w-5 h-5",
-            activeMethod === tab.id ? "text-primary" : "text-muted-foreground"
-          )} />
-          <span className={cn(
-            "text-xs font-semibold",
-            activeMethod === tab.id ? "text-foreground" : "text-muted-foreground"
-          )}>
-            {tab.label}
-          </span>
-          {tab.badge && (
-            <span className="absolute -top-2 -right-2 bg-checkout-badge text-checkout-surface text-[10px] font-bold px-2 py-0.5 rounded-full">
-              {tab.badge}
+            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+              <span className="text-primary-foreground text-[10px]">✓</span>
             </span>
           )}
+          <tab.icon className="w-4 h-4" />
+          <span>{tab.label}</span>
         </button>
       ))}
     </div>
