@@ -37,6 +37,7 @@ const CheckoutBuilder = () => {
   const [activeTab, setActiveTab] = useState("components");
   const [activeDragType, setActiveDragType] = useState<ComponentType | null>(null);
   const [dbConfigId, setDbConfigId] = useState<string | null>(configId || null);
+  const [product, setProduct] = useState<{ name: string; image_url: string | null } | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -54,12 +55,13 @@ const CheckoutBuilder = () => {
 
     const load = async () => {
       // Fetch product name
-      const { data: product } = await supabase
+      const { data: prodData } = await supabase
         .from("products")
-        .select("name")
+        .select("name, image_url")
         .eq("id", productId)
         .single();
-      const productName = product?.name || "TÍTULO DO PRODUTO";
+      const productName = prodData?.name || "TÍTULO DO PRODUTO";
+      setProduct({ name: productName, image_url: prodData?.image_url || null });
       const defaults = getDefaultComponents(productName);
 
       let loaded = false;
@@ -291,6 +293,8 @@ const CheckoutBuilder = () => {
               onRemove={removeComponent}
               onSelect={(id) => { setSelectedId(id); setActiveTab("config"); }}
               isMobile={isMobile}
+              productImageUrl={product?.image_url || null}
+              productName={product?.name || ""}
             />
         </div>
 
