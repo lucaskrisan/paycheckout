@@ -16,13 +16,11 @@ import {
   Settings2,
   Server,
   CreditCard,
-  Users,
   GraduationCap,
   Bell,
   Crosshair,
   ShoppingCart,
   HardDrive,
-  Mail,
 } from "lucide-react";
 import { toast } from "sonner";
 
