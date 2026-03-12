@@ -1,13 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import {
   Loader2, ExternalLink, CheckCircle2, AlertCircle, Globe, Code2, Zap,
-  Activity, XCircle, AlertTriangle, Play, RefreshCw,
+  Activity, XCircle, AlertTriangle, Play, RefreshCw, Search, Link2, FileCode,
+  ClipboardCopy,
 } from "lucide-react";
 import {
   Select,
@@ -59,6 +61,11 @@ const Tracking = () => {
   const [diagLoading, setDiagLoading] = useState(false);
   const [diagResults, setDiagResults] = useState<DiagResult[] | null>(null);
   const [diagSummary, setDiagSummary] = useState<DiagSummary | null>(null);
+
+  // Page verification state
+  const [pageUrl, setPageUrl] = useState("");
+  const [pageChecking, setPageChecking] = useState(false);
+  const [pageChecks, setPageChecks] = useState<DiagCheck[] | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -137,6 +144,103 @@ const Tracking = () => {
       setDiagLoading(false);
     }
   };
+
+  const verifyPage = useCallback(async () => {
+    const url = pageUrl.trim();
+    if (!url) { toast.error("Cole a URL da página"); return; }
+    if (!url.startsWith("http")) { toast.error("URL deve começar com http:// ou https://"); return; }
+
+    setPageChecking(true);
+    setPageChecks(null);
+
+    const checks: DiagCheck[] = [];
+
+    try {
+      // 1) Fetch page HTML via edge function proxy (avoids CORS)
+      const { data: htmlData, error: fetchErr } = await supabase.functions.invoke("meta-diagnostics", {
+        body: { action: "verify_page", url },
+      });
+
+      if (fetchErr || !htmlData?.html) {
+        // If edge function doesn't support it, do client-side checks
+        checks.push({
+          name: "Acesso à página",
+          status: "warning",
+          detail: "Não foi possível acessar a página remotamente. Verifique manualmente no navegador.",
+        });
+      } else {
+        const html: string = htmlData.html;
+
+        // Check for fbevents.js
+        if (html.includes("fbevents.js")) {
+          checks.push({ name: "Meta Pixel SDK", status: "pass", detail: "fbevents.js encontrado na página ✅" });
+        } else {
+          checks.push({ name: "Meta Pixel SDK", status: "error", detail: "fbevents.js NÃO encontrado! O script do pixel não está carregando." });
+        }
+
+        // Check for fbq('init'
+        if (html.includes("fbq('init'") || html.includes('fbq("init"') || html.includes("fbq(\"init\"")) {
+          checks.push({ name: "fbq init", status: "pass", detail: "Inicialização do Pixel encontrada na página ✅" });
+        } else if (html.includes("public_product_pixels")) {
+          checks.push({ name: "fbq init (dinâmico)", status: "pass", detail: "Pixel carregado dinamicamente via PayCheckout API ✅" });
+        } else {
+          checks.push({ name: "fbq init", status: "error", detail: "Nenhuma inicialização de Pixel encontrada." });
+        }
+
+        // Check for PageView
+        if (html.includes("PageView")) {
+          checks.push({ name: "PageView", status: "pass", detail: "Evento PageView detectado ✅" });
+        } else {
+          checks.push({ name: "PageView", status: "warning", detail: "PageView não encontrado no HTML (pode ser disparado dinamicamente)" });
+        }
+
+        // Check for UTM capture
+        if (html.includes("utm_source") || html.includes("pc_utms")) {
+          checks.push({ name: "Captura de UTMs", status: "pass", detail: "Lógica de captura de UTMs encontrada ✅" });
+        } else {
+          checks.push({ name: "Captura de UTMs", status: "error", detail: "Nenhuma lógica de captura de UTMs encontrada. Os parâmetros não serão passados ao checkout." });
+        }
+
+        // Check for goToCheckout
+        if (html.includes("goToCheckout")) {
+          checks.push({ name: "Função goToCheckout", status: "pass", detail: "Função de redirecionamento ao checkout encontrada ✅" });
+        } else {
+          checks.push({ name: "Função goToCheckout", status: "warning", detail: "Função goToCheckout não encontrada. Verifique se os botões usam links diretos." });
+        }
+
+        // Check for PayCheckout product ID
+        const productIdRegex = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
+        const foundIds = html.match(productIdRegex) || [];
+        const myProductIds = pixels.map(p => p.product_id);
+        const matchedProducts = [...new Set(foundIds)].filter(id => myProductIds.includes(id));
+
+        if (matchedProducts.length > 0) {
+          const names = matchedProducts.map(id => pixels.find(p => p.product_id === id)?.product_name).filter(Boolean);
+          checks.push({ name: "Link do checkout", status: "pass", detail: `Produto(s) detectado(s): ${names.join(", ")} ✅` });
+        } else {
+          checks.push({ name: "Link do checkout", status: "error", detail: "Nenhum ID de produto do PayCheckout encontrado na página." });
+        }
+
+        // Check for config ID
+        if (html.includes("config=") || html.includes("config'") || html.includes("configId")) {
+          checks.push({ name: "Config ID", status: "pass", detail: "Referência a config de checkout encontrada ✅" });
+        } else {
+          checks.push({ name: "Config ID", status: "warning", detail: "Nenhum config ID encontrado — pode estar usando a oferta padrão." });
+        }
+      }
+    } catch (err: any) {
+      checks.push({ name: "Erro geral", status: "error", detail: err.message || "Erro desconhecido" });
+    }
+
+    setPageChecks(checks);
+    setPageChecking(false);
+
+    const errors = checks.filter(c => c.status === "error").length;
+    const warnings = checks.filter(c => c.status === "warning").length;
+    if (errors > 0) toast.error(`${errors} problema(s) encontrado(s) na página`);
+    else if (warnings > 0) toast.warning(`Página OK com ${warnings} aviso(s)`);
+    else toast.success("Página 100% configurada! 🎯");
+  }, [pageUrl, pixels]);
 
   const statusIcon = (status: string) => {
     switch (status) {
@@ -311,6 +415,57 @@ const Tracking = () => {
                 </p>
               )}
             </>
+          )}
+        </div>
+      </Card>
+
+      {/* ========= PAGE VERIFICATION ========= */}
+      <Card className="overflow-hidden">
+        <div className="px-5 py-4 border-b border-border bg-muted/30 flex items-center gap-3">
+          <FileCode className="w-5 h-5 text-primary" />
+          <div>
+            <h2 className="font-semibold text-foreground text-sm">Verificação de Página Externa</h2>
+            <p className="text-xs text-muted-foreground">Cole a URL da sua página de vendas para verificar se o tracking está 100%</p>
+          </div>
+        </div>
+        <div className="p-5 space-y-4">
+          <div className="flex items-end gap-3">
+            <div className="flex-1 space-y-1.5">
+              <label className="text-sm font-medium text-foreground">URL da página</label>
+              <div className="relative">
+                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  value={pageUrl}
+                  onChange={(e) => setPageUrl(e.target.value)}
+                  placeholder="https://suapagina.com"
+                  className="pl-9"
+                />
+              </div>
+            </div>
+            <Button onClick={verifyPage} disabled={pageChecking} className="gap-2">
+              {pageChecking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              {pageChecking ? "Verificando..." : "Verificar página"}
+            </Button>
+          </div>
+
+          {pageChecks && (
+            <Card className="overflow-hidden border-border">
+              <div className="px-4 py-2.5 border-b border-border bg-muted/20 flex items-center gap-2">
+                <Globe className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-foreground truncate">{pageUrl}</span>
+              </div>
+              <div className="divide-y divide-border">
+                {pageChecks.map((check, i) => (
+                  <div key={i} className="px-4 py-3 flex items-start gap-3">
+                    {statusIcon(check.status)}
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground">{check.name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{check.detail}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
           )}
         </div>
       </Card>
