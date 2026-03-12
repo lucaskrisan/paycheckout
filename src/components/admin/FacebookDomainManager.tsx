@@ -234,7 +234,7 @@ export default function FacebookDomainManager({ open, onClose, onDomainsChange }
               </div>
               <div className="bg-muted/50 rounded-lg px-4 py-3 text-sm text-foreground">
                 <span className="font-medium">2.2.</span> Crie um registro CNAME com o valor{" "}
-                <strong>pixels.{newDomain || "seudominio"}.com</strong> apontando para{" "}
+                <strong>pixels.{newDomain || "seudominio.com"}</strong> apontando para{" "}
                 <strong>pixels.paycheckout.lovable.app</strong>
               </div>
               <div className="bg-muted/50 rounded-lg px-4 py-3 text-sm text-foreground">
