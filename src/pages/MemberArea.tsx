@@ -161,7 +161,7 @@ const MemberArea = () => {
       setAccess(accessData);
 
       // Load customer name
-      const { data: customerData } = await supabase
+      const { data: customerData } = await tokenClient
         .from("customers")
         .select("name")
         .eq("id", accessData.customer_id)
