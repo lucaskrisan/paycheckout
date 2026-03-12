@@ -311,7 +311,10 @@ const Notifications = () => {
                   <button
                     key={sound.value}
                     type="button"
-                    onClick={() => update("notification_sound", sound.value)}
+                    onClick={() => {
+                      update("notification_sound", sound.value);
+                      playNotificationSound(sound.value);
+                    }}
                     className={`flex items-center gap-2 rounded-xl border p-3 text-left text-sm transition-colors cursor-pointer ${
                       settings.notification_sound === sound.value
                         ? "border-primary bg-primary/5 font-medium"
