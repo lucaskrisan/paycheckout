@@ -270,6 +270,85 @@ Deno.serve(async (req) => {
       console.error('[create-pix-payment] Notification error:', notifErr);
     }
 
+    // Send PIX email to customer via Resend
+    try {
+      const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+      if (RESEND_API_KEY && lastTransaction?.qr_code_url) {
+        const formattedAmount = Number(amount).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const expiresAt = lastTransaction.expires_at
+          ? new Date(lastTransaction.expires_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+          : '30 minutos';
+        const pixCode = lastTransaction.qr_code || '';
+
+        const emailHtml = `
+          <!DOCTYPE html>
+          <html>
+          <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+          <body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+            <div style="max-width:560px;margin:40px auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+              <div style="background:linear-gradient(135deg,#22c55e,#16a34a);padding:32px 40px;text-align:center;">
+                <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;">💠 Seu PIX foi gerado!</h1>
+              </div>
+              <div style="padding:32px 40px;">
+                <p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 8px;">
+                  Olá <strong>${customer.name.split(' ')[0]}</strong>,
+                </p>
+                <p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 24px;">
+                  Seu pagamento de <strong>${formattedAmount}</strong> para <strong>${productName}</strong> está quase concluído! Escaneie o QR Code abaixo ou copie o código PIX para finalizar:
+                </p>
+                <div style="text-align:center;margin:24px 0;">
+                  <img src="${lastTransaction.qr_code_url}" alt="QR Code PIX" style="width:220px;height:220px;border-radius:12px;border:2px solid #e5e7eb;" />
+                </div>
+                <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:20px 0;">
+                  <p style="color:#6b7280;font-size:12px;margin:0 0 8px;text-transform:uppercase;font-weight:600;letter-spacing:0.5px;">Código PIX (Copia e Cola)</p>
+                  <p style="color:#111827;font-size:13px;margin:0;word-break:break-all;font-family:monospace;line-height:1.5;">${pixCode}</p>
+                </div>
+                <div style="background:linear-gradient(135deg,#fefce8,#fef9c3);border:1px solid #fde68a;border-radius:8px;padding:14px 16px;margin:20px 0;">
+                  <p style="color:#92400e;font-size:14px;margin:0;font-weight:500;">
+                    ⏰ <strong>Atenção:</strong> Este PIX expira em <strong>${expiresAt}</strong>. Pague antes do vencimento para garantir sua compra!
+                  </p>
+                </div>
+                <div style="text-align:center;margin:28px 0 0;">
+                  <p style="color:#6b7280;font-size:13px;margin:0;">
+                    Após o pagamento, você receberá a confirmação automaticamente. 🎉
+                  </p>
+                </div>
+              </div>
+              <div style="background:#f9fafb;padding:20px 40px;text-align:center;border-top:1px solid #e5e7eb;">
+                <p style="color:#9ca3af;font-size:12px;margin:0;">
+                  Este é um email automático. Não responda a esta mensagem.
+                </p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `;
+
+        const resendRes = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${RESEND_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: 'PayCheckout <noreply@paolasemfiltro.com>',
+            to: [customer.email],
+            subject: `💠 Seu PIX de ${formattedAmount} foi gerado — finalize agora!`,
+            html: emailHtml,
+          }),
+        });
+
+        if (!resendRes.ok) {
+          const resendErr = await resendRes.json();
+          console.error('[create-pix-payment] Resend error:', resendErr);
+        } else {
+          console.log('[create-pix-payment] PIX email sent to', customer.email);
+        }
+      }
+    } catch (emailErr) {
+      console.error('[create-pix-payment] Email error:', emailErr);
+    }
+
     return new Response(
       JSON.stringify({
         order_id: data.id,
