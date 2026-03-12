@@ -22,16 +22,17 @@ Deno.serve(async (req) => {
     const payload = {
       app_id: appId,
       included_segments: ['Subscribed Users'],
+      target_channel: 'push',
       headings: { en: '🎉 Ka-ching! Mais uma venda!' },
       contents: { en: 'João Silva • 💠 PIX R$ 197,00 • Curso Premium' },
       chrome_web_icon: 'https://paycheckout.lovable.app/pwa-192x192.png',
       url: 'https://paycheckout.lovable.app/admin/orders',
     };
 
-    const response = await fetch('https://api.onesignal.com/notifications', {
+    const response = await fetch('https://onesignal.com/api/v1/notifications', {
       method: 'POST',
       headers: {
-        'Authorization': `Key ${apiKey}`,
+        'Authorization': `Basic ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
