@@ -153,7 +153,6 @@ Deno.serve(async (req) => {
             event_id: externalId,
             event_source_url: orderMetadata.checkout_url || '',
             action_source: 'website',
-            action_source: 'website',
             user_data: userData,
             custom_data: {
               value: Number(orderData.amount),
