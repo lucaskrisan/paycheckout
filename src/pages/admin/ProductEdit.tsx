@@ -26,6 +26,7 @@ interface PixelEntry {
   domain: string;
   fire_on_pix: boolean;
   fire_on_boleto: boolean;
+  capi_token: string;
 }
 import {
   Select,
