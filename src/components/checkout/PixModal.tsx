@@ -11,17 +11,19 @@ interface PixModalProps {
   qrCodeUrl?: string;
   pixCode?: string;
   externalOrderId?: string;
+  onPaymentConfirmed?: () => void;
 }
 
-const PixModal = ({ open, onClose, totalAmount, qrCodeUrl, pixCode, externalOrderId }: PixModalProps) => {
+const PixModal = ({ open, onClose, totalAmount, qrCodeUrl, pixCode, externalOrderId, onPaymentConfirmed }: PixModalProps) => {
   const [copied, setCopied] = useState(false);
   const [copying, setCopying] = useState(false);
   const [timeLeft, setTimeLeft] = useState(1800);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const confirmedCallbackFiredRef = useRef(false);
 
   useEffect(() => {
-    if (!open) { setPaymentConfirmed(false); return; }
+    if (!open) { setPaymentConfirmed(false); confirmedCallbackFiredRef.current = false; return; }
     setTimeLeft(1800);
     const interval = setInterval(() => {
       setTimeLeft((prev) => (prev <= 0 ? 0 : prev - 1));
@@ -38,6 +40,10 @@ const PixModal = ({ open, onClose, totalAmount, qrCodeUrl, pixCode, externalOrde
       });
       if (data && (data.status === "paid" || data.status === "approved" || data.status === "confirmed")) {
         setPaymentConfirmed(true);
+        if (!confirmedCallbackFiredRef.current) {
+          confirmedCallbackFiredRef.current = true;
+          onPaymentConfirmed?.();
+        }
         if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
       }
     } catch (err) {
