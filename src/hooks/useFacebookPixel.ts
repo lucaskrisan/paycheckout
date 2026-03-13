@@ -92,11 +92,13 @@ export function useFacebookPixel(productId: string | undefined) {
   /** Log pixel event to database for real-time dashboard (non-blocking) */
   const logPixelEvent = useCallback((eventName: string, eventId?: string) => {
     if (!productId) return;
+    const name = customerRef.current?.name || null;
     supabase.from("pixel_events" as any).insert({
       product_id: productId,
       event_name: eventName,
       source: "browser",
       event_id: eventId || null,
+      customer_name: name,
     }).then(() => {});
   }, [productId]);
 

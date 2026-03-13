@@ -13,6 +13,7 @@ interface PixelEvent {
   event_name: string;
   source: string;
   created_at: string;
+  customer_name: string | null;
 }
 
 interface Props {
@@ -39,7 +40,7 @@ const PixelEventsDashboard = ({ products }: Props) => {
     const since = subHours(new Date(), hoursBack).toISOString();
     let query = supabase
       .from("pixel_events" as any)
-      .select("id, product_id, event_name, source, created_at")
+      .select("id, product_id, event_name, source, created_at, customer_name")
       .gte("created_at", since)
       .order("created_at", { ascending: false })
       .limit(1000);
@@ -294,9 +295,16 @@ const PixelEventsDashboard = ({ products }: Props) => {
                       {cfg?.label || e.event_name}
                     </span>
 
+                    {/* Customer name */}
+                    {e.customer_name && (
+                      <span className="text-[12px] text-slate-300 font-medium truncate max-w-[180px]">
+                        {e.customer_name.split(' ')[0]}
+                      </span>
+                    )}
+
                     {/* Product name */}
                     {productName && (
-                      <span className="text-[11px] text-slate-500 truncate max-w-[200px] hidden sm:inline">
+                      <span className="text-[11px] text-slate-500 truncate max-w-[160px] hidden sm:inline">
                         {productName}
                       </span>
                     )}
