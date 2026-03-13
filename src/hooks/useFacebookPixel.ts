@@ -347,10 +347,13 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     firedEventsRef.current.add("Lead");
 
     const eventId = generateEventId("Lead");
-    const customData = {
+    const customData: Record<string, unknown> = {
       content_type: "product",
       content_ids: productId ? [productId] : [],
+      currency: "BRL",
     };
+    if (productPriceRef.current) customData.value = productPriceRef.current;
+    if (productNameRef.current) customData.content_name = productNameRef.current;
 
     if (window.fbq) {
       window.fbq("track", "Lead", customData, { eventID: eventId });
