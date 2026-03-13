@@ -16,6 +16,17 @@ interface PixelEvent {
   created_at: string;
   customer_name: string | null;
   visitor_id: string | null;
+  event_id: string | null;
+}
+
+interface GroupedEvent {
+  event_id: string;
+  event_name: string;
+  product_id: string;
+  customer_name: string | null;
+  created_at: string;
+  sources: string[];
+  ids: string[];
 }
 
 interface Props {
