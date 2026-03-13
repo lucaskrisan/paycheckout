@@ -39,8 +39,14 @@ const SuperAdminDashboard = () => {
   }, [isSuperAdmin]);
 
   const loadData = async () => {
-    // Load profiles (producers)
-    const { data: profiles } = await supabase.from("profiles").select("*").order("created_at", { ascending: false });
+    // Load only admin/super_admin roles (actual producers)
+    const { data: adminRoles } = await supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin"]);
+    const adminUserIds = [...new Set((adminRoles || []).map((r: any) => r.user_id))];
+
+    // Load profiles only for producers
+    const { data: profiles } = adminUserIds.length > 0
+      ? await supabase.from("profiles").select("*").in("id", adminUserIds).order("created_at", { ascending: false })
+      : { data: [] };
 
     // Load all orders for stats
     const { data: orders } = await supabase.from("orders").select("user_id, amount, status");
