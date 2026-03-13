@@ -29,10 +29,10 @@ function getCookie(name: string): string | null {
   return match ? decodeURIComponent(match[1]) : null;
 }
 
-/** Set a first-party cookie */
+/** Set a first-party cookie — raw value, no encoding to preserve fbclid integrity */
 function setCookie(name: string, value: string, days: number) {
   const expires = new Date(Date.now() + days * 864e5).toUTCString();
-  document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires};path=/;SameSite=Lax`;
+  document.cookie = `${name}=${value};expires=${expires};path=/;SameSite=Lax`;
 }
 
 /** Get or create a persistent visitor ID for journey tracking.
