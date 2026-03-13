@@ -273,19 +273,21 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     firedEventsRef.current.add(dedup);
 
     const eventId = generateEventId("AddPaymentInfo");
+    const customData: Record<string, unknown> = {
+      content_type: "product",
+      content_ids: productId ? [productId] : [],
+      payment_method: paymentMethod,
+      currency: "BRL",
+    };
+    if (productPriceRef.current) customData.value = productPriceRef.current;
+    if (productNameRef.current) customData.content_name = productNameRef.current;
 
     if (window.fbq) {
-      window.fbq("track", "AddPaymentInfo", {
-        content_type: "product",
-        payment_method: paymentMethod,
-      }, { eventID: eventId });
+      window.fbq("track", "AddPaymentInfo", customData, { eventID: eventId });
     }
     logPixelEvent("AddPaymentInfo", eventId);
-    sendCAPI("AddPaymentInfo", eventId, {
-      content_type: "product",
-      payment_method: paymentMethod,
-    });
-  }, [logPixelEvent, sendCAPI]);
+    sendCAPI("AddPaymentInfo", eventId, customData);
+  }, [productId, logPixelEvent, sendCAPI]);
 
   /**
    * Track AddToCart event (Order Bump selected).
