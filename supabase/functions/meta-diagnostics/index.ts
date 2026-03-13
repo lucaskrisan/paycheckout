@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
     }
 
     // ========== Standard pixel diagnostics ==========
-    const { data: pixels } = await supabase
+    const { data: pixels } = await supabaseAdmin
       .from('product_pixels')
       .select('pixel_id, capi_token, domain')
       .eq('product_id', product_id)
