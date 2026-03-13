@@ -3,6 +3,7 @@ import { Navigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Loader2, CreditCard, GraduationCap, BarChart3, Zap, Shield, ArrowRight, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
+import InstallPrompt from "@/components/InstallPrompt";
 
 const Index = () => {
   const { user, isAdmin, loading } = useAuth();
@@ -20,6 +21,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <InstallPrompt />
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container max-w-6xl mx-auto flex items-center justify-between px-4 h-16">
