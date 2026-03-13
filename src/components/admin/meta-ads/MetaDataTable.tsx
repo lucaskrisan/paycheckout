@@ -204,6 +204,12 @@ export function MetaDataTable({
                     <TableCell className={`text-right font-semibold ${roas >= 1 ? "text-primary" : roas > 0 ? "text-destructive" : "text-muted-foreground"}`}>
                       {roas > 0 ? `${roas.toFixed(2)}x` : "—"}
                     </TableCell>
+                    <TableCell className="text-right font-semibold">
+                      {(() => { const cv = getConversionValue(ins); return cv > 0 ? formatCurrency(cv) : "—"; })()}
+                    </TableCell>
+                    <TableCell className={`text-right font-semibold ${(() => { const roi = getROI(ins); return roi > 0 ? "text-primary" : roi < 0 ? "text-destructive" : "text-muted-foreground"; })()}`}>
+                      {(() => { const roi = getROI(ins); return roi !== 0 ? `${roi.toFixed(1).replace(".", ",")}%` : "—"; })()}
+                    </TableCell>
                     <TableCell className="text-right">{formatCurrency(ins?.cpm || "0")}</TableCell>
                     <TableCell className="text-right">{formatPercent(ins?.ctr || "0")}</TableCell>
                     <TableCell className="text-right">{formatCurrency(ins?.cpc || "0")}</TableCell>
