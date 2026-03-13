@@ -51,15 +51,14 @@ export default function MetaAds() {
       if (!ins) return acc;
       acc.spend += parseFloat(ins.spend || "0");
       acc.results += getResults(ins);
-      acc.roas += getROAS(ins);
       acc.convValue += getConversionValue(ins);
-      acc.count++;
       return acc;
     },
-    { spend: 0, results: 0, roas: 0, convValue: 0, count: 0 }
+    { spend: 0, results: 0, convValue: 0 }
   );
 
-  const avgROAS = summary.count > 0 ? summary.roas / summary.count : 0;
+  // ROAS global = faturamento total / gasto total (não média dos ROAS individuais)
+  const globalROAS = summary.spend > 0 ? summary.convValue / summary.spend : 0;
   const selectedAccName = accounts.find((a) => a.id === selectedAccount)?.name || "";
 
   return (
