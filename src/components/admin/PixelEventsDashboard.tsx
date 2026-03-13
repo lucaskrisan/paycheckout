@@ -55,7 +55,7 @@ const PixelEventsDashboard = ({ products }: Props) => {
     const since = subHours(new Date(), hoursBack).toISOString();
     let query = supabase
       .from("pixel_events" as any)
-      .select("id, product_id, event_name, source, created_at, customer_name, visitor_id")
+      .select("id, product_id, event_name, source, created_at, customer_name, visitor_id, event_id")
       .gte("created_at", since)
       .order("created_at", { ascending: false })
       .limit(1000);
