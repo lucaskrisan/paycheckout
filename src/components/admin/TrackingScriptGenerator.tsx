@@ -1,13 +1,8 @@
 import { useState, useMemo } from "react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Code2, ClipboardCopy, CheckCircle2, Megaphone } from "lucide-react";
 import { toast } from "sonner";
@@ -40,15 +35,11 @@ export default function TrackingScriptGenerator({ pixels, products, checkoutBase
 
   const generatedScript = useMemo(() => {
     if (!selectedProduct || productPixels.length === 0) return "";
-
     const pixelInits = productPixels
       .map((p) => `    fbq('set','autoConfig',false,'${p.pixel_id}');\n    fbq('init','${p.pixel_id}');`)
       .join("\n");
-
     const domain = productPixels[0]?.domain || "";
-    const fbSrc = domain
-      ? `https://${domain}/en_US/fbevents.js`
-      : "https://connect.facebook.net/en_US/fbevents.js";
+    const fbSrc = domain ? `https://${domain}/en_US/fbevents.js` : "https://connect.facebook.net/en_US/fbevents.js";
 
     return `<!-- PayCheckout Tracking · ${selectedProductName} -->
 <script>
@@ -86,10 +77,8 @@ ${pixelInits}
   window.goToCheckout=function(configId){
     var base='${checkoutBaseUrl}/checkout/${selectedProduct}';
     var q=[];
-    // UTMs
     var saved=sessionStorage.getItem('pc_utms');
     if(saved){try{var u=JSON.parse(saved);for(var k in u)q.push(k+'='+encodeURIComponent(u[k]))}catch(e){}}
-    // fbclid / _fbp / _fbc
     var m=document.cookie.match(/(^|;\\s*)_fbc=([^;]*)/);
     if(m) q.push('fbc='+encodeURIComponent(m[2]));
     var m2=document.cookie.match(/(^|;\\s*)_fbp=([^;]*)/);
@@ -99,7 +88,7 @@ ${pixelInits}
     location.href=base+(q.length?'?'+q.join('&'):'');
   };
 
-  // === 4. Auto-patch links com href contendo "/checkout/${selectedProduct}" ===
+  // === 4. Auto-patch links ===
   document.addEventListener('DOMContentLoaded',function(){
     document.querySelectorAll('a[href*="/checkout/${selectedProduct}"]').forEach(function(a){
       a.addEventListener('click',function(e){
@@ -114,86 +103,67 @@ ${pixelInits}
 </script>`;
   }, [selectedProduct, productPixels, selectedProductName, checkoutBaseUrl]);
 
-  const copyScript = () => {
-    navigator.clipboard.writeText(generatedScript);
-    toast.success("Script copiado!");
-  };
-
-  const copyUtm = () => {
-    navigator.clipboard.writeText(UTM_TEMPLATE);
-    toast.success("Parâmetros UTM copiados!");
-  };
+  const copyScript = () => { navigator.clipboard.writeText(generatedScript); toast.success("Script copiado!"); };
+  const copyUtm = () => { navigator.clipboard.writeText(UTM_TEMPLATE); toast.success("Parâmetros UTM copiados!"); };
 
   return (
-    <div className="space-y-4">
-      {/* UTM Template for Meta Ads */}
-      <Card className="overflow-hidden">
-        <div className="px-5 py-4 border-b border-border bg-muted/30 flex items-center gap-3">
-          <Megaphone className="w-5 h-5 text-primary" />
+    <div className="space-y-3">
+      {/* UTM Template */}
+      <div className="rounded-lg bg-slate-800/50 border border-slate-700/30 overflow-hidden">
+        <div className="px-4 py-3 border-b border-slate-700/30 flex items-center gap-2.5">
+          <Megaphone className="w-4 h-4 text-amber-400" />
           <div>
-            <h2 className="font-semibold text-foreground text-sm">Parâmetros UTM para Meta Ads</h2>
-            <p className="text-xs text-muted-foreground">Cole no campo "Parâmetros de URL" do Gerenciador de Anúncios</p>
+            <h2 className="text-sm font-semibold text-slate-200">Parâmetros UTM para Meta Ads</h2>
+            <p className="text-[10px] text-slate-500">Cole no campo "Parâmetros de URL" do Gerenciador</p>
           </div>
         </div>
-        <div className="p-5 space-y-3">
+        <div className="p-4 space-y-3">
           <div className="relative">
-            <pre className="bg-muted/50 border border-border rounded-lg p-4 text-xs font-mono text-foreground overflow-x-auto whitespace-pre-wrap break-all">
+            <pre className="bg-slate-900/60 border border-slate-700/30 rounded-md p-3 text-[11px] font-mono text-slate-300 overflow-x-auto whitespace-pre-wrap break-all">
               {UTM_TEMPLATE}
             </pre>
-            <Button
-              size="sm"
-              variant="outline"
-              className="absolute top-2 right-2 gap-1.5 text-xs"
-              onClick={copyUtm}
-            >
-              <ClipboardCopy className="w-3.5 h-3.5" /> Copiar
+            <Button size="sm" variant="outline" className="absolute top-1.5 right-1.5 gap-1 text-[10px] h-6 bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700" onClick={copyUtm}>
+              <ClipboardCopy className="w-3 h-3" /> Copiar
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">
-            ✅ Captura automática: source, campaign (nome|id), medium (conjunto|id), content (anúncio|id) e placement.
+          <p className="text-[10px] text-slate-500">
+            ✅ Captura: source, campaign (nome|id), medium (conjunto|id), content (anúncio|id) e placement.
           </p>
         </div>
-      </Card>
+      </div>
 
       {/* Script Generator */}
-      <Card className="overflow-hidden">
-        <div className="px-5 py-4 border-b border-border bg-muted/30 flex items-center gap-3">
-          <Code2 className="w-5 h-5 text-primary" />
+      <div className="rounded-lg bg-slate-800/50 border border-slate-700/30 overflow-hidden">
+        <div className="px-4 py-3 border-b border-slate-700/30 flex items-center gap-2.5">
+          <Code2 className="w-4 h-4 text-cyan-400" />
           <div>
-            <h2 className="font-semibold text-foreground text-sm">Script de Integração</h2>
-            <p className="text-xs text-muted-foreground">Cole antes do &lt;/body&gt; na sua landing page</p>
+            <h2 className="text-sm font-semibold text-slate-200">Script de Integração</h2>
+            <p className="text-[10px] text-slate-500">Cole antes do &lt;/body&gt; na sua landing page</p>
           </div>
         </div>
-        <div className="p-5 space-y-4">
+        <div className="p-4 space-y-3">
           {products.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Nenhum pixel do Facebook configurado. Configure em Produtos → Editar → Configurações.
-            </p>
+            <p className="text-xs text-slate-500">Nenhum pixel Facebook configurado.</p>
           ) : (
             <>
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">Produto</label>
-                <Select value={selectedProduct} onValueChange={setSelectedProduct}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um produto" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {products.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <Select value={selectedProduct} onValueChange={setSelectedProduct}>
+                <SelectTrigger className="bg-slate-800/60 border-slate-700/50 text-slate-300 text-xs">
+                  <SelectValue placeholder="Selecione um produto" />
+                </SelectTrigger>
+                <SelectContent>
+                  {products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
 
               {productPixels.length > 0 && (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5">
                   {productPixels.map((px) => (
-                    <Badge key={px.pixel_id} variant="outline" className="text-xs bg-blue-500/10 text-blue-500 border-blue-500/20 gap-1">
-                      <CheckCircle2 className="w-3 h-3" /> {px.pixel_id}
+                    <Badge key={px.pixel_id} variant="outline" className="text-[10px] bg-blue-500/10 text-blue-400 border-blue-500/20 gap-1">
+                      <CheckCircle2 className="w-2.5 h-2.5" /> {px.pixel_id}
                     </Badge>
                   ))}
                   {productPixels[0]?.domain && (
-                    <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/20 gap-1">
+                    <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
                       🌐 {productPixels[0].domain}
                     </Badge>
                   )}
@@ -202,39 +172,32 @@ ${pixelInits}
 
               {generatedScript ? (
                 <div className="relative">
-                  <pre className="bg-muted/50 border border-border rounded-lg p-4 text-xs font-mono text-foreground overflow-x-auto max-h-[400px] overflow-y-auto whitespace-pre">
+                  <pre className="bg-slate-900/60 border border-slate-700/30 rounded-md p-3 text-[11px] font-mono text-slate-300 overflow-x-auto max-h-[350px] overflow-y-auto whitespace-pre">
                     {generatedScript}
                   </pre>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="absolute top-2 right-2 gap-1.5 text-xs"
-                    onClick={copyScript}
-                  >
-                    <ClipboardCopy className="w-3.5 h-3.5" /> Copiar script
+                  <Button size="sm" variant="outline" className="absolute top-1.5 right-1.5 gap-1 text-[10px] h-6 bg-slate-800 border-slate-600 text-slate-300 hover:bg-slate-700" onClick={copyScript}>
+                    <ClipboardCopy className="w-3 h-3" /> Copiar
                   </Button>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  Nenhum pixel Facebook encontrado para este produto.
-                </p>
+                <p className="text-xs text-slate-500 text-center py-4">Nenhum pixel Facebook neste produto.</p>
               )}
 
-              <div className="bg-muted/30 border border-border rounded-lg p-4 space-y-2">
-                <p className="text-xs font-semibold text-foreground">O que o script faz:</p>
-                <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
-                  <li>Carrega o Meta Pixel e inicializa todos os IDs do produto</li>
-                  <li>Dispara <strong>PageView</strong> + <strong>ViewContent</strong> (topo de funil)</li>
-                  <li>Captura UTMs da URL e salva na sessão</li>
-                  <li>Gera cookie <strong>_fbc</strong> a partir do fbclid (atribuição CAPI)</li>
-                  <li>Propaga UTMs, fbclid, _fbp e _fbc para o checkout via query params</li>
-                  <li>Patch automático de links apontando para o checkout deste produto</li>
+              <div className="bg-slate-900/40 border border-slate-700/20 rounded-md p-3 space-y-1.5">
+                <p className="text-[11px] font-medium text-slate-300">O que o script faz:</p>
+                <ul className="text-[10px] text-slate-500 space-y-0.5 list-disc list-inside">
+                  <li>Carrega o Meta Pixel e inicializa todos os IDs</li>
+                  <li>Dispara <span className="text-slate-400">PageView</span> + <span className="text-slate-400">ViewContent</span></li>
+                  <li>Captura UTMs e salva na sessão</li>
+                  <li>Gera cookie <span className="text-slate-400">_fbc</span> a partir do fbclid</li>
+                  <li>Propaga UTMs, fbclid, _fbp e _fbc ao checkout</li>
+                  <li>Patch automático de links para o checkout</li>
                 </ul>
               </div>
             </>
           )}
         </div>
-      </Card>
+      </div>
     </div>
   );
 }
