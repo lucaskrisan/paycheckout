@@ -74,8 +74,7 @@ export default function AdminLayout() {
       const [{ data: orders }, { data: settings }] = await Promise.all([
         supabase
           .from("orders")
-          .select("amount, status")
-          .eq("user_id", user.id),
+          .select("amount, status"),
         supabase
           .from("notification_settings")
           .select("notification_sound, send_approved")
@@ -106,7 +105,7 @@ export default function AdminLayout() {
           event: "*",
           schema: "public",
           table: "orders",
-          filter: `user_id=eq.${user.id}`,
+          filter: undefined,
         },
         (payload: any) => {
           const newStatus = String(payload?.new?.status || "").toLowerCase();
@@ -124,7 +123,6 @@ export default function AdminLayout() {
             supabase
               .from("orders")
               .select("amount, status")
-              .eq("user_id", user.id)
               .then(({ data }) => {
                 const revenue = (data || [])
                   .filter((o) => PAID_STATUSES.has(String(o.status).toLowerCase()))
