@@ -25,11 +25,6 @@ const Index = () => {
         <div className="container max-w-6xl mx-auto flex items-center justify-between px-4 h-16">
           <span className="font-display font-bold text-xl text-foreground">PayCheckout</span>
           <div className="flex items-center gap-3">
-            <a href="/manual-tecnico.html" target="_blank" rel="noreferrer">
-              <Button variant="outline" size="sm" className="gap-1.5">
-                <FileText className="w-4 h-4" /> Manual
-              </Button>
-            </a>
             <Link to="/login">
               <Button variant="ghost" size="sm">Entrar</Button>
             </Link>

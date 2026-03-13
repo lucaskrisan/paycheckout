@@ -47,7 +47,6 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/manual-tecnico" element={<ManualTecnico />} />
             <Route path="/checkout/sucesso" element={<CheckoutSuccess />} />
             <Route path="/checkout/:productId" element={<Checkout />} />
             <Route path="/membros" element={<MemberArea />} />
