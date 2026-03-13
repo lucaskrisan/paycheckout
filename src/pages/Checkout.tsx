@@ -193,9 +193,9 @@ const Checkout = () => {
         next.delete(bumpId);
       } else {
         next.add(bumpId);
-        // Fire AddToCart pixel event (front-end only, value zero)
+        // Fire AddToCart pixel event (browser + CAPI with value)
         const bump = orderBumps.find((b) => b.id === bumpId);
-        if (bump) trackAddToCart(bump.bump_product.id);
+        if (bump) trackAddToCart(bump.bump_product.id, bump.bump_product.price);
       }
       return next;
     });
