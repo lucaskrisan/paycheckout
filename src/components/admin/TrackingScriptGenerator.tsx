@@ -62,8 +62,8 @@ export default function TrackingScriptGenerator({ pixels, products, checkoutBase
 
 ${pixelInits}
 
-  fbq('track','PageView');
-  fbq('track','ViewContent',{content_type:'product',content_ids:['${selectedProduct}']});
+  fbq('track','PageView',{},{eventID:pvId});
+  fbq('track','ViewContent',{content_type:'product',content_ids:['${selectedProduct}']},{eventID:vcId});
 
   // === Ensure _fbp cookie exists (fallback if pixel blocked by adblock) ===
   var fbpCk=(document.cookie.match(/(^|;\\s*)_fbp=([^;]*)/)||[])[2];
