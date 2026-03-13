@@ -290,8 +290,31 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
   }, [productId, logPixelEvent, sendCAPI]);
 
   /**
+   * Track AddToCart for the main product (fired on buy click).
+   */
+  const trackAddToCartMain = useCallback(() => {
+    const dedupKey = "AddToCart_main";
+    if (firedEventsRef.current.has(dedupKey)) return;
+    firedEventsRef.current.add(dedupKey);
+
+    const eventId = generateEventId("AddToCart");
+    const customData: Record<string, unknown> = {
+      content_type: "product",
+      content_ids: productId ? [productId] : [],
+      currency: "BRL",
+    };
+    if (productPriceRef.current) customData.value = productPriceRef.current;
+    if (productNameRef.current) customData.content_name = productNameRef.current;
+
+    if (window.fbq) {
+      window.fbq("track", "AddToCart", customData, { eventID: eventId });
+    }
+    logPixelEvent("AddToCart", eventId);
+    sendCAPI("AddToCart", eventId, customData);
+  }, [productId, logPixelEvent, sendCAPI]);
+
+  /**
    * Track AddToCart event (Order Bump selected).
-   * Front-end only — value zero to avoid CPA inflation.
    */
   const trackAddToCart = useCallback((bumpProductId: string, bumpPrice?: number) => {
     const dedupKey = `AddToCart_${bumpProductId}`;
