@@ -262,7 +262,15 @@ export function MetaDataTable({
                 <TableCell className="text-right">
                   {totals.results > 0 ? formatCurrency(totals.spend / totals.results) : "—"}
                 </TableCell>
-                <TableCell />
+                <TableCell className="text-right">
+                  {totals.conversionValue > 0 && totals.spend > 0 ? `${(totals.conversionValue / totals.spend).toFixed(2)}x` : "—"}
+                </TableCell>
+                <TableCell className="text-right font-semibold">
+                  {totals.conversionValue > 0 ? formatCurrency(totals.conversionValue) : "—"}
+                </TableCell>
+                <TableCell className={`text-right font-semibold ${totals.conversionValue > totals.spend ? "text-primary" : totals.conversionValue > 0 ? "text-destructive" : ""}`}>
+                  {totals.spend > 0 && totals.conversionValue > 0 ? `${(((totals.conversionValue - totals.spend) / totals.spend) * 100).toFixed(1).replace(".", ",")}%` : "—"}
+                </TableCell>
                 <TableCell className="text-right">
                   {totals.impressions > 0 ? formatCurrency((totals.spend / totals.impressions) * 1000) : "—"}
                 </TableCell>
