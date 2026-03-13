@@ -47,14 +47,18 @@ export default function MetaAds() {
       acc.impressions += parseInt(ins.impressions || "0", 10);
       acc.results += getResults(ins);
       acc.roas += getROAS(ins);
+      acc.conversionValue += getConversionValue(ins);
       acc.count++;
       return acc;
     },
-    { spend: 0, impressions: 0, results: 0, roas: 0, count: 0 }
+    { spend: 0, impressions: 0, results: 0, roas: 0, conversionValue: 0, count: 0 }
   );
 
   const avgCPA = summary.results > 0 ? summary.spend / summary.results : 0;
   const avgROAS = summary.count > 0 ? summary.roas / summary.count : 0;
+  const totalROI = summary.spend > 0 && summary.conversionValue > 0
+    ? ((summary.conversionValue - summary.spend) / summary.spend) * 100
+    : 0;
 
   return (
     <div className="space-y-4">
