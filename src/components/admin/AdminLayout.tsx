@@ -7,7 +7,7 @@ import { Loader2, User, Eye, Bell, LogOut, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import HeaderGamification from "./HeaderGamification";
 import { playNotificationSound } from "@/lib/notificationSounds";
-import {
+import { toast } from "sonner";
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
