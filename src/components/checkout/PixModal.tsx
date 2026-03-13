@@ -23,7 +23,7 @@ const PixModal = ({ open, onClose, totalAmount, qrCodeUrl, pixCode, externalOrde
   const confirmedCallbackFiredRef = useRef(false);
 
   useEffect(() => {
-    if (!open) { setPaymentConfirmed(false); return; }
+    if (!open) { setPaymentConfirmed(false); confirmedCallbackFiredRef.current = false; return; }
     setTimeLeft(1800);
     const interval = setInterval(() => {
       setTimeLeft((prev) => (prev <= 0 ? 0 : prev - 1));
