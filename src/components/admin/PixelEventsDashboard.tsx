@@ -15,6 +15,7 @@ interface PixelEvent {
   source: string;
   created_at: string;
   customer_name: string | null;
+  visitor_id: string | null;
 }
 
 interface Props {
@@ -42,7 +43,7 @@ const PixelEventsDashboard = ({ products }: Props) => {
     const since = subHours(new Date(), hoursBack).toISOString();
     let query = supabase
       .from("pixel_events" as any)
-      .select("id, product_id, event_name, source, created_at, customer_name")
+      .select("id, product_id, event_name, source, created_at, customer_name, visitor_id")
       .gte("created_at", since)
       .order("created_at", { ascending: false })
       .limit(1000);

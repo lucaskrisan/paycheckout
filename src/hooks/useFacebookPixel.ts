@@ -35,6 +35,17 @@ function setCookie(name: string, value: string, days: number) {
   document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires};path=/;SameSite=Lax`;
 }
 
+/** Get or create a persistent visitor ID for journey tracking */
+function getVisitorId(): string {
+  const key = "_vid";
+  let vid = getCookie(key);
+  if (!vid) {
+    vid = `v_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+    setCookie(key, vid, 390); // ~13 months
+  }
+  return vid;
+}
+
 /**
  * Capture fbclid / fbp from URL params (cross-domain propagation).
  * If fbclid is present in the URL, generate _fbc cookie.
@@ -74,6 +85,7 @@ export function useFacebookPixel(productId: string | undefined) {
   /** Send event to CAPI edge function (server-side, non-blocking) */
   const sendCAPI = useCallback((eventName: string, eventId: string, customData?: Record<string, unknown>) => {
     if (!productId) return;
+    const visitorId = getVisitorId();
 
     supabase.functions.invoke("facebook-capi", {
       body: {
@@ -85,6 +97,7 @@ export function useFacebookPixel(productId: string | undefined) {
         custom_data: customData,
         fbc: getCookie("_fbc") || null,
         fbp: getCookie("_fbp") || null,
+        visitor_id: visitorId,
       },
     }).catch((err) => console.warn("[CAPI] non-blocking error:", err));
   }, [productId]);
@@ -93,12 +106,14 @@ export function useFacebookPixel(productId: string | undefined) {
   const logPixelEvent = useCallback((eventName: string, eventId?: string) => {
     if (!productId) return;
     const name = customerRef.current?.name || null;
+    const visitorId = getVisitorId();
     supabase.from("pixel_events" as any).insert({
       product_id: productId,
       event_name: eventName,
       source: "browser",
       event_id: eventId || null,
       customer_name: name,
+      visitor_id: visitorId,
     }).then(() => {});
   }, [productId]);
 
