@@ -3,22 +3,10 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from "@/hooks/useAuth";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
-import { Lock, Mail, Eye, EyeOff, User, ArrowLeft, ArrowRight, ShoppingBag, Megaphone } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-
-type OnboardingStep = "credentials" | "account_type" | "revenue";
-
-const REVENUE_OPTIONS = [
-  "Ainda não faturei",
-  "Até R$50 mil",
-  "De R$50 mil a R$500 mil",
-  "De R$500 mil a R$1 milhão",
-  "Mais de R$1 milhão",
-];
+import { Lock, Mail, Eye, EyeOff, User } from "lucide-react";
 
 const Login = () => {
   const [searchParams] = useSearchParams();
@@ -29,13 +17,8 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { signIn, user, isAdmin, loading: authLoading } = useAuth();
+  const { signIn, signUp, user, isAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-
-  // Onboarding state
-  const [step, setStep] = useState<OnboardingStep>("credentials");
-  const [accountType, setAccountType] = useState<"producer" | "buyer">("producer");
-  const [revenueRange, setRevenueRange] = useState("");
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -43,125 +26,22 @@ const Login = () => {
     }
   }, [user, isAdmin, authLoading, navigate]);
 
-  const handleCredentialsNext = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!fullName.trim() || !email.trim() || password.length < 6) {
-      toast.error("Preencha todos os campos (senha mínima: 6 caracteres)");
-      return;
-    }
-    setStep("account_type");
-  };
-
-  const handleAccountTypeNext = () => {
-    if (accountType === "producer") {
-      setStep("revenue");
-    } else {
-      doSignUp();
-    }
-  };
-
-  const doSignUp = async () => {
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-            account_type: accountType,
-            revenue_range: accountType === "producer" ? revenueRange : null,
-          },
-          emailRedirectTo: window.location.origin,
-        },
-      });
-      if (error) throw error;
-      // Auto-confirm is on, sign in immediately
-      await signIn(email, password);
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao criar conta");
-      setLoading(false);
-    }
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await signIn(email, password);
+      if (isSignUp) {
+        await signUp(email, password, fullName);
+        await signIn(email, password);
+      } else {
+        await signIn(email, password);
+      }
     } catch (err: any) {
       toast.error(err.message || "Erro na autenticação");
       setLoading(false);
     }
   };
 
-  // ---- SIGNUP STEP VIEWS ----
-
-  if (isSignUp && step === "account_type") {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="w-full max-w-lg">
-          <div className="text-center mb-8">
-            <h1 className="font-display text-2xl font-bold text-foreground">Qual é o seu tipo de cadastro?</h1>
-          </div>
-          <div className="bg-card border border-border rounded-2xl p-6 space-y-4 shadow-sm">
-            <RadioGroup value={accountType} onValueChange={(v) => setAccountType(v as any)} className="space-y-3">
-              <label className="flex items-center gap-3 p-4 rounded-xl border border-border hover:border-primary/50 cursor-pointer transition-colors has-[data-state=checked]:border-primary has-[data-state=checked]:bg-primary/5">
-                <RadioGroupItem value="producer" />
-                <Megaphone className="w-5 h-5 text-primary shrink-0" />
-                <span className="text-sm font-medium">Quero vender produtos digitais. Sou um infoprodutor, co-produtor ou afiliado.</span>
-              </label>
-              <label className="flex items-center gap-3 p-4 rounded-xl border border-border hover:border-primary/50 cursor-pointer transition-colors has-[data-state=checked]:border-primary has-[data-state=checked]:bg-primary/5">
-                <RadioGroupItem value="buyer" />
-                <ShoppingBag className="w-5 h-5 text-muted-foreground shrink-0" />
-                <span className="text-sm font-medium">Preciso de ajuda com um produto que comprei pela plataforma.</span>
-              </label>
-            </RadioGroup>
-            <div className="flex items-center justify-between pt-2">
-              <Button variant="outline" onClick={() => setStep("credentials")} className="gap-2">
-                <ArrowLeft className="w-4 h-4" /> Voltar
-              </Button>
-              <Button onClick={handleAccountTypeNext} className="gap-2" disabled={loading}>
-                Continuar <ArrowRight className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (isSignUp && step === "revenue") {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="w-full max-w-lg">
-          <div className="text-center mb-8">
-            <h1 className="font-display text-2xl font-bold text-foreground">Quanto você faturou com infoprodutos nos últimos 12 meses?</h1>
-          </div>
-          <div className="bg-card border border-border rounded-2xl p-6 space-y-4 shadow-sm">
-            <RadioGroup value={revenueRange} onValueChange={setRevenueRange} className="space-y-2">
-              {REVENUE_OPTIONS.map((opt) => (
-                <label key={opt} className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary/50 cursor-pointer transition-colors has-[data-state=checked]:border-primary has-[data-state=checked]:bg-primary/5">
-                  <RadioGroupItem value={opt} />
-                  <span className="text-sm">{opt}</span>
-                </label>
-              ))}
-            </RadioGroup>
-            <div className="flex items-center justify-between pt-2">
-              <Button variant="outline" onClick={() => setStep("account_type")} className="gap-2">
-                <ArrowLeft className="w-4 h-4" /> Voltar
-              </Button>
-              <Button onClick={doSignUp} className="gap-2" disabled={loading || !revenueRange}>
-                {loading ? "Criando conta..." : "Criar conta"} <ArrowRight className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ---- CREDENTIALS / LOGIN ----
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
@@ -175,7 +55,7 @@ const Login = () => {
           </p>
         </div>
 
-        <form onSubmit={isSignUp ? handleCredentialsNext : handleLogin} className="bg-card border border-border rounded-2xl p-6 space-y-4 shadow-sm">
+        <form onSubmit={handleSubmit} className="bg-card border border-border rounded-2xl p-6 space-y-4 shadow-sm">
           {isSignUp && (
             <div className="space-y-1.5">
               <Label htmlFor="name">Nome completo</Label>
@@ -206,7 +86,7 @@ const Login = () => {
           </div>
 
           <Button type="submit" className="w-full h-11 font-display font-bold" disabled={loading}>
-            {loading ? "Aguarde..." : isSignUp ? "Continuar" : "Entrar"}
+            {loading ? "Aguarde..." : isSignUp ? "Criar conta" : "Entrar"}
           </Button>
 
           <div className="relative flex items-center gap-2 py-2">
@@ -242,7 +122,7 @@ const Login = () => {
 
           <button
             type="button"
-            onClick={() => { setIsSignUp(!isSignUp); setStep("credentials"); }}
+            onClick={() => setIsSignUp(!isSignUp)}
             className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             {isSignUp ? "Já tem conta? Fazer login" : "Criar nova conta"}
