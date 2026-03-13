@@ -58,8 +58,10 @@ function useOneSignalInit(email: string | undefined) {
   }, [email]);
 }
 
+  const navigate = useNavigate();
+
 export default function AdminLayout() {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, isAdmin, loading, signOut } = useAuth();
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [notificationSound, setNotificationSound] = useState("kaching");
   const [playApprovedSaleSound, setPlayApprovedSaleSound] = useState(true);
