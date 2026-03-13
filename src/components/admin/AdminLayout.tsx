@@ -209,6 +209,13 @@ export default function AdminLayout() {
           {/* Green top bar with gamification — Kiwify style */}
           <div className="h-10 bg-primary flex items-center justify-between px-4">
             <HeaderGamification totalRevenue={totalRevenue} />
+            <button
+              onClick={toggleTheme}
+              className="w-7 h-7 rounded-full bg-primary-foreground/20 flex items-center justify-center text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+              title={isDark ? "Modo claro" : "Modo escuro"}
+            >
+              {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+            </button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 text-primary-foreground/90 hover:text-primary-foreground text-sm font-medium transition-colors">
