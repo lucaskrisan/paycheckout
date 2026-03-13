@@ -13,6 +13,7 @@ interface PixelEvent {
   event_name: string;
   source: string;
   created_at: string;
+  customer_name: string | null;
 }
 
 interface Props {
