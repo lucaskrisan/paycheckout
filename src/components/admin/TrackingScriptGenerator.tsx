@@ -47,6 +47,10 @@ export default function TrackingScriptGenerator({ pixels, products, checkoutBase
     return `<!-- PayCheckout Tracking · ${selectedProductName} -->
 <script>
 (function(){
+  // === Guard anti-loop: só executa 1x por sessão ===
+  if(window.__pcTrackingFired) return;
+  window.__pcTrackingFired = true;
+
   // === 1. Meta Pixel ===
   !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){
   n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};
