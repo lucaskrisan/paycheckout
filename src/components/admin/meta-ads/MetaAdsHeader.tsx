@@ -33,12 +33,12 @@ export function MetaAdsHeader({
     <div className="flex flex-wrap items-center gap-3">
       {/* Account selector */}
       <Select value={selectedAccount} onValueChange={onSelectAccount}>
-        <SelectTrigger className="w-[260px] bg-card border-border">
+        <SelectTrigger className="w-[260px] bg-[hsl(222,25%,16%)] border-slate-700/50 text-slate-200">
           <SelectValue placeholder="Selecione a conta" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="bg-[hsl(222,25%,16%)] border-slate-700/50">
           {accounts.map((acc) => (
-            <SelectItem key={acc.id} value={acc.id}>
+            <SelectItem key={acc.id} value={acc.id} className="text-slate-200 focus:bg-slate-700/50 focus:text-slate-100">
               {acc.name || acc.account_id} ({acc.currency})
             </SelectItem>
           ))}
