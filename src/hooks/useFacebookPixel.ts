@@ -354,9 +354,8 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     if (window.fbq) {
       window.fbq("track", "Purchase", customData, { eventID: eventId });
     }
-    logPixelEvent("Purchase", eventId);
     sendCAPI("Purchase", eventId, customData);
-  }, [productId, sendCAPI, logPixelEvent]);
+  }, [productId, sendCAPI]);
 
   /**
    * Track custom lead/contact event (e.g., after form fill).
