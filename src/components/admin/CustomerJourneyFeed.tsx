@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
-import { Eye, ShoppingCart, UserCheck, CreditCard, MousePointerClick, TrendingUp, Zap, Clock, CheckCircle2, Loader2 } from "lucide-react";
+import { Eye, ShoppingCart, UserCheck, CreditCard, MousePointerClick, TrendingUp, Zap, CheckCircle2, Loader2 } from "lucide-react";
 
 interface PixelEvent {
   id: string;
