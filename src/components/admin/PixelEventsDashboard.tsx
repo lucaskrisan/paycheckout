@@ -306,16 +306,19 @@ const PixelEventsDashboard = ({ products }: Props) => {
               </button>
             </div>
             <span className="text-[10px] font-mono text-slate-500 bg-slate-800/60 px-2 py-0.5 rounded-full">
-              {recentEvents.length} eventos
+              {groupedEvents.length} sinais
             </span>
           </div>
           {feedView === "feed" && (
             <div className="flex items-center gap-3 text-[10px] text-slate-500">
               <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-sm bg-cyan-500/60" /> Browser
+                <span className="w-2 h-2 rounded-sm bg-cyan-500/60" /> Pixel
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-sm bg-violet-500/60" /> Server
+                <span className="w-2 h-2 rounded-sm bg-violet-500/60" /> CAPI
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-sm bg-emerald-500/60" /> Ambos
               </span>
             </div>
           )}
@@ -325,7 +328,7 @@ const PixelEventsDashboard = ({ products }: Props) => {
         <div className="overflow-y-auto max-h-[420px] min-h-[280px]">
           {feedView === "journeys" ? (
             <CustomerJourneyFeed events={events} products={products} />
-          ) : recentEvents.length === 0 ? (
+          ) : groupedEvents.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
               <motion.div
                 animate={{ opacity: [0.3, 0.7, 0.3] }}
@@ -338,14 +341,16 @@ const PixelEventsDashboard = ({ products }: Props) => {
             </div>
           ) : (
             <AnimatePresence mode="popLayout">
-              {recentEvents.map((e, index) => {
-                const cfg = EVENT_CONFIG[e.event_name];
+              {groupedEvents.map((g, index) => {
+                const cfg = EVENT_CONFIG[g.event_name];
                 const Icon = cfg?.icon || Zap;
-                const isServer = e.source === "server";
-                const productName = products.find(p => p.id === e.product_id)?.name;
+                const hasBrowser = g.sources.includes("browser");
+                const hasServer = g.sources.includes("server");
+                const isDual = hasBrowser && hasServer;
+                const productName = products.find(p => p.id === g.product_id)?.name;
                 return (
                   <motion.div
-                    key={e.id}
+                    key={g.event_id}
                     initial={{ opacity: 0, y: -8, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.96 }}
@@ -358,7 +363,7 @@ const PixelEventsDashboard = ({ products }: Props) => {
                     `}
                   >
                     <span className="text-[11px] font-mono text-slate-500 tabular-nums w-[58px] shrink-0">
-                      {format(new Date(e.created_at), "HH:mm:ss")}
+                      {format(new Date(g.created_at), "HH:mm:ss")}
                     </span>
                     <div className="relative flex items-center justify-center w-7 h-7 shrink-0">
                       <div
@@ -368,14 +373,14 @@ const PixelEventsDashboard = ({ products }: Props) => {
                       <Icon className="w-3.5 h-3.5 relative z-10" style={{ color: cfg?.color || "#94a3b8" }} />
                     </div>
                     <span
-                      className="text-[13px] font-semibold min-w-[120px] shrink-0"
+                      className="text-[13px] font-semibold min-w-[110px] shrink-0"
                       style={{ color: cfg?.color || "#94a3b8" }}
                     >
-                      {cfg?.label || e.event_name}
+                      {cfg?.label || g.event_name}
                     </span>
-                    {e.customer_name && (
+                    {g.customer_name && (
                       <span className="text-[12px] text-slate-300 font-medium truncate max-w-[180px]">
-                        {e.customer_name.split(' ')[0]}
+                        {g.customer_name.split(' ')[0]}
                       </span>
                     )}
                     {productName && (
@@ -384,17 +389,26 @@ const PixelEventsDashboard = ({ products }: Props) => {
                       </span>
                     )}
                     <span className="flex-1" />
-                    <span
-                      className={`
-                        text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full shrink-0
-                        ${isServer
-                          ? "bg-violet-500/15 text-violet-400 border border-violet-500/20"
-                          : "bg-cyan-500/15 text-cyan-400 border border-cyan-500/20"
-                        }
-                      `}
-                    >
-                      {isServer ? "CAPI" : "PIXEL"}
-                    </span>
+                    {/* Source badges — grouped */}
+                    {isDual ? (
+                      <span className="flex items-center gap-1 text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full shrink-0 bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-violet-400" />
+                        DUAL ✓
+                      </span>
+                    ) : (
+                      <span
+                        className={`
+                          text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full shrink-0
+                          ${hasServer
+                            ? "bg-violet-500/15 text-violet-400 border border-violet-500/20"
+                            : "bg-cyan-500/15 text-cyan-400 border border-cyan-500/20"
+                          }
+                        `}
+                      >
+                        {hasServer ? "CAPI" : "PIXEL"}
+                      </span>
+                    )}
                   </motion.div>
                 );
               })}
