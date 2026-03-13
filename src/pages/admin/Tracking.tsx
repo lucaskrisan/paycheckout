@@ -312,74 +312,57 @@ const Tracking = () => {
     : null;
 
   return (
-    <div className="space-y-6">
-      {/* ===== NASA-STYLE HEADER ===== */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-700/50 p-6">
-        <div className="absolute inset-0 opacity-[0.04]" style={{
-          backgroundImage: `radial-gradient(circle at 20% 50%, rgba(34,211,238,0.15) 0%, transparent 50%), radial-gradient(circle at 80% 50%, rgba(99,102,241,0.1) 0%, transparent 50%)`,
-        }} />
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-1">
-            <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
-              <Activity className="w-5 h-5 text-cyan-400" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white tracking-tight">Rastreamento</h1>
-              <p className="text-xs text-slate-400 font-mono uppercase tracking-widest">
-                Pixels · Conversions API · Diagnóstico Meta
-              </p>
-            </div>
-          </div>
+    <div className="space-y-5 -m-6 p-6 min-h-screen bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950">
+      {/* ── Header ── */}
+      <div className="flex items-center gap-3">
+        <Activity className="w-5 h-5 text-cyan-400" />
+        <div>
+          <h1 className="text-xl font-bold text-white">Rastreamento</h1>
+          <p className="text-[11px] text-slate-500">Pixels · Conversions API · Diagnóstico</p>
         </div>
       </div>
 
-      {/* Stats — NASA telemetry cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* ── Stats ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
-          { icon: Code2, label: "Pixels configurados", value: totalPixels, color: "#22d3ee" },
-          { icon: Zap, label: "Com CAPI ativo", value: capiEnabled, color: "#a78bfa" },
-          { icon: Globe, label: "Domínios verificados", value: domains.length, color: "#34d399" },
+          { icon: Code2, label: "Pixels", value: totalPixels, color: "#22d3ee" },
+          { icon: Zap, label: "CAPI ativo", value: capiEnabled, color: "#a78bfa" },
+          { icon: Globe, label: "Domínios", value: domains.length, color: "#34d399" },
         ].map((card, i) => (
-          <div key={i} className="relative overflow-hidden rounded-xl bg-slate-900/90 border border-slate-700/40 p-4 flex items-center gap-3">
-            <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ backgroundColor: card.color }} />
-            <div className="p-2 rounded-lg" style={{ backgroundColor: `${card.color}15` }}>
-              <card.icon className="w-5 h-5" style={{ color: card.color }} />
+          <div key={i} className="rounded-lg bg-slate-800/50 border border-slate-700/30 p-4 flex items-center gap-3">
+            <div className="p-2 rounded-md" style={{ backgroundColor: `${card.color}12` }}>
+              <card.icon className="w-4 h-4" style={{ color: card.color }} />
             </div>
             <div>
-              <p className="text-2xl font-bold text-white font-mono tabular-nums">{card.value}</p>
-              <p className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">{card.label}</p>
+              <p className="text-xl font-bold text-slate-100 font-mono tabular-nums">{card.value}</p>
+              <p className="text-[10px] text-slate-500 font-medium">{card.label}</p>
             </div>
           </div>
         ))}
       </div>
 
-      {/* ========= REAL-TIME EVENTS DASHBOARD ========= */}
+      {/* ── Real-time Events ── */}
       <PixelEventsDashboard products={products} />
 
-      {/* ========= DIAGNOSTICS ========= */}
-      <div className="relative overflow-hidden rounded-xl bg-slate-900/90 border border-slate-700/40">
-        <div className="px-5 py-4 border-b border-slate-700/50 flex items-center gap-3">
-          <div className="p-1.5 rounded-md bg-cyan-500/10 border border-cyan-500/20">
-            <Activity className="w-4 h-4 text-cyan-400" />
-          </div>
+      {/* ── Diagnostics ── */}
+      <div className="rounded-lg bg-slate-800/50 border border-slate-700/30 overflow-hidden">
+        <div className="px-4 py-3 border-b border-slate-700/30 flex items-center gap-2.5">
+          <Activity className="w-4 h-4 text-cyan-400" />
           <div>
-            <h2 className="font-semibold text-white text-sm">Diagnóstico do Meta</h2>
-            <p className="text-[10px] text-slate-500 font-mono uppercase tracking-wider">Pixel ID · Domínio · CAPI · Graph API</p>
+            <h2 className="text-sm font-semibold text-slate-200">Diagnóstico do Meta</h2>
+            <p className="text-[10px] text-slate-500">Pixel ID · Domínio · CAPI · Graph API</p>
           </div>
         </div>
-
-        <div className="p-5 space-y-4">
+        <div className="p-4 space-y-3">
           {products.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Nenhum pixel do Facebook configurado. Configure em Produtos → Editar → Configurações.
-            </p>
+            <p className="text-xs text-slate-500">Nenhum pixel Facebook configurado.</p>
           ) : (
             <>
               <div className="flex items-end gap-3">
-                <div className="flex-1 space-y-1.5">
-                  <label className="text-sm font-medium text-foreground">Produto</label>
+                <div className="flex-1 space-y-1">
+                  <label className="text-xs font-medium text-slate-400">Produto</label>
                   <Select value={selectedProduct} onValueChange={setSelectedProduct}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-slate-800/60 border-slate-700/50 text-slate-300 text-xs">
                       <SelectValue placeholder="Selecione um produto" />
                     </SelectTrigger>
                     <SelectContent>
@@ -389,230 +372,197 @@ const Tracking = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <Button onClick={runDiagnostics} disabled={diagLoading} className="gap-2">
-                  {diagLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : diagResults ? (
-                    <RefreshCw className="w-4 h-4" />
-                  ) : (
-                    <Play className="w-4 h-4" />
-                  )}
-                  {diagLoading ? "Analisando..." : diagResults ? "Rodar novamente" : "Executar diagnóstico"}
+                <Button onClick={runDiagnostics} disabled={diagLoading} size="sm" className="gap-1.5 text-xs">
+                  {diagLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : diagResults ? <RefreshCw className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                  {diagLoading ? "Analisando..." : diagResults ? "Rodar novamente" : "Executar"}
                 </Button>
               </div>
 
-              {/* Health Score */}
               {diagSummary && healthScore !== null && (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-foreground">Saúde do rastreamento</span>
-                    <span className={`text-2xl font-bold ${
-                      healthScore === 100 ? "text-primary" :
-                      healthScore >= 70 ? "text-yellow-500" : "text-destructive"
-                    }`}>
-                      {healthScore}%
-                    </span>
+                    <span className="text-xs font-medium text-slate-400">Saúde do rastreamento</span>
+                    <span className={`text-xl font-bold font-mono tabular-nums ${
+                      healthScore === 100 ? "text-emerald-400" :
+                      healthScore >= 70 ? "text-amber-400" : "text-red-400"
+                    }`}>{healthScore}%</span>
                   </div>
-                  <Progress
-                    value={healthScore}
-                    className="h-3"
-                  />
-                  <div className="flex gap-4 text-xs">
-                    <span className="flex items-center gap-1 text-primary">
-                      <CheckCircle2 className="w-3 h-3" /> {diagSummary.passed} OK
+                  <div className="h-2 rounded-full bg-slate-700/50 overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{
+                        width: `${healthScore}%`,
+                        backgroundColor: healthScore === 100 ? "#34d399" : healthScore >= 70 ? "#fbbf24" : "#f87171"
+                      }}
+                    />
+                  </div>
+                  <div className="flex gap-4 text-[10px]">
+                    <span className="flex items-center gap-1 text-emerald-400">
+                      <CheckCircle2 className="w-2.5 h-2.5" /> {diagSummary.passed} OK
                     </span>
-                    <span className="flex items-center gap-1 text-yellow-500">
-                      <AlertTriangle className="w-3 h-3" /> {diagSummary.warnings} Avisos
+                    <span className="flex items-center gap-1 text-amber-400">
+                      <AlertTriangle className="w-2.5 h-2.5" /> {diagSummary.warnings} Avisos
                     </span>
-                    <span className="flex items-center gap-1 text-destructive">
-                      <XCircle className="w-3 h-3" /> {diagSummary.errors} Erros
+                    <span className="flex items-center gap-1 text-red-400">
+                      <XCircle className="w-2.5 h-2.5" /> {diagSummary.errors} Erros
                     </span>
                   </div>
                 </div>
               )}
 
-              {/* Results */}
               {diagResults && diagResults.map((result) => (
-                <Card key={result.pixel_id} className="overflow-hidden border-border">
-                  <div className="px-4 py-2.5 border-b border-border bg-muted/20 flex items-center gap-2">
-                    <Code2 className="w-4 h-4 text-muted-foreground" />
-                    <span className="font-mono text-sm font-medium text-foreground">{result.pixel_id}</span>
+                <div key={result.pixel_id} className="rounded-md bg-slate-900/50 border border-slate-700/20 overflow-hidden">
+                  <div className="px-3 py-2 border-b border-slate-700/20 flex items-center gap-2">
+                    <Code2 className="w-3.5 h-3.5 text-slate-500" />
+                    <span className="font-mono text-xs font-medium text-slate-300">{result.pixel_id}</span>
                   </div>
-                  <div className="divide-y divide-border">
+                  <div className="divide-y divide-slate-700/15">
                     {result.checks.map((check, i) => (
-                      <div key={i} className="px-4 py-3 flex items-start gap-3">
+                      <div key={i} className="px-3 py-2.5 flex items-start gap-2.5">
                         {statusIcon(check.status)}
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-foreground">{check.name}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">{check.detail}</p>
+                          <p className="text-xs font-medium text-slate-300">{check.name}</p>
+                          <p className="text-[10px] text-slate-500 mt-0.5">{check.detail}</p>
                         </div>
                       </div>
                     ))}
                   </div>
-                </Card>
+                </div>
               ))}
 
               {diagResults && diagResults.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  Nenhum pixel do Facebook encontrado para este produto.
-                </p>
+                <p className="text-xs text-slate-500 text-center py-4">Nenhum pixel Facebook neste produto.</p>
               )}
             </>
           )}
         </div>
       </div>
 
-      {/* ========= PAGE VERIFICATION ========= */}
-      <div className="relative overflow-hidden rounded-xl bg-slate-900/90 border border-slate-700/40">
-        <div className="px-5 py-4 border-b border-slate-700/50 flex items-center gap-3">
-          <div className="p-1.5 rounded-md bg-violet-500/10 border border-violet-500/20">
-            <FileCode className="w-4 h-4 text-violet-400" />
-          </div>
+      {/* ── Page Verification ── */}
+      <div className="rounded-lg bg-slate-800/50 border border-slate-700/30 overflow-hidden">
+        <div className="px-4 py-3 border-b border-slate-700/30 flex items-center gap-2.5">
+          <FileCode className="w-4 h-4 text-violet-400" />
           <div>
-            <h2 className="font-semibold text-white text-sm">Verificação de Página Externa</h2>
-            <p className="text-[10px] text-slate-500 font-mono uppercase tracking-wider">Audite o tracking da sua landing page</p>
+            <h2 className="text-sm font-semibold text-slate-200">Verificação de Página Externa</h2>
+            <p className="text-[10px] text-slate-500">Audite o tracking da sua landing page</p>
           </div>
         </div>
-        <div className="p-5 space-y-4">
+        <div className="p-4 space-y-3">
           <div className="flex items-end gap-3">
-            <div className="flex-1 space-y-1.5">
-              <label className="text-sm font-medium text-foreground">URL da página</label>
+            <div className="flex-1 space-y-1">
+              <label className="text-xs font-medium text-slate-400">URL da página</label>
               <div className="relative">
-                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
                 <Input
                   value={pageUrl}
                   onChange={(e) => setPageUrl(e.target.value)}
                   placeholder="https://suapagina.com"
-                  className="pl-9"
+                  className="pl-9 bg-slate-800/60 border-slate-700/50 text-slate-300 text-xs placeholder:text-slate-600"
                 />
               </div>
             </div>
-            <Button onClick={verifyPage} disabled={pageChecking} className="gap-2">
-              {pageChecking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-              {pageChecking ? "Verificando..." : "Verificar página"}
+            <Button onClick={verifyPage} disabled={pageChecking} size="sm" className="gap-1.5 text-xs">
+              {pageChecking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+              {pageChecking ? "Verificando..." : "Verificar"}
             </Button>
           </div>
 
           {pageChecks && (
-            <Card className="overflow-hidden border-border">
-              <div className="px-4 py-2.5 border-b border-border bg-muted/20 flex items-center gap-2">
-                <Globe className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm font-medium text-foreground truncate">{pageUrl}</span>
+            <div className="rounded-md bg-slate-900/50 border border-slate-700/20 overflow-hidden">
+              <div className="px-3 py-2 border-b border-slate-700/20 flex items-center gap-2">
+                <Globe className="w-3.5 h-3.5 text-slate-500" />
+                <span className="text-xs font-medium text-slate-300 truncate">{pageUrl}</span>
               </div>
-              <div className="divide-y divide-border">
+              <div className="divide-y divide-slate-700/15">
                 {pageChecks.map((check, i) => (
-                  <div key={i} className="px-4 py-3 flex items-start gap-3">
+                  <div key={i} className="px-3 py-2.5 flex items-start gap-2.5">
                     {statusIcon(check.status)}
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground">{check.name}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{check.detail}</p>
+                      <p className="text-xs font-medium text-slate-300">{check.name}</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">{check.detail}</p>
                     </div>
                   </div>
                 ))}
               </div>
-            </Card>
+            </div>
           )}
         </div>
       </div>
 
-      {/* ========= SCRIPT GENERATOR + UTM TEMPLATE ========= */}
-      <TrackingScriptGenerator
-        pixels={pixels}
-        products={products}
-        checkoutBaseUrl={window.location.origin}
-      />
+      {/* ── Script Generator + UTM ── */}
+      <TrackingScriptGenerator pixels={pixels} products={products} checkoutBaseUrl={window.location.origin} />
 
-      {/* ========= UTM ATTRIBUTION ========= */}
+      {/* ── UTM Attribution ── */}
       <UtmAttributionTable />
 
-      {/* ========= PIXELS BY PRODUCT ========= */}
+      {/* ── Pixels by Product ── */}
       <div>
-        <h2 className="text-lg font-semibold text-foreground mb-3">Pixels por produto</h2>
+        <h2 className="text-sm font-semibold text-slate-200 mb-2">Pixels por produto</h2>
         {uniqueProductIds.length === 0 ? (
-          <Card className="p-8 text-center">
-            <Code2 className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-            <p className="text-foreground font-medium">Nenhum pixel configurado</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Configure pixels em Produtos → Editar → Configurações → Pixels de conversão
-            </p>
-          </Card>
+          <div className="rounded-lg bg-slate-800/50 border border-slate-700/30 p-8 text-center">
+            <Code2 className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+            <p className="text-xs text-slate-400">Nenhum pixel configurado</p>
+            <p className="text-[10px] text-slate-600 mt-1">Configure em Produtos → Editar → Configurações</p>
+          </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-2">
             {uniqueProductIds.map((productId) => {
               const productPixels = pixels.filter((p) => p.product_id === productId);
               const productName = productPixels[0]?.product_name || "Produto";
-
               return (
-                <Card key={productId} className="overflow-hidden">
-                  <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-muted/30">
-                    <h3 className="font-semibold text-foreground text-sm">{productName}</h3>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-xs gap-1"
-                      onClick={() => navigate(`/admin/products/${productId}/edit`)}
-                    >
-                      Editar <ExternalLink className="w-3 h-3" />
+                <div key={productId} className="rounded-lg bg-slate-800/50 border border-slate-700/30 overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-700/30">
+                    <h3 className="text-xs font-semibold text-slate-200">{productName}</h3>
+                    <Button size="sm" variant="ghost" className="text-[10px] gap-1 text-slate-400 hover:text-slate-200 h-7" onClick={() => navigate(`/admin/products/${productId}/edit`)}>
+                      Editar <ExternalLink className="w-2.5 h-2.5" />
                     </Button>
                   </div>
-                  <div className="divide-y divide-border">
+                  <div className="divide-y divide-slate-700/20">
                     {productPixels.map((px, i) => (
-                      <div key={i} className="px-5 py-3 flex items-center gap-3 text-sm">
-                        <Badge
-                          variant="outline"
-                          className={`text-xs ${platformColors[px.platform] || "border-border text-muted-foreground"}`}
-                        >
+                      <div key={i} className="px-4 py-2.5 flex items-center gap-2.5 text-xs">
+                        <Badge variant="outline" className={`text-[10px] ${platformColors[px.platform] || "border-slate-600 text-slate-400"}`}>
                           {px.platform}
                         </Badge>
-                        <span className="font-mono text-foreground">{px.pixel_id}</span>
-                        {px.domain && (
-                          <span className="text-xs text-muted-foreground">via {px.domain}</span>
-                        )}
-                        <div className="ml-auto flex items-center gap-2">
+                        <span className="font-mono text-slate-300 text-[11px]">{px.pixel_id}</span>
+                        {px.domain && <span className="text-[10px] text-slate-500">via {px.domain}</span>}
+                        <div className="ml-auto">
                           {px.has_capi ? (
-                            <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/20 gap-1">
-                              <CheckCircle2 className="w-3 h-3" /> CAPI
+                            <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-400 border-emerald-500/20 gap-1">
+                              <CheckCircle2 className="w-2.5 h-2.5" /> CAPI
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-600 border-yellow-500/20 gap-1">
-                              <AlertCircle className="w-3 h-3" /> Sem CAPI
+                            <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-400 border-amber-500/20 gap-1">
+                              <AlertCircle className="w-2.5 h-2.5" /> Sem CAPI
                             </Badge>
                           )}
                         </div>
                       </div>
                     ))}
                   </div>
-                </Card>
+                </div>
               );
             })}
           </div>
         )}
       </div>
 
-      {/* Domains */}
+      {/* ── Domains ── */}
       {domains.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-foreground mb-3">Domínios verificados</h2>
-          <Card>
-            <div className="divide-y divide-border">
-              {domains.map((d) => (
-                <div key={d.id} className="px-5 py-3 flex items-center gap-3 text-sm">
-                  <Globe className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-foreground">{d.domain}</span>
-                  <Badge
-                    variant="outline"
-                    className={`ml-auto text-xs ${
-                      d.verified
-                        ? "bg-primary/10 text-primary border-primary/20"
-                        : "bg-yellow-500/10 text-yellow-600 border-yellow-500/20"
-                    }`}
-                  >
-                    {d.verified ? "Verificado" : "Pendente"}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </Card>
+          <h2 className="text-sm font-semibold text-slate-200 mb-2">Domínios verificados</h2>
+          <div className="rounded-lg bg-slate-800/50 border border-slate-700/30 divide-y divide-slate-700/20">
+            {domains.map((d) => (
+              <div key={d.id} className="px-4 py-2.5 flex items-center gap-2.5 text-xs">
+                <Globe className="w-3.5 h-3.5 text-slate-500" />
+                <span className="text-slate-300">{d.domain}</span>
+                <Badge variant="outline" className={`ml-auto text-[10px] ${
+                  d.verified ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                }`}>
+                  {d.verified ? "Verificado" : "Pendente"}
+                </Badge>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
