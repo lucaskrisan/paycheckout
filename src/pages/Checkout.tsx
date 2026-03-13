@@ -276,7 +276,7 @@ const Checkout = () => {
           throw new Error(msg);
         }
         if (data?.error) throw new Error(data.error);
-        if (data?.qr_code_url || data?.qr_code) { setPixData({ qrCodeUrl: data.qr_code_url, pixCode: data.qr_code, orderId: data.order_id }); setPixModalOpen(true); trackPurchase(frontEndAmount); await markPurchased(); }
+        if (data?.qr_code_url || data?.qr_code) { setPixData({ qrCodeUrl: data.qr_code_url, pixCode: data.qr_code, orderId: data.order_id }); setPixModalOpen(true); }
         else throw new Error("Falha ao gerar o PIX. Tente novamente.");
       } else {
         const bumpProductIds2 = orderBumps.filter((b) => selectedBumps.has(b.id)).map((b) => b.bump_product.id);
