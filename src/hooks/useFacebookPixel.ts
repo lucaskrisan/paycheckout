@@ -97,11 +97,19 @@ interface CustomerInfo {
   cpf?: string;
 }
 
-export function useFacebookPixel(productId: string | undefined) {
+export function useFacebookPixel(productId: string | undefined, productPrice?: number, productName?: string) {
   const initializedRef = useRef(false);
   const pixelIdsRef = useRef<string[]>([]);
   const firedEventsRef = useRef<Set<string>>(new Set());
   const customerRef = useRef<CustomerInfo>({});
+  const productPriceRef = useRef(productPrice);
+  const productNameRef = useRef(productName);
+
+  // Keep refs updated
+  useEffect(() => {
+    productPriceRef.current = productPrice;
+    productNameRef.current = productName;
+  }, [productPrice, productName]);
 
   /** Send event to CAPI edge function (server-side, non-blocking) */
   const sendCAPI = useCallback((eventName: string, eventId: string, customData?: Record<string, unknown>) => {
