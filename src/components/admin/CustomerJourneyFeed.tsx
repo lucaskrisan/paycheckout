@@ -73,7 +73,13 @@ const CustomerJourneyFeed = ({ events, products }: Props) => {
       };
     });
 
-    return result.sort((a, b) => b.lastActivity - a.lastActivity);
+    const now = Date.now();
+    const EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
+
+    // Filter out expired non-converted journeys
+    const active = result.filter((j) => j.completed || (now - j.lastActivity) < EXPIRY_MS);
+
+    return active.sort((a, b) => b.lastActivity - a.lastActivity);
   }, [events, products]);
 
   if (journeys.length === 0) {
