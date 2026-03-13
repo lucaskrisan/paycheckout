@@ -24,6 +24,7 @@ interface Props {
 
 const EVENT_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
   PageView: { label: "PageView", color: "#818cf8", icon: Eye },
+  ViewContent: { label: "ViewContent", color: "#fb923c", icon: BookOpen },
   InitiateCheckout: { label: "Checkout", color: "#fbbf24", icon: ShoppingCart },
   Lead: { label: "Lead", color: "#60a5fa", icon: UserCheck },
   AddPaymentInfo: { label: "Payment", color: "#a78bfa", icon: CreditCard },
