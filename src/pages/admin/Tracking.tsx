@@ -340,6 +340,9 @@ const Tracking = () => {
         ))}
       </div>
 
+      {/* ── Full Audit ── */}
+      {user && <TrackingFullAudit userId={user.id} />}
+
       {/* ── Real-time Events ── */}
       <PixelEventsDashboard products={products} />
 
