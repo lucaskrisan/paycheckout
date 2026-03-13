@@ -295,9 +295,16 @@ const PixelEventsDashboard = ({ products }: Props) => {
                       {cfg?.label || e.event_name}
                     </span>
 
+                    {/* Customer name */}
+                    {e.customer_name && (
+                      <span className="text-[12px] text-slate-300 font-medium truncate max-w-[180px]">
+                        {e.customer_name.split(' ')[0]}
+                      </span>
+                    )}
+
                     {/* Product name */}
                     {productName && (
-                      <span className="text-[11px] text-slate-500 truncate max-w-[200px] hidden sm:inline">
+                      <span className="text-[11px] text-slate-500 truncate max-w-[160px] hidden sm:inline">
                         {productName}
                       </span>
                     )}
