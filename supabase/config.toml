@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.test-push]
 verify_jwt = false
+
+[functions.meta-ads]
+verify_jwt = false

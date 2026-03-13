@@ -31,6 +31,7 @@ import SystemHealth from "./pages/admin/SystemHealth";
 import Webhooks from "./pages/admin/Webhooks";
 import Emails from "./pages/admin/Emails";
 import PwaSettings from "./pages/admin/PwaSettings";
+import MetaAds from "./pages/admin/MetaAds";
 import NotFound from "./pages/NotFound";
 import InstallPrompt from "./components/InstallPrompt";
 
@@ -73,6 +74,7 @@ const App = () => (
               <Route path="webhooks" element={<Webhooks />} />
               <Route path="emails" element={<Emails />} />
               <Route path="pwa" element={<PwaSettings />} />
+              <Route path="meta-ads" element={<MetaAds />} />
               <Route path="platform" element={<SuperAdminDashboard />} />
             </Route>
             <Route path="*" element={<NotFound />} />
