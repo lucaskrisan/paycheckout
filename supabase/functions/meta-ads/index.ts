@@ -50,11 +50,49 @@ async function metaFetch(endpoint: string, params: Record<string, string> = {}, 
 // ========== Handlers ==========
 
 async function listAccounts() {
-  const data = await metaFetch('/me/adaccounts', {
+  // 1. Direct ad accounts
+  const direct = await metaFetch('/me/adaccounts', {
     fields: 'id,name,account_id,currency,account_status,amount_spent',
     limit: '100',
   });
-  return data.data || [];
+  const allAccounts = new Map<string, any>();
+  for (const acc of (direct.data || [])) {
+    allAccounts.set(acc.id, acc);
+  }
+
+  // 2. Ad accounts from all Business Managers
+  try {
+    const businesses = await metaFetch('/me/businesses', { fields: 'id,name', limit: '100' });
+    for (const bm of (businesses.data || [])) {
+      try {
+        const bmAccounts = await metaFetch(`/${bm.id}/owned_ad_accounts`, {
+          fields: 'id,name,account_id,currency,account_status,amount_spent',
+          limit: '100',
+        });
+        for (const acc of (bmAccounts.data || [])) {
+          if (!allAccounts.has(acc.id)) {
+            allAccounts.set(acc.id, acc);
+          }
+        }
+        // Also fetch client ad accounts
+        const clientAccounts = await metaFetch(`/${bm.id}/client_ad_accounts`, {
+          fields: 'id,name,account_id,currency,account_status,amount_spent',
+          limit: '100',
+        });
+        for (const acc of (clientAccounts.data || [])) {
+          if (!allAccounts.has(acc.id)) {
+            allAccounts.set(acc.id, acc);
+          }
+        }
+      } catch {
+        // Skip BMs with permission issues
+      }
+    }
+  } catch {
+    // Token may not have business_management permission
+  }
+
+  return Array.from(allAccounts.values());
 }
 
 async function listCampaigns(accountId: string, datePreset: string, since?: string, until?: string) {
