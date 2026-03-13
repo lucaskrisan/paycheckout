@@ -103,12 +103,20 @@ Deno.serve(async (req) => {
       : req.headers.get('cf-connecting-ip') || undefined;
 
     // Skip invalid/private IPs that Meta will reject
+    // Check if IP is private (RFC 1918) — only 172.16.0.0–172.31.255.255 are private
+    const isPrivate172 = (ip: string) => {
+      const m = ip.match(/^172\.(\d+)\./);
+      if (!m) return false;
+      const second = parseInt(m[1], 10);
+      return second >= 16 && second <= 31;
+    };
+
     const isValidPublicIp = clientIp && 
       !clientIp.startsWith('0.') && 
       !clientIp.startsWith('127.') && 
       !clientIp.startsWith('10.') && 
       !clientIp.startsWith('192.168.') &&
-      !clientIp.startsWith('172.') &&
+      !isPrivate172(clientIp) &&
       clientIp !== '::1';
 
     const userData: CAPIEvent['user_data'] = {
