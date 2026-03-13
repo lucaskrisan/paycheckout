@@ -30,6 +30,21 @@ export function getROAS(insights: MetaInsights | null): number {
   return roas ? parseFloat(roas.value) : 0;
 }
 
+export function getConversionValue(insights: MetaInsights | null): number {
+  if (!insights?.action_values) return 0;
+  const purchase = insights.action_values.find(
+    (a) => a.action_type === "offsite_conversion.fb_pixel_purchase" || a.action_type === "purchase"
+  );
+  return purchase ? parseFloat(purchase.value) : 0;
+}
+
+export function getROI(insights: MetaInsights | null): number {
+  const revenue = getConversionValue(insights);
+  const spend = parseFloat(insights?.spend || "0");
+  if (spend <= 0 || revenue <= 0) return 0;
+  return ((revenue - spend) / spend) * 100;
+}
+
 export function formatCurrency(value: string | number, decimals = 2): string {
   const num = typeof value === "string" ? parseFloat(value) : value;
   if (isNaN(num)) return "R$ 0,00";
