@@ -40,6 +40,10 @@ const PixModal = ({ open, onClose, totalAmount, qrCodeUrl, pixCode, externalOrde
       });
       if (data && (data.status === "paid" || data.status === "approved" || data.status === "confirmed")) {
         setPaymentConfirmed(true);
+        if (!confirmedCallbackFiredRef.current) {
+          confirmedCallbackFiredRef.current = true;
+          onPaymentConfirmed?.();
+        }
         if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
       }
     } catch (err) {
