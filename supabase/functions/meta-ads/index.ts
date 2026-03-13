@@ -157,7 +157,7 @@ async function listAdSets(accountId: string, datePreset: string, since?: string,
 
 async function listAds(accountId: string, datePreset: string, since?: string, until?: string) {
   const fields = 'id,name,status,adset_id,campaign_id,creative{title,body,thumbnail_url}';
-  const insightFields = 'spend,impressions,reach,frequency,cpm,ctr,cpc,actions,cost_per_action_type,purchase_roas';
+  const insightFields = 'spend,impressions,reach,frequency,cpm,ctr,cpc,actions,action_values,cost_per_action_type,purchase_roas';
 
   const ads = await metaFetch(`/${accountId}/ads`, {
     fields,
