@@ -3,9 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { createClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import {
   BookOpen,
   CheckCircle2,
@@ -28,6 +26,8 @@ import {
   ChevronDown,
   ChevronRight,
   X,
+  List,
+  Menu,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -103,7 +103,6 @@ const MemberArea = () => {
   const navigate = useNavigate();
   const token = searchParams.get("token");
 
-  // Create a supabase client that sends x-access-token header for RLS
   const tokenClient = useMemo(() => {
     if (!token) return supabase;
     return createClient<Database>(
@@ -131,6 +130,7 @@ const MemberArea = () => {
   const [otherCourses, setOtherCourses] = useState<OtherCourse[]>([]);
   const [showCatalog, setShowCatalog] = useState(false);
   const [customerName, setCustomerName] = useState("");
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -162,7 +162,6 @@ const MemberArea = () => {
 
       setAccess(accessData);
 
-      // Load customer name
       const { data: customerData } = await tokenClient
         .from("customers")
         .select("name")
@@ -170,7 +169,6 @@ const MemberArea = () => {
         .single();
       if (customerData) setCustomerName(customerData.name.split(" ")[0]);
 
-      // Load course
       const { data: courseData } = await tokenClient
         .from("courses")
         .select("*")
@@ -178,7 +176,6 @@ const MemberArea = () => {
         .single();
       if (courseData) setCourse(courseData);
 
-      // Load modules + lessons
       const { data: modulesData } = await tokenClient
         .from("course_modules")
         .select("*")
@@ -204,7 +201,6 @@ const MemberArea = () => {
         }
       }
 
-      // Load progress
       const { data: progressData } = await tokenClient
         .from("lesson_progress")
         .select("lesson_id")
@@ -214,12 +210,10 @@ const MemberArea = () => {
         setCompletedLessons(new Set(progressData.map((p: any) => p.lesson_id)));
       }
 
-      // Load other courses (catalog) - all courses from the system
       const { data: allCourses } = await tokenClient
         .from("courses")
         .select("id, title, description, cover_image_url, product_id");
 
-      // Get all accesses for this customer
       const { data: allAccesses } = await tokenClient
         .from("member_access")
         .select("course_id")
@@ -285,6 +279,14 @@ const MemberArea = () => {
     }
   };
 
+  const selectLesson = (lesson: Lesson) => {
+    setActiveLesson(lesson);
+    setShowMobileSidebar(false);
+    // Find and open the module containing this lesson
+    const mod = modules.find((m) => m.lessons.some((l) => l.id === lesson.id));
+    if (mod) setActiveModuleId(mod.id);
+  };
+
   const totalLessons = modules.reduce((acc, m) => acc + m.lessons.length, 0);
   const progressPercent = totalLessons > 0 ? (completedLessons.size / totalLessons) * 100 : 0;
 
@@ -341,8 +343,135 @@ const MemberArea = () => {
     );
   }
 
+  // ===== Sidebar content (reusable for desktop and mobile drawer) =====
+  const SidebarContent = () => (
+    <div className="space-y-2">
+      {modules.map((mod, modIndex) => {
+        const modCompleted = mod.lessons.filter((l) => completedLessons.has(l.id)).length;
+        const modTotal = mod.lessons.length;
+        const isOpen = activeModuleId === mod.id;
+
+        return (
+          <div
+            key={mod.id}
+            className="rounded-2xl overflow-hidden border transition-colors"
+            style={{
+              background: "hsl(220 18% 10%)",
+              borderColor: isOpen ? "hsl(145,65%,25%)" : "hsl(220 15% 14%)",
+            }}
+          >
+            <button
+              onClick={() => setActiveModuleId(isOpen ? null : mod.id)}
+              className="w-full flex items-center justify-between p-4 text-left transition-colors hover:bg-[hsl(220,16%,13%)]"
+            >
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold"
+                  style={{
+                    background: modCompleted === modTotal && modTotal > 0
+                      ? "hsl(145,65%,42%)"
+                      : "hsl(220,18%,16%)",
+                    color: modCompleted === modTotal && modTotal > 0
+                      ? "white"
+                      : "hsl(220,10%,50%)",
+                  }}
+                >
+                  {modCompleted === modTotal && modTotal > 0 ? (
+                    <Trophy className="w-4 h-4" />
+                  ) : (
+                    modIndex + 1
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <span className="text-white font-semibold text-sm block truncate">{mod.title}</span>
+                  <span className="text-[hsl(220,10%,40%)] text-xs">
+                    {modCompleted}/{modTotal} aulas
+                  </span>
+                </div>
+              </div>
+              {isOpen ? (
+                <ChevronDown className="w-4 h-4 text-[hsl(220,10%,40%)] flex-shrink-0" />
+              ) : (
+                <ChevronRight className="w-4 h-4 text-[hsl(220,10%,40%)] flex-shrink-0" />
+              )}
+            </button>
+
+            <AnimatePresence>
+              {isOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div
+                    className="mx-4 mb-3 border-t pt-2 space-y-0.5"
+                    style={{ borderColor: "hsl(220 15% 14%)" }}
+                  >
+                    {mod.lessons.map((lesson) => {
+                      const isActive = activeLesson?.id === lesson.id;
+                      const isCompleted = completedLessons.has(lesson.id);
+                      const Icon = contentTypeIcons[lesson.content_type] || FileText;
+
+                      return (
+                        <button
+                          key={lesson.id}
+                          onClick={() => selectLesson(lesson)}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm transition-all"
+                          style={{
+                            background: isActive ? "hsl(145,65%,42%)" : "transparent",
+                            color: isActive ? "white" : "hsl(0,0%,75%)",
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isActive) e.currentTarget.style.background = "hsl(220,16%,14%)";
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isActive) e.currentTarget.style.background = "transparent";
+                          }}
+                        >
+                          {isCompleted ? (
+                            <CheckCircle2
+                              className="w-4 h-4 flex-shrink-0"
+                              style={{ color: isActive ? "white" : "hsl(145,65%,50%)" }}
+                            />
+                          ) : (
+                            <Circle className="w-4 h-4 flex-shrink-0 text-[hsl(220,10%,30%)]" />
+                          )}
+                          <Icon className="w-3.5 h-3.5 flex-shrink-0 opacity-50" />
+                          <span className="truncate text-[13px]">{lesson.title}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        );
+      })}
+
+      {otherCourses.length > 0 && (
+        <button
+          onClick={() => { setShowCatalog(true); setShowMobileSidebar(false); }}
+          className="w-full flex items-center gap-3 p-4 rounded-2xl border transition-all hover:scale-[1.01]"
+          style={{
+            background: "linear-gradient(135deg, hsl(220,18%,10%), hsl(220,15%,12%))",
+            borderColor: "hsl(45,93%,30%)",
+          }}
+        >
+          <Crown className="w-5 h-5 text-[hsl(45,93%,55%)]" />
+          <div className="text-left">
+            <span className="text-white text-sm font-semibold block">Explorar mais cursos</span>
+            <span className="text-[hsl(220,10%,40%)] text-xs">{otherCourses.length} disponíveis</span>
+          </div>
+        </button>
+      )}
+    </div>
+  );
+
   return (
-    <div className="min-h-screen" style={{ background: "hsl(220 20% 6%)" }}>
+    <div className="min-h-screen pb-[env(safe-area-inset-bottom)]" style={{ background: "hsl(220 20% 6%)" }}>
       {/* ===== TOP HEADER ===== */}
       <header
         className="sticky top-0 z-50 backdrop-blur-xl border-b"
@@ -351,26 +480,35 @@ const MemberArea = () => {
           borderColor: "hsl(220 15% 12%)",
         }}
       >
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          {/* Left: Logo + Course */}
-          <div className="flex items-center gap-3">
+        <div className="max-w-[1440px] mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
+          {/* Left: Menu button (mobile) + Logo + Course */}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+            <button
+              onClick={() => setShowMobileSidebar(true)}
+              className="lg:hidden w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: "hsl(220 18% 14%)" }}
+            >
+              <Menu className="w-4 h-4 text-[hsl(0,0%,60%)]" />
+            </button>
             <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center bg-gradient-to-br"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center bg-gradient-to-br flex-shrink-0"
               style={{
                 backgroundImage: "linear-gradient(135deg, hsl(145,65%,42%), hsl(160,70%,36%))",
               }}
             >
-              <Sparkles className="w-4.5 h-4.5 text-white" />
+              <Sparkles className="w-4 h-4 text-white" />
             </div>
-            <div className="hidden sm:block">
-              <h1 className="text-white font-bold text-sm leading-tight truncate max-w-[200px] lg:max-w-[300px]">
+            <div className="min-w-0">
+              <h1 className="text-white font-bold text-xs sm:text-sm leading-tight truncate">
                 {course.title}
               </h1>
-              <p className="text-[hsl(220,10%,45%)] text-xs">{totalLessons} aulas</p>
+              <p className="text-[hsl(220,10%,45%)] text-[10px] sm:text-xs">
+                {completedLessons.size}/{totalLessons} aulas
+              </p>
             </div>
           </div>
 
-          {/* Center: Progress */}
+          {/* Center: Progress (desktop) */}
           <div className="hidden md:flex items-center gap-3 flex-1 justify-center max-w-md">
             <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "hsl(220 18% 14%)" }}>
               <motion.div
@@ -389,10 +527,34 @@ const MemberArea = () => {
           </div>
 
           {/* Right: Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            {/* Mobile progress circle */}
+            <div className="flex md:hidden">
+              <div className="w-9 h-9 relative">
+                <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                  <path
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none"
+                    stroke="hsl(220,18%,14%)"
+                    strokeWidth="3"
+                  />
+                  <path
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none"
+                    stroke="hsl(145,65%,42%)"
+                    strokeWidth="3"
+                    strokeDasharray={`${progressPercent}, 100`}
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white">
+                  {Math.round(progressPercent)}%
+                </span>
+              </div>
+            </div>
             <button
               onClick={() => setShowCatalog(!showCatalog)}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all hover:scale-[1.02]"
+              className="flex items-center gap-2 px-2.5 sm:px-3 py-2 rounded-xl text-sm font-medium transition-all hover:scale-[1.02]"
               style={{
                 background: showCatalog ? "hsl(145,65%,42%)" : "hsl(220 18% 14%)",
                 color: showCatalog ? "white" : "hsl(0 0% 70%)",
@@ -411,6 +573,45 @@ const MemberArea = () => {
         </div>
       </header>
 
+      {/* ===== MOBILE SIDEBAR DRAWER ===== */}
+      <AnimatePresence>
+        {showMobileSidebar && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm lg:hidden"
+              onClick={() => setShowMobileSidebar(false)}
+            />
+            {/* Drawer */}
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed inset-y-0 left-0 z-[70] w-[85%] max-w-[340px] overflow-y-auto lg:hidden"
+              style={{ background: "hsl(220 20% 6%)" }}
+            >
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-white font-bold text-base">Conteúdo</h2>
+                  <button
+                    onClick={() => setShowMobileSidebar(false)}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center"
+                    style={{ background: "hsl(220,18%,14%)" }}
+                  >
+                    <X className="w-4 h-4 text-[hsl(0,0%,60%)]" />
+                  </button>
+                </div>
+                <SidebarContent />
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* ===== CATALOG PANEL ===== */}
       <AnimatePresence>
         {showCatalog && (
@@ -425,15 +626,15 @@ const MemberArea = () => {
               borderColor: "hsl(220 15% 12%)",
             }}
           >
-            <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-8">
-              <div className="flex items-center justify-between mb-6">
+            <div className="max-w-[1440px] mx-auto px-3 sm:px-6 py-6 sm:py-8">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
                 <div>
-                  <h2 className="text-white font-bold text-lg flex items-center gap-2">
+                  <h2 className="text-white font-bold text-base sm:text-lg flex items-center gap-2">
                     <Star className="w-5 h-5 text-[hsl(45,93%,55%)]" />
-                    Outros Cursos Disponíveis
+                    Outros Cursos
                   </h2>
-                  <p className="text-[hsl(220,10%,45%)] text-sm mt-1">
-                    Expanda seu conhecimento com mais conteúdos exclusivos
+                  <p className="text-[hsl(220,10%,45%)] text-xs sm:text-sm mt-1">
+                    Expanda seu conhecimento
                   </p>
                 </div>
                 <button onClick={() => setShowCatalog(false)} className="text-[hsl(220,10%,45%)] hover:text-white transition-colors">
@@ -444,7 +645,7 @@ const MemberArea = () => {
               {otherCourses.length === 0 ? (
                 <p className="text-[hsl(220,10%,40%)] text-sm">Nenhum outro curso disponível no momento.</p>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                   {otherCourses.map((c, index) => (
                     <motion.div
                       key={c.id}
@@ -457,8 +658,7 @@ const MemberArea = () => {
                         borderColor: c.hasAccess ? "hsl(145,65%,30%)" : "hsl(220 15% 16%)",
                       }}
                     >
-                      {/* Cover image */}
-                      <div className="relative h-36 overflow-hidden">
+                      <div className="relative h-32 sm:h-36 overflow-hidden">
                         {c.cover_image_url ? (
                           <img
                             src={c.cover_image_url}
@@ -477,8 +677,6 @@ const MemberArea = () => {
                             <GraduationCap className="w-10 h-10 text-[hsl(220,10%,30%)]" />
                           </div>
                         )}
-
-                        {/* Overlay */}
                         {!c.hasAccess && (
                           <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-[2px]">
                             <div className="w-12 h-12 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-center">
@@ -486,7 +684,6 @@ const MemberArea = () => {
                             </div>
                           </div>
                         )}
-
                         {c.hasAccess && (
                           <div className="absolute top-2 right-2">
                             <div className="px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-[hsl(145,65%,42%)] text-white">
@@ -495,18 +692,14 @@ const MemberArea = () => {
                           </div>
                         )}
                       </div>
-
-                      {/* Info */}
                       <div className="p-4">
                         <h3 className="text-white font-bold text-sm mb-1 truncate">{c.title}</h3>
                         {c.description && (
                           <p className="text-[hsl(220,10%,45%)] text-xs line-clamp-2 mb-3">{c.description}</p>
                         )}
-
                         {c.hasAccess ? (
                           <button
                             onClick={() => {
-                              // Find the access token for this course
                               supabase
                                 .from("member_access")
                                 .select("access_token")
@@ -557,179 +750,27 @@ const MemberArea = () => {
       </AnimatePresence>
 
       {/* ===== WELCOME BANNER ===== */}
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 pt-6 pb-2">
+      <div className="max-w-[1440px] mx-auto px-3 sm:px-6 pt-4 sm:pt-6 pb-2">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between"
         >
-          <div>
-            <h2 className="text-white text-lg sm:text-xl font-bold">
-              {customerName ? `Olá, ${customerName}` : "Bem-vindo"} 👋
-            </h2>
-            <p className="text-[hsl(220,10%,45%)] text-sm mt-0.5">
-              Continue de onde parou • {completedLessons.size}/{totalLessons} aulas concluídas
-            </p>
-          </div>
-
-          {/* Mobile progress */}
-          <div className="flex md:hidden items-center gap-2">
-            <div className="w-12 h-12 relative">
-              <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                <path
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                  fill="none"
-                  stroke="hsl(220,18%,14%)"
-                  strokeWidth="3"
-                />
-                <path
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                  fill="none"
-                  stroke="hsl(145,65%,42%)"
-                  strokeWidth="3"
-                  strokeDasharray={`${progressPercent}, 100`}
-                  strokeLinecap="round"
-                />
-              </svg>
-              <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white">
-                {Math.round(progressPercent)}%
-              </span>
-            </div>
-          </div>
+          <h2 className="text-white text-base sm:text-xl font-bold">
+            {customerName ? `Olá, ${customerName}` : "Bem-vindo"} 👋
+          </h2>
+          <p className="text-[hsl(220,10%,45%)] text-xs sm:text-sm mt-0.5">
+            Continue de onde parou • {completedLessons.size}/{totalLessons} aulas concluídas
+          </p>
         </motion.div>
       </div>
 
       {/* ===== MAIN CONTENT ===== */}
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-4">
-        <div className="grid lg:grid-cols-12 gap-5">
-          {/* ===== SIDEBAR ===== */}
-          <aside className="lg:col-span-4 xl:col-span-3">
-            <div className="lg:sticky lg:top-24 space-y-2">
-              {modules.map((mod, modIndex) => {
-                const modCompleted = mod.lessons.filter((l) => completedLessons.has(l.id)).length;
-                const modTotal = mod.lessons.length;
-                const isOpen = activeModuleId === mod.id;
-
-                return (
-                  <motion.div
-                    key={mod.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: modIndex * 0.05 }}
-                    className="rounded-2xl overflow-hidden border transition-colors"
-                    style={{
-                      background: "hsl(220 18% 10%)",
-                      borderColor: isOpen ? "hsl(145,65%,25%)" : "hsl(220 15% 14%)",
-                    }}
-                  >
-                    <button
-                      onClick={() => setActiveModuleId(isOpen ? null : mod.id)}
-                      className="w-full flex items-center justify-between p-4 text-left transition-colors hover:bg-[hsl(220,16%,13%)]"
-                    >
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div
-                          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold"
-                          style={{
-                            background: modCompleted === modTotal && modTotal > 0
-                              ? "hsl(145,65%,42%)"
-                              : "hsl(220,18%,16%)",
-                            color: modCompleted === modTotal && modTotal > 0
-                              ? "white"
-                              : "hsl(220,10%,50%)",
-                          }}
-                        >
-                          {modCompleted === modTotal && modTotal > 0 ? (
-                            <Trophy className="w-4 h-4" />
-                          ) : (
-                            modIndex + 1
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <span className="text-white font-semibold text-sm block truncate">{mod.title}</span>
-                          <span className="text-[hsl(220,10%,40%)] text-xs">
-                            {modCompleted}/{modTotal} aulas
-                          </span>
-                        </div>
-                      </div>
-                      {isOpen ? (
-                        <ChevronDown className="w-4 h-4 text-[hsl(220,10%,40%)] flex-shrink-0" />
-                      ) : (
-                        <ChevronRight className="w-4 h-4 text-[hsl(220,10%,40%)] flex-shrink-0" />
-                      )}
-                    </button>
-
-                    <AnimatePresence>
-                      {isOpen && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="overflow-hidden"
-                        >
-                          <div
-                            className="mx-4 mb-3 border-t pt-2 space-y-0.5"
-                            style={{ borderColor: "hsl(220 15% 14%)" }}
-                          >
-                            {mod.lessons.map((lesson) => {
-                              const isActive = activeLesson?.id === lesson.id;
-                              const isCompleted = completedLessons.has(lesson.id);
-                              const Icon = contentTypeIcons[lesson.content_type] || FileText;
-
-                              return (
-                                <button
-                                  key={lesson.id}
-                                  onClick={() => setActiveLesson(lesson)}
-                                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm transition-all"
-                                  style={{
-                                    background: isActive ? "hsl(145,65%,42%)" : "transparent",
-                                    color: isActive ? "white" : "hsl(0,0%,75%)",
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    if (!isActive) e.currentTarget.style.background = "hsl(220,16%,14%)";
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    if (!isActive) e.currentTarget.style.background = "transparent";
-                                  }}
-                                >
-                                  {isCompleted ? (
-                                    <CheckCircle2
-                                      className="w-4 h-4 flex-shrink-0"
-                                      style={{ color: isActive ? "white" : "hsl(145,65%,50%)" }}
-                                    />
-                                  ) : (
-                                    <Circle className="w-4 h-4 flex-shrink-0 text-[hsl(220,10%,30%)]" />
-                                  )}
-                                  <Icon className="w-3.5 h-3.5 flex-shrink-0 opacity-50" />
-                                  <span className="truncate text-[13px]">{lesson.title}</span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                );
-              })}
-
-              {/* Other Courses Quick Access */}
-              {otherCourses.length > 0 && (
-                <button
-                  onClick={() => setShowCatalog(true)}
-                  className="w-full flex items-center gap-3 p-4 rounded-2xl border transition-all hover:scale-[1.01]"
-                  style={{
-                    background: "linear-gradient(135deg, hsl(220,18%,10%), hsl(220,15%,12%))",
-                    borderColor: "hsl(45,93%,30%)",
-                  }}
-                >
-                  <Crown className="w-5 h-5 text-[hsl(45,93%,55%)]" />
-                  <div className="text-left">
-                    <span className="text-white text-sm font-semibold block">Explorar mais cursos</span>
-                    <span className="text-[hsl(220,10%,40%)] text-xs">{otherCourses.length} disponíveis</span>
-                  </div>
-                </button>
-              )}
+      <div className="max-w-[1440px] mx-auto px-3 sm:px-6 py-3 sm:py-4">
+        <div className="grid lg:grid-cols-12 gap-4 sm:gap-5">
+          {/* ===== DESKTOP SIDEBAR (hidden on mobile) ===== */}
+          <aside className="hidden lg:block lg:col-span-4 xl:col-span-3">
+            <div className="lg:sticky lg:top-24">
+              <SidebarContent />
             </div>
           </aside>
 
@@ -742,6 +783,7 @@ const MemberArea = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.25 }}
               >
+                {/* Video / Content first on mobile */}
                 <div
                   className="rounded-2xl border overflow-hidden"
                   style={{
@@ -749,14 +791,29 @@ const MemberArea = () => {
                     borderColor: "hsl(220 15% 14%)",
                   }}
                 >
+                  {/* Video content rendered FIRST for immediate visibility */}
+                  {activeLesson.content_type === "video_embed" && activeLesson.content && (
+                    <div className="w-full" style={{ background: "hsl(220,20%,4%)" }}>
+                      <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+                        <iframe
+                          src={activeLesson.content}
+                          className="absolute inset-0 w-full h-full"
+                          allowFullScreen
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          style={{ border: 0 }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   {/* Lesson Header */}
                   <div
-                    className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b"
+                    className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b"
                     style={{ borderColor: "hsl(220 15% 14%)" }}
                   >
-                    <div>
-                      <h2 className="text-white font-bold text-lg sm:text-xl">{activeLesson.title}</h2>
-                      <div className="flex items-center gap-2 mt-2">
+                    <div className="min-w-0">
+                      <h2 className="text-white font-bold text-base sm:text-xl truncate">{activeLesson.title}</h2>
+                      <div className="flex items-center gap-2 mt-1.5">
                         <span
                           className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium"
                           style={{
@@ -774,7 +831,7 @@ const MemberArea = () => {
                     </div>
                     <button
                       onClick={() => toggleLessonComplete(activeLesson.id)}
-                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap hover:scale-[1.02]"
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap hover:scale-[1.02] self-start sm:self-auto"
                       style={{
                         background: completedLessons.has(activeLesson.id)
                           ? "hsl(145,65%,42%)"
@@ -792,49 +849,28 @@ const MemberArea = () => {
                       ) : (
                         <>
                           <Circle className="w-4 h-4" />
-                          Marcar como concluída
+                          Concluída
                         </>
                       )}
                     </button>
                   </div>
 
-                  {/* Lesson Content */}
-                  <div className="p-5 sm:p-6 lg:p-8">
-                    {activeLesson.content_type === "text" && activeLesson.content && (
-                      <div className="prose prose-invert prose-sm max-w-none">
-                        <div className="whitespace-pre-wrap text-[hsl(0,0%,80%)] leading-relaxed">
-                          {activeLesson.content}
+                  {/* Non-video content */}
+                  {activeLesson.content_type !== "video_embed" && (
+                    <div className="p-4 sm:p-5 lg:p-8">
+                      {activeLesson.content_type === "text" && activeLesson.content && (
+                        <div className="prose prose-invert prose-sm max-w-none">
+                          <div className="whitespace-pre-wrap text-[hsl(0,0%,80%)] leading-relaxed text-sm sm:text-base">
+                            {activeLesson.content}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                    {activeLesson.content_type === "link" && activeLesson.content && (
-                      <div className="space-y-4">
-                        <p className="text-[hsl(220,10%,50%)] text-sm">Acesse o material no link abaixo:</p>
-                        <a
-                          href={activeLesson.content}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-5 py-3.5 rounded-xl font-semibold text-sm transition-all hover:scale-[1.02] hover:shadow-lg"
-                          style={{
-                            backgroundImage: "linear-gradient(135deg, hsl(145,65%,42%), hsl(160,70%,36%))",
-                            color: "white",
-                          }}
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                          Abrir Link
-                        </a>
-                      </div>
-                    )}
-
-                    {activeLesson.content_type === "pdf" && (
-                      <div className="space-y-4">
-                        {activeLesson.content && (
-                          <p className="text-[hsl(220,10%,50%)] text-sm">{activeLesson.content}</p>
-                        )}
-                        {activeLesson.file_url && (
+                      {activeLesson.content_type === "link" && activeLesson.content && (
+                        <div className="space-y-4">
+                          <p className="text-[hsl(220,10%,50%)] text-sm">Acesse o material no link abaixo:</p>
                           <a
-                            href={activeLesson.file_url}
+                            href={activeLesson.content}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-2 px-5 py-3.5 rounded-xl font-semibold text-sm transition-all hover:scale-[1.02] hover:shadow-lg"
@@ -843,26 +879,36 @@ const MemberArea = () => {
                               color: "white",
                             }}
                           >
-                            <Download className="w-4 h-4" />
-                            Baixar Arquivo
+                            <ExternalLink className="w-4 h-4" />
+                            Abrir Link
                           </a>
-                        )}
-                      </div>
-                    )}
-
-                    {activeLesson.content_type === "video_embed" && activeLesson.content && (
-                      <div className="space-y-4">
-                        <div className="aspect-video rounded-xl overflow-hidden" style={{ background: "hsl(220,20%,6%)" }}>
-                          <iframe
-                            src={activeLesson.content}
-                            className="w-full h-full"
-                            allowFullScreen
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          />
                         </div>
-                      </div>
-                    )}
-                  </div>
+                      )}
+
+                      {activeLesson.content_type === "pdf" && (
+                        <div className="space-y-4">
+                          {activeLesson.content && (
+                            <p className="text-[hsl(220,10%,50%)] text-sm">{activeLesson.content}</p>
+                          )}
+                          {activeLesson.file_url && (
+                            <a
+                              href={activeLesson.file_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 px-5 py-3.5 rounded-xl font-semibold text-sm transition-all hover:scale-[1.02] hover:shadow-lg"
+                              style={{
+                                backgroundImage: "linear-gradient(135deg, hsl(145,65%,42%), hsl(160,70%,36%))",
+                                color: "white",
+                              }}
+                            >
+                              <Download className="w-4 h-4" />
+                              Baixar Arquivo
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Complementary Materials */}
@@ -876,7 +922,7 @@ const MemberArea = () => {
                   client={tokenClient}
                 />
 
-
+                {/* Navigation */}
                 {(() => {
                   const allLessons = modules.flatMap((m) => m.lessons);
                   const currentIndex = allLessons.findIndex((l) => l.id === activeLesson.id);
@@ -884,11 +930,11 @@ const MemberArea = () => {
                   const prevLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null;
 
                   return (
-                    <div className="flex items-center justify-between mt-4 gap-3">
+                    <div className="flex items-center justify-between mt-4 gap-2">
                       {prevLesson ? (
                         <button
-                          onClick={() => setActiveLesson(prevLesson)}
-                          className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm transition-all hover:bg-[hsl(220,16%,14%)]"
+                          onClick={() => selectLesson(prevLesson)}
+                          className="flex items-center gap-2 px-3 sm:px-4 py-3 rounded-xl text-xs sm:text-sm transition-all hover:bg-[hsl(220,16%,14%)]"
                           style={{ color: "hsl(0,0%,60%)" }}
                         >
                           ← Anterior
@@ -898,15 +944,8 @@ const MemberArea = () => {
                       )}
                       {nextLesson && (
                         <button
-                          onClick={() => {
-                            setActiveLesson(nextLesson);
-                            // Find and open the module containing the next lesson
-                            const nextModule = modules.find((m) =>
-                              m.lessons.some((l) => l.id === nextLesson.id)
-                            );
-                            if (nextModule) setActiveModuleId(nextModule.id);
-                          }}
-                          className="flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold transition-all hover:scale-[1.02]"
+                          onClick={() => selectLesson(nextLesson)}
+                          className="flex items-center gap-2 px-4 sm:px-5 py-3 rounded-xl text-xs sm:text-sm font-semibold transition-all hover:scale-[1.02]"
                           style={{
                             backgroundImage: "linear-gradient(135deg, hsl(145,65%,42%), hsl(160,70%,36%))",
                             color: "white",
@@ -923,22 +962,33 @@ const MemberArea = () => {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="rounded-2xl border p-12 text-center"
+                className="rounded-2xl border p-8 sm:p-12 text-center"
                 style={{
                   background: "hsl(220 18% 10%)",
                   borderColor: "hsl(220 15% 14%)",
                 }}
               >
                 <div
-                  className="w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center"
+                  className="w-16 sm:w-20 h-16 sm:h-20 mx-auto mb-4 sm:mb-6 rounded-2xl flex items-center justify-center"
                   style={{ background: "hsl(220,18%,14%)" }}
                 >
-                  <PlayCircle className="w-10 h-10 text-[hsl(145,65%,42%)]" />
+                  <PlayCircle className="w-8 sm:w-10 h-8 sm:h-10 text-[hsl(145,65%,42%)]" />
                 </div>
-                <h3 className="text-white text-lg font-bold mb-2">Selecione uma aula</h3>
-                <p className="text-[hsl(220,10%,45%)] text-sm">
-                  Escolha uma aula no menu lateral para começar sua jornada.
+                <h3 className="text-white text-base sm:text-lg font-bold mb-2">Selecione uma aula</h3>
+                <p className="text-[hsl(220,10%,45%)] text-xs sm:text-sm">
+                  Escolha uma aula no menu para começar.
                 </p>
+                <button
+                  onClick={() => setShowMobileSidebar(true)}
+                  className="lg:hidden mt-4 inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold"
+                  style={{
+                    backgroundImage: "linear-gradient(135deg, hsl(145,65%,42%), hsl(160,70%,36%))",
+                    color: "white",
+                  }}
+                >
+                  <List className="w-4 h-4" />
+                  Ver Aulas
+                </button>
               </motion.div>
             )}
           </main>
