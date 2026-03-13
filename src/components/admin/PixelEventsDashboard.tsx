@@ -34,6 +34,7 @@ const PixelEventsDashboard = ({ products }: Props) => {
   const [events, setEvents] = useState<PixelEvent[]>([]);
   const [filterProduct, setFilterProduct] = useState("all");
   const [period, setPeriod] = useState("24h");
+  const [feedView, setFeedView] = useState<"feed" | "journeys">("feed");
 
   // --- Data loading (unchanged logic) ---
   const loadEvents = async () => {
