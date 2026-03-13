@@ -74,8 +74,7 @@ export default function AdminLayout() {
       const [{ data: orders }, { data: settings }] = await Promise.all([
         supabase
           .from("orders")
-          .select("amount, status")
-          .eq("user_id", user.id),
+          .select("amount, status"),
         supabase
           .from("notification_settings")
           .select("notification_sound, send_approved")
