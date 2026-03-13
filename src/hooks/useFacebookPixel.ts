@@ -220,7 +220,7 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     return () => {
       cancelled = true;
     };
-  }, [productId, logPixelEvent, sendCAPI]);
+  }, [productId, sendCAPI]);
 
   /**
    * Set Advanced Matching data (call when customer fills the form).
