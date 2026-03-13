@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Lock, ArrowRight, Loader2, Award, Star, ListOrdered, Shield, ShieldCheck } from "lucide-react";
-import CustomerForm, { type CustomerData } from "@/components/checkout/CustomerForm";
+import CustomerForm, { type CustomerData, isValidCPF } from "@/components/checkout/CustomerForm";
 import PixPayment from "@/components/checkout/PixPayment";
 import PixModal from "@/components/checkout/PixModal";
 import CreditCardForm, { type CreditCardData } from "@/components/checkout/CreditCardForm";
