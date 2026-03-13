@@ -460,7 +460,7 @@ const Tracking = () => {
             </>
           )}
         </div>
-      </Card>
+      </div>
 
       {/* ========= PAGE VERIFICATION ========= */}
       <Card className="overflow-hidden">
