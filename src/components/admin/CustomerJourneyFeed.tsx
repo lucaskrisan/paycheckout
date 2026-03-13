@@ -10,6 +10,7 @@ interface PixelEvent {
   source: string;
   created_at: string;
   customer_name: string | null;
+  visitor_id: string | null;
 }
 
 interface Props {
@@ -30,12 +31,12 @@ const JOURNEY_END = "Purchase";
 
 const CustomerJourneyFeed = ({ events, products }: Props) => {
   const journeys = useMemo(() => {
-    // Group events by customer_name (only named events)
+    // Group events by visitor_id (full journey), fall back to customer_name
     const map = new Map<string, PixelEvent[]>();
     
     events.forEach((e) => {
-      if (!e.customer_name) return;
-      const key = e.customer_name.trim().toLowerCase();
+      const key = e.visitor_id || (e.customer_name ? `name:${e.customer_name.trim().toLowerCase()}` : null);
+      if (!key) return;
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(e);
     });
@@ -43,7 +44,9 @@ const CustomerJourneyFeed = ({ events, products }: Props) => {
     // Build journey objects sorted by most recent activity
     const result = Array.from(map.entries()).map(([key, evts]) => {
       const sorted = [...evts].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-      const displayName = sorted[0].customer_name!;
+      // Find the best name from any event in this journey
+      const namedEvent = sorted.find((e) => e.customer_name);
+      const displayName = namedEvent?.customer_name || "Visitante";
       const firstName = displayName.split(" ")[0];
       const lastEvent = sorted[sorted.length - 1];
       const completed = sorted.some((e) => e.event_name === JOURNEY_END);
