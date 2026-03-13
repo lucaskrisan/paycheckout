@@ -123,7 +123,6 @@ export default function AdminLayout() {
             supabase
               .from("orders")
               .select("amount, status")
-              .eq("user_id", user.id)
               .then(({ data }) => {
                 const revenue = (data || [])
                   .filter((o) => PAID_STATUSES.has(String(o.status).toLowerCase()))
