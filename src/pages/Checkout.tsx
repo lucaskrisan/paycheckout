@@ -489,6 +489,10 @@ const Checkout = () => {
         qrCodeUrl={pixData?.qrCodeUrl}
         pixCode={pixData?.pixCode}
         externalOrderId={pixData?.orderId}
+        onPaymentConfirmed={() => {
+          trackPurchase(finalAmount);
+          markPurchased();
+        }}
       />
     </div>
   );

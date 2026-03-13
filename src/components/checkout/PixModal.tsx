@@ -11,6 +11,7 @@ interface PixModalProps {
   qrCodeUrl?: string;
   pixCode?: string;
   externalOrderId?: string;
+  onPaymentConfirmed?: () => void;
 }
 
 const PixModal = ({ open, onClose, totalAmount, qrCodeUrl, pixCode, externalOrderId }: PixModalProps) => {
