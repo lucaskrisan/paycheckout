@@ -49,7 +49,9 @@ const PixelEventsDashboard = ({ products }: Props) => {
       .limit(1000);
     if (filterProduct !== "all") query = query.eq("product_id", filterProduct);
     const { data } = await query;
-    setEvents((data as any) || []);
+    // Filter out simulated test events
+    const real = ((data as any) || []).filter((e: PixelEvent) => !e.visitor_id?.startsWith("sim_"));
+    setEvents(real);
   };
 
   useEffect(() => { loadEvents(); }, [filterProduct, period]);
@@ -60,6 +62,7 @@ const PixelEventsDashboard = ({ products }: Props) => {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "pixel_events" }, (payload) => {
         const ne = payload.new as PixelEvent;
         if (filterProduct !== "all" && ne.product_id !== filterProduct) return;
+        if (ne.visitor_id?.startsWith("sim_")) return; // Ignore test events
         setEvents((prev) => [ne, ...prev].slice(0, 1000));
       })
       .subscribe();
