@@ -129,24 +129,11 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
         fbp: fbp,
         visitor_id: visitorId,
         user_agent: navigator.userAgent,
+        log_browser: true,
       },
     }).catch((err) => console.warn("[CAPI] non-blocking error:", err));
   }, [productId]);
 
-  /** Log pixel event to database for real-time dashboard (non-blocking) */
-  const logPixelEvent = useCallback((eventName: string, eventId?: string) => {
-    if (!productId) return;
-    const name = customerRef.current?.name || null;
-    const visitorId = getVisitorId();
-    supabase.from("pixel_events" as any).insert({
-      product_id: productId,
-      event_name: eventName,
-      source: "browser",
-      event_id: eventId || null,
-      customer_name: name,
-      visitor_id: visitorId,
-    }).then(() => {});
-  }, [productId]);
 
   useEffect(() => {
     if (!productId || initializedRef.current) return;
@@ -169,11 +156,9 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
 
       if (cancelled) return;
 
-      // Always log + send CAPI for PageView & InitiateCheckout (even if no pixels or fbq blocked)
-      logPixelEvent("PageView", pvId);
+      // Always send CAPI for PageView & InitiateCheckout (log_browser: true handles both entries)
       sendCAPI("PageView", pvId);
 
-      logPixelEvent("InitiateCheckout", icId);
       sendCAPI("InitiateCheckout", icId, {
         content_type: "product",
         content_ids: [productId],
@@ -235,7 +220,7 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     return () => {
       cancelled = true;
     };
-  }, [productId, logPixelEvent, sendCAPI]);
+  }, [productId, sendCAPI]);
 
   /**
    * Set Advanced Matching data (call when customer fills the form).
@@ -285,9 +270,8 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     if (window.fbq) {
       window.fbq("track", "AddPaymentInfo", customData, { eventID: eventId });
     }
-    logPixelEvent("AddPaymentInfo", eventId);
     sendCAPI("AddPaymentInfo", eventId, customData);
-  }, [productId, logPixelEvent, sendCAPI]);
+  }, [productId, sendCAPI]);
 
   /**
    * Track AddToCart for the main product (fired on buy click).
@@ -309,9 +293,8 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     if (window.fbq) {
       window.fbq("track", "AddToCart", customData, { eventID: eventId });
     }
-    logPixelEvent("AddToCart", eventId);
     sendCAPI("AddToCart", eventId, customData);
-  }, [productId, logPixelEvent, sendCAPI]);
+  }, [productId, sendCAPI]);
 
   /**
    * Track AddToCart event (Order Bump selected).
@@ -332,9 +315,8 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     if (window.fbq) {
       window.fbq("track", "AddToCart", customData, { eventID: eventId });
     }
-    logPixelEvent("AddToCart", eventId);
     sendCAPI("AddToCart", eventId, customData);
-  }, [productId, logPixelEvent, sendCAPI]);
+  }, [productId, sendCAPI]);
 
   /**
    * Track Purchase event with full data and deduplication.
@@ -358,9 +340,8 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     if (window.fbq) {
       window.fbq("track", "Purchase", customData, { eventID: eventId });
     }
-    logPixelEvent("Purchase", eventId);
     sendCAPI("Purchase", eventId, customData);
-  }, [productId, sendCAPI, logPixelEvent]);
+  }, [productId, sendCAPI]);
 
   /**
    * Track custom lead/contact event (e.g., after form fill).
@@ -382,8 +363,7 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
       window.fbq("track", "Lead", customData, { eventID: eventId });
     }
     sendCAPI("Lead", eventId, customData);
-    logPixelEvent("Lead", eventId);
-  }, [productId, sendCAPI, logPixelEvent]);
+  }, [productId, sendCAPI]);
 
   return {
     trackPurchase,
