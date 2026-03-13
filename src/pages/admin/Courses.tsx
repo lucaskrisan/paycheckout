@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Pencil, Trash2, GraduationCap, BookOpen, FileText, Users } from "lucide-react";
+import { Plus, Pencil, Trash2, GraduationCap, BookOpen, FileText, Users, ChevronUp, ChevronDown } from "lucide-react";
 import LessonMaterialsManager from "@/components/admin/LessonMaterialsManager";
 import { toast } from "sonner";
 import CourseStudents from "@/components/admin/CourseStudents";
@@ -281,6 +281,32 @@ const Courses = () => {
     if (selectedCourse) loadModules(selectedCourse.id);
   };
 
+  const moveModule = async (index: number, direction: "up" | "down") => {
+    if (!selectedCourse) return;
+    const swapIdx = direction === "up" ? index - 1 : index + 1;
+    if (swapIdx < 0 || swapIdx >= modules.length) return;
+    const a = modules[index];
+    const b = modules[swapIdx];
+    await Promise.all([
+      supabase.from("course_modules").update({ sort_order: b.sort_order }).eq("id", a.id),
+      supabase.from("course_modules").update({ sort_order: a.sort_order }).eq("id", b.id),
+    ]);
+    loadModules(selectedCourse.id);
+  };
+
+  const moveLesson = async (mod: Module, lessonIndex: number, direction: "up" | "down") => {
+    if (!selectedCourse) return;
+    const swapIdx = direction === "up" ? lessonIndex - 1 : lessonIndex + 1;
+    if (swapIdx < 0 || swapIdx >= mod.lessons.length) return;
+    const a = mod.lessons[lessonIndex];
+    const b = mod.lessons[swapIdx];
+    await Promise.all([
+      supabase.from("course_lessons").update({ sort_order: b.sort_order }).eq("id", a.id),
+      supabase.from("course_lessons").update({ sort_order: a.sort_order }).eq("id", b.id),
+    ]);
+    loadModules(selectedCourse.id);
+  };
+
   // --- LIST VIEW (no course selected) ---
   if (!selectedCourse) {
     return (
@@ -417,6 +443,14 @@ const Courses = () => {
             <AccordionItem key={mod.id} value={mod.id} className="border rounded-xl px-4">
               <AccordionTrigger className="hover:no-underline py-4">
                 <div className="flex items-center gap-3 flex-1 text-left">
+                  <div className="flex flex-col gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <Button variant="ghost" size="icon" className="h-5 w-5" disabled={modIdx === 0} onClick={() => moveModule(modIdx, "up")}>
+                      <ChevronUp className="w-3 h-3" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-5 w-5" disabled={modIdx === modules.length - 1} onClick={() => moveModule(modIdx, "down")}>
+                      <ChevronDown className="w-3 h-3" />
+                    </Button>
+                  </div>
                   <span className="text-xs font-bold text-muted-foreground bg-muted rounded-full w-7 h-7 flex items-center justify-center">
                     {modIdx + 1}
                   </span>
@@ -445,6 +479,14 @@ const Courses = () => {
                   <div className="space-y-2">
                     {mod.lessons.map((lesson, lesIdx) => (
                       <div key={lesson.id} className="flex items-center gap-3 bg-muted/30 rounded-lg px-3 py-2.5">
+                        <div className="flex flex-col gap-0.5 shrink-0">
+                          <Button variant="ghost" size="icon" className="h-5 w-5" disabled={lesIdx === 0} onClick={() => moveLesson(mod, lesIdx, "up")}>
+                            <ChevronUp className="w-3 h-3" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-5 w-5" disabled={lesIdx === mod.lessons.length - 1} onClick={() => moveLesson(mod, lesIdx, "down")}>
+                            <ChevronDown className="w-3 h-3" />
+                          </Button>
+                        </div>
                         <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">{lesson.title}</p>
