@@ -316,7 +316,7 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
       window.fbq("track", "AddToCart", customData, { eventID: eventId });
     }
     sendCAPI("AddToCart", eventId, customData);
-  }, [productId, logPixelEvent, sendCAPI]);
+  }, [productId, sendCAPI]);
 
   /**
    * Track Purchase event with full data and deduplication.
