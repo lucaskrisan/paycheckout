@@ -58,6 +58,16 @@ ${pixelInits}
   fbq('track','PageView');
   fbq('track','ViewContent',{content_type:'product',content_ids:['${selectedProduct}']});
 
+  // === Log ViewContent to CAPI/dashboard ===
+  var vid=localStorage.getItem('_vid');
+  if(!vid){vid='v_'+Date.now()+'_'+Math.random().toString(36).slice(2,12);localStorage.setItem('_vid',vid);}
+  var vcId='vc_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
+  var capiUrl='https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/facebook-capi';
+  fetch(capiUrl,{
+    method:'POST',headers:{'Content-Type':'application/json','apikey':'${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}'},
+    body:JSON.stringify({product_id:'${selectedProduct}',event_name:'ViewContent',event_id:vcId,event_source_url:location.href,visitor_id:vid,fbc:(document.cookie.match(/(^|;\\s*)_fbc=([^;]*)/)||[])[2]||'',fbp:(document.cookie.match(/(^|;\\s*)_fbp=([^;]*)/)||[])[2]||'',custom_data:{content_type:'product',content_ids:['${selectedProduct}']}})
+  }).catch(function(){});
+
   // === 2. Captura UTMs + fbclid ===
   var ps=new URLSearchParams(location.search);
   var utms={};

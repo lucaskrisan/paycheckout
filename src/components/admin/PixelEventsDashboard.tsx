@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Eye, ShoppingCart, UserCheck, CreditCard, Zap, MousePointerClick, TrendingUp, Radio } from "lucide-react";
+import { Eye, ShoppingCart, UserCheck, CreditCard, Zap, MousePointerClick, TrendingUp, Radio, BookOpen } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { format, subHours, startOfHour } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -24,6 +24,7 @@ interface Props {
 
 const EVENT_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
   PageView: { label: "PageView", color: "#818cf8", icon: Eye },
+  ViewContent: { label: "ViewContent", color: "#fb923c", icon: BookOpen },
   InitiateCheckout: { label: "Checkout", color: "#fbbf24", icon: ShoppingCart },
   Lead: { label: "Lead", color: "#60a5fa", icon: UserCheck },
   AddPaymentInfo: { label: "Payment", color: "#a78bfa", icon: CreditCard },
@@ -109,7 +110,7 @@ const PixelEventsDashboard = ({ products }: Props) => {
   }, [eventCounts]);
 
   const recentEvents = events.slice(0, 50);
-  const orderedEventNames = ["PageView", "InitiateCheckout", "Lead", "AddPaymentInfo", "AddToCart", "Purchase"];
+  const orderedEventNames = ["PageView", "ViewContent", "InitiateCheckout", "Lead", "AddPaymentInfo", "AddToCart", "Purchase"];
 
   return (
     <div className="space-y-4">
@@ -151,7 +152,7 @@ const PixelEventsDashboard = ({ products }: Props) => {
       </div>
 
       {/* ── Event counters ── */}
-      <div className="grid grid-cols-3 lg:grid-cols-6 gap-2">
+      <div className="grid grid-cols-4 lg:grid-cols-7 gap-2">
         {orderedEventNames.map((name) => {
           const cfg = EVENT_CONFIG[name];
           const count = eventCounts[name] || 0;
