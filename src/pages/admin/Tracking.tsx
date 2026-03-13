@@ -9,8 +9,9 @@ import { Progress } from "@/components/ui/progress";
 import {
   Loader2, ExternalLink, CheckCircle2, AlertCircle, Globe, Code2, Zap,
   Activity, XCircle, AlertTriangle, Play, RefreshCw, Search, Link2, FileCode,
+  Radar, Shield, Signal,
 } from "lucide-react";
-import TrackingScriptGenerator from "@/components/admin/TrackingScriptGenerator";
+import { motion } from "framer-motion";
 import UtmAttributionTable from "@/components/admin/UtmAttributionTable";
 import PixelEventsDashboard from "@/components/admin/PixelEventsDashboard";
 import {
