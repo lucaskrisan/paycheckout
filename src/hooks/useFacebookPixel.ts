@@ -35,9 +35,18 @@ function setCookie(name: string, value: string, days: number) {
   document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires};path=/;SameSite=Lax`;
 }
 
-/** Get or create a persistent visitor ID for journey tracking */
+/** Get or create a persistent visitor ID for journey tracking.
+ *  If a `vid` query parameter exists (cross-domain from LP), adopt it. */
 function getVisitorId(): string {
   const key = "_vid";
+
+  // Cross-domain: LP passes vid as URL param — adopt it so the journey stays linked
+  const urlVid = new URLSearchParams(window.location.search).get("vid");
+  if (urlVid && urlVid.startsWith("v_")) {
+    setCookie(key, urlVid, 390);
+    return urlVid;
+  }
+
   let vid = getCookie(key);
   if (!vid) {
     vid = `v_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
