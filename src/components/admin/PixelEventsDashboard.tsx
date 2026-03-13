@@ -101,7 +101,7 @@ const PixelEventsDashboard = ({ products }: Props) => {
     };
   }, [eventCounts]);
 
-  const recentEvents = events.slice(0, 25);
+  const recentEvents = events.slice(0, 50);
   const orderedEventNames = ["PageView", "InitiateCheckout", "Lead", "AddPaymentInfo", "AddToCart", "Purchase"];
 
   return (
