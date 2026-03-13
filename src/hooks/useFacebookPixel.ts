@@ -322,19 +322,22 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     firedEventsRef.current.add(dedupKey);
 
     const eventId = orderId || generateEventId("Purchase");
-    const customData = {
+    const customData: Record<string, unknown> = {
       value,
       currency,
       content_type: "product",
       content_ids: productId ? [productId] : [],
+      num_items: 1,
     };
+    if (productNameRef.current) customData.content_name = productNameRef.current;
+    if (orderId) customData.order_id = orderId;
 
     if (window.fbq) {
       window.fbq("track", "Purchase", customData, { eventID: eventId });
     }
-    // CAPI already logs to pixel_events server-side — no need for browser logPixelEvent
+    logPixelEvent("Purchase", eventId);
     sendCAPI("Purchase", eventId, customData);
-  }, [productId, sendCAPI]);
+  }, [productId, sendCAPI, logPixelEvent]);
 
   /**
    * Track custom lead/contact event (e.g., after form fill).
