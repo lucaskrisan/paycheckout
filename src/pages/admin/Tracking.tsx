@@ -11,6 +11,7 @@ import {
 import TrackingScriptGenerator from "@/components/admin/TrackingScriptGenerator";
 import UtmAttributionTable from "@/components/admin/UtmAttributionTable";
 import PixelEventsDashboard from "@/components/admin/PixelEventsDashboard";
+import TrackingFullAudit from "@/components/admin/TrackingFullAudit";
 import {
   Select,
   SelectContent,
@@ -338,6 +339,9 @@ const Tracking = () => {
           </div>
         ))}
       </div>
+
+      {/* ── Full Audit ── */}
+      {user && <TrackingFullAudit userId={user.id} />}
 
       {/* ── Real-time Events ── */}
       <PixelEventsDashboard products={products} />
