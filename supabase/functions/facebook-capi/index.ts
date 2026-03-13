@@ -96,9 +96,23 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Build user_data with hashed values
+    // Extract real client IP — x-forwarded-for may contain "client, proxy1, proxy2"
+    const forwardedFor = req.headers.get('x-forwarded-for');
+    const clientIp = forwardedFor
+      ? forwardedFor.split(',')[0].trim()
+      : req.headers.get('cf-connecting-ip') || undefined;
+
+    // Skip invalid/private IPs that Meta will reject
+    const isValidPublicIp = clientIp && 
+      !clientIp.startsWith('0.') && 
+      !clientIp.startsWith('127.') && 
+      !clientIp.startsWith('10.') && 
+      !clientIp.startsWith('192.168.') &&
+      !clientIp.startsWith('172.') &&
+      clientIp !== '::1';
+
     const userData: CAPIEvent['user_data'] = {
-      client_ip_address: req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || undefined,
+      client_ip_address: isValidPublicIp ? clientIp : undefined,
       client_user_agent: req.headers.get('user-agent') || undefined,
     };
 
