@@ -3,7 +3,8 @@ import { Navigate, Outlet, useNavigate } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2, User, Eye, Bell, LogOut, ChevronDown } from "lucide-react";
+import { Loader2, User, Eye, Bell, LogOut, ChevronDown, Moon, Sun } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
 import { supabase } from "@/integrations/supabase/client";
 import HeaderGamification from "./HeaderGamification";
 import { playNotificationSound } from "@/lib/notificationSounds";
@@ -61,6 +62,7 @@ function useOneSignalInit(email: string | undefined) {
 
 export default function AdminLayout() {
   const { user, isAdmin, loading, signOut } = useAuth();
+  const { isDark, toggle: toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [notificationSound, setNotificationSound] = useState("kaching");
@@ -207,6 +209,13 @@ export default function AdminLayout() {
           {/* Green top bar with gamification — Kiwify style */}
           <div className="h-10 bg-primary flex items-center justify-between px-4">
             <HeaderGamification totalRevenue={totalRevenue} />
+            <button
+              onClick={toggleTheme}
+              className="w-7 h-7 rounded-full bg-primary-foreground/20 flex items-center justify-center text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+              title={isDark ? "Modo claro" : "Modo escuro"}
+            >
+              {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+            </button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 text-primary-foreground/90 hover:text-primary-foreground text-sm font-medium transition-colors">
