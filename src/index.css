@@ -73,7 +73,11 @@ All colors MUST be HSL.
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border box-border;
+  }
+
+  html, body {
+    @apply h-full overflow-x-hidden;
   }
 
   body {

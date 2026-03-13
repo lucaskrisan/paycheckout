@@ -161,9 +161,9 @@ export default function AdminLayout() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="h-screen flex w-full overflow-hidden">
         <AdminSidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Green top bar with gamification — Kiwify style */}
           <div className="h-10 bg-primary flex items-center justify-between px-4">
             <HeaderGamification totalRevenue={totalRevenue} />
@@ -205,7 +205,7 @@ export default function AdminLayout() {
             <SidebarTrigger className="mr-4" />
             <span className="font-display font-bold text-foreground">Painel Admin</span>
           </header>
-          <main className="flex-1 p-6 bg-background overflow-auto">
+          <main className="flex-1 p-6 bg-background overflow-y-auto overflow-x-hidden">
             <Outlet />
           </main>
         </div>
