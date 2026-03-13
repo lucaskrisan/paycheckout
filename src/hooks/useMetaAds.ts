@@ -34,6 +34,8 @@ export interface MetaCampaign {
   lifetime_budget?: string;
   budget_remaining?: string;
   insights: MetaInsights | null;
+  _account_id?: string;
+  _account_name?: string;
 }
 
 export interface MetaAdSet {
@@ -47,6 +49,7 @@ export interface MetaAdSet {
   optimization_goal?: string;
   billing_event?: string;
   insights: MetaInsights | null;
+  _account_id?: string;
 }
 
 export interface MetaAd {
@@ -57,6 +60,7 @@ export interface MetaAd {
   campaign_id: string;
   creative?: { title?: string; body?: string; thumbnail_url?: string };
   insights: MetaInsights | null;
+  _account_id?: string;
 }
 
 type DatePreset = "today" | "yesterday" | "last_7d" | "last_30d" | "custom";
@@ -72,7 +76,7 @@ async function callMetaAds(payload: Record<string, any>) {
 
 export function useMetaAds() {
   const [accounts, setAccounts] = useState<MetaAccount[]>([]);
-  const [selectedAccount, setSelectedAccount] = useState<string>("");
+  const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
   const [campaigns, setCampaigns] = useState<MetaCampaign[]>([]);
   const [adsets, setAdsets] = useState<MetaAdSet[]>([]);
   const [ads, setAds] = useState<MetaAd[]>([]);
@@ -93,69 +97,83 @@ export function useMetaAds() {
     try {
       const data = await callMetaAds({ action: "list_accounts" });
       setAccounts(data || []);
-      if (data?.length > 0 && !selectedAccount) {
-        setSelectedAccount(data[0].id);
+      if (data?.length > 0 && selectedAccounts.length === 0) {
+        setSelectedAccounts([data[0].id]);
       }
     } catch (err: any) {
       toast.error("Erro ao buscar contas: " + err.message);
     } finally {
       setLoading(false);
     }
-  }, [selectedAccount]);
+  }, [selectedAccounts.length]);
+
+  const fetchForAccounts = useCallback(
+    async (action: string, accountIds: string[]) => {
+      const results = await Promise.all(
+        accountIds.map(async (accId) => {
+          try {
+            const data = await callMetaAds({
+              action,
+              account_id: accId,
+              ...getDateParams(),
+            });
+            const accName = accounts.find((a) => a.id === accId)?.name || accId;
+            return (data || []).map((item: any) => ({
+              ...item,
+              _account_id: accId,
+              _account_name: accName,
+            }));
+          } catch {
+            return [];
+          }
+        })
+      );
+      return results.flat();
+    },
+    [getDateParams, accounts]
+  );
 
   const fetchCampaigns = useCallback(async () => {
-    if (!selectedAccount) return;
+    if (selectedAccounts.length === 0) return;
     setLoading(true);
     try {
-      const data = await callMetaAds({
-        action: "list_campaigns",
-        account_id: selectedAccount,
-        ...getDateParams(),
-      });
-      setCampaigns(data || []);
+      const data = await fetchForAccounts("list_campaigns", selectedAccounts);
+      setCampaigns(data);
       setLastRefresh(new Date());
     } catch (err: any) {
       toast.error("Erro ao buscar campanhas: " + err.message);
     } finally {
       setLoading(false);
     }
-  }, [selectedAccount, getDateParams]);
+  }, [selectedAccounts, fetchForAccounts]);
 
   const fetchAdSets = useCallback(async () => {
-    if (!selectedAccount) return;
+    if (selectedAccounts.length === 0) return;
     setLoading(true);
     try {
-      const data = await callMetaAds({
-        action: "list_adsets",
-        account_id: selectedAccount,
-        ...getDateParams(),
-      });
-      setAdsets(data || []);
+      const data = await fetchForAccounts("list_adsets", selectedAccounts);
+      setAdsets(data);
       setLastRefresh(new Date());
     } catch (err: any) {
       toast.error("Erro ao buscar conjuntos: " + err.message);
     } finally {
       setLoading(false);
     }
-  }, [selectedAccount, getDateParams]);
+  }, [selectedAccounts, fetchForAccounts]);
 
   const fetchAds = useCallback(async () => {
-    if (!selectedAccount) return;
+    if (selectedAccounts.length === 0) return;
     setLoading(true);
     try {
-      const data = await callMetaAds({
-        action: "list_ads",
-        account_id: selectedAccount,
-        ...getDateParams(),
-      });
-      setAds(data || []);
+      const data = await fetchForAccounts("list_ads", selectedAccounts);
+      setAds(data);
       setLastRefresh(new Date());
     } catch (err: any) {
       toast.error("Erro ao buscar anúncios: " + err.message);
     } finally {
       setLoading(false);
     }
-  }, [selectedAccount, getDateParams]);
+  }, [selectedAccounts, fetchForAccounts]);
 
   const toggleStatus = useCallback(async (objectId: string, currentStatus: string) => {
     const newStatus = currentStatus === "ACTIVE" ? "PAUSED" : "ACTIVE";
@@ -191,8 +209,22 @@ export function useMetaAds() {
     }
   }, []);
 
+  const toggleAccount = useCallback((accountId: string) => {
+    setSelectedAccounts((prev) => {
+      if (prev.includes(accountId)) {
+        if (prev.length === 1) return prev; // keep at least one
+        return prev.filter((id) => id !== accountId);
+      }
+      return [...prev, accountId];
+    });
+  }, []);
+
+  const selectAllAccounts = useCallback(() => {
+    setSelectedAccounts(accounts.map((a) => a.id));
+  }, [accounts]);
+
   return {
-    accounts, selectedAccount, setSelectedAccount,
+    accounts, selectedAccounts, setSelectedAccounts, toggleAccount, selectAllAccounts,
     campaigns, adsets, ads,
     loading, datePreset, setDatePreset,
     customRange, setCustomRange,

@@ -1,13 +1,16 @@
-import { RefreshCw, Clock } from "lucide-react";
+import { RefreshCw, Clock, Check, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { MetaAccount } from "@/hooks/useMetaAds";
 
 interface Props {
   accounts: MetaAccount[];
-  selectedAccount: string;
-  onSelectAccount: (id: string) => void;
+  selectedAccounts: string[];
+  onToggleAccount: (id: string) => void;
+  onSelectAll: () => void;
   datePreset: string;
   onDatePreset: (v: string) => void;
   customRange: { since: string; until: string } | null;
@@ -25,25 +28,68 @@ function timeAgo(date: Date) {
 }
 
 export function MetaAdsHeader({
-  accounts, selectedAccount, onSelectAccount,
+  accounts, selectedAccounts, onToggleAccount, onSelectAll,
   datePreset, onDatePreset, customRange, onCustomRange,
   lastRefresh, loading, onRefresh,
 }: Props) {
+  const allSelected = accounts.length > 0 && selectedAccounts.length === accounts.length;
+  const label =
+    selectedAccounts.length === 0
+      ? "Selecione contas"
+      : selectedAccounts.length === 1
+        ? accounts.find((a) => a.id === selectedAccounts[0])?.name || "1 conta"
+        : selectedAccounts.length === accounts.length
+          ? "Todas as contas"
+          : `${selectedAccounts.length} contas selecionadas`;
+
   return (
     <div className="flex flex-wrap items-center gap-3">
-      {/* Account selector */}
-      <Select value={selectedAccount} onValueChange={onSelectAccount}>
-        <SelectTrigger className="w-[260px] bg-[hsl(222,25%,16%)] border-slate-700/50 text-slate-200">
-          <SelectValue placeholder="Selecione a conta" />
-        </SelectTrigger>
-        <SelectContent className="bg-[hsl(222,25%,16%)] border-slate-700/50">
-          {accounts.map((acc) => (
-            <SelectItem key={acc.id} value={acc.id} className="text-slate-200 focus:bg-slate-700/50 focus:text-slate-100">
-              {acc.name || acc.account_id} ({acc.currency})
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {/* Multi-account selector */}
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            className="w-[280px] justify-between bg-[hsl(222,25%,16%)] border-slate-700/50 text-slate-200 hover:bg-slate-700/50 hover:text-slate-100"
+          >
+            <span className="truncate text-sm">{label}</span>
+            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[300px] p-2 bg-[hsl(222,25%,16%)] border-slate-700/50" align="start">
+          {/* Select all */}
+          <div
+            className="flex items-center gap-2 px-2 py-2 rounded hover:bg-slate-700/40 cursor-pointer border-b border-slate-700/30 mb-1"
+            onClick={onSelectAll}
+          >
+            <Checkbox checked={allSelected} className="border-slate-500 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500" />
+            <span className="text-sm font-medium text-slate-200">Selecionar todas</span>
+          </div>
+          <div className="max-h-[240px] overflow-y-auto space-y-0.5">
+            {accounts.map((acc) => {
+              const checked = selectedAccounts.includes(acc.id);
+              return (
+                <div
+                  key={acc.id}
+                  className={`flex items-center gap-2 px-2 py-2 rounded cursor-pointer transition-colors ${
+                    checked ? "bg-blue-500/10" : "hover:bg-slate-700/40"
+                  }`}
+                  onClick={() => onToggleAccount(acc.id)}
+                >
+                  <Checkbox
+                    checked={checked}
+                    className="border-slate-500 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-slate-200 truncate">{acc.name || acc.account_id}</p>
+                    <p className="text-[10px] text-slate-500">{acc.currency}</p>
+                  </div>
+                  {checked && <Check className="w-3.5 h-3.5 text-blue-400 shrink-0" />}
+                </div>
+              );
+            })}
+          </div>
+        </PopoverContent>
+      </Popover>
 
       {/* Date preset */}
       <Select value={datePreset} onValueChange={onDatePreset}>
