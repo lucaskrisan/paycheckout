@@ -18,23 +18,32 @@ interface Props {
   products: { id: string; name: string }[];
 }
 
-const EVENT_CONFIG: Record<string, { label: string; color: string; icon: any; order: number }> = {
-  PageView: { label: "Acessou a página", color: "#818cf8", icon: Eye, order: 0 },
-  ViewContent: { label: "Viu a oferta", color: "#fb923c", icon: BookOpen, order: 1 },
-  InitiateCheckout: { label: "Entrou no checkout", color: "#fbbf24", icon: ShoppingCart, order: 2 },
-  Lead: { label: "Preencheu os dados", color: "#60a5fa", icon: UserCheck, order: 3 },
-  AddToCart: { label: "Clicou em comprar", color: "#f472b6", icon: MousePointerClick, order: 4 },
-  AddPaymentInfo: { label: "Informou pagamento", color: "#a78bfa", icon: CreditCard, order: 5 },
-  Purchase: { label: "Pagou! 🎉", color: "#34d399", icon: TrendingUp, order: 6 },
+const FUNNEL_STEPS = [
+  { key: "PageView", label: "PV", color: "#818cf8", icon: Eye },
+  { key: "ViewContent", label: "VC", color: "#fb923c", icon: BookOpen },
+  { key: "InitiateCheckout", label: "IC", color: "#fbbf24", icon: ShoppingCart },
+  { key: "Lead", label: "Lead", color: "#60a5fa", icon: UserCheck },
+  { key: "AddToCart", label: "Cart", color: "#f472b6", icon: MousePointerClick },
+  { key: "AddPaymentInfo", label: "Pay", color: "#a78bfa", icon: CreditCard },
+  { key: "Purchase", label: "🎉", color: "#34d399", icon: TrendingUp },
+];
+
+const EVENT_LABELS: Record<string, string> = {
+  PageView: "Acessou a página",
+  ViewContent: "Viu a oferta",
+  InitiateCheckout: "Entrou no checkout",
+  Lead: "Preencheu os dados",
+  AddToCart: "Clicou em comprar",
+  AddPaymentInfo: "Informou pagamento",
+  Purchase: "Pagou! 🎉",
 };
 
 const JOURNEY_END = "Purchase";
 
 const CustomerJourneyFeed = ({ events, products }: Props) => {
   const journeys = useMemo(() => {
-    // Group events by visitor_id (full journey), fall back to customer_name
     const map = new Map<string, PixelEvent[]>();
-    
+
     events.forEach((e) => {
       const key = e.visitor_id || (e.customer_name ? `name:${e.customer_name.trim().toLowerCase()}` : null);
       if (!key) return;
@@ -42,10 +51,8 @@ const CustomerJourneyFeed = ({ events, products }: Props) => {
       map.get(key)!.push(e);
     });
 
-    // Build journey objects sorted by most recent activity
     const result = Array.from(map.entries()).map(([key, evts]) => {
       const sorted = [...evts].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-      // Find the best name from any event in this journey
       const namedEvent = sorted.find((e) => e.customer_name);
       const displayName = namedEvent?.customer_name || "Visitante";
       const firstName = displayName.split(" ")[0];
@@ -53,7 +60,6 @@ const CustomerJourneyFeed = ({ events, products }: Props) => {
       const completed = sorted.some((e) => e.event_name === JOURNEY_END);
       const productName = products.find((p) => p.id === sorted[0].product_id)?.name;
 
-      // Deduplicate event types, keep first occurrence
       const seenTypes = new Set<string>();
       const uniqueSteps = sorted.filter((e) => {
         if (seenTypes.has(e.event_name)) return false;
@@ -61,24 +67,31 @@ const CustomerJourneyFeed = ({ events, products }: Props) => {
         return true;
       });
 
+      // Calculate funnel progress (0-100)
+      const reachedSteps = new Set(uniqueSteps.map((e) => e.event_name));
+      let maxIndex = -1;
+      FUNNEL_STEPS.forEach((step, i) => {
+        if (reachedSteps.has(step.key)) maxIndex = i;
+      });
+      const progress = FUNNEL_STEPS.length > 1 ? Math.round((maxIndex / (FUNNEL_STEPS.length - 1)) * 100) : 0;
+
       return {
         key,
         displayName,
         firstName,
         events: uniqueSteps,
+        reachedSteps,
         lastEvent,
         completed,
         productName,
+        progress,
         lastActivity: new Date(lastEvent.created_at).getTime(),
       };
     });
 
     const now = Date.now();
-    const EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
-
-    // Filter out expired non-converted journeys
+    const EXPIRY_MS = 10 * 60 * 1000;
     const active = result.filter((j) => j.completed || (now - j.lastActivity) < EXPIRY_MS);
-
     return active.sort((a, b) => b.lastActivity - a.lastActivity);
   }, [events, products]);
 
@@ -120,12 +133,13 @@ const CustomerJourneyFeed = ({ events, products }: Props) => {
           <div className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800/50 border border-slate-700/30">
             <TrendingUp className="w-3 h-3 text-cyan-400" />
             <span className="text-[11px] font-semibold text-cyan-400">
-              {journeys.length > 0 ? ((completedCount / journeys.length) * 100).toFixed(0) : 0}%
+              {((completedCount / journeys.length) * 100).toFixed(0)}%
             </span>
             <span className="text-[10px] text-slate-500">taxa</span>
           </div>
         )}
       </div>
+
       <div className="divide-y divide-slate-800/40">
         <AnimatePresence mode="popLayout">
           {journeys.map((journey) => (
@@ -173,28 +187,62 @@ const CustomerJourneyFeed = ({ events, products }: Props) => {
                   </div>
                 </div>
               </div>
-              {/* Timeline steps */}
-              <div className="flex items-center gap-1 ml-10 flex-wrap">
-                {journey.events.map((e, i) => {
-                  const cfg = EVENT_CONFIG[e.event_name];
-                  const Icon = cfg?.icon || Zap;
-                  return (
-                    <div key={e.id} className="flex items-center gap-1">
-                      {i > 0 && <div className="w-4 h-[1px] bg-slate-700/60" />}
-                      <div
-                        className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-medium"
-                        style={{
-                          backgroundColor: `${cfg?.color || "#475569"}15`,
-                          color: cfg?.color || "#94a3b8",
-                          border: `1px solid ${cfg?.color || "#475569"}25`,
-                        }}
-                      >
-                        <Icon className="w-3 h-3" />
-                        <span className="hidden sm:inline">{cfg?.label || e.event_name}</span>
+
+              {/* Funnel Progress Bar */}
+              <div className="ml-10 mb-2">
+                <div className="flex items-center gap-0">
+                  {FUNNEL_STEPS.map((step, i) => {
+                    const reached = journey.reachedSteps.has(step.key);
+                    const Icon = step.icon;
+                    const isLast = i === FUNNEL_STEPS.length - 1;
+                    return (
+                      <div key={step.key} className="flex items-center">
+                        <div
+                          className="flex items-center justify-center w-6 h-6 rounded-full transition-all relative group/step"
+                          style={{
+                            backgroundColor: reached ? `${step.color}25` : "rgba(51,65,85,0.3)",
+                            border: `1.5px solid ${reached ? step.color : "rgba(71,85,105,0.3)"}`,
+                          }}
+                          title={EVENT_LABELS[step.key] || step.key}
+                        >
+                          <Icon
+                            className="w-2.5 h-2.5"
+                            style={{ color: reached ? step.color : "#475569" }}
+                          />
+                          {reached && step.key === "Purchase" && (
+                            <motion.div
+                              className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400"
+                              animate={{ scale: [1, 1.4, 1] }}
+                              transition={{ duration: 1.5, repeat: Infinity }}
+                            />
+                          )}
+                        </div>
+                        {!isLast && (
+                          <div
+                            className="w-3 h-[2px] transition-colors"
+                            style={{
+                              backgroundColor: reached && journey.reachedSteps.has(FUNNEL_STEPS[i + 1]?.key)
+                                ? step.color
+                                : "rgba(71,85,105,0.25)",
+                            }}
+                          />
+                        )}
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                  <span className="ml-2 text-[10px] font-mono font-semibold tabular-nums" style={{
+                    color: journey.completed ? "#34d399" : "#fbbf24"
+                  }}>
+                    {journey.progress}%
+                  </span>
+                </div>
+              </div>
+
+              {/* Last action label */}
+              <div className="ml-10">
+                <span className="text-[10px] text-slate-500 italic">
+                  Último: {EVENT_LABELS[journey.lastEvent.event_name] || journey.lastEvent.event_name}
+                </span>
               </div>
             </motion.div>
           ))}
