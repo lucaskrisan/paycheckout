@@ -127,6 +127,11 @@ Deno.serve(async (req) => {
     if (fbc) userData.fbc = fbc;
     if (fbp) userData.fbp = fbp;
 
+    // Always send visitor_id as external_id for consistent cross-event matching (boosts EMQ)
+    if (visitor_id) {
+      userData.external_id = [await hashSHA256(visitor_id)];
+    }
+
     if (customer?.email) {
       userData.em = [await hashSHA256(customer.email)];
     }
@@ -143,6 +148,7 @@ Deno.serve(async (req) => {
       }
     }
     if (customer?.cpf) {
+      // If CPF exists, use it as external_id instead (stronger identifier)
       userData.external_id = [await hashSHA256(customer.cpf.replace(/\D/g, ''))];
     }
 
