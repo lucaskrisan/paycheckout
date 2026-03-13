@@ -307,9 +307,8 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     if (window.fbq) {
       window.fbq("track", "AddToCart", customData, { eventID: eventId });
     }
-    logPixelEvent("AddToCart", eventId);
     sendCAPI("AddToCart", eventId, customData);
-  }, [productId, logPixelEvent, sendCAPI]);
+  }, [productId, sendCAPI]);
 
   /**
    * Track AddToCart event (Order Bump selected).
@@ -330,7 +329,6 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     if (window.fbq) {
       window.fbq("track", "AddToCart", customData, { eventID: eventId });
     }
-    logPixelEvent("AddToCart", eventId);
     sendCAPI("AddToCart", eventId, customData);
   }, [productId, logPixelEvent, sendCAPI]);
 
