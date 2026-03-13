@@ -102,7 +102,7 @@ async function listCampaigns(accountId: string, datePreset: string, since?: stri
   // Get campaigns
   const campaigns = await metaFetch(`/${accountId}/campaigns`, {
     fields,
-    filtering: JSON.stringify([{ field: 'effective_status', operator: 'IN', value: ['ACTIVE', 'PAUSED'] }]),
+    filtering: JSON.stringify([{ field: 'effective_status', operator: 'IN', value: ['ACTIVE'] }]),
     limit: '200',
   });
 
