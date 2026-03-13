@@ -463,12 +463,14 @@ const Tracking = () => {
       </div>
 
       {/* ========= PAGE VERIFICATION ========= */}
-      <Card className="overflow-hidden">
-        <div className="px-5 py-4 border-b border-border bg-muted/30 flex items-center gap-3">
-          <FileCode className="w-5 h-5 text-primary" />
+      <div className="relative overflow-hidden rounded-xl bg-slate-900/90 border border-slate-700/40">
+        <div className="px-5 py-4 border-b border-slate-700/50 flex items-center gap-3">
+          <div className="p-1.5 rounded-md bg-violet-500/10 border border-violet-500/20">
+            <FileCode className="w-4 h-4 text-violet-400" />
+          </div>
           <div>
-            <h2 className="font-semibold text-foreground text-sm">Verificação de Página Externa</h2>
-            <p className="text-xs text-muted-foreground">Cole a URL da sua página de vendas para verificar se o tracking está 100%</p>
+            <h2 className="font-semibold text-white text-sm">Verificação de Página Externa</h2>
+            <p className="text-[10px] text-slate-500 font-mono uppercase tracking-wider">Audite o tracking da sua landing page</p>
           </div>
         </div>
         <div className="p-5 space-y-4">
