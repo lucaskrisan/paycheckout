@@ -33,6 +33,7 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import LessonMaterials from "@/components/member/LessonMaterials";
 import LessonReviews from "@/components/member/LessonReviews";
+import MemberInstallBanner from "@/components/member/MemberInstallBanner";
 
 interface Lesson {
   id: string;
