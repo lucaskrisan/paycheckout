@@ -105,7 +105,7 @@ export default function MetaAds() {
             spend={summary.spend}
             conversionValue={summary.convValue}
             results={summary.results}
-            roas={avgROAS}
+            roas={globalROAS}
           />
           <MetaAdsFunnel />
         </TabsContent>
