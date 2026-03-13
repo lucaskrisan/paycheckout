@@ -63,14 +63,14 @@ export function MetaAdsHeader({
         <div className="flex items-center gap-2">
           <Input
             type="date"
-            className="w-[140px] bg-card border-border"
+            className="w-[140px] bg-[hsl(222,25%,16%)] border-slate-700/50 text-slate-200"
             value={customRange?.since || ""}
             onChange={(e) => onCustomRange({ since: e.target.value, until: customRange?.until || "" })}
           />
-          <span className="text-muted-foreground text-sm">até</span>
+          <span className="text-slate-400 text-sm">até</span>
           <Input
             type="date"
-            className="w-[140px] bg-card border-border"
+            className="w-[140px] bg-[hsl(222,25%,16%)] border-slate-700/50 text-slate-200"
             value={customRange?.until || ""}
             onChange={(e) => onCustomRange({ since: customRange?.since || "", until: e.target.value })}
           />
