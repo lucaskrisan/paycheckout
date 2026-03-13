@@ -152,7 +152,7 @@ const PixelEventsDashboard = ({ products }: Props) => {
       </div>
 
       {/* ── Event counters ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-2">
+      <div className="grid grid-cols-2 min-[480px]:grid-cols-3 md:grid-cols-4 xl:grid-cols-7 gap-2">
         {orderedEventNames.map((name) => {
           const cfg = EVENT_CONFIG[name];
           const count = eventCounts[name] || 0;
