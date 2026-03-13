@@ -71,7 +71,7 @@ const Checkout = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pixData, setPixData] = useState<{ qrCodeUrl?: string; pixCode?: string; orderId?: string } | null>(null);
   const [pixModalOpen, setPixModalOpen] = useState(false);
-  const { trackPurchase, trackAddPaymentInfo, trackAddToCart, trackLead, setAdvancedMatching } = useFacebookPixel(productId, product?.price, product?.name);
+  const { trackPurchase, trackAddPaymentInfo, trackAddToCart, trackAddToCartMain, trackLead, setAdvancedMatching } = useFacebookPixel(productId, product?.price, product?.name);
   const [orderBumps, setOrderBumps] = useState<OrderBump[]>([]);
   const [selectedBumps, setSelectedBumps] = useState<Set<string>>(new Set());
   const [builderLayout, setBuilderLayout] = useState<BuilderComponent[]>([]);
