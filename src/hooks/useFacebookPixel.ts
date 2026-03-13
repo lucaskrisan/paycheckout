@@ -107,6 +107,7 @@ export function useFacebookPixel(productId: string | undefined) {
   const sendCAPI = useCallback((eventName: string, eventId: string, customData?: Record<string, unknown>) => {
     if (!productId) return;
     const visitorId = getVisitorId();
+    const fbp = ensureFbp();
 
     supabase.functions.invoke("facebook-capi", {
       body: {
@@ -117,8 +118,9 @@ export function useFacebookPixel(productId: string | undefined) {
         customer: customerRef.current,
         custom_data: customData,
         fbc: getCookie("_fbc") || null,
-        fbp: getCookie("_fbp") || null,
+        fbp: fbp,
         visitor_id: visitorId,
+        user_agent: navigator.userAgent,
       },
     }).catch((err) => console.warn("[CAPI] non-blocking error:", err));
   }, [productId]);
