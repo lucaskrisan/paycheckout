@@ -97,11 +97,19 @@ interface CustomerInfo {
   cpf?: string;
 }
 
-export function useFacebookPixel(productId: string | undefined) {
+export function useFacebookPixel(productId: string | undefined, productPrice?: number, productName?: string) {
   const initializedRef = useRef(false);
   const pixelIdsRef = useRef<string[]>([]);
   const firedEventsRef = useRef<Set<string>>(new Set());
   const customerRef = useRef<CustomerInfo>({});
+  const productPriceRef = useRef(productPrice);
+  const productNameRef = useRef(productName);
+
+  // Keep refs updated
+  useEffect(() => {
+    productPriceRef.current = productPrice;
+    productNameRef.current = productName;
+  }, [productPrice, productName]);
 
   /** Send event to CAPI edge function (server-side, non-blocking) */
   const sendCAPI = useCallback((eventName: string, eventId: string, customData?: Record<string, unknown>) => {
@@ -265,34 +273,36 @@ export function useFacebookPixel(productId: string | undefined) {
     firedEventsRef.current.add(dedup);
 
     const eventId = generateEventId("AddPaymentInfo");
+    const customData: Record<string, unknown> = {
+      content_type: "product",
+      content_ids: productId ? [productId] : [],
+      payment_method: paymentMethod,
+      currency: "BRL",
+    };
+    if (productPriceRef.current) customData.value = productPriceRef.current;
+    if (productNameRef.current) customData.content_name = productNameRef.current;
 
     if (window.fbq) {
-      window.fbq("track", "AddPaymentInfo", {
-        content_type: "product",
-        payment_method: paymentMethod,
-      }, { eventID: eventId });
+      window.fbq("track", "AddPaymentInfo", customData, { eventID: eventId });
     }
     logPixelEvent("AddPaymentInfo", eventId);
-    sendCAPI("AddPaymentInfo", eventId, {
-      content_type: "product",
-      payment_method: paymentMethod,
-    });
-  }, [logPixelEvent, sendCAPI]);
+    sendCAPI("AddPaymentInfo", eventId, customData);
+  }, [productId, logPixelEvent, sendCAPI]);
 
   /**
    * Track AddToCart event (Order Bump selected).
    * Front-end only — value zero to avoid CPA inflation.
    */
-  const trackAddToCart = useCallback((bumpProductId: string) => {
+  const trackAddToCart = useCallback((bumpProductId: string, bumpPrice?: number) => {
     const dedupKey = `AddToCart_${bumpProductId}`;
     if (firedEventsRef.current.has(dedupKey)) return;
     firedEventsRef.current.add(dedupKey);
 
     const eventId = generateEventId("AddToCart");
-    const customData = {
+    const customData: Record<string, unknown> = {
       content_type: "product",
-      content_ids: [productId],
-      value: 0,
+      content_ids: [bumpProductId],
+      value: bumpPrice || 0,
       currency: "BRL",
     };
 
@@ -300,7 +310,8 @@ export function useFacebookPixel(productId: string | undefined) {
       window.fbq("track", "AddToCart", customData, { eventID: eventId });
     }
     logPixelEvent("AddToCart", eventId);
-  }, [productId, logPixelEvent]);
+    sendCAPI("AddToCart", eventId, customData);
+  }, [productId, logPixelEvent, sendCAPI]);
 
   /**
    * Track Purchase event with full data and deduplication.
@@ -311,19 +322,22 @@ export function useFacebookPixel(productId: string | undefined) {
     firedEventsRef.current.add(dedupKey);
 
     const eventId = orderId || generateEventId("Purchase");
-    const customData = {
+    const customData: Record<string, unknown> = {
       value,
       currency,
       content_type: "product",
       content_ids: productId ? [productId] : [],
+      num_items: 1,
     };
+    if (productNameRef.current) customData.content_name = productNameRef.current;
+    if (orderId) customData.order_id = orderId;
 
     if (window.fbq) {
       window.fbq("track", "Purchase", customData, { eventID: eventId });
     }
-    // CAPI already logs to pixel_events server-side — no need for browser logPixelEvent
+    logPixelEvent("Purchase", eventId);
     sendCAPI("Purchase", eventId, customData);
-  }, [productId, sendCAPI]);
+  }, [productId, sendCAPI, logPixelEvent]);
 
   /**
    * Track custom lead/contact event (e.g., after form fill).
@@ -333,10 +347,13 @@ export function useFacebookPixel(productId: string | undefined) {
     firedEventsRef.current.add("Lead");
 
     const eventId = generateEventId("Lead");
-    const customData = {
+    const customData: Record<string, unknown> = {
       content_type: "product",
       content_ids: productId ? [productId] : [],
+      currency: "BRL",
     };
+    if (productPriceRef.current) customData.value = productPriceRef.current;
+    if (productNameRef.current) customData.content_name = productNameRef.current;
 
     if (window.fbq) {
       window.fbq("track", "Lead", customData, { eventID: eventId });

@@ -71,7 +71,7 @@ const Checkout = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pixData, setPixData] = useState<{ qrCodeUrl?: string; pixCode?: string; orderId?: string } | null>(null);
   const [pixModalOpen, setPixModalOpen] = useState(false);
-  const { trackPurchase, trackAddPaymentInfo, trackAddToCart, trackLead, setAdvancedMatching } = useFacebookPixel(productId);
+  const { trackPurchase, trackAddPaymentInfo, trackAddToCart, trackLead, setAdvancedMatching } = useFacebookPixel(productId, product?.price, product?.name);
   const [orderBumps, setOrderBumps] = useState<OrderBump[]>([]);
   const [selectedBumps, setSelectedBumps] = useState<Set<string>>(new Set());
   const [builderLayout, setBuilderLayout] = useState<BuilderComponent[]>([]);
@@ -193,9 +193,9 @@ const Checkout = () => {
         next.delete(bumpId);
       } else {
         next.add(bumpId);
-        // Fire AddToCart pixel event (front-end only, value zero)
+        // Fire AddToCart pixel event (browser + CAPI with value)
         const bump = orderBumps.find((b) => b.id === bumpId);
-        if (bump) trackAddToCart(bump.bump_product.id);
+        if (bump) trackAddToCart(bump.bump_product.id, bump.bump_product.price);
       }
       return next;
     });
