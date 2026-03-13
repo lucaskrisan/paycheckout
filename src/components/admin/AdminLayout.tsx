@@ -163,7 +163,7 @@ export default function AdminLayout() {
     <SidebarProvider>
       <div className="h-screen flex w-full overflow-hidden">
         <AdminSidebar />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Green top bar with gamification — Kiwify style */}
           <div className="h-10 bg-primary flex items-center justify-between px-4">
             <HeaderGamification totalRevenue={totalRevenue} />
