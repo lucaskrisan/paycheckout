@@ -152,18 +152,18 @@ const PixelEventsDashboard = ({ products }: Props) => {
       </div>
 
       {/* ── Event counters ── */}
-      <div className="grid grid-cols-4 lg:grid-cols-7 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-2">
         {orderedEventNames.map((name) => {
           const cfg = EVENT_CONFIG[name];
           const count = eventCounts[name] || 0;
           const Icon = cfg?.icon || Zap;
           return (
-            <div key={name} className="rounded-lg bg-slate-800/50 border border-slate-700/30 px-3 py-3">
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <Icon className="w-3 h-3" style={{ color: cfg?.color }} />
+            <div key={name} className="rounded-lg bg-slate-800/50 border border-slate-700/30 px-2.5 py-2.5">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Icon className="w-3 h-3 shrink-0" style={{ color: cfg?.color }} />
                 <span className="text-[10px] text-slate-500 font-medium truncate">{cfg?.label}</span>
               </div>
-              <span className="text-lg font-bold text-slate-100 font-mono tabular-nums">{count}</span>
+              <span className="text-base font-bold text-slate-100 font-mono tabular-nums">{count}</span>
             </div>
           );
         })}
