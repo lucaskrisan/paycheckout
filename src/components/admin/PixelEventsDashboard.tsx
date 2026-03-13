@@ -120,8 +120,48 @@ const PixelEventsDashboard = ({ products }: Props) => {
     };
   }, [eventCounts]);
 
-  const recentEvents = events.slice(0, 50);
+  const recentEvents = events.slice(0, 80);
   const orderedEventNames = ["PageView", "ViewContent", "InitiateCheckout", "Lead", "AddPaymentInfo", "AddToCart", "Purchase"];
+
+  // Group events by event_id to show Browser+CAPI as one row
+  const groupedEvents = useMemo(() => {
+    const map = new Map<string, GroupedEvent>();
+    const ungrouped: GroupedEvent[] = [];
+
+    recentEvents.forEach((e) => {
+      if (e.event_id) {
+        if (map.has(e.event_id)) {
+          const g = map.get(e.event_id)!;
+          if (!g.sources.includes(e.source)) g.sources.push(e.source);
+          g.ids.push(e.id);
+          if (e.customer_name && !g.customer_name) g.customer_name = e.customer_name;
+        } else {
+          map.set(e.event_id, {
+            event_id: e.event_id,
+            event_name: e.event_name,
+            product_id: e.product_id,
+            customer_name: e.customer_name,
+            created_at: e.created_at,
+            sources: [e.source],
+            ids: [e.id],
+          });
+        }
+      } else {
+        ungrouped.push({
+          event_id: e.id,
+          event_name: e.event_name,
+          product_id: e.product_id,
+          customer_name: e.customer_name,
+          created_at: e.created_at,
+          sources: [e.source],
+          ids: [e.id],
+        });
+      }
+    });
+
+    const all = [...map.values(), ...ungrouped];
+    return all.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 50);
+  }, [recentEvents]);
 
   return (
     <div className="space-y-4">
