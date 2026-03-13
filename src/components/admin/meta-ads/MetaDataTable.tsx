@@ -128,7 +128,7 @@ export function MetaDataTable({
           <TableBody>
             {loading && filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={15} className="text-center py-8 text-muted-foreground">
+               <TableCell colSpan={17} className="text-center py-8 text-muted-foreground">
                   Carregando dados do Meta...
                 </TableCell>
               </TableRow>
