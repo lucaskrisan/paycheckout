@@ -97,7 +97,7 @@ async function listAccounts() {
 
 async function listCampaigns(accountId: string, datePreset: string, since?: string, until?: string) {
   const fields = 'id,name,status,objective,daily_budget,lifetime_budget,budget_remaining';
-  const insightFields = 'spend,impressions,reach,frequency,cpm,ctr,cpc,actions,cost_per_action_type,purchase_roas';
+  const insightFields = 'spend,impressions,reach,frequency,cpm,ctr,cpc,actions,action_values,cost_per_action_type,purchase_roas';
   
   // Get campaigns
   const campaigns = await metaFetch(`/${accountId}/campaigns`, {
@@ -128,7 +128,7 @@ async function listCampaigns(accountId: string, datePreset: string, since?: stri
 
 async function listAdSets(accountId: string, datePreset: string, since?: string, until?: string) {
   const fields = 'id,name,status,campaign_id,daily_budget,lifetime_budget,budget_remaining,optimization_goal,billing_event';
-  const insightFields = 'spend,impressions,reach,frequency,cpm,ctr,cpc,actions,cost_per_action_type,purchase_roas';
+  const insightFields = 'spend,impressions,reach,frequency,cpm,ctr,cpc,actions,action_values,cost_per_action_type,purchase_roas';
 
   const adsets = await metaFetch(`/${accountId}/adsets`, {
     fields,
@@ -157,7 +157,7 @@ async function listAdSets(accountId: string, datePreset: string, since?: string,
 
 async function listAds(accountId: string, datePreset: string, since?: string, until?: string) {
   const fields = 'id,name,status,adset_id,campaign_id,creative{title,body,thumbnail_url}';
-  const insightFields = 'spend,impressions,reach,frequency,cpm,ctr,cpc,actions,cost_per_action_type,purchase_roas';
+  const insightFields = 'spend,impressions,reach,frequency,cpm,ctr,cpc,actions,action_values,cost_per_action_type,purchase_roas';
 
   const ads = await metaFetch(`/${accountId}/ads`, {
     fields,

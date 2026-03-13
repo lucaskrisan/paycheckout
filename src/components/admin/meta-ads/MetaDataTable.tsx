@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { MetaInsights } from "@/hooks/useMetaAds";
 import {
-  getResults, getCPA, getROAS,
+  getResults, getCPA, getROAS, getConversionValue, getROI,
   formatCurrency, formatNumber, formatPercent, formatBudget,
 } from "./MetaInsightsHelpers";
 
@@ -80,9 +80,10 @@ export function MetaDataTable({
       acc.impressions += parseInt(ins.impressions || "0", 10);
       acc.reach += parseInt(ins.reach || "0", 10);
       acc.results += getResults(ins);
+      acc.conversionValue += getConversionValue(ins);
       return acc;
     },
-    { spend: 0, impressions: 0, reach: 0, results: 0 }
+    { spend: 0, impressions: 0, reach: 0, results: 0, conversionValue: 0 }
   );
 
   return (
@@ -114,6 +115,8 @@ export function MetaDataTable({
               <TableHead className="text-right">Investimento</TableHead>
               <TableHead className="text-right">CPA</TableHead>
               <TableHead className="text-right">ROAS</TableHead>
+              <TableHead className="text-right">Valor Conv.</TableHead>
+              <TableHead className="text-right">ROI</TableHead>
               <TableHead className="text-right">CPM</TableHead>
               <TableHead className="text-right">CTR</TableHead>
               <TableHead className="text-right">CPC</TableHead>
@@ -126,13 +129,13 @@ export function MetaDataTable({
           <TableBody>
             {loading && filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={15} className="text-center py-8 text-muted-foreground">
+               <TableCell colSpan={17} className="text-center py-8 text-muted-foreground">
                   Carregando dados do Meta...
                 </TableCell>
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={15} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={17} className="text-center py-8 text-muted-foreground">
                   Nenhum item encontrado
                 </TableCell>
               </TableRow>
@@ -202,6 +205,12 @@ export function MetaDataTable({
                     <TableCell className={`text-right font-semibold ${roas >= 1 ? "text-primary" : roas > 0 ? "text-destructive" : "text-muted-foreground"}`}>
                       {roas > 0 ? `${roas.toFixed(2)}x` : "—"}
                     </TableCell>
+                    <TableCell className="text-right font-semibold">
+                      {(() => { const cv = getConversionValue(ins); return cv > 0 ? formatCurrency(cv) : "—"; })()}
+                    </TableCell>
+                    <TableCell className={`text-right font-semibold ${(() => { const roi = getROI(ins); return roi > 0 ? "text-primary" : roi < 0 ? "text-destructive" : "text-muted-foreground"; })()}`}>
+                      {(() => { const roi = getROI(ins); return roi !== 0 ? `${roi.toFixed(1).replace(".", ",")}%` : "—"; })()}
+                    </TableCell>
                     <TableCell className="text-right">{formatCurrency(ins?.cpm || "0")}</TableCell>
                     <TableCell className="text-right">{formatPercent(ins?.ctr || "0")}</TableCell>
                     <TableCell className="text-right">{formatCurrency(ins?.cpc || "0")}</TableCell>
@@ -253,7 +262,15 @@ export function MetaDataTable({
                 <TableCell className="text-right">
                   {totals.results > 0 ? formatCurrency(totals.spend / totals.results) : "—"}
                 </TableCell>
-                <TableCell />
+                <TableCell className="text-right">
+                  {totals.conversionValue > 0 && totals.spend > 0 ? `${(totals.conversionValue / totals.spend).toFixed(2)}x` : "—"}
+                </TableCell>
+                <TableCell className="text-right font-semibold">
+                  {totals.conversionValue > 0 ? formatCurrency(totals.conversionValue) : "—"}
+                </TableCell>
+                <TableCell className={`text-right font-semibold ${totals.conversionValue > totals.spend ? "text-primary" : totals.conversionValue > 0 ? "text-destructive" : ""}`}>
+                  {totals.spend > 0 && totals.conversionValue > 0 ? `${(((totals.conversionValue - totals.spend) / totals.spend) * 100).toFixed(1).replace(".", ",")}%` : "—"}
+                </TableCell>
                 <TableCell className="text-right">
                   {totals.impressions > 0 ? formatCurrency((totals.spend / totals.impressions) * 1000) : "—"}
                 </TableCell>

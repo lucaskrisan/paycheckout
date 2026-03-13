@@ -20,6 +20,7 @@ export interface MetaInsights {
   ctr: string;
   cpc: string;
   actions?: Array<{ action_type: string; value: string }>;
+  action_values?: Array<{ action_type: string; value: string }>;
   cost_per_action_type?: Array<{ action_type: string; value: string }>;
   purchase_roas?: Array<{ action_type: string; value: string }>;
 }

@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Megaphone, LayoutGrid, Layers, FileImage, DollarSign, Target, TrendingUp, Eye } from "lucide-react";
+import { Megaphone, LayoutGrid, Layers, FileImage, DollarSign, Target, TrendingUp, Percent } from "lucide-react";
 import { useMetaAds } from "@/hooks/useMetaAds";
 import { MetaAdsHeader } from "@/components/admin/meta-ads/MetaAdsHeader";
 import { MetaDataTable } from "@/components/admin/meta-ads/MetaDataTable";
-import { formatCurrency, formatNumber, getResults, getROAS } from "@/components/admin/meta-ads/MetaInsightsHelpers";
+import { formatCurrency, formatNumber, getResults, getROAS, getConversionValue, getROI } from "@/components/admin/meta-ads/MetaInsightsHelpers";
 
 export default function MetaAds() {
   const {
@@ -47,14 +47,18 @@ export default function MetaAds() {
       acc.impressions += parseInt(ins.impressions || "0", 10);
       acc.results += getResults(ins);
       acc.roas += getROAS(ins);
+      acc.conversionValue += getConversionValue(ins);
       acc.count++;
       return acc;
     },
-    { spend: 0, impressions: 0, results: 0, roas: 0, count: 0 }
+    { spend: 0, impressions: 0, results: 0, roas: 0, conversionValue: 0, count: 0 }
   );
 
   const avgCPA = summary.results > 0 ? summary.spend / summary.results : 0;
   const avgROAS = summary.count > 0 ? summary.roas / summary.count : 0;
+  const totalROI = summary.spend > 0 && summary.conversionValue > 0
+    ? ((summary.conversionValue - summary.spend) / summary.spend) * 100
+    : 0;
 
   return (
     <div className="space-y-4">
@@ -77,7 +81,7 @@ export default function MetaAds() {
       />
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <Card className="bg-card border-border">
           <CardContent className="p-4 flex items-center gap-3">
             <DollarSign className="w-8 h-8 text-primary" />
@@ -107,11 +111,31 @@ export default function MetaAds() {
         </Card>
         <Card className="bg-card border-border">
           <CardContent className="p-4 flex items-center gap-3">
+            <DollarSign className="w-8 h-8 text-primary" />
+            <div>
+              <p className="text-xs text-muted-foreground">Valor Conversão</p>
+              <p className="text-lg font-bold text-foreground">{summary.conversionValue > 0 ? formatCurrency(summary.conversionValue) : "—"}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-card border-border">
+          <CardContent className="p-4 flex items-center gap-3">
             <TrendingUp className={`w-8 h-8 ${avgROAS >= 1 ? "text-primary" : "text-destructive"}`} />
             <div>
               <p className="text-xs text-muted-foreground">ROAS Médio</p>
               <p className={`text-lg font-bold ${avgROAS >= 1 ? "text-primary" : "text-destructive"}`}>
                 {avgROAS > 0 ? `${avgROAS.toFixed(2)}x` : "—"}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-card border-border">
+          <CardContent className="p-4 flex items-center gap-3">
+            <Percent className={`w-8 h-8 ${totalROI > 0 ? "text-primary" : totalROI < 0 ? "text-destructive" : "text-muted-foreground"}`} />
+            <div>
+              <p className="text-xs text-muted-foreground">ROI</p>
+              <p className={`text-lg font-bold ${totalROI > 0 ? "text-primary" : totalROI < 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                {totalROI !== 0 ? `${totalROI.toFixed(1).replace(".", ",")}%` : "—"}
               </p>
             </div>
           </CardContent>
