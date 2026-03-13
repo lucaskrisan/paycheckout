@@ -513,7 +513,7 @@ const Tracking = () => {
             </Card>
           )}
         </div>
-      </Card>
+      </div>
 
       {/* ========= SCRIPT GENERATOR + UTM TEMPLATE ========= */}
       <TrackingScriptGenerator
