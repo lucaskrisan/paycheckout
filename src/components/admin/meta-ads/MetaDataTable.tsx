@@ -80,9 +80,10 @@ export function MetaDataTable({
       acc.impressions += parseInt(ins.impressions || "0", 10);
       acc.reach += parseInt(ins.reach || "0", 10);
       acc.results += getResults(ins);
+      acc.conversionValue += getConversionValue(ins);
       return acc;
     },
-    { spend: 0, impressions: 0, reach: 0, results: 0 }
+    { spend: 0, impressions: 0, reach: 0, results: 0, conversionValue: 0 }
   );
 
   return (
