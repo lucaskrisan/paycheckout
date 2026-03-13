@@ -226,19 +226,43 @@ const PixelEventsDashboard = ({ products }: Props) => {
               />
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 relative z-10" />
             </div>
-            <span className="text-sm font-semibold text-slate-200 tracking-tight">Feed ao Vivo</span>
+            {/* View Toggle */}
+            <div className="flex items-center bg-slate-800/60 rounded-lg p-0.5 border border-slate-700/40">
+              <button
+                onClick={() => setFeedView("feed")}
+                className={`px-3 py-1 text-[11px] font-semibold rounded-md transition-all ${
+                  feedView === "feed"
+                    ? "bg-slate-700/80 text-slate-200 shadow-sm"
+                    : "text-slate-500 hover:text-slate-400"
+                }`}
+              >
+                Feed
+              </button>
+              <button
+                onClick={() => setFeedView("journeys")}
+                className={`px-3 py-1 text-[11px] font-semibold rounded-md transition-all ${
+                  feedView === "journeys"
+                    ? "bg-slate-700/80 text-slate-200 shadow-sm"
+                    : "text-slate-500 hover:text-slate-400"
+                }`}
+              >
+                Jornadas
+              </button>
+            </div>
             <span className="text-[10px] font-mono text-slate-500 bg-slate-800/60 px-2 py-0.5 rounded-full">
               {recentEvents.length} eventos
             </span>
           </div>
-          <div className="flex items-center gap-3 text-[10px] text-slate-500">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-sm bg-cyan-500/60" /> Browser
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-sm bg-violet-500/60" /> Server
-            </span>
-          </div>
+          {feedView === "feed" && (
+            <div className="flex items-center gap-3 text-[10px] text-slate-500">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-sm bg-cyan-500/60" /> Browser
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-sm bg-violet-500/60" /> Server
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Feed Body */}
