@@ -70,8 +70,8 @@ ${pixelInits}
   if(!fbpCk){fbpCk='fb.1.'+Date.now()+'.'+Math.floor(1e9+Math.random()*9e9);document.cookie='_fbp='+fbpCk+';max-age=33696000;path=/;SameSite=Lax';}
 
   // === Log ViewContent to CAPI/dashboard ===
-  var vid=localStorage.getItem('_vid');
-  if(!vid){vid='v_'+Date.now()+'_'+Math.random().toString(36).slice(2,12);localStorage.setItem('_vid',vid);}
+  var vid=(document.cookie.match(/(^|;\\s*)_vid=([^;]*)/)||[])[2];
+  if(!vid){vid='v_'+Date.now()+'_'+Math.random().toString(36).slice(2,12);document.cookie='_vid='+vid+';max-age=33696000;path=/;SameSite=Lax';}
   var vcId='vc_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
   var pvId='pv_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
   var capiUrl='${SUPABASE_URL}/functions/v1/facebook-capi';
