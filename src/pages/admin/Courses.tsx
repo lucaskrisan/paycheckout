@@ -479,6 +479,14 @@ const Courses = () => {
                   <div className="space-y-2">
                     {mod.lessons.map((lesson, lesIdx) => (
                       <div key={lesson.id} className="flex items-center gap-3 bg-muted/30 rounded-lg px-3 py-2.5">
+                        <div className="flex flex-col gap-0.5 shrink-0">
+                          <Button variant="ghost" size="icon" className="h-5 w-5" disabled={lesIdx === 0} onClick={() => moveLesson(mod, lesIdx, "up")}>
+                            <ChevronUp className="w-3 h-3" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-5 w-5" disabled={lesIdx === mod.lessons.length - 1} onClick={() => moveLesson(mod, lesIdx, "down")}>
+                            <ChevronDown className="w-3 h-3" />
+                          </Button>
+                        </div>
                         <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">{lesson.title}</p>
