@@ -20,6 +20,7 @@ const PixModal = ({ open, onClose, totalAmount, qrCodeUrl, pixCode, externalOrde
   const [timeLeft, setTimeLeft] = useState(1800);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const confirmedCallbackFiredRef = useRef(false);
 
   useEffect(() => {
     if (!open) { setPaymentConfirmed(false); return; }
