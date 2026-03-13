@@ -33,6 +33,9 @@ export default function TrackingScriptGenerator({ pixels, products, checkoutBase
 
   const selectedProductName = products.find((p) => p.id === selectedProduct)?.name || "";
 
+  const SUPABASE_URL = `https://vipltojtcrqatwvzobro.supabase.co`;
+  const SUPABASE_ANON_KEY = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpcGx0b2p0Y3JxYXR3dnpvYnJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwOTk4MTAsImV4cCI6MjA4ODY3NTgxMH0.rBq_Vw5aD_hPGpgDoatr2STFkxe_E4fLTX5Hot_MoMU`;
+
   const generatedScript = useMemo(() => {
     if (!selectedProduct || productPixels.length === 0) return "";
     const pixelInits = productPixels
@@ -62,9 +65,9 @@ ${pixelInits}
   var vid=localStorage.getItem('_vid');
   if(!vid){vid='v_'+Date.now()+'_'+Math.random().toString(36).slice(2,12);localStorage.setItem('_vid',vid);}
   var vcId='vc_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
-  var capiUrl='https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/facebook-capi';
+  var capiUrl='${SUPABASE_URL}/functions/v1/facebook-capi';
   fetch(capiUrl,{
-    method:'POST',headers:{'Content-Type':'application/json','apikey':'${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}'},
+    method:'POST',headers:{'Content-Type':'application/json','apikey':'${SUPABASE_ANON_KEY}'},
     body:JSON.stringify({product_id:'${selectedProduct}',event_name:'ViewContent',event_id:vcId,event_source_url:location.href,visitor_id:vid,fbc:(document.cookie.match(/(^|;\\s*)_fbc=([^;]*)/)||[])[2]||'',fbp:(document.cookie.match(/(^|;\\s*)_fbp=([^;]*)/)||[])[2]||'',custom_data:{content_type:'product',content_ids:['${selectedProduct}']}})
   }).catch(function(){});
 
