@@ -161,7 +161,7 @@ const CustomerJourneyFeed = ({ events, products }: Props) => {
               })}
             </div>
           </motion.div>
-        ))
+        ))}
       </AnimatePresence>
     </div>
   );
