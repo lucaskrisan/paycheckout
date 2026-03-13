@@ -20,11 +20,12 @@ interface Props {
 
 const EVENT_CONFIG: Record<string, { label: string; color: string; icon: any; order: number }> = {
   PageView: { label: "Acessou a página", color: "#818cf8", icon: Eye, order: 0 },
-  InitiateCheckout: { label: "Entrou no checkout", color: "#fbbf24", icon: ShoppingCart, order: 1 },
-  Lead: { label: "Preencheu os dados", color: "#60a5fa", icon: UserCheck, order: 2 },
-  AddToCart: { label: "Clicou em comprar", color: "#f472b6", icon: MousePointerClick, order: 3 },
-  AddPaymentInfo: { label: "Informou pagamento", color: "#a78bfa", icon: CreditCard, order: 4 },
-  Purchase: { label: "Pagou! 🎉", color: "#34d399", icon: TrendingUp, order: 5 },
+  ViewContent: { label: "Viu a oferta", color: "#fb923c", icon: BookOpen, order: 1 },
+  InitiateCheckout: { label: "Entrou no checkout", color: "#fbbf24", icon: ShoppingCart, order: 2 },
+  Lead: { label: "Preencheu os dados", color: "#60a5fa", icon: UserCheck, order: 3 },
+  AddToCart: { label: "Clicou em comprar", color: "#f472b6", icon: MousePointerClick, order: 4 },
+  AddPaymentInfo: { label: "Informou pagamento", color: "#a78bfa", icon: CreditCard, order: 5 },
+  Purchase: { label: "Pagou! 🎉", color: "#34d399", icon: TrendingUp, order: 6 },
 };
 
 const JOURNEY_END = "Purchase";

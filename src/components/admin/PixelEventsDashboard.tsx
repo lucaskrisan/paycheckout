@@ -110,7 +110,7 @@ const PixelEventsDashboard = ({ products }: Props) => {
   }, [eventCounts]);
 
   const recentEvents = events.slice(0, 50);
-  const orderedEventNames = ["PageView", "InitiateCheckout", "Lead", "AddPaymentInfo", "AddToCart", "Purchase"];
+  const orderedEventNames = ["PageView", "ViewContent", "InitiateCheckout", "Lead", "AddPaymentInfo", "AddToCart", "Purchase"];
 
   return (
     <div className="space-y-4">
