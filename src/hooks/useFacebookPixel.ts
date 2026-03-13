@@ -284,7 +284,6 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     if (window.fbq) {
       window.fbq("track", "AddPaymentInfo", customData, { eventID: eventId });
     }
-    logPixelEvent("AddPaymentInfo", eventId);
     sendCAPI("AddPaymentInfo", eventId, customData);
   }, [productId, logPixelEvent, sendCAPI]);
 
