@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import HeaderGamification from "./HeaderGamification";
 import { playNotificationSound } from "@/lib/notificationSounds";
 import { toast } from "sonner";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
