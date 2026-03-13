@@ -6,6 +6,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 import { format, subHours, startOfHour } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
+import CustomerJourneyFeed from "./CustomerJourneyFeed";
 
 interface PixelEvent {
   id: string;
@@ -33,6 +34,7 @@ const PixelEventsDashboard = ({ products }: Props) => {
   const [events, setEvents] = useState<PixelEvent[]>([]);
   const [filterProduct, setFilterProduct] = useState("all");
   const [period, setPeriod] = useState("24h");
+  const [feedView, setFeedView] = useState<"feed" | "journeys">("feed");
 
   // --- Data loading (unchanged logic) ---
   const loadEvents = async () => {
@@ -224,24 +226,50 @@ const PixelEventsDashboard = ({ products }: Props) => {
               />
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 relative z-10" />
             </div>
-            <span className="text-sm font-semibold text-slate-200 tracking-tight">Feed ao Vivo</span>
+            {/* View Toggle */}
+            <div className="flex items-center bg-slate-800/60 rounded-lg p-0.5 border border-slate-700/40">
+              <button
+                onClick={() => setFeedView("feed")}
+                className={`px-3 py-1 text-[11px] font-semibold rounded-md transition-all ${
+                  feedView === "feed"
+                    ? "bg-slate-700/80 text-slate-200 shadow-sm"
+                    : "text-slate-500 hover:text-slate-400"
+                }`}
+              >
+                Feed
+              </button>
+              <button
+                onClick={() => setFeedView("journeys")}
+                className={`px-3 py-1 text-[11px] font-semibold rounded-md transition-all ${
+                  feedView === "journeys"
+                    ? "bg-slate-700/80 text-slate-200 shadow-sm"
+                    : "text-slate-500 hover:text-slate-400"
+                }`}
+              >
+                Jornadas
+              </button>
+            </div>
             <span className="text-[10px] font-mono text-slate-500 bg-slate-800/60 px-2 py-0.5 rounded-full">
               {recentEvents.length} eventos
             </span>
           </div>
-          <div className="flex items-center gap-3 text-[10px] text-slate-500">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-sm bg-cyan-500/60" /> Browser
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-sm bg-violet-500/60" /> Server
-            </span>
-          </div>
+          {feedView === "feed" && (
+            <div className="flex items-center gap-3 text-[10px] text-slate-500">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-sm bg-cyan-500/60" /> Browser
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-sm bg-violet-500/60" /> Server
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Feed Body */}
         <div className="overflow-y-auto max-h-[420px] min-h-[280px]">
-          {recentEvents.length === 0 ? (
+          {feedView === "journeys" ? (
+            <CustomerJourneyFeed events={events} products={products} />
+          ) : recentEvents.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
               <motion.div
                 animate={{ opacity: [0.3, 0.7, 0.3] }}
@@ -273,12 +301,9 @@ const PixelEventsDashboard = ({ products }: Props) => {
                       ${index === 0 ? "bg-slate-800/20" : ""}
                     `}
                   >
-                    {/* Timestamp */}
                     <span className="text-[11px] font-mono text-slate-500 tabular-nums w-[58px] shrink-0">
                       {format(new Date(e.created_at), "HH:mm:ss")}
                     </span>
-
-                    {/* Event Icon + Glow */}
                     <div className="relative flex items-center justify-center w-7 h-7 shrink-0">
                       <div
                         className="absolute inset-0 rounded-lg opacity-20 group-hover:opacity-30 transition-opacity"
@@ -286,33 +311,23 @@ const PixelEventsDashboard = ({ products }: Props) => {
                       />
                       <Icon className="w-3.5 h-3.5 relative z-10" style={{ color: cfg?.color || "#94a3b8" }} />
                     </div>
-
-                    {/* Event Name */}
                     <span
                       className="text-[13px] font-semibold min-w-[120px] shrink-0"
                       style={{ color: cfg?.color || "#94a3b8" }}
                     >
                       {cfg?.label || e.event_name}
                     </span>
-
-                    {/* Customer name */}
                     {e.customer_name && (
                       <span className="text-[12px] text-slate-300 font-medium truncate max-w-[180px]">
                         {e.customer_name.split(' ')[0]}
                       </span>
                     )}
-
-                    {/* Product name */}
                     {productName && (
                       <span className="text-[11px] text-slate-500 truncate max-w-[160px] hidden sm:inline">
                         {productName}
                       </span>
                     )}
-
-                    {/* Spacer */}
                     <span className="flex-1" />
-
-                    {/* Source Badge */}
                     <span
                       className={`
                         text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full shrink-0
