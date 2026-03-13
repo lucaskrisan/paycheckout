@@ -5,6 +5,7 @@ import { Megaphone, LayoutGrid, Layers, FileImage, DollarSign, Target, TrendingU
 import { useMetaAds } from "@/hooks/useMetaAds";
 import { MetaAdsHeader } from "@/components/admin/meta-ads/MetaAdsHeader";
 import { MetaDataTable } from "@/components/admin/meta-ads/MetaDataTable";
+import { MetaAdsFunnel } from "@/components/admin/meta-ads/MetaAdsFunnel";
 import { formatCurrency, formatNumber, getResults, getROAS, getConversionValue, getROI } from "@/components/admin/meta-ads/MetaInsightsHelpers";
 
 export default function MetaAds() {
@@ -141,6 +142,9 @@ export default function MetaAds() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Real-time Funnel */}
+      <MetaAdsFunnel />
 
       {/* Tabs */}
       <Tabs value={tab} onValueChange={setTab}>
