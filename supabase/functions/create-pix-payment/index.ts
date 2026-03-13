@@ -214,6 +214,18 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Check if Pagar.me order failed (e.g. invalid CPF, fraud check)
+    if (data.status === 'failed') {
+      const failReason = data.charges?.[0]?.last_transaction?.gateway_response?.errors?.[0]?.message
+        || data.charges?.[0]?.last_transaction?.status
+        || 'Falha no processamento';
+      console.error('[create-pix-payment] Pagar.me order failed:', JSON.stringify(data));
+      return new Response(
+        JSON.stringify({ error: `Falha ao gerar o PIX: ${failReason}. Verifique seus dados e tente novamente.` }),
+        { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const charge = data.charges?.[0];
     const lastTransaction = charge?.last_transaction;
 
