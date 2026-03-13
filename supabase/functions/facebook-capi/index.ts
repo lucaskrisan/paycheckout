@@ -17,6 +17,7 @@ interface CAPIEvent {
     fn?: string[];
     ln?: string[];
     external_id?: string[];
+    country?: string[];
     client_ip_address?: string;
     client_user_agent?: string;
     fbc?: string;
