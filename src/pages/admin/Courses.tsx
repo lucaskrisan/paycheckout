@@ -443,6 +443,14 @@ const Courses = () => {
             <AccordionItem key={mod.id} value={mod.id} className="border rounded-xl px-4">
               <AccordionTrigger className="hover:no-underline py-4">
                 <div className="flex items-center gap-3 flex-1 text-left">
+                  <div className="flex flex-col gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <Button variant="ghost" size="icon" className="h-5 w-5" disabled={modIdx === 0} onClick={() => moveModule(modIdx, "up")}>
+                      <ChevronUp className="w-3 h-3" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-5 w-5" disabled={modIdx === modules.length - 1} onClick={() => moveModule(modIdx, "down")}>
+                      <ChevronDown className="w-3 h-3" />
+                    </Button>
+                  </div>
                   <span className="text-xs font-bold text-muted-foreground bg-muted rounded-full w-7 h-7 flex items-center justify-center">
                     {modIdx + 1}
                   </span>
