@@ -21,18 +21,26 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
     );
 
     // Verify user from token
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
+    const { data: claimsData, error: authError } = await supabase.auth.getClaims(token);
+    if (authError || !claimsData?.claims) {
       return new Response(JSON.stringify({ error: 'Invalid token' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    const user = { id: claimsData.claims.sub };
+
+    // Service role client for data queries
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
 
     const body = await req.json();
     const { action, url, product_id } = body;
@@ -56,7 +64,7 @@ Deno.serve(async (req) => {
     }
 
     // ========== Standard pixel diagnostics ==========
-    const { data: pixels } = await supabase
+    const { data: pixels } = await supabaseAdmin
       .from('product_pixels')
       .select('pixel_id, capi_token, domain')
       .eq('product_id', product_id)
