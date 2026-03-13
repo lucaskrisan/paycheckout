@@ -205,7 +205,7 @@ export default function AdminLayout() {
             <SidebarTrigger className="mr-4" />
             <span className="font-display font-bold text-foreground">Painel Admin</span>
           </header>
-          <main className="flex-1 p-6 bg-background overflow-auto">
+          <main className="flex-1 p-6 bg-background overflow-y-auto overflow-x-hidden">
             <Outlet />
           </main>
         </div>
