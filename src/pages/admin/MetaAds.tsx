@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Megaphone, LayoutGrid, Layers, FileImage, DollarSign, Target, TrendingUp, Percent } from "lucide-react";
+import { LayoutGrid, Megaphone, Layers, FileImage } from "lucide-react";
 import { useMetaAds } from "@/hooks/useMetaAds";
 import { MetaAdsHeader } from "@/components/admin/meta-ads/MetaAdsHeader";
 import { MetaDataTable } from "@/components/admin/meta-ads/MetaDataTable";
 import { MetaAdsFunnel } from "@/components/admin/meta-ads/MetaAdsFunnel";
-import { formatCurrency, formatNumber, getResults, getROAS, getConversionValue, getROI } from "@/components/admin/meta-ads/MetaInsightsHelpers";
+import { MetaAdsSummary } from "@/components/admin/meta-ads/MetaAdsSummary";
+import { formatCurrency, getResults, getROAS, getConversionValue } from "@/components/admin/meta-ads/MetaInsightsHelpers";
 
 export default function MetaAds() {
   const {
@@ -20,9 +21,7 @@ export default function MetaAds() {
 
   const [tab, setTab] = useState("campaigns");
 
-  useEffect(() => {
-    fetchAccounts();
-  }, []);
+  useEffect(() => { fetchAccounts(); }, []);
 
   useEffect(() => {
     if (!selectedAccount) return;
@@ -38,139 +37,81 @@ export default function MetaAds() {
     else fetchAccounts();
   };
 
-  // Summary metrics from active tab data
-  const activeData = tab === "campaigns" ? campaigns : tab === "adsets" ? adsets : ads;
-  const summary = activeData.reduce(
+  // Summary from campaigns (always from campaigns for top-level)
+  const summary = campaigns.reduce(
     (acc, item) => {
-      const ins = (item as any).insights;
+      const ins = item.insights;
       if (!ins) return acc;
       acc.spend += parseFloat(ins.spend || "0");
-      acc.impressions += parseInt(ins.impressions || "0", 10);
       acc.results += getResults(ins);
       acc.roas += getROAS(ins);
-      acc.conversionValue += getConversionValue(ins);
+      acc.convValue += getConversionValue(ins);
       acc.count++;
       return acc;
     },
-    { spend: 0, impressions: 0, results: 0, roas: 0, conversionValue: 0, count: 0 }
+    { spend: 0, results: 0, roas: 0, convValue: 0, count: 0 }
   );
 
-  const avgCPA = summary.results > 0 ? summary.spend / summary.results : 0;
   const avgROAS = summary.count > 0 ? summary.roas / summary.count : 0;
-  const totalROI = summary.spend > 0 && summary.conversionValue > 0
-    ? ((summary.conversionValue - summary.spend) / summary.spend) * 100
-    : 0;
+
+  // Get selected account name
+  const selectedAccName = accounts.find((a) => a.id === selectedAccount)?.name || "";
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <Megaphone className="w-6 h-6 text-primary" />
-        <h1 className="text-xl font-bold text-foreground">Meta Ads</h1>
+      {/* Header */}
+      <div className="bg-[hsl(222,30%,14%)] border border-slate-700/50 rounded-lg p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-semibold text-slate-200">Resumo</h2>
+        </div>
+        <MetaAdsHeader
+          accounts={accounts}
+          selectedAccount={selectedAccount}
+          onSelectAccount={setSelectedAccount}
+          datePreset={datePreset}
+          onDatePreset={(v) => setDatePreset(v as any)}
+          customRange={customRange}
+          onCustomRange={setCustomRange}
+          lastRefresh={lastRefresh}
+          loading={loading}
+          onRefresh={handleRefresh}
+        />
       </div>
-
-      <MetaAdsHeader
-        accounts={accounts}
-        selectedAccount={selectedAccount}
-        onSelectAccount={setSelectedAccount}
-        datePreset={datePreset}
-        onDatePreset={(v) => setDatePreset(v as any)}
-        customRange={customRange}
-        onCustomRange={setCustomRange}
-        lastRefresh={lastRefresh}
-        loading={loading}
-        onRefresh={handleRefresh}
-      />
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <Card className="bg-card border-border">
-          <CardContent className="p-4 flex items-center gap-3">
-            <DollarSign className="w-8 h-8 text-primary" />
-            <div>
-              <p className="text-xs text-muted-foreground">Investimento</p>
-              <p className="text-lg font-bold text-foreground">{formatCurrency(summary.spend)}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-card border-border">
-          <CardContent className="p-4 flex items-center gap-3">
-            <Target className="w-8 h-8 text-primary" />
-            <div>
-              <p className="text-xs text-muted-foreground">Resultados</p>
-              <p className="text-lg font-bold text-foreground">{formatNumber(summary.results)}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-card border-border">
-          <CardContent className="p-4 flex items-center gap-3">
-            <DollarSign className="w-8 h-8 text-destructive" />
-            <div>
-              <p className="text-xs text-muted-foreground">CPA Médio</p>
-              <p className="text-lg font-bold text-foreground">{avgCPA > 0 ? formatCurrency(avgCPA) : "—"}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-card border-border">
-          <CardContent className="p-4 flex items-center gap-3">
-            <DollarSign className="w-8 h-8 text-primary" />
-            <div>
-              <p className="text-xs text-muted-foreground">Valor Conversão</p>
-              <p className="text-lg font-bold text-foreground">{summary.conversionValue > 0 ? formatCurrency(summary.conversionValue) : "—"}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-card border-border">
-          <CardContent className="p-4 flex items-center gap-3">
-            <TrendingUp className={`w-8 h-8 ${avgROAS >= 1 ? "text-primary" : "text-destructive"}`} />
-            <div>
-              <p className="text-xs text-muted-foreground">ROAS Médio</p>
-              <p className={`text-lg font-bold ${avgROAS >= 1 ? "text-primary" : "text-destructive"}`}>
-                {avgROAS > 0 ? `${avgROAS.toFixed(2)}x` : "—"}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-card border-border">
-          <CardContent className="p-4 flex items-center gap-3">
-            <Percent className={`w-8 h-8 ${totalROI > 0 ? "text-primary" : totalROI < 0 ? "text-destructive" : "text-muted-foreground"}`} />
-            <div>
-              <p className="text-xs text-muted-foreground">ROI</p>
-              <p className={`text-lg font-bold ${totalROI > 0 ? "text-primary" : totalROI < 0 ? "text-destructive" : "text-muted-foreground"}`}>
-                {totalROI !== 0 ? `${totalROI.toFixed(1).replace(".", ",")}%` : "—"}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <MetaAdsSummary
+        spend={summary.spend}
+        conversionValue={summary.convValue}
+        results={summary.results}
+        roas={avgROAS}
+      />
 
-      {/* Real-time Funnel */}
+      {/* Funnel */}
       <MetaAdsFunnel />
 
-      {/* Tabs */}
+      {/* Data tabs */}
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="bg-muted/50">
-          <TabsTrigger value="accounts" className="gap-1.5">
+        <TabsList className="bg-[hsl(222,30%,14%)] border border-slate-700/50 p-1 h-auto">
+          <TabsTrigger value="accounts" className="gap-1.5 data-[state=active]:bg-blue-600 data-[state=active]:text-white text-slate-400 px-6 py-2.5">
             <LayoutGrid className="w-4 h-4" /> Contas
           </TabsTrigger>
-          <TabsTrigger value="campaigns" className="gap-1.5">
+          <TabsTrigger value="campaigns" className="gap-1.5 data-[state=active]:bg-blue-600 data-[state=active]:text-white text-slate-400 px-6 py-2.5">
             <Megaphone className="w-4 h-4" /> Campanhas
           </TabsTrigger>
-          <TabsTrigger value="adsets" className="gap-1.5">
+          <TabsTrigger value="adsets" className="gap-1.5 data-[state=active]:bg-blue-600 data-[state=active]:text-white text-slate-400 px-6 py-2.5">
             <Layers className="w-4 h-4" /> Conjuntos
           </TabsTrigger>
-          <TabsTrigger value="ads" className="gap-1.5">
+          <TabsTrigger value="ads" className="gap-1.5 data-[state=active]:bg-blue-600 data-[state=active]:text-white text-slate-400 px-6 py-2.5">
             <FileImage className="w-4 h-4" /> Anúncios
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="accounts" className="mt-4">
-          <Card className="bg-card border-border">
-            <CardHeader>
-              <CardTitle className="text-base">Contas de Anúncio</CardTitle>
-            </CardHeader>
+          <Card className="bg-[hsl(222,30%,14%)] border-slate-700/50">
+            <CardHeader><CardTitle className="text-base text-slate-200">Contas de Anúncio</CardTitle></CardHeader>
             <CardContent>
               {accounts.length === 0 ? (
-                <p className="text-muted-foreground text-sm py-8 text-center">
+                <p className="text-slate-500 text-sm py-8 text-center">
                   {loading ? "Carregando contas..." : "Nenhuma conta encontrada. Verifique o token."}
                 </p>
               ) : (
@@ -180,19 +121,19 @@ export default function MetaAds() {
                       key={acc.id}
                       className={`p-4 rounded-lg border cursor-pointer transition-colors ${
                         selectedAccount === acc.id
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/50"
+                          ? "border-blue-500 bg-blue-500/10"
+                          : "border-slate-700/50 hover:border-blue-500/50"
                       }`}
                       onClick={() => setSelectedAccount(acc.id)}
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-semibold text-foreground">{acc.name || acc.account_id}</p>
-                          <p className="text-xs text-muted-foreground">ID: {acc.account_id} • {acc.currency}</p>
+                          <p className="font-semibold text-slate-200">{acc.name || acc.account_id}</p>
+                          <p className="text-xs text-slate-500">ID: {acc.account_id} • {acc.currency}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm text-muted-foreground">Gasto total</p>
-                          <p className="font-semibold">{formatCurrency(parseInt(acc.amount_spent || "0", 10) / 100)}</p>
+                          <p className="text-sm text-slate-500">Gasto total</p>
+                          <p className="font-semibold text-slate-200">{formatCurrency(parseInt(acc.amount_spent || "0", 10) / 100)}</p>
                         </div>
                       </div>
                     </div>
@@ -207,8 +148,9 @@ export default function MetaAds() {
           <MetaDataTable
             data={campaigns}
             loading={loading}
-            searchPlaceholder="Buscar campanha..."
+            searchPlaceholder="Filtrar por nome..."
             showObjective
+            accountName={selectedAccName}
             onToggleStatus={toggleStatus}
             onUpdateBudget={updateBudget}
             onDuplicate={(id) => duplicate(id, "campaign")}
@@ -220,7 +162,7 @@ export default function MetaAds() {
           <MetaDataTable
             data={adsets}
             loading={loading}
-            searchPlaceholder="Buscar conjunto..."
+            searchPlaceholder="Filtrar por nome..."
             onToggleStatus={toggleStatus}
             onUpdateBudget={updateBudget}
             onDuplicate={(id) => duplicate(id, "adset")}
@@ -232,7 +174,7 @@ export default function MetaAds() {
           <MetaDataTable
             data={ads}
             loading={loading}
-            searchPlaceholder="Buscar anúncio..."
+            searchPlaceholder="Filtrar por nome..."
             onToggleStatus={toggleStatus}
             onUpdateBudget={updateBudget}
             onDuplicate={(id) => duplicate(id, "ad")}

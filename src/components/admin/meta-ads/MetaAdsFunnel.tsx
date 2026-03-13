@@ -21,43 +21,34 @@ export function MetaAdsFunnel() {
       const todayISO = today.toISOString();
 
       const [{ data: events }, { data: orders }] = await Promise.all([
-        supabase
-          .from("pixel_events")
-          .select("event_name")
-          .gte("created_at", todayISO),
-        supabase
-          .from("orders")
-          .select("status")
-          .gte("created_at", todayISO),
+        supabase.from("pixel_events").select("event_name").gte("created_at", todayISO),
+        supabase.from("orders").select("status").gte("created_at", todayISO),
       ]);
 
-      const eventCounts: Record<string, number> = {};
-      (events || []).forEach((e) => {
-        eventCounts[e.event_name] = (eventCounts[e.event_name] || 0) + 1;
-      });
+      const ec: Record<string, number> = {};
+      (events || []).forEach((e) => { ec[e.event_name] = (ec[e.event_name] || 0) + 1; });
 
-      // Divide by 2 for browser+server dual events
-      const cliques = Math.ceil((eventCounts["ViewContent"] || 0) / 2);
-      const visPages = Math.ceil((eventCounts["PageView"] || 0) / 2);
-      const ics = Math.ceil((eventCounts["InitiateCheckout"] || 0) / 2);
-      const vendasInic = (orders || []).filter(
-        (o) => ["pending", "waiting_payment", "paid", "approved", "confirmed"].includes(o.status)
+      const cliques = Math.ceil((ec["ViewContent"] || 0) / 2);
+      const visPages = Math.ceil((ec["PageView"] || 0) / 2);
+      const ics = Math.ceil((ec["InitiateCheckout"] || 0) / 2);
+      const allSales = (orders || []).filter((o) =>
+        ["pending", "waiting_payment", "paid", "approved", "confirmed"].includes(o.status)
       ).length;
-      const vendasApr = (orders || []).filter(
-        (o) => ["paid", "approved", "confirmed"].includes(o.status)
+      const approvedSales = (orders || []).filter((o) =>
+        ["paid", "approved", "confirmed"].includes(o.status)
       ).length;
 
       const maxVal = Math.max(cliques, visPages, 1);
 
       setStages([
         { label: "Cliques", count: cliques, percent: 100 },
-        { label: "Vis. Página", count: visPages, percent: maxVal > 0 ? (visPages / maxVal) * 100 : 0 },
-        { label: "ICs", count: ics, percent: maxVal > 0 ? (ics / maxVal) * 100 : 0 },
-        { label: "Vendas Inic.", count: vendasInic, percent: maxVal > 0 ? (vendasInic / maxVal) * 100 : 0 },
-        { label: "Vendas Apr.", count: vendasApr, percent: maxVal > 0 ? (vendasApr / maxVal) * 100 : 0 },
+        { label: "Vis. Página", count: visPages, percent: (visPages / maxVal) * 100 },
+        { label: "ICs", count: ics, percent: (ics / maxVal) * 100 },
+        { label: "Vendas Inic.", count: allSales, percent: (allSales / maxVal) * 100 },
+        { label: "Vendas Apr.", count: approvedSales, percent: (approvedSales / maxVal) * 100 },
       ]);
     } catch (err) {
-      console.error("Funnel fetch error:", err);
+      console.error("Funnel error:", err);
     } finally {
       setLoading(false);
     }
@@ -65,211 +56,106 @@ export function MetaAdsFunnel() {
 
   useEffect(() => {
     fetchFunnelData();
-
-    const pixelChannel = supabase
-      .channel("meta-funnel-pixels")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "pixel_events" }, () => fetchFunnelData())
-      .subscribe();
-
-    const ordersChannel = supabase
-      .channel("meta-funnel-orders")
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => fetchFunnelData())
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(pixelChannel);
-      supabase.removeChannel(ordersChannel);
-    };
+    const c1 = supabase.channel("funnel-px").on("postgres_changes", { event: "INSERT", schema: "public", table: "pixel_events" }, () => fetchFunnelData()).subscribe();
+    const c2 = supabase.channel("funnel-or").on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => fetchFunnelData()).subscribe();
+    return () => { supabase.removeChannel(c1); supabase.removeChannel(c2); };
   }, [fetchFunnelData]);
 
-  // SVG funnel dimensions
-  const svgWidth = 960;
-  const svgHeight = 200;
-  const stageCount = stages.length || 5;
-  const stageW = svgWidth / stageCount;
-  const centerY = svgHeight / 2;
-  const maxBarH = 150;
-  const minBarH = 3;
+  const W = 960;
+  const H = 200;
+  const stageW = W / (stages.length || 5);
+  const cy = H / 2;
+  const maxH = 150;
+  const minH = 3;
 
-  // Compute heights with smooth tapering
-  const heights = stages.map((s) => Math.max((s.percent / 100) * maxBarH, minBarH));
+  const heights = stages.map((s) => Math.max((s.percent / 100) * maxH, minH));
 
-  // Build funnel path: smooth bezier curves connecting stages
-  const buildFunnelPath = () => {
-    if (heights.length === 0) return "";
+  const buildPath = () => {
+    if (!heights.length) return "";
+    const pts = heights.map((h, i) => ({
+      x: i * stageW + stageW / 2,
+      t: cy - h / 2,
+      b: cy + h / 2,
+    }));
 
-    const points: Array<{ x: number; topY: number; botY: number }> = [];
-    heights.forEach((h, i) => {
-      const x = i * stageW + stageW / 2;
-      points.push({ x, topY: centerY - h / 2, botY: centerY + h / 2 });
+    let d = `M ${pts[0].x - stageW / 2} ${pts[0].t}`;
+    pts.forEach((p, i) => {
+      if (i === 0) { d += ` L ${p.x} ${p.t}`; return; }
+      const prev = pts[i - 1];
+      const mx = (prev.x + p.x) / 2;
+      d += ` C ${mx} ${prev.t}, ${mx} ${p.t}, ${p.x} ${p.t}`;
     });
-
-    // Top line (left to right)
-    let path = `M ${points[0].x - stageW / 2} ${points[0].topY}`;
-    points.forEach((p, i) => {
-      if (i === 0) {
-        path += ` L ${p.x} ${p.topY}`;
-      } else {
-        const prev = points[i - 1];
-        const cpx = (prev.x + p.x) / 2;
-        path += ` C ${cpx} ${prev.topY}, ${cpx} ${p.topY}, ${p.x} ${p.topY}`;
-      }
-    });
-    // Extend to right edge
-    const last = points[points.length - 1];
-    path += ` L ${last.x + stageW / 2} ${last.topY}`;
-
-    // Bottom line (right to left)
-    path += ` L ${last.x + stageW / 2} ${last.botY}`;
-    for (let i = points.length - 1; i >= 0; i--) {
-      const p = points[i];
-      if (i === points.length - 1) {
-        path += ` L ${p.x} ${p.botY}`;
-      } else {
-        const next = points[i + 1];
-        const cpx = (next.x + p.x) / 2;
-        path += ` C ${cpx} ${next.botY}, ${cpx} ${p.botY}, ${p.x} ${p.botY}`;
-      }
+    const last = pts[pts.length - 1];
+    d += ` L ${last.x + stageW / 2} ${last.t} L ${last.x + stageW / 2} ${last.b}`;
+    for (let i = pts.length - 1; i >= 0; i--) {
+      const p = pts[i];
+      if (i === pts.length - 1) { d += ` L ${p.x} ${p.b}`; continue; }
+      const next = pts[i + 1];
+      const mx = (next.x + p.x) / 2;
+      d += ` C ${mx} ${next.b}, ${mx} ${p.b}, ${p.x} ${p.b}`;
     }
-    path += ` L ${points[0].x - stageW / 2} ${points[0].botY}`;
-    path += " Z";
-    return path;
+    d += ` L ${pts[0].x - stageW / 2} ${pts[0].b} Z`;
+    return d;
   };
 
   return (
-    <Card className="bg-[hsl(222,30%,14%)] border-border/50 overflow-hidden">
+    <Card className="bg-[hsl(222,30%,14%)] border-slate-700/50">
       <CardHeader className="pb-1 pt-4 px-5">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
+          <CardTitle className="text-sm font-medium text-slate-400">
             Funil de Conversão (Meta Ads)
           </CardTitle>
           <Tooltip>
-            <TooltipTrigger>
-              <Info className="w-3.5 h-3.5 text-muted-foreground/60" />
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs max-w-[200px]">
-                Dados em tempo real do funil de hoje. Atualiza automaticamente.
-              </p>
-            </TooltipContent>
+            <TooltipTrigger><Info className="w-3.5 h-3.5 text-slate-600" /></TooltipTrigger>
+            <TooltipContent><p className="text-xs max-w-[200px]">Dados em tempo real de hoje.</p></TooltipContent>
           </Tooltip>
         </div>
       </CardHeader>
       <CardContent className="px-5 pb-4 pt-0">
         {loading ? (
-          <div className="flex items-center justify-center py-16 text-muted-foreground text-sm">
-            Carregando funil...
-          </div>
+          <div className="flex items-center justify-center py-16 text-slate-500 text-sm">Carregando funil...</div>
         ) : (
           <div className="w-full">
-            {/* Stage Labels */}
             <div className="flex w-full mb-1">
-              {stages.map((stage) => (
-                <div key={stage.label} className="flex-1 text-center">
-                  <span className="text-[11px] font-semibold tracking-wide text-slate-400 uppercase">
-                    {stage.label}
-                  </span>
+              {stages.map((s) => (
+                <div key={s.label} className="flex-1 text-center">
+                  <span className="text-[11px] font-semibold tracking-wide text-slate-400 uppercase">{s.label}</span>
                 </div>
               ))}
             </div>
 
-            {/* SVG Funnel */}
-            <div className="w-full">
-              <svg
-                viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-                className="w-full h-auto"
-                preserveAspectRatio="xMidYMid meet"
-              >
-                <defs>
-                  <linearGradient id="funnel-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="hsl(220, 85%, 55%)" stopOpacity="0.95" />
-                    <stop offset="35%" stopColor="hsl(240, 70%, 50%)" stopOpacity="0.85" />
-                    <stop offset="65%" stopColor="hsl(280, 60%, 45%)" stopOpacity="0.7" />
-                    <stop offset="100%" stopColor="hsl(330, 70%, 55%)" stopOpacity="0.55" />
-                  </linearGradient>
-                  <linearGradient id="line-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="transparent" />
-                    <stop offset="50%" stopColor="hsl(330, 80%, 60%)" />
-                    <stop offset="100%" stopColor="hsl(330, 80%, 60%)" />
-                  </linearGradient>
-                </defs>
+            <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <linearGradient id="fg" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="hsl(220, 85%, 55%)" stopOpacity="0.95" />
+                  <stop offset="35%" stopColor="hsl(240, 70%, 50%)" stopOpacity="0.85" />
+                  <stop offset="65%" stopColor="hsl(280, 60%, 45%)" stopOpacity="0.7" />
+                  <stop offset="100%" stopColor="hsl(330, 70%, 55%)" stopOpacity="0.55" />
+                </linearGradient>
+                <linearGradient id="lg" x1="0%" y2="0%"><stop offset="50%" stopColor="transparent" /><stop offset="100%" stopColor="hsl(330,80%,60%)" /></linearGradient>
+              </defs>
+              <path d={buildPath()} fill="url(#fg)" className="transition-all duration-700" />
+              {stages.length > 2 && heights.slice(-2).every((h) => h < 10) && (
+                <line x1={(stages.length - 2) * stageW} y1={cy} x2={W} y2={cy} stroke="url(#lg)" strokeWidth="2" opacity={0.8} />
+              )}
+              {stages.map((_, i) => i > 0 && (
+                <line key={i} x1={i * stageW} y1={10} x2={i * stageW} y2={H - 10} stroke="hsl(220,20%,25%)" strokeWidth="1" strokeDasharray="3,5" opacity={0.6} />
+              ))}
+              {stages.map((s, i) => (
+                <text key={i} x={i * stageW + stageW / 2} y={cy + 5} textAnchor="middle" fill="white" fontWeight="700" fontSize="18" opacity={0.95}>
+                  {s.percent >= 0.05 ? `${s.percent.toFixed(1)}%` : "0%"}
+                </text>
+              ))}
+            </svg>
 
-                {/* Main funnel shape */}
-                <path
-                  d={buildFunnelPath()}
-                  fill="url(#funnel-grad)"
-                  className="transition-all duration-700"
-                />
-
-                {/* Thin accent line at bottom of funnel for small values */}
-                {stages.length > 2 && (() => {
-                  const lastTwo = heights.slice(-2);
-                  if (lastTwo.every((h) => h < 10)) {
-                    const startX = (stages.length - 2) * stageW;
-                    return (
-                      <line
-                        x1={startX}
-                        y1={centerY}
-                        x2={svgWidth}
-                        y2={centerY}
-                        stroke="url(#line-grad)"
-                        strokeWidth="2"
-                        opacity={0.8}
-                      />
-                    );
-                  }
-                  return null;
-                })()}
-
-                {/* Divider lines */}
-                {stages.map((_, i) => {
-                  if (i === 0) return null;
-                  const x = i * stageW;
-                  return (
-                    <line
-                      key={`div-${i}`}
-                      x1={x} y1={10} x2={x} y2={svgHeight - 10}
-                      stroke="hsl(220, 20%, 25%)"
-                      strokeWidth="1"
-                      strokeDasharray="3,5"
-                      opacity={0.6}
-                    />
-                  );
-                })}
-
-                {/* Percentage labels */}
-                {stages.map((stage, i) => {
-                  const cx = i * stageW + stageW / 2;
-                  return (
-                    <text
-                      key={`pct-${i}`}
-                      x={cx}
-                      y={centerY + 5}
-                      textAnchor="middle"
-                      fill="white"
-                      fontWeight="700"
-                      fontSize="18"
-                      opacity={0.95}
-                    >
-                      {stage.percent >= 0.05 ? `${stage.percent.toFixed(1)}%` : "0%"}
-                    </text>
-                  );
-                })}
-              </svg>
-            </div>
-
-            {/* Count labels */}
             <div className="flex w-full mt-0">
-              {stages.map((stage) => (
-                <div key={`c-${stage.label}`} className="flex-1 text-center">
-                  <span className="text-base font-bold text-slate-200">
-                    {stage.count.toLocaleString("pt-BR")}
-                  </span>
+              {stages.map((s) => (
+                <div key={`c-${s.label}`} className="flex-1 text-center">
+                  <span className="text-base font-bold text-slate-200">{s.count.toLocaleString("pt-BR")}</span>
                 </div>
               ))}
             </div>
 
-            {/* Live dot */}
             <div className="flex items-center gap-1.5 mt-3 justify-end">
               <span className="relative flex h-1.5 w-1.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
