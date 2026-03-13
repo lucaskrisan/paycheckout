@@ -101,7 +101,7 @@ const PixelEventsDashboard = ({ products }: Props) => {
     };
   }, [eventCounts]);
 
-  const recentEvents = events.slice(0, 25);
+  const recentEvents = events.slice(0, 50);
   const orderedEventNames = ["PageView", "InitiateCheckout", "Lead", "AddPaymentInfo", "AddToCart", "Purchase"];
 
   return (
@@ -184,79 +184,143 @@ const PixelEventsDashboard = ({ products }: Props) => {
         ))}
       </div>
 
-      {/* ── Chart + Feed ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-3">
-        {/* Chart */}
-        <div className="lg:col-span-3 rounded-lg bg-slate-800/50 border border-slate-700/30 p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-            <p className="text-[11px] text-slate-500 font-medium">Sinais · {period === "7d" ? "diário" : "por hora"}</p>
+      {/* ── Chart ── */}
+      <div className="rounded-xl bg-slate-800/40 border border-slate-700/20 p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+          <p className="text-xs text-slate-400 font-medium">Sinais · {period === "7d" ? "diário" : "por hora"}</p>
+        </div>
+        <div className="h-[220px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} barCategoryGap="20%">
+              <XAxis dataKey="label" tick={{ fontSize: 9, fill: '#475569' }} stroke="#334155" tickLine={false} axisLine={false} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 9, fill: '#475569' }} stroke="#334155" tickLine={false} axisLine={false} width={28} />
+              <Tooltip
+                cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: 8, fontSize: 11, color: "#e2e8f0" }}
+                labelStyle={{ color: "#94a3b8", fontSize: 10 }}
+              />
+              <Bar dataKey="count" radius={[3, 3, 0, 0]}>
+                {chartData.map((entry, i) => (
+                  <Cell key={i} fill={entry.count > 0 ? "#22d3ee" : "#1e293b"} fillOpacity={entry.count > 0 ? 0.7 : 0.3} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* ── Feed ao Vivo — Full Width ── */}
+      <div className="rounded-xl bg-gradient-to-b from-slate-900/90 to-slate-950/95 border border-slate-700/20 flex flex-col overflow-hidden">
+        {/* Feed Header */}
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-700/20 bg-slate-800/20">
+          <div className="flex items-center gap-3">
+            <div className="relative flex items-center justify-center">
+              <motion.div
+                className="absolute w-5 h-5 rounded-full bg-emerald-500/20"
+                animate={{ scale: [1, 1.8, 1], opacity: [0.6, 0, 0.6] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
+              />
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 relative z-10" />
+            </div>
+            <span className="text-sm font-semibold text-slate-200 tracking-tight">Feed ao Vivo</span>
+            <span className="text-[10px] font-mono text-slate-500 bg-slate-800/60 px-2 py-0.5 rounded-full">
+              {recentEvents.length} eventos
+            </span>
           </div>
-          <div className="h-[200px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} barCategoryGap="20%">
-                <XAxis dataKey="label" tick={{ fontSize: 9, fill: '#475569' }} stroke="#334155" tickLine={false} axisLine={false} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 9, fill: '#475569' }} stroke="#334155" tickLine={false} axisLine={false} width={28} />
-                <Tooltip
-                  cursor={{ fill: 'rgba(255,255,255,0.03)' }}
-                  contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: 8, fontSize: 11, color: "#e2e8f0" }}
-                  labelStyle={{ color: "#94a3b8", fontSize: 10 }}
-                />
-                <Bar dataKey="count" radius={[3, 3, 0, 0]}>
-                  {chartData.map((entry, i) => (
-                    <Cell key={i} fill={entry.count > 0 ? "#22d3ee" : "#1e293b"} fillOpacity={entry.count > 0 ? 0.7 : 0.3} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="flex items-center gap-3 text-[10px] text-slate-500">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-sm bg-cyan-500/60" /> Browser
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-sm bg-violet-500/60" /> Server
+            </span>
           </div>
         </div>
 
-        {/* Feed */}
-        <div className="lg:col-span-2 rounded-lg bg-slate-900/80 border border-slate-700/30 flex flex-col">
-          <div className="flex items-center gap-2 px-3 py-2.5 border-b border-slate-700/30">
-            <motion.div
-              className="w-1.5 h-1.5 rounded-full bg-emerald-400"
-              animate={{ opacity: [1, 0.3, 1] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-            />
-            <p className="text-[10px] text-slate-500 font-medium tracking-wide">FEED AO VIVO</p>
-          </div>
-          <div className="flex-1 overflow-y-auto max-h-[240px] px-1 py-1">
-            {recentEvents.length === 0 ? (
-              <p className="text-[11px] text-slate-600 text-center py-10 font-mono">aguardando sinais...</p>
-            ) : (
-              <AnimatePresence mode="popLayout">
-                {recentEvents.map((e) => {
-                  const cfg = EVENT_CONFIG[e.event_name];
-                  return (
-                    <motion.div
-                      key={e.id}
-                      initial={{ opacity: 0, x: -6 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.15 }}
-                      className="flex items-center gap-2 text-[11px] font-mono py-[5px] px-2 rounded hover:bg-slate-800/40 transition-colors"
-                    >
-                      <span className="text-slate-600 w-[48px] shrink-0 tabular-nums">
-                        {format(new Date(e.created_at), "HH:mm:ss")}
-                      </span>
-                      <span
-                        className="w-1.5 h-1.5 rounded-full shrink-0"
+        {/* Feed Body */}
+        <div className="overflow-y-auto max-h-[420px] min-h-[280px]">
+          {recentEvents.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-3">
+              <motion.div
+                animate={{ opacity: [0.3, 0.7, 0.3] }}
+                transition={{ duration: 3, repeat: Infinity }}
+              >
+                <Radio className="w-8 h-8 text-slate-700" />
+              </motion.div>
+              <p className="text-sm text-slate-600 font-medium">Aguardando sinais...</p>
+              <p className="text-[11px] text-slate-700">Os eventos aparecerão aqui em tempo real</p>
+            </div>
+          ) : (
+            <AnimatePresence mode="popLayout">
+              {recentEvents.map((e, index) => {
+                const cfg = EVENT_CONFIG[e.event_name];
+                const Icon = cfg?.icon || Zap;
+                const isServer = e.source === "server";
+                const productName = products.find(p => p.id === e.product_id)?.name;
+                return (
+                  <motion.div
+                    key={e.id}
+                    initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.96 }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    className={`
+                      group flex items-center gap-3 px-5 py-3 
+                      border-b border-slate-800/40 last:border-b-0
+                      hover:bg-slate-800/30 transition-all duration-200
+                      ${index === 0 ? "bg-slate-800/20" : ""}
+                    `}
+                  >
+                    {/* Timestamp */}
+                    <span className="text-[11px] font-mono text-slate-500 tabular-nums w-[58px] shrink-0">
+                      {format(new Date(e.created_at), "HH:mm:ss")}
+                    </span>
+
+                    {/* Event Icon + Glow */}
+                    <div className="relative flex items-center justify-center w-7 h-7 shrink-0">
+                      <div
+                        className="absolute inset-0 rounded-lg opacity-20 group-hover:opacity-30 transition-opacity"
                         style={{ backgroundColor: cfg?.color || "#475569" }}
                       />
-                      <span className="font-medium truncate" style={{ color: cfg?.color || "#94a3b8" }}>
-                        {e.event_name}
+                      <Icon className="w-3.5 h-3.5 relative z-10" style={{ color: cfg?.color || "#94a3b8" }} />
+                    </div>
+
+                    {/* Event Name */}
+                    <span
+                      className="text-[13px] font-semibold min-w-[120px] shrink-0"
+                      style={{ color: cfg?.color || "#94a3b8" }}
+                    >
+                      {cfg?.label || e.event_name}
+                    </span>
+
+                    {/* Product name */}
+                    {productName && (
+                      <span className="text-[11px] text-slate-500 truncate max-w-[200px] hidden sm:inline">
+                        {productName}
                       </span>
-                      <span className="text-[9px] text-slate-600 ml-auto shrink-0">
-                        {e.source === "server" ? "☁" : "🖥" }
-                      </span>
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
-            )}
-          </div>
+                    )}
+
+                    {/* Spacer */}
+                    <span className="flex-1" />
+
+                    {/* Source Badge */}
+                    <span
+                      className={`
+                        text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full shrink-0
+                        ${isServer
+                          ? "bg-violet-500/15 text-violet-400 border border-violet-500/20"
+                          : "bg-cyan-500/15 text-cyan-400 border border-cyan-500/20"
+                        }
+                      `}
+                    >
+                      {isServer ? "CAPI" : "PIXEL"}
+                    </span>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          )}
         </div>
       </div>
     </div>
