@@ -143,6 +143,9 @@ export default function MetaAds() {
         </Card>
       </div>
 
+      {/* Real-time Funnel */}
+      <MetaAdsFunnel />
+
       {/* Tabs */}
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="bg-muted/50">
