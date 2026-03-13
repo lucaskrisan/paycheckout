@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Pencil, Trash2, GraduationCap, BookOpen, FileText, Users } from "lucide-react";
+import { Plus, Pencil, Trash2, GraduationCap, BookOpen, FileText, Users, ChevronUp, ChevronDown } from "lucide-react";
 import LessonMaterialsManager from "@/components/admin/LessonMaterialsManager";
 import { toast } from "sonner";
 import CourseStudents from "@/components/admin/CourseStudents";
