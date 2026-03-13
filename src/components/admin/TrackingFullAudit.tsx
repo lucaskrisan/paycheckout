@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Shield, CheckCircle2, XCircle, AlertTriangle, Loader2, RefreshCw,
-  Zap, Globe, Code2, Eye, ShoppingCart, UserCheck, CreditCard, TrendingUp,
-  MousePointerClick, BookOpen, Server, Monitor,
+  Zap, Globe, Code2, Eye, ShoppingCart, UserCheck, TrendingUp,
+  Server, Monitor,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
