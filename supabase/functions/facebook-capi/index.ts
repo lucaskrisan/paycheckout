@@ -58,6 +58,7 @@ Deno.serve(async (req) => {
       fbp,
       visitor_id,
       user_agent,
+      log_browser,
     } = await req.json();
 
     if (!product_id || !event_name) {
@@ -92,6 +93,20 @@ Deno.serve(async (req) => {
       customer_name: customerName,
       visitor_id: visitor_id || null,
     }).then(() => {});
+
+    // If caller signals browser pixel also fired (e.g. external tracking script),
+    // log a "browser" entry so the dashboard shows DUAL ✓
+    if (log_browser) {
+      supabase.from('pixel_events').insert({
+        product_id,
+        event_name,
+        source: 'browser',
+        event_id: event_id || null,
+        user_id: productOwnerId,
+        customer_name: customerName,
+        visitor_id: visitor_id || null,
+      }).then(() => {});
+    }
 
     if (!pixels || pixels.length === 0) {
       return new Response(

@@ -71,7 +71,7 @@ const Checkout = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pixData, setPixData] = useState<{ qrCodeUrl?: string; pixCode?: string; orderId?: string } | null>(null);
   const [pixModalOpen, setPixModalOpen] = useState(false);
-  const { trackPurchase, trackAddPaymentInfo, trackAddToCart, trackLead, setAdvancedMatching } = useFacebookPixel(productId, product?.price, product?.name);
+  const { trackPurchase, trackAddPaymentInfo, trackAddToCart, trackAddToCartMain, trackLead, setAdvancedMatching } = useFacebookPixel(productId, product?.price, product?.name);
   const [orderBumps, setOrderBumps] = useState<OrderBump[]>([]);
   const [selectedBumps, setSelectedBumps] = useState<Set<string>>(new Set());
   const [builderLayout, setBuilderLayout] = useState<BuilderComponent[]>([]);
@@ -247,6 +247,7 @@ const Checkout = () => {
     if (!isValidCPF(customer.cpf)) { toast.error("CPF inválido. Verifique o número digitado."); return; }
     if (paymentMethod === "credit_card" && (!creditCard.number || !creditCard.name || !creditCard.expiry || !creditCard.cvv)) { toast.error("Preencha todos os dados do cartão"); return; }
 
+    trackAddToCartMain();
     setIsSubmitting(true);
     try {
       if (paymentMethod === "pix") {

@@ -75,7 +75,7 @@ ${pixelInits}
   var vcId='vc_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
   var pvId='pv_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
   var capiUrl='${SUPABASE_URL}/functions/v1/facebook-capi';
-  var capiBody={product_id:'${selectedProduct}',event_name:'ViewContent',event_id:vcId,event_source_url:location.href,visitor_id:vid,user_agent:navigator.userAgent,fbc:(document.cookie.match(/(^|;\\s*)_fbc=([^;]*)/)||[])[2]||'',fbp:fbpCk,custom_data:{content_type:'product',content_ids:['${selectedProduct}']}};
+  var capiBody={product_id:'${selectedProduct}',event_name:'ViewContent',event_id:vcId,event_source_url:location.href,visitor_id:vid,user_agent:navigator.userAgent,fbc:(document.cookie.match(/(^|;\\s*)_fbc=([^;]*)/)||[])[2]||'',fbp:fbpCk,log_browser:true,custom_data:{content_type:'product',content_ids:['${selectedProduct}']}};
   fetch(capiUrl,{
     method:'POST',headers:{'Content-Type':'application/json','apikey':'${SUPABASE_ANON_KEY}'},
     body:JSON.stringify(capiBody)
@@ -83,7 +83,7 @@ ${pixelInits}
   // Also send PageView via CAPI
   fetch(capiUrl,{
     method:'POST',headers:{'Content-Type':'application/json','apikey':'${SUPABASE_ANON_KEY}'},
-    body:JSON.stringify({product_id:'${selectedProduct}',event_name:'PageView',event_id:pvId,event_source_url:location.href,visitor_id:vid,user_agent:navigator.userAgent,fbc:(document.cookie.match(/(^|;\\s*)_fbc=([^;]*)/)||[])[2]||'',fbp:fbpCk})
+    body:JSON.stringify({product_id:'${selectedProduct}',event_name:'PageView',event_id:pvId,event_source_url:location.href,visitor_id:vid,user_agent:navigator.userAgent,fbc:(document.cookie.match(/(^|;\\s*)_fbc=([^;]*)/)||[])[2]||'',fbp:fbpCk,log_browser:true})
   }).catch(function(){});
 
   // === 2. Captura UTMs + fbclid ===
