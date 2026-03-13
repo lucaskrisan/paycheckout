@@ -105,7 +105,7 @@ export default function AdminLayout() {
           event: "*",
           schema: "public",
           table: "orders",
-          filter: `user_id=eq.${user.id}`,
+          filter: undefined,
         },
         (payload: any) => {
           const newStatus = String(payload?.new?.status || "").toLowerCase();
