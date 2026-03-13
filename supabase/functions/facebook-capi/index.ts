@@ -77,12 +77,14 @@ Deno.serve(async (req) => {
 
     // Log event to pixel_events for dashboard (non-blocking)
     const productOwnerId = pixels?.[0]?.user_id || null;
+    const customerName = customer?.name || null;
     supabase.from('pixel_events').insert({
       product_id,
       event_name,
       source: 'server',
       event_id: event_id || null,
       user_id: productOwnerId,
+      customer_name: customerName,
     }).then(() => {});
 
     if (!pixels || pixels.length === 0) {
