@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Lock, ArrowRight, Loader2, Award, Star, ListOrdered, Shield, ShieldCheck } from "lucide-react";
-import CustomerForm, { type CustomerData } from "@/components/checkout/CustomerForm";
+import CustomerForm, { type CustomerData, isValidCPF } from "@/components/checkout/CustomerForm";
 import PixPayment from "@/components/checkout/PixPayment";
 import PixModal from "@/components/checkout/PixModal";
 import CreditCardForm, { type CreditCardData } from "@/components/checkout/CreditCardForm";
@@ -244,6 +244,7 @@ const Checkout = () => {
 
   const handleSubmit = async () => {
     if (!customer.name || !customer.email || !customer.cpf || !customer.phone) { toast.error("Preencha todos os campos obrigatórios"); return; }
+    if (!isValidCPF(customer.cpf)) { toast.error("CPF inválido. Verifique o número digitado."); return; }
     if (paymentMethod === "credit_card" && (!creditCard.number || !creditCard.name || !creditCard.expiry || !creditCard.cvv)) { toast.error("Preencha todos os dados do cartão"); return; }
 
     setIsSubmitting(true);
