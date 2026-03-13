@@ -148,6 +148,14 @@ const PixelEventsDashboard = ({ products }: Props) => {
           <h3 className="text-sm font-semibold text-slate-200">Eventos em Tempo Real</h3>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={simulateJourney}
+            disabled={simulating}
+            className="flex items-center gap-1.5 px-3 h-8 rounded-md text-[11px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors disabled:opacity-50"
+          >
+            <FlaskConical className={`w-3.5 h-3.5 ${simulating ? "animate-pulse" : ""}`} />
+            {simulating ? "Simulando..." : "Simular Jornada"}
+          </button>
           <Select value={filterProduct} onValueChange={setFilterProduct}>
             <SelectTrigger className="w-[170px] bg-slate-800/60 border-slate-700/50 text-slate-300 text-xs h-8">
               <SelectValue placeholder="Todos os produtos" />
