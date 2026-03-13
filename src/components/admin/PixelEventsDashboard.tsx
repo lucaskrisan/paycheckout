@@ -15,6 +15,7 @@ interface PixelEvent {
   source: string;
   created_at: string;
   customer_name: string | null;
+  visitor_id: string | null;
 }
 
 interface Props {
