@@ -55,6 +55,18 @@ function getVisitorId(): string {
   return vid;
 }
 
+/** Generate or read _fbp cookie (fallback if Meta pixel didn't create one, e.g. adblock) */
+function ensureFbp(): string {
+  let fbp = getCookie("_fbp");
+  if (!fbp) {
+    // Meta _fbp format: fb.1.<creation_time>.<random_10_digits>
+    const rand = Math.floor(1000000000 + Math.random() * 9000000000);
+    fbp = `fb.1.${Date.now()}.${rand}`;
+    setCookie("_fbp", fbp, 390);
+  }
+  return fbp;
+}
+
 /**
  * Capture fbclid / fbp from URL params (cross-domain propagation).
  * If fbclid is present in the URL, generate _fbc cookie.
@@ -95,6 +107,7 @@ export function useFacebookPixel(productId: string | undefined) {
   const sendCAPI = useCallback((eventName: string, eventId: string, customData?: Record<string, unknown>) => {
     if (!productId) return;
     const visitorId = getVisitorId();
+    const fbp = ensureFbp();
 
     supabase.functions.invoke("facebook-capi", {
       body: {
@@ -105,8 +118,9 @@ export function useFacebookPixel(productId: string | undefined) {
         customer: customerRef.current,
         custom_data: customData,
         fbc: getCookie("_fbc") || null,
-        fbp: getCookie("_fbp") || null,
+        fbp: fbp,
         visitor_id: visitorId,
+        user_agent: navigator.userAgent,
       },
     }).catch((err) => console.warn("[CAPI] non-blocking error:", err));
   }, [productId]);

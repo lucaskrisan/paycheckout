@@ -17,6 +17,7 @@ interface CAPIEvent {
     fn?: string[];
     ln?: string[];
     external_id?: string[];
+    country?: string[];
     client_ip_address?: string;
     client_user_agent?: string;
     fbc?: string;
@@ -54,6 +55,7 @@ Deno.serve(async (req) => {
       fbc,
       fbp,
       visitor_id,
+      user_agent,
     } = await req.json();
 
     if (!product_id || !event_name) {
@@ -121,11 +123,15 @@ Deno.serve(async (req) => {
 
     const userData: CAPIEvent['user_data'] = {
       client_ip_address: isValidPublicIp ? clientIp : undefined,
-      client_user_agent: req.headers.get('user-agent') || undefined,
+      // Prefer browser UA sent from client; fallback to request UA
+      client_user_agent: user_agent || req.headers.get('user-agent') || undefined,
     };
 
     if (fbc) userData.fbc = fbc;
     if (fbp) userData.fbp = fbp;
+
+    // Always send country for Brazilian users (boosts EMQ significantly)
+    (userData as any).country = [await hashSHA256('br')];
 
     // Always send visitor_id as external_id for consistent cross-event matching (boosts EMQ)
     if (visitor_id) {
