@@ -28,6 +28,8 @@ interface CAPIEvent {
     currency?: string;
     content_type?: string;
     content_ids?: string[];
+    content_name?: string;
+    num_items?: number;
     order_id?: string;
   };
 }
