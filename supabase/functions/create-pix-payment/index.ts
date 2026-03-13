@@ -54,7 +54,9 @@ Deno.serve(async (req) => {
     );
 
     const body = await req.json();
-    const { amount, customer, product_id, coupon_id, config_id, bump_product_ids, checkout_url, utms } = body;
+    const { customer, product_id, coupon_id, config_id, bump_product_ids, checkout_url, utms } = body;
+    // Round amount to 2 decimal places to prevent floating point issues
+    const amount = Math.round(Number(body.amount) * 100) / 100;
 
     if (!amount || !customer?.name || !customer?.email || !customer?.cpf) {
       return new Response(
