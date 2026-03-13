@@ -62,28 +62,30 @@ export default function TrackingScriptGenerator({ pixels, products, checkoutBase
 
 ${pixelInits}
 
-  fbq('track','PageView',{},{eventID:pvId});
-  fbq('track','ViewContent',{content_type:'product',content_ids:['${selectedProduct}']},{eventID:vcId});
-
   // === Ensure _fbp cookie exists (fallback if pixel blocked by adblock) ===
   var fbpCk=(document.cookie.match(/(^|;\\s*)_fbp=([^;]*)/)||[])[2];
   if(!fbpCk){fbpCk='fb.1.'+Date.now()+'.'+Math.floor(1e9+Math.random()*9e9);document.cookie='_fbp='+fbpCk+';max-age=33696000;path=/;SameSite=Lax';}
 
-  // === Log ViewContent to CAPI/dashboard ===
+  // === IDs de evento (declarados ANTES do uso para deduplicação correta) ===
   var vid=(document.cookie.match(/(^|;\\s*)_vid=([^;]*)/)||[])[2];
   if(!vid){vid='v_'+Date.now()+'_'+Math.random().toString(36).slice(2,12);document.cookie='_vid='+vid+';max-age=33696000;path=/;SameSite=Lax';}
   var vcId='vc_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
   var pvId='pv_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
+
+  // === Disparos Pixel (Browser) com eventID para deduplicação ===
+  fbq('track','PageView',{},{eventID:pvId});
+  fbq('track','ViewContent',{content_type:'product',content_ids:['${selectedProduct}']},{eventID:vcId});
+
+  // === Disparos CAPI (Server) com mesmo eventID ===
   var capiUrl='${SUPABASE_URL}/functions/v1/facebook-capi';
-  var capiBody={product_id:'${selectedProduct}',event_name:'ViewContent',event_id:vcId,event_source_url:location.href,visitor_id:vid,user_agent:navigator.userAgent,fbc:(document.cookie.match(/(^|;\\s*)_fbc=([^;]*)/)||[])[2]||'',fbp:fbpCk,log_browser:true,custom_data:{content_type:'product',content_ids:['${selectedProduct}']}};
+  var commonParams={product_id:'${selectedProduct}',event_source_url:location.href,visitor_id:vid,user_agent:navigator.userAgent,fbc:(document.cookie.match(/(^|;\\s*)_fbc=([^;]*)/)||[])[2]||'',fbp:fbpCk,log_browser:true};
   fetch(capiUrl,{
     method:'POST',headers:{'Content-Type':'application/json','apikey':'${SUPABASE_ANON_KEY}'},
-    body:JSON.stringify(capiBody)
+    body:JSON.stringify(Object.assign({},commonParams,{event_name:'PageView',event_id:pvId}))
   }).catch(function(){});
-  // Also send PageView via CAPI
   fetch(capiUrl,{
     method:'POST',headers:{'Content-Type':'application/json','apikey':'${SUPABASE_ANON_KEY}'},
-    body:JSON.stringify({product_id:'${selectedProduct}',event_name:'PageView',event_id:pvId,event_source_url:location.href,visitor_id:vid,user_agent:navigator.userAgent,fbc:(document.cookie.match(/(^|;\\s*)_fbc=([^;]*)/)||[])[2]||'',fbp:fbpCk,log_browser:true})
+    body:JSON.stringify(Object.assign({},commonParams,{event_name:'ViewContent',event_id:vcId,custom_data:{content_type:'product',content_ids:['${selectedProduct}']}}))
   }).catch(function(){});
 
   // === 2. Captura UTMs + fbclid ===
