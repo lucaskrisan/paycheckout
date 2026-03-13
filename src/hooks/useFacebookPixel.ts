@@ -35,6 +35,17 @@ function setCookie(name: string, value: string, days: number) {
   document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires};path=/;SameSite=Lax`;
 }
 
+/** Get or create a persistent visitor ID for journey tracking */
+function getVisitorId(): string {
+  const key = "_vid";
+  let vid = getCookie(key);
+  if (!vid) {
+    vid = `v_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+    setCookie(key, vid, 390); // ~13 months
+  }
+  return vid;
+}
+
 /**
  * Capture fbclid / fbp from URL params (cross-domain propagation).
  * If fbclid is present in the URL, generate _fbc cookie.
