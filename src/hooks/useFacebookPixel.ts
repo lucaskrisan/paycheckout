@@ -170,11 +170,9 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
 
       if (cancelled) return;
 
-      // Always log + send CAPI for PageView & InitiateCheckout (even if no pixels or fbq blocked)
-      logPixelEvent("PageView", pvId);
+      // Always send CAPI for PageView & InitiateCheckout (log_browser: true handles both entries)
       sendCAPI("PageView", pvId);
 
-      logPixelEvent("InitiateCheckout", icId);
       sendCAPI("InitiateCheckout", icId, {
         content_type: "product",
         content_ids: [productId],
