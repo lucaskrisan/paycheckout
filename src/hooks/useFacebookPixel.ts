@@ -23,10 +23,10 @@ function digitsOnly(value: string | undefined | null): string {
   return (value || "").replace(/\D/g, "");
 }
 
-/** Read a cookie by name */
+/** Read a cookie by name — raw value, no decoding to preserve fbclid integrity */
 function getCookie(name: string): string | null {
   const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
-  return match ? decodeURIComponent(match[1]) : null;
+  return match ? match[1] : null;
 }
 
 /** Set a first-party cookie — raw value, no encoding to preserve fbclid integrity */
