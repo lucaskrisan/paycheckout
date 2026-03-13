@@ -128,7 +128,7 @@ Deno.serve(async (req) => {
           }
         }
 
-        const validatedAmount = Math.max(pixPrice - couponDiscount, 0) + bumpTotal;
+        const validatedAmount = Math.round((Math.max(pixPrice - couponDiscount, 0) + bumpTotal) * 100) / 100;
         // Allow small rounding tolerance (R$ 0.02)
         if (Math.abs(amount - validatedAmount) > 0.02) {
           console.warn(`[create-pix-payment] Price mismatch: client=${amount}, server=${validatedAmount} (product=${pixPrice}, coupon=${couponDiscount}, bumps=${bumpTotal})`);
