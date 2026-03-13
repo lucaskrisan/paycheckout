@@ -52,6 +52,10 @@ const CustomerForm = ({ data, onChange }: CustomerFormProps) => {
     onChange({ ...data, [field]: formatted });
   };
 
+  const cpfDigits = data.cpf.replace(/\D/g, "");
+  const cpfComplete = cpfDigits.length === 11;
+  const cpfInvalid = cpfComplete && !isValidCPF(data.cpf);
+
   return (
     <div className="space-y-3">
       <p className="text-xs font-bold text-[#565959] uppercase tracking-wider">Seus dados</p>
@@ -78,14 +82,19 @@ const CustomerForm = ({ data, onChange }: CustomerFormProps) => {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <div className="relative">
-          <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#565959]" />
-          <Input
-            value={data.cpf}
-            onChange={(e) => handleChange("cpf", e.target.value)}
-            placeholder="CPF"
-            className={inputClass}
-          />
+        <div>
+          <div className="relative">
+            <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#565959]" />
+            <Input
+              value={data.cpf}
+              onChange={(e) => handleChange("cpf", e.target.value)}
+              placeholder="CPF"
+              className={`${inputClass} ${cpfInvalid ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""}`}
+            />
+          </div>
+          {cpfInvalid && (
+            <p className="text-xs text-red-500 mt-1">CPF inválido</p>
+          )}
         </div>
         <div className="relative">
           <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#565959]" />
