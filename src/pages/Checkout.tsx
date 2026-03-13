@@ -247,6 +247,7 @@ const Checkout = () => {
     if (!isValidCPF(customer.cpf)) { toast.error("CPF inválido. Verifique o número digitado."); return; }
     if (paymentMethod === "credit_card" && (!creditCard.number || !creditCard.name || !creditCard.expiry || !creditCard.cvv)) { toast.error("Preencha todos os dados do cartão"); return; }
 
+    trackAddToCartMain();
     setIsSubmitting(true);
     try {
       if (paymentMethod === "pix") {

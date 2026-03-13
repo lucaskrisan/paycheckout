@@ -389,6 +389,7 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     trackPurchase,
     trackAddPaymentInfo,
     trackAddToCart,
+    trackAddToCartMain,
     trackLead,
     setAdvancedMatching,
   };
