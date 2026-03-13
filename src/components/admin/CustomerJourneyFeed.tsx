@@ -87,8 +87,38 @@ const CustomerJourneyFeed = ({ events, products }: Props) => {
     );
   }
 
+  const completedCount = journeys.filter((j) => j.completed).length;
+  const pendingCount = journeys.length - completedCount;
+
   return (
-    <div className="divide-y divide-slate-800/40">
+    <div>
+      {/* Summary */}
+      <div className="flex items-center gap-3 px-5 py-3 border-b border-slate-800/40">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800/50 border border-slate-700/30">
+          <UserCheck className="w-3 h-3 text-slate-400" />
+          <span className="text-[11px] font-semibold text-slate-300">{journeys.length}</span>
+          <span className="text-[10px] text-slate-500">visitantes</span>
+        </div>
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/20">
+          <Loader2 className="w-3 h-3 text-amber-400" />
+          <span className="text-[11px] font-semibold text-amber-400">{pendingCount}</span>
+          <span className="text-[10px] text-amber-400/60">aguardando</span>
+        </div>
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20">
+          <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+          <span className="text-[11px] font-semibold text-emerald-400">{completedCount}</span>
+          <span className="text-[10px] text-emerald-400/60">convertidos</span>
+        </div>
+        {journeys.length > 0 && (
+          <div className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800/50 border border-slate-700/30">
+            <TrendingUp className="w-3 h-3 text-cyan-400" />
+            <span className="text-[11px] font-semibold text-cyan-400">
+              {journeys.length > 0 ? ((completedCount / journeys.length) * 100).toFixed(0) : 0}%
+            </span>
+            <span className="text-[10px] text-slate-500">taxa</span>
+          </div>
+        )}
+      </div>
       <AnimatePresence mode="popLayout">
         {journeys.map((journey) => (
           <motion.div
