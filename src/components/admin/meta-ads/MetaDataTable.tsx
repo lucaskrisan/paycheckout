@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { MetaInsights } from "@/hooks/useMetaAds";
 import {
-  getResults, getCPA, getROAS,
+  getResults, getCPA, getROAS, getConversionValue, getROI,
   formatCurrency, formatNumber, formatPercent, formatBudget,
 } from "./MetaInsightsHelpers";
 
