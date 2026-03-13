@@ -11,7 +11,7 @@ import { formatCurrency, getResults, getConversionValue } from "@/components/adm
 
 export default function MetaAds() {
   const {
-    accounts, selectedAccount, setSelectedAccount,
+    accounts, selectedAccounts, setSelectedAccounts, toggleAccount, selectAllAccounts,
     campaigns, adsets, ads,
     loading, datePreset, setDatePreset,
     customRange, setCustomRange, lastRefresh,
@@ -25,16 +25,15 @@ export default function MetaAds() {
   useEffect(() => { fetchAccounts(); }, []);
 
   useEffect(() => {
-    if (!selectedAccount) return;
-    // Always fetch campaigns for summary
+    if (selectedAccounts.length === 0) return;
     fetchCampaigns();
-  }, [selectedAccount, datePreset, customRange]);
+  }, [selectedAccounts, datePreset, customRange]);
 
   useEffect(() => {
-    if (!selectedAccount || mainTab !== "campanhas") return;
+    if (selectedAccounts.length === 0 || mainTab !== "campanhas") return;
     if (dataTab === "adsets") fetchAdSets();
     else if (dataTab === "ads") fetchAds();
-  }, [selectedAccount, dataTab, mainTab, datePreset, customRange]);
+  }, [selectedAccounts, dataTab, mainTab, datePreset, customRange]);
 
   const handleRefresh = () => {
     fetchCampaigns();
@@ -44,7 +43,6 @@ export default function MetaAds() {
     }
   };
 
-  // Summary from campaigns
   const summary = campaigns.reduce(
     (acc, item) => {
       const ins = item.insights;
@@ -57,21 +55,19 @@ export default function MetaAds() {
     { spend: 0, results: 0, convValue: 0 }
   );
 
-  // ROAS global = faturamento total / gasto total (não média dos ROAS individuais)
   const globalROAS = summary.spend > 0 ? summary.convValue / summary.spend : 0;
-  const selectedAccName = accounts.find((a) => a.id === selectedAccount)?.name || "";
 
   return (
     <div className="space-y-4">
-      {/* Filters bar */}
       <div className="bg-[hsl(222,30%,14%)] border border-slate-700/50 rounded-lg p-4">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-semibold text-slate-200">Meta Ads</h2>
         </div>
         <MetaAdsHeader
           accounts={accounts}
-          selectedAccount={selectedAccount}
-          onSelectAccount={setSelectedAccount}
+          selectedAccounts={selectedAccounts}
+          onToggleAccount={toggleAccount}
+          onSelectAll={selectAllAccounts}
           datePreset={datePreset}
           onDatePreset={(v) => setDatePreset(v as any)}
           customRange={customRange}
@@ -82,7 +78,6 @@ export default function MetaAds() {
         />
       </div>
 
-      {/* Main tabs: Resumo | Campanhas */}
       <Tabs value={mainTab} onValueChange={setMainTab}>
         <TabsList className="bg-[hsl(222,30%,14%)] border border-slate-700/50 p-1 h-auto">
           <TabsTrigger
@@ -99,7 +94,6 @@ export default function MetaAds() {
           </TabsTrigger>
         </TabsList>
 
-        {/* ============ RESUMO ============ */}
         <TabsContent value="resumo" className="mt-4 space-y-4">
           <MetaAdsSummary
             spend={summary.spend}
@@ -110,7 +104,6 @@ export default function MetaAds() {
           <MetaAdsFunnel />
         </TabsContent>
 
-        {/* ============ CAMPANHAS ============ */}
         <TabsContent value="campanhas" className="mt-4 space-y-4">
           <Tabs value={dataTab} onValueChange={setDataTab}>
             <TabsList className="bg-[hsl(222,25%,16%)] border border-slate-700/50 p-1 h-auto">
@@ -138,28 +131,31 @@ export default function MetaAds() {
                     </p>
                   ) : (
                     <div className="grid gap-3">
-                      {accounts.map((acc) => (
-                        <div
-                          key={acc.id}
-                          className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                            selectedAccount === acc.id
-                              ? "border-blue-500 bg-blue-500/10"
-                              : "border-slate-700/50 hover:border-blue-500/50"
-                          }`}
-                          onClick={() => setSelectedAccount(acc.id)}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-semibold text-slate-200">{acc.name || acc.account_id}</p>
-                              <p className="text-xs text-slate-500">ID: {acc.account_id} • {acc.currency}</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-sm text-slate-500">Gasto total</p>
-                              <p className="font-semibold text-slate-200">{formatCurrency(parseInt(acc.amount_spent || "0", 10) / 100)}</p>
+                      {accounts.map((acc) => {
+                        const isSelected = selectedAccounts.includes(acc.id);
+                        return (
+                          <div
+                            key={acc.id}
+                            className={`p-4 rounded-lg border cursor-pointer transition-colors ${
+                              isSelected
+                                ? "border-blue-500 bg-blue-500/10"
+                                : "border-slate-700/50 hover:border-blue-500/50"
+                            }`}
+                            onClick={() => toggleAccount(acc.id)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-semibold text-slate-200">{acc.name || acc.account_id}</p>
+                                <p className="text-xs text-slate-500">ID: {acc.account_id} • {acc.currency}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-sm text-slate-500">Gasto total</p>
+                                <p className="font-semibold text-slate-200">{formatCurrency(parseInt(acc.amount_spent || "0", 10) / 100)}</p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </CardContent>
@@ -172,7 +168,7 @@ export default function MetaAds() {
                 loading={loading}
                 searchPlaceholder="Filtrar por nome..."
                 showObjective
-                accountName={selectedAccName}
+                accountName={selectedAccounts.length > 1 ? undefined : accounts.find((a) => a.id === selectedAccounts[0])?.name}
                 onToggleStatus={toggleStatus}
                 onUpdateBudget={updateBudget}
                 onDuplicate={(id) => duplicate(id, "campaign")}
