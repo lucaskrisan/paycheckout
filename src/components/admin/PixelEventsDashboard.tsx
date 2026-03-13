@@ -62,6 +62,7 @@ const PixelEventsDashboard = ({ products }: Props) => {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "pixel_events" }, (payload) => {
         const ne = payload.new as PixelEvent;
         if (filterProduct !== "all" && ne.product_id !== filterProduct) return;
+        if (ne.visitor_id?.startsWith("sim_")) return; // Ignore test events
         setEvents((prev) => [ne, ...prev].slice(0, 1000));
       })
       .subscribe();
