@@ -17,3 +17,27 @@ verify_jwt = false
 
 [functions.check-order-status]
 verify_jwt = false
+
+[functions.meta-diagnostics]
+verify_jwt = false
+
+[functions.facebook-capi]
+verify_jwt = false
+
+[functions.fire-webhooks]
+verify_jwt = false
+
+[functions.generate-email-copy]
+verify_jwt = false
+
+[functions.pwa-manifest]
+verify_jwt = false
+
+[functions.resend-webhook]
+verify_jwt = false
+
+[functions.send-pix-reminder]
+verify_jwt = false
+
+[functions.test-push]
+verify_jwt = false
