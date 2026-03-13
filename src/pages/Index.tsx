@@ -3,6 +3,7 @@ import { Navigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Loader2, CreditCard, GraduationCap, BarChart3, Zap, Shield, ArrowRight, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
+import InstallPrompt from "@/components/InstallPrompt";
 
 const Index = () => {
   const { user, isAdmin, loading } = useAuth();
