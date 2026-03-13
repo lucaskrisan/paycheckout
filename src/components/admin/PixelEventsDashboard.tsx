@@ -49,7 +49,9 @@ const PixelEventsDashboard = ({ products }: Props) => {
       .limit(1000);
     if (filterProduct !== "all") query = query.eq("product_id", filterProduct);
     const { data } = await query;
-    setEvents((data as any) || []);
+    // Filter out simulated test events
+    const real = ((data as any) || []).filter((e: PixelEvent) => !e.visitor_id?.startsWith("sim_"));
+    setEvents(real);
   };
 
   useEffect(() => { loadEvents(); }, [filterProduct, period]);
