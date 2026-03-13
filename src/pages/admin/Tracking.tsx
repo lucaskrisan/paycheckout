@@ -488,7 +488,7 @@ const Tracking = () => {
       </div>
 
       {/* ── Script Generator + UTM ── */}
-      <TrackingScriptGenerator pixels={pixels} products={products} checkoutBaseUrl={window.location.origin} />
+      <TrackingScriptGenerator pixels={pixels} products={products} checkoutBaseUrl="https://paycheckout.lovable.app" />
 
       {/* ── UTM Attribution ── */}
       <UtmAttributionTable />
