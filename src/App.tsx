@@ -33,7 +33,7 @@ import Emails from "./pages/admin/Emails";
 import PwaSettings from "./pages/admin/PwaSettings";
 import NotFound from "./pages/NotFound";
 import InstallPrompt from "./components/InstallPrompt";
-import ManualTecnico from "./pages/ManualTecnico";
+
 
 const queryClient = new QueryClient();
 
@@ -47,7 +47,6 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/manual-tecnico" element={<ManualTecnico />} />
             <Route path="/checkout/sucesso" element={<CheckoutSuccess />} />
             <Route path="/checkout/:productId" element={<Checkout />} />
             <Route path="/membros" element={<MemberArea />} />

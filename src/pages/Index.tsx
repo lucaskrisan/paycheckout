@@ -1,7 +1,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Loader2, CreditCard, GraduationCap, BarChart3, Zap, Shield, ArrowRight, CheckCircle2, FileText } from "lucide-react";
+import { Loader2, CreditCard, GraduationCap, BarChart3, Zap, Shield, ArrowRight, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 const Index = () => {
@@ -25,11 +25,6 @@ const Index = () => {
         <div className="container max-w-6xl mx-auto flex items-center justify-between px-4 h-16">
           <span className="font-display font-bold text-xl text-foreground">PayCheckout</span>
           <div className="flex items-center gap-3">
-            <a href="/manual-tecnico.html" target="_blank" rel="noreferrer">
-              <Button variant="outline" size="sm" className="gap-1.5">
-                <FileText className="w-4 h-4" /> Manual
-              </Button>
-            </a>
             <Link to="/login">
               <Button variant="ghost" size="sm">Entrar</Button>
             </Link>
