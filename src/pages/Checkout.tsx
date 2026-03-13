@@ -236,9 +236,9 @@ const Checkout = () => {
     </div>
   );
 
-  const couponDiscount = coupon ? (coupon.discount_type === "percent" ? product.price * (coupon.discount_value / 100) : coupon.discount_value) : 0;
+  const couponDiscount = coupon ? (coupon.discount_type === "percent" ? Math.round(product.price * (coupon.discount_value / 100) * 100) / 100 : coupon.discount_value) : 0;
   const bumpTotal = orderBumps.filter((b) => selectedBumps.has(b.id)).reduce((sum, b) => sum + (b.bump_product?.price || 0), 0);
-  const pixDiscount = paymentMethod === "pix" ? product.price * 0.05 : 0;
+  const pixDiscount = paymentMethod === "pix" ? Math.round(product.price * 0.05 * 100) / 100 : 0;
   const frontEndAmount = Math.round((product.price - pixDiscount - couponDiscount) * 100) / 100;
   const finalAmount = Math.round((Math.max(frontEndAmount, 0) + bumpTotal) * 100) / 100;
 
@@ -261,9 +261,21 @@ const Checkout = () => {
         const { data, error } = await supabase.functions.invoke("create-pix-payment", {
           body: { amount: finalAmount, product_id: product.id, config_id: requestedConfigId || null, coupon_id: coupon?.id || null, bump_product_ids: bumpProductIds, checkout_url: window.location.href, utms, customer: { name: customer.name, email: customer.email, cpf: customer.cpf, phone: customer.phone } },
         });
-        if (error) throw error;
+        if (error) {
+          // Try to extract the real error message from the response body
+          let msg = "Falha ao gerar o PIX";
+          try {
+            const ctx = (error as any).context;
+            if (ctx && typeof ctx.json === "function") {
+              const body = await ctx.json();
+              if (body?.error) msg = body.error;
+            }
+          } catch {}
+          throw new Error(msg);
+        }
+        if (data?.error) throw new Error(data.error);
         if (data?.qr_code_url || data?.qr_code) { setPixData({ qrCodeUrl: data.qr_code_url, pixCode: data.qr_code, orderId: data.order_id }); setPixModalOpen(true); trackPurchase(frontEndAmount); await markPurchased(); }
-        else throw new Error("Falha ao gerar o PIX");
+        else throw new Error("Falha ao gerar o PIX. Tente novamente.");
       } else {
         const bumpProductIds2 = orderBumps.filter((b) => selectedBumps.has(b.id)).map((b) => b.bump_product.id);
         const [expMonth, expYear] = creditCard.expiry.split("/");
