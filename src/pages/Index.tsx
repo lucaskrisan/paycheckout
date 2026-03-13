@@ -1,7 +1,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Loader2, CreditCard, GraduationCap, BarChart3, Zap, Shield, ArrowRight, CheckCircle2, FileText } from "lucide-react";
+import { Loader2, CreditCard, GraduationCap, BarChart3, Zap, Shield, ArrowRight, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 const Index = () => {
