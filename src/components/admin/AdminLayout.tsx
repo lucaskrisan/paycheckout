@@ -140,7 +140,45 @@ export default function AdminLayout() {
     };
   }, [user?.id, notificationSound, playApprovedSaleSound]);
 
-  if (loading) {
+  // Visitor activity toasts
+  const lastToastRef = useRef(0);
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const EVENT_LABELS: Record<string, { emoji: string; label: string }> = {
+      PageView: { emoji: "👀", label: "acessou a página" },
+      ViewContent: { emoji: "📖", label: "viu a oferta" },
+      InitiateCheckout: { emoji: "🛒", label: "abriu o checkout" },
+      Lead: { emoji: "✍️", label: "preencheu os dados" },
+      AddPaymentInfo: { emoji: "💳", label: "informou pagamento" },
+      Purchase: { emoji: "🎉", label: "comprou!" },
+    };
+
+    const ch = supabase
+      .channel("admin-visitor-toasts")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "pixel_events" }, (payload: any) => {
+        const evt = payload.new;
+        if (!evt || evt.visitor_id?.startsWith("sim_")) return;
+        
+        // Throttle: max 1 toast per 3 seconds
+        const now = Date.now();
+        if (now - lastToastRef.current < 3000) return;
+        lastToastRef.current = now;
+
+        const cfg = EVENT_LABELS[evt.event_name];
+        if (!cfg) return;
+
+        const name = evt.customer_name?.split(" ")[0] || "Visitante";
+        toast(`${cfg.emoji} ${name} ${cfg.label}`, {
+          duration: 4000,
+          position: "bottom-right",
+        });
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(ch); };
+  }, [user?.id]);
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
