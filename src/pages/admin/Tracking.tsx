@@ -280,19 +280,19 @@ const Tracking = () => {
 
   const statusIcon = (status: string) => {
     switch (status) {
-      case "pass": return <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />;
-      case "warning": return <AlertTriangle className="w-4 h-4 text-yellow-500 shrink-0" />;
-      case "error": return <XCircle className="w-4 h-4 text-destructive shrink-0" />;
+      case "pass": return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />;
+      case "warning": return <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />;
+      case "error": return <XCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />;
       default: return null;
     }
   };
 
   const platformColors: Record<string, string> = {
-    facebook: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-    "g ads": "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
-    "g analytics": "bg-orange-500/10 text-orange-500 border-orange-500/20",
-    tiktok: "bg-pink-500/10 text-pink-500 border-pink-500/20",
-    taboola: "bg-purple-500/10 text-purple-500 border-purple-500/20",
+    facebook: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+    "g ads": "bg-amber-500/10 text-amber-400 border-amber-500/20",
+    "g analytics": "bg-orange-500/10 text-orange-400 border-orange-500/20",
+    tiktok: "bg-pink-500/10 text-pink-400 border-pink-500/20",
+    taboola: "bg-violet-500/10 text-violet-400 border-violet-500/20",
   };
 
   if (loading) {
