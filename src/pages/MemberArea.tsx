@@ -995,6 +995,7 @@ const MemberArea = () => {
           </main>
         </div>
       </div>
+      <MemberInstallBanner />
     </div>
   );
 };
