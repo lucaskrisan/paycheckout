@@ -129,6 +129,7 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
         fbp: fbp,
         visitor_id: visitorId,
         user_agent: navigator.userAgent,
+        log_browser: true,
       },
     }).catch((err) => console.warn("[CAPI] non-blocking error:", err));
   }, [productId]);
