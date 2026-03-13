@@ -7,7 +7,7 @@ import { MetaAdsHeader } from "@/components/admin/meta-ads/MetaAdsHeader";
 import { MetaDataTable } from "@/components/admin/meta-ads/MetaDataTable";
 import { MetaAdsFunnel } from "@/components/admin/meta-ads/MetaAdsFunnel";
 import { MetaAdsSummary } from "@/components/admin/meta-ads/MetaAdsSummary";
-import { formatCurrency, getResults, getROAS, getConversionValue } from "@/components/admin/meta-ads/MetaInsightsHelpers";
+import { formatCurrency, getResults, getConversionValue } from "@/components/admin/meta-ads/MetaInsightsHelpers";
 
 export default function MetaAds() {
   const {
