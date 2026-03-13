@@ -33,7 +33,7 @@ import Emails from "./pages/admin/Emails";
 import PwaSettings from "./pages/admin/PwaSettings";
 import NotFound from "./pages/NotFound";
 import InstallPrompt from "./components/InstallPrompt";
-import ManualTecnico from "./pages/ManualTecnico";
+
 
 const queryClient = new QueryClient();
 
