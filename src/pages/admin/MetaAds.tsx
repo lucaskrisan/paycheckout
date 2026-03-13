@@ -81,7 +81,7 @@ export default function MetaAds() {
       />
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <Card className="bg-card border-border">
           <CardContent className="p-4 flex items-center gap-3">
             <DollarSign className="w-8 h-8 text-primary" />
@@ -111,11 +111,31 @@ export default function MetaAds() {
         </Card>
         <Card className="bg-card border-border">
           <CardContent className="p-4 flex items-center gap-3">
+            <DollarSign className="w-8 h-8 text-primary" />
+            <div>
+              <p className="text-xs text-muted-foreground">Valor Conversão</p>
+              <p className="text-lg font-bold text-foreground">{summary.conversionValue > 0 ? formatCurrency(summary.conversionValue) : "—"}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-card border-border">
+          <CardContent className="p-4 flex items-center gap-3">
             <TrendingUp className={`w-8 h-8 ${avgROAS >= 1 ? "text-primary" : "text-destructive"}`} />
             <div>
               <p className="text-xs text-muted-foreground">ROAS Médio</p>
               <p className={`text-lg font-bold ${avgROAS >= 1 ? "text-primary" : "text-destructive"}`}>
                 {avgROAS > 0 ? `${avgROAS.toFixed(2)}x` : "—"}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-card border-border">
+          <CardContent className="p-4 flex items-center gap-3">
+            <Percent className={`w-8 h-8 ${totalROI > 0 ? "text-primary" : totalROI < 0 ? "text-destructive" : "text-muted-foreground"}`} />
+            <div>
+              <p className="text-xs text-muted-foreground">ROI</p>
+              <p className={`text-lg font-bold ${totalROI > 0 ? "text-primary" : totalROI < 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                {totalROI !== 0 ? `${totalROI.toFixed(1).replace(".", ",")}%` : "—"}
               </p>
             </div>
           </CardContent>
