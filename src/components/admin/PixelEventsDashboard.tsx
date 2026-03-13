@@ -269,7 +269,7 @@ const PixelEventsDashboard = ({ products }: Props) => {
         <div className="overflow-y-auto max-h-[420px] min-h-[280px]">
           {feedView === "journeys" ? (
             <CustomerJourneyFeed events={events} products={products} />
-          ) : (
+          ) : recentEvents.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
               <motion.div
                 animate={{ opacity: [0.3, 0.7, 0.3] }}
@@ -301,12 +301,9 @@ const PixelEventsDashboard = ({ products }: Props) => {
                       ${index === 0 ? "bg-slate-800/20" : ""}
                     `}
                   >
-                    {/* Timestamp */}
                     <span className="text-[11px] font-mono text-slate-500 tabular-nums w-[58px] shrink-0">
                       {format(new Date(e.created_at), "HH:mm:ss")}
                     </span>
-
-                    {/* Event Icon + Glow */}
                     <div className="relative flex items-center justify-center w-7 h-7 shrink-0">
                       <div
                         className="absolute inset-0 rounded-lg opacity-20 group-hover:opacity-30 transition-opacity"
@@ -314,33 +311,23 @@ const PixelEventsDashboard = ({ products }: Props) => {
                       />
                       <Icon className="w-3.5 h-3.5 relative z-10" style={{ color: cfg?.color || "#94a3b8" }} />
                     </div>
-
-                    {/* Event Name */}
                     <span
                       className="text-[13px] font-semibold min-w-[120px] shrink-0"
                       style={{ color: cfg?.color || "#94a3b8" }}
                     >
                       {cfg?.label || e.event_name}
                     </span>
-
-                    {/* Customer name */}
                     {e.customer_name && (
                       <span className="text-[12px] text-slate-300 font-medium truncate max-w-[180px]">
                         {e.customer_name.split(' ')[0]}
                       </span>
                     )}
-
-                    {/* Product name */}
                     {productName && (
                       <span className="text-[11px] text-slate-500 truncate max-w-[160px] hidden sm:inline">
                         {productName}
                       </span>
                     )}
-
-                    {/* Spacer */}
                     <span className="flex-1" />
-
-                    {/* Source Badge */}
                     <span
                       className={`
                         text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full shrink-0
