@@ -357,12 +357,14 @@ const Tracking = () => {
       <PixelEventsDashboard products={products} />
 
       {/* ========= DIAGNOSTICS ========= */}
-      <Card className="overflow-hidden">
-        <div className="px-5 py-4 border-b border-border bg-muted/30 flex items-center gap-3">
-          <Activity className="w-5 h-5 text-primary" />
+      <div className="relative overflow-hidden rounded-xl bg-slate-900/90 border border-slate-700/40">
+        <div className="px-5 py-4 border-b border-slate-700/50 flex items-center gap-3">
+          <div className="p-1.5 rounded-md bg-cyan-500/10 border border-cyan-500/20">
+            <Activity className="w-4 h-4 text-cyan-400" />
+          </div>
           <div>
-            <h2 className="font-semibold text-foreground text-sm">Diagnóstico do Meta</h2>
-            <p className="text-xs text-muted-foreground">Teste completo: Pixel ID, domínio, CAPI e conexão com a Graph API</p>
+            <h2 className="font-semibold text-white text-sm">Diagnóstico do Meta</h2>
+            <p className="text-[10px] text-slate-500 font-mono uppercase tracking-wider">Pixel ID · Domínio · CAPI · Graph API</p>
           </div>
         </div>
 
