@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Eye, ShoppingCart, UserCheck, CreditCard, Zap, MousePointerClick, TrendingUp, Radio } from "lucide-react";
+import { Eye, ShoppingCart, UserCheck, CreditCard, Zap, MousePointerClick, TrendingUp, Radio, FlaskConical } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { format, subHours, startOfHour } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -36,6 +36,30 @@ const PixelEventsDashboard = ({ products }: Props) => {
   const [filterProduct, setFilterProduct] = useState("all");
   const [period, setPeriod] = useState("24h");
   const [feedView, setFeedView] = useState<"feed" | "journeys">("feed");
+  const [simulating, setSimulating] = useState(false);
+
+  const simulateJourney = async () => {
+    if (simulating || products.length === 0) return;
+    setSimulating(true);
+    const pid = products[0].id;
+    const vid = `sim_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const names = ["Carlos Silva", "Ana Souza", "Pedro Lima", "Julia Santos", "Lucas Rocha"];
+    const customerName = names[Math.floor(Math.random() * names.length)];
+    const journey = ["PageView", "InitiateCheckout", "Lead", "AddPaymentInfo", "Purchase"];
+
+    for (let i = 0; i < journey.length; i++) {
+      const hasName = i >= 2; // Lead onwards has name
+      await supabase.from("pixel_events" as any).insert({
+        product_id: pid,
+        event_name: journey[i],
+        source: i % 2 === 0 ? "browser" : "server",
+        visitor_id: vid,
+        customer_name: hasName ? customerName : null,
+      });
+      await new Promise((r) => setTimeout(r, 600));
+    }
+    setSimulating(false);
+  };
 
   // --- Data loading (unchanged logic) ---
   const loadEvents = async () => {
@@ -124,6 +148,14 @@ const PixelEventsDashboard = ({ products }: Props) => {
           <h3 className="text-sm font-semibold text-slate-200">Eventos em Tempo Real</h3>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={simulateJourney}
+            disabled={simulating}
+            className="flex items-center gap-1.5 px-3 h-8 rounded-md text-[11px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors disabled:opacity-50"
+          >
+            <FlaskConical className={`w-3.5 h-3.5 ${simulating ? "animate-pulse" : ""}`} />
+            {simulating ? "Simulando..." : "Simular Jornada"}
+          </button>
           <Select value={filterProduct} onValueChange={setFilterProduct}>
             <SelectTrigger className="w-[170px] bg-slate-800/60 border-slate-700/50 text-slate-300 text-xs h-8">
               <SelectValue placeholder="Todos os produtos" />
