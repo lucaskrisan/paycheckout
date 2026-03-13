@@ -281,6 +281,32 @@ const Courses = () => {
     if (selectedCourse) loadModules(selectedCourse.id);
   };
 
+  const moveModule = async (index: number, direction: "up" | "down") => {
+    if (!selectedCourse) return;
+    const swapIdx = direction === "up" ? index - 1 : index + 1;
+    if (swapIdx < 0 || swapIdx >= modules.length) return;
+    const a = modules[index];
+    const b = modules[swapIdx];
+    await Promise.all([
+      supabase.from("course_modules").update({ sort_order: b.sort_order }).eq("id", a.id),
+      supabase.from("course_modules").update({ sort_order: a.sort_order }).eq("id", b.id),
+    ]);
+    loadModules(selectedCourse.id);
+  };
+
+  const moveLesson = async (mod: Module, lessonIndex: number, direction: "up" | "down") => {
+    if (!selectedCourse) return;
+    const swapIdx = direction === "up" ? lessonIndex - 1 : lessonIndex + 1;
+    if (swapIdx < 0 || swapIdx >= mod.lessons.length) return;
+    const a = mod.lessons[lessonIndex];
+    const b = mod.lessons[swapIdx];
+    await Promise.all([
+      supabase.from("course_lessons").update({ sort_order: b.sort_order }).eq("id", a.id),
+      supabase.from("course_lessons").update({ sort_order: a.sort_order }).eq("id", b.id),
+    ]);
+    loadModules(selectedCourse.id);
+  };
+
   // --- LIST VIEW (no course selected) ---
   if (!selectedCourse) {
     return (
