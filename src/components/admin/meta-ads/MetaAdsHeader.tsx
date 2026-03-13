@@ -47,15 +47,15 @@ export function MetaAdsHeader({
 
       {/* Date preset */}
       <Select value={datePreset} onValueChange={onDatePreset}>
-        <SelectTrigger className="w-[160px] bg-card border-border">
+        <SelectTrigger className="w-[160px] bg-[hsl(222,25%,16%)] border-slate-700/50 text-slate-200">
           <SelectValue />
         </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="today">Hoje</SelectItem>
-          <SelectItem value="yesterday">Ontem</SelectItem>
-          <SelectItem value="last_7d">Últimos 7 dias</SelectItem>
-          <SelectItem value="last_30d">Últimos 30 dias</SelectItem>
-          <SelectItem value="custom">Personalizado</SelectItem>
+        <SelectContent className="bg-[hsl(222,25%,16%)] border-slate-700/50">
+          <SelectItem value="today" className="text-slate-200 focus:bg-slate-700/50 focus:text-slate-100">Hoje</SelectItem>
+          <SelectItem value="yesterday" className="text-slate-200 focus:bg-slate-700/50 focus:text-slate-100">Ontem</SelectItem>
+          <SelectItem value="last_7d" className="text-slate-200 focus:bg-slate-700/50 focus:text-slate-100">Últimos 7 dias</SelectItem>
+          <SelectItem value="last_30d" className="text-slate-200 focus:bg-slate-700/50 focus:text-slate-100">Últimos 30 dias</SelectItem>
+          <SelectItem value="custom" className="text-slate-200 focus:bg-slate-700/50 focus:text-slate-100">Personalizado</SelectItem>
         </SelectContent>
       </Select>
 
