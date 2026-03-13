@@ -54,7 +54,9 @@ Deno.serve(async (req) => {
     );
 
     const body = await req.json();
-    const { amount, customer, product_id, coupon_id, config_id, bump_product_ids, checkout_url, utms } = body;
+    const { customer, product_id, coupon_id, config_id, bump_product_ids, checkout_url, utms } = body;
+    // Round amount to 2 decimal places to prevent floating point issues
+    const amount = Math.round(Number(body.amount) * 100) / 100;
 
     if (!amount || !customer?.name || !customer?.email || !customer?.cpf) {
       return new Response(
@@ -211,6 +213,18 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'Payment creation failed', details: data }),
         { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check if Pagar.me order failed (e.g. invalid CPF, fraud check)
+    if (data.status === 'failed') {
+      const failReason = data.charges?.[0]?.last_transaction?.gateway_response?.errors?.[0]?.message
+        || data.charges?.[0]?.last_transaction?.status
+        || 'Falha no processamento';
+      console.error('[create-pix-payment] Pagar.me order failed:', JSON.stringify(data));
+      return new Response(
+        JSON.stringify({ error: `Falha ao gerar o PIX: ${failReason}. Verifique seus dados e tente novamente.` }),
+        { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 

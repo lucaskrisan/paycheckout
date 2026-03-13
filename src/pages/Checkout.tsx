@@ -239,8 +239,8 @@ const Checkout = () => {
   const couponDiscount = coupon ? (coupon.discount_type === "percent" ? product.price * (coupon.discount_value / 100) : coupon.discount_value) : 0;
   const bumpTotal = orderBumps.filter((b) => selectedBumps.has(b.id)).reduce((sum, b) => sum + (b.bump_product?.price || 0), 0);
   const pixDiscount = paymentMethod === "pix" ? product.price * 0.05 : 0;
-  const frontEndAmount = product.price - pixDiscount - couponDiscount;
-  const finalAmount = Math.max(frontEndAmount, 0) + bumpTotal;
+  const frontEndAmount = Math.round((product.price - pixDiscount - couponDiscount) * 100) / 100;
+  const finalAmount = Math.round((Math.max(frontEndAmount, 0) + bumpTotal) * 100) / 100;
 
   const handleSubmit = async () => {
     if (!customer.name || !customer.email || !customer.cpf || !customer.phone) { toast.error("Preencha todos os campos obrigatórios"); return; }
