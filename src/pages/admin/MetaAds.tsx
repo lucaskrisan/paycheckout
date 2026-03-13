@@ -5,7 +5,7 @@ import { Megaphone, LayoutGrid, Layers, FileImage, DollarSign, Target, TrendingU
 import { useMetaAds } from "@/hooks/useMetaAds";
 import { MetaAdsHeader } from "@/components/admin/meta-ads/MetaAdsHeader";
 import { MetaDataTable } from "@/components/admin/meta-ads/MetaDataTable";
-import { formatCurrency, formatNumber, getResults, getROAS } from "@/components/admin/meta-ads/MetaInsightsHelpers";
+import { formatCurrency, formatNumber, getResults, getROAS, getConversionValue, getROI } from "@/components/admin/meta-ads/MetaInsightsHelpers";
 
 export default function MetaAds() {
   const {
