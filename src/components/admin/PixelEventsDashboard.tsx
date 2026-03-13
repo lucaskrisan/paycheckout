@@ -267,7 +267,9 @@ const PixelEventsDashboard = ({ products }: Props) => {
 
         {/* Feed Body */}
         <div className="overflow-y-auto max-h-[420px] min-h-[280px]">
-          {recentEvents.length === 0 ? (
+          {feedView === "journeys" ? (
+            <CustomerJourneyFeed events={events} products={products} />
+          ) : (
             <div className="flex flex-col items-center justify-center py-20 gap-3">
               <motion.div
                 animate={{ opacity: [0.3, 0.7, 0.3] }}
