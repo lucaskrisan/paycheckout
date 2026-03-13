@@ -32,7 +32,17 @@ const Reviews = () => {
   const loadReviews = async () => {
     const { data, error } = await supabase
       .from("lesson_reviews")
-      .select("*")
+      .select(`
+        *,
+        course_lessons (
+          title,
+          course_modules (
+            courses (
+              title
+            )
+          )
+        )
+      `)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -41,38 +51,11 @@ const Reviews = () => {
       return;
     }
 
-    // Enrich with lesson and course info
-    const enriched: Review[] = [];
-    for (const r of data || []) {
-      const { data: lesson } = await supabase
-        .from("course_lessons")
-        .select("title, module_id")
-        .eq("id", r.lesson_id)
-        .single();
-
-      let courseTitle = "";
-      if (lesson) {
-        const { data: mod } = await supabase
-          .from("course_modules")
-          .select("course_id")
-          .eq("id", lesson.module_id)
-          .single();
-        if (mod) {
-          const { data: course } = await supabase
-            .from("courses")
-            .select("title")
-            .eq("id", mod.course_id)
-            .single();
-          courseTitle = course?.title || "";
-        }
-      }
-
-      enriched.push({
-        ...r,
-        lesson_title: lesson?.title || "Aula desconhecida",
-        course_title: courseTitle,
-      });
-    }
+    const enriched: Review[] = (data || []).map((r: any) => ({
+      ...r,
+      lesson_title: r.course_lessons?.title || "Aula desconhecida",
+      course_title: r.course_lessons?.course_modules?.courses?.title || "",
+    }));
 
     setReviews(enriched);
     setLoading(false);
