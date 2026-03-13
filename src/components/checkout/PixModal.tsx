@@ -14,7 +14,7 @@ interface PixModalProps {
   onPaymentConfirmed?: () => void;
 }
 
-const PixModal = ({ open, onClose, totalAmount, qrCodeUrl, pixCode, externalOrderId }: PixModalProps) => {
+const PixModal = ({ open, onClose, totalAmount, qrCodeUrl, pixCode, externalOrderId, onPaymentConfirmed }: PixModalProps) => {
   const [copied, setCopied] = useState(false);
   const [copying, setCopying] = useState(false);
   const [timeLeft, setTimeLeft] = useState(1800);
