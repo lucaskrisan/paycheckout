@@ -114,6 +114,8 @@ export function MetaDataTable({
               <TableHead className="text-right">Investimento</TableHead>
               <TableHead className="text-right">CPA</TableHead>
               <TableHead className="text-right">ROAS</TableHead>
+              <TableHead className="text-right">Valor Conv.</TableHead>
+              <TableHead className="text-right">ROI</TableHead>
               <TableHead className="text-right">CPM</TableHead>
               <TableHead className="text-right">CTR</TableHead>
               <TableHead className="text-right">CPC</TableHead>
