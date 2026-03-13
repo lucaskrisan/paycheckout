@@ -313,42 +313,44 @@ const Tracking = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Rastreamento</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Visão geral dos pixels, Conversions API e diagnóstico completo do Meta.
-        </p>
+      {/* ===== NASA-STYLE HEADER ===== */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-slate-700/50 p-6">
+        <div className="absolute inset-0 opacity-[0.04]" style={{
+          backgroundImage: `radial-gradient(circle at 20% 50%, rgba(34,211,238,0.15) 0%, transparent 50%), radial-gradient(circle at 80% 50%, rgba(99,102,241,0.1) 0%, transparent 50%)`,
+        }} />
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-1">
+            <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+              <Activity className="w-5 h-5 text-cyan-400" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-white tracking-tight">Rastreamento</h1>
+              <p className="text-xs text-slate-400 font-mono uppercase tracking-widest">
+                Pixels · Conversions API · Diagnóstico Meta
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Stats */}
+      {/* Stats — NASA telemetry cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="p-4 flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-primary/10">
-            <Code2 className="w-5 h-5 text-primary" />
+        {[
+          { icon: Code2, label: "Pixels configurados", value: totalPixels, color: "#22d3ee" },
+          { icon: Zap, label: "Com CAPI ativo", value: capiEnabled, color: "#a78bfa" },
+          { icon: Globe, label: "Domínios verificados", value: domains.length, color: "#34d399" },
+        ].map((card, i) => (
+          <div key={i} className="relative overflow-hidden rounded-xl bg-slate-900/90 border border-slate-700/40 p-4 flex items-center gap-3">
+            <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ backgroundColor: card.color }} />
+            <div className="p-2 rounded-lg" style={{ backgroundColor: `${card.color}15` }}>
+              <card.icon className="w-5 h-5" style={{ color: card.color }} />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-white font-mono tabular-nums">{card.value}</p>
+              <p className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">{card.label}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-2xl font-bold text-foreground">{totalPixels}</p>
-            <p className="text-xs text-muted-foreground">Pixels configurados</p>
-          </div>
-        </Card>
-        <Card className="p-4 flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-primary/10">
-            <Zap className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-foreground">{capiEnabled}</p>
-            <p className="text-xs text-muted-foreground">Com CAPI ativo</p>
-          </div>
-        </Card>
-        <Card className="p-4 flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-primary/10">
-            <Globe className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-foreground">{domains.length}</p>
-            <p className="text-xs text-muted-foreground">Domínios verificados</p>
-          </div>
-        </Card>
+        ))}
       </div>
 
       {/* ========= REAL-TIME EVENTS DASHBOARD ========= */}
