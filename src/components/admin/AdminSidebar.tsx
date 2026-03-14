@@ -75,6 +75,7 @@ export function AdminSidebar() {
 
   const superAdminItems = [
     { title: "Painel Plataforma", url: "/admin/platform", icon: Crown },
+    { title: "Billing", url: "/admin/billing", icon: CreditCard },
   ];
 
   const renderItems = (items: { title: string; url: string; icon: any }[]) => (
