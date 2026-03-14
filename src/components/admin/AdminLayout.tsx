@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { Navigate, Outlet, useNavigate } from "react-router-dom";
-import { resolveUserDestination } from "@/lib/resolveUserDestination";
+
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
 import { useAuth } from "@/hooks/useAuth";
@@ -69,18 +69,11 @@ function AdminAccessRedirect({ refreshRoles }: { refreshRoles: () => Promise<voi
   useEffect(() => {
     let cancelled = false;
     const run = async () => {
-      // Re-check roles (maybe trigger just fired)
       await refreshRoles();
-      // If still not admin after refresh, redirect to correct destination
-      if (!cancelled) {
-        try {
-          const destination = await resolveUserDestination();
-          navigate(destination, { replace: true });
-        } catch {
-          navigate("/completar-perfil", { replace: true });
-        }
-        setChecked(true);
-      }
+      if (cancelled) return;
+      setChecked(true);
+      // Simple redirect — avoid calling resolveUserDestination to prevent history loops
+      navigate("/completar-perfil", { replace: true });
     };
     run();
     return () => { cancelled = true; };

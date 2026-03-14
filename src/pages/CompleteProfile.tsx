@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { resolveUserDestination } from "@/lib/resolveUserDestination";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -70,7 +70,7 @@ const CompleteProfile = () => {
       navigate("/login", { replace: true });
       return;
     }
-    // If profile is already completed, skip this page entirely
+    // If profile is already completed, skip this page — use simple local check, no edge function
     let cancelled = false;
     const checkProfile = async () => {
       try {
@@ -80,8 +80,8 @@ const CompleteProfile = () => {
           .eq("id", user.id)
           .single();
         if (!cancelled && data?.profile_completed === true) {
-          const destination = await resolveUserDestination();
-          navigate(destination, { replace: true });
+          // Simple redirect — don't call resolveUserDestination to avoid history loops
+          navigate("/admin", { replace: true });
         }
       } catch {
         // stay on page if check fails
@@ -146,14 +146,8 @@ const CompleteProfile = () => {
     await new Promise(r => setTimeout(r, 500));
     await refreshRoles();
 
-    try {
-      const destination = await resolveUserDestination();
-      toast.success("Perfil completo! Redirecionando...");
-      navigate(destination, { replace: true });
-    } catch {
-      toast.success("Perfil completo! Bem-vindo ao painel.");
-      navigate("/admin", { replace: true });
-    }
+    toast.success("Perfil completo! Redirecionando...");
+    navigate("/admin", { replace: true });
   };
 
   if (authLoading) {
