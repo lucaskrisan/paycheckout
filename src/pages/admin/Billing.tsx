@@ -352,6 +352,9 @@ const Billing = () => {
                         </Select>
                       </TableCell>
                       <TableCell className="text-right">
+                        <span className="font-medium text-primary">{fmt(acc.monthly_sales || 0)}</span>
+                      </TableCell>
+                      <TableCell className="text-right">
                         <span className={acc.balance > acc.credit_limit ? "text-destructive font-bold" : "font-medium"}>{fmt(acc.balance)}</span>
                         <div className="w-full h-1.5 bg-muted rounded-full mt-1 overflow-hidden">
                           <div className={`h-full rounded-full ${usagePercent > 80 ? "bg-destructive" : usagePercent > 50 ? "bg-yellow-500" : "bg-primary"}`}
