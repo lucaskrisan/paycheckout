@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-const META_API = 'https://graph.facebook.com/v21.0';
+const META_API = 'https://graph.facebook.com/v22.0';
 
 async function authenticateUser(req: Request) {
   const authHeader = req.headers.get('Authorization');
@@ -258,6 +258,18 @@ Deno.serve(async (req) => {
       case 'list_accounts':
         result = await listAccounts();
         break;
+      case 'account_insights': {
+        const insightFields = 'spend,impressions,reach,frequency,cpm,ctr,cpc,actions,action_values,cost_per_action_type,purchase_roas';
+        const insightParams: Record<string, string> = { fields: insightFields };
+        if (since && until) {
+          insightParams.time_range = JSON.stringify({ since, until });
+        } else {
+          insightParams.date_preset = date_preset || 'today';
+        }
+        const insightsRes = await metaFetch(`/${account_id}/insights`, insightParams);
+        result = insightsRes.data?.[0] || null;
+        break;
+      }
       case 'list_campaigns':
         result = await listCampaigns(account_id, date_preset, since, until, include_all, daily_breakdown);
         break;
