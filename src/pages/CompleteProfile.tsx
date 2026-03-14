@@ -120,6 +120,10 @@ const CompleteProfile = () => {
       return;
     }
 
+    // Wait a moment for DB trigger to fire, then refresh roles
+    await new Promise(r => setTimeout(r, 500));
+    await refreshRoles();
+
     try {
       const destination = await resolveUserDestination();
       toast.success("Perfil completo! Redirecionando...");
