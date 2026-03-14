@@ -64,7 +64,7 @@ export function MetaAdsSummary({ spend, conversionValue, results, roas, selected
     setLoadingLifetime(true);
     try {
       const { data, error } = await supabase.functions.invoke("meta-ads-alerts", {
-        body: { action: "full_report" },
+        body: { action: "full_report", account_ids: selectedAccounts || [] },
       });
       if (error || !data?.campaigns) return;
 
