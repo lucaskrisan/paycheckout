@@ -111,6 +111,11 @@ export default function MetaAds() {
           <MetaAdsFunnel />
         </TabsContent>
 
+
+        <TabsContent value="alertas" className="mt-4">
+          <MetaAdsAlerts campaigns={campaigns} loading={loading} />
+        </TabsContent>
+
         <TabsContent value="campanhas" className="mt-4 space-y-4">
           <Tabs value={dataTab} onValueChange={setDataTab}>
             <TabsList className="bg-[hsl(222,25%,16%)] border border-slate-700/50 p-1 h-auto">
