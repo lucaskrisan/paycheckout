@@ -88,28 +88,50 @@ const Billing = () => {
 
   const loadAccounts = async () => {
     setLoading(true);
-    const { data: accs } = await supabase
-      .from("billing_accounts")
-      .select("*")
-      .order("balance", { ascending: false });
 
-    if (accs) {
-      // Fetch profiles for display names
-      const userIds = accs.map((a: any) => a.user_id);
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, full_name")
-        .in("id", userIds);
+    // 1. Get ALL admin/super_admin producers from user_roles
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("user_id, role")
+      .in("role", ["admin", "super_admin"]);
 
-      const profileMap = new Map((profiles || []).map((p: any) => [p.id, p.full_name]));
+    const adminUserIds = [...new Set((roles || []).map((r: any) => r.user_id))];
 
-      setAccounts(
-        accs.map((a: any) => ({
-          ...a,
-          full_name: profileMap.get(a.user_id) || "Sem nome",
-        }))
-      );
+    if (adminUserIds.length === 0) {
+      setAccounts([]);
+      setLoading(false);
+      return;
     }
+
+    // 2. Fetch billing_accounts and profiles in parallel
+    const [{ data: accs }, { data: profiles }] = await Promise.all([
+      supabase.from("billing_accounts").select("*").in("user_id", adminUserIds),
+      supabase.from("profiles").select("id, full_name").in("id", adminUserIds),
+    ]);
+
+    const billingMap = new Map((accs || []).map((a: any) => [a.user_id, a]));
+    const profileMap = new Map((profiles || []).map((p: any) => [p.id, p.full_name]));
+
+    // 3. Merge: every admin gets a row, even without billing_account
+    const merged: BillingAccount[] = adminUserIds.map((uid) => {
+      const billing = billingMap.get(uid);
+      return {
+        id: billing?.id || uid,
+        user_id: uid,
+        balance: billing?.balance ?? 0,
+        credit_tier: billing?.credit_tier ?? "iron",
+        credit_limit: billing?.credit_limit ?? 5,
+        blocked: billing?.blocked ?? false,
+        card_last4: billing?.card_last4 ?? null,
+        card_brand: billing?.card_brand ?? null,
+        created_at: billing?.created_at ?? new Date().toISOString(),
+        full_name: profileMap.get(uid) || "Sem nome",
+      };
+    });
+
+    // Sort by balance descending
+    merged.sort((a, b) => b.balance - a.balance);
+    setAccounts(merged);
     setLoading(false);
   };
 
