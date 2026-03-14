@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LayoutGrid, Megaphone, Layers, FileImage, BarChart3, Table2 } from "lucide-react";
+import { LayoutGrid, Megaphone, Layers, FileImage, BarChart3, Table2, Bell } from "lucide-react";
 import { useMetaAds } from "@/hooks/useMetaAds";
 import { MetaAdsHeader } from "@/components/admin/meta-ads/MetaAdsHeader";
 import { MetaDataTable } from "@/components/admin/meta-ads/MetaDataTable";
 import { MetaAdsFunnel } from "@/components/admin/meta-ads/MetaAdsFunnel";
 import { MetaAdsSummary } from "@/components/admin/meta-ads/MetaAdsSummary";
+import { MetaAdsAlerts } from "@/components/admin/meta-ads/MetaAdsAlerts";
 import { formatCurrency, getResults, getConversionValue } from "@/components/admin/meta-ads/MetaInsightsHelpers";
 
 export default function MetaAds() {
@@ -92,6 +93,12 @@ export default function MetaAds() {
           >
             <Table2 className="w-4 h-4" /> Campanhas
           </TabsTrigger>
+          <TabsTrigger
+            value="alertas"
+            className="gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white text-slate-400 px-8 py-2.5 text-sm font-medium"
+          >
+            <Bell className="w-4 h-4" /> Alertas
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="resumo" className="mt-4 space-y-4">
@@ -102,6 +109,11 @@ export default function MetaAds() {
             roas={globalROAS}
           />
           <MetaAdsFunnel />
+        </TabsContent>
+
+
+        <TabsContent value="alertas" className="mt-4">
+          <MetaAdsAlerts campaigns={campaigns} loading={loading} />
         </TabsContent>
 
         <TabsContent value="campanhas" className="mt-4 space-y-4">
