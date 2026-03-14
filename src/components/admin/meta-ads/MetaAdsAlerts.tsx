@@ -352,7 +352,7 @@ export function MetaAdsAlerts({ campaigns, loading }: Props) {
         <span className="text-[10px] text-slate-600 flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500" /> Atenção</span>
         <span className="text-[10px] text-slate-600 flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Positivo</span>
         <span className="text-[10px] text-slate-600 flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500" /> Informativo</span>
-        <span className="text-[10px] text-slate-600 ml-auto">📊 Análise baseada nos dados já carregados — zero chamadas extras à API</span>
+        <span className="text-[10px] text-slate-600 ml-auto">🤖 AntonyAD — Seu gestor de tráfego inteligente</span>
       </div>
     </div>
   );
