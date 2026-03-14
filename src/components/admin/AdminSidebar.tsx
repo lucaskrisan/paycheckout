@@ -54,7 +54,6 @@ const mainItems = [
   { title: "Vendas", url: "/admin/orders", icon: ShoppingCart },
   { title: "Clientes", url: "/admin/customers", icon: Users },
   { title: "Financeiro", url: "/admin/gateways", icon: Wallet },
-  { title: "Billing", url: "/admin/billing", icon: CreditCard },
   { title: "Relatórios", url: "/admin/abandoned", icon: BarChart3 },
   { title: "Rastreamento", url: "/admin/tracking", icon: Crosshair },
   { title: "Meta Ads", url: "/admin/meta-ads", icon: Megaphone },
@@ -76,6 +75,7 @@ export function AdminSidebar() {
 
   const superAdminItems = [
     { title: "Painel Plataforma", url: "/admin/platform", icon: Crown },
+    { title: "Billing", url: "/admin/billing", icon: CreditCard },
   ];
 
   const renderItems = (items: { title: string; url: string; icon: any }[]) => (

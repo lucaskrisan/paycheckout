@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { Navigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Wallet,
   AlertTriangle,
   CreditCard,
@@ -22,6 +30,9 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   QrCode,
+  Users,
+  Ban,
+  CheckCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -42,10 +53,13 @@ interface BillingAccount {
   card_last4: string | null;
   card_brand: string | null;
   created_at: string;
+  email?: string;
+  full_name?: string;
 }
 
 interface BillingTransaction {
   id: string;
+  user_id: string;
   type: string;
   amount: number;
   description: string | null;
@@ -57,296 +71,313 @@ const fmt = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 const Billing = () => {
-  const { user } = useAuth();
-  const [account, setAccount] = useState<BillingAccount | null>(null);
+  const { user, isSuperAdmin, loading: authLoading } = useAuth();
+  const [accounts, setAccounts] = useState<BillingAccount[]>([]);
   const [transactions, setTransactions] = useState<BillingTransaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [pixAmount, setPixAmount] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user?.id) return;
-    loadData();
-  }, [user?.id]);
+    if (!user?.id || !isSuperAdmin) return;
+    loadAccounts();
+  }, [user?.id, isSuperAdmin]);
 
-  const loadData = async () => {
+  useEffect(() => {
+    if (selectedUserId) loadTransactions(selectedUserId);
+  }, [selectedUserId]);
+
+  const loadAccounts = async () => {
     setLoading(true);
-
-    // Ensure account exists
-    const { data: existing } = await supabase
+    const { data: accs } = await supabase
       .from("billing_accounts")
       .select("*")
-      .eq("user_id", user!.id)
-      .maybeSingle();
+      .order("balance", { ascending: false });
 
-    if (!existing) {
-      await supabase.from("billing_accounts").insert({ user_id: user!.id });
+    if (accs) {
+      // Fetch profiles for display names
+      const userIds = accs.map((a: any) => a.user_id);
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", userIds);
+
+      const profileMap = new Map((profiles || []).map((p: any) => [p.id, p.full_name]));
+
+      setAccounts(
+        accs.map((a: any) => ({
+          ...a,
+          full_name: profileMap.get(a.user_id) || "Sem nome",
+        }))
+      );
     }
-
-    const [{ data: acc }, { data: txns }] = await Promise.all([
-      supabase
-        .from("billing_accounts")
-        .select("*")
-        .eq("user_id", user!.id)
-        .single(),
-      supabase
-        .from("billing_transactions")
-        .select("*")
-        .eq("user_id", user!.id)
-        .order("created_at", { ascending: false })
-        .limit(50),
-    ]);
-
-    if (acc) setAccount(acc as unknown as BillingAccount);
-    if (txns) setTransactions(txns as unknown as BillingTransaction[]);
     setLoading(false);
   };
 
-  const handleAddCredit = async () => {
-    const amount = parseFloat(pixAmount);
-    if (!amount || amount <= 0) {
-      toast.error("Informe um valor válido");
-      return;
-    }
-
-    // In production, this would generate a real PIX payment
-    // For now, simulate the credit addition
-    const { error } = await supabase.from("billing_transactions").insert({
-      user_id: user!.id,
-      type: "credit",
-      amount: -amount,
-      description: `Crédito adicionado via PIX - ${fmt(amount)}`,
-    });
-
-    if (error) {
-      toast.error("Erro ao adicionar crédito");
-      return;
-    }
-
-    // Update balance
-    await supabase
-      .from("billing_accounts")
-      .update({
-        balance: Math.max(0, (account?.balance || 0) - amount),
-        blocked: false,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("user_id", user!.id);
-
-    toast.success(`Crédito de ${fmt(amount)} adicionado!`);
-    setPixAmount("");
-    loadData();
+  const loadTransactions = async (userId: string) => {
+    const { data } = await supabase
+      .from("billing_transactions")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(50);
+    setTransactions((data as unknown as BillingTransaction[]) || []);
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
-  }
+  const handleChangeTier = async (accountId: string, userId: string, newTier: string) => {
+    const newLimit = TIER_CONFIG[newTier]?.limit || 5;
+    const { error } = await supabase
+      .from("billing_accounts")
+      .update({ credit_tier: newTier, credit_limit: newLimit, updated_at: new Date().toISOString() })
+      .eq("id", accountId);
+    if (error) toast.error("Erro ao alterar tier");
+    else {
+      toast.success(`Tier alterado para ${TIER_CONFIG[newTier].label}`);
+      loadAccounts();
+    }
+  };
 
-  const tier = TIER_CONFIG[account?.credit_tier || "iron"];
-  const usagePercent = account ? Math.min(100, (account.balance / account.credit_limit) * 100) : 0;
+  const handleToggleBlock = async (accountId: string, currentlyBlocked: boolean) => {
+    const { error } = await supabase
+      .from("billing_accounts")
+      .update({ blocked: !currentlyBlocked, updated_at: new Date().toISOString() })
+      .eq("id", accountId);
+    if (error) toast.error("Erro");
+    else {
+      toast.success(currentlyBlocked ? "Produtor desbloqueado" : "Produtor bloqueado");
+      loadAccounts();
+    }
+  };
+
+  const handleResetBalance = async (accountId: string, userId: string) => {
+    if (!confirm("Zerar o saldo devedor deste produtor?")) return;
+    const account = accounts.find((a) => a.id === accountId);
+    if (!account || account.balance <= 0) return;
+
+    await supabase.from("billing_transactions").insert({
+      user_id: userId,
+      type: "credit",
+      amount: -account.balance,
+      description: "Saldo zerado pelo Super Admin",
+    });
+
+    await supabase
+      .from("billing_accounts")
+      .update({ balance: 0, blocked: false, updated_at: new Date().toISOString() })
+      .eq("id", accountId);
+
+    toast.success("Saldo zerado");
+    loadAccounts();
+    if (selectedUserId === userId) loadTransactions(userId);
+  };
+
+  if (authLoading) return null;
+  if (!isSuperAdmin) return <Navigate to="/admin" replace />;
+
+  const totalOwed = accounts.reduce((s, a) => s + Math.max(a.balance, 0), 0);
+  const blockedCount = accounts.filter((a) => a.blocked).length;
+  const selectedAccount = accounts.find((a) => a.user_id === selectedUserId);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold text-foreground">Billing</h1>
-        {account?.blocked && (
-          <Badge variant="destructive" className="gap-1.5 px-3 py-1.5">
-            <AlertTriangle className="w-3.5 h-3.5" />
-            Vendas Bloqueadas
-          </Badge>
-        )}
+        <h1 className="font-display text-2xl font-bold text-foreground">Billing — Gestão de Produtores</h1>
       </div>
 
-      {/* Overview Cards */}
+      {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Balance Card */}
-        <Card className={account?.blocked ? "border-destructive/50" : ""}>
+        <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Wallet className="w-4 h-4" />
-              Taxas a Pagar
+              <Wallet className="w-4 h-4" /> Total a Receber
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className={`text-3xl font-bold ${account?.blocked ? "text-destructive" : "text-foreground"}`}>
-              {fmt(account?.balance || 0)}
+            <p className="text-3xl font-bold text-foreground">{fmt(totalOwed)}</p>
+            <p className="text-xs text-muted-foreground mt-1">Taxas acumuladas de todos os produtores</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Users className="w-4 h-4" /> Produtores com Billing
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-foreground">{accounts.length}</p>
+          </CardContent>
+        </Card>
+
+        <Card className={blockedCount > 0 ? "border-destructive/50" : ""}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Ban className="w-4 h-4" /> Produtores Bloqueados
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className={`text-3xl font-bold ${blockedCount > 0 ? "text-destructive" : "text-foreground"}`}>
+              {blockedCount}
             </p>
-            <div className="mt-3 space-y-1.5">
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>Uso do limite</span>
-                <span>{usagePercent.toFixed(0)}%</span>
-              </div>
-              <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all ${
-                    usagePercent > 80 ? "bg-destructive" : usagePercent > 50 ? "bg-yellow-500" : "bg-primary"
-                  }`}
-                  style={{ width: `${usagePercent}%` }}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Tier Card */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Shield className="w-4 h-4" />
-              Limite de Crédito
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-baseline gap-2">
-              <p className={`text-3xl font-bold ${tier.color}`}>{tier.label}</p>
-              <span className="text-sm text-muted-foreground">até {fmt(tier.limit)}</span>
-            </div>
-            {tier.next && (
-              <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-                <TrendingUp className="w-3 h-3" />
-                Próximo: {TIER_CONFIG[tier.next].label} ({fmt(TIER_CONFIG[tier.next].limit)})
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Payment Method Card */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <CreditCard className="w-4 h-4" />
-              Forma de Pagamento
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {account?.card_last4 ? (
-              <div>
-                <p className="text-lg font-semibold text-foreground">
-                  {account.card_brand} •••• {account.card_last4}
-                </p>
-                <Button variant="link" size="sm" className="px-0 text-xs">
-                  Alterar cartão
-                </Button>
-              </div>
-            ) : (
-              <div>
-                <p className="text-sm text-muted-foreground mb-2">Nenhum cartão cadastrado</p>
-                <Button variant="outline" size="sm">
-                  <CreditCard className="w-3.5 h-3.5 mr-1.5" />
-                  Cadastrar cartão
-                </Button>
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Add Credit Section */}
+      {/* Accounts Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <QrCode className="w-5 h-5 text-primary" />
-            Adicionar Crédito via PIX
-          </CardTitle>
+          <CardTitle className="text-base">Contas de Billing</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
-            Deposite um valor antecipado e as taxas serão descontadas automaticamente do seu saldo.
-          </p>
-          <div className="flex gap-3 items-end max-w-md">
-            <div className="flex-1">
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">
-                Valor (R$)
-              </label>
-              <Input
-                type="number"
-                min="1"
-                step="0.01"
-                placeholder="50.00"
-                value={pixAmount}
-                onChange={(e) => setPixAmount(e.target.value)}
-              />
-            </div>
-            <Button onClick={handleAddCredit} className="gap-1.5">
-              <QrCode className="w-4 h-4" />
-              Gerar PIX
-            </Button>
-          </div>
-          <div className="flex gap-2 mt-3">
-            {[10, 50, 100, 500].map((v) => (
-              <Button
-                key={v}
-                variant="outline"
-                size="sm"
-                onClick={() => setPixAmount(String(v))}
-                className="text-xs"
-              >
-                {fmt(v)}
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Transaction History */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Histórico de Transações</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {transactions.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">
-              Nenhuma transação registrada ainda.
-            </p>
+          {loading ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">Carregando...</p>
+          ) : accounts.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma conta de billing ainda.</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
-                  <TableHead className="text-right">Data</TableHead>
+                  <TableHead>Produtor</TableHead>
+                  <TableHead>Tier</TableHead>
+                  <TableHead className="text-right">Saldo Devedor</TableHead>
+                  <TableHead className="text-right">Limite</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {transactions.map((tx) => (
-                  <TableRow key={tx.id}>
-                    <TableCell>
-                      <Badge
-                        variant={tx.type === "fee" ? "secondary" : "default"}
-                        className="gap-1"
-                      >
-                        {tx.type === "fee" ? (
-                          <ArrowUpRight className="w-3 h-3" />
-                        ) : (
-                          <ArrowDownLeft className="w-3 h-3" />
-                        )}
-                        {tx.type === "fee" ? "Taxa" : "Crédito"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground max-w-[300px] truncate">
-                      {tx.description || "-"}
-                    </TableCell>
-                    <TableCell
-                      className={`text-right font-medium ${
-                        tx.type === "fee" ? "text-destructive" : "text-primary"
-                      }`}
+                {accounts.map((acc) => {
+                  const tier = TIER_CONFIG[acc.credit_tier] || TIER_CONFIG.iron;
+                  const usagePercent = Math.min(100, (acc.balance / acc.credit_limit) * 100);
+                  return (
+                    <TableRow
+                      key={acc.id}
+                      className={`cursor-pointer ${selectedUserId === acc.user_id ? "bg-muted/50" : ""}`}
+                      onClick={() => setSelectedUserId(acc.user_id)}
                     >
-                      {tx.type === "fee" ? "+" : "-"}{fmt(Math.abs(tx.amount))}
-                    </TableCell>
-                    <TableCell className="text-right text-xs text-muted-foreground">
-                      {new Date(tx.created_at).toLocaleDateString("pt-BR")}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      <TableCell>
+                        <div>
+                          <p className="font-medium text-sm text-foreground">{acc.full_name}</p>
+                          <p className="text-xs text-muted-foreground truncate max-w-[200px]">{acc.user_id}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          value={acc.credit_tier}
+                          onValueChange={(v) => handleChangeTier(acc.id, acc.user_id, v)}
+                        >
+                          <SelectTrigger className="w-[100px] h-8 text-xs" onClick={(e) => e.stopPropagation()}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(TIER_CONFIG).map(([key, cfg]) => (
+                              <SelectItem key={key} value={key}>
+                                {cfg.label} ({fmt(cfg.limit)})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <span className={acc.balance > acc.credit_limit ? "text-destructive font-bold" : "font-medium"}>
+                          {fmt(acc.balance)}
+                        </span>
+                        <div className="w-full h-1.5 bg-muted rounded-full mt-1 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${usagePercent > 80 ? "bg-destructive" : usagePercent > 50 ? "bg-yellow-500" : "bg-primary"}`}
+                            style={{ width: `${usagePercent}%` }}
+                          />
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right text-sm text-muted-foreground">
+                        {fmt(acc.credit_limit)}
+                      </TableCell>
+                      <TableCell>
+                        {acc.blocked ? (
+                          <Badge variant="destructive" className="gap-1">
+                            <Ban className="w-3 h-3" /> Bloqueado
+                          </Badge>
+                        ) : (
+                          <Badge variant="default" className="gap-1">
+                            <CheckCircle className="w-3 h-3" /> Ativo
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs h-7"
+                            onClick={() => handleToggleBlock(acc.id, acc.blocked)}
+                          >
+                            {acc.blocked ? "Desbloquear" : "Bloquear"}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs h-7"
+                            onClick={() => handleResetBalance(acc.id, acc.user_id)}
+                          >
+                            Zerar
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
         </CardContent>
       </Card>
+
+      {/* Transaction History for selected producer */}
+      {selectedAccount && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">
+              Transações — {selectedAccount.full_name}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {transactions.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma transação.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Descrição</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
+                    <TableHead className="text-right">Data</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {transactions.map((tx) => (
+                    <TableRow key={tx.id}>
+                      <TableCell>
+                        <Badge variant={tx.type === "fee" ? "secondary" : "default"} className="gap-1">
+                          {tx.type === "fee" ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownLeft className="w-3 h-3" />}
+                          {tx.type === "fee" ? "Taxa" : "Crédito"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground max-w-[300px] truncate">
+                        {tx.description || "-"}
+                      </TableCell>
+                      <TableCell className={`text-right font-medium ${tx.type === "fee" ? "text-destructive" : "text-primary"}`}>
+                        {tx.type === "fee" ? "+" : "-"}{fmt(Math.abs(tx.amount))}
+                      </TableCell>
+                      <TableCell className="text-right text-xs text-muted-foreground">
+                        {new Date(tx.created_at).toLocaleDateString("pt-BR")}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
