@@ -456,6 +456,64 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
               </>
             )}
 
+            {(form.provider === "mercadopago" || form.provider === "stripe") && (
+              <>
+                <Separator />
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-foreground">
+                    Taxas {form.provider === "mercadopago" ? "Mercado Pago" : "Stripe"}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">Informativo — as taxas são cobradas diretamente pelo gateway</p>
+                  {form.provider === "mercadopago" && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label>Taxa PIX (%)</Label>
+                        <Input type="number" step="0.01" value={form.config.pix_fee_percent ?? 0.99} onChange={(e) => updateConfig("pix_fee_percent", parseFloat(e.target.value) || 0)} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Taxa Cartão 1x (%)</Label>
+                        <Input type="number" step="0.01" value={form.config.credit_fee_1x ?? 4.98} onChange={(e) => updateConfig("credit_fee_1x", parseFloat(e.target.value) || 0)} />
+                      </div>
+                    </div>
+                  )}
+                  {form.provider === "stripe" && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label>Taxa Cartão (%)</Label>
+                        <Input type="number" step="0.01" value={form.config.credit_fee_percent ?? 3.99} onChange={(e) => updateConfig("credit_fee_percent", parseFloat(e.target.value) || 0)} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Taxa Fixa (R$)</Label>
+                        <Input type="number" step="0.01" value={form.config.credit_fee_fixed ?? 0.39} onChange={(e) => updateConfig("credit_fee_fixed", parseFloat(e.target.value) || 0)} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <Separator />
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-foreground">Parcelamento</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label>Máximo de Parcelas</Label>
+                      <Select value={String(form.config.max_installments ?? 12)} onValueChange={(v) => updateConfig("max_installments", parseInt(v))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => (
+                            <SelectItem key={n} value={String(n)}>{n}x</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Valor Mínimo Parcela (R$)</Label>
+                      <Input type="number" step="0.01" value={form.config.min_installment_value ?? 5} onChange={(e) => updateConfig("min_installment_value", parseFloat(e.target.value) || 5)} />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
             <Separator />
             {/* Payment methods */}
             <div className="space-y-4">
