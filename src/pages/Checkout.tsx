@@ -221,7 +221,7 @@ const Checkout = () => {
     }
   };
 
-  useEffect(() => { if (customer.name && customer.email) { setAdvancedMatching(customer); trackLead(); } }, [customer.name, customer.email, customer.phone, customer.cpf, setAdvancedMatching, trackLead]);
+  useEffect(() => { if (customer.name && customer.email && customer.cpf && customer.phone) { setAdvancedMatching(customer); trackLead(); } }, [customer.name, customer.email, customer.phone, customer.cpf, setAdvancedMatching, trackLead]);
   useEffect(() => { trackAddPaymentInfo(paymentMethod); }, [paymentMethod, trackAddPaymentInfo]);
 
   if (loading) return (
