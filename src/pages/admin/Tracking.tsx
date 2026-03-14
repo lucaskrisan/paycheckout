@@ -342,6 +342,9 @@ const Tracking = () => {
         ))}
       </div>
 
+      {/* ── Onboarding Guide ── */}
+      <TrackingOnboardingGuide hasPixels={totalPixels > 0} />
+
       {/* ── Full Audit ── */}
       {user && <TrackingFullAudit userId={user.id} />}
 
