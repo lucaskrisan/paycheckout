@@ -237,6 +237,51 @@ export type Database = {
         }
         Relationships: []
       }
+      checkout_templates: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          layout: Json
+          name: string
+          published: boolean
+          settings: Json
+          thumbnail_url: string | null
+          updated_at: string
+          uses_count: number
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          layout?: Json
+          name: string
+          published?: boolean
+          settings?: Json
+          thumbnail_url?: string | null
+          updated_at?: string
+          uses_count?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          layout?: Json
+          name?: string
+          published?: boolean
+          settings?: Json
+          thumbnail_url?: string | null
+          updated_at?: string
+          uses_count?: number
+        }
+        Relationships: []
+      }
       coupons: {
         Row: {
           active: boolean
