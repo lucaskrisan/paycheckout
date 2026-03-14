@@ -17,7 +17,7 @@ function fmt(v: number): string {
   return `R$ ${v.toFixed(2).replace(".", ",")}`;
 }
 
-export function MetaBudgetCalculator({ currentCPA, currentROAS }: Props) {
+export function MetaBudgetCalculator({ currentCPA }: Props) {
   const [cpaMeta, setCpaMeta] = useState(currentCPA ? Math.round(currentCPA) : 30);
   const [numCreatives, setNumCreatives] = useState(3);
   const [testDays, setTestDays] = useState(3);
