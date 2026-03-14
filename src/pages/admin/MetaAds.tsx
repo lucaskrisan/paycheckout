@@ -29,6 +29,7 @@ export default function MetaAds() {
   useEffect(() => {
     if (selectedAccounts.length === 0) return;
     fetchCampaigns();
+    fetchAccountInsights();
   }, [selectedAccounts, datePreset, customRange]);
 
   useEffect(() => {
