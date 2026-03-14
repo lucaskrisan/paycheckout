@@ -207,6 +207,7 @@ const Billing = () => {
   if (!isSuperAdmin) return <Navigate to="/admin" replace />;
 
   const totalOwed = accounts.reduce((s, a) => s + Math.max(a.balance, 0), 0);
+  const totalMonthlySales = accounts.reduce((s, a) => s + (a.monthly_sales || 0), 0);
   const blockedCount = accounts.filter((a) => a.blocked).length;
   const selectedAccount = accounts.find((a) => a.user_id === selectedUserId);
 
