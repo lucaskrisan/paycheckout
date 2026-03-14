@@ -62,6 +62,7 @@ const CustomerPortal = () => {
 
       if (!accessData) {
         toast.error("Link inválido ou expirado");
+        navigate(user ? "/completar-perfil" : "/login?signup=true", { replace: true });
         setLoading(false);
         return;
       }
@@ -73,11 +74,15 @@ const CustomerPortal = () => {
         .eq("id", accessData.customer_id)
         .single();
 
-      if (customerData) {
-        setCustomer(customerData);
-        setEditName(customerData.name);
-        setEditPhone(customerData.phone || "");
+      if (!customerData) {
+        navigate(user ? "/completar-perfil" : "/login?signup=true", { replace: true });
+        setLoading(false);
+        return;
       }
+
+      setCustomer(customerData);
+      setEditName(customerData.name);
+      setEditPhone(customerData.phone || "");
 
       // Load orders
       const { data: ordersData } = await supabase
