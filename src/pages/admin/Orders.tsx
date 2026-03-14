@@ -18,8 +18,9 @@ interface Order {
   payment_method: string;
   status: string;
   created_at: string;
+  updated_at: string;
   product_id: string | null;
-  customers: { name: string; email: string } | null;
+  customers: { name: string; email: string; phone?: string; cpf?: string } | null;
   products: { name: string } | null;
 }
 
