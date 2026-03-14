@@ -264,7 +264,32 @@ export default function AdminLayout() {
                     <Bell className="w-4 h-4 mr-2" />
                     Notificações
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => window.open("/membros", "_blank")}>
+                  <DropdownMenuItem onClick={async () => {
+                    // Find admin's customer record and access token
+                    const email = user?.email;
+                    if (!email) return;
+                    const { data: cust } = await supabase
+                      .from("customers")
+                      .select("id")
+                      .eq("email", email)
+                      .limit(1)
+                      .maybeSingle();
+                    if (!cust) {
+                      toast("Você não possui compras como aluno.", { duration: 3000 });
+                      return;
+                    }
+                    const { data: acc } = await supabase
+                      .from("member_access")
+                      .select("access_token")
+                      .eq("customer_id", cust.id)
+                      .limit(1)
+                      .maybeSingle();
+                    if (!acc) {
+                      toast("Nenhum curso encontrado para sua conta.", { duration: 3000 });
+                      return;
+                    }
+                    window.open(`/minha-conta?token=${acc.access_token}`, "_blank");
+                  }}>
                     <Eye className="w-4 h-4 mr-2" />
                     Mudar para painel do aluno
                   </DropdownMenuItem>
