@@ -38,6 +38,20 @@ const CustomerPortal = () => {
   const [editPhone, setEditPhone] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const { user, profileCompleted, isAdmin, loading: authLoading } = useAuth();
+
+  // If user is authenticated but has no token, redirect appropriately
+  useEffect(() => {
+    if (authLoading) return;
+    if (!token && user) {
+      if (profileCompleted === false) {
+        navigate("/completar-perfil", { replace: true });
+      } else if (isAdmin) {
+        navigate("/admin", { replace: true });
+      }
+    }
+  }, [token, user, profileCompleted, isAdmin, authLoading, navigate]);
+
   useEffect(() => {
     if (!token) {
       setLoading(false);
