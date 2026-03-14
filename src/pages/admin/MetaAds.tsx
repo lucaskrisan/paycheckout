@@ -16,11 +16,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function MetaAds() {
   const { isSuperAdmin } = useAuth();
-
-  // Block access for non-super_admin users
-  if (!isSuperAdmin) {
-    return <Navigate to="/admin" replace />;
-  }
   const {
     accounts, selectedAccounts, setSelectedAccounts, toggleAccount, selectAllAccounts,
     campaigns, adsets, ads, accountInsights,
@@ -32,6 +27,11 @@ export default function MetaAds() {
 
   const [mainTab, setMainTab] = useState("resumo");
   const [dataTab, setDataTab] = useState("campaigns");
+
+  // Block access for non-super_admin users (after all hooks)
+  if (!isSuperAdmin) {
+    return <Navigate to="/admin" replace />;
+  }
 
   useEffect(() => { fetchAccounts(); }, []);
 
