@@ -12,7 +12,15 @@ import { MetaAdsAlerts } from "@/components/admin/meta-ads/MetaAdsAlerts";
 import { MetaBudgetCalculator } from "@/components/admin/meta-ads/MetaBudgetCalculator";
 import { formatCurrency, getResults, getConversionValue } from "@/components/admin/meta-ads/MetaInsightsHelpers";
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 export default function MetaAds() {
+  const { isSuperAdmin } = useAuth();
+
+  // Block access for non-super_admin users
+  if (!isSuperAdmin) {
+    return <Navigate to="/admin" replace />;
+  }
   const {
     accounts, selectedAccounts, setSelectedAccounts, toggleAccount, selectAllAccounts,
     campaigns, adsets, ads, accountInsights,

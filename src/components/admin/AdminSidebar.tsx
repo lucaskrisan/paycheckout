@@ -93,6 +93,7 @@ const configItems = [
 
 // 6. SUPER ADMIN — visível apenas para super_admin
 const superAdminItems = [
+  { title: "Meta Ads", url: "/admin/meta-ads", icon: Megaphone },
   { title: "Painel Plataforma", url: "/admin/platform", icon: Crown },
   { title: "Billing", url: "/admin/billing", icon: Wallet },
   { title: "Roadmap", url: "/admin/roadmap", icon: ClipboardList },
