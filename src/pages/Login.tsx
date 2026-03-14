@@ -77,7 +77,10 @@ const Login = () => {
           setLoading(false);
           return;
         }
-        await signUp(email, password, fullName);
+        await signUp(email, password, fullName, {
+          phone: phone,
+          cpf: cpf,
+        });
         await signIn(email, password);
       } else {
         await signIn(email, password);
