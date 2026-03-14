@@ -55,13 +55,14 @@ const validateCpf = (cpf: string) => {
 };
 
 const CompleteProfile = () => {
-  const { user, loading: authLoading, refreshRoles } = useAuth();
+  const { user, loading: authLoading, refreshRoles, signOut } = useAuth();
   const navigate = useNavigate();
   const [cpf, setCpf] = useState("");
   const [phone, setPhone] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [saving, setSaving] = useState(false);
   const [cpfError, setCpfError] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -254,6 +255,45 @@ const CompleteProfile = () => {
         <p className="text-center text-[11px] text-slate-500">
           Esses dados são necessários para emissão de certificados e notas fiscais.
         </p>
+
+        <div className="text-center pt-2 space-y-2">
+          <button
+            type="button"
+            onClick={async () => {
+              await signOut();
+              navigate("/", { replace: true });
+            }}
+            className="text-xs text-slate-500 hover:text-slate-300 underline transition-colors"
+          >
+            Sair da conta
+          </button>
+          <span className="text-slate-600 mx-2">·</span>
+          <button
+            type="button"
+            onClick={async () => {
+              if (!confirm("Tem certeza que deseja excluir sua conta? Esta ação é irreversível.")) return;
+              setDeleting(true);
+              try {
+                const { data, error } = await supabase.functions.invoke("delete-account", { body: {} });
+                if (error || !data?.success) {
+                  toast.error("Erro ao excluir conta.");
+                  setDeleting(false);
+                  return;
+                }
+                await signOut();
+                toast.success("Conta excluída.");
+                navigate("/", { replace: true });
+              } catch {
+                toast.error("Erro ao excluir conta.");
+                setDeleting(false);
+              }
+            }}
+            disabled={deleting}
+            className="text-xs text-red-400/70 hover:text-red-400 underline transition-colors"
+          >
+            {deleting ? "Excluindo..." : "Excluir minha conta"}
+          </button>
+        </div>
       </div>
     </div>
   );

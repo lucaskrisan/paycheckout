@@ -1,19 +1,34 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { User, Mail, Phone, KeyRound } from "lucide-react";
+import { User, Mail, Phone, KeyRound, Trash2, Loader2 } from "lucide-react";
 
 const MyAccount = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [fullName, setFullName] = useState("");
   const [nickname, setNickname] = useState("");
   const [phone, setPhone] = useState("");
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
 
   useEffect(() => {
     if (user) {
@@ -42,6 +57,28 @@ const MyAccount = () => {
       toast.error("Erro ao enviar email");
     } else {
       toast.success("Email de redefinição enviado");
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-account", {
+        body: {},
+      });
+
+      if (error || !data?.success) {
+        toast.error("Erro ao excluir conta. Tente novamente.");
+        setDeleting(false);
+        return;
+      }
+
+      await signOut();
+      toast.success("Conta excluída com sucesso.");
+      navigate("/", { replace: true });
+    } catch {
+      toast.error("Erro ao excluir conta.");
+      setDeleting(false);
     }
   };
 
@@ -104,6 +141,71 @@ const MyAccount = () => {
         </CardHeader>
         <CardContent>
           <Button variant="outline" size="sm" onClick={handleResetPassword}>Alterar Senha</Button>
+        </CardContent>
+      </Card>
+
+      {/* Delete Account */}
+      <Card className="border-destructive/30">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-display flex items-center gap-2 text-destructive">
+            <Trash2 className="w-4 h-4" /> Excluir Conta
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Esta ação é irreversível. Todos os seus dados, produtos, pedidos e configurações serão permanentemente excluídos.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm">
+                <Trash2 className="w-4 h-4 mr-2" />
+                Excluir minha conta
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Tem certeza absoluta?</AlertDialogTitle>
+                <AlertDialogDescription className="space-y-3">
+                  <p>
+                    Esta ação <strong>não pode ser desfeita</strong>. Isso irá excluir permanentemente:
+                  </p>
+                  <ul className="list-disc pl-5 space-y-1 text-sm">
+                    <li>Sua conta e perfil</li>
+                    <li>Todos os produtos e cursos</li>
+                    <li>Histórico de pedidos e clientes</li>
+                    <li>Configurações de checkout e pixels</li>
+                    <li>Todos os dados associados</li>
+                  </ul>
+                  <p className="pt-2">
+                    Digite <strong>EXCLUIR</strong> para confirmar:
+                  </p>
+                  <Input
+                    value={confirmText}
+                    onChange={(e) => setConfirmText(e.target.value)}
+                    placeholder="EXCLUIR"
+                    className="mt-2"
+                  />
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setConfirmText("")}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteAccount}
+                  disabled={confirmText !== "EXCLUIR" || deleting}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {deleting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Excluindo...
+                    </>
+                  ) : (
+                    "Excluir permanentemente"
+                  )}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardContent>
       </Card>
     </div>
