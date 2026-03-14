@@ -142,8 +142,17 @@ const Checkout = () => {
         setProduct(p);
         if (p.is_subscription) setPaymentMethod("credit_card");
         if (p.user_id) {
-          const { data: settings } = await supabase.from("checkout_settings").select("logo_url, primary_color, custom_css, company_name").eq("user_id", p.user_id).maybeSingle();
+          // Check if producer is blocked
+          const [{ data: settings }, { data: billingAcc }] = await Promise.all([
+            supabase.from("checkout_settings").select("logo_url, primary_color, custom_css, company_name").eq("user_id", p.user_id).maybeSingle(),
+            supabase.from("billing_accounts").select("blocked").eq("user_id", p.user_id).maybeSingle(),
+          ]);
           if (settings) setCheckoutSettings(settings);
+          if ((billingAcc as any)?.blocked === true) {
+            setProducerBlocked(true);
+            setLoading(false);
+            return;
+          }
         }
       }
       if (bumpsRes.data) setOrderBumps(bumpsRes.data as any);
