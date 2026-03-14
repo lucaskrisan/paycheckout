@@ -91,12 +91,20 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
       <DialogContent className="max-w-2xl max-h-[90vh] p-0">
         <DialogHeader className="p-6 pb-0">
           <DialogTitle className="font-display">
-            {isEditing ? "Editar" : "Nova Conexão"} - {form.provider === "asaas" ? "Asaas" : "Pagar.me"}
+            {isEditing ? "Editar" : "Nova Conexão"} - {
+              form.provider === "asaas" ? "Asaas" :
+              form.provider === "pagarme" ? "Pagar.me" :
+              form.provider === "mercadopago" ? "Mercado Pago" : "Stripe"
+            }
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
             {form.provider === "asaas"
               ? "Aceite pagamentos via Pix e Cartão de Crédito de forma simples e segura."
-              : "Processamento rápido e confiável de pagamentos com Pix e Cartão."}
+              : form.provider === "pagarme"
+              ? "Processamento rápido e confiável de pagamentos com Pix e Cartão."
+              : form.provider === "mercadopago"
+              ? "O gateway mais popular do Brasil. PIX, Cartão e Boleto."
+              : "Gateway global para cartões internacionais e PIX."}
           </p>
         </DialogHeader>
 
