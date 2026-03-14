@@ -93,6 +93,8 @@ const Orders = () => {
   const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState<"approved" | "all">("approved");
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [detailTab, setDetailTab] = useState<"sale" | "customer" | "values">("sale");
   const [emailPreview, setEmailPreview] = useState<{
     open: boolean;
     orderId: string;
