@@ -29,6 +29,7 @@ interface AbandonedCart {
 const ITEMS_PER_PAGE = 20;
 
 const AbandonedCarts = () => {
+  const { user } = useAuth();
   const [carts, setCarts] = useState<AbandonedCart[]>([]);
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);

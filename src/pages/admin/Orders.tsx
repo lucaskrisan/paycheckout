@@ -96,6 +96,7 @@ const DetailRow = ({ label, value, children }: { label: string; value?: string; 
 );
 
 const Orders = () => {
+  const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
