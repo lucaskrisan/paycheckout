@@ -2,46 +2,29 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Wallet,
-  AlertTriangle,
-  CreditCard,
-  TrendingUp,
-  Shield,
-  ArrowUpRight,
-  ArrowDownLeft,
-  QrCode,
-  Users,
-  Ban,
-  CheckCircle,
+  Wallet, ArrowUpRight, ArrowDownLeft, Users, Ban, CheckCircle, Settings2, Save,
 } from "lucide-react";
 import { toast } from "sonner";
 
-const TIER_CONFIG: Record<string, { label: string; limit: number; color: string; next?: string }> = {
-  iron: { label: "Iron", limit: 5, color: "text-muted-foreground", next: "bronze" },
-  bronze: { label: "Bronze", limit: 50, color: "text-amber-700", next: "silver" },
-  silver: { label: "Silver", limit: 500, color: "text-slate-400", next: "gold" },
-  gold: { label: "Gold", limit: 5000, color: "text-yellow-500" },
-};
+interface TierRow {
+  id: string;
+  key: string;
+  label: string;
+  credit_limit: number;
+  level: number;
+  color: string;
+}
 
 interface BillingAccount {
   id: string;
@@ -53,7 +36,6 @@ interface BillingAccount {
   card_last4: string | null;
   card_brand: string | null;
   created_at: string;
-  email?: string;
   full_name?: string;
 }
 
@@ -74,11 +56,16 @@ const Billing = () => {
   const { user, isSuperAdmin, loading: authLoading } = useAuth();
   const [accounts, setAccounts] = useState<BillingAccount[]>([]);
   const [transactions, setTransactions] = useState<BillingTransaction[]>([]);
+  const [tiers, setTiers] = useState<TierRow[]>([]);
+  const [editingTiers, setEditingTiers] = useState<TierRow[]>([]);
+  const [showTierEditor, setShowTierEditor] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [savingTiers, setSavingTiers] = useState(false);
 
   useEffect(() => {
     if (!user?.id || !isSuperAdmin) return;
+    loadTiers();
     loadAccounts();
   }, [user?.id, isSuperAdmin]);
 
@@ -86,24 +73,26 @@ const Billing = () => {
     if (selectedUserId) loadTransactions(selectedUserId);
   }, [selectedUserId]);
 
+  const loadTiers = async () => {
+    const { data } = await supabase
+      .from("billing_tiers")
+      .select("*")
+      .order("level", { ascending: true });
+    const rows = (data || []) as unknown as TierRow[];
+    setTiers(rows);
+    setEditingTiers(rows.map((t) => ({ ...t })));
+  };
+
   const loadAccounts = async () => {
     setLoading(true);
-
-    // 1. Get ALL admin/super_admin producers from user_roles
     const { data: roles } = await supabase
       .from("user_roles")
       .select("user_id, role")
       .in("role", ["admin", "super_admin"]);
 
     const adminUserIds = [...new Set((roles || []).map((r: any) => r.user_id))];
+    if (adminUserIds.length === 0) { setAccounts([]); setLoading(false); return; }
 
-    if (adminUserIds.length === 0) {
-      setAccounts([]);
-      setLoading(false);
-      return;
-    }
-
-    // 2. Fetch billing_accounts and profiles in parallel
     const [{ data: accs }, { data: profiles }] = await Promise.all([
       supabase.from("billing_accounts").select("*").in("user_id", adminUserIds),
       supabase.from("profiles").select("id, full_name").in("id", adminUserIds),
@@ -112,7 +101,6 @@ const Billing = () => {
     const billingMap = new Map((accs || []).map((a: any) => [a.user_id, a]));
     const profileMap = new Map((profiles || []).map((p: any) => [p.id, p.full_name]));
 
-    // 3. Merge: every admin gets a row, even without billing_account
     const merged: BillingAccount[] = adminUserIds.map((uid) => {
       const billing = billingMap.get(uid);
       return {
@@ -129,7 +117,6 @@ const Billing = () => {
       };
     });
 
-    // Sort by balance descending
     merged.sort((a, b) => b.balance - a.balance);
     setAccounts(merged);
     setLoading(false);
@@ -137,59 +124,60 @@ const Billing = () => {
 
   const loadTransactions = async (userId: string) => {
     const { data } = await supabase
-      .from("billing_transactions")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(50);
+      .from("billing_transactions").select("*").eq("user_id", userId)
+      .order("created_at", { ascending: false }).limit(50);
     setTransactions((data as unknown as BillingTransaction[]) || []);
   };
 
+  const tierMap = Object.fromEntries(tiers.map((t) => [t.key, t]));
+
   const handleChangeTier = async (accountId: string, userId: string, newTier: string) => {
-    const newLimit = TIER_CONFIG[newTier]?.limit || 5;
+    const t = tierMap[newTier];
+    const newLimit = t?.credit_limit || 5;
     const { error } = await supabase
       .from("billing_accounts")
       .update({ credit_tier: newTier, credit_limit: newLimit, updated_at: new Date().toISOString() })
       .eq("id", accountId);
     if (error) toast.error("Erro ao alterar tier");
-    else {
-      toast.success(`Tier alterado para ${TIER_CONFIG[newTier].label}`);
-      loadAccounts();
-    }
+    else { toast.success(`Tier alterado para ${t?.label || newTier}`); loadAccounts(); }
   };
 
-  const handleToggleBlock = async (accountId: string, currentlyBlocked: boolean) => {
+  const handleToggleBlock = async (accountId: string, blocked: boolean) => {
     const { error } = await supabase
       .from("billing_accounts")
-      .update({ blocked: !currentlyBlocked, updated_at: new Date().toISOString() })
+      .update({ blocked: !blocked, updated_at: new Date().toISOString() })
       .eq("id", accountId);
     if (error) toast.error("Erro");
-    else {
-      toast.success(currentlyBlocked ? "Produtor desbloqueado" : "Produtor bloqueado");
-      loadAccounts();
-    }
+    else { toast.success(blocked ? "Desbloqueado" : "Bloqueado"); loadAccounts(); }
   };
 
   const handleResetBalance = async (accountId: string, userId: string) => {
     if (!confirm("Zerar o saldo devedor deste produtor?")) return;
     const account = accounts.find((a) => a.id === accountId);
     if (!account || account.balance <= 0) return;
-
     await supabase.from("billing_transactions").insert({
-      user_id: userId,
-      type: "credit",
-      amount: -account.balance,
+      user_id: userId, type: "credit", amount: -account.balance,
       description: "Saldo zerado pelo Super Admin",
     });
-
-    await supabase
-      .from("billing_accounts")
+    await supabase.from("billing_accounts")
       .update({ balance: 0, blocked: false, updated_at: new Date().toISOString() })
       .eq("id", accountId);
-
     toast.success("Saldo zerado");
     loadAccounts();
     if (selectedUserId === userId) loadTransactions(userId);
+  };
+
+  const handleSaveTiers = async () => {
+    setSavingTiers(true);
+    for (const t of editingTiers) {
+      await supabase.from("billing_tiers")
+        .update({ label: t.label, credit_limit: t.credit_limit, updated_at: new Date().toISOString() })
+        .eq("id", t.id);
+    }
+    toast.success("Tiers atualizados!");
+    await loadTiers();
+    setSavingTiers(false);
+    setShowTierEditor(false);
   };
 
   if (authLoading) return null;
@@ -203,7 +191,54 @@ const Billing = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-bold text-foreground">Billing — Gestão de Produtores</h1>
+        <Button variant="outline" size="sm" className="gap-2" onClick={() => setShowTierEditor(!showTierEditor)}>
+          <Settings2 className="w-4 h-4" /> {showTierEditor ? "Fechar Tiers" : "Editar Tiers"}
+        </Button>
       </div>
+
+      {/* Tier Editor */}
+      {showTierEditor && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Configuração dos Níveis de Crédito</CardTitle>
+            <CardDescription>Edite os nomes e limites de cada tier. Os produtores verão essas mudanças automaticamente.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {editingTiers.map((t, i) => (
+                <div key={t.id} className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground w-6">{t.level}</span>
+                  <Input
+                    className="w-32 h-8 text-sm"
+                    value={t.label}
+                    onChange={(e) => {
+                      const copy = [...editingTiers];
+                      copy[i] = { ...copy[i], label: e.target.value };
+                      setEditingTiers(copy);
+                    }}
+                  />
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-muted-foreground">R$</span>
+                    <Input
+                      className="w-24 h-8 text-sm"
+                      type="number"
+                      value={t.credit_limit}
+                      onChange={(e) => {
+                        const copy = [...editingTiers];
+                        copy[i] = { ...copy[i], credit_limit: parseFloat(e.target.value) || 0 };
+                        setEditingTiers(copy);
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+              <Button size="sm" className="gap-2 mt-2" onClick={handleSaveTiers} disabled={savingTiers}>
+                <Save className="w-4 h-4" /> {savingTiers ? "Salvando..." : "Salvar Tiers"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -218,42 +253,34 @@ const Billing = () => {
             <p className="text-xs text-muted-foreground mt-1">Taxas acumuladas de todos os produtores</p>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Users className="w-4 h-4" /> Produtores com Billing
+              <Users className="w-4 h-4" /> Produtores
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold text-foreground">{accounts.length}</p>
-          </CardContent>
+          <CardContent><p className="text-3xl font-bold text-foreground">{accounts.length}</p></CardContent>
         </Card>
-
         <Card className={blockedCount > 0 ? "border-destructive/50" : ""}>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Ban className="w-4 h-4" /> Produtores Bloqueados
+              <Ban className="w-4 h-4" /> Bloqueados
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className={`text-3xl font-bold ${blockedCount > 0 ? "text-destructive" : "text-foreground"}`}>
-              {blockedCount}
-            </p>
+            <p className={`text-3xl font-bold ${blockedCount > 0 ? "text-destructive" : "text-foreground"}`}>{blockedCount}</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Accounts Table */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Contas de Billing</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle className="text-base">Contas de Billing</CardTitle></CardHeader>
         <CardContent>
           {loading ? (
             <p className="text-sm text-muted-foreground py-4 text-center">Carregando...</p>
           ) : accounts.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma conta de billing ainda.</p>
+            <p className="text-sm text-muted-foreground py-4 text-center">Nenhum produtor encontrado.</p>
           ) : (
             <Table>
               <TableHeader>
@@ -268,80 +295,49 @@ const Billing = () => {
               </TableHeader>
               <TableBody>
                 {accounts.map((acc) => {
-                  const tier = TIER_CONFIG[acc.credit_tier] || TIER_CONFIG.iron;
-                  const usagePercent = Math.min(100, (acc.balance / acc.credit_limit) * 100);
+                  const usagePercent = acc.credit_limit > 0 ? Math.min(100, (acc.balance / acc.credit_limit) * 100) : 0;
                   return (
-                    <TableRow
-                      key={acc.id}
-                      className={`cursor-pointer ${selectedUserId === acc.user_id ? "bg-muted/50" : ""}`}
-                      onClick={() => setSelectedUserId(acc.user_id)}
-                    >
+                    <TableRow key={acc.user_id} className={`cursor-pointer ${selectedUserId === acc.user_id ? "bg-muted/50" : ""}`}
+                      onClick={() => setSelectedUserId(acc.user_id)}>
                       <TableCell>
-                        <div>
-                          <p className="font-medium text-sm text-foreground">{acc.full_name}</p>
-                          <p className="text-xs text-muted-foreground truncate max-w-[200px]">{acc.user_id}</p>
-                        </div>
+                        <p className="font-medium text-sm text-foreground">{acc.full_name}</p>
+                        <p className="text-xs text-muted-foreground truncate max-w-[200px]">{acc.user_id}</p>
                       </TableCell>
                       <TableCell>
-                        <Select
-                          value={acc.credit_tier}
-                          onValueChange={(v) => handleChangeTier(acc.id, acc.user_id, v)}
-                        >
-                          <SelectTrigger className="w-[100px] h-8 text-xs" onClick={(e) => e.stopPropagation()}>
+                        <Select value={acc.credit_tier} onValueChange={(v) => handleChangeTier(acc.id, acc.user_id, v)}>
+                          <SelectTrigger className="w-[110px] h-8 text-xs" onClick={(e) => e.stopPropagation()}>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {Object.entries(TIER_CONFIG).map(([key, cfg]) => (
-                              <SelectItem key={key} value={key}>
-                                {cfg.label} ({fmt(cfg.limit)})
-                              </SelectItem>
+                            {tiers.map((t) => (
+                              <SelectItem key={t.key} value={t.key}>{t.label} ({fmt(t.credit_limit)})</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       </TableCell>
                       <TableCell className="text-right">
-                        <span className={acc.balance > acc.credit_limit ? "text-destructive font-bold" : "font-medium"}>
-                          {fmt(acc.balance)}
-                        </span>
+                        <span className={acc.balance > acc.credit_limit ? "text-destructive font-bold" : "font-medium"}>{fmt(acc.balance)}</span>
                         <div className="w-full h-1.5 bg-muted rounded-full mt-1 overflow-hidden">
-                          <div
-                            className={`h-full rounded-full ${usagePercent > 80 ? "bg-destructive" : usagePercent > 50 ? "bg-yellow-500" : "bg-primary"}`}
-                            style={{ width: `${usagePercent}%` }}
-                          />
+                          <div className={`h-full rounded-full ${usagePercent > 80 ? "bg-destructive" : usagePercent > 50 ? "bg-yellow-500" : "bg-primary"}`}
+                            style={{ width: `${usagePercent}%` }} />
                         </div>
                       </TableCell>
-                      <TableCell className="text-right text-sm text-muted-foreground">
-                        {fmt(acc.credit_limit)}
-                      </TableCell>
+                      <TableCell className="text-right text-sm text-muted-foreground">{fmt(acc.credit_limit)}</TableCell>
                       <TableCell>
                         {acc.blocked ? (
-                          <Badge variant="destructive" className="gap-1">
-                            <Ban className="w-3 h-3" /> Bloqueado
-                          </Badge>
+                          <Badge variant="destructive" className="gap-1"><Ban className="w-3 h-3" /> Bloqueado</Badge>
                         ) : (
-                          <Badge variant="default" className="gap-1">
-                            <CheckCircle className="w-3 h-3" /> Ativo
-                          </Badge>
+                          <Badge variant="default" className="gap-1"><CheckCircle className="w-3 h-3" /> Ativo</Badge>
                         )}
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-xs h-7"
-                            onClick={() => handleToggleBlock(acc.id, acc.blocked)}
-                          >
+                          <Button variant="outline" size="sm" className="text-xs h-7"
+                            onClick={() => handleToggleBlock(acc.id, acc.blocked)}>
                             {acc.blocked ? "Desbloquear" : "Bloquear"}
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-xs h-7"
-                            onClick={() => handleResetBalance(acc.id, acc.user_id)}
-                          >
-                            Zerar
-                          </Button>
+                          <Button variant="ghost" size="sm" className="text-xs h-7"
+                            onClick={() => handleResetBalance(acc.id, acc.user_id)}>Zerar</Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -353,14 +349,10 @@ const Billing = () => {
         </CardContent>
       </Card>
 
-      {/* Transaction History for selected producer */}
+      {/* Transactions */}
       {selectedAccount && (
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">
-              Transações — {selectedAccount.full_name}
-            </CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-base">Transações — {selectedAccount.full_name}</CardTitle></CardHeader>
           <CardContent>
             {transactions.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma transação.</p>
@@ -383,9 +375,7 @@ const Billing = () => {
                           {tx.type === "fee" ? "Taxa" : "Crédito"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground max-w-[300px] truncate">
-                        {tx.description || "-"}
-                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground max-w-[300px] truncate">{tx.description || "-"}</TableCell>
                       <TableCell className={`text-right font-medium ${tx.type === "fee" ? "text-destructive" : "text-primary"}`}>
                         {tx.type === "fee" ? "+" : "-"}{fmt(Math.abs(tx.amount))}
                       </TableCell>

@@ -121,6 +121,36 @@ export type Database = {
         }
         Relationships: []
       }
+      billing_tiers: {
+        Row: {
+          color: string
+          credit_limit: number
+          id: string
+          key: string
+          label: string
+          level: number
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          credit_limit?: number
+          id?: string
+          key: string
+          label: string
+          level?: number
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          credit_limit?: number
+          id?: string
+          key?: string
+          label?: string
+          level?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       billing_transactions: {
         Row: {
           amount: number
