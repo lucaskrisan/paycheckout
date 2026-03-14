@@ -88,6 +88,7 @@ const App = () => (
               <Route path="communications" element={<Communications />} />
               <Route path="my-account" element={<MyAccount />} />
               <Route path="metrics" element={<Metrics />} />
+              <Route path="upsell" element={<Upsell />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
