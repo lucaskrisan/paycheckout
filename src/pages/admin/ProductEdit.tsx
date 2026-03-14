@@ -143,6 +143,16 @@ const ProductEdit = () => {
     if (data) setOrderBumps(data);
   }, [isNew, productId]);
 
+  const loadUpsellOffers = useCallback(async () => {
+    if (isNew || !productId) return;
+    const { data } = await supabase
+      .from("upsell_offers" as any)
+      .select("*, upsell_product:products!upsell_offers_upsell_product_id_fkey(name, price, image_url)")
+      .eq("product_id", productId)
+      .order("sort_order");
+    if (data) setUpsellOffers(data);
+  }, [isNew, productId]);
+
   const loadCheckouts = useCallback(async () => {
     if (isNew || !productId) return;
     const { data, error } = await supabase
