@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  AlertTriangle, TrendingUp, TrendingDown, Zap, Trophy, Brain,
+  AlertTriangle, TrendingDown, Trophy, Brain,
   ThermometerSun, Activity, Target, ShieldAlert, Rocket, Pause,
 } from "lucide-react";
 import type { MetaCampaign } from "@/hooks/useMetaAds";
