@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, Download, Mail, Loader2, X } from "lucide-react";
+import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, Download, Mail, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { EmailPreviewModal } from "@/components/admin/EmailPreviewModal";
@@ -18,8 +18,9 @@ interface Order {
   payment_method: string;
   status: string;
   created_at: string;
+  updated_at: string;
   product_id: string | null;
-  customers: { name: string; email: string } | null;
+  customers: { name: string; email: string; phone?: string; cpf?: string } | null;
   products: { name: string } | null;
 }
 
@@ -84,6 +85,15 @@ const PAYMENT_LABEL: Record<string, string> = {
   boleto: "Boleto",
 };
 
+const DetailRow = ({ label, value, children }: { label: string; value?: string; children?: React.ReactNode }) => (
+  <div className="flex items-start justify-between py-2 border-b border-border/50 last:border-0">
+    <span className="text-sm text-muted-foreground">{label}</span>
+    <span className="text-sm text-foreground font-medium text-right max-w-[200px] break-all">
+      {children || value || "—"}
+    </span>
+  </div>
+);
+
 const Orders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
@@ -92,6 +102,8 @@ const Orders = () => {
   const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState<"approved" | "all">("approved");
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [detailTab, setDetailTab] = useState<"sale" | "customer" | "values">("sale");
   const [emailPreview, setEmailPreview] = useState<{
     open: boolean;
     orderId: string;
@@ -157,7 +169,7 @@ const Orders = () => {
       const [ordersRes, productsRes] = await Promise.all([
         supabase
           .from("orders")
-          .select("*, customers(name, email), products(name)")
+          .select("*, customers(name, email, phone, cpf), products(name)")
           .order("created_at", { ascending: false }),
         supabase.from("products").select("id, name"),
       ]);
@@ -366,7 +378,7 @@ const Orders = () => {
                   const st = getStatus(order.status);
                   const isPendingPix = order.status === "pending" && order.payment_method === "pix" && order.customers?.email;
                   return (
-                    <tr key={order.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                    <tr key={order.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => { setSelectedOrder(order); setDetailTab("sale"); }}>
                       <td className="py-3.5 px-4 text-muted-foreground whitespace-nowrap text-sm">
                         {format(new Date(order.created_at), "dd/MM/yyyy HH:mm")}
                       </td>
@@ -610,6 +622,81 @@ const Orders = () => {
               ))}
             </div>
           </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Order Detail Drawer */}
+      <Sheet open={!!selectedOrder} onOpenChange={(open) => { if (!open) setSelectedOrder(null); }}>
+        <SheetContent className="w-[400px] overflow-y-auto">
+          <SheetHeader>
+            <div className="flex items-center justify-between">
+              <SheetTitle className="text-base font-semibold">Ver detalhes</SheetTitle>
+            </div>
+          </SheetHeader>
+          {selectedOrder && (() => {
+            const st = getStatus(selectedOrder.status);
+            return (
+              <div className="mt-4">
+                {/* Tabs */}
+                <div className="flex items-center gap-1 border-b border-border mb-5">
+                  {([
+                    { key: "sale" as const, label: "Venda" },
+                    { key: "customer" as const, label: "Cliente" },
+                    { key: "values" as const, label: "Valores" },
+                  ]).map(tab => (
+                    <button
+                      key={tab.key}
+                      onClick={() => setDetailTab(tab.key)}
+                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${
+                        detailTab === tab.key
+                          ? "border-primary text-primary"
+                          : "border-transparent text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {detailTab === "sale" && (
+                  <div className="space-y-4">
+                    <DetailRow label="ID da venda" value={selectedOrder.id.slice(0, 8).toUpperCase()} />
+                    <DetailRow label="Status">
+                      <Badge variant="outline" className={`text-xs font-medium ${VARIANT_CLASSES[st.variant]}`}>
+                        {st.label}
+                      </Badge>
+                    </DetailRow>
+                    <DetailRow label="Tipo" value="Sou produtor" />
+                    <DetailRow label="Valor líquido" value={`R$ ${Number(selectedOrder.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
+                    <DetailRow label="Produto" value={selectedOrder.products?.name || "—"} />
+                    <DetailRow label="Método de pagamento" value={PAYMENT_LABEL[selectedOrder.payment_method] || selectedOrder.payment_method} />
+                    <DetailRow label="Parcelas" value="1" />
+                    <DetailRow label="Data da criação" value={format(new Date(selectedOrder.created_at), "dd/MM/yyyy HH:mm")} />
+                    {selectedOrder.updated_at && ["paid", "approved", "confirmed"].includes(selectedOrder.status) && (
+                      <DetailRow label="Data da aprovação" value={format(new Date(selectedOrder.updated_at), "dd/MM/yyyy HH:mm")} />
+                    )}
+                  </div>
+                )}
+
+                {detailTab === "customer" && (
+                  <div className="space-y-4">
+                    <DetailRow label="Nome" value={selectedOrder.customers?.name || "—"} />
+                    <DetailRow label="E-mail" value={selectedOrder.customers?.email || "—"} />
+                    <DetailRow label="Telefone" value={selectedOrder.customers?.phone || "—"} />
+                    <DetailRow label="CPF" value={selectedOrder.customers?.cpf || "—"} />
+                  </div>
+                )}
+
+                {detailTab === "values" && (
+                  <div className="space-y-4">
+                    <DetailRow label="Valor bruto" value={`R$ ${Number(selectedOrder.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
+                    <DetailRow label="Taxa da plataforma" value={`R$ ${Number((selectedOrder as any).platform_fee_amount || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
+                    <DetailRow label="Valor líquido" value={`R$ ${(Number(selectedOrder.amount) - Number((selectedOrder as any).platform_fee_amount || 0)).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </SheetContent>
       </Sheet>
 
