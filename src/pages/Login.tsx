@@ -22,10 +22,10 @@ const Login = () => {
 
   useEffect(() => {
     if (!authLoading && user) {
-      if (!profileCompleted) {
+      if (profileCompleted === false) {
         navigate("/completar-perfil", { replace: true });
-      } else {
-        navigate(isAdmin ? "/admin" : "/aguardando-aprovacao", { replace: true });
+      } else if (profileCompleted === true) {
+        navigate(isAdmin ? "/admin" : "/admin", { replace: true });
       }
     }
   }, [user, isAdmin, profileCompleted, authLoading, navigate]);
