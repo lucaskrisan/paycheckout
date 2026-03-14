@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { resolveUserDestination } from "@/lib/resolveUserDestination";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +14,6 @@ import {
   LogOut,
   BookOpen,
   Loader2,
-  Lock,
   LayoutDashboard,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -38,30 +36,10 @@ const CustomerPortal = () => {
 
   const { user, loading: authLoading } = useAuth();
 
-  // If user is authenticated but has no token, resolve destination automatically
+  // Never show restricted placeholder screen without token
   useEffect(() => {
-    if (authLoading || token || !user) return;
-
-    let cancelled = false;
-
-    const routeUser = async () => {
-      try {
-        const destination = await resolveUserDestination();
-        if (!cancelled) {
-          navigate(destination, { replace: true });
-        }
-      } catch {
-        if (!cancelled) {
-          navigate("/completar-perfil", { replace: true });
-        }
-      }
-    };
-
-    routeUser();
-
-    return () => {
-      cancelled = true;
-    };
+    if (token || authLoading) return;
+    navigate(user ? "/completar-perfil" : "/login?signup=true", { replace: true });
   }, [token, user, authLoading, navigate]);
 
   useEffect(() => {
