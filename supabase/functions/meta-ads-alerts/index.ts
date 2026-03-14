@@ -315,48 +315,28 @@ Deno.serve(async (req) => {
       const allData = [];
       for (const accId of accountIds) {
         try {
-          // Get account name
           const accInfo = await metaFetch(`/${accId}`, { fields: 'name' });
-          
-          // Campaigns with 7-day breakdown
           const campaigns = await metaFetch(`/${accId}/campaigns`, {
-            fields: 'id,name,status,objective,daily_budget,lifetime_budget,effective_status,start_time',
+            fields: 'id,name,status,objective,daily_budget,lifetime_budget,effective_status',
             filtering: JSON.stringify([{ field: 'effective_status', operator: 'IN', value: ['ACTIVE', 'PAUSED', 'IN_PROCESS', 'WITH_ISSUES'] }]),
-            limit: '200',
+            limit: '50',
           });
 
           for (const c of (campaigns.data || [])) {
             try {
-              const todayInsights = await metaFetch(`/${c.id}/insights`, { fields: insightFields, date_preset: 'today' });
-              const weekInsights = await metaFetch(`/${c.id}/insights`, { fields: insightFields, date_preset: 'last_7d', time_increment: '1' });
-              
-              // Adsets for this campaign
-              const adsets = await metaFetch(`/${accId}/adsets`, {
-                fields: 'id,name,status,effective_status,daily_budget,optimization_goal',
-                filtering: JSON.stringify([{ field: 'campaign.id', operator: 'EQUAL', value: c.id }]),
-                limit: '100',
-              });
-
-              const adsetData = [];
-              for (const as of (adsets.data || [])) {
-                try {
-                  const asInsights = await metaFetch(`/${as.id}/insights`, { fields: insightFields, date_preset: 'last_7d' });
-                  adsetData.push({ ...as, insights_7d: asInsights.data?.[0] || null });
-                } catch {
-                  adsetData.push({ ...as, insights_7d: null });
-                }
-              }
-
+              const [todayRes, weekRes] = await Promise.all([
+                metaFetch(`/${c.id}/insights`, { fields: insightFields, date_preset: 'today' }),
+                metaFetch(`/${c.id}/insights`, { fields: insightFields, date_preset: 'last_7d' }),
+              ]);
               allData.push({
                 account_id: accId,
                 account_name: accInfo.name || accId,
                 ...c,
-                insights_today: todayInsights.data?.[0] || null,
-                insights_7d_daily: weekInsights.data || [],
-                adsets: adsetData,
+                insights_today: todayRes.data?.[0] || null,
+                insights_7d: weekRes.data?.[0] || null,
               });
-            } catch (err) {
-              allData.push({ account_id: accId, account_name: accInfo.name || accId, ...c, insights_today: null, insights_7d_daily: [], adsets: [] });
+            } catch {
+              allData.push({ account_id: accId, account_name: accInfo.name || accId, ...c, insights_today: null, insights_7d: null });
             }
           }
         } catch (err) {
@@ -364,6 +344,7 @@ Deno.serve(async (req) => {
         }
       }
 
+      console.log(`[meta-ads-alerts] Full report: ${allData.length} campaigns`);
       return new Response(JSON.stringify({ success: true, campaigns: allData }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
