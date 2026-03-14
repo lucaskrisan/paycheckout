@@ -34,6 +34,7 @@ import PwaSettings from "./pages/admin/PwaSettings";
 import MetaAds from "./pages/admin/MetaAds";
 import Billing from "./pages/admin/Billing";
 import Upsell from "./pages/admin/Upsell";
+import Roadmap from "./pages/admin/Roadmap";
 import Domains from "./pages/admin/Domains";
 import WhatsApp from "./pages/admin/WhatsApp";
 import Communications from "./pages/admin/Communications";
@@ -89,6 +90,7 @@ const App = () => (
               <Route path="my-account" element={<MyAccount />} />
               <Route path="metrics" element={<Metrics />} />
               <Route path="upsell" element={<Upsell />} />
+              <Route path="roadmap" element={<Roadmap />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
