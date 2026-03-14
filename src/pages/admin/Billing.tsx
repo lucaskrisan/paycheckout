@@ -147,7 +147,7 @@ const Billing = () => {
   const ensureBillingAccount = async (userId: string) => {
     await supabase.from("billing_accounts").upsert(
       { user_id: userId },
-      { onConflict: "user_id" }
+      { onConflict: "user_id", ignoreDuplicates: true }
     );
   };
 
