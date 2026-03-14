@@ -131,37 +131,47 @@ const Billing = () => {
 
   const tierMap = Object.fromEntries(tiers.map((t) => [t.key, t]));
 
-  const handleChangeTier = async (accountId: string, userId: string, newTier: string) => {
+  const ensureBillingAccount = async (userId: string) => {
+    await supabase.from("billing_accounts").upsert(
+      { user_id: userId },
+      { onConflict: "user_id" }
+    );
+  };
+
+  const handleChangeTier = async (_accountId: string, userId: string, newTier: string) => {
     const t = tierMap[newTier];
     const newLimit = t?.credit_limit || 5;
+    await ensureBillingAccount(userId);
     const { error } = await supabase
       .from("billing_accounts")
       .update({ credit_tier: newTier, credit_limit: newLimit, updated_at: new Date().toISOString() })
-      .eq("id", accountId);
+      .eq("user_id", userId);
     if (error) toast.error("Erro ao alterar tier");
     else { toast.success(`Tier alterado para ${t?.label || newTier}`); loadAccounts(); }
   };
 
-  const handleToggleBlock = async (accountId: string, blocked: boolean) => {
+  const handleToggleBlock = async (_accountId: string, userId: string, blocked: boolean) => {
+    await ensureBillingAccount(userId);
     const { error } = await supabase
       .from("billing_accounts")
       .update({ blocked: !blocked, updated_at: new Date().toISOString() })
-      .eq("id", accountId);
+      .eq("user_id", userId);
     if (error) toast.error("Erro");
     else { toast.success(blocked ? "Desbloqueado" : "Bloqueado"); loadAccounts(); }
   };
 
-  const handleResetBalance = async (accountId: string, userId: string) => {
+  const handleResetBalance = async (_accountId: string, userId: string) => {
     if (!confirm("Zerar o saldo devedor deste produtor?")) return;
-    const account = accounts.find((a) => a.id === accountId);
+    const account = accounts.find((a) => a.user_id === userId);
     if (!account || account.balance <= 0) return;
+    await ensureBillingAccount(userId);
     await supabase.from("billing_transactions").insert({
       user_id: userId, type: "credit", amount: -account.balance,
       description: "Saldo zerado pelo Super Admin",
     });
     await supabase.from("billing_accounts")
       .update({ balance: 0, blocked: false, updated_at: new Date().toISOString() })
-      .eq("id", accountId);
+      .eq("user_id", userId);
     toast.success("Saldo zerado");
     loadAccounts();
     if (selectedUserId === userId) loadTransactions(userId);
@@ -333,7 +343,7 @@ const Billing = () => {
                       <TableCell>
                         <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                           <Button variant="outline" size="sm" className="text-xs h-7"
-                            onClick={() => handleToggleBlock(acc.id, acc.blocked)}>
+                            onClick={() => handleToggleBlock(acc.id, acc.user_id, acc.blocked)}>
                             {acc.blocked ? "Desbloquear" : "Bloquear"}
                           </Button>
                           <Button variant="ghost" size="sm" className="text-xs h-7"
