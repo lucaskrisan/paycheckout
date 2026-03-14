@@ -69,14 +69,26 @@ const Gateways = () => {
     setDialogOpen(true);
   };
 
-  const handleNew = (provider: "asaas" | "pagarme") => {
+  const handleNew = (provider: "asaas" | "pagarme" | "mercadopago" | "stripe") => {
+    const nameMap: Record<string, string> = {
+      asaas: "Asaas Principal",
+      pagarme: "Pagar.me Principal",
+      mercadopago: "Mercado Pago Principal",
+      stripe: "Stripe Principal",
+    };
+    const configMap: Record<string, Record<string, any>> = {
+      asaas: defaultAsaasConfig,
+      pagarme: defaultPagarmeConfig,
+      mercadopago: defaultMercadoPagoConfig,
+      stripe: defaultStripeConfig,
+    };
     setEditingGateway({
       provider,
-      name: provider === "asaas" ? "Asaas Principal" : "Pagar.me Principal",
+      name: nameMap[provider],
       environment: "sandbox",
       active: false,
       payment_methods: [],
-      config: provider === "asaas" ? defaultAsaasConfig : defaultPagarmeConfig,
+      config: configMap[provider],
     });
     setDialogOpen(true);
   };
