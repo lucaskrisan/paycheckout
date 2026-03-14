@@ -172,7 +172,7 @@ function analyzeAndGenerateAlerts(campaigns: any[]): AlertMsg[] {
     const winnerNames = winners.slice(0, 2).map(w => w.name.substring(0, 25)).join(' e ');
     alerts.push({
       priority: 'opportunity',
-      title: `🔥 AÇÃO: Escale agora! Score ${score}/100`,
+      title: `🔥 AntonyAD: Escale agora! Score ${score}/100`,
       body: `ROAS ${globalROAS.toFixed(2)}x | ${totalResults} vendas | Gasto ${fmt(totalSpend)}. FAÇA AGORA: Aumente ${winnerNames ? '"' + winnerNames + '"' : 'winners'} em 20-30%. Leilão barato, aproveite!`,
     });
   } else if (score >= 60) {
