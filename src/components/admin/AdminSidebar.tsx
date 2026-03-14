@@ -77,6 +77,7 @@ const conteudoItems = [
 const analiseItems = [
   { title: "Relatórios", url: "/admin/abandoned", icon: Activity },
   { title: "Métricas", url: "/admin/metrics", icon: TrendingUp },
+  { title: "Financeiro", url: "/admin/financeiro", icon: Wallet },
 ];
 
 // 5. CONFIGURAÇÕES — collapsible, menos frequente
