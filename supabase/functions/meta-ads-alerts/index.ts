@@ -117,7 +117,7 @@ function analyzeAndGenerateAlerts(campaigns: any[]): AlertMsg[] {
   const active = campaigns.filter((c: any) => c.status === 'ACTIVE' && c.insights);
   if (active.length === 0) return [{
     priority: 'info',
-    title: '⏸️ Nenhuma campanha ativa',
+    title: '⏸️ AntonyAD: Nenhuma campanha ativa',
     body: 'Todas as campanhas estão pausadas. Se foi intencional, ok. Se não, ative pelo menos 1 campanha winner.',
   }];
 
