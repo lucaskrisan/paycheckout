@@ -96,6 +96,7 @@ const configItems = [
 const superAdminItems = [
   { title: "Painel Plataforma", url: "/admin/platform", icon: Crown },
   { title: "Billing", url: "/admin/billing", icon: Wallet },
+  { title: "Roadmap", url: "/admin/roadmap", icon: ClipboardList },
   { title: "Fiscalizar", url: "/admin/health", icon: ShieldCheck },
 ];
 
