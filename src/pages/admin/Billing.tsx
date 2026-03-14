@@ -322,6 +322,7 @@ const Billing = () => {
                 <TableRow>
                   <TableHead>Produtor</TableHead>
                   <TableHead>Tier</TableHead>
+                  <TableHead className="text-right">Vendas Mês</TableHead>
                   <TableHead className="text-right">Saldo Devedor</TableHead>
                   <TableHead className="text-right">Limite</TableHead>
                   <TableHead>Status</TableHead>
