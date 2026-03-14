@@ -8,7 +8,7 @@ import {
 import {
   Loader2, Activity, CheckCircle2, AlertTriangle, XCircle,
   TrendingUp, Eye, ShieldCheck, Zap, RefreshCw, BarChart3,
-  History, Camera, TrendingDown, ArrowUp, ArrowDown, Minus,
+  History, Camera, ArrowUp, ArrowDown, Minus,
 } from "lucide-react";
 import { toast } from "sonner";
 
