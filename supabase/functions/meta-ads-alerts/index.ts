@@ -325,9 +325,10 @@ Deno.serve(async (req) => {
         
         // Parallel fetch insights for all campaigns in this account
         const campaignResults = await Promise.allSettled((campaigns.data || []).map(async (c: any) => {
-          const [todayRes, weekRes] = await Promise.all([
+          const [todayRes, weekRes, maxRes] = await Promise.all([
             metaFetch(`/${c.id}/insights`, { fields: insightFields, date_preset: 'today' }).catch(() => ({ data: [] })),
             metaFetch(`/${c.id}/insights`, { fields: insightFields, date_preset: 'last_7d' }).catch(() => ({ data: [] })),
+            metaFetch(`/${c.id}/insights`, { fields: insightFields, date_preset: 'maximum' }).catch(() => ({ data: [] })),
           ]);
           return {
             account_id: accId,
@@ -335,6 +336,7 @@ Deno.serve(async (req) => {
             ...c,
             insights_today: todayRes.data?.[0] || null,
             insights_7d: weekRes.data?.[0] || null,
+            insights_lifetime: maxRes.data?.[0] || null,
           };
         }));
         
