@@ -56,7 +56,7 @@ const Upsell = () => {
     setLoading(true);
     const [{ data: offersData }, { data: productsData }] = await Promise.all([
       supabase.from("upsell_offers").select("*").order("created_at", { ascending: false }),
-      supabase.from("products").select("id, name, price").eq("active", true),
+      supabase.from("products").select("id, name, price").eq("user_id", user!.id).eq("active", true),
     ]);
     setOffers((offersData as any[]) || []);
     setProducts(productsData || []);

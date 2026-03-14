@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import {
   ShieldCheck,
   AlertTriangle,
@@ -68,6 +69,7 @@ const CATEGORY_ORDER: Category[] = [
 ];
 
 const SystemHealth = () => {
+  const { user } = useAuth();
   const [results, setResults] = useState<CheckResult[]>([]);
   const [running, setRunning] = useState(false);
   const [lastRun, setLastRun] = useState<Date | null>(null);
@@ -229,7 +231,7 @@ const SystemHealth = () => {
     // 4. PRODUTOS
     // ═══════════════════════════════════════
     try {
-      const { data: products } = await supabase.from("products").select("id, name, price, active, is_subscription, show_coupon, image_url");
+      const { data: products } = await supabase.from("products").select("id, name, price, active, is_subscription, show_coupon, image_url").eq("user_id", user?.id);
       if (products) {
         const active = products.filter((p) => p.active);
         const inactive = products.filter((p) => !p.active);

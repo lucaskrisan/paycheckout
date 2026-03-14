@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { ShoppingBag, ChevronLeft, ChevronRight, Download, Copy, Check, MessageCircle, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { format, startOfDay, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -28,6 +29,7 @@ interface AbandonedCart {
 const ITEMS_PER_PAGE = 20;
 
 const AbandonedCarts = () => {
+  const { user } = useAuth();
   const [carts, setCarts] = useState<AbandonedCart[]>([]);
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,7 +51,7 @@ const AbandonedCarts = () => {
           .select("*, products(name)")
           .order("created_at", { ascending: false })
           .limit(500),
-        supabase.from("products").select("id, name"),
+        supabase.from("products").select("id, name").eq("user_id", user?.id),
       ]);
       setCarts((cartsRes.data as any) || []);
       setProducts(productsRes.data || []);

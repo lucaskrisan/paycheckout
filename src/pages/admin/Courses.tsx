@@ -75,7 +75,8 @@ const Courses = () => {
   }, []);
 
   const loadProducts = async () => {
-    const { data } = await supabase.from("products").select("id, name").order("name");
+    if (!user) return;
+    const { data } = await supabase.from("products").select("id, name").eq("user_id", user.id).order("name");
     setProducts(data || []);
   };
 

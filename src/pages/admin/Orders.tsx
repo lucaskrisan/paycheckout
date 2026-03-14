@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -95,6 +96,7 @@ const DetailRow = ({ label, value, children }: { label: string; value?: string; 
 );
 
 const Orders = () => {
+  const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -171,7 +173,7 @@ const Orders = () => {
           .from("orders")
           .select("*, customers(name, email, phone, cpf), products(name)")
           .order("created_at", { ascending: false }),
-        supabase.from("products").select("id, name"),
+        supabase.from("products").select("id, name").eq("user_id", user?.id),
       ]);
       setOrders((ordersRes.data as any) || []);
       setProducts(productsRes.data || []);
