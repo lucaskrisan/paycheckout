@@ -85,6 +85,15 @@ const PAYMENT_LABEL: Record<string, string> = {
   boleto: "Boleto",
 };
 
+const DetailRow = ({ label, value, children }: { label: string; value?: string; children?: React.ReactNode }) => (
+  <div className="flex items-start justify-between py-2 border-b border-border/50 last:border-0">
+    <span className="text-sm text-muted-foreground">{label}</span>
+    <span className="text-sm text-foreground font-medium text-right max-w-[200px] break-all">
+      {children || value || "—"}
+    </span>
+  </div>
+);
+
 const Orders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
