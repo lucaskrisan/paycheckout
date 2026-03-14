@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertTriangle, TrendingDown, Trophy, Brain,
-  ThermometerSun, Activity, Target, ShieldAlert, Rocket, Pause, Users, Radio,
+  ThermometerSun, Activity, Target, ShieldAlert, Rocket, Pause, Users,
 } from "lucide-react";
 import type { MetaCampaign } from "@/hooks/useMetaAds";
 import { getResults, getCPA, getROAS, getConversionValue, formatCurrency } from "./MetaInsightsHelpers";
