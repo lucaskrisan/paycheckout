@@ -10,18 +10,35 @@ const Index = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [resolving, setResolving] = useState(false);
+  const [resolved, setResolved] = useState(false);
 
   useEffect(() => {
-    if (loading || !user) return;
+    if (loading) return;
+    if (!user) {
+      setResolving(false);
+      setResolved(false);
+      return;
+    }
+    if (resolved) return;
     let cancelled = false;
     setResolving(true);
     resolveUserDestination()
-      .then((dest) => { if (!cancelled) navigate(dest, { replace: true }); })
-      .catch(() => { if (!cancelled) navigate("/completar-perfil", { replace: true }); });
+      .then((dest) => {
+        if (!cancelled) {
+          setResolved(true);
+          navigate(dest, { replace: true });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setResolved(true);
+          navigate("/completar-perfil", { replace: true });
+        }
+      });
     return () => { cancelled = true; };
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, resolved]);
 
-  if (loading || resolving) {
+  if (loading || (user && resolving && !resolved)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
