@@ -343,7 +343,7 @@ const Billing = () => {
                       <TableCell>
                         <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                           <Button variant="outline" size="sm" className="text-xs h-7"
-                            onClick={() => handleToggleBlock(acc.id, acc.blocked)}>
+                            onClick={() => handleToggleBlock(acc.id, acc.user_id, acc.blocked)}>
                             {acc.blocked ? "Desbloquear" : "Bloquear"}
                           </Button>
                           <Button variant="ghost" size="sm" className="text-xs h-7"
