@@ -1,9 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { Info, TrendingUp, Trophy, Calendar } from "lucide-react";
+import { Info } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { formatCurrency, formatNumber } from "./MetaInsightsHelpers";
+import { formatCurrency } from "./MetaInsightsHelpers";
 
 interface Props {
   spend: number;
