@@ -94,13 +94,24 @@ const Billing = () => {
     const adminUserIds = [...new Set((roles || []).map((r: any) => r.user_id))];
     if (adminUserIds.length === 0) { setAccounts([]); setLoading(false); return; }
 
-    const [{ data: accs }, { data: profiles }] = await Promise.all([
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+
+    const [{ data: accs }, { data: profiles }, { data: monthlyOrders }] = await Promise.all([
       supabase.from("billing_accounts").select("*").in("user_id", adminUserIds),
       supabase.from("profiles").select("id, full_name").in("id", adminUserIds),
+      supabase.from("orders").select("user_id, amount").in("user_id", adminUserIds)
+        .in("status", ["paid", "approved"])
+        .gte("created_at", monthStart.toISOString()),
     ]);
 
     const billingMap = new Map((accs || []).map((a: any) => [a.user_id, a]));
     const profileMap = new Map((profiles || []).map((p: any) => [p.id, p.full_name]));
+    const salesMap = new Map<string, number>();
+    (monthlyOrders || []).forEach((o: any) => {
+      salesMap.set(o.user_id, (salesMap.get(o.user_id) || 0) + Number(o.amount));
+    });
 
     const merged: BillingAccount[] = adminUserIds.map((uid) => {
       const billing = billingMap.get(uid);
