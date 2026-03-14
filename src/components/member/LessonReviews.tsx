@@ -41,6 +41,7 @@ export default function LessonReviews({
       .from("lesson_reviews")
       .select("*")
       .eq("lesson_id", lessonId)
+      .eq("member_access_id", memberAccessId)
       .order("created_at", { ascending: false });
 
     if (data) {
