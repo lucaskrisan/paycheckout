@@ -13,7 +13,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Wallet, ArrowUpRight, ArrowDownLeft, Users, Ban, CheckCircle, Settings2, Save,
+  Wallet, ArrowUpRight, ArrowDownLeft, Users, Ban, CheckCircle, Settings2, Save, TrendingUp,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -37,6 +37,7 @@ interface BillingAccount {
   card_brand: string | null;
   created_at: string;
   full_name?: string;
+  monthly_sales?: number;
 }
 
 interface BillingTransaction {
@@ -93,13 +94,24 @@ const Billing = () => {
     const adminUserIds = [...new Set((roles || []).map((r: any) => r.user_id))];
     if (adminUserIds.length === 0) { setAccounts([]); setLoading(false); return; }
 
-    const [{ data: accs }, { data: profiles }] = await Promise.all([
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+
+    const [{ data: accs }, { data: profiles }, { data: monthlyOrders }] = await Promise.all([
       supabase.from("billing_accounts").select("*").in("user_id", adminUserIds),
       supabase.from("profiles").select("id, full_name").in("id", adminUserIds),
+      supabase.from("orders").select("user_id, amount").in("user_id", adminUserIds)
+        .in("status", ["paid", "approved"])
+        .gte("created_at", monthStart.toISOString()),
     ]);
 
     const billingMap = new Map((accs || []).map((a: any) => [a.user_id, a]));
     const profileMap = new Map((profiles || []).map((p: any) => [p.id, p.full_name]));
+    const salesMap = new Map<string, number>();
+    (monthlyOrders || []).forEach((o: any) => {
+      salesMap.set(o.user_id, (salesMap.get(o.user_id) || 0) + Number(o.amount));
+    });
 
     const merged: BillingAccount[] = adminUserIds.map((uid) => {
       const billing = billingMap.get(uid);
@@ -114,6 +126,7 @@ const Billing = () => {
         card_brand: billing?.card_brand ?? null,
         created_at: billing?.created_at ?? new Date().toISOString(),
         full_name: profileMap.get(uid) || "Sem nome",
+        monthly_sales: salesMap.get(uid) || 0,
       };
     });
 
@@ -194,6 +207,7 @@ const Billing = () => {
   if (!isSuperAdmin) return <Navigate to="/admin" replace />;
 
   const totalOwed = accounts.reduce((s, a) => s + Math.max(a.balance, 0), 0);
+  const totalMonthlySales = accounts.reduce((s, a) => s + (a.monthly_sales || 0), 0);
   const blockedCount = accounts.filter((a) => a.blocked).length;
   const selectedAccount = accounts.find((a) => a.user_id === selectedUserId);
 
@@ -251,7 +265,18 @@ const Billing = () => {
       )}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" /> Vendas do Mês
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-primary">{fmt(totalMonthlySales)}</p>
+            <p className="text-xs text-muted-foreground mt-1">Total aprovado no mês atual</p>
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -260,7 +285,7 @@ const Billing = () => {
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold text-foreground">{fmt(totalOwed)}</p>
-            <p className="text-xs text-muted-foreground mt-1">Taxas acumuladas de todos os produtores</p>
+            <p className="text-xs text-muted-foreground mt-1">Taxas acumuladas</p>
           </CardContent>
         </Card>
         <Card>
@@ -297,6 +322,7 @@ const Billing = () => {
                 <TableRow>
                   <TableHead>Produtor</TableHead>
                   <TableHead>Tier</TableHead>
+                  <TableHead className="text-right">Vendas Mês</TableHead>
                   <TableHead className="text-right">Saldo Devedor</TableHead>
                   <TableHead className="text-right">Limite</TableHead>
                   <TableHead>Status</TableHead>
@@ -324,6 +350,9 @@ const Billing = () => {
                             ))}
                           </SelectContent>
                         </Select>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <span className="font-medium text-primary">{fmt(acc.monthly_sales || 0)}</span>
                       </TableCell>
                       <TableCell className="text-right">
                         <span className={acc.balance > acc.credit_limit ? "text-destructive font-bold" : "font-medium"}>{fmt(acc.balance)}</span>
