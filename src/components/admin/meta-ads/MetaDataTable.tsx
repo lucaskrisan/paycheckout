@@ -132,6 +132,7 @@ export function MetaDataTable({
               <Th right>Cliques</Th>
               <Th right>Alcance</Th>
               <Th right>Frequência</Th>
+              <Th right>Saturação</Th>
               <Th>Ações</Th>
             </TableRow>
           </TableHeader>
@@ -214,6 +215,9 @@ export function MetaDataTable({
                     <TableCell className="text-right text-slate-400">
                       {ins?.frequency ? parseFloat(ins.frequency).toFixed(2).replace(".", ",") : "—"}
                     </TableCell>
+                    <TableCell className="text-right">
+                      <SaturationBadge insights={ins} />
+                    </TableCell>
                     <TableCell>
                       <div className="flex gap-0.5">
                         <Tooltip>
@@ -264,6 +268,7 @@ export function MetaDataTable({
                 <TableCell className="text-right text-slate-400">{formatNumber(totals.reach)}</TableCell>
                 <TableCell />
                 <TableCell />
+                <TableCell />
               </TableRow>
             </TableFooter>
           )}
@@ -288,4 +293,55 @@ function Colored({ value, format }: { value: number; format?: "decimal" }) {
     ? (value !== 0 ? value.toFixed(2) : "0.00")
     : (value !== 0 ? formatCurrency(value) : "R$ 0,00");
   return <TableCell className={`text-right font-semibold ${color}`}>{display}</TableCell>;
+}
+
+function getSaturationScore(ins: MetaInsights | null): { score: number; signals: string[] } {
+  if (!ins) return { score: 0, signals: [] };
+  const signals: string[] = [];
+  let score = 0;
+  const freq = parseFloat(ins.frequency || "0");
+  const ctr = parseFloat(ins.ctr || "0");
+  const cpm = parseFloat(ins.cpm || "0");
+  const spend = parseFloat(ins.spend || "0");
+  const reach = parseInt(ins.reach || "0", 10);
+  const impressions = parseInt(ins.impressions || "0", 10);
+
+  if (freq > 3) { signals.push(`Freq ${freq.toFixed(1)}`); score += 30; }
+  else if (freq > 2) { signals.push(`Freq ${freq.toFixed(1)}`); score += 15; }
+  if (ctr < 0.6 && spend > 10) { signals.push(`CTR ${ctr.toFixed(2)}%`); score += 25; }
+  if (cpm > 70) { signals.push(`CPM alto`); score += 20; }
+  if (reach > 0 && impressions / reach > 4) { signals.push(`${(impressions / reach).toFixed(1)} imp/pessoa`); score += 20; }
+
+  const roas = getROAS(ins);
+  if (roas > 0 && roas < 0.8 && spend > 20) { signals.push(`ROAS ${roas.toFixed(2)}`); score += 25; }
+
+  return { score: Math.min(100, score), signals };
+}
+
+function SaturationBadge({ insights }: { insights: MetaInsights | null }) {
+  const { score, signals } = getSaturationScore(insights);
+  if (score === 0) return <span className="text-slate-600 text-xs">—</span>;
+
+  const color = score >= 70 ? "bg-red-500/15 text-red-400 border-red-500/30"
+    : score >= 50 ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
+    : score >= 25 ? "bg-blue-500/15 text-blue-400 border-blue-500/30"
+    : "bg-slate-500/15 text-slate-400 border-slate-500/30";
+
+  const label = score >= 70 ? "🚨" : score >= 50 ? "⚠️" : score >= 25 ? "👀" : "✓";
+
+  return (
+    <Tooltip>
+      <TooltipTrigger>
+        <Badge variant="outline" className={`text-[10px] ${color} border cursor-help`}>
+          {label} {score}%
+        </Badge>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-[200px]">
+        <p className="text-xs font-semibold mb-1">Saturação: {score}/100</p>
+        {signals.map((s, i) => <p key={i} className="text-[10px] text-slate-400">• {s}</p>)}
+        {score >= 70 && <p className="text-[10px] text-red-400 mt-1 font-medium">Pausar ou trocar público</p>}
+        {score >= 50 && score < 70 && <p className="text-[10px] text-amber-400 mt-1 font-medium">Monitorar 24h</p>}
+      </TooltipContent>
+    </Tooltip>
+  );
 }
