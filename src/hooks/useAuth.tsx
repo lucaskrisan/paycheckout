@@ -7,6 +7,7 @@ interface AuthContextType {
   session: Session | null;
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  profileCompleted: boolean | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
@@ -20,6 +21,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [profileCompleted, setProfileCompleted] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
 
   const checkRoles = async (userId: string) => {
@@ -45,6 +47,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const checkProfileCompleted = async (userId: string) => {
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("profile_completed")
+        .eq("id", userId)
+        .single();
+      setProfileCompleted(data?.profile_completed ?? false);
+    } catch {
+      setProfileCompleted(false);
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
 
@@ -57,12 +72,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (session?.user) {
           setTimeout(async () => {
             if (!mounted) return;
-            await checkRoles(session.user.id);
+            await Promise.all([
+              checkRoles(session.user.id),
+              checkProfileCompleted(session.user.id),
+            ]);
             setLoading(false);
           }, 0);
         } else {
           setIsAdmin(false);
           setIsSuperAdmin(false);
+          setProfileCompleted(null);
           setLoading(false);
         }
       }
@@ -73,7 +92,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        await checkRoles(session.user.id);
+        await Promise.all([
+          checkRoles(session.user.id),
+          checkProfileCompleted(session.user.id),
+        ]);
       }
       setLoading(false);
     });
@@ -106,7 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, isAdmin, isSuperAdmin, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, isAdmin, isSuperAdmin, profileCompleted, loading, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );

@@ -17,14 +17,18 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { signIn, signUp, user, isAdmin, loading: authLoading } = useAuth();
+  const { signIn, signUp, user, isAdmin, profileCompleted, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!authLoading && user) {
-      navigate(isAdmin ? "/admin" : "/aguardando-aprovacao", { replace: true });
+      if (!profileCompleted) {
+        navigate("/completar-perfil", { replace: true });
+      } else {
+        navigate(isAdmin ? "/admin" : "/aguardando-aprovacao", { replace: true });
+      }
     }
-  }, [user, isAdmin, authLoading, navigate]);
+  }, [user, isAdmin, profileCompleted, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
