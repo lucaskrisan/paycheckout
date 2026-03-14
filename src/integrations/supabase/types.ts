@@ -440,6 +440,59 @@ export type Database = {
         }
         Relationships: []
       }
+      emq_snapshots: {
+        Row: {
+          browser_count: number | null
+          created_at: string
+          dedup_rate: number | null
+          dual_count: number | null
+          emq_score: number | null
+          event_name: string
+          id: string
+          pixel_id: string
+          product_id: string
+          server_count: number | null
+          snapshot_date: string
+          vid_coverage: number | null
+        }
+        Insert: {
+          browser_count?: number | null
+          created_at?: string
+          dedup_rate?: number | null
+          dual_count?: number | null
+          emq_score?: number | null
+          event_name: string
+          id?: string
+          pixel_id: string
+          product_id: string
+          server_count?: number | null
+          snapshot_date?: string
+          vid_coverage?: number | null
+        }
+        Update: {
+          browser_count?: number | null
+          created_at?: string
+          dedup_rate?: number | null
+          dual_count?: number | null
+          emq_score?: number | null
+          event_name?: string
+          id?: string
+          pixel_id?: string
+          product_id?: string
+          server_count?: number | null
+          snapshot_date?: string
+          vid_coverage?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emq_snapshots_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       facebook_domains: {
         Row: {
           created_at: string
