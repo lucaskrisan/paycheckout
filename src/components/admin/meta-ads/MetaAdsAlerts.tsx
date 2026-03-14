@@ -121,7 +121,7 @@ function generateAlerts(campaigns: MetaCampaign[]): Alert[] {
     const cpa = getCPA(c.insights);
     const roas = getROAS(c.insights);
     const ctr = parseFloat(c.insights!.ctr || "0");
-    const cpm = parseFloat(c.insights!.cpm || "0");
+    
 
     // Winner detection: ROAS > 2 and has results
     if (roas >= 2 && results >= 2) {
