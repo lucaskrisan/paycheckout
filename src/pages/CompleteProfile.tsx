@@ -70,7 +70,7 @@ const CompleteProfile = () => {
       navigate("/login", { replace: true });
       return;
     }
-    // If profile is already completed, skip this page — use simple local check, no edge function
+    // If profile is already completed, skip this page and let root resolver decide destination
     let cancelled = false;
     const checkProfile = async () => {
       try {
@@ -80,8 +80,7 @@ const CompleteProfile = () => {
           .eq("id", user.id)
           .single();
         if (!cancelled && data?.profile_completed === true) {
-          // Simple redirect — don't call resolveUserDestination to avoid history loops
-          navigate("/admin", { replace: true });
+          navigate("/", { replace: true });
         }
       } catch {
         // stay on page if check fails
@@ -147,7 +146,7 @@ const CompleteProfile = () => {
     await refreshRoles();
 
     toast.success("Perfil completo! Redirecionando...");
-    navigate("/admin", { replace: true });
+    navigate("/", { replace: true });
   };
 
   if (authLoading) {

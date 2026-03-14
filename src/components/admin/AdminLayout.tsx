@@ -61,23 +61,55 @@ function useOneSignalInit(email: string | undefined) {
   }, [email]);
 }
 
-// Component that re-checks roles and redirects non-admin users
-function AdminAccessRedirect({ refreshRoles }: { refreshRoles: () => Promise<void> }) {
+// Component that re-checks roles and redirects non-admin users safely
+function AdminAccessRedirect({
+  refreshRoles,
+  userId,
+}: {
+  refreshRoles: () => Promise<void>;
+  userId: string;
+}) {
   const navigate = useNavigate();
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     const run = async () => {
-      await refreshRoles();
-      if (cancelled) return;
-      setChecked(true);
-      // Simple redirect — avoid calling resolveUserDestination to prevent history loops
-      navigate("/completar-perfil", { replace: true });
+      try {
+        await refreshRoles();
+        if (cancelled) return;
+
+        const [{ data: roles }, { data: profile }] = await Promise.all([
+          supabase.from("user_roles").select("role").eq("user_id", userId),
+          supabase.from("profiles").select("profile_completed").eq("id", userId).maybeSingle(),
+        ]);
+
+        if (cancelled) return;
+
+        const roleNames = (roles ?? []).map((r: any) => r.role);
+        const hasAdminRole = roleNames.includes("admin") || roleNames.includes("super_admin");
+
+        setChecked(true);
+
+        // Route through root resolver to avoid stale role state trapping users in onboarding
+        if (hasAdminRole) {
+          navigate("/", { replace: true });
+          return;
+        }
+
+        navigate(profile?.profile_completed ? "/minha-conta" : "/completar-perfil", { replace: true });
+      } catch {
+        if (cancelled) return;
+        setChecked(true);
+        navigate("/", { replace: true });
+      }
     };
+
     run();
-    return () => { cancelled = true; };
-  }, [refreshRoles, navigate]);
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshRoles, navigate, userId]);
 
   if (checked) return null;
 
@@ -219,7 +251,7 @@ export default function AdminLayout() {
   if (!user) return <Navigate to="/login" replace />;
   if (!isAdmin) {
     // Re-check roles and redirect — never show "access denied" to users
-    return <AdminAccessRedirect refreshRoles={refreshRoles} />;
+    return <AdminAccessRedirect refreshRoles={refreshRoles} userId={user.id} />;
   }
 
   return (
