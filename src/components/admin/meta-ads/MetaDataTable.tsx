@@ -215,6 +215,9 @@ export function MetaDataTable({
                     <TableCell className="text-right text-slate-400">
                       {ins?.frequency ? parseFloat(ins.frequency).toFixed(2).replace(".", ",") : "—"}
                     </TableCell>
+                    <TableCell className="text-right">
+                      <SaturationBadge insights={ins} />
+                    </TableCell>
                     <TableCell>
                       <div className="flex gap-0.5">
                         <Tooltip>
