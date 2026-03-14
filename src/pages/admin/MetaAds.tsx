@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/hooks/useAuth";
+import { Navigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LayoutGrid, Megaphone, Layers, FileImage, BarChart3, Table2, Bell } from "lucide-react";
 import { useMetaAds } from "@/hooks/useMetaAds";
