@@ -301,6 +301,9 @@ export function MetaAdsAlerts({ campaigns, loading }: Props) {
         </CardContent>
       </Card>
 
+      {/* Campaign Lifecycle & Scaling */}
+      <MetaCampaignLifecycle campaigns={campaigns} healthScore={health.score} />
+
       {/* Alerts list */}
       {alerts.length === 0 ? (
         <Card className="bg-[hsl(222,30%,14%)] border-slate-700/50">
