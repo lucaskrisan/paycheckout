@@ -253,36 +253,6 @@ function analyzeAndGenerateAlerts(campaigns: any[]): AlertMsg[] {
       body: `Faturou ${fmt(totalRevenue)} | Gastou ${fmt(totalSpend)} | ROAS ${globalROAS.toFixed(2)}x | ${totalResults} vendas. ${profit > 0 ? 'Amanhã repita a estratégia e escale winners.' : 'Amanhã reduza 20% do orçamento geral e revise criativos dos losers.'}`,
     });
   }
-      });
-    }
-
-    // Saturated
-    if (freq > 3 || (ctr < 0.5 && spend > 30)) {
-      alerts.push({
-        priority: 'warning',
-        title: `💀 Saturando: ${c.name.substring(0, 40)}`,
-        body: `Freq ${freq.toFixed(1)} | CTR ${ctr.toFixed(2)}%. Público cansou. Teste novos criativos.`,
-      });
-    }
-
-    // Spending without results
-    if (spend > 50 && results === 0) {
-      alerts.push({
-        priority: 'critical',
-        title: `🔴 Sem vendas: ${c.name.substring(0, 40)}`,
-        body: `Já gastou ${fmt(spend)} sem conversão. Revise criativo e página.`,
-      });
-    }
-
-    // Ready to scale
-    if (roas >= 1.5 && results >= 5 && score >= 60) {
-      alerts.push({
-        priority: 'opportunity',
-        title: `🚀 Escalar: ${c.name.substring(0, 40)}`,
-        body: `ROAS ${roas.toFixed(2)}x estável com ${results} vendas. ${score >= 80 ? 'Dia excelente — aumente 30%!' : 'Aumente 20% e monitore 48h.'}`,
-      });
-    }
-  }
 
   return alerts;
 }
