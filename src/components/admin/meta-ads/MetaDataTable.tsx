@@ -268,6 +268,7 @@ export function MetaDataTable({
                 <TableCell className="text-right text-slate-400">{formatNumber(totals.reach)}</TableCell>
                 <TableCell />
                 <TableCell />
+                <TableCell />
               </TableRow>
             </TableFooter>
           )}
