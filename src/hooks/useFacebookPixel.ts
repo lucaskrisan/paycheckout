@@ -75,17 +75,22 @@ function ensureFbp(): string {
 function hydrateClickParams() {
   const params = new URLSearchParams(window.location.search);
 
-  // fbclid → _fbc cookie
+  // fbc passed cross-domain (already formatted fb.1.xxx.fbclid) → _fbc cookie
+  const fbcParam = params.get("fbc");
+  if (fbcParam && fbcParam.startsWith("fb.") && !getCookie("_fbc")) {
+    setCookie("_fbc", fbcParam, 90);
+  }
+
+  // fbclid → _fbc cookie (fallback if fbc param wasn't passed)
   const fbclid = params.get("fbclid");
   if (fbclid && !getCookie("_fbc")) {
-    // _fbc format: fb.1.<creation_time>.<fbclid>
     const fbc = `fb.1.${Date.now()}.${fbclid}`;
     setCookie("_fbc", fbc, 90);
   }
 
   // fbp passed cross-domain → _fbp cookie
   const fbpParam = params.get("fbp");
-  if (fbpParam && !getCookie("_fbp")) {
+  if (fbpParam && fbpParam.startsWith("fb.") && !getCookie("_fbp")) {
     setCookie("_fbp", fbpParam, 390);
   }
 }
