@@ -112,8 +112,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
-  const signUp = async (email: string, password: string, fullName: string) => {
-    const { error } = await supabase.auth.signUp({
+  const signUp = async (email: string, password: string, fullName: string, extra?: { phone?: string; cpf?: string }) => {
+    const { error, data } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -122,6 +122,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     });
     if (error) throw error;
+
+    // If phone/cpf provided, update profile immediately
+    if (data?.user?.id && (extra?.phone || extra?.cpf)) {
+      const updates: Record<string, any> = {};
+      if (extra.phone) updates.phone = extra.phone.replace(/\D/g, "");
+      if (extra.cpf) updates.cpf = extra.cpf.replace(/\D/g, "");
+      updates.profile_completed = true;
+      await supabase.from("profiles").update(updates).eq("id", data.user.id);
+    }
   };
 
   const signOut = async () => {
