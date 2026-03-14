@@ -12,6 +12,7 @@ import TrackingScriptGenerator from "@/components/admin/TrackingScriptGenerator"
 import UtmAttributionTable from "@/components/admin/UtmAttributionTable";
 import PixelEventsDashboard from "@/components/admin/PixelEventsDashboard";
 import TrackingFullAudit from "@/components/admin/TrackingFullAudit";
+import MetaEmqPanel from "@/components/admin/MetaEmqPanel";
 import {
   Select,
   SelectContent,
