@@ -90,6 +90,7 @@ const App = () => (
               <Route path="my-account" element={<MyAccount />} />
               <Route path="metrics" element={<Metrics />} />
               <Route path="upsell" element={<Upsell />} />
+              <Route path="roadmap" element={<Roadmap />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
