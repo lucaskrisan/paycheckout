@@ -240,7 +240,7 @@ export function MetaAdsAlerts({ campaigns, loading }: Props) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-slate-500 text-sm">Analisando campanhas...</p>
+        <p className="text-slate-500 text-sm">🤖 AntonyAD analisando suas campanhas...</p>
       </div>
     );
   }
