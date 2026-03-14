@@ -79,6 +79,78 @@ export type Database = {
           },
         ]
       }
+      billing_accounts: {
+        Row: {
+          balance: number
+          blocked: boolean
+          card_brand: string | null
+          card_last4: string | null
+          card_token: string | null
+          created_at: string
+          credit_limit: number
+          credit_tier: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          blocked?: boolean
+          card_brand?: string | null
+          card_last4?: string | null
+          card_token?: string | null
+          created_at?: string
+          credit_limit?: number
+          credit_tier?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          blocked?: boolean
+          card_brand?: string | null
+          card_last4?: string | null
+          card_token?: string | null
+          created_at?: string
+          credit_limit?: number
+          credit_tier?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      billing_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          order_id: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_id?: string | null
+          type?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_id?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       checkout_builder_configs: {
         Row: {
           created_at: string
