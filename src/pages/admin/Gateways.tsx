@@ -20,6 +20,8 @@ export interface GatewayConfig {
 const providerLabels: Record<string, string> = {
   asaas: "Asaas",
   pagarme: "Pagar.me",
+  mercadopago: "Mercado Pago",
+  stripe: "Stripe",
 };
 
 const Gateways = () => {
