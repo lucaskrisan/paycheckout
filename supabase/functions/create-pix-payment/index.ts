@@ -141,6 +141,21 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Check if producer is blocked (billing limit exceeded)
+    if (productOwnerId) {
+      const { data: billingAccount } = await supabaseAdmin
+        .from('billing_accounts')
+        .select('blocked')
+        .eq('user_id', productOwnerId)
+        .maybeSingle();
+      if (billingAccount?.blocked) {
+        return new Response(
+          JSON.stringify({ error: 'Este checkout está temporariamente indisponível. O produtor precisa regularizar sua conta.' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     // Upsert customer
     const { data: existingCustomer } = await supabaseAdmin
       .from('customers')
