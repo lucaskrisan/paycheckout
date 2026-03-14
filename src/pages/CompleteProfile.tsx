@@ -67,13 +67,14 @@ const validateCpf = (cpf: string) => {
 };
 
 const CompleteProfile = () => {
-  const { user, loading: authLoading, refreshRoles } = useAuth();
+  const { user, loading: authLoading, refreshRoles, signOut } = useAuth();
   const navigate = useNavigate();
   const [cpf, setCpf] = useState("");
   const [phone, setPhone] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [saving, setSaving] = useState(false);
   const [cpfError, setCpfError] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
