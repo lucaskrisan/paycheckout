@@ -256,6 +256,8 @@ export function MetaAdsAlerts({ campaigns, loading }: Props) {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-bold text-slate-500 tracking-wider uppercase">AntonyAD</span>
+                <span className="text-slate-700">•</span>
                 <h3 className="text-lg font-bold text-slate-100">{health.label}</h3>
                 <Badge variant="outline" className={`text-xs ${scoreBgColors[health.color]}`}>
                   Score: {health.score}/100
