@@ -68,6 +68,7 @@ const Checkout = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [producerBlocked, setProducerBlocked] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pixData, setPixData] = useState<{ qrCodeUrl?: string; pixCode?: string; orderId?: string } | null>(null);
   const [pixModalOpen, setPixModalOpen] = useState(false);
