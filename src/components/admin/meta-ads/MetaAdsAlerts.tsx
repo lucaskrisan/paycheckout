@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import type { MetaCampaign } from "@/hooks/useMetaAds";
 import { getResults, getCPA, getROAS, getConversionValue, formatCurrency } from "./MetaInsightsHelpers";
+import { MetaCampaignLifecycle } from "./MetaCampaignLifecycle";
 
 interface Props {
   campaigns: MetaCampaign[];
