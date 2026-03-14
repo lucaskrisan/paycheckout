@@ -110,6 +110,7 @@ export default function MetaAds() {
             roas={globalROAS}
           />
           <MetaAdsFunnel />
+          <MetaBudgetCalculator currentCPA={summary.results > 0 ? summary.spend / summary.results : undefined} />
         </TabsContent>
 
 
