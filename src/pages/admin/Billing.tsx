@@ -265,7 +265,18 @@ const Billing = () => {
       )}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" /> Vendas do Mês
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-primary">{fmt(totalMonthlySales)}</p>
+            <p className="text-xs text-muted-foreground mt-1">Total aprovado no mês atual</p>
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -274,7 +285,7 @@ const Billing = () => {
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold text-foreground">{fmt(totalOwed)}</p>
-            <p className="text-xs text-muted-foreground mt-1">Taxas acumuladas de todos os produtores</p>
+            <p className="text-xs text-muted-foreground mt-1">Taxas acumuladas</p>
           </CardContent>
         </Card>
         <Card>
