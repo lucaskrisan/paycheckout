@@ -289,6 +289,7 @@ const ProductEdit = () => {
         });
       loadPixels();
       loadOrderBumps();
+      loadUpsellOffers();
       loadCheckouts();
     }
   }, [productId]);
