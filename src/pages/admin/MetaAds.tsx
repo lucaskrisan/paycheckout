@@ -28,24 +28,24 @@ export default function MetaAds() {
   const [mainTab, setMainTab] = useState("resumo");
   const [dataTab, setDataTab] = useState("campaigns");
 
+  useEffect(() => { if (isSuperAdmin) fetchAccounts(); }, [isSuperAdmin]);
+
+  useEffect(() => {
+    if (!isSuperAdmin || selectedAccounts.length === 0) return;
+    fetchCampaigns();
+    fetchAccountInsights();
+  }, [isSuperAdmin, selectedAccounts, datePreset, customRange]);
+
+  useEffect(() => {
+    if (!isSuperAdmin || selectedAccounts.length === 0 || mainTab !== "campanhas") return;
+    if (dataTab === "adsets") fetchAdSets();
+    else if (dataTab === "ads") fetchAds();
+  }, [isSuperAdmin, selectedAccounts, dataTab, mainTab, datePreset, customRange]);
+
   // Block access for non-super_admin users (after all hooks)
   if (!isSuperAdmin) {
     return <Navigate to="/admin" replace />;
   }
-
-  useEffect(() => { fetchAccounts(); }, []);
-
-  useEffect(() => {
-    if (selectedAccounts.length === 0) return;
-    fetchCampaigns();
-    fetchAccountInsights();
-  }, [selectedAccounts, datePreset, customRange]);
-
-  useEffect(() => {
-    if (selectedAccounts.length === 0 || mainTab !== "campanhas") return;
-    if (dataTab === "adsets") fetchAdSets();
-    else if (dataTab === "ads") fetchAds();
-  }, [selectedAccounts, dataTab, mainTab, datePreset, customRange]);
 
   const handleRefresh = () => {
     fetchCampaigns();
