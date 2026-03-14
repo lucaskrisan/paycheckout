@@ -177,13 +177,19 @@ const Orders = () => {
 
   const clearFilters = () => {
     setFilterPeriod("all");
+    setFilterCurrency("all");
+    setFilterType("all");
     setFilterProduct("all");
+    setFilterOffer("all");
+    setFilterAffiliate("");
+    setFilterUtmParams("");
     setFilterMethods(new Set());
     setFilterStatuses(new Set());
+    setFilterSubscriptions(new Set());
     setSearch("");
   };
 
-  const hasActiveFilters = filterPeriod !== "all" || filterProduct !== "all" || filterMethods.size > 0 || filterStatuses.size > 0;
+  const hasActiveFilters = filterPeriod !== "all" || filterCurrency !== "all" || filterType !== "all" || filterProduct !== "all" || filterOffer !== "all" || filterAffiliate !== "" || filterUtmParams !== "" || filterMethods.size > 0 || filterStatuses.size > 0 || filterSubscriptions.size > 0;
 
   const filtered = useMemo(() => {
     let result = orders;
