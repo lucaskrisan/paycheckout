@@ -8,6 +8,7 @@ import {
 import {
   Loader2, Activity, CheckCircle2, AlertTriangle, XCircle,
   TrendingUp, Eye, ShieldCheck, Zap, RefreshCw, BarChart3,
+  History, Camera, TrendingDown, ArrowUp, ArrowDown, Minus,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -38,6 +39,16 @@ interface EmqData {
     events: EventEmq[];
     overall: { total_events: number; vid_coverage: number };
   };
+}
+
+interface EmqSnapshot {
+  snapshot_date: string;
+  event_name: string;
+  dedup_rate: number;
+  vid_coverage: number;
+  browser_count: number;
+  server_count: number;
+  dual_count: number;
 }
 
 const EVENT_LABELS: Record<string, string> = {
@@ -72,10 +83,20 @@ function dedupIcon(rate: number) {
   return <XCircle className="w-3 h-3 text-red-400" />;
 }
 
+function trendArrow(current: number, previous: number) {
+  const diff = current - previous;
+  if (diff > 2) return <ArrowUp className="w-3 h-3 text-emerald-400" />;
+  if (diff < -2) return <ArrowDown className="w-3 h-3 text-red-400" />;
+  return <Minus className="w-3 h-3 text-slate-500" />;
+}
+
 export default function MetaEmqPanel({ products }: Props) {
   const [selectedProduct, setSelectedProduct] = useState(products[0]?.id || "");
   const [loading, setLoading] = useState(false);
+  const [snapshotLoading, setSnapshotLoading] = useState(false);
   const [data, setData] = useState<EmqData | null>(null);
+  const [history, setHistory] = useState<EmqSnapshot[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   const fetchEmq = async () => {
     if (!selectedProduct) { toast.error("Selecione um produto"); return; }
@@ -92,10 +113,42 @@ export default function MetaEmqPanel({ products }: Props) {
 
       setData(result);
       toast.success("Dados de EMQ carregados!");
+
+      // Also load history
+      loadHistory();
     } catch (err: any) {
       toast.error(err.message || "Erro ao carregar EMQ");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadHistory = async () => {
+    if (!selectedProduct) return;
+    const { data: snapshots } = await supabase
+      .from('emq_snapshots')
+      .select('snapshot_date, event_name, dedup_rate, vid_coverage, browser_count, server_count, dual_count')
+      .eq('product_id', selectedProduct)
+      .order('snapshot_date', { ascending: false })
+      .limit(100);
+
+    if (snapshots) setHistory(snapshots as EmqSnapshot[]);
+  };
+
+  const takeSnapshot = async () => {
+    if (!selectedProduct) return;
+    setSnapshotLoading(true);
+    try {
+      const { data: result, error } = await supabase.functions.invoke("meta-emq-monitor", {
+        body: { product_id: selectedProduct },
+      });
+      if (error) throw error;
+      toast.success(`Snapshot salvo! ${result?.snapshots || 0} registros capturados.`);
+      loadHistory();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao salvar snapshot");
+    } finally {
+      setSnapshotLoading(false);
     }
   };
 
@@ -112,6 +165,23 @@ export default function MetaEmqPanel({ products }: Props) {
     ? Math.round(sortedInternalEvents.reduce((sum, e) => sum + e.dedup_rate, 0) / sortedInternalEvents.length)
     : 0;
 
+  // Group history by date
+  const historyByDate = history.reduce<Record<string, EmqSnapshot[]>>((acc, s) => {
+    if (!acc[s.snapshot_date]) acc[s.snapshot_date] = [];
+    acc[s.snapshot_date].push(s);
+    return acc;
+  }, {});
+  const sortedDates = Object.keys(historyByDate).sort((a, b) => b.localeCompare(a));
+
+  // Get trend data (compare latest 2 dates)
+  const getTrend = (eventName: string): { current: number; previous: number } | null => {
+    if (sortedDates.length < 2) return null;
+    const current = historyByDate[sortedDates[0]]?.find(s => s.event_name === eventName);
+    const previous = historyByDate[sortedDates[1]]?.find(s => s.event_name === eventName);
+    if (!current || !previous) return null;
+    return { current: current.dedup_rate, previous: previous.dedup_rate };
+  };
+
   return (
     <div className="rounded-lg bg-slate-800/50 border border-slate-700/30 overflow-hidden">
       <div className="px-4 py-3 border-b border-slate-700/30 flex items-center gap-2.5">
@@ -127,8 +197,8 @@ export default function MetaEmqPanel({ products }: Props) {
           <p className="text-xs text-slate-500">Nenhum produto com pixel configurado.</p>
         ) : (
           <>
-            <div className="flex items-end gap-3">
-              <div className="flex-1 space-y-1">
+            <div className="flex items-end gap-3 flex-wrap">
+              <div className="flex-1 min-w-[160px] space-y-1">
                 <label className="text-xs font-medium text-slate-400">Produto</label>
                 <Select value={selectedProduct} onValueChange={setSelectedProduct}>
                   <SelectTrigger className="bg-slate-800/60 border-slate-700/50 text-slate-300 text-xs">
@@ -139,10 +209,18 @@ export default function MetaEmqPanel({ products }: Props) {
                   </SelectContent>
                 </Select>
               </div>
-              <Button onClick={fetchEmq} disabled={loading} size="sm" className="gap-1.5 text-xs">
-                {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : data ? <RefreshCw className="w-3.5 h-3.5" /> : <TrendingUp className="w-3.5 h-3.5" />}
-                {loading ? "Carregando..." : data ? "Atualizar" : "Consultar EMQ"}
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={fetchEmq} disabled={loading} size="sm" className="gap-1.5 text-xs">
+                  {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : data ? <RefreshCw className="w-3.5 h-3.5" /> : <TrendingUp className="w-3.5 h-3.5" />}
+                  {loading ? "Carregando..." : data ? "Atualizar" : "Consultar EMQ"}
+                </Button>
+                {data && (
+                  <Button onClick={takeSnapshot} disabled={snapshotLoading} size="sm" variant="outline" className="gap-1.5 text-xs border-slate-700/50 text-slate-400 hover:text-slate-200">
+                    {snapshotLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+                    Snapshot
+                  </Button>
+                )}
+              </div>
             </div>
 
             {data && (
@@ -193,7 +271,6 @@ export default function MetaEmqPanel({ products }: Props) {
                       </div>
                     ) : (
                       <>
-                        {/* Pixel settings */}
                         {pixel.settings && (
                           <div className="px-3 py-2 border-b border-slate-700/10 flex flex-wrap gap-2">
                             {Object.entries(pixel.settings).map(([key, val]) => (
@@ -204,7 +281,6 @@ export default function MetaEmqPanel({ products }: Props) {
                           </div>
                         )}
 
-                        {/* EMQ scores per event */}
                         {pixel.events.length > 0 ? (
                           <div className="divide-y divide-slate-700/15">
                             {pixel.events
@@ -259,33 +335,92 @@ export default function MetaEmqPanel({ products }: Props) {
                             <th className="px-3 py-2 text-center text-slate-500 font-medium">DUAL ✓</th>
                             <th className="px-3 py-2 text-center text-slate-500 font-medium">Dedup</th>
                             <th className="px-3 py-2 text-center text-slate-500 font-medium">VID %</th>
+                            <th className="px-3 py-2 text-center text-slate-500 font-medium">Trend</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-700/10">
-                          {sortedInternalEvents.map((ev) => (
-                            <tr key={ev.event_name}>
-                              <td className="px-3 py-2 text-slate-300 font-medium">{EVENT_LABELS[ev.event_name] || ev.event_name}</td>
-                              <td className="px-3 py-2 text-center text-slate-400 font-mono">{ev.browser_count}</td>
-                              <td className="px-3 py-2 text-center text-slate-400 font-mono">{ev.server_count}</td>
-                              <td className="px-3 py-2 text-center text-emerald-400 font-mono font-bold">{ev.dual_count}</td>
-                              <td className="px-3 py-2 text-center">
-                                <span className="inline-flex items-center gap-1">
-                                  {dedupIcon(ev.dedup_rate)}
-                                  <span className={`font-mono font-bold ${ev.dedup_rate >= 90 ? 'text-emerald-400' : ev.dedup_rate >= 60 ? 'text-amber-400' : 'text-red-400'}`}>
-                                    {ev.dedup_rate}%
+                          {sortedInternalEvents.map((ev) => {
+                            const trend = getTrend(ev.event_name);
+                            return (
+                              <tr key={ev.event_name}>
+                                <td className="px-3 py-2 text-slate-300 font-medium">{EVENT_LABELS[ev.event_name] || ev.event_name}</td>
+                                <td className="px-3 py-2 text-center text-slate-400 font-mono">{ev.browser_count}</td>
+                                <td className="px-3 py-2 text-center text-slate-400 font-mono">{ev.server_count}</td>
+                                <td className="px-3 py-2 text-center text-emerald-400 font-mono font-bold">{ev.dual_count}</td>
+                                <td className="px-3 py-2 text-center">
+                                  <span className="inline-flex items-center gap-1">
+                                    {dedupIcon(ev.dedup_rate)}
+                                    <span className={`font-mono font-bold ${ev.dedup_rate >= 90 ? 'text-emerald-400' : ev.dedup_rate >= 60 ? 'text-amber-400' : 'text-red-400'}`}>
+                                      {ev.dedup_rate}%
+                                    </span>
                                   </span>
-                                </span>
-                              </td>
-                              <td className="px-3 py-2 text-center">
-                                <span className={`font-mono ${ev.vid_coverage >= 95 ? 'text-emerald-400' : 'text-amber-400'}`}>
-                                  {ev.vid_coverage}%
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  <span className={`font-mono ${ev.vid_coverage >= 95 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                                    {ev.vid_coverage}%
+                                  </span>
+                                </td>
+                                <td className="px-3 py-2 text-center">
+                                  {trend ? trendArrow(trend.current, trend.previous) : <Minus className="w-3 h-3 text-slate-600 mx-auto" />}
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
+                  </div>
+                )}
+
+                {/* ── History Toggle ── */}
+                {history.length > 0 && (
+                  <div className="rounded-md bg-slate-900/50 border border-slate-700/20 overflow-hidden">
+                    <button
+                      onClick={() => setShowHistory(!showHistory)}
+                      className="w-full px-3 py-2 border-b border-slate-700/20 flex items-center gap-2 hover:bg-slate-800/50 transition-colors"
+                    >
+                      <History className="w-3.5 h-3.5 text-cyan-400" />
+                      <span className="text-xs font-medium text-slate-300">Histórico de Snapshots ({sortedDates.length} dias)</span>
+                      <span className="text-[10px] text-slate-500 ml-auto">{showHistory ? '▲ Fechar' : '▼ Expandir'}</span>
+                    </button>
+
+                    {showHistory && (
+                      <div className="max-h-[400px] overflow-y-auto">
+                        {sortedDates.map((date) => {
+                          const dateEvents = historyByDate[date]
+                            .sort((a, b) => {
+                              const aIdx = FUNNEL_ORDER.indexOf(a.event_name);
+                              const bIdx = FUNNEL_ORDER.indexOf(b.event_name);
+                              return (aIdx === -1 ? 99 : aIdx) - (bIdx === -1 ? 99 : bIdx);
+                            });
+
+                          const avgDedup = dateEvents.length > 0
+                            ? Math.round(dateEvents.reduce((s, e) => s + e.dedup_rate, 0) / dateEvents.length)
+                            : 0;
+
+                          return (
+                            <div key={date} className="border-b border-slate-700/10">
+                              <div className="px-3 py-1.5 bg-slate-800/30 flex items-center justify-between">
+                                <span className="text-[10px] font-mono text-slate-400">{date}</span>
+                                <Badge variant="outline" className={`text-[9px] ${avgDedup >= 90 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : avgDedup >= 60 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
+                                  {avgDedup}% dedup
+                                </Badge>
+                              </div>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1 p-2">
+                                {dateEvents.map((ev) => (
+                                  <div key={ev.event_name} className="flex items-center justify-between px-2 py-1 rounded bg-slate-800/30">
+                                    <span className="text-[9px] text-slate-400 truncate">{EVENT_LABELS[ev.event_name] || ev.event_name}</span>
+                                    <span className={`text-[10px] font-mono font-bold ml-1 ${ev.dedup_rate >= 90 ? 'text-emerald-400' : ev.dedup_rate >= 60 ? 'text-amber-400' : 'text-red-400'}`}>
+                                      {ev.dedup_rate}%
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
               </>
