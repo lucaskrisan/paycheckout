@@ -3,22 +3,19 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { resolveUserDestination } from "@/lib/resolveUserDestination";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import {
   ShoppingCart,
   GraduationCap,
   User,
   LogOut,
   BookOpen,
-  CreditCard,
   Loader2,
   Lock,
-  ExternalLink,
   LayoutDashboard,
 } from "lucide-react";
 import { toast } from "sonner";
