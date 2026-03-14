@@ -87,7 +87,7 @@ const Gateways = () => {
         <h1 className="font-display text-2xl font-bold text-foreground">Gateways de Pagamento</h1>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="border-dashed border-2 flex flex-col items-center justify-center p-8 cursor-pointer hover:border-primary/50 transition-colors" onClick={() => handleNew("asaas")}>
           <Plus className="w-8 h-8 text-muted-foreground mb-2" />
           <p className="font-semibold text-foreground">Adicionar Asaas</p>
@@ -97,6 +97,16 @@ const Gateways = () => {
           <Plus className="w-8 h-8 text-muted-foreground mb-2" />
           <p className="font-semibold text-foreground">Adicionar Pagar.me</p>
           <p className="text-xs text-muted-foreground">PIX e Cartão de Crédito</p>
+        </Card>
+        <Card className="border-dashed border-2 flex flex-col items-center justify-center p-8 cursor-pointer hover:border-primary/50 transition-colors" onClick={() => handleNew("mercadopago")}>
+          <Plus className="w-8 h-8 text-muted-foreground mb-2" />
+          <p className="font-semibold text-foreground">Adicionar Mercado Pago</p>
+          <p className="text-xs text-muted-foreground">PIX e Cartão de Crédito</p>
+        </Card>
+        <Card className="border-dashed border-2 flex flex-col items-center justify-center p-8 cursor-pointer hover:border-primary/50 transition-colors" onClick={() => handleNew("stripe")}>
+          <Plus className="w-8 h-8 text-muted-foreground mb-2" />
+          <p className="font-semibold text-foreground">Adicionar Stripe</p>
+          <p className="text-xs text-muted-foreground">Cartão Internacional + PIX</p>
         </Card>
       </div>
 
