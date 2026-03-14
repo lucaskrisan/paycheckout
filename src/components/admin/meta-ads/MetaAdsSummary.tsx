@@ -10,6 +10,7 @@ interface Props {
   conversionValue: number;
   results: number;
   roas: number;
+  selectedAccounts?: string[];
 }
 
 
@@ -29,7 +30,7 @@ function extractRevenue(insights: any): number {
   return p ? parseFloat(p.value) : 0;
 }
 
-export function MetaAdsSummary({ spend, conversionValue, results, roas }: Props) {
+export function MetaAdsSummary({ spend, conversionValue, results, roas, selectedAccounts }: Props) {
   const [orderMetrics, setOrderMetrics] = useState({
     pendingAmount: 0,
     chargebackAmount: 0,
@@ -63,7 +64,7 @@ export function MetaAdsSummary({ spend, conversionValue, results, roas }: Props)
     setLoadingLifetime(true);
     try {
       const { data, error } = await supabase.functions.invoke("meta-ads-alerts", {
-        body: { action: "full_report" },
+        body: { action: "full_report", account_ids: selectedAccounts || [] },
       });
       if (error || !data?.campaigns) return;
 
@@ -114,7 +115,7 @@ export function MetaAdsSummary({ spend, conversionValue, results, roas }: Props)
     } finally {
       setLoadingLifetime(false);
     }
-  }, []);
+  }, [selectedAccounts]);
 
   useEffect(() => {
     fetchOrderMetrics();

@@ -108,6 +108,7 @@ export default function MetaAds() {
             conversionValue={summary.convValue}
             results={summary.results}
             roas={globalROAS}
+            selectedAccounts={selectedAccounts}
           />
           <MetaAdsFunnel />
           <MetaBudgetCalculator currentCPA={summary.results > 0 ? summary.spend / summary.results : undefined} />
