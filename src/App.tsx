@@ -41,6 +41,7 @@ import WhatsApp from "./pages/admin/WhatsApp";
 import Communications from "./pages/admin/Communications";
 import MyAccount from "./pages/admin/MyAccount";
 import Metrics from "./pages/admin/Metrics";
+import ProducerBilling from "./pages/admin/ProducerBilling";
 import NotFound from "./pages/NotFound";
 import PendingApproval from "./pages/PendingApproval";
 import CompleteProfile from "./pages/CompleteProfile";
