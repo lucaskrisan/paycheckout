@@ -1,20 +1,65 @@
+const downloadManualAsHTML = () => {
+  const el = document.getElementById("manual-content");
+  if (!el) return;
+  const textContent = el.innerText;
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manual Técnico Completo — PayCheckout</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; line-height: 1.7; padding: 40px 20px; }
+  .container { max-width: 900px; margin: 0 auto; background: #1e293b; border-radius: 16px; padding: 48px; border: 1px solid #334155; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+  h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; color: #f8fafc; }
+  .meta { font-size: 13px; color: #94a3b8; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid #334155; }
+  pre { white-space: pre-wrap; word-wrap: break-word; font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; line-height: 1.8; color: #cbd5e1; }
+  @media print { body { background: #fff; color: #1e293b; } .container { border: none; box-shadow: none; background: #fff; } pre { color: #334155; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Manual Técnico Completo — PayCheckout</h1>
+  <p class="meta">Gerado em ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR")} | Documento de uso interno</p>
+  <pre>${textContent.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+</div>
+</body>
+</html>`;
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `Manual_Tecnico_PayCheckout_${new Date().toISOString().slice(0,10)}.html`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
 const TechnicalManual = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-8 text-foreground">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-3xl font-bold">Manual Técnico Completo — PayCheckout</h1>
-        <button
-          onClick={() => {
-            const el = document.getElementById("manual-content");
-            if (el) {
-              navigator.clipboard.writeText(el.innerText);
-              alert("Copiado para a área de transferência!");
-            }
-          }}
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90"
-        >
-          Copiar tudo
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              const el = document.getElementById("manual-content");
+              if (el) {
+                navigator.clipboard.writeText(el.innerText);
+                alert("Copiado para a área de transferência!");
+              }
+            }}
+            className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium hover:opacity-90"
+          >
+            Copiar tudo
+          </button>
+          <button
+            onClick={downloadManualAsHTML}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90"
+          >
+            ⬇ Baixar HTML
+          </button>
+        </div>
       </div>
 
       <div id="manual-content" className="prose prose-sm max-w-none dark:prose-invert space-y-6 bg-card p-8 rounded-2xl border border-border">
