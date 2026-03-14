@@ -62,7 +62,7 @@ function useOneSignalInit(email: string | undefined) {
 }
 
 export default function AdminLayout() {
-  const { user, isAdmin, loading, signOut } = useAuth();
+  const { user, isAdmin, loading, signOut, refreshRoles } = useAuth();
   const { isDark, toggle: toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [totalRevenue, setTotalRevenue] = useState(0);
