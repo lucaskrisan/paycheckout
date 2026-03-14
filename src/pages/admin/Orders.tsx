@@ -47,17 +47,35 @@ const VARIANT_CLASSES: Record<string, string> = {
 
 const PAYMENT_METHODS = [
   { value: "credit_card", label: "Cartão de crédito" },
-  { value: "pix", label: "Pix" },
+  { value: "credit_card_pix", label: "Cartão + Pix" },
   { value: "boleto", label: "Boleto" },
+  { value: "pix", label: "Pix" },
 ];
 
 const STATUS_FILTERS = [
   { value: "paid", label: "Pago" },
-  { value: "pending", label: "Aguardando pagamento" },
   { value: "refused", label: "Recusado" },
+  { value: "pending", label: "Aguardando pagamento" },
   { value: "refunded", label: "Reembolso" },
   { value: "chargeback", label: "Chargeback" },
-  { value: "cancelled", label: "Cancelado" },
+  { value: "refund_pending", label: "Reembolso pendente" },
+  { value: "authorized", label: "Autorizado" },
+];
+
+const SUBSCRIPTION_FILTERS = [
+  { value: "new", label: "Novas assinaturas" },
+  { value: "renewal", label: "Renovações" },
+];
+
+const TYPE_OPTIONS = [
+  { value: "all", label: "Todos" },
+  { value: "single", label: "Venda única" },
+  { value: "subscription", label: "Assinatura" },
+];
+
+const CURRENCY_OPTIONS = [
+  { value: "all", label: "Todas" },
+  { value: "BRL", label: "BRL" },
 ];
 
 const PAYMENT_LABEL: Record<string, string> = {
