@@ -73,16 +73,24 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
+    // Get product owner for logging (independent of CAPI config)
+    const { data: productData } = await supabase
+      .from('products')
+      .select('user_id')
+      .eq('id', product_id)
+      .single();
+
+    const productOwnerId = productData?.user_id || null;
+
     // Get pixels with CAPI tokens for this product
     const { data: pixels } = await supabase
       .from('product_pixels')
-      .select('pixel_id, capi_token, user_id')
+      .select('pixel_id, capi_token')
       .eq('product_id', product_id)
       .eq('platform', 'facebook')
       .not('capi_token', 'is', null);
 
     // Log event to pixel_events for dashboard
-    const productOwnerId = pixels?.[0]?.user_id || null;
     const customerName = customer?.name || null;
 
     const insertPromises: Promise<any>[] = [];
