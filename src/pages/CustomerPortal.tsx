@@ -203,10 +203,16 @@ const CustomerPortal = () => {
               <p className="text-xs text-muted-foreground">{customer.email}</p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
-            <LogOut className="w-4 h-4 mr-1.5" />
-            Sair
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate("/admin")} className="gap-1.5">
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Painel do Produtor</span>
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
+              <LogOut className="w-4 h-4 mr-1.5" />
+              Sair
+            </Button>
+          </div>
         </div>
       </header>
 
