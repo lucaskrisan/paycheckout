@@ -56,7 +56,7 @@ import { useState } from "react";
 // 1. PRINCIPAL — operações diárias, acesso imediato
 const principalItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
-  { title: "Pagamentos", url: "/admin/orders", icon: ShoppingCart },
+  { title: "Vendas", url: "/admin/orders", icon: ShoppingCart },
   { title: "Produtos", url: "/admin/products", icon: Package },
   { title: "Clientes", url: "/admin/customers", icon: Users },
 ];
