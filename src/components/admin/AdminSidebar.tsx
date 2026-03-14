@@ -6,16 +6,12 @@ import {
   Settings,
   LogOut,
   CreditCard,
-  ShoppingBag,
-  Link2,
-  Megaphone,
   GraduationCap,
   ChevronDown,
   Crown,
   BarChart3,
   Wallet,
   Bell,
-  Crosshair,
   MessageCircle,
   ShieldCheck,
   Webhook,
@@ -24,6 +20,7 @@ import {
   Globe,
   Zap,
   User,
+  Paintbrush,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -52,12 +49,12 @@ const menuItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Pagamentos", url: "/admin/orders", icon: ShoppingCart },
   { title: "Produtos", url: "/admin/products", icon: Package },
-  { title: "Checkouts", url: "/admin/settings", icon: Settings },
+  { title: "Checkouts", url: "/admin/settings", icon: Paintbrush },
   { title: "Área de Membros", url: "/admin/courses", icon: GraduationCap },
-  { title: "Upsell", url: "/admin/products", icon: Zap },
+  { title: "Upsell", url: "/admin/upsell", icon: Zap },
   { title: "Clientes", url: "/admin/customers", icon: Users },
   { title: "Avaliações", url: "/admin/reviews", icon: MessageCircle },
-  { title: "Meta Ads", url: "/admin/meta-ads", icon: Megaphone },
+  { title: "Meta Ads", url: "/admin/meta-ads", icon: BarChart3 },
   { title: "Relatórios", url: "/admin/abandoned", icon: BarChart3 },
 ];
 
@@ -68,7 +65,7 @@ const configItems = [
   { title: "Billing", url: "/admin/billing", icon: Wallet },
   { title: "Comunicações", url: "/admin/communications", icon: Mail },
   { title: "Webhook", url: "/admin/webhooks", icon: Webhook },
-  { title: "WhatsApp", url: "/admin/whatsapp", icon: MessageCircle },
+  { title: "WhatsApp", url: "/admin/whatsapp", icon: Smartphone },
   { title: "Notificações", url: "/admin/notifications", icon: Bell },
   { title: "App Mobile", url: "/admin/pwa", icon: Smartphone },
   { title: "Minha conta", url: "/admin/my-account", icon: User },
@@ -85,14 +82,13 @@ export function AdminSidebar() {
 
   const superAdminItems = [
     { title: "Painel Plataforma", url: "/admin/platform", icon: Crown },
-    { title: "Billing Global", url: "/admin/billing", icon: CreditCard },
     { title: "Fiscalizar", url: "/admin/health", icon: ShieldCheck },
   ];
 
   const renderItems = (items: { title: string; url: string; icon: any }[]) => (
     <SidebarMenu>
       {items.map((item) => (
-        <SidebarMenuItem key={item.title + item.url}>
+        <SidebarMenuItem key={item.title}>
           <SidebarMenuButton asChild>
             <NavLink
               to={item.url}
