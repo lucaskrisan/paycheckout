@@ -215,4 +215,29 @@ const defaultPagarmeConfig = {
   interest_rate_incremental: 1.45,
 };
 
+const defaultMercadoPagoConfig = {
+  pix_fee_percent: 0.99,
+  pix_fee_fixed: 0,
+  pix_timer_minutes: 30,
+  credit_fee_1x: 4.98,
+  credit_fee_2_6x: 4.98,
+  credit_fee_7_12x: 4.98,
+  credit_processing_fee: 0,
+  max_installments: 12,
+  min_installment_value: 5,
+  free_installments: 1,
+  interest_rate_initial: 6.58,
+  interest_rate_incremental: 1.45,
+};
+
+const defaultStripeConfig = {
+  credit_fee_percent: 3.99,
+  credit_fee_fixed: 0.39,
+  pix_fee_percent: 1.5,
+  pix_fee_fixed: 0,
+  pix_timer_minutes: 30,
+  max_installments: 12,
+  min_installment_value: 5,
+};
+
 export default Gateways;
