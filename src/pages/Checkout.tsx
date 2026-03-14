@@ -293,7 +293,7 @@ const Checkout = () => {
           body: { amount: finalAmount, product_id: product.id, payment_method: "credit_card", installments: creditCard.installments, is_subscription: product.is_subscription, billing_cycle: product.billing_cycle, config_id: requestedConfigId || null, coupon_id: coupon?.id || null, bump_product_ids: bumpProductIds2, checkout_url: window.location.href, utms: utms2, customer: { name: customer.name, email: customer.email, cpf: customer.cpf, phone: customer.phone, creditCard: { holderName: creditCard.name, number: creditCard.number.replace(/\s/g, ""), expiryMonth: expMonth, expiryYear: `20${expYear}`, ccv: creditCard.cvv } } },
         });
         if (error) throw error;
-        if (data?.payment_id) { toast.success("Pagamento processado com sucesso!"); trackPurchase(finalAmount, "BRL", data.payment_id); await markPurchased(); navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}`); }
+        if (data?.payment_id) { toast.success("Pagamento processado com sucesso!"); trackPurchase(finalAmount, "BRL", data.payment_id); await markPurchased(); navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product.id}${data.order_id ? `&order_id=${data.order_id}` : ''}`); }
         else throw new Error("Falha ao processar pagamento");
       }
     } catch (err: any) { console.error("Payment error:", err); toast.error(err.message || "Erro ao processar pagamento."); }
