@@ -146,7 +146,7 @@ const CompleteProfile = () => {
     await refreshRoles();
 
     toast.success("Perfil completo! Redirecionando...");
-    navigate("/admin", { replace: true });
+    navigate("/", { replace: true });
   };
 
   if (authLoading) {

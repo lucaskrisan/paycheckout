@@ -251,7 +251,7 @@ export default function AdminLayout() {
   if (!user) return <Navigate to="/login" replace />;
   if (!isAdmin) {
     // Re-check roles and redirect — never show "access denied" to users
-    return <AdminAccessRedirect refreshRoles={refreshRoles} />;
+    return <AdminAccessRedirect refreshRoles={refreshRoles} userId={user.id} />;
   }
 
   return (
