@@ -21,7 +21,7 @@ import {
   Zap,
   User,
   Paintbrush,
-  LayoutTemplate,
+  
   Activity,
   TrendingUp,
   Megaphone,
