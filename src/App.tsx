@@ -95,6 +95,7 @@ const App = () => (
               <Route path="communications" element={<Communications />} />
               <Route path="my-account" element={<MyAccount />} />
               <Route path="metrics" element={<Metrics />} />
+              <Route path="financeiro" element={<ProducerBilling />} />
               <Route path="upsell" element={<Upsell />} />
               <Route path="roadmap" element={<Roadmap />} />
               <Route path="manual" element={<TechnicalManual />} />
