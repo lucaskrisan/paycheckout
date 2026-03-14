@@ -22,6 +22,9 @@ import {
   User,
   Paintbrush,
   Activity,
+  TrendingUp,
+  Megaphone,
+  Tag,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -46,24 +49,40 @@ import {
 } from "@/components/ui/collapsible";
 import { useState } from "react";
 
-const menuItems = [
+/* ── Seções do menu ────────────────────────────────── */
+
+// 1. PRINCIPAL — operações diárias, acesso imediato
+const principalItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Pagamentos", url: "/admin/orders", icon: ShoppingCart },
   { title: "Produtos", url: "/admin/products", icon: Package },
-  { title: "Checkouts", url: "/admin/settings", icon: Paintbrush },
-  { title: "Área de Membros", url: "/admin/courses", icon: GraduationCap },
-  { title: "Upsell", url: "/admin/upsell", icon: Zap },
   { title: "Clientes", url: "/admin/customers", icon: Users },
-  { title: "Avaliações", url: "/admin/reviews", icon: MessageCircle },
-  { title: "Meta Ads", url: "/admin/meta-ads", icon: BarChart3 },
-  { title: "Relatórios", url: "/admin/abandoned", icon: Activity },
 ];
 
+// 2. VENDAS — ferramentas de conversão e receita
+const vendasItems = [
+  { title: "Checkouts", url: "/admin/settings", icon: Paintbrush },
+  { title: "Upsell", url: "/admin/upsell", icon: Zap },
+  { title: "Cupons", url: "/admin/coupons", icon: Tag },
+  { title: "Meta Ads", url: "/admin/meta-ads", icon: Megaphone },
+];
+
+// 3. CONTEÚDO — entrega e engajamento
+const conteudoItems = [
+  { title: "Área de Membros", url: "/admin/courses", icon: GraduationCap },
+  { title: "Avaliações", url: "/admin/reviews", icon: MessageCircle },
+];
+
+// 4. ANÁLISE — dados e relatórios
+const analiseItems = [
+  { title: "Relatórios", url: "/admin/abandoned", icon: Activity },
+  { title: "Métricas", url: "/admin/metrics", icon: TrendingUp },
+];
+
+// 5. CONFIGURAÇÕES — collapsible, menos frequente
 const configItems = [
-  { title: "Métricas", url: "/admin/metrics", icon: BarChart3 },
-  { title: "Domínios", url: "/admin/domains", icon: Globe },
   { title: "Gateways", url: "/admin/integrations", icon: CreditCard },
-  { title: "Billing", url: "/admin/billing", icon: Wallet },
+  { title: "Domínios", url: "/admin/domains", icon: Globe },
   { title: "Comunicações", url: "/admin/communications", icon: Mail },
   { title: "Webhook", url: "/admin/webhooks", icon: Webhook },
   { title: "WhatsApp", url: "/admin/whatsapp", icon: Smartphone },
@@ -71,6 +90,15 @@ const configItems = [
   { title: "App Mobile", url: "/admin/pwa", icon: Smartphone },
   { title: "Minha conta", url: "/admin/my-account", icon: User },
 ];
+
+// 6. SUPER ADMIN — visível apenas para super_admin
+const superAdminItems = [
+  { title: "Painel Plataforma", url: "/admin/platform", icon: Crown },
+  { title: "Billing", url: "/admin/billing", icon: Wallet },
+  { title: "Fiscalizar", url: "/admin/health", icon: ShieldCheck },
+];
+
+/* ── Componente ────────────────────────────────────── */
 
 export function AdminSidebar() {
   const { state } = useSidebar();
@@ -80,11 +108,6 @@ export function AdminSidebar() {
   const [configOpen, setConfigOpen] = useState(() =>
     configItems.some((item) => location.pathname === item.url)
   );
-
-  const superAdminItems = [
-    { title: "Painel Plataforma", url: "/admin/platform", icon: Crown },
-    { title: "Fiscalizar", url: "/admin/health", icon: ShieldCheck },
-  ];
 
   const renderItems = (items: { title: string; url: string; icon: any }[]) => (
     <SidebarMenu>
@@ -105,6 +128,13 @@ export function AdminSidebar() {
       ))}
     </SidebarMenu>
   );
+
+  const renderSectionLabel = (label: string) =>
+    !collapsed ? (
+      <span className="text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/50 px-1">
+        {label}
+      </span>
+    ) : null;
 
   return (
     <Sidebar collapsible="icon">
@@ -136,27 +166,33 @@ export function AdminSidebar() {
           </SidebarGroupLabel>
         </SidebarGroup>
 
-        {/* MENU */}
+        {/* 1. PRINCIPAL */}
         <SidebarGroup>
-          <SidebarGroupLabel>
-            {!collapsed && (
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/50 px-1">
-                Menu
-              </span>
-            )}
-          </SidebarGroupLabel>
-          <SidebarGroupContent>{renderItems(menuItems)}</SidebarGroupContent>
+          <SidebarGroupLabel>{renderSectionLabel("Principal")}</SidebarGroupLabel>
+          <SidebarGroupContent>{renderItems(principalItems)}</SidebarGroupContent>
         </SidebarGroup>
 
-        {/* GERAL */}
+        {/* 2. VENDAS */}
         <SidebarGroup>
-          <SidebarGroupLabel>
-            {!collapsed && (
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/50 px-1">
-                Geral
-              </span>
-            )}
-          </SidebarGroupLabel>
+          <SidebarGroupLabel>{renderSectionLabel("Vendas")}</SidebarGroupLabel>
+          <SidebarGroupContent>{renderItems(vendasItems)}</SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* 3. CONTEÚDO */}
+        <SidebarGroup>
+          <SidebarGroupLabel>{renderSectionLabel("Conteúdo")}</SidebarGroupLabel>
+          <SidebarGroupContent>{renderItems(conteudoItems)}</SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* 4. ANÁLISE */}
+        <SidebarGroup>
+          <SidebarGroupLabel>{renderSectionLabel("Análise")}</SidebarGroupLabel>
+          <SidebarGroupContent>{renderItems(analiseItems)}</SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* 5. CONFIGURAÇÕES (collapsible) */}
+        <SidebarGroup>
+          <SidebarGroupLabel>{renderSectionLabel("Geral")}</SidebarGroupLabel>
           <SidebarGroupContent>
             {collapsed ? (
               renderItems(configItems)
@@ -175,13 +211,13 @@ export function AdminSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Super Admin */}
+        {/* 6. SUPER ADMIN */}
         {isSuperAdmin && (
           <SidebarGroup>
             <SidebarGroupLabel>
               {!collapsed && (
                 <span className="text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/50 flex items-center gap-1.5 px-1">
-                  <Crown className="w-3 h-3 text-checkout-badge" /> Super Admin
+                  <Crown className="w-3 h-3 text-checkout-badge" /> Plataforma
                 </span>
               )}
             </SidebarGroupLabel>
