@@ -126,6 +126,7 @@ const Billing = () => {
         card_brand: billing?.card_brand ?? null,
         created_at: billing?.created_at ?? new Date().toISOString(),
         full_name: profileMap.get(uid) || "Sem nome",
+        monthly_sales: salesMap.get(uid) || 0,
       };
     });
 
