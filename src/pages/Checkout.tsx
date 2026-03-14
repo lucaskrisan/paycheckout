@@ -143,12 +143,14 @@ const Checkout = () => {
         if (p.is_subscription) setPaymentMethod("credit_card");
         if (p.user_id) {
           // Check if producer is blocked
-          const [{ data: settings }, { data: billingAcc }] = await Promise.all([
+          const [{ data: settings }, { data: billingAcc }, { data: ownerRoles }] = await Promise.all([
             supabase.from("checkout_settings").select("logo_url, primary_color, custom_css, company_name").eq("user_id", p.user_id).maybeSingle(),
             supabase.from("billing_accounts").select("blocked").eq("user_id", p.user_id).maybeSingle(),
+            supabase.from("user_roles").select("role").eq("user_id", p.user_id).eq("role", "super_admin"),
           ]);
           if (settings) setCheckoutSettings(settings);
-          if ((billingAcc as any)?.blocked === true) {
+          const isSuperAdmin = (ownerRoles as any[])?.length > 0;
+          if (!isSuperAdmin && (billingAcc as any)?.blocked === true) {
             setProducerBlocked(true);
             setLoading(false);
             return;
