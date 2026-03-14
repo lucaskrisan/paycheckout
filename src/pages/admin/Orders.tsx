@@ -105,9 +105,15 @@ const Orders = () => {
 
   // Filters
   const [filterPeriod, setFilterPeriod] = useState("all");
+  const [filterCurrency, setFilterCurrency] = useState("all");
+  const [filterType, setFilterType] = useState("all");
   const [filterProduct, setFilterProduct] = useState("all");
+  const [filterOffer, setFilterOffer] = useState("all");
+  const [filterAffiliate, setFilterAffiliate] = useState("");
+  const [filterUtmParams, setFilterUtmParams] = useState("");
   const [filterMethods, setFilterMethods] = useState<Set<string>>(new Set());
   const [filterStatuses, setFilterStatuses] = useState<Set<string>>(new Set());
+  const [filterSubscriptions, setFilterSubscriptions] = useState<Set<string>>(new Set());
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const handlePreviewReminder = async (orderId: string) => {
