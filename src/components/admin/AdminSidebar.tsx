@@ -58,7 +58,7 @@ const mainItems = [
   { title: "Rastreamento", url: "/admin/tracking", icon: Crosshair },
   { title: "Meta Ads", url: "/admin/meta-ads", icon: Megaphone },
   { title: "Avaliações", url: "/admin/reviews", icon: MessageCircle },
-  { title: "Colaboradores", url: "/admin/integrations", icon: UserPlus },
+  { title: "Integrações", url: "/admin/integrations", icon: Link2 },
   { title: "Emails", url: "/admin/emails", icon: Mail },
   { title: "Notificações", url: "/admin/notifications", icon: Bell },
   { title: "Webhooks", url: "/admin/webhooks", icon: Webhook },
