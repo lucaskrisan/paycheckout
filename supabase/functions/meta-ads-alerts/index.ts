@@ -184,7 +184,7 @@ function analyzeAndGenerateAlerts(campaigns: any[]): AlertMsg[] {
   } else if (score >= 40) {
     alerts.push({
       priority: 'warning',
-      title: `⚠️ Dia instável — Score ${score}/100`,
+      title: `⚠️ AntonyAD: Dia instável — Score ${score}/100`,
       body: `ROAS ${globalROAS.toFixed(2)}x | CPM ${fmt(avgCPM)}. AÇÃO: NÃO escale hoje. ${losers.length > 0 ? 'Pause "' + losers[0].name.substring(0, 25) + '" (ROAS ' + losers[0].roas.toFixed(2) + 'x). ' : ''}Mantenha apenas winners.`,
     });
   } else {
