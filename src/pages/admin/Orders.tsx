@@ -241,7 +241,7 @@ const Orders = () => {
 
   const totalAmount = filtered.reduce((sum, o) => sum + Number(o.amount), 0);
 
-  useEffect(() => { setPage(1); }, [search, activeTab, filterPeriod, filterProduct, filterMethods, filterStatuses]);
+  useEffect(() => { setPage(1); }, [search, activeTab, filterPeriod, filterProduct, filterMethods, filterStatuses, filterType, filterSubscriptions, filterCurrency]);
 
   const getStatus = (status: string) => STATUS_MAP[status] || { label: status, variant: "default" as const };
 
