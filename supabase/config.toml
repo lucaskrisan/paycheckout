@@ -47,3 +47,12 @@ verify_jwt = false
 
 [functions.meta-emq]
 verify_jwt = false
+
+[functions.mercadopago-webhook]
+verify_jwt = false
+
+[functions.create-mercadopago-payment]
+verify_jwt = false
+
+[functions.create-stripe-payment]
+verify_jwt = false
