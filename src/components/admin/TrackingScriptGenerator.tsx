@@ -62,23 +62,40 @@ export default function TrackingScriptGenerator({ pixels, products, checkoutBase
 
 ${pixelInits}
 
-  // === Ensure _fbp cookie exists (fallback if pixel blocked by adblock) ===
+  // === IMPORTANTE: Captura fbclid/fbc/fbp ANTES dos disparos ===
+  var ps=new URLSearchParams(location.search);
+  var fbclid=ps.get('fbclid');
+
+  // fbclid → _fbc cookie (ANTES do CAPI)
+  if(fbclid && !document.cookie.match(/(^|;\\s*)_fbc=/)){
+    var fbc='fb.1.'+Date.now()+'.'+fbclid;
+    document.cookie='_fbc='+fbc+';max-age=7776000;path=/;SameSite=Lax';
+  }
+
+  // Ensure _fbp cookie exists
   var fbpCk=(document.cookie.match(/(^|;\\s*)_fbp=([^;]*)/)||[])[2];
   if(!fbpCk){fbpCk='fb.1.'+Date.now()+'.'+Math.floor(1e9+Math.random()*9e9);document.cookie='_fbp='+fbpCk+';max-age=33696000;path=/;SameSite=Lax';}
 
-  // === IDs de evento (declarados ANTES do uso para deduplicação correta) ===
+  // Read _fbc after potential creation above
+  var fbcCk=(document.cookie.match(/(^|;\\s*)_fbc=([^;]*)/)||[])[2]||null;
+
+  // Visitor ID
   var vid=(document.cookie.match(/(^|;\\s*)_vid=([^;]*)/)||[])[2];
   if(!vid){vid='v_'+Date.now()+'_'+Math.random().toString(36).slice(2,12);document.cookie='_vid='+vid+';max-age=33696000;path=/;SameSite=Lax';}
-  var vcId='vc_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
+
+  // === IDs de evento para deduplicação ===
   var pvId='pv_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
+  var vcId='vc_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
 
   // === Disparos Pixel (Browser) com eventID para deduplicação ===
   fbq('track','PageView',{},{eventID:pvId});
   fbq('track','ViewContent',{content_type:'product',content_ids:['${selectedProduct}']},{eventID:vcId});
 
-  // === Disparos CAPI (Server) com mesmo eventID ===
+  // === Disparos CAPI (Server) com mesmo eventID + fbc/fbp reais ===
   var capiUrl='${SUPABASE_URL}/functions/v1/facebook-capi';
-  var commonParams={product_id:'${selectedProduct}',event_source_url:location.href,visitor_id:vid,user_agent:navigator.userAgent,fbc:(document.cookie.match(/(^|;\\s*)_fbc=([^;]*)/)||[])[2]||'',fbp:fbpCk,log_browser:true};
+  var commonParams={product_id:'${selectedProduct}',event_source_url:location.href,visitor_id:vid,user_agent:navigator.userAgent,fbp:fbpCk||null,log_browser:true};
+  // IMPORTANTE: só envia fbc se existir (Meta rejeita fbc vazio)
+  if(fbcCk) commonParams.fbc=fbcCk;
   fetch(capiUrl,{
     method:'POST',headers:{'Content-Type':'application/json','apikey':'${SUPABASE_ANON_KEY}'},
     body:JSON.stringify(Object.assign({},commonParams,{event_name:'PageView',event_id:pvId}))
@@ -88,20 +105,12 @@ ${pixelInits}
     body:JSON.stringify(Object.assign({},commonParams,{event_name:'ViewContent',event_id:vcId,custom_data:{content_type:'product',content_ids:['${selectedProduct}']}}))
   }).catch(function(){});
 
-  // === 2. Captura UTMs + fbclid ===
-  var ps=new URLSearchParams(location.search);
+  // === 2. Captura UTMs ===
   var utms={};
   ['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(function(k){
     var v=ps.get(k); if(v) utms[k]=v;
   });
   if(Object.keys(utms).length) sessionStorage.setItem('pc_utms',JSON.stringify(utms));
-
-  // fbclid → _fbc cookie
-  var fbclid=ps.get('fbclid');
-  if(fbclid && !document.cookie.match(/(^|;\\s*)_fbc=/)){
-    var fbc='fb.1.'+Date.now()+'.'+fbclid;
-    document.cookie='_fbc='+fbc+';max-age=7776000;path=/;SameSite=Lax';
-  }
 
   // === 3. goToCheckout — redireciona com todos os params ===
   window.goToCheckout=function(configId){
