@@ -61,6 +61,7 @@ const App = () => (
             <Route path="/membros" element={<MemberArea />} />
             <Route path="/minha-conta" element={<CustomerPortal />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/aguardando-aprovacao" element={<PendingApproval />} />
             <Route path="/admin/products/:productId/checkout-builder" element={<CheckoutBuilder />} />
             <Route path="/admin/products/:productId/checkout-builder/:configId" element={<CheckoutBuilder />} />
             <Route path="/admin" element={<><InstallPrompt /><AdminLayout /></>}>
