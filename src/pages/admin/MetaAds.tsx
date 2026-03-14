@@ -40,6 +40,7 @@ export default function MetaAds() {
 
   const handleRefresh = () => {
     fetchCampaigns();
+    fetchAccountInsights();
     if (mainTab === "campanhas") {
       if (dataTab === "adsets") fetchAdSets();
       else if (dataTab === "ads") fetchAds();
