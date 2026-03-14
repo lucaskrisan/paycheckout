@@ -137,15 +137,34 @@ export function useMetaAds() {
     if (selectedAccounts.length === 0) return;
     setLoading(true);
     try {
-      const data = await fetchForAccounts("list_campaigns", selectedAccounts);
-      setCampaigns(data);
+      const data = await Promise.all(
+        selectedAccounts.map(async (accId) => {
+          try {
+            const d = await callMetaAds({
+              action: "list_campaigns",
+              account_id: accId,
+              include_all: true,
+              ...getDateParams(),
+            });
+            const accName = accounts.find((a) => a.id === accId)?.name || accId;
+            return (d || []).map((item: any) => ({
+              ...item,
+              _account_id: accId,
+              _account_name: accName,
+            }));
+          } catch {
+            return [];
+          }
+        })
+      );
+      setCampaigns(data.flat());
       setLastRefresh(new Date());
     } catch (err: any) {
       toast.error("Erro ao buscar campanhas: " + err.message);
     } finally {
       setLoading(false);
     }
-  }, [selectedAccounts, fetchForAccounts]);
+  }, [selectedAccounts, getDateParams, accounts]);
 
   const fetchAdSets = useCallback(async () => {
     if (selectedAccounts.length === 0) return;

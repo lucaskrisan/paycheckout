@@ -258,6 +258,18 @@ Deno.serve(async (req) => {
       case 'list_accounts':
         result = await listAccounts();
         break;
+      case 'account_insights': {
+        const insightFields = 'spend,impressions,reach,frequency,cpm,ctr,cpc,actions,action_values,cost_per_action_type,purchase_roas';
+        const insightParams: Record<string, string> = { fields: insightFields };
+        if (since && until) {
+          insightParams.time_range = JSON.stringify({ since, until });
+        } else {
+          insightParams.date_preset = date_preset || 'today';
+        }
+        const insightsRes = await metaFetch(`/${account_id}/insights`, insightParams);
+        result = insightsRes.data?.[0] || null;
+        break;
+      }
       case 'list_campaigns':
         result = await listCampaigns(account_id, date_preset, since, until, include_all, daily_breakdown);
         break;
