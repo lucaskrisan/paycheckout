@@ -463,11 +463,19 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Get internal order ID for upsell flow
+    const { data: savedOrder } = await supabaseAdmin
+      .from('orders')
+      .select('id')
+      .eq('external_id', paymentData.id)
+      .maybeSingle();
+
     return new Response(
       JSON.stringify({
         payment_id: paymentData.id,
         status: paymentData.status,
         invoice_url: paymentData.invoiceUrl,
+        order_id: savedOrder?.id || null,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
