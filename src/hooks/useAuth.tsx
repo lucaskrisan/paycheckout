@@ -12,6 +12,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, fullName: string) => Promise<void>;
   signOut: () => Promise<void>;
+  refreshRoles: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -127,8 +128,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  const refreshRoles = async () => {
+    if (user?.id) {
+      await Promise.all([
+        checkRoles(user.id),
+        checkProfileCompleted(user.id),
+      ]);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, isAdmin, isSuperAdmin, profileCompleted, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, isAdmin, isSuperAdmin, profileCompleted, loading, signIn, signUp, signOut, refreshRoles }}>
       {children}
     </AuthContext.Provider>
   );

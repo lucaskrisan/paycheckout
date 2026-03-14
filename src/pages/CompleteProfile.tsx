@@ -55,7 +55,7 @@ const validateCpf = (cpf: string) => {
 };
 
 const CompleteProfile = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refreshRoles } = useAuth();
   const navigate = useNavigate();
   const [cpf, setCpf] = useState("");
   const [phone, setPhone] = useState("");
@@ -119,6 +119,10 @@ const CompleteProfile = () => {
       setSaving(false);
       return;
     }
+
+    // Wait a moment for DB trigger to fire, then refresh roles
+    await new Promise(r => setTimeout(r, 500));
+    await refreshRoles();
 
     try {
       const destination = await resolveUserDestination();

@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { Navigate, Outlet, useNavigate } from "react-router-dom";
+import { resolveUserDestination } from "@/lib/resolveUserDestination";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
 import { useAuth } from "@/hooks/useAuth";
@@ -60,8 +61,42 @@ function useOneSignalInit(email: string | undefined) {
   }, [email]);
 }
 
+// Component that re-checks roles and redirects non-admin users
+function AdminAccessRedirect({ refreshRoles }: { refreshRoles: () => Promise<void> }) {
+  const navigate = useNavigate();
+  const [checked, setChecked] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      // Re-check roles (maybe trigger just fired)
+      await refreshRoles();
+      // If still not admin after refresh, redirect to correct destination
+      if (!cancelled) {
+        try {
+          const destination = await resolveUserDestination();
+          navigate(destination, { replace: true });
+        } catch {
+          navigate("/completar-perfil", { replace: true });
+        }
+        setChecked(true);
+      }
+    };
+    run();
+    return () => { cancelled = true; };
+  }, [refreshRoles, navigate]);
+
+  if (checked) return null;
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+    </div>
+  );
+}
+
 export default function AdminLayout() {
-  const { user, isAdmin, loading, signOut } = useAuth();
+  const { user, isAdmin, loading, signOut, refreshRoles } = useAuth();
   const { isDark, toggle: toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [totalRevenue, setTotalRevenue] = useState(0);
@@ -190,14 +225,8 @@ export default function AdminLayout() {
 
   if (!user) return <Navigate to="/login" replace />;
   if (!isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-2">
-          <p className="font-display text-xl font-bold text-foreground">Acesso negado</p>
-          <p className="text-sm text-muted-foreground">Você não tem permissão de administrador.</p>
-        </div>
-      </div>
-    );
+    // Re-check roles and redirect — never show "access denied" to users
+    return <AdminAccessRedirect refreshRoles={refreshRoles} />;
   }
 
   return (
