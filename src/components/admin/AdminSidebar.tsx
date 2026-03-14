@@ -230,6 +230,17 @@ export function AdminSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
+        {!collapsed && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => window.location.href = "/minha-conta"}
+            className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/60 mb-1"
+          >
+            <GraduationCap className="h-4 w-4 mr-2" />
+            {!collapsed && "Painel do Aluno"}
+          </Button>
+        )}
         {!collapsed && user && (
           <p className="text-[11px] text-sidebar-foreground/60 truncate px-3 mb-1">{user.email}</p>
         )}
