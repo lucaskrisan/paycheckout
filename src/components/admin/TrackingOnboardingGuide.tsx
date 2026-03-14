@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 
 interface Props {
   hasPixels: boolean;
-  productCount: number;
 }
 
 const steps = [
