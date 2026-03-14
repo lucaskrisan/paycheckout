@@ -8,6 +8,7 @@ import { MetaDataTable } from "@/components/admin/meta-ads/MetaDataTable";
 import { MetaAdsFunnel } from "@/components/admin/meta-ads/MetaAdsFunnel";
 import { MetaAdsSummary } from "@/components/admin/meta-ads/MetaAdsSummary";
 import { MetaAdsAlerts } from "@/components/admin/meta-ads/MetaAdsAlerts";
+import { MetaBudgetCalculator } from "@/components/admin/meta-ads/MetaBudgetCalculator";
 import { formatCurrency, getResults, getConversionValue } from "@/components/admin/meta-ads/MetaInsightsHelpers";
 
 export default function MetaAds() {
@@ -109,6 +110,7 @@ export default function MetaAds() {
             roas={globalROAS}
           />
           <MetaAdsFunnel />
+          <MetaBudgetCalculator currentCPA={summary.results > 0 ? summary.spend / summary.results : undefined} />
         </TabsContent>
 
 
