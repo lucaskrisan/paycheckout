@@ -9,7 +9,7 @@ import GatewayFormDialog from "@/components/admin/GatewayFormDialog";
 
 export interface GatewayConfig {
   id?: string;
-  provider: "asaas" | "pagarme";
+  provider: "asaas" | "pagarme" | "mercadopago" | "stripe";
   name: string;
   environment: "sandbox" | "production";
   active: boolean;
