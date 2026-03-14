@@ -78,12 +78,15 @@ const Products = () => {
     }
     setCreating(true);
     try {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) throw new Error("Usuário não autenticado");
       const { data, error } = await supabase.from("products").insert({
         name: newName.trim(),
         description: newDescription.trim() || null,
         is_subscription: paymentType === "subscription",
         billing_cycle: paymentType === "subscription" ? "monthly" : "monthly",
         price: 0,
+        user_id: currentUser.id,
       }).select("id").single();
 
       if (error) throw error;
