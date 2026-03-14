@@ -80,6 +80,7 @@ export function useMetaAds() {
   const [campaigns, setCampaigns] = useState<MetaCampaign[]>([]);
   const [adsets, setAdsets] = useState<MetaAdSet[]>([]);
   const [ads, setAds] = useState<MetaAd[]>([]);
+  const [accountInsights, setAccountInsights] = useState<MetaInsights | null>(null);
   const [loading, setLoading] = useState(false);
   const [datePreset, setDatePreset] = useState<DatePreset>("today");
   const [customRange, setCustomRange] = useState<{ since: string; until: string } | null>(null);
