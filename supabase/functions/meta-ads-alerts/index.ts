@@ -296,6 +296,22 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Authenticate and verify super_admin
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader) {
+      const userClient = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_ANON_KEY')!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+      const { data: { user }, error: authErr } = await userClient.auth.getUser();
+      if (authErr || !user) throw new Error('Unauthorized');
+
+      const svc = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+      const { data: roles } = await svc.from('user_roles').select('role').eq('user_id', user.id).eq('role', 'super_admin');
+      if (!roles || roles.length === 0) throw new Error('Forbidden');
+    }
+
     const body = await req.json().catch(() => ({}));
     const isFullReport = body?.action === 'full_report';
     const filterAccountIds: string[] | null = body?.account_ids || null;
