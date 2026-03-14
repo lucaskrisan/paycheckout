@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +37,20 @@ const CustomerPortal = () => {
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const { user, profileCompleted, isAdmin, loading: authLoading } = useAuth();
+
+  // If user is authenticated but has no token, redirect appropriately
+  useEffect(() => {
+    if (authLoading) return;
+    if (!token && user) {
+      if (profileCompleted === false) {
+        navigate("/completar-perfil", { replace: true });
+      } else if (isAdmin) {
+        navigate("/admin", { replace: true });
+      }
+    }
+  }, [token, user, profileCompleted, isAdmin, authLoading, navigate]);
 
   useEffect(() => {
     if (!token) {
