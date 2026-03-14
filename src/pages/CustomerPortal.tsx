@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { resolveUserDestination } from "@/lib/resolveUserDestination";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +14,6 @@ import {
   LogOut,
   BookOpen,
   Loader2,
-  Lock,
   LayoutDashboard,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -38,30 +36,10 @@ const CustomerPortal = () => {
 
   const { user, loading: authLoading } = useAuth();
 
-  // If user is authenticated but has no token, resolve destination automatically
+  // Never show restricted placeholder screen without token
   useEffect(() => {
-    if (authLoading || token || !user) return;
-
-    let cancelled = false;
-
-    const routeUser = async () => {
-      try {
-        const destination = await resolveUserDestination();
-        if (!cancelled) {
-          navigate(destination, { replace: true });
-        }
-      } catch {
-        if (!cancelled) {
-          navigate("/completar-perfil", { replace: true });
-        }
-      }
-    };
-
-    routeUser();
-
-    return () => {
-      cancelled = true;
-    };
+    if (token || authLoading) return;
+    navigate(user ? "/completar-perfil" : "/login?signup=true", { replace: true });
   }, [token, user, authLoading, navigate]);
 
   useEffect(() => {
@@ -84,6 +62,7 @@ const CustomerPortal = () => {
 
       if (!accessData) {
         toast.error("Link inválido ou expirado");
+        navigate(user ? "/completar-perfil" : "/login?signup=true", { replace: true });
         setLoading(false);
         return;
       }
@@ -95,11 +74,15 @@ const CustomerPortal = () => {
         .eq("id", accessData.customer_id)
         .single();
 
-      if (customerData) {
-        setCustomer(customerData);
-        setEditName(customerData.name);
-        setEditPhone(customerData.phone || "");
+      if (!customerData) {
+        navigate(user ? "/completar-perfil" : "/login?signup=true", { replace: true });
+        setLoading(false);
+        return;
       }
+
+      setCustomer(customerData);
+      setEditName(customerData.name);
+      setEditPhone(customerData.phone || "");
 
       // Load orders
       const { data: ordersData } = await supabase
@@ -173,50 +156,8 @@ const CustomerPortal = () => {
 
   if (!token || !customer) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30 flex items-center justify-center p-4">
-        <div className="max-w-sm w-full text-center space-y-6">
-          {/* Brand */}
-          <div className="flex items-center justify-center gap-2">
-            <img src="/brand-icon.webp" alt="PayCheckout" className="w-8 h-8 rounded-lg" />
-            <span className="text-lg font-bold text-foreground tracking-tight">PayCheckout</span>
-          </div>
-
-          {/* Main card */}
-          <div className="bg-card border border-border rounded-2xl p-8 shadow-sm space-y-5">
-            <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto">
-              <Lock className="w-7 h-7 text-primary" />
-            </div>
-
-            <div className="space-y-2">
-              <h1 className="text-xl font-bold text-foreground">Área do Comprador</h1>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Para acessar seus pedidos e cursos, utilize o link exclusivo que enviamos para seu e-mail de compra.
-              </p>
-            </div>
-
-            <div className="bg-muted/50 rounded-xl p-4 text-left space-y-2">
-              <p className="text-xs font-medium text-foreground">Como acessar?</p>
-              <ol className="text-xs text-muted-foreground space-y-1.5 list-decimal list-inside">
-                <li>Abra o e-mail de confirmação de compra</li>
-                <li>Clique no botão <strong className="text-foreground">"Acessar Minha Conta"</strong></li>
-                <li>Pronto! Você será direcionado automaticamente</li>
-              </ol>
-            </div>
-
-            <div className="space-y-2">
-              <Button onClick={() => navigate("/login")} className="w-full gap-2">
-                Entrar com Google
-              </Button>
-              <Button variant="outline" onClick={() => navigate("/")} className="w-full gap-2">
-                Voltar ao início
-              </Button>
-            </div>
-          </div>
-
-          <p className="text-[11px] text-muted-foreground">
-            Problemas para acessar? Entre em contato com o produtor do seu curso.
-          </p>
-        </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
