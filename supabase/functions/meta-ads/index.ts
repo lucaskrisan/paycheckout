@@ -250,7 +250,7 @@ Deno.serve(async (req) => {
 
   try {
     await authenticateUser(req);
-    const { action, account_id, date_preset, since, until, object_id, new_status, budget_type, budget_amount, object_type } = await req.json();
+    const { action, account_id, date_preset, since, until, object_id, new_status, budget_type, budget_amount, object_type, include_all, daily_breakdown } = await req.json();
 
     let result: any;
 
@@ -259,13 +259,13 @@ Deno.serve(async (req) => {
         result = await listAccounts();
         break;
       case 'list_campaigns':
-        result = await listCampaigns(account_id, date_preset, since, until);
+        result = await listCampaigns(account_id, date_preset, since, until, include_all, daily_breakdown);
         break;
       case 'list_adsets':
-        result = await listAdSets(account_id, date_preset, since, until);
+        result = await listAdSets(account_id, date_preset, since, until, include_all, daily_breakdown);
         break;
       case 'list_ads':
-        result = await listAds(account_id, date_preset, since, until);
+        result = await listAds(account_id, date_preset, since, until, include_all, daily_breakdown);
         break;
       case 'update_status':
         result = await updateStatus(object_id, new_status);
