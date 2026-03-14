@@ -74,7 +74,6 @@ function generateAlerts(campaigns: MetaCampaign[]): Alert[] {
 
   // Global metrics
   const totalSpend = active.reduce((s, c) => s + parseFloat(c.insights!.spend || "0"), 0);
-  const totalRevenue = active.reduce((s, c) => s + getConversionValue(c.insights), 0);
   const totalResults = active.reduce((s, c) => s + getResults(c.insights), 0);
   const avgCPM = active.length > 0 ? active.reduce((s, c) => s + parseFloat(c.insights!.cpm || "0"), 0) / active.length : 0;
   const avgFreq = active.length > 0 ? active.reduce((s, c) => s + parseFloat(c.insights!.frequency || "0"), 0) / active.length : 0;
