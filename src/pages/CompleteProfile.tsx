@@ -146,14 +146,8 @@ const CompleteProfile = () => {
     await new Promise(r => setTimeout(r, 500));
     await refreshRoles();
 
-    try {
-      const destination = await resolveUserDestination();
-      toast.success("Perfil completo! Redirecionando...");
-      navigate(destination, { replace: true });
-    } catch {
-      toast.success("Perfil completo! Bem-vindo ao painel.");
-      navigate("/admin", { replace: true });
-    }
+    toast.success("Perfil completo! Redirecionando...");
+    navigate("/admin", { replace: true });
   };
 
   if (authLoading) {
