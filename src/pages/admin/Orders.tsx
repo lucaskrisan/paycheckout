@@ -369,7 +369,7 @@ const Orders = () => {
                   const st = getStatus(order.status);
                   const isPendingPix = order.status === "pending" && order.payment_method === "pix" && order.customers?.email;
                   return (
-                    <tr key={order.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                    <tr key={order.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => { setSelectedOrder(order); setDetailTab("sale"); }}>
                       <td className="py-3.5 px-4 text-muted-foreground whitespace-nowrap text-sm">
                         {format(new Date(order.created_at), "dd/MM/yyyy HH:mm")}
                       </td>
