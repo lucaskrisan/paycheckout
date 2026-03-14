@@ -35,7 +35,6 @@ import MetaAds from "./pages/admin/MetaAds";
 import Billing from "./pages/admin/Billing";
 import Upsell from "./pages/admin/Upsell";
 import Roadmap from "./pages/admin/Roadmap";
-import TemplateMarketplace from "./pages/admin/TemplateMarketplace";
 import Domains from "./pages/admin/Domains";
 import WhatsApp from "./pages/admin/WhatsApp";
 import Communications from "./pages/admin/Communications";

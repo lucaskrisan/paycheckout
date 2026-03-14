@@ -64,7 +64,6 @@ const principalItems = [
 // 2. VENDAS — ferramentas de conversão e receita
 const vendasItems = [
   { title: "Checkouts", url: "/admin/settings", icon: Paintbrush },
-  { title: "Templates", url: "/admin/templates", icon: LayoutTemplate },
   { title: "Upsell", url: "/admin/upsell", icon: Zap },
   { title: "Cupons", url: "/admin/coupons", icon: Tag },
   { title: "Meta Ads", url: "/admin/meta-ads", icon: Megaphone },
