@@ -91,12 +91,20 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
       <DialogContent className="max-w-2xl max-h-[90vh] p-0">
         <DialogHeader className="p-6 pb-0">
           <DialogTitle className="font-display">
-            {isEditing ? "Editar" : "Nova Conexão"} - {form.provider === "asaas" ? "Asaas" : "Pagar.me"}
+            {isEditing ? "Editar" : "Nova Conexão"} - {
+              form.provider === "asaas" ? "Asaas" :
+              form.provider === "pagarme" ? "Pagar.me" :
+              form.provider === "mercadopago" ? "Mercado Pago" : "Stripe"
+            }
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
             {form.provider === "asaas"
               ? "Aceite pagamentos via Pix e Cartão de Crédito de forma simples e segura."
-              : "Processamento rápido e confiável de pagamentos com Pix e Cartão."}
+              : form.provider === "pagarme"
+              ? "Processamento rápido e confiável de pagamentos com Pix e Cartão."
+              : form.provider === "mercadopago"
+              ? "O gateway mais popular do Brasil. PIX, Cartão e Boleto."
+              : "Gateway global para cartões internacionais e PIX."}
           </p>
         </DialogHeader>
 
@@ -130,7 +138,11 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
                 <p className="text-xs text-muted-foreground">
                   {form.provider === "asaas"
                     ? "Configure a chave API nas Secrets do projeto (ASAAS_API_KEY). Encontre em: Minha Conta > Integrações > API"
-                    : "Configure a chave API nas Secrets do projeto (PAGARME_API_KEY)."}
+                    : form.provider === "pagarme"
+                    ? "Configure a chave API nas Secrets do projeto (PAGARME_API_KEY)."
+                    : form.provider === "mercadopago"
+                    ? "Configure o Access Token nas Secrets do projeto (MERCADOPAGO_ACCESS_TOKEN). Encontre em: Suas Integrações > Credenciais"
+                    : "Configure a Secret Key nas Secrets do projeto (STRIPE_SECRET_KEY). Encontre em: Dashboard > Developers > API Keys"}
                 </p>
               </div>
             </div>
@@ -438,6 +450,64 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
                       <p className="font-medium text-foreground">Venda Cartão 1x - R$ 100,00</p>
                       <p>Você paga: MDR {form.config.credit_fee_1x ?? 2.99}% + R$ {(form.config.credit_processing_fee ?? 0.44).toFixed(2)}</p>
                       <p>Recebe líquido: R$ {(100 - ((100 * (form.config.credit_fee_1x ?? 2.99) / 100) + (form.config.credit_processing_fee ?? 0.44))).toFixed(2)}</p>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {(form.provider === "mercadopago" || form.provider === "stripe") && (
+              <>
+                <Separator />
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-foreground">
+                    Taxas {form.provider === "mercadopago" ? "Mercado Pago" : "Stripe"}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">Informativo — as taxas são cobradas diretamente pelo gateway</p>
+                  {form.provider === "mercadopago" && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label>Taxa PIX (%)</Label>
+                        <Input type="number" step="0.01" value={form.config.pix_fee_percent ?? 0.99} onChange={(e) => updateConfig("pix_fee_percent", parseFloat(e.target.value) || 0)} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Taxa Cartão 1x (%)</Label>
+                        <Input type="number" step="0.01" value={form.config.credit_fee_1x ?? 4.98} onChange={(e) => updateConfig("credit_fee_1x", parseFloat(e.target.value) || 0)} />
+                      </div>
+                    </div>
+                  )}
+                  {form.provider === "stripe" && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label>Taxa Cartão (%)</Label>
+                        <Input type="number" step="0.01" value={form.config.credit_fee_percent ?? 3.99} onChange={(e) => updateConfig("credit_fee_percent", parseFloat(e.target.value) || 0)} />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Taxa Fixa (R$)</Label>
+                        <Input type="number" step="0.01" value={form.config.credit_fee_fixed ?? 0.39} onChange={(e) => updateConfig("credit_fee_fixed", parseFloat(e.target.value) || 0)} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <Separator />
+                <div className="space-y-4">
+                  <h3 className="text-sm font-semibold text-foreground">Parcelamento</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label>Máximo de Parcelas</Label>
+                      <Select value={String(form.config.max_installments ?? 12)} onValueChange={(v) => updateConfig("max_installments", parseInt(v))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((n) => (
+                            <SelectItem key={n} value={String(n)}>{n}x</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Valor Mínimo Parcela (R$)</Label>
+                      <Input type="number" step="0.01" value={form.config.min_installment_value ?? 5} onChange={(e) => updateConfig("min_installment_value", parseFloat(e.target.value) || 5)} />
                     </div>
                   </div>
                 </div>

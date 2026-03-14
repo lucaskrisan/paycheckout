@@ -9,7 +9,7 @@ import GatewayFormDialog from "@/components/admin/GatewayFormDialog";
 
 export interface GatewayConfig {
   id?: string;
-  provider: "asaas" | "pagarme";
+  provider: "asaas" | "pagarme" | "mercadopago" | "stripe";
   name: string;
   environment: "sandbox" | "production";
   active: boolean;
@@ -20,6 +20,8 @@ export interface GatewayConfig {
 const providerLabels: Record<string, string> = {
   asaas: "Asaas",
   pagarme: "Pagar.me",
+  mercadopago: "Mercado Pago",
+  stripe: "Stripe",
 };
 
 const Gateways = () => {
@@ -67,14 +69,26 @@ const Gateways = () => {
     setDialogOpen(true);
   };
 
-  const handleNew = (provider: "asaas" | "pagarme") => {
+  const handleNew = (provider: "asaas" | "pagarme" | "mercadopago" | "stripe") => {
+    const nameMap: Record<string, string> = {
+      asaas: "Asaas Principal",
+      pagarme: "Pagar.me Principal",
+      mercadopago: "Mercado Pago Principal",
+      stripe: "Stripe Principal",
+    };
+    const configMap: Record<string, Record<string, any>> = {
+      asaas: defaultAsaasConfig,
+      pagarme: defaultPagarmeConfig,
+      mercadopago: defaultMercadoPagoConfig,
+      stripe: defaultStripeConfig,
+    };
     setEditingGateway({
       provider,
-      name: provider === "asaas" ? "Asaas Principal" : "Pagar.me Principal",
+      name: nameMap[provider],
       environment: "sandbox",
       active: false,
       payment_methods: [],
-      config: provider === "asaas" ? defaultAsaasConfig : defaultPagarmeConfig,
+      config: configMap[provider],
     });
     setDialogOpen(true);
   };
@@ -85,7 +99,7 @@ const Gateways = () => {
         <h1 className="font-display text-2xl font-bold text-foreground">Gateways de Pagamento</h1>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="border-dashed border-2 flex flex-col items-center justify-center p-8 cursor-pointer hover:border-primary/50 transition-colors" onClick={() => handleNew("asaas")}>
           <Plus className="w-8 h-8 text-muted-foreground mb-2" />
           <p className="font-semibold text-foreground">Adicionar Asaas</p>
@@ -95,6 +109,16 @@ const Gateways = () => {
           <Plus className="w-8 h-8 text-muted-foreground mb-2" />
           <p className="font-semibold text-foreground">Adicionar Pagar.me</p>
           <p className="text-xs text-muted-foreground">PIX e Cartão de Crédito</p>
+        </Card>
+        <Card className="border-dashed border-2 flex flex-col items-center justify-center p-8 cursor-pointer hover:border-primary/50 transition-colors" onClick={() => handleNew("mercadopago")}>
+          <Plus className="w-8 h-8 text-muted-foreground mb-2" />
+          <p className="font-semibold text-foreground">Adicionar Mercado Pago</p>
+          <p className="text-xs text-muted-foreground">PIX e Cartão de Crédito</p>
+        </Card>
+        <Card className="border-dashed border-2 flex flex-col items-center justify-center p-8 cursor-pointer hover:border-primary/50 transition-colors" onClick={() => handleNew("stripe")}>
+          <Plus className="w-8 h-8 text-muted-foreground mb-2" />
+          <p className="font-semibold text-foreground">Adicionar Stripe</p>
+          <p className="text-xs text-muted-foreground">Cartão Internacional + PIX</p>
         </Card>
       </div>
 
@@ -189,6 +213,31 @@ const defaultPagarmeConfig = {
   free_installments: 1,
   interest_rate_initial: 6.58,
   interest_rate_incremental: 1.45,
+};
+
+const defaultMercadoPagoConfig = {
+  pix_fee_percent: 0.99,
+  pix_fee_fixed: 0,
+  pix_timer_minutes: 30,
+  credit_fee_1x: 4.98,
+  credit_fee_2_6x: 4.98,
+  credit_fee_7_12x: 4.98,
+  credit_processing_fee: 0,
+  max_installments: 12,
+  min_installment_value: 5,
+  free_installments: 1,
+  interest_rate_initial: 6.58,
+  interest_rate_incremental: 1.45,
+};
+
+const defaultStripeConfig = {
+  credit_fee_percent: 3.99,
+  credit_fee_fixed: 0.39,
+  pix_fee_percent: 1.5,
+  pix_fee_fixed: 0,
+  pix_timer_minutes: 30,
+  max_installments: 12,
+  min_installment_value: 5,
 };
 
 export default Gateways;
