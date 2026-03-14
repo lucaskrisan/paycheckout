@@ -30,7 +30,7 @@ function extractRevenue(insights: any): number {
   return p ? parseFloat(p.value) : 0;
 }
 
-export function MetaAdsSummary({ spend, conversionValue, results, roas }: Props) {
+export function MetaAdsSummary({ spend, conversionValue, results, roas, selectedAccounts }: Props) {
   const [orderMetrics, setOrderMetrics] = useState({
     pendingAmount: 0,
     chargebackAmount: 0,
