@@ -89,6 +89,8 @@ const ProductEdit = () => {
   const [savingCheckoutEdit, setSavingCheckoutEdit] = useState(false);
   const [checkouts, setCheckouts] = useState<any[]>([]);
   const [orderBumps, setOrderBumps] = useState<any[]>([]);
+  const [upsellOffers, setUpsellOffers] = useState<any[]>([]);
+  const [showUpsellDialog, setShowUpsellDialog] = useState(false);
   const [fbDomains, setFbDomains] = useState<{ id: string; domain: string; verified: boolean }[]>([]);
   const CATEGORIES = [
     "Saúde e Esportes", "Finanças e Investimentos", "Relacionamentos", "Negócios e Carreira",
