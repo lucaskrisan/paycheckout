@@ -49,7 +49,7 @@ const steps = [
   },
 ];
 
-const TrackingOnboardingGuide = ({ hasPixels, productCount }: Props) => {
+const TrackingOnboardingGuide = ({ hasPixels }: Props) => {
   const [expanded, setExpanded] = useState(!hasPixels);
   const navigate = useNavigate();
 
