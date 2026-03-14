@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { BookOpen, ChevronDown, ChevronRight, ExternalLink, Copy, CheckCircle2 } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronRight, ExternalLink, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 interface Props {
