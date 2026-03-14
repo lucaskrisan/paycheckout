@@ -477,6 +477,32 @@ const Orders = () => {
               </Select>
             </div>
 
+            {/* Currency */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Moeda</Label>
+              <Select value={filterCurrency} onValueChange={setFilterCurrency}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {CURRENCY_OPTIONS.map(c => (
+                    <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Type */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Tipo</Label>
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {TYPE_OPTIONS.map(t => (
+                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Product */}
             <div className="space-y-2">
               <Label className="text-sm font-medium">Produto</Label>
@@ -491,15 +517,46 @@ const Orders = () => {
               </Select>
             </div>
 
+            {/* Offer */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Oferta</Label>
+              <Select value={filterOffer} onValueChange={setFilterOffer}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Affiliate */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Afiliado</Label>
+              <Input
+                placeholder="Selecione um afiliado (buscar)"
+                value={filterAffiliate}
+                onChange={(e) => setFilterAffiliate(e.target.value)}
+                className="text-sm"
+              />
+            </div>
+
+            {/* UTM Params */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Parâmetros de URL</Label>
+              <Input
+                placeholder="utm_source, utm_medium..."
+                value={filterUtmParams}
+                onChange={(e) => setFilterUtmParams(e.target.value)}
+                className="text-sm"
+              />
+            </div>
+
             {/* Payment method */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-medium">Método de pagamento</Label>
-                {filterMethods.size > 0 && (
-                  <button onClick={() => setFilterMethods(new Set(PAYMENT_METHODS.map(m => m.value)))} className="text-xs text-primary hover:underline">
-                    Selecionar todos
-                  </button>
-                )}
+                <button onClick={() => setFilterMethods(prev => prev.size === PAYMENT_METHODS.length ? new Set() : new Set(PAYMENT_METHODS.map(m => m.value)))} className="text-xs text-primary hover:underline">
+                  {filterMethods.size === PAYMENT_METHODS.length ? "Desmarcar todos" : "Selecionar todos"}
+                </button>
               </div>
               {PAYMENT_METHODS.map(m => (
                 <div key={m.value} className="flex items-center gap-2">
@@ -517,11 +574,9 @@ const Orders = () => {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-medium">Status</Label>
-                {filterStatuses.size > 0 && (
-                  <button onClick={() => setFilterStatuses(new Set(STATUS_FILTERS.map(s => s.value)))} className="text-xs text-primary hover:underline">
-                    Selecionar todos
-                  </button>
-                )}
+                <button onClick={() => setFilterStatuses(prev => prev.size === STATUS_FILTERS.length ? new Set() : new Set(STATUS_FILTERS.map(s => s.value)))} className="text-xs text-primary hover:underline">
+                  {filterStatuses.size === STATUS_FILTERS.length ? "Desmarcar todos" : "Selecionar todos"}
+                </button>
               </div>
               {STATUS_FILTERS.map(s => (
                 <div key={s.value} className="flex items-center gap-2">
@@ -531,6 +586,26 @@ const Orders = () => {
                     onCheckedChange={() => setFilterStatuses(prev => toggleFilter(prev, s.value))}
                   />
                   <label htmlFor={`status-${s.value}`} className="text-sm cursor-pointer">{s.label}</label>
+                </div>
+              ))}
+            </div>
+
+            {/* Subscription */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Assinatura</Label>
+                <button onClick={() => setFilterSubscriptions(prev => prev.size === SUBSCRIPTION_FILTERS.length ? new Set() : new Set(SUBSCRIPTION_FILTERS.map(s => s.value)))} className="text-xs text-primary hover:underline">
+                  {filterSubscriptions.size === SUBSCRIPTION_FILTERS.length ? "Desmarcar todos" : "Selecionar todos"}
+                </button>
+              </div>
+              {SUBSCRIPTION_FILTERS.map(s => (
+                <div key={s.value} className="flex items-center gap-2">
+                  <Checkbox
+                    id={`sub-${s.value}`}
+                    checked={filterSubscriptions.has(s.value)}
+                    onCheckedChange={() => setFilterSubscriptions(prev => toggleFilter(prev, s.value))}
+                  />
+                  <label htmlFor={`sub-${s.value}`} className="text-sm cursor-pointer">{s.label}</label>
                 </div>
               ))}
             </div>
