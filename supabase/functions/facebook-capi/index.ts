@@ -161,8 +161,10 @@ Deno.serve(async (req) => {
       client_user_agent: user_agent || req.headers.get('user-agent') || undefined,
     };
 
-    if (fbc) userData.fbc = fbc;
-    if (fbp) userData.fbp = fbp;
+    // CRITICAL: Only send fbc/fbp if they have actual values (not empty strings)
+    // Meta flags empty fbc as "received but empty" which hurts EMQ score
+    if (fbc && typeof fbc === 'string' && fbc.startsWith('fb.')) userData.fbc = fbc;
+    if (fbp && typeof fbp === 'string' && fbp.startsWith('fb.')) userData.fbp = fbp;
 
     // Always send country for Brazilian users (boosts EMQ significantly)
     (userData as any).country = [await hashSHA256('br')];
