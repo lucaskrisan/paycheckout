@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import type { MetaCampaign } from "@/hooks/useMetaAds";
 import { getResults, getCPA, getROAS, getConversionValue, formatCurrency } from "./MetaInsightsHelpers";
+import { MetaCampaignLifecycle } from "./MetaCampaignLifecycle";
 
 interface Props {
   campaigns: MetaCampaign[];
@@ -299,6 +300,9 @@ export function MetaAdsAlerts({ campaigns, loading }: Props) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Campaign Lifecycle & Scaling */}
+      <MetaCampaignLifecycle campaigns={campaigns} healthScore={health.score} />
 
       {/* Alerts list */}
       {alerts.length === 0 ? (
