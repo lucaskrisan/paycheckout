@@ -17,6 +17,7 @@ import {
   Loader2,
   Lock,
   ExternalLink,
+  LayoutDashboard,
 } from "lucide-react";
 import { toast } from "sonner";
 
