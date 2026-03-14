@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,9 +7,18 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, DollarSign, ShoppingCart, TrendingUp, Search, ShieldCheck, ShieldX, UserPlus, Loader2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Users, DollarSign, ShoppingCart, TrendingUp, Search, ShieldCheck, ShieldX, Loader2,
+  Crown, Eye, ArrowLeft, CreditCard, AlertTriangle, Ban, CheckCircle, RefreshCcw,
+  Activity, Webhook, Mail, Package, BarChart3, Wallet,
+} from "lucide-react";
 import { toast } from "sonner";
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from "recharts";
 
+/* ─── Types ────────────────────────────────────── */
 interface Producer {
   id: string;
   full_name: string | null;
@@ -17,6 +26,7 @@ interface Producer {
   product_count: number;
   order_count: number;
   total_revenue: number;
+  pending_revenue: number;
 }
 
 interface UserWithRoles {
@@ -26,101 +36,152 @@ interface UserWithRoles {
   roles: string[];
 }
 
+interface BillingAccount {
+  user_id: string;
+  balance: number;
+  credit_limit: number;
+  credit_tier: string;
+  blocked: boolean;
+  card_last4: string | null;
+  card_brand: string | null;
+  producer_name?: string;
+}
+
+interface BillingTx {
+  id: string;
+  user_id: string;
+  type: string;
+  amount: number;
+  description: string | null;
+  created_at: string;
+  order_id: string | null;
+  producer_name?: string;
+}
+
+type Period = "today" | "7days" | "month" | "total";
+const periodLabels: Record<Period, string> = {
+  today: "Hoje", "7days": "7 dias", month: "Mês atual", total: "Total",
+};
+
+const fmt = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
+
+/* ─── Component ────────────────────────────────── */
 const SuperAdminDashboard = () => {
   const { isSuperAdmin, user } = useAuth();
+
+  // Data state
   const [producers, setProducers] = useState<Producer[]>([]);
   const [allUsers, setAllUsers] = useState<UserWithRoles[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [billingAccounts, setBillingAccounts] = useState<BillingAccount[]>([]);
+  const [billingTxs, setBillingTxs] = useState<BillingTx[]>([]);
+  const [emailLogs, setEmailLogs] = useState<any[]>([]);
+  const [webhookEndpoints, setWebhookEndpoints] = useState<any[]>([]);
+
+  // UI state
   const [loading, setLoading] = useState(true);
-  const [usersLoading, setUsersLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [userSearch, setUserSearch] = useState("");
-  const [platformStats, setPlatformStats] = useState({
-    totalProducers: 0,
-    totalOrders: 0,
-    totalRevenue: 0,
-    platformFees: 0,
-    feePercent: 4.99,
-  });
+  const [period, setPeriod] = useState<Period>("today");
+  const [selectedProducerId, setSelectedProducerId] = useState<string | null>(null);
+  const [feePercent, setFeePercent] = useState(4.99);
 
   useEffect(() => {
-    if (isSuperAdmin) {
-      loadData();
-      loadAllUsers();
-    }
+    if (isSuperAdmin) loadAll();
   }, [isSuperAdmin]);
 
-  const loadData = async () => {
-    const { data: adminRoles } = await supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin"]);
-    const adminUserIds = [...new Set((adminRoles || []).map((r: any) => r.user_id))];
+  const loadAll = useCallback(async () => {
+    setLoading(true);
+    const [
+      { data: rolesData },
+      { data: profilesData },
+      { data: ordersData },
+      { data: productsData },
+      { data: settingsData },
+      { data: billingData },
+      { data: txData },
+      { data: emailData },
+      { data: webhooksData },
+    ] = await Promise.all([
+      supabase.from("user_roles").select("user_id, role"),
+      supabase.from("profiles").select("*").order("created_at", { ascending: false }),
+      supabase.from("orders").select("*").order("created_at", { ascending: false }),
+      supabase.from("products").select("*"),
+      supabase.from("platform_settings").select("*").limit(1).single(),
+      supabase.from("billing_accounts").select("*"),
+      supabase.from("billing_transactions").select("*").order("created_at", { ascending: false }).limit(200),
+      supabase.from("email_logs").select("id, email_type, status, to_email, to_name, subject, created_at, user_id, cost_estimate").order("created_at", { ascending: false }).limit(100),
+      supabase.from("webhook_endpoints").select("*"),
+    ]);
 
-    const { data: profiles } = adminUserIds.length > 0
-      ? await supabase.from("profiles").select("*").in("id", adminUserIds).order("created_at", { ascending: false })
-      : { data: [] };
+    const fee = (settingsData as any)?.platform_fee_percent || 4.99;
+    setFeePercent(fee);
 
-    const { data: orders } = await supabase.from("orders").select("user_id, amount, status");
-    const { data: products } = await supabase.from("products").select("user_id");
-    const { data: settings } = await supabase.from("platform_settings" as any).select("*").limit(1).single();
-    const feePercent = (settings as any)?.platform_fee_percent || 4.99;
-
-    const totalRevenue = (orders || [])
-      .filter((o: any) => o.status === "paid" || o.status === "confirmed")
-      .reduce((acc: number, o: any) => acc + Number(o.amount), 0);
-
-    const producerMap = new Map<string, Producer>();
-    (profiles || []).forEach((p: any) => {
-      producerMap.set(p.id, { id: p.id, full_name: p.full_name, created_at: p.created_at, product_count: 0, order_count: 0, total_revenue: 0 });
-    });
-
-    (products || []).forEach((p: any) => {
-      if (p.user_id && producerMap.has(p.user_id)) producerMap.get(p.user_id)!.product_count++;
-    });
-
-    (orders || []).forEach((o: any) => {
-      if (o.user_id && producerMap.has(o.user_id)) {
-        const prod = producerMap.get(o.user_id)!;
-        prod.order_count++;
-        if (o.status === "paid" || o.status === "confirmed") prod.total_revenue += Number(o.amount);
-      }
-    });
-
-    setProducers(Array.from(producerMap.values()));
-    setPlatformStats({ totalProducers: producerMap.size, totalOrders: (orders || []).length, totalRevenue, platformFees: totalRevenue * (feePercent / 100), feePercent });
-    setLoading(false);
-  };
-
-  const loadAllUsers = async () => {
-    setUsersLoading(true);
-    const { data: profiles } = await supabase.from("profiles").select("*").order("created_at", { ascending: false });
-    const { data: roles } = await supabase.from("user_roles").select("user_id, role");
-
+    // Build role map
     const roleMap = new Map<string, string[]>();
-    (roles || []).forEach((r: any) => {
+    (rolesData || []).forEach((r: any) => {
       if (!roleMap.has(r.user_id)) roleMap.set(r.user_id, []);
       roleMap.get(r.user_id)!.push(r.role);
     });
 
-    const users: UserWithRoles[] = (profiles || []).map((p: any) => ({
-      id: p.id,
-      full_name: p.full_name,
-      created_at: p.created_at,
-      roles: roleMap.get(p.id) || [],
+    // All users
+    const users: UserWithRoles[] = (profilesData || []).map((p: any) => ({
+      id: p.id, full_name: p.full_name, created_at: p.created_at, roles: roleMap.get(p.id) || [],
     }));
-
     setAllUsers(users);
-    setUsersLoading(false);
-  };
 
+    // Profile name map
+    const nameMap = new Map<string, string>();
+    (profilesData || []).forEach((p: any) => nameMap.set(p.id, p.full_name || "Sem nome"));
+
+    // Producers
+    const adminIds = new Set((rolesData || []).filter((r: any) => r.role === "admin" || r.role === "super_admin").map((r: any) => r.user_id));
+    const producerMap = new Map<string, Producer>();
+    adminIds.forEach((uid) => {
+      producerMap.set(uid, {
+        id: uid, full_name: nameMap.get(uid) || "Sem nome", created_at: "",
+        product_count: 0, order_count: 0, total_revenue: 0, pending_revenue: 0,
+      });
+    });
+    (profilesData || []).forEach((p: any) => {
+      if (producerMap.has(p.id)) producerMap.get(p.id)!.created_at = p.created_at;
+    });
+    (productsData || []).forEach((p: any) => {
+      if (p.user_id && producerMap.has(p.user_id)) producerMap.get(p.user_id)!.product_count++;
+    });
+    (ordersData || []).forEach((o: any) => {
+      if (o.user_id && producerMap.has(o.user_id)) {
+        const prod = producerMap.get(o.user_id)!;
+        prod.order_count++;
+        const s = String(o.status).toLowerCase();
+        if (s === "paid" || s === "approved") prod.total_revenue += Number(o.amount);
+        if (s === "pending") prod.pending_revenue += Number(o.amount);
+      }
+    });
+    setProducers(Array.from(producerMap.values()));
+    setOrders(ordersData || []);
+    setProducts(productsData || []);
+
+    // Billing
+    setBillingAccounts((billingData || []).map((b: any) => ({ ...b, producer_name: nameMap.get(b.user_id) || "Sem nome" })));
+    setBillingTxs((txData || []).map((t: any) => ({ ...t, producer_name: nameMap.get(t.user_id) || "Sem nome" })));
+
+    // Logs
+    setEmailLogs((emailData || []).map((e: any) => ({ ...e, producer_name: nameMap.get(e.user_id) || "—" })));
+    setWebhookEndpoints(webhooksData || []);
+
+    setLoading(false);
+  }, []);
+
+  /* ─── Actions ─── */
   const promoteToAdmin = async (userId: string) => {
     if (userId === user?.id) return;
     setActionLoading(userId);
     const { error } = await supabase.from("user_roles").insert({ user_id: userId, role: "admin" as any });
-    if (error) {
-      toast.error("Erro ao promover: " + error.message);
-    } else {
-      toast.success("Usuário promovido a Produtor!");
-      await Promise.all([loadAllUsers(), loadData()]);
-    }
+    if (error) toast.error("Erro: " + error.message);
+    else { toast.success("Promovido a Produtor!"); await loadAll(); }
     setActionLoading(null);
   };
 
@@ -128,253 +189,490 @@ const SuperAdminDashboard = () => {
     if (userId === user?.id) return;
     setActionLoading(userId);
     const { error } = await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", "admin" as any);
-    if (error) {
-      toast.error("Erro ao rebaixar: " + error.message);
-    } else {
-      toast.success("Acesso de produtor removido!");
-      await Promise.all([loadAllUsers(), loadData()]);
-    }
+    if (error) toast.error("Erro: " + error.message);
+    else { toast.success("Acesso removido!"); await loadAll(); }
     setActionLoading(null);
   };
 
+  /* ─── Computed ─── */
+  const filterByPeriod = useCallback((items: any[]) => {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return items.filter((item) => {
+      const d = new Date(item.created_at);
+      switch (period) {
+        case "today": return d >= startOfDay;
+        case "7days": { const w = new Date(startOfDay); w.setDate(w.getDate() - 7); return d >= w; }
+        case "month": return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+        case "total": return true;
+        default: return true;
+      }
+    });
+  }, [period]);
+
+  const paidStatuses = new Set(["paid", "approved"]);
+  const periodOrders = useMemo(() => filterByPeriod(orders), [orders, filterByPeriod]);
+  const periodApproved = useMemo(() => periodOrders.filter((o) => paidStatuses.has(String(o.status).toLowerCase())), [periodOrders]);
+
+  const totalRevenue = periodApproved.reduce((s, o) => s + Number(o.amount), 0);
+  const totalPlatformFees = totalRevenue * (feePercent / 100);
+  const totalOrders = periodOrders.length;
+  const approvedCount = periodApproved.length;
+
+  // Chart
+  const chartData = useMemo(() => {
+    const days: Record<string, { revenue: number; fees: number }> = {};
+    const now = new Date();
+    const numDays = period === "today" ? 1 : period === "7days" ? 7 : 30;
+    for (let i = numDays - 1; i >= 0; i--) {
+      const d = new Date(now); d.setDate(d.getDate() - i);
+      days[d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })] = { revenue: 0, fees: 0 };
+    }
+    periodApproved.forEach((o) => {
+      const key = new Date(o.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+      if (days[key] !== undefined) {
+        const amt = Number(o.amount);
+        days[key].revenue += amt;
+        days[key].fees += amt * (feePercent / 100);
+      }
+    });
+    return Object.entries(days).map(([name, v]) => ({ name, ...v }));
+  }, [periodApproved, period, feePercent]);
+
+  // Producer drill-down
+  const selectedProducer = useMemo(() => producers.find((p) => p.id === selectedProducerId), [producers, selectedProducerId]);
+  const producerOrders = useMemo(() => {
+    if (!selectedProducerId) return [];
+    return filterByPeriod(orders.filter((o) => o.user_id === selectedProducerId));
+  }, [orders, selectedProducerId, filterByPeriod]);
+  const producerProducts = useMemo(() => {
+    if (!selectedProducerId) return [];
+    return products.filter((p) => p.user_id === selectedProducerId);
+  }, [products, selectedProducerId]);
+
   if (!isSuperAdmin) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <p className="text-muted-foreground">Acesso restrito ao Super Admin.</p>
-      </div>
-    );
+    return <div className="flex items-center justify-center py-20"><p className="text-muted-foreground">Acesso restrito ao Super Admin.</p></div>;
   }
 
-  const filteredProducers = producers.filter(
-    (p) => (p.full_name || "").toLowerCase().includes(search.toLowerCase()) || p.id.includes(search)
-  );
+  if (loading) {
+    return <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+  }
 
-  const filteredUsers = allUsers.filter(
-    (u) => (u.full_name || "").toLowerCase().includes(userSearch.toLowerCase()) || u.id.includes(userSearch)
-  );
+  const filteredProducers = producers.filter((p) => (p.full_name || "").toLowerCase().includes(search.toLowerCase()));
+  const filteredUsers = allUsers.filter((u) => (u.full_name || "").toLowerCase().includes(userSearch.toLowerCase()));
 
   return (
     <div className="space-y-6">
-      <h1 className="font-display text-2xl font-bold text-foreground">Painel da Plataforma</h1>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10"><Users className="w-5 h-5 text-primary" /></div>
-              <div>
-                <p className="text-xs text-muted-foreground">Produtores</p>
-                <p className="text-2xl font-display font-bold text-foreground">{platformStats.totalProducers}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10"><ShoppingCart className="w-5 h-5 text-primary" /></div>
-              <div>
-                <p className="text-xs text-muted-foreground">Pedidos Totais</p>
-                <p className="text-2xl font-display font-bold text-foreground">{platformStats.totalOrders}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10"><DollarSign className="w-5 h-5 text-primary" /></div>
-              <div>
-                <p className="text-xs text-muted-foreground">Receita Total</p>
-                <p className="text-2xl font-display font-bold text-foreground">
-                  R$ {platformStats.totalRevenue.toFixed(2).replace(".", ",")}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-checkout-badge/10"><TrendingUp className="w-5 h-5 text-checkout-badge" /></div>
-              <div>
-                <p className="text-xs text-muted-foreground">Comissão ({platformStats.feePercent}%)</p>
-                <p className="text-2xl font-display font-bold text-foreground">
-                  R$ {platformStats.platformFees.toFixed(2).replace(".", ",")}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="flex items-center gap-3">
+        <Crown className="w-6 h-6 text-primary" />
+        <h1 className="font-display text-2xl font-bold text-foreground">Painel CEO — Super Admin</h1>
+        <Button variant="ghost" size="sm" onClick={() => loadAll()} className="ml-auto gap-1.5">
+          <RefreshCcw className="w-4 h-4" /> Atualizar
+        </Button>
       </div>
 
+      {/* Period selector */}
+      <div className="flex items-center gap-2">
+        <Select value={period} onValueChange={(v) => setPeriod(v as Period)}>
+          <SelectTrigger className="w-[150px] h-9 text-sm"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {(Object.keys(periodLabels) as Period[]).map((p) => <SelectItem key={p} value={p}>{periodLabels[p]}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Global KPIs */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        {[
+          { icon: Users, label: "Produtores", value: String(producers.length), color: "text-primary" },
+          { icon: ShoppingCart, label: "Pedidos", value: String(totalOrders), color: "text-primary" },
+          { icon: CheckCircle, label: "Aprovados", value: String(approvedCount), color: "text-emerald-500" },
+          { icon: DollarSign, label: "Receita Total", value: fmt(totalRevenue), color: "text-primary" },
+          { icon: TrendingUp, label: `Comissão (${feePercent}%)`, value: fmt(totalPlatformFees), color: "text-amber-500" },
+        ].map((kpi, i) => (
+          <Card key={i}>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-muted"><kpi.icon className={`w-5 h-5 ${kpi.color}`} /></div>
+              <div>
+                <p className="text-xs text-muted-foreground">{kpi.label}</p>
+                <p className="text-lg font-bold text-foreground">{kpi.value}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Chart */}
+      <Card>
+        <CardContent className="p-5">
+          <p className="text-sm font-medium text-muted-foreground mb-3">Receita vs Comissão</p>
+          <div className="h-[200px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="gRev" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="gFee" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `R$${v}`} />
+                <Tooltip formatter={(v: number) => fmt(v)} />
+                <Area type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" fill="url(#gRev)" strokeWidth={2} name="Receita" />
+                <Area type="monotone" dataKey="fees" stroke="#f59e0b" fill="url(#gFee)" strokeWidth={2} name="Comissão" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Tabs */}
       <Tabs defaultValue="producers" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="producers">Produtores</TabsTrigger>
-          <TabsTrigger value="users">Gerenciar Usuários</TabsTrigger>
+        <TabsList className="flex-wrap">
+          <TabsTrigger value="producers"><Users className="w-4 h-4 mr-1.5" />Produtores</TabsTrigger>
+          <TabsTrigger value="financial"><Wallet className="w-4 h-4 mr-1.5" />Financeiro</TabsTrigger>
+          <TabsTrigger value="logs"><Activity className="w-4 h-4 mr-1.5" />Logs & Auditoria</TabsTrigger>
+          <TabsTrigger value="users"><ShieldCheck className="w-4 h-4 mr-1.5" />Gerenciar Usuários</TabsTrigger>
         </TabsList>
 
-        {/* Producers Tab */}
+        {/* ═══ PRODUCERS TAB ═══ */}
         <TabsContent value="producers">
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="font-display text-lg">Produtores Ativos</CardTitle>
-                <div className="relative w-64">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input placeholder="Buscar produtor..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9" />
-                </div>
+          {selectedProducerId ? (
+            /* ─── Producer Drill-down ─── */
+            <div className="space-y-4">
+              <Button variant="ghost" size="sm" onClick={() => setSelectedProducerId(null)} className="gap-1.5">
+                <ArrowLeft className="w-4 h-4" /> Voltar para lista
+              </Button>
+              <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                <Eye className="w-5 h-5 text-primary" />
+                Dashboard de: {selectedProducer?.full_name || "Produtor"}
+              </h2>
+
+              {/* Producer KPIs */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  { label: "Produtos", value: String(producerProducts.length), icon: Package },
+                  { label: "Pedidos (período)", value: String(producerOrders.length), icon: ShoppingCart },
+                  { label: "Receita aprovada", value: fmt(producerOrders.filter((o) => paidStatuses.has(String(o.status).toLowerCase())).reduce((s, o) => s + Number(o.amount), 0)), icon: DollarSign },
+                  { label: "Pendentes", value: fmt(producerOrders.filter((o) => o.status === "pending").reduce((s, o) => s + Number(o.amount), 0)), icon: AlertTriangle },
+                ].map((k, i) => (
+                  <Card key={i}><CardContent className="p-4 flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-muted"><k.icon className="w-5 h-5 text-muted-foreground" /></div>
+                    <div><p className="text-xs text-muted-foreground">{k.label}</p><p className="text-lg font-bold text-foreground">{k.value}</p></div>
+                  </CardContent></Card>
+                ))}
               </div>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <p className="text-sm text-muted-foreground py-4">Carregando...</p>
-              ) : (
+
+              {/* Producer Products */}
+              <Card>
+                <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Produtos</CardTitle></CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader><TableRow>
+                      <TableHead>Nome</TableHead><TableHead className="text-right">Preço</TableHead><TableHead className="text-center">Ativo</TableHead>
+                    </TableRow></TableHeader>
+                    <TableBody>
+                      {producerProducts.map((p) => (
+                        <TableRow key={p.id}>
+                          <TableCell className="font-medium">{p.name}</TableCell>
+                          <TableCell className="text-right">{fmt(Number(p.price))}</TableCell>
+                          <TableCell className="text-center">{p.active ? <Badge variant="default" className="text-xs">Sim</Badge> : <Badge variant="outline" className="text-xs">Não</Badge>}</TableCell>
+                        </TableRow>
+                      ))}
+                      {producerProducts.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-4">Nenhum produto</TableCell></TableRow>}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+
+              {/* Producer Orders */}
+              <Card>
+                <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Últimos Pedidos</CardTitle></CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader><TableRow>
+                      <TableHead>ID</TableHead><TableHead>Status</TableHead><TableHead>Método</TableHead><TableHead className="text-right">Valor</TableHead><TableHead>Data</TableHead>
+                    </TableRow></TableHeader>
+                    <TableBody>
+                      {producerOrders.slice(0, 20).map((o) => (
+                        <TableRow key={o.id}>
+                          <TableCell className="text-xs font-mono">{o.id.slice(0, 8)}</TableCell>
+                          <TableCell><Badge variant={paidStatuses.has(o.status) ? "default" : o.status === "pending" ? "secondary" : "destructive"} className="text-xs">{o.status}</Badge></TableCell>
+                          <TableCell className="text-xs">{o.payment_method}</TableCell>
+                          <TableCell className="text-right font-semibold">{fmt(Number(o.amount))}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{new Date(o.created_at).toLocaleString("pt-BR")}</TableCell>
+                        </TableRow>
+                      ))}
+                      {producerOrders.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-4">Nenhum pedido no período</TableCell></TableRow>}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            /* ─── Producer List ─── */
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Produtores Ativos</CardTitle>
+                  <div className="relative w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9" />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
                 <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead className="text-center">Produtos</TableHead>
-                      <TableHead className="text-center">Pedidos</TableHead>
-                      <TableHead className="text-right">Receita</TableHead>
-                      <TableHead className="text-right">Sua Comissão</TableHead>
-                      <TableHead className="text-center">Cadastro</TableHead>
-                      <TableHead className="text-center">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                  <TableHeader><TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead className="text-center">Produtos</TableHead>
+                    <TableHead className="text-center">Pedidos</TableHead>
+                    <TableHead className="text-right">Receita</TableHead>
+                    <TableHead className="text-right">Sua Comissão</TableHead>
+                    <TableHead className="text-center">Ações</TableHead>
+                  </TableRow></TableHeader>
                   <TableBody>
                     {filteredProducers.map((p) => {
                       const isSelf = p.id === user?.id;
                       return (
-                        <TableRow key={p.id}>
+                        <TableRow key={p.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedProducerId(p.id)}>
                           <TableCell className="font-medium">
                             {p.full_name || "Sem nome"}
                             {isSelf && <Badge variant="outline" className="ml-2 text-xs">Você</Badge>}
                           </TableCell>
                           <TableCell className="text-center">{p.product_count}</TableCell>
                           <TableCell className="text-center">{p.order_count}</TableCell>
-                          <TableCell className="text-right font-semibold">R$ {p.total_revenue.toFixed(2).replace(".", ",")}</TableCell>
-                          <TableCell className="text-right text-primary font-semibold">R$ {(p.total_revenue * (platformStats.feePercent / 100)).toFixed(2).replace(".", ",")}</TableCell>
-                          <TableCell className="text-center text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString("pt-BR")}</TableCell>
-                          <TableCell className="text-center">
-                            {!isSelf && (
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                className="h-7 text-xs gap-1"
-                                disabled={actionLoading === p.id}
-                                onClick={() => demoteFromAdmin(p.id)}
-                              >
-                                {actionLoading === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldX className="w-3 h-3" />}
-                                Remover
+                          <TableCell className="text-right font-semibold">{fmt(p.total_revenue)}</TableCell>
+                          <TableCell className="text-right text-primary font-semibold">{fmt(p.total_revenue * (feePercent / 100))}</TableCell>
+                          <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex gap-1 justify-center">
+                              <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" onClick={() => setSelectedProducerId(p.id)}>
+                                <Eye className="w-3 h-3" /> Ver
                               </Button>
-                            )}
+                              {!isSelf && (
+                                <Button size="sm" variant="destructive" className="h-7 text-xs gap-1" disabled={actionLoading === p.id} onClick={() => demoteFromAdmin(p.id)}>
+                                  {actionLoading === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldX className="w-3 h-3" />} Remover
+                                </Button>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
                     })}
-                    {filteredProducers.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center text-muted-foreground py-8">Nenhum produtor encontrado.</TableCell>
-                      </TableRow>
-                    )}
+                    {filteredProducers.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhum produtor</TableCell></TableRow>}
                   </TableBody>
                 </Table>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
-        {/* Users Management Tab */}
+        {/* ═══ FINANCIAL TAB ═══ */}
+        <TabsContent value="financial">
+          <div className="space-y-4">
+            {/* Billing accounts overview */}
+            <Card>
+              <CardHeader className="pb-3"><CardTitle className="text-lg flex items-center gap-2"><Wallet className="w-5 h-5" /> Contas de Billing dos Produtores</CardTitle></CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader><TableRow>
+                    <TableHead>Produtor</TableHead>
+                    <TableHead className="text-center">Tier</TableHead>
+                    <TableHead className="text-right">Saldo Devedor</TableHead>
+                    <TableHead className="text-right">Limite</TableHead>
+                    <TableHead className="text-center">Cartão</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
+                  </TableRow></TableHeader>
+                  <TableBody>
+                    {billingAccounts.map((b) => (
+                      <TableRow key={b.user_id}>
+                        <TableCell className="font-medium">{b.producer_name}</TableCell>
+                        <TableCell className="text-center"><Badge variant="outline" className="text-xs uppercase">{b.credit_tier}</Badge></TableCell>
+                        <TableCell className="text-right font-semibold">{fmt(b.balance)}</TableCell>
+                        <TableCell className="text-right">{fmt(b.credit_limit)}</TableCell>
+                        <TableCell className="text-center text-xs">{b.card_last4 ? `${b.card_brand || "•"} ****${b.card_last4}` : "—"}</TableCell>
+                        <TableCell className="text-center">
+                          {b.blocked
+                            ? <Badge variant="destructive" className="text-xs gap-1"><Ban className="w-3 h-3" /> Bloqueado</Badge>
+                            : <Badge variant="default" className="text-xs gap-1"><CheckCircle className="w-3 h-3" /> Ativo</Badge>
+                          }
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {billingAccounts.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhuma conta</TableCell></TableRow>}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* Recent billing transactions */}
+            <Card>
+              <CardHeader className="pb-3"><CardTitle className="text-lg flex items-center gap-2"><CreditCard className="w-5 h-5" /> Últimas Transações de Billing</CardTitle></CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader><TableRow>
+                    <TableHead>Produtor</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
+                    <TableHead>Descrição</TableHead>
+                    <TableHead>Data</TableHead>
+                  </TableRow></TableHeader>
+                  <TableBody>
+                    {billingTxs.slice(0, 50).map((tx) => (
+                      <TableRow key={tx.id}>
+                        <TableCell className="text-sm">{tx.producer_name}</TableCell>
+                        <TableCell><Badge variant={tx.type === "fee" ? "secondary" : tx.type === "payment" ? "default" : "outline"} className="text-xs">{tx.type}</Badge></TableCell>
+                        <TableCell className="text-right font-semibold">{fmt(tx.amount)}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">{tx.description || "—"}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{new Date(tx.created_at).toLocaleString("pt-BR")}</TableCell>
+                      </TableRow>
+                    ))}
+                    {billingTxs.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhuma transação</TableCell></TableRow>}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* ═══ LOGS & AUDIT TAB ═══ */}
+        <TabsContent value="logs">
+          <div className="space-y-4">
+            {/* Email logs */}
+            <Card>
+              <CardHeader className="pb-3"><CardTitle className="text-lg flex items-center gap-2"><Mail className="w-5 h-5" /> Últimos Emails Enviados</CardTitle></CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader><TableRow>
+                    <TableHead>Produtor</TableHead>
+                    <TableHead>Para</TableHead>
+                    <TableHead>Assunto</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
+                    <TableHead>Data</TableHead>
+                  </TableRow></TableHeader>
+                  <TableBody>
+                    {emailLogs.slice(0, 30).map((e: any) => (
+                      <TableRow key={e.id}>
+                        <TableCell className="text-xs">{e.producer_name}</TableCell>
+                        <TableCell className="text-xs">{e.to_email}</TableCell>
+                        <TableCell className="text-xs max-w-[200px] truncate">{e.subject}</TableCell>
+                        <TableCell className="text-center"><Badge variant={e.status === "delivered" ? "default" : e.status === "bounced" ? "destructive" : "secondary"} className="text-xs">{e.status}</Badge></TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{new Date(e.created_at).toLocaleString("pt-BR")}</TableCell>
+                      </TableRow>
+                    ))}
+                    {emailLogs.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhum email</TableCell></TableRow>}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* Webhooks */}
+            <Card>
+              <CardHeader className="pb-3"><CardTitle className="text-lg flex items-center gap-2"><Webhook className="w-5 h-5" /> Webhooks Cadastrados</CardTitle></CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader><TableRow>
+                    <TableHead>URL</TableHead>
+                    <TableHead>Eventos</TableHead>
+                    <TableHead className="text-center">Ativo</TableHead>
+                  </TableRow></TableHeader>
+                  <TableBody>
+                    {webhookEndpoints.map((w: any) => (
+                      <TableRow key={w.id}>
+                        <TableCell className="text-xs font-mono max-w-[300px] truncate">{w.url}</TableCell>
+                        <TableCell><div className="flex gap-1 flex-wrap">{(w.events || []).map((ev: string) => <Badge key={ev} variant="outline" className="text-xs">{ev}</Badge>)}</div></TableCell>
+                        <TableCell className="text-center">{w.active ? <CheckCircle className="w-4 h-4 text-emerald-500 mx-auto" /> : <Ban className="w-4 h-4 text-destructive mx-auto" />}</TableCell>
+                      </TableRow>
+                    ))}
+                    {webhookEndpoints.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-8">Nenhum webhook</TableCell></TableRow>}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* Platform stats summary */}
+            <Card>
+              <CardHeader className="pb-3"><CardTitle className="text-lg flex items-center gap-2"><BarChart3 className="w-5 h-5" /> Resumo da Plataforma</CardTitle></CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div><p className="text-muted-foreground">Total Usuários</p><p className="text-xl font-bold">{allUsers.length}</p></div>
+                  <div><p className="text-muted-foreground">Produtores</p><p className="text-xl font-bold">{producers.length}</p></div>
+                  <div><p className="text-muted-foreground">Produtos Cadastrados</p><p className="text-xl font-bold">{products.length}</p></div>
+                  <div><p className="text-muted-foreground">Pedidos Totais</p><p className="text-xl font-bold">{orders.length}</p></div>
+                  <div><p className="text-muted-foreground">Webhooks</p><p className="text-xl font-bold">{webhookEndpoints.length}</p></div>
+                  <div><p className="text-muted-foreground">Emails Enviados</p><p className="text-xl font-bold">{emailLogs.length}</p></div>
+                  <div><p className="text-muted-foreground">Contas Billing</p><p className="text-xl font-bold">{billingAccounts.length}</p></div>
+                  <div><p className="text-muted-foreground">Bloqueados</p><p className="text-xl font-bold text-destructive">{billingAccounts.filter((b) => b.blocked).length}</p></div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* ═══ USERS TAB ═══ */}
         <TabsContent value="users">
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="font-display text-lg">Todos os Usuários</CardTitle>
+                <CardTitle className="text-lg">Todos os Usuários</CardTitle>
                 <div className="relative w-64">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input placeholder="Buscar usuário..." value={userSearch} onChange={(e) => setUserSearch(e.target.value)} className="pl-9 h-9" />
+                  <Input placeholder="Buscar..." value={userSearch} onChange={(e) => setUserSearch(e.target.value)} className="pl-9 h-9" />
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              {usersLoading ? (
-                <p className="text-sm text-muted-foreground py-4">Carregando...</p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Roles</TableHead>
-                      <TableHead className="text-center">Cadastro</TableHead>
-                      <TableHead className="text-center">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredUsers.map((u) => {
-                      const isSelf = u.id === user?.id;
-                      const isAdmin = u.roles.includes("admin");
-                      const isSA = u.roles.includes("super_admin");
-                      return (
-                        <TableRow key={u.id}>
-                          <TableCell className="font-medium">
-                            {u.full_name || "Sem nome"}
-                            {isSelf && <Badge variant="outline" className="ml-2 text-xs">Você</Badge>}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-1 flex-wrap">
-                              {u.roles.map((r) => (
-                                <Badge
-                                  key={r}
-                                  variant={r === "super_admin" ? "default" : r === "admin" ? "secondary" : "outline"}
-                                  className="text-xs"
-                                >
-                                  {r === "super_admin" ? "Super Admin" : r === "admin" ? "Produtor" : "Comprador"}
-                                </Badge>
-                              ))}
-                              {u.roles.length === 0 && <Badge variant="outline" className="text-xs">Sem role</Badge>}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-center text-xs text-muted-foreground">
-                            {new Date(u.created_at).toLocaleDateString("pt-BR")}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {isSelf || isSA ? null : isAdmin ? (
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                className="h-7 text-xs gap-1"
-                                disabled={actionLoading === u.id}
-                                onClick={() => demoteFromAdmin(u.id)}
-                              >
-                                {actionLoading === u.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldX className="w-3 h-3" />}
-                                Rebaixar
-                              </Button>
-                            ) : (
-                              <Button
-                                size="sm"
-                                variant="default"
-                                className="h-7 text-xs gap-1"
-                                disabled={actionLoading === u.id}
-                                onClick={() => promoteToAdmin(u.id)}
-                              >
-                                {actionLoading === u.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldCheck className="w-3 h-3" />}
-                                Promover
-                              </Button>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                    {filteredUsers.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center text-muted-foreground py-8">Nenhum usuário encontrado.</TableCell>
+              <Table>
+                <TableHeader><TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Roles</TableHead>
+                  <TableHead className="text-center">Cadastro</TableHead>
+                  <TableHead className="text-center">Ações</TableHead>
+                </TableRow></TableHeader>
+                <TableBody>
+                  {filteredUsers.map((u) => {
+                    const isSelf = u.id === user?.id;
+                    const isAdmin = u.roles.includes("admin");
+                    const isSA = u.roles.includes("super_admin");
+                    return (
+                      <TableRow key={u.id}>
+                        <TableCell className="font-medium">
+                          {u.full_name || "Sem nome"}
+                          {isSelf && <Badge variant="outline" className="ml-2 text-xs">Você</Badge>}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1 flex-wrap">
+                            {u.roles.map((r) => (
+                              <Badge key={r} variant={r === "super_admin" ? "default" : r === "admin" ? "secondary" : "outline"} className="text-xs">
+                                {r === "super_admin" ? "Super Admin" : r === "admin" ? "Produtor" : "Comprador"}
+                              </Badge>
+                            ))}
+                            {u.roles.length === 0 && <Badge variant="outline" className="text-xs">Sem role</Badge>}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString("pt-BR")}</TableCell>
+                        <TableCell className="text-center">
+                          {isSelf || isSA ? null : isAdmin ? (
+                            <Button size="sm" variant="destructive" className="h-7 text-xs gap-1" disabled={actionLoading === u.id} onClick={() => demoteFromAdmin(u.id)}>
+                              {actionLoading === u.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldX className="w-3 h-3" />} Rebaixar
+                            </Button>
+                          ) : (
+                            <Button size="sm" variant="default" className="h-7 text-xs gap-1" disabled={actionLoading === u.id} onClick={() => promoteToAdmin(u.id)}>
+                              {actionLoading === u.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldCheck className="w-3 h-3" />} Promover
+                            </Button>
+                          )}
+                        </TableCell>
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              )}
+                    );
+                  })}
+                  {filteredUsers.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Nenhum usuário</TableCell></TableRow>}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>
