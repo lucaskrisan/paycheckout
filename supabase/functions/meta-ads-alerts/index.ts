@@ -296,12 +296,19 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const isFullReport = body?.action === 'full_report';
+    const filterAccountIds: string[] | null = body?.account_ids || null;
 
-    console.log(`[meta-ads-alerts] Starting ${isFullReport ? 'full report' : 'analysis'}...`);
+    console.log(`[meta-ads-alerts] Starting ${isFullReport ? 'full report' : 'analysis'}... Filter: ${filterAccountIds ? filterAccountIds.length + ' accounts' : 'ALL'}`);
 
     // Fetch all active accounts
-    const accountIds = await getAllActiveAccounts();
+    let accountIds = await getAllActiveAccounts();
     console.log(`[meta-ads-alerts] Found ${accountIds.length} active accounts`);
+
+    // Filter by selected accounts if provided
+    if (filterAccountIds && filterAccountIds.length > 0) {
+      accountIds = accountIds.filter(id => filterAccountIds.includes(id));
+      console.log(`[meta-ads-alerts] Filtered to ${accountIds.length} selected accounts`);
+    }
 
     if (accountIds.length === 0) {
       return new Response(JSON.stringify({ success: true, message: 'No active accounts', alerts: 0 }), {
@@ -309,12 +316,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Full report mode: return raw campaign data with 7-day daily breakdown
+    // Full report mode: return raw campaign data with today, 7d, and lifetime
     if (isFullReport) {
       const insightFields = 'spend,impressions,reach,frequency,cpm,ctr,cpc,actions,action_values,cost_per_action_type,purchase_roas';
-      const allData = [];
+      const allData: any[] = [];
       
-      // Parallel fetch across all accounts
       const accountResults = await Promise.allSettled(accountIds.map(async (accId) => {
         const accInfo = await metaFetch(`/${accId}`, { fields: 'name' });
         const campaigns = await metaFetch(`/${accId}/campaigns`, {
@@ -323,7 +329,6 @@ Deno.serve(async (req) => {
           limit: '50',
         });
         
-        // Parallel fetch insights for all campaigns in this account
         const campaignResults = await Promise.allSettled((campaigns.data || []).map(async (c: any) => {
           const [todayRes, weekRes, maxRes] = await Promise.all([
             metaFetch(`/${c.id}/insights`, { fields: insightFields, date_preset: 'today' }).catch(() => ({ data: [] })),
