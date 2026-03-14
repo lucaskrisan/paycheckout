@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { CheckCircle, PartyPopper, Mail, ArrowRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { CheckCircle, PartyPopper, Mail, ArrowRight, Loader2, Gift, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const confettiColors = ["#22c55e", "#f59e0b", "#3b82f6", "#ef4444", "#a855f7", "#ec4899"];
 
@@ -14,13 +16,31 @@ interface ConfettiPiece {
   size: number;
 }
 
+interface UpsellOffer {
+  id: string;
+  title: string;
+  description: string;
+  discount_percent: number;
+  upsell_product: {
+    id: string;
+    name: string;
+    price: number;
+    image_url: string | null;
+  };
+}
+
 const CheckoutSuccess = () => {
   const [searchParams] = useSearchParams();
   const productName = searchParams.get("product") || "seu produto";
   const method = searchParams.get("method") || "pix";
   const email = searchParams.get("email") || "";
+  const productId = searchParams.get("product_id") || "";
+  const orderId = searchParams.get("order_id") || "";
 
   const [confetti, setConfetti] = useState<ConfettiPiece[]>([]);
+  const [upsellOffers, setUpsellOffers] = useState<UpsellOffer[]>([]);
+  const [processingUpsell, setProcessingUpsell] = useState<string | null>(null);
+  const [purchasedUpsells, setPurchasedUpsells] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const pieces: ConfettiPiece[] = Array.from({ length: 50 }, (_, i) => ({
@@ -32,6 +52,64 @@ const CheckoutSuccess = () => {
     }));
     setConfetti(pieces);
   }, []);
+
+  // Load upsell offers
+  useEffect(() => {
+    if (!productId || method !== "credit_card" || !orderId) return;
+
+    const loadUpsells = async () => {
+      const { data } = await supabase
+        .from("upsell_offers" as any)
+        .select("id, title, description, discount_percent, upsell_product:products!upsell_offers_upsell_product_id_fkey(id, name, price, image_url)")
+        .eq("product_id", productId)
+        .eq("active", true)
+        .order("sort_order");
+
+      if (data && data.length > 0) {
+        setUpsellOffers(data as any);
+      }
+    };
+    loadUpsells();
+  }, [productId, method, orderId]);
+
+  const handleUpsellBuy = async (offer: UpsellOffer) => {
+    if (!orderId) return;
+    setProcessingUpsell(offer.id);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("process-upsell", {
+        body: {
+          order_id: orderId,
+          upsell_product_id: offer.upsell_product.id,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      if (data?.success) {
+        setPurchasedUpsells((prev) => new Set(prev).add(offer.id));
+        toast.success(`🎉 ${offer.upsell_product.name} adquirido com sucesso!`);
+      } else {
+        throw new Error("Falha ao processar upsell");
+      }
+    } catch (err: any) {
+      console.error("Upsell error:", err);
+      toast.error(err.message || "Erro ao processar compra. Tente novamente.");
+    } finally {
+      setProcessingUpsell(null);
+    }
+  };
+
+  const getUpsellPrice = (offer: UpsellOffer) => {
+    const original = offer.upsell_product.price;
+    if (offer.discount_percent > 0) {
+      return Math.round(original * (1 - offer.discount_percent / 100) * 100) / 100;
+    }
+    return original;
+  };
+
+  const activeUpsells = upsellOffers.filter((o) => !purchasedUpsells.has(o.id));
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4 overflow-hidden relative">
@@ -92,6 +170,108 @@ const CheckoutSuccess = () => {
               </p>
             </div>
           </div>
+        )}
+
+        {/* Upsell Offers */}
+        <AnimatePresence>
+          {activeUpsells.length > 0 && (
+            <motion.div
+              className="space-y-3"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8, duration: 0.5 }}
+            >
+              <div className="flex items-center justify-center gap-2 text-primary">
+                <Gift className="w-4 h-4" />
+                <p className="text-sm font-semibold uppercase tracking-wide">Oferta exclusiva para você!</p>
+              </div>
+
+              {activeUpsells.map((offer) => {
+                const finalPrice = getUpsellPrice(offer);
+                const isProcessing = processingUpsell === offer.id;
+
+                return (
+                  <motion.div
+                    key={offer.id}
+                    className="bg-card border-2 border-primary/20 rounded-xl p-4 space-y-3 text-left"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95, height: 0 }}
+                    layout
+                  >
+                    <div className="flex items-start gap-3">
+                      {offer.upsell_product.image_url ? (
+                        <img
+                          src={offer.upsell_product.image_url}
+                          alt=""
+                          className="w-14 h-14 rounded-lg object-cover shrink-0"
+                        />
+                      ) : (
+                        <div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                          <ShoppingBag className="w-6 h-6 text-primary" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-foreground text-sm">
+                          {offer.title || offer.upsell_product.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{offer.description}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          {offer.discount_percent > 0 && (
+                            <span className="text-xs line-through text-muted-foreground">
+                              R$ {offer.upsell_product.price.toFixed(2).replace(".", ",")}
+                            </span>
+                          )}
+                          <span className="text-sm font-bold text-primary">
+                            R$ {finalPrice.toFixed(2).replace(".", ",")}
+                          </span>
+                          {offer.discount_percent > 0 && (
+                            <span className="text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full font-bold">
+                              -{offer.discount_percent}%
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button
+                      className="w-full gap-2"
+                      onClick={() => handleUpsellBuy(offer)}
+                      disabled={isProcessing}
+                    >
+                      {isProcessing ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Processando...
+                        </>
+                      ) : (
+                        <>
+                          <Gift className="w-4 h-4" />
+                          Comprar com 1 clique
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-[10px] text-center text-muted-foreground">
+                      Cobrado no mesmo cartão utilizado na compra anterior
+                    </p>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Purchased upsells confirmation */}
+        {purchasedUpsells.size > 0 && (
+          <motion.div
+            className="bg-primary/5 border border-primary/20 rounded-xl p-3"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <p className="text-sm text-primary font-medium">
+              ✅ {purchasedUpsells.size} produto(s) adicional(is) adquirido(s) com sucesso!
+            </p>
+          </motion.div>
         )}
 
         <div className="pt-4">

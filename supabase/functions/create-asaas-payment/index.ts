@@ -416,7 +416,32 @@ Deno.serve(async (req) => {
     };
     const orderStatus = statusMap[paymentData.status] || 'pending';
 
+    // Extract credit card token for one-click upsell
+    const ccToken = paymentData.creditCard?.creditCardToken || null;
+
     await saveOrder(paymentData.id, orderStatus, payment_method || 'credit_card');
+
+    // Store Asaas customer ID + card token in order metadata for upsell
+    if (payment_method === 'credit_card' && (ccToken || customerData.id)) {
+      const orderRecord2 = await supabaseAdmin
+        .from('orders')
+        .select('id, metadata')
+        .eq('external_id', paymentData.id)
+        .maybeSingle();
+      if (orderRecord2?.data) {
+        const existingMeta = (orderRecord2.data.metadata as Record<string, any>) || {};
+        await supabaseAdmin
+          .from('orders')
+          .update({
+            metadata: {
+              ...existingMeta,
+              asaas_customer_id: customerData.id,
+              credit_card_token: ccToken,
+            },
+          })
+          .eq('id', orderRecord2.data.id);
+      }
+    }
 
     // Push notification on confirmed card
     if (payment_method === 'credit_card' && (paymentData.status === 'CONFIRMED' || paymentData.status === 'RECEIVED')) {
@@ -438,11 +463,19 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Get internal order ID for upsell flow
+    const { data: savedOrder } = await supabaseAdmin
+      .from('orders')
+      .select('id')
+      .eq('external_id', paymentData.id)
+      .maybeSingle();
+
     return new Response(
       JSON.stringify({
         payment_id: paymentData.id,
         status: paymentData.status,
         invoice_url: paymentData.invoiceUrl,
+        order_id: savedOrder?.id || null,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
