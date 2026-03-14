@@ -231,7 +231,7 @@ const SystemHealth = () => {
     // 4. PRODUTOS
     // ═══════════════════════════════════════
     try {
-      const { data: products } = await supabase.from("products").select("id, name, price, active, is_subscription, show_coupon, image_url");
+      const { data: products } = await supabase.from("products").select("id, name, price, active, is_subscription, show_coupon, image_url").eq("user_id", user?.id);
       if (products) {
         const active = products.filter((p) => p.active);
         const inactive = products.filter((p) => !p.active);
