@@ -344,6 +344,9 @@ const Tracking = () => {
       {/* ── Full Audit ── */}
       {user && <TrackingFullAudit userId={user.id} />}
 
+      {/* ── EMQ Panel ── */}
+      <MetaEmqPanel products={products} />
+
       {/* ── Real-time Events ── */}
       <PixelEventsDashboard products={products} />
 
