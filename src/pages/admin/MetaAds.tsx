@@ -97,7 +97,7 @@ export default function MetaAds() {
             value="alertas"
             className="gap-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white text-slate-400 px-8 py-2.5 text-sm font-medium"
           >
-            <Bell className="w-4 h-4" /> Alertas
+            <Bell className="w-4 h-4" /> AntonyAD
           </TabsTrigger>
         </TabsList>
 
