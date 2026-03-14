@@ -294,7 +294,10 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('[meta-ads-alerts] Starting analysis...');
+    const body = await req.json().catch(() => ({}));
+    const isFullReport = body?.action === 'full_report';
+
+    console.log(`[meta-ads-alerts] Starting ${isFullReport ? 'full report' : 'analysis'}...`);
 
     // Fetch all active accounts
     const accountIds = await getAllActiveAccounts();
@@ -306,7 +309,51 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Fetch campaigns from all accounts
+    // Full report mode: return raw campaign data with 7-day daily breakdown
+    if (isFullReport) {
+      const insightFields = 'spend,impressions,reach,frequency,cpm,ctr,cpc,actions,action_values,cost_per_action_type,purchase_roas';
+      const allData = [];
+      
+      // Parallel fetch across all accounts
+      const accountResults = await Promise.allSettled(accountIds.map(async (accId) => {
+        const accInfo = await metaFetch(`/${accId}`, { fields: 'name' });
+        const campaigns = await metaFetch(`/${accId}/campaigns`, {
+          fields: 'id,name,status,objective,daily_budget,lifetime_budget,effective_status',
+          filtering: JSON.stringify([{ field: 'effective_status', operator: 'IN', value: ['ACTIVE'] }]),
+          limit: '50',
+        });
+        
+        // Parallel fetch insights for all campaigns in this account
+        const campaignResults = await Promise.allSettled((campaigns.data || []).map(async (c: any) => {
+          const [todayRes, weekRes] = await Promise.all([
+            metaFetch(`/${c.id}/insights`, { fields: insightFields, date_preset: 'today' }).catch(() => ({ data: [] })),
+            metaFetch(`/${c.id}/insights`, { fields: insightFields, date_preset: 'last_7d' }).catch(() => ({ data: [] })),
+          ]);
+          return {
+            account_id: accId,
+            account_name: accInfo.name || accId,
+            ...c,
+            insights_today: todayRes.data?.[0] || null,
+            insights_7d: weekRes.data?.[0] || null,
+          };
+        }));
+        
+        return campaignResults
+          .filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled')
+          .map(r => r.value);
+      }));
+
+      for (const r of accountResults) {
+        if (r.status === 'fulfilled' && r.value) allData.push(...r.value);
+      }
+
+      console.log(`[meta-ads-alerts] Full report: ${allData.length} campaigns`);
+      return new Response(JSON.stringify({ success: true, campaigns: allData }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Fetch campaigns from all accounts (normal alert mode)
     const allCampaigns = [];
     for (const accId of accountIds) {
       try {
