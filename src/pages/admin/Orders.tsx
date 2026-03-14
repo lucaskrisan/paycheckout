@@ -171,7 +171,7 @@ const Orders = () => {
           .from("orders")
           .select("*, customers(name, email, phone, cpf), products(name)")
           .order("created_at", { ascending: false }),
-        supabase.from("products").select("id, name"),
+        supabase.from("products").select("id, name").eq("user_id", user?.id),
       ]);
       setOrders((ordersRes.data as any) || []);
       setProducts(productsRes.data || []);

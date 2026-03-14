@@ -49,7 +49,7 @@ const AbandonedCarts = () => {
           .select("*, products(name)")
           .order("created_at", { ascending: false })
           .limit(500),
-        supabase.from("products").select("id, name"),
+        supabase.from("products").select("id, name").eq("user_id", user?.id),
       ]);
       setCarts((cartsRes.data as any) || []);
       setProducts(productsRes.data || []);
