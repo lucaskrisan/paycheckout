@@ -81,32 +81,41 @@ Deno.serve(async (req) => {
       .eq('platform', 'facebook')
       .not('capi_token', 'is', null);
 
-    // Log event to pixel_events for dashboard (non-blocking)
+    // Log event to pixel_events for dashboard
     const productOwnerId = pixels?.[0]?.user_id || null;
     const customerName = customer?.name || null;
-    supabase.from('pixel_events').insert({
-      product_id,
-      event_name,
-      source: 'server',
-      event_id: event_id || null,
-      user_id: productOwnerId,
-      customer_name: customerName,
-      visitor_id: visitor_id || null,
-    }).then(() => {});
 
-    // If caller signals browser pixel also fired (e.g. external tracking script),
-    // log a "browser" entry so the dashboard shows DUAL ✓
-    if (log_browser) {
+    const insertPromises: Promise<any>[] = [];
+
+    insertPromises.push(
       supabase.from('pixel_events').insert({
         product_id,
         event_name,
-        source: 'browser',
+        source: 'server',
         event_id: event_id || null,
         user_id: productOwnerId,
         customer_name: customerName,
         visitor_id: visitor_id || null,
-      }).then(() => {});
+      })
+    );
+
+    // If caller signals browser pixel also fired, log a "browser" entry so dashboard shows DUAL ✓
+    if (log_browser) {
+      insertPromises.push(
+        supabase.from('pixel_events').insert({
+          product_id,
+          event_name,
+          source: 'browser',
+          event_id: event_id || null,
+          user_id: productOwnerId,
+          customer_name: customerName,
+          visitor_id: visitor_id || null,
+        })
+      );
     }
+
+    // Await all inserts so Deno doesn't kill them before completion
+    await Promise.all(insertPromises);
 
     if (!pixels || pixels.length === 0) {
       return new Response(
