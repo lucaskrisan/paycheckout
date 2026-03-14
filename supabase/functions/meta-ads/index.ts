@@ -317,7 +317,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('[meta-ads] Error:', error?.message);
     return new Response(JSON.stringify({ error: error?.message || 'Unknown error' }), {
-      status: error?.message === 'Unauthorized' || error?.message === 'Invalid token' ? 401 : 500,
+      status: error?.message === 'Unauthorized' || error?.message === 'Invalid token' ? 401 : error?.message === 'Forbidden' ? 403 : 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
