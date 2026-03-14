@@ -27,30 +27,6 @@ import {
   Tag,
   ClipboardList,
 } from "lucide-react";
-  Users,
-  Settings,
-  LogOut,
-  CreditCard,
-  GraduationCap,
-  ChevronDown,
-  Crown,
-  BarChart3,
-  Wallet,
-  Bell,
-  MessageCircle,
-  ShieldCheck,
-  Webhook,
-  Mail,
-  Smartphone,
-  Globe,
-  Zap,
-  User,
-  Paintbrush,
-  Activity,
-  TrendingUp,
-  Megaphone,
-  Tag,
-} from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
