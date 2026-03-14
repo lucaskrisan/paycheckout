@@ -136,15 +136,47 @@ const CustomerPortal = () => {
 
       const allCourses: PortalCourse[] = [];
 
-      // 1. Courses created by this producer
+      // 1. All products created by this producer
+      const { data: ownProducts } = await supabase
+        .from("products")
+        .select("id, name, description, image_url")
+        .eq("user_id", userId);
+
+      // 2. Courses created by this producer (may be linked to products)
       const { data: ownCourses } = await supabase
         .from("courses")
-        .select("id, title, description, cover_image_url")
+        .select("id, title, description, cover_image_url, product_id")
         .eq("user_id", userId);
+
+      const courseByProductId = new Map<string, any>();
+      const addedIds = new Set<string>();
 
       if (ownCourses) {
         for (const c of ownCourses) {
-          allCourses.push({ ...c, source: "created" });
+          if (c.product_id) courseByProductId.set(c.product_id, c);
+          allCourses.push({
+            id: c.id,
+            title: c.title,
+            description: c.description,
+            cover_image_url: c.cover_image_url,
+            source: "created",
+          });
+          addedIds.add(c.id);
+        }
+      }
+
+      // Add products that DON'T have a course yet (show as product cards)
+      if (ownProducts) {
+        for (const p of ownProducts) {
+          if (!courseByProductId.has(p.id)) {
+            allCourses.push({
+              id: `product-${p.id}`,
+              title: p.name,
+              description: p.description,
+              cover_image_url: p.image_url,
+              source: "created",
+            });
+          }
         }
       }
 
