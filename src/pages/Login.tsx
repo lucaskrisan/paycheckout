@@ -94,7 +94,7 @@ const Login = () => {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     const { error } = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: `${window.location.origin}/completar-perfil`,
+      redirect_uri: window.location.origin,
     });
     if (error) {
       toast.error("Erro ao entrar com Google");

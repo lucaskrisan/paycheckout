@@ -65,9 +65,30 @@ const CompleteProfile = () => {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !user) {
+    if (authLoading) return;
+    if (!user) {
       navigate("/login", { replace: true });
+      return;
     }
+    // If profile is already completed, skip this page entirely
+    let cancelled = false;
+    const checkProfile = async () => {
+      try {
+        const { data } = await supabase
+          .from("profiles")
+          .select("profile_completed")
+          .eq("id", user.id)
+          .single();
+        if (!cancelled && data?.profile_completed === true) {
+          const destination = await resolveUserDestination();
+          navigate(destination, { replace: true });
+        }
+      } catch {
+        // stay on page if check fails
+      }
+    };
+    checkProfile();
+    return () => { cancelled = true; };
   }, [user, authLoading, navigate]);
 
   const handleCpfChange = (value: string) => {
