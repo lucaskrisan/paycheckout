@@ -160,7 +160,7 @@ const Orders = () => {
       const [ordersRes, productsRes] = await Promise.all([
         supabase
           .from("orders")
-          .select("*, customers(name, email), products(name)")
+          .select("*, customers(name, email, phone, cpf), products(name)")
           .order("created_at", { ascending: false }),
         supabase.from("products").select("id, name"),
       ]);
