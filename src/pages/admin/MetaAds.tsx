@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/hooks/useAuth";
+import { Navigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LayoutGrid, Megaphone, Layers, FileImage, BarChart3, Table2, Bell } from "lucide-react";
 import { useMetaAds } from "@/hooks/useMetaAds";
@@ -11,7 +12,10 @@ import { MetaAdsAlerts } from "@/components/admin/meta-ads/MetaAdsAlerts";
 import { MetaBudgetCalculator } from "@/components/admin/meta-ads/MetaBudgetCalculator";
 import { formatCurrency, getResults, getConversionValue } from "@/components/admin/meta-ads/MetaInsightsHelpers";
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 export default function MetaAds() {
+  const { isSuperAdmin } = useAuth();
   const {
     accounts, selectedAccounts, setSelectedAccounts, toggleAccount, selectAllAccounts,
     campaigns, adsets, ads, accountInsights,
@@ -24,19 +28,24 @@ export default function MetaAds() {
   const [mainTab, setMainTab] = useState("resumo");
   const [dataTab, setDataTab] = useState("campaigns");
 
-  useEffect(() => { fetchAccounts(); }, []);
+  useEffect(() => { if (isSuperAdmin) fetchAccounts(); }, [isSuperAdmin]);
 
   useEffect(() => {
-    if (selectedAccounts.length === 0) return;
+    if (!isSuperAdmin || selectedAccounts.length === 0) return;
     fetchCampaigns();
     fetchAccountInsights();
-  }, [selectedAccounts, datePreset, customRange]);
+  }, [isSuperAdmin, selectedAccounts, datePreset, customRange]);
 
   useEffect(() => {
-    if (selectedAccounts.length === 0 || mainTab !== "campanhas") return;
+    if (!isSuperAdmin || selectedAccounts.length === 0 || mainTab !== "campanhas") return;
     if (dataTab === "adsets") fetchAdSets();
     else if (dataTab === "ads") fetchAds();
-  }, [selectedAccounts, dataTab, mainTab, datePreset, customRange]);
+  }, [isSuperAdmin, selectedAccounts, dataTab, mainTab, datePreset, customRange]);
+
+  // Block access for non-super_admin users (after all hooks)
+  if (!isSuperAdmin) {
+    return <Navigate to="/admin" replace />;
+  }
 
   const handleRefresh = () => {
     fetchCampaigns();

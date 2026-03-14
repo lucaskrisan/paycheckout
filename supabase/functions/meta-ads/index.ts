@@ -19,6 +19,22 @@ async function authenticateUser(req: Request) {
 
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) throw new Error('Invalid token');
+
+  // Only super_admin can access Meta Ads data
+  const serviceClient = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  );
+  const { data: roles } = await serviceClient
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', user.id)
+    .eq('role', 'super_admin');
+
+  if (!roles || roles.length === 0) {
+    throw new Error('Forbidden');
+  }
+
   return user;
 }
 
@@ -301,7 +317,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('[meta-ads] Error:', error?.message);
     return new Response(JSON.stringify({ error: error?.message || 'Unknown error' }), {
-      status: error?.message === 'Unauthorized' || error?.message === 'Invalid token' ? 401 : 500,
+      status: error?.message === 'Unauthorized' || error?.message === 'Invalid token' ? 401 : error?.message === 'Forbidden' ? 403 : 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
