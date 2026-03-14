@@ -1,14 +1,13 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Search, Filter, X, ChevronLeft, ChevronRight, DollarSign, ShoppingCart, Mail, Loader2 } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, Download, Mail, Loader2, X } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { EmailPreviewModal } from "@/components/admin/EmailPreviewModal";
@@ -26,16 +25,24 @@ interface Order {
 
 const ITEMS_PER_PAGE = 20;
 
-const STATUS_MAP: Record<string, { label: string; class: string }> = {
-  paid: { label: "Pago", class: "bg-primary/10 text-primary border-primary/20" },
-  approved: { label: "Aprovado", class: "bg-primary/10 text-primary border-primary/20" },
-  confirmed: { label: "Confirmado", class: "bg-primary/10 text-primary border-primary/20" },
-  pending: { label: "Aguardando pagamento", class: "bg-yellow-500/10 text-yellow-600 border-yellow-500/20" },
-  refunded: { label: "Reembolso", class: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
-  refused: { label: "Recusado", class: "bg-destructive/10 text-destructive border-destructive/20" },
-  failed: { label: "Recusado", class: "bg-destructive/10 text-destructive border-destructive/20" },
-  chargeback: { label: "Chargeback", class: "bg-destructive/10 text-destructive border-destructive/20" },
-  cancelled: { label: "Cancelado", class: "bg-muted text-muted-foreground border-border" },
+const STATUS_MAP: Record<string, { label: string; variant: "paid" | "pending" | "refunded" | "refused" | "default" }> = {
+  paid: { label: "Pago", variant: "paid" },
+  approved: { label: "Pago", variant: "paid" },
+  confirmed: { label: "Pago", variant: "paid" },
+  pending: { label: "Aguardando pagamento", variant: "pending" },
+  refunded: { label: "Reembolsado", variant: "refunded" },
+  refused: { label: "Recusado", variant: "refused" },
+  failed: { label: "Recusado", variant: "refused" },
+  chargeback: { label: "Chargeback", variant: "refused" },
+  cancelled: { label: "Cancelado", variant: "default" },
+};
+
+const VARIANT_CLASSES: Record<string, string> = {
+  paid: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  pending: "bg-amber-50 text-amber-700 border-amber-200",
+  refunded: "bg-blue-50 text-blue-700 border-blue-200",
+  refused: "bg-red-50 text-red-700 border-red-200",
+  default: "bg-muted text-muted-foreground border-border",
 };
 
 const PAYMENT_METHODS = [
@@ -46,13 +53,18 @@ const PAYMENT_METHODS = [
 
 const STATUS_FILTERS = [
   { value: "paid", label: "Pago" },
-  { value: "approved", label: "Aprovado" },
   { value: "pending", label: "Aguardando pagamento" },
   { value: "refused", label: "Recusado" },
   { value: "refunded", label: "Reembolso" },
   { value: "chargeback", label: "Chargeback" },
   { value: "cancelled", label: "Cancelado" },
 ];
+
+const PAYMENT_LABEL: Record<string, string> = {
+  credit_card: "Cartão de crédito",
+  pix: "Pix",
+  boleto: "Boleto",
+};
 
 const Orders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -152,12 +164,10 @@ const Orders = () => {
   const filtered = useMemo(() => {
     let result = orders;
 
-    // Tab filter
     if (activeTab === "approved") {
       result = result.filter(o => ["paid", "approved", "confirmed"].includes(o.status));
     }
 
-    // Search
     if (search) {
       const s = search.toLowerCase();
       result = result.filter(o =>
@@ -168,7 +178,6 @@ const Orders = () => {
       );
     }
 
-    // Period
     if (filterPeriod !== "all") {
       const now = new Date();
       let from: Date;
@@ -182,17 +191,14 @@ const Orders = () => {
       result = result.filter(o => new Date(o.created_at) >= from);
     }
 
-    // Product
     if (filterProduct !== "all") {
       result = result.filter(o => o.product_id === filterProduct);
     }
 
-    // Payment method
     if (filterMethods.size > 0) {
       result = result.filter(o => filterMethods.has(o.payment_method));
     }
 
-    // Status
     if (filterStatuses.size > 0) {
       result = result.filter(o => filterStatuses.has(o.status));
     }
@@ -205,171 +211,93 @@ const Orders = () => {
 
   const totalAmount = filtered.reduce((sum, o) => sum + Number(o.amount), 0);
 
-  // Reset page on filter change
   useEffect(() => { setPage(1); }, [search, activeTab, filterPeriod, filterProduct, filterMethods, filterStatuses]);
 
-  const getStatus = (status: string) => STATUS_MAP[status] || { label: status, class: "bg-muted text-muted-foreground border-border" };
+  const getStatus = (status: string) => STATUS_MAP[status] || { label: status, variant: "default" as const };
+
+  const handleExport = () => {
+    if (filtered.length === 0) { toast.error("Nenhuma venda para exportar"); return; }
+    const header = "Data,Produto,Cliente,Email,Status,Método,Valor\n";
+    const csv = filtered.map(o =>
+      `"${format(new Date(o.created_at), "dd/MM/yyyy HH:mm")}","${o.products?.name || ""}","${o.customers?.name || ""}","${o.customers?.email || ""}","${getStatus(o.status).label}","${PAYMENT_LABEL[o.payment_method] || o.payment_method}","${Number(o.amount).toFixed(2)}"`
+    ).join("\n");
+    const blob = new Blob([header + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `vendas-${format(new Date(), "yyyy-MM-dd")}.csv`; a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Exportação concluída!");
+  };
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-bold text-foreground">Vendas</h1>
-        <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
-          <SheetTrigger asChild>
-            <Button variant="outline" className="gap-2">
-              <Filter className="w-4 h-4" />
-              Filtros
-              {hasActiveFilters && (
-                <span className="w-2 h-2 rounded-full bg-primary" />
-              )}
-            </Button>
-          </SheetTrigger>
-          <SheetContent className="w-80 overflow-y-auto">
-            <SheetHeader>
-              <div className="flex items-center justify-between">
-                <SheetTitle>Filtros</SheetTitle>
-                {hasActiveFilters && (
-                  <button onClick={clearFilters} className="text-sm text-primary hover:underline">
-                    Limpar filtros
-                  </button>
-                )}
-              </div>
-            </SheetHeader>
-            <div className="mt-6 space-y-6">
-              {/* Period */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Período</Label>
-                <Select value={filterPeriod} onValueChange={setFilterPeriod}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tempo todo</SelectItem>
-                    <SelectItem value="today">Hoje</SelectItem>
-                    <SelectItem value="7d">Últimos 7 dias</SelectItem>
-                    <SelectItem value="30d">Últimos 30 dias</SelectItem>
-                    <SelectItem value="90d">Últimos 90 dias</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Product */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Produto</Label>
-                <Select value={filterProduct} onValueChange={setFilterProduct}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os produtos</SelectItem>
-                    {products.map(p => (
-                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Payment method */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium">Método de pagamento</Label>
-                  {filterMethods.size > 0 && (
-                    <button onClick={() => setFilterMethods(new Set())} className="text-xs text-primary hover:underline">
-                      Limpar
-                    </button>
-                  )}
-                </div>
-                {PAYMENT_METHODS.map(m => (
-                  <div key={m.value} className="flex items-center gap-2">
-                    <Checkbox
-                      id={`method-${m.value}`}
-                      checked={filterMethods.has(m.value)}
-                      onCheckedChange={() => setFilterMethods(prev => toggleFilter(prev, m.value))}
-                    />
-                    <label htmlFor={`method-${m.value}`} className="text-sm cursor-pointer">{m.label}</label>
-                  </div>
-                ))}
-              </div>
-
-              {/* Status */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium">Status</Label>
-                  {filterStatuses.size > 0 && (
-                    <button onClick={() => setFilterStatuses(new Set())} className="text-xs text-primary hover:underline">
-                      Limpar
-                    </button>
-                  )}
-                </div>
-                {STATUS_FILTERS.map(s => (
-                  <div key={s.value} className="flex items-center gap-2">
-                    <Checkbox
-                      id={`status-${s.value}`}
-                      checked={filterStatuses.has(s.value)}
-                      onCheckedChange={() => setFilterStatuses(prev => toggleFilter(prev, s.value))}
-                    />
-                    <label htmlFor={`status-${s.value}`} className="text-sm cursor-pointer">{s.label}</label>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </SheetContent>
-        </Sheet>
+        <Button variant="outline" size="sm" className="gap-2" onClick={handleExport}>
+          <Download className="w-4 h-4" />
+          Exportar
+        </Button>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-lg">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
+      {/* Search + Filter button */}
+      <div className="flex items-center gap-3 border border-border rounded-lg bg-card px-3 py-2">
+        <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+        <input
+          type="text"
           placeholder="Buscar por cliente, e-mail, produto..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="pl-10"
+          className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
         />
+        <button
+          onClick={() => setFiltersOpen(true)}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium border transition-colors shrink-0 ${
+            hasActiveFilters
+              ? "border-primary text-primary bg-primary/5"
+              : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
+          }`}
+        >
+          <SlidersHorizontal className="w-4 h-4" />
+          Filtros
+          {hasActiveFilters && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
+        </button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card>
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <ShoppingCart className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Vendas encontradas</p>
-              <p className="text-2xl font-bold text-foreground">{filtered.length}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Valor líquido</p>
-              <p className="text-2xl font-bold text-foreground">
-                R$ {totalAmount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 border border-border rounded-lg bg-card overflow-hidden">
+        <div className="p-5 border-r border-border">
+          <p className="text-sm text-muted-foreground">Vendas encontradas</p>
+          <p className="text-2xl font-bold text-foreground mt-1">
+            {filtered.length.toLocaleString("pt-BR")}
+          </p>
+        </div>
+        <div className="p-5">
+          <p className="text-sm text-muted-foreground">Valor líquido</p>
+          <p className="text-2xl font-bold text-foreground mt-1">
+            R$ {totalAmount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+          </p>
+        </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-border">
+      <div className="flex items-center gap-1">
         <button
           onClick={() => setActiveTab("approved")}
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+          className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
             activeTab === "approved"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
+              ? "text-foreground"
+              : "text-muted-foreground hover:text-foreground border border-border"
           }`}
         >
           Aprovadas
         </button>
         <button
           onClick={() => setActiveTab("all")}
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+          className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
             activeTab === "all"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
+              ? "text-foreground border border-foreground/30"
+              : "text-muted-foreground hover:text-foreground border border-border"
           }`}
         >
           Todas
@@ -377,150 +305,214 @@ const Orders = () => {
       </div>
 
       {/* Table */}
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/30">
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">DATA</th>
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">PRODUTO</th>
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">CLIENTE</th>
-                  <th className="text-left py-3 px-4 font-medium text-muted-foreground">STATUS</th>
-                  <th className="text-right py-3 px-4 font-medium text-muted-foreground">VALOR LÍQUIDO</th>
-                  <th className="text-center py-3 px-4 font-medium text-muted-foreground">AÇÕES</th>
+      <div className="border border-border rounded-lg bg-card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="text-left py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Data</th>
+                <th className="text-left py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Produto</th>
+                <th className="text-left py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Cliente</th>
+                <th className="text-left py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Status</th>
+                <th className="text-right py-3 px-4 font-medium text-muted-foreground text-xs uppercase tracking-wider">Valor líquido</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="py-16 text-center text-muted-foreground">
+                    <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />
+                    Carregando vendas...
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                   <td colSpan={6} className="py-12 text-center text-muted-foreground">
-                      Carregando...
-                    </td>
-                  </tr>
-                ) : paginated.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-12 text-center text-muted-foreground">
-                      Nenhuma venda encontrada.
-                    </td>
-                  </tr>
-                ) : (
-                  paginated.map((order) => {
-                    const st = getStatus(order.status);
-                    return (
-                      <tr key={order.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
-                        <td className="py-3 px-4 text-muted-foreground whitespace-nowrap">
-                          {format(new Date(order.created_at), "dd/MM/yyyy HH:mm")}
-                        </td>
-                        <td className="py-3 px-4 font-medium max-w-[200px] truncate">
+              ) : paginated.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-16 text-center text-muted-foreground">
+                    Nenhuma venda encontrada.
+                  </td>
+                </tr>
+              ) : (
+                paginated.map((order) => {
+                  const st = getStatus(order.status);
+                  const isPendingPix = order.status === "pending" && order.payment_method === "pix" && order.customers?.email;
+                  return (
+                    <tr key={order.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                      <td className="py-3.5 px-4 text-muted-foreground whitespace-nowrap text-sm">
+                        {format(new Date(order.created_at), "dd/MM/yyyy HH:mm")}
+                      </td>
+                      <td className="py-3.5 px-4 max-w-[220px]">
+                        <span className="text-sm text-foreground truncate block">
                           {order.products?.name || "—"}
-                        </td>
-                        <td className="py-3 px-4">
-                          <div>
-                            <p className="font-medium">{order.customers?.name || "—"}</p>
-                            <p className="text-xs text-muted-foreground">{order.customers?.email || ""}</p>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <Badge variant="outline" className={st.class}>
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div>
+                          <p className="text-sm text-foreground">{order.customers?.name || "—"}</p>
+                          <p className="text-xs text-muted-foreground">{order.customers?.email || ""}</p>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="space-y-1">
+                          <Badge variant="outline" className={`text-xs font-medium ${VARIANT_CLASSES[st.variant]}`}>
                             {st.label}
                           </Badge>
-                        </td>
-                        <td className="py-3 px-4 text-right font-medium whitespace-nowrap">
-                          R$ {Number(order.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          {order.status === "pending" && order.payment_method === "pix" && order.customers?.email ? (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="gap-1.5 text-xs h-8"
-                              disabled={sendingReminder === order.id}
-                              onClick={() => handlePreviewReminder(order.id)}
-                            >
-                              {sendingReminder === order.id ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              ) : (
-                                <Mail className="w-3.5 h-3.5" />
-                              )}
-                              Lembrete
-                            </Button>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-border">
-              <p className="text-sm text-muted-foreground">
-                Exibindo {page} de {totalPages} páginas
-              </p>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  disabled={page <= 1}
-                  onClick={() => setPage(p => p - 1)}
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNum: number;
-                  if (totalPages <= 5) {
-                    pageNum = i + 1;
-                  } else if (page <= 3) {
-                    pageNum = i + 1;
-                  } else if (page >= totalPages - 2) {
-                    pageNum = totalPages - 4 + i;
-                  } else {
-                    pageNum = page - 2 + i;
-                  }
-                  return (
-                    <Button
-                      key={pageNum}
-                      variant={page === pageNum ? "default" : "outline"}
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => setPage(pageNum)}
-                    >
-                      {pageNum}
-                    </Button>
+                          <p className="text-xs text-muted-foreground">
+                            {PAYMENT_LABEL[order.payment_method] || order.payment_method}
+                          </p>
+                        </div>
+                        {isPendingPix && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1 text-xs h-6 px-2 mt-1 text-primary hover:text-primary"
+                            disabled={sendingReminder === order.id}
+                            onClick={() => handlePreviewReminder(order.id)}
+                          >
+                            {sendingReminder === order.id ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Mail className="w-3 h-3" />
+                            )}
+                            Enviar lembrete
+                          </Button>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-medium whitespace-nowrap text-sm">
+                        R$ {Number(order.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
                   );
-                })}
-                {totalPages > 5 && page < totalPages - 2 && (
-                  <span className="px-1 text-muted-foreground">...</span>
-                )}
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  disabled={page >= totalPages}
-                  onClick={() => setPage(p => p + 1)}
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+            <p className="text-sm text-muted-foreground">
+              Página {page} de {totalPages}
+            </p>
+            <div className="flex items-center gap-1">
+              <Button variant="outline" size="icon" className="h-8 w-8" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum: number;
+                if (totalPages <= 5) pageNum = i + 1;
+                else if (page <= 3) pageNum = i + 1;
+                else if (page >= totalPages - 2) pageNum = totalPages - 4 + i;
+                else pageNum = page - 2 + i;
+                return (
+                  <Button key={pageNum} variant={page === pageNum ? "default" : "outline"} size="icon" className="h-8 w-8" onClick={() => setPage(pageNum)}>
+                    {pageNum}
+                  </Button>
+                );
+              })}
+              <Button variant="outline" size="icon" className="h-8 w-8" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
+                <ChevronRight className="w-4 h-4" />
+              </Button>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        )}
+      </div>
+
+      {/* Filters Sheet */}
+      <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <SheetContent className="w-80 overflow-y-auto">
+          <SheetHeader>
+            <div className="flex items-center justify-between">
+              <SheetTitle className="text-base font-semibold">Filtros</SheetTitle>
+              {hasActiveFilters && (
+                <button onClick={clearFilters} className="text-sm text-primary hover:underline">
+                  Limpar filtros
+                </button>
+              )}
+            </div>
+          </SheetHeader>
+          <div className="mt-6 space-y-6">
+            {/* Period */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Período</Label>
+              <Select value={filterPeriod} onValueChange={setFilterPeriod}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tempo todo</SelectItem>
+                  <SelectItem value="today">Hoje</SelectItem>
+                  <SelectItem value="7d">Últimos 7 dias</SelectItem>
+                  <SelectItem value="30d">Últimos 30 dias</SelectItem>
+                  <SelectItem value="90d">Últimos 90 dias</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Product */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Produto</Label>
+              <Select value={filterProduct} onValueChange={setFilterProduct}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os produtos</SelectItem>
+                  {products.map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Payment method */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Método de pagamento</Label>
+                {filterMethods.size > 0 && (
+                  <button onClick={() => setFilterMethods(new Set(PAYMENT_METHODS.map(m => m.value)))} className="text-xs text-primary hover:underline">
+                    Selecionar todos
+                  </button>
+                )}
+              </div>
+              {PAYMENT_METHODS.map(m => (
+                <div key={m.value} className="flex items-center gap-2">
+                  <Checkbox
+                    id={`method-${m.value}`}
+                    checked={filterMethods.has(m.value)}
+                    onCheckedChange={() => setFilterMethods(prev => toggleFilter(prev, m.value))}
+                  />
+                  <label htmlFor={`method-${m.value}`} className="text-sm cursor-pointer">{m.label}</label>
+                </div>
+              ))}
+            </div>
+
+            {/* Status */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Status</Label>
+                {filterStatuses.size > 0 && (
+                  <button onClick={() => setFilterStatuses(new Set(STATUS_FILTERS.map(s => s.value)))} className="text-xs text-primary hover:underline">
+                    Selecionar todos
+                  </button>
+                )}
+              </div>
+              {STATUS_FILTERS.map(s => (
+                <div key={s.value} className="flex items-center gap-2">
+                  <Checkbox
+                    id={`status-${s.value}`}
+                    checked={filterStatuses.has(s.value)}
+                    onCheckedChange={() => setFilterStatuses(prev => toggleFilter(prev, s.value))}
+                  />
+                  <label htmlFor={`status-${s.value}`} className="text-sm cursor-pointer">{s.label}</label>
+                </div>
+              ))}
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Email Preview Modal */}
       {emailPreview && (
         <EmailPreviewModal
           open={emailPreview.open}
-          onOpenChange={(open) => {
-            if (!open) setEmailPreview(null);
-          }}
+          onOpenChange={(open) => { if (!open) setEmailPreview(null); }}
           subject={emailPreview.subject}
           body={emailPreview.body}
           fullHtml={emailPreview.fullHtml}
