@@ -67,7 +67,7 @@ const Dashboard = () => {
       supabase.from("orders").select("*"),
       supabase.from("abandoned_carts").select("*").order("created_at", { ascending: false }).limit(500),
       supabase.from("platform_settings").select("platform_fee_percent").limit(1).single(),
-      supabase.from("products").select("id, name"),
+      supabase.from("products").select("id, name").eq("user_id", user.id),
     ]);
     setOrders(ordersRes.data || []);
     setAbandonedCarts(cartsRes.data || []);

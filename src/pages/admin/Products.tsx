@@ -49,7 +49,9 @@ const Products = () => {
   useEffect(() => { loadProducts(); }, []);
 
   const loadProducts = async () => {
-    const { data } = await supabase.from("products").select("id, name, price, active, is_subscription").order("created_at", { ascending: false });
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase.from("products").select("id, name, price, active, is_subscription").eq("user_id", user.id).order("created_at", { ascending: false });
     setProducts(data || []);
   };
 
