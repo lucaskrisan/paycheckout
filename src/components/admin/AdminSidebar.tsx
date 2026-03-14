@@ -9,7 +9,6 @@ import {
   GraduationCap,
   ChevronDown,
   Crown,
-  BarChart3,
   Wallet,
   Bell,
   MessageCircle,

@@ -2,22 +2,20 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { resolveUserDestination } from "@/lib/resolveUserDestination";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import {
   ShoppingCart,
   GraduationCap,
   User,
   LogOut,
   BookOpen,
-  CreditCard,
   Loader2,
   Lock,
-  ExternalLink,
   LayoutDashboard,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -38,19 +36,33 @@ const CustomerPortal = () => {
   const [editPhone, setEditPhone] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const { user, profileCompleted, isAdmin, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
-  // If user is authenticated but has no token, redirect appropriately
+  // If user is authenticated but has no token, resolve destination automatically
   useEffect(() => {
-    if (authLoading) return;
-    if (!token && user) {
-      if (profileCompleted === false) {
-        navigate("/completar-perfil", { replace: true });
-      } else if (isAdmin) {
-        navigate("/admin", { replace: true });
+    if (authLoading || token || !user) return;
+
+    let cancelled = false;
+
+    const routeUser = async () => {
+      try {
+        const destination = await resolveUserDestination();
+        if (!cancelled) {
+          navigate(destination, { replace: true });
+        }
+      } catch {
+        if (!cancelled) {
+          navigate("/completar-perfil", { replace: true });
+        }
       }
-    }
-  }, [token, user, profileCompleted, isAdmin, authLoading, navigate]);
+    };
+
+    routeUser();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token, user, authLoading, navigate]);
 
   useEffect(() => {
     if (!token) {
@@ -191,9 +203,14 @@ const CustomerPortal = () => {
               </ol>
             </div>
 
-            <Button onClick={() => navigate("/")} className="w-full gap-2">
-              Voltar ao início
-            </Button>
+            <div className="space-y-2">
+              <Button onClick={() => navigate("/login")} className="w-full gap-2">
+                Entrar com Google
+              </Button>
+              <Button variant="outline" onClick={() => navigate("/")} className="w-full gap-2">
+                Voltar ao início
+              </Button>
+            </div>
           </div>
 
           <p className="text-[11px] text-muted-foreground">

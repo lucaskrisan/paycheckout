@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { lovable } from "@/integrations/lovable/index";
+import { resolveUserDestination } from "@/lib/resolveUserDestination";
 import { toast } from "sonner";
 import { Mail, Eye, EyeOff, User, ArrowRight, ShieldCheck, Zap, BarChart3 } from "lucide-react";
 
@@ -17,18 +18,33 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { signIn, signUp, user, isAdmin, profileCompleted, loading: authLoading } = useAuth();
+  const { signIn, signUp, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!authLoading && user) {
-      if (profileCompleted === false) {
-        navigate("/completar-perfil", { replace: true });
-      } else if (profileCompleted === true) {
-        navigate(isAdmin ? "/admin" : "/admin", { replace: true });
+    if (authLoading || !user) return;
+
+    let cancelled = false;
+
+    const routeUser = async () => {
+      try {
+        const destination = await resolveUserDestination();
+        if (!cancelled) {
+          navigate(destination, { replace: true });
+        }
+      } catch {
+        if (!cancelled) {
+          navigate("/completar-perfil", { replace: true });
+        }
       }
-    }
-  }, [user, isAdmin, profileCompleted, authLoading, navigate]);
+    };
+
+    routeUser();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
