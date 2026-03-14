@@ -234,7 +234,7 @@ const Orders = () => {
     }
 
     return result;
-  }, [orders, search, activeTab, filterPeriod, filterProduct, filterMethods, filterStatuses]);
+  }, [orders, search, activeTab, filterPeriod, filterProduct, filterMethods, filterStatuses, filterType, filterSubscriptions]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
