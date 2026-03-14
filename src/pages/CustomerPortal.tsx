@@ -39,19 +39,33 @@ const CustomerPortal = () => {
   const [editPhone, setEditPhone] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const { user, profileCompleted, isAdmin, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
-  // If user is authenticated but has no token, redirect appropriately
+  // If user is authenticated but has no token, resolve destination automatically
   useEffect(() => {
-    if (authLoading) return;
-    if (!token && user) {
-      if (profileCompleted === false) {
-        navigate("/completar-perfil", { replace: true });
-      } else if (isAdmin) {
-        navigate("/admin", { replace: true });
+    if (authLoading || token || !user) return;
+
+    let cancelled = false;
+
+    const routeUser = async () => {
+      try {
+        const destination = await resolveUserDestination();
+        if (!cancelled) {
+          navigate(destination, { replace: true });
+        }
+      } catch {
+        if (!cancelled) {
+          navigate("/completar-perfil", { replace: true });
+        }
       }
-    }
-  }, [token, user, profileCompleted, isAdmin, authLoading, navigate]);
+    };
+
+    routeUser();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token, user, authLoading, navigate]);
 
   useEffect(() => {
     if (!token) {

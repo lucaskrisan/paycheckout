@@ -120,33 +120,14 @@ const CompleteProfile = () => {
       return;
     }
 
-    // Check if user has purchases (is a buyer/student)
-    const { data: customerData } = await supabase
-      .from("customers")
-      .select("id")
-      .eq("email", user!.email!)
-      .limit(1)
-      .maybeSingle();
-
-    if (customerData) {
-      // Has purchases → check for member_access tokens
-      const { data: accessData } = await supabase
-        .from("member_access")
-        .select("access_token")
-        .eq("customer_id", customerData.id)
-        .limit(1)
-        .maybeSingle();
-
-      if (accessData) {
-        toast.success("Perfil completo! Redirecionando para seus cursos...");
-        navigate(`/minha-conta?token=${accessData.access_token}`, { replace: true });
-        return;
-      }
+    try {
+      const destination = await resolveUserDestination();
+      toast.success("Perfil completo! Redirecionando...");
+      navigate(destination, { replace: true });
+    } catch {
+      toast.success("Perfil completo! Bem-vindo ao painel.");
+      navigate("/admin", { replace: true });
     }
-
-    // No purchases → producer panel (admin role was auto-assigned by trigger)
-    toast.success("Perfil completo! Bem-vindo ao painel de produtor!");
-    navigate("/admin", { replace: true });
   };
 
   if (authLoading) {
