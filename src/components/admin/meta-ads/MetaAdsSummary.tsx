@@ -14,34 +14,12 @@ interface Props {
 }
 
 
-function extractPurchases(insights: any): number {
-  if (!insights?.actions) return 0;
-  const p = insights.actions.find((a: any) =>
-    a.action_type === "offsite_conversion.fb_pixel_purchase" || a.action_type === "purchase"
-  );
-  return p ? parseInt(p.value, 10) : 0;
-}
-
-function extractRevenue(insights: any): number {
-  if (!insights?.action_values) return 0;
-  const p = insights.action_values.find((a: any) =>
-    a.action_type === "offsite_conversion.fb_pixel_purchase" || a.action_type === "purchase"
-  );
-  return p ? parseFloat(p.value) : 0;
-}
-
-export function MetaAdsSummary({ spend, conversionValue, results, roas, selectedAccounts }: Props) {
+export function MetaAdsSummary({ spend, conversionValue, results, roas }: Props) {
   const [orderMetrics, setOrderMetrics] = useState({
     pendingAmount: 0,
     chargebackAmount: 0,
     refundedAmount: 0,
   });
-  const [lifetime, setLifetime] = useState<{
-    spend: number; revenue: number; purchases: number; roas: number;
-    spend7d: number; revenue7d: number; purchases7d: number; roas7d: number;
-    campaigns: Array<{ name: string; account: string; purchases: number; revenue: number; spend: number; roas: number; dateRange: string }>;
-  } | null>(null);
-  const [loadingLifetime, setLoadingLifetime] = useState(false);
 
   const fetchOrderMetrics = useCallback(async () => {
     const today = new Date();
