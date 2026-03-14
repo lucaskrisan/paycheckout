@@ -1212,6 +1212,60 @@ export type Database = {
         }
         Relationships: []
       }
+      upsell_offers: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string
+          discount_percent: number
+          id: string
+          product_id: string
+          sort_order: number
+          title: string
+          upsell_product_id: string
+          user_id: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string
+          discount_percent?: number
+          id?: string
+          product_id: string
+          sort_order?: number
+          title?: string
+          upsell_product_id: string
+          user_id?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string
+          discount_percent?: number
+          id?: string
+          product_id?: string
+          sort_order?: number
+          title?: string
+          upsell_product_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "upsell_offers_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "upsell_offers_upsell_product_id_fkey"
+            columns: ["upsell_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
