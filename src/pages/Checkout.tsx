@@ -68,6 +68,7 @@ const Checkout = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [producerBlocked, setProducerBlocked] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pixData, setPixData] = useState<{ qrCodeUrl?: string; pixCode?: string; orderId?: string } | null>(null);
   const [pixModalOpen, setPixModalOpen] = useState(false);
@@ -141,8 +142,17 @@ const Checkout = () => {
         setProduct(p);
         if (p.is_subscription) setPaymentMethod("credit_card");
         if (p.user_id) {
-          const { data: settings } = await supabase.from("checkout_settings").select("logo_url, primary_color, custom_css, company_name").eq("user_id", p.user_id).maybeSingle();
+          // Check if producer is blocked
+          const [{ data: settings }, { data: billingAcc }] = await Promise.all([
+            supabase.from("checkout_settings").select("logo_url, primary_color, custom_css, company_name").eq("user_id", p.user_id).maybeSingle(),
+            supabase.from("billing_accounts").select("blocked").eq("user_id", p.user_id).maybeSingle(),
+          ]);
           if (settings) setCheckoutSettings(settings);
+          if ((billingAcc as any)?.blocked === true) {
+            setProducerBlocked(true);
+            setLoading(false);
+            return;
+          }
         }
       }
       if (bumpsRes.data) setOrderBumps(bumpsRes.data as any);
@@ -227,6 +237,18 @@ const Checkout = () => {
   if (loading) return (
     <div className="min-h-screen bg-[#F2F4F8] flex items-center justify-center">
       <div className="space-y-4 w-full max-w-lg px-4"><Skeleton className="h-8 w-3/4" /><Skeleton className="h-40 w-full" /><Skeleton className="h-40 w-full" /></div>
+    </div>
+  );
+
+  if (producerBlocked) return (
+    <div className="min-h-screen bg-[#F2F4F8] flex items-center justify-center px-4">
+      <div className="text-center space-y-4 max-w-md">
+        <div className="w-16 h-16 rounded-full bg-yellow-100 flex items-center justify-center mx-auto">
+          <Shield className="w-8 h-8 text-yellow-600" />
+        </div>
+        <h1 className="text-2xl font-bold text-[#0F1111]">Página em manutenção</h1>
+        <p className="text-[#565959]">Este checkout está temporariamente indisponível. Por favor, tente novamente mais tarde.</p>
+      </div>
     </div>
   );
 
