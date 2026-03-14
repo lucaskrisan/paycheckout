@@ -2,23 +2,33 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
-  ShoppingCart,
-  GraduationCap,
   User,
   LogOut,
   BookOpen,
   Loader2,
   LayoutDashboard,
+  Search,
+  PlayCircle,
+  ChevronDown,
+  Settings,
 } from "lucide-react";
 import { toast } from "sonner";
-
-type Tab = "orders" | "courses" | "profile";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const CustomerPortal = () => {
   const [searchParams] = useSearchParams();
@@ -27,16 +37,12 @@ const CustomerPortal = () => {
 
   const [loading, setLoading] = useState(true);
   const [customer, setCustomer] = useState<any>(null);
-  const [orders, setOrders] = useState<any[]>([]);
   const [courses, setCourses] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<Tab>("orders");
-  const [editName, setEditName] = useState("");
-  const [editPhone, setEditPhone] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("all");
 
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isAdmin, signOut } = useAuth();
 
-  // Never show restricted placeholder screen without token
   useEffect(() => {
     if (token || authLoading) return;
     navigate(user ? "/completar-perfil" : "/login?signup=true", { replace: true });
@@ -52,7 +58,6 @@ const CustomerPortal = () => {
 
   const loadPortalData = async () => {
     try {
-      // Get member access by token to find customer
       const { data: accessData } = await supabase
         .from("member_access")
         .select("customer_id, course_id")
@@ -67,7 +72,6 @@ const CustomerPortal = () => {
         return;
       }
 
-      // Load customer
       const { data: customerData } = await supabase
         .from("customers")
         .select("*")
@@ -81,19 +85,7 @@ const CustomerPortal = () => {
       }
 
       setCustomer(customerData);
-      setEditName(customerData.name);
-      setEditPhone(customerData.phone || "");
 
-      // Load orders
-      const { data: ordersData } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("customer_id", accessData.customer_id)
-        .order("created_at", { ascending: false });
-
-      setOrders(ordersData || []);
-
-      // Load courses via member_access
       const { data: accessList } = await supabase
         .from("member_access")
         .select("*, courses(*)")
@@ -114,37 +106,10 @@ const CustomerPortal = () => {
     setLoading(false);
   };
 
-  const handleSaveProfile = async () => {
-    if (!customer) return;
-    setSaving(true);
-    const { error } = await supabase
-      .from("customers")
-      .update({ name: editName, phone: editPhone })
-      .eq("id", customer.id);
-    if (error) {
-      toast.error("Erro ao salvar");
-    } else {
-      toast.success("Dados atualizados!");
-      setCustomer({ ...customer, name: editName, phone: editPhone });
-    }
-    setSaving(false);
-  };
-
-  const fmt = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
-
-  const statusLabels: Record<string, { label: string; className: string }> = {
-    paid: { label: "Pago", className: "bg-primary/10 text-primary" },
-    approved: { label: "Aprovado", className: "bg-primary/10 text-primary" },
-    pending: { label: "Pendente", className: "bg-yellow-100 text-yellow-700" },
-    refunded: { label: "Reembolsado", className: "bg-destructive/10 text-destructive" },
-    expired: { label: "Expirado", className: "bg-muted text-muted-foreground" },
-  };
-
-  const tabs: { key: Tab; label: string; icon: typeof ShoppingCart }[] = [
-    { key: "orders", label: "Meus Pedidos", icon: ShoppingCart },
-    { key: "courses", label: "Meus Cursos", icon: GraduationCap },
-    { key: "profile", label: "Meus Dados", icon: User },
-  ];
+  const filteredCourses = courses.filter((c) => {
+    if (search && !c.title?.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
 
   if (loading) {
     return (
@@ -162,154 +127,124 @@ const CustomerPortal = () => {
     );
   }
 
+  const firstName = customer.name?.split(" ")[0] || "Aluno";
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-card border-b border-border">
-        <div className="container max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
-              <User className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h1 className="font-display font-bold text-foreground">Olá, {customer.name.split(" ")[0]}!</h1>
-              <p className="text-xs text-muted-foreground">{customer.email}</p>
-            </div>
+    <div className="min-h-screen bg-muted/30">
+      {/* ===== GREEN HEADER BAR ===== */}
+      <header className="bg-primary h-14 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-50 shadow-md">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-primary-foreground/20 flex items-center justify-center">
+            <BookOpen className="w-4 h-4 text-primary-foreground" />
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => navigate("/admin")} className="gap-1.5">
-              <LayoutDashboard className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Painel do Produtor</span>
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
-              <LogOut className="w-4 h-4 mr-1.5" />
-              Sair
-            </Button>
-          </div>
+          <span className="text-primary-foreground font-bold text-sm sm:text-base">{firstName}</span>
         </div>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-2 text-primary-foreground/90 hover:text-primary-foreground transition-colors">
+              <div className="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+                <User className="w-4 h-4" />
+              </div>
+              <ChevronDown className="w-3.5 h-3.5 hidden sm:block" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-64">
+            <div className="px-3 py-2.5">
+              <p className="text-sm font-medium text-foreground">{customer.name}</p>
+              <p className="text-xs text-muted-foreground truncate">{customer.email}</p>
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate(`/minha-conta?token=${token}`)}>
+              <BookOpen className="w-4 h-4 mr-2" />
+              Meus cursos
+            </DropdownMenuItem>
+            {isAdmin && (
+              <DropdownMenuItem onClick={() => navigate("/admin")}>
+                <LayoutDashboard className="w-4 h-4 mr-2" />
+                Mudar para painel do produtor
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={async () => { await signOut(); navigate("/login"); }}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Sair
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </header>
 
-      <div className="container max-w-5xl mx-auto px-4 py-6">
-        {/* Tabs */}
-        <div className="flex gap-1 mb-6 bg-muted rounded-xl p-1">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === tab.key
-                  ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <tab.icon className="w-4 h-4" />
-              <span className="hidden sm:inline">{tab.label}</span>
-            </button>
-          ))}
+      {/* ===== MAIN CONTENT ===== */}
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+        <h1 className="text-2xl font-bold text-foreground mb-6">Meus Cursos</h1>
+
+        {/* Search + Filter row */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-8">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 bg-card border-border"
+            />
+          </div>
+          <Select value={filter} onValueChange={setFilter}>
+            <SelectTrigger className="w-[140px] bg-card border-border">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Ativos</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* Orders */}
-        {activeTab === "orders" && (
-          <div className="space-y-3">
-            <h2 className="font-display text-lg font-bold text-foreground">Meus Pedidos</h2>
-            {orders.length === 0 ? (
-              <Card><CardContent className="py-12 text-center text-muted-foreground text-sm">Nenhum pedido encontrado.</CardContent></Card>
-            ) : (
-              orders.map((order) => {
-                const st = statusLabels[order.status] || { label: order.status, className: "bg-muted" };
-                return (
-                  <Card key={order.id}>
-                    <CardContent className="py-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-mono text-xs text-muted-foreground">#{order.id.slice(0, 8)}</p>
-                          <p className="font-display font-bold text-foreground">{fmt(Number(order.amount))}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="secondary" className="text-xs">
-                              {order.payment_method === "pix" ? "PIX" : "Cartão"}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {new Date(order.created_at).toLocaleDateString("pt-BR")}
-                            </span>
-                          </div>
-                        </div>
-                        <Badge className={`${st.className} border-0`}>{st.label}</Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })
-            )}
+        {/* Courses grid */}
+        {filteredCourses.length === 0 ? (
+          <div className="text-center py-20">
+            <BookOpen className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
+            <p className="text-muted-foreground">Nenhum curso encontrado.</p>
           </div>
-        )}
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredCourses.map((course: any) => (
+              <div
+                key={course.id}
+                className="bg-card rounded-xl border border-border overflow-hidden shadow-sm hover:shadow-lg transition-shadow group"
+              >
+                {/* Cover image */}
+                <div className="aspect-video bg-muted overflow-hidden">
+                  {course.cover_image_url ? (
+                    <img
+                      src={course.cover_image_url}
+                      alt={course.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
+                      <BookOpen className="w-12 h-12 text-primary/30" />
+                    </div>
+                  )}
+                </div>
 
-        {/* Courses */}
-        {activeTab === "courses" && (
-          <div className="space-y-3">
-            <h2 className="font-display text-lg font-bold text-foreground">Meus Cursos</h2>
-            {courses.length === 0 ? (
-              <Card><CardContent className="py-12 text-center text-muted-foreground text-sm">Nenhum curso disponível.</CardContent></Card>
-            ) : (
-              <div className="grid sm:grid-cols-2 gap-4">
-                {courses.map((course: any) => (
-                  <Card key={course.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                    {course.cover_image_url && (
-                      <div className="h-32 bg-muted">
-                        <img src={course.cover_image_url} alt={course.title} className="w-full h-full object-cover" />
-                      </div>
-                    )}
-                    <CardContent className="p-4">
-                      <h3 className="font-display font-bold text-foreground mb-1">{course.title}</h3>
-                      {course.description && (
-                        <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{course.description}</p>
-                      )}
-                      <Button
-                        size="sm"
-                        className="w-full"
-                        onClick={() => navigate(`/membros?token=${course.access_token}`)}
-                      >
-                        <BookOpen className="w-4 h-4 mr-1.5" />
-                        Acessar Curso
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
+                {/* Info */}
+                <div className="p-4">
+                  <h3 className="font-bold text-foreground text-sm mb-3 line-clamp-2 min-h-[2.5rem]">
+                    {course.title}
+                  </h3>
+                  <button
+                    onClick={() => navigate(`/membros?token=${course.access_token}`)}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors"
+                  >
+                    Acessar
+                    <PlayCircle className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-            )}
+            ))}
           </div>
         )}
-
-        {/* Profile */}
-        {activeTab === "profile" && (
-          <div className="space-y-4">
-            <h2 className="font-display text-lg font-bold text-foreground">Meus Dados</h2>
-            <Card>
-              <CardContent className="p-6 space-y-4">
-                <div className="space-y-1.5">
-                  <Label>Nome</Label>
-                  <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>E-mail</Label>
-                  <Input value={customer.email} disabled className="bg-muted" />
-                  <p className="text-xs text-muted-foreground">O e-mail não pode ser alterado.</p>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>CPF</Label>
-                  <Input value={customer.cpf || ""} disabled className="bg-muted" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Telefone</Label>
-                  <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} />
-                </div>
-                <Button onClick={handleSaveProfile} disabled={saving}>
-                  {saving ? "Salvando..." : "Salvar Alterações"}
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-      </div>
+      </main>
     </div>
   );
 };
