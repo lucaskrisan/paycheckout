@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/useAuth";
 import { lovable } from "@/integrations/lovable/index";
-import { resolveUserDestination } from "@/lib/resolveUserDestination";
+
 import { toast } from "sonner";
 import { Eye, EyeOff, Star, Zap } from "lucide-react";
 
