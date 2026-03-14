@@ -13,7 +13,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Wallet, ArrowUpRight, ArrowDownLeft, Users, Ban, CheckCircle, Settings2, Save,
+  Wallet, ArrowUpRight, ArrowDownLeft, Users, Ban, CheckCircle, Settings2, Save, TrendingUp,
 } from "lucide-react";
 import { toast } from "sonner";
 
