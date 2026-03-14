@@ -34,13 +34,14 @@ export default function LessonReviews({
 
   useEffect(() => {
     loadReviews();
-  }, [lessonId]);
+  }, [lessonId, memberAccessId]);
 
   const loadReviews = async () => {
     const { data } = await client
       .from("lesson_reviews")
       .select("*")
       .eq("lesson_id", lessonId)
+      .eq("member_access_id", memberAccessId)
       .order("created_at", { ascending: false });
 
     if (data) {
@@ -131,8 +132,11 @@ export default function LessonReviews({
         className="rounded-xl p-4 mb-5"
         style={{ background: "hsl(220,18%,14%)" }}
       >
-        <p className="text-[hsl(220,10%,55%)] text-xs mb-3">
+        <p className="text-[hsl(220,10%,55%)] text-xs mb-1">
           {myReview ? "Editar sua avaliação" : "Deixe sua avaliação"}
+        </p>
+        <p className="text-[hsl(220,10%,40%)] text-[11px] mb-3">
+          Sua avaliação é privada e visível apenas para você e para o produtor do curso.
         </p>
 
         {/* Stars */}
