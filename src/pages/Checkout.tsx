@@ -492,6 +492,9 @@ const Checkout = () => {
         onPaymentConfirmed={() => {
           trackPurchase(finalAmount, "BRL", pixData?.orderId);
           markPurchased();
+          setTimeout(() => {
+            navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=pix&email=${encodeURIComponent(customer.email)}`);
+          }, 2500);
         }}
       />
     </div>
