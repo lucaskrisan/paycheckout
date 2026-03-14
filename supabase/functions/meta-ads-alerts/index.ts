@@ -117,7 +117,7 @@ function analyzeAndGenerateAlerts(campaigns: any[]): AlertMsg[] {
   const active = campaigns.filter((c: any) => c.status === 'ACTIVE' && c.insights);
   if (active.length === 0) return [{
     priority: 'info',
-    title: '⏸️ Nenhuma campanha ativa',
+    title: '⏸️ AntonyAD: Nenhuma campanha ativa',
     body: 'Todas as campanhas estão pausadas. Se foi intencional, ok. Se não, ative pelo menos 1 campanha winner.',
   }];
 
@@ -172,25 +172,25 @@ function analyzeAndGenerateAlerts(campaigns: any[]): AlertMsg[] {
     const winnerNames = winners.slice(0, 2).map(w => w.name.substring(0, 25)).join(' e ');
     alerts.push({
       priority: 'opportunity',
-      title: `🔥 AÇÃO: Escale agora! Score ${score}/100`,
+      title: `🔥 AntonyAD: Escale agora! Score ${score}/100`,
       body: `ROAS ${globalROAS.toFixed(2)}x | ${totalResults} vendas | Gasto ${fmt(totalSpend)}. FAÇA AGORA: Aumente ${winnerNames ? '"' + winnerNames + '"' : 'winners'} em 20-30%. Leilão barato, aproveite!`,
     });
   } else if (score >= 60) {
     alerts.push({
       priority: 'info',
-      title: `👍 Dia bom — Score ${score}/100`,
+      title: `👍 AntonyAD: Dia bom — Score ${score}/100`,
       body: `ROAS ${globalROAS.toFixed(2)}x | ${totalResults} vendas. AÇÃO: Mantenha tudo rodando. ${winners.length > 0 ? 'Pode escalar "' + winners[0].name.substring(0, 25) + '" em 20% com segurança.' : 'Aguarde winners consolidarem.'}`,
     });
   } else if (score >= 40) {
     alerts.push({
       priority: 'warning',
-      title: `⚠️ Dia instável — Score ${score}/100`,
+      title: `⚠️ AntonyAD: Dia instável — Score ${score}/100`,
       body: `ROAS ${globalROAS.toFixed(2)}x | CPM ${fmt(avgCPM)}. AÇÃO: NÃO escale hoje. ${losers.length > 0 ? 'Pause "' + losers[0].name.substring(0, 25) + '" (ROAS ' + losers[0].roas.toFixed(2) + 'x). ' : ''}Mantenha apenas winners.`,
     });
   } else {
     alerts.push({
       priority: 'critical',
-      title: `🚨 AÇÃO URGENTE! Score ${score}/100`,
+      title: `🚨 AntonyAD: AÇÃO URGENTE! Score ${score}/100`,
       body: `ROAS ${globalROAS.toFixed(2)}x | Gasto ${fmt(totalSpend)} | ${totalResults} vendas. FAÇA AGORA: ${losers.length > 0 ? 'Pause "' + losers[0].name.substring(0, 25) + '" imediatamente. ' : ''}Reduza orçamento geral em 20%. Proteja seu capital.`,
     });
   }
