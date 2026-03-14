@@ -69,18 +69,11 @@ function AdminAccessRedirect({ refreshRoles }: { refreshRoles: () => Promise<voi
   useEffect(() => {
     let cancelled = false;
     const run = async () => {
-      // Re-check roles (maybe trigger just fired)
       await refreshRoles();
-      // If still not admin after refresh, redirect to correct destination
-      if (!cancelled) {
-        try {
-          const destination = await resolveUserDestination();
-          navigate(destination, { replace: true });
-        } catch {
-          navigate("/completar-perfil", { replace: true });
-        }
-        setChecked(true);
-      }
+      if (cancelled) return;
+      setChecked(true);
+      // Simple redirect — avoid calling resolveUserDestination to prevent history loops
+      navigate("/completar-perfil", { replace: true });
     };
     run();
     return () => { cancelled = true; };

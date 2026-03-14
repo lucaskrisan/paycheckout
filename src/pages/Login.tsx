@@ -54,17 +54,8 @@ const Login = () => {
 
   useEffect(() => {
     if (authLoading || !user) return;
-    let cancelled = false;
-    const routeUser = async () => {
-      try {
-        const destination = await resolveUserDestination();
-        if (!cancelled) navigate(destination, { replace: true });
-      } catch {
-        if (!cancelled) navigate("/completar-perfil", { replace: true });
-      }
-    };
-    routeUser();
-    return () => { cancelled = true; };
+    // Redirect to root — Index.tsx is the single source of truth for routing
+    navigate("/", { replace: true });
   }, [user, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
