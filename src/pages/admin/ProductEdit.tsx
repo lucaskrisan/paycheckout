@@ -874,23 +874,75 @@ const ProductEdit = () => {
                 </div>
               </div>
 
-              {/* Página de obrigado e upsell */}
+              {/* Upsell One-Click pós-compra */}
               <div className="grid lg:grid-cols-12 gap-8">
                 <div className="lg:col-span-4">
-                  <h2 className="text-base font-semibold text-foreground">Página de obrigado e upsell</h2>
+                  <h2 className="text-base font-semibold text-foreground">Upsell One-Click</h2>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Aprenda sobre as páginas de obrigado personalizadas e também sobre a upsell de 1 clique.
+                    Ofertas exibidas na página de sucesso após pagamento com cartão. O cliente compra com 1 clique sem redigitar os dados.
                   </p>
                 </div>
                 <div className="lg:col-span-8">
-                  <div className="border border-border rounded-lg p-6 bg-card">
-                    <div className="flex items-center gap-3">
-                      <Switch />
-                      <Label className="text-sm">Esse produto tem uma página de obrigado personalizada ou upsell</Label>
-                    </div>
+                  <div className="border border-border rounded-lg p-6 bg-card space-y-4">
+                    {upsellOffers.length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="hover:bg-transparent">
+                            <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Produto</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase text-muted-foreground">Desconto</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase text-muted-foreground w-10" />
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {upsellOffers.map((uo: any) => (
+                            <TableRow key={uo.id}>
+                              <TableCell className="text-sm">
+                                <div>
+                                  <p className="font-medium text-foreground">{uo.title || uo.upsell_product?.name}</p>
+                                  <p className="text-xs text-muted-foreground">{uo.description}</p>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground">
+                                {uo.discount_percent > 0 ? `${uo.discount_percent}%` : "—"}
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive"
+                                  onClick={async () => {
+                                    await supabase.from("upsell_offers").delete().eq("id", uo.id);
+                                    loadUpsellOffers();
+                                    toast.success("Upsell removido");
+                                  }}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        Nenhum upsell configurado. Adicione um produto para oferecer após a compra.
+                      </p>
+                    )}
+                    <Button variant="outline" size="sm" className="gap-1" onClick={() => setShowUpsellDialog(true)}>
+                      <Plus className="w-4 h-4" /> Adicionar upsell
+                    </Button>
                   </div>
                 </div>
               </div>
+
+              {showUpsellDialog && productId && (
+                <UpsellOfferDialog
+                  open={showUpsellDialog}
+                  onClose={() => setShowUpsellDialog(false)}
+                  productId={productId}
+                  onSaved={loadUpsellOffers}
+                />
+              )}
 
               {/* Pixels de conversão */}
               <div className="grid lg:grid-cols-12 gap-8">
