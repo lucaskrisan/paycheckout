@@ -34,7 +34,7 @@ export default function LessonReviews({
 
   useEffect(() => {
     loadReviews();
-  }, [lessonId]);
+  }, [lessonId, memberAccessId]);
 
   const loadReviews = async () => {
     const { data } = await client
