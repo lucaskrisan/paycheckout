@@ -61,6 +61,40 @@ function useOneSignalInit(email: string | undefined) {
   }, [email]);
 }
 
+// Component that re-checks roles and redirects non-admin users
+function AdminAccessRedirect({ refreshRoles }: { refreshRoles: () => Promise<void> }) {
+  const navigate = useNavigate();
+  const [checked, setChecked] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      // Re-check roles (maybe trigger just fired)
+      await refreshRoles();
+      // If still not admin after refresh, redirect to correct destination
+      if (!cancelled) {
+        try {
+          const destination = await resolveUserDestination();
+          navigate(destination, { replace: true });
+        } catch {
+          navigate("/completar-perfil", { replace: true });
+        }
+        setChecked(true);
+      }
+    };
+    run();
+    return () => { cancelled = true; };
+  }, [refreshRoles, navigate]);
+
+  if (checked) return null;
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+    </div>
+  );
+}
+
 export default function AdminLayout() {
   const { user, isAdmin, loading, signOut, refreshRoles } = useAuth();
   const { isDark, toggle: toggleTheme } = useTheme();
