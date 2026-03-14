@@ -32,6 +32,7 @@ import Webhooks from "./pages/admin/Webhooks";
 import Emails from "./pages/admin/Emails";
 import PwaSettings from "./pages/admin/PwaSettings";
 import MetaAds from "./pages/admin/MetaAds";
+import Billing from "./pages/admin/Billing";
 import NotFound from "./pages/NotFound";
 import InstallPrompt from "./components/InstallPrompt";
 
