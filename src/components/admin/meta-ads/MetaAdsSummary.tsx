@@ -115,7 +115,7 @@ export function MetaAdsSummary({ spend, conversionValue, results, roas, selected
     } finally {
       setLoadingLifetime(false);
     }
-  }, []);
+  }, [selectedAccounts]);
 
   useEffect(() => {
     fetchOrderMetrics();
