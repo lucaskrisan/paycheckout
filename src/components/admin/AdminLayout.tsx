@@ -191,14 +191,8 @@ export default function AdminLayout() {
 
   if (!user) return <Navigate to="/login" replace />;
   if (!isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-2">
-          <p className="font-display text-xl font-bold text-foreground">Acesso negado</p>
-          <p className="text-sm text-muted-foreground">Você não tem permissão de administrador.</p>
-        </div>
-      </div>
-    );
+    // Re-check roles and redirect — never show "access denied" to users
+    return <AdminAccessRedirect refreshRoles={refreshRoles} />;
   }
 
   return (
