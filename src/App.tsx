@@ -41,6 +41,7 @@ import Communications from "./pages/admin/Communications";
 import MyAccount from "./pages/admin/MyAccount";
 import Metrics from "./pages/admin/Metrics";
 import NotFound from "./pages/NotFound";
+import PendingApproval from "./pages/PendingApproval";
 import InstallPrompt from "./components/InstallPrompt";
 
 const queryClient = new QueryClient();
