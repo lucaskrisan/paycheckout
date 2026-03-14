@@ -6,7 +6,7 @@ import {
   TrendingUp, AlertTriangle, Zap,
 } from "lucide-react";
 import type { MetaCampaign } from "@/hooks/useMetaAds";
-import { getResults, getCPA, getROAS, getConversionValue, formatCurrency } from "./MetaInsightsHelpers";
+import { getResults, getCPA, getROAS } from "./MetaInsightsHelpers";
 
 interface Props {
   campaigns: MetaCampaign[];
