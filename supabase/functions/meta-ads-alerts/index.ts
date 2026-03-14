@@ -115,7 +115,11 @@ interface AlertMsg {
 
 function analyzeAndGenerateAlerts(campaigns: any[]): AlertMsg[] {
   const active = campaigns.filter((c: any) => c.status === 'ACTIVE' && c.insights);
-  if (active.length === 0) return [];
+  if (active.length === 0) return [{
+    priority: 'info',
+    title: '⏸️ Nenhuma campanha ativa',
+    body: 'Todas as campanhas estão pausadas. Se foi intencional, ok. Se não, ative pelo menos 1 campanha winner.',
+  }];
 
   const alerts: AlertMsg[] = [];
 
@@ -128,95 +132,126 @@ function analyzeAndGenerateAlerts(campaigns: any[]): AlertMsg[] {
   const avgFreq = active.reduce((s: number, c: any) => s + parseFloat(c.insights.frequency || '0'), 0) / active.length;
   const globalROAS = totalSpend > 0 ? totalRevenue / totalSpend : 0;
 
-  // Health score (same logic as frontend)
+  // Health score
   let score = 50;
   if (globalROAS >= 3) score += 25;
   else if (globalROAS >= 2) score += 15;
   else if (globalROAS >= 1) score += 5;
   else if (globalROAS > 0 && globalROAS < 1) score -= 15;
   else if (totalSpend > 0 && totalResults === 0) score -= 25;
-
   if (avgCPM > 80) score -= 15;
   else if (avgCPM > 50) score -= 5;
   else if (avgCPM < 20) score += 10;
-
   if (avgCTR > 2) score += 10;
   else if (avgCTR > 1) score += 5;
   else if (avgCTR < 0.5) score -= 10;
-
   if (avgFreq > 3) score -= 15;
   else if (avgFreq > 2) score -= 5;
-
   score = Math.max(0, Math.min(100, score));
 
-  // Day health notification
+  // Identify winners and losers for decision-making
+  const sorted = active.map((c: any) => ({
+    name: c.name,
+    roas: getROAS(c.insights),
+    results: getResults(c.insights),
+    cpa: getCPA(c.insights),
+    spend: parseFloat(c.insights.spend || '0'),
+    ctr: parseFloat(c.insights.ctr || '0'),
+    freq: parseFloat(c.insights.frequency || '0'),
+    cpm: parseFloat(c.insights.cpm || '0'),
+  })).sort((a, b) => b.roas - a.roas);
+
+  const winners = sorted.filter(c => c.roas >= 1.5 && c.results >= 1);
+  const losers = sorted.filter(c => c.spend > 15 && c.roas < 1);
+  const saturated = sorted.filter(c => c.freq > 3 || (c.ctr < 0.5 && c.spend > 30));
+
+  // ===== DECISÃO PRINCIPAL DO DIA =====
+  const hour = new Date().getUTCHours() - 3; // BRT approximation
+
   if (score >= 80) {
+    const winnerNames = winners.slice(0, 2).map(w => w.name.substring(0, 25)).join(' e ');
     alerts.push({
       priority: 'opportunity',
-      title: '🔥 Dia excelente! Score: ' + score + '/100',
-      body: `ROAS ${globalROAS.toFixed(2)}x | ${totalResults} vendas | Gasto ${fmt(totalSpend)}. Escala agressiva liberada — aumente 20-30%!`,
+      title: `🔥 AÇÃO: Escale agora! Score ${score}/100`,
+      body: `ROAS ${globalROAS.toFixed(2)}x | ${totalResults} vendas | Gasto ${fmt(totalSpend)}. FAÇA AGORA: Aumente ${winnerNames ? '"' + winnerNames + '"' : 'winners'} em 20-30%. Leilão barato, aproveite!`,
     });
-  } else if (score < 40 && totalSpend > 30) {
+  } else if (score >= 60) {
+    alerts.push({
+      priority: 'info',
+      title: `👍 Dia bom — Score ${score}/100`,
+      body: `ROAS ${globalROAS.toFixed(2)}x | ${totalResults} vendas. AÇÃO: Mantenha tudo rodando. ${winners.length > 0 ? 'Pode escalar "' + winners[0].name.substring(0, 25) + '" em 20% com segurança.' : 'Aguarde winners consolidarem.'}`,
+    });
+  } else if (score >= 40) {
+    alerts.push({
+      priority: 'warning',
+      title: `⚠️ Dia instável — Score ${score}/100`,
+      body: `ROAS ${globalROAS.toFixed(2)}x | CPM ${fmt(avgCPM)}. AÇÃO: NÃO escale hoje. ${losers.length > 0 ? 'Pause "' + losers[0].name.substring(0, 25) + '" (ROAS ' + losers[0].roas.toFixed(2) + 'x). ' : ''}Mantenha apenas winners.`,
+    });
+  } else {
     alerts.push({
       priority: 'critical',
-      title: '🚨 Dia crítico! Score: ' + score + '/100',
-      body: `ROAS ${globalROAS.toFixed(2)}x | Gasto ${fmt(totalSpend)} | CPM ${fmt(avgCPM)}. Reduza orçamentos ou pause campanhas fracas.`,
+      title: `🚨 AÇÃO URGENTE! Score ${score}/100`,
+      body: `ROAS ${globalROAS.toFixed(2)}x | Gasto ${fmt(totalSpend)} | ${totalResults} vendas. FAÇA AGORA: ${losers.length > 0 ? 'Pause "' + losers[0].name.substring(0, 25) + '" imediatamente. ' : ''}Reduza orçamento geral em 20%. Proteja seu capital.`,
     });
   }
 
-  // Per-campaign alerts
-  for (const c of active) {
-    const roas = getROAS(c.insights);
-    const results = getResults(c.insights);
-    const cpa = getCPA(c.insights);
-    const spend = parseFloat(c.insights.spend || '0');
-    const ctr = parseFloat(c.insights.ctr || '0');
-    const freq = parseFloat(c.insights.frequency || '0');
-
-    // Winner
-    if (roas >= 2 && results >= 2) {
+  // ===== DECISÕES POR CAMPANHA =====
+  for (const c of sorted) {
+    // Winner com decisão clara
+    if (c.roas >= 2 && c.results >= 2) {
       alerts.push({
         priority: 'opportunity',
-        title: `🏆 Winner: ${c.name.substring(0, 40)}`,
-        body: `ROAS ${roas.toFixed(2)}x | ${results} vendas | CPA ${fmt(cpa)}. Escale 20% o orçamento!`,
+        title: `🏆 ESCALE: ${c.name.substring(0, 35)}`,
+        body: `ROAS ${c.roas.toFixed(2)}x | ${c.results} vendas | CPA ${fmt(c.cpa)}. AÇÃO: Aumente orçamento em ${score >= 80 ? '30%' : '20%'}. ${c.results >= 5 ? 'Duplique o ad set e teste público lookalike.' : 'Aguarde 5+ vendas antes de duplicar.'}`,
       });
     }
 
-    // High CPA losing money
-    if (cpa > 0 && spend > 20 && roas < 1) {
+    // Perdendo dinheiro — decisão de pausar
+    if (c.spend > 20 && c.roas < 0.8 && c.results <= 1) {
+      const killRule = c.cpa > 0 ? `Kill rule atingida (CPA ${fmt(c.cpa)}).` : `Já gastou ${fmt(c.spend)} sem retorno.`;
       alerts.push({
         priority: 'critical',
-        title: `⚠️ CPA alto: ${c.name.substring(0, 40)}`,
-        body: `CPA ${fmt(cpa)} com ROAS ${roas.toFixed(2)}x. Considere pausar ou trocar criativo.`,
+        title: `🛑 PAUSE: ${c.name.substring(0, 35)}`,
+        body: `ROAS ${c.roas.toFixed(2)}x | ${killRule} AÇÃO: Pause agora. ${c.ctr < 0.8 ? 'CTR baixo (' + c.ctr.toFixed(2) + '%) — criativo fraco, troque.' : 'Teste novo público ou oferta.'}`,
       });
     }
 
-    // Saturated
-    if (freq > 3 || (ctr < 0.5 && spend > 30)) {
+    // Saturando — decisão de renovar
+    if (c.freq > 3 && c.spend > 10) {
       alerts.push({
         priority: 'warning',
-        title: `💀 Saturando: ${c.name.substring(0, 40)}`,
-        body: `Freq ${freq.toFixed(1)} | CTR ${ctr.toFixed(2)}%. Público cansou. Teste novos criativos.`,
+        title: `🔄 TROQUE CRIATIVO: ${c.name.substring(0, 30)}`,
+        body: `Freq ${c.freq.toFixed(1)} | CTR ${c.ctr.toFixed(2)}%. Público saturado. AÇÃO: Crie novo ad set com criativo diferente na mesma campanha. Não altere o ad set atual, crie um novo.`,
       });
     }
 
-    // Spending without results
-    if (spend > 50 && results === 0) {
+    // Fase de aprendizado — decisão de NÃO mexer
+    if (c.results > 0 && c.results < 5 && c.spend > 10 && c.roas >= 0.8) {
       alerts.push({
-        priority: 'critical',
-        title: `🔴 Sem vendas: ${c.name.substring(0, 40)}`,
-        body: `Já gastou ${fmt(spend)} sem conversão. Revise criativo e página.`,
+        priority: 'info',
+        title: `⏳ NÃO MEXA: ${c.name.substring(0, 35)}`,
+        body: `${c.results}/50 conversões | ROAS ${c.roas.toFixed(2)}x. Em aprendizado. AÇÃO: Não altere nada por 48-72h. Qualquer mudança reseta o algoritmo.`,
       });
     }
 
-    // Ready to scale
-    if (roas >= 1.5 && results >= 5 && score >= 60) {
+    // CPA bom mas poucos resultados — decisão de manter
+    if (c.roas >= 1 && c.roas < 2 && c.results >= 1 && c.results < 3) {
       alerts.push({
-        priority: 'opportunity',
-        title: `🚀 Escalar: ${c.name.substring(0, 40)}`,
-        body: `ROAS ${roas.toFixed(2)}x estável com ${results} vendas. ${score >= 80 ? 'Dia excelente — aumente 30%!' : 'Aumente 20% e monitore 48h.'}`,
+        priority: 'info',
+        title: `👀 MONITORE: ${c.name.substring(0, 35)}`,
+        body: `ROAS ${c.roas.toFixed(2)}x com ${c.results} venda(s). Potencial winner. AÇÃO: Mantenha rodando. Se chegar a 3+ vendas com ROAS > 1.5x, escale 20%.`,
       });
     }
+  }
+
+  // Resumo financeiro no fim do dia (após 20h BRT)
+  if (hour >= 20 && totalSpend > 0) {
+    const profit = totalRevenue - totalSpend;
+    alerts.push({
+      priority: profit > 0 ? 'opportunity' : 'critical',
+      title: profit > 0 ? `💰 Lucro do dia: ${fmt(profit)}` : `📉 Prejuízo do dia: ${fmt(Math.abs(profit))}`,
+      body: `Faturou ${fmt(totalRevenue)} | Gastou ${fmt(totalSpend)} | ROAS ${globalROAS.toFixed(2)}x | ${totalResults} vendas. ${profit > 0 ? 'Amanhã repita a estratégia e escale winners.' : 'Amanhã reduza 20% do orçamento geral e revise criativos dos losers.'}`,
+    });
   }
 
   return alerts;
