@@ -6,15 +6,12 @@ import {
   Settings,
   LogOut,
   CreditCard,
-  Tag,
   ShoppingBag,
   Link2,
   Megaphone,
   GraduationCap,
   ChevronDown,
   Crown,
-  HelpCircle,
-  UserPlus,
   BarChart3,
   Wallet,
   Bell,
@@ -24,6 +21,9 @@ import {
   Webhook,
   Mail,
   Smartphone,
+  Globe,
+  Zap,
+  User,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -46,25 +46,32 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { useState } from "react";
 
-const mainItems = [
+const menuItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
+  { title: "Pagamentos", url: "/admin/orders", icon: ShoppingCart },
   { title: "Produtos", url: "/admin/products", icon: Package },
+  { title: "Checkouts", url: "/admin/settings", icon: Settings },
   { title: "Área de Membros", url: "/admin/courses", icon: GraduationCap },
-  { title: "Vendas", url: "/admin/orders", icon: ShoppingCart },
+  { title: "Upsell", url: "/admin/products", icon: Zap },
   { title: "Clientes", url: "/admin/customers", icon: Users },
-  { title: "Financeiro", url: "/admin/gateways", icon: Wallet },
-  { title: "Relatórios", url: "/admin/abandoned", icon: BarChart3 },
-  { title: "Rastreamento", url: "/admin/tracking", icon: Crosshair },
-  { title: "Meta Ads", url: "/admin/meta-ads", icon: Megaphone },
   { title: "Avaliações", url: "/admin/reviews", icon: MessageCircle },
-  { title: "Gateway", url: "/admin/integrations", icon: Link2 },
-  { title: "Emails", url: "/admin/emails", icon: Mail },
+  { title: "Meta Ads", url: "/admin/meta-ads", icon: Megaphone },
+  { title: "Relatórios", url: "/admin/abandoned", icon: BarChart3 },
+];
+
+const configItems = [
+  { title: "Métricas", url: "/admin/metrics", icon: BarChart3 },
+  { title: "Domínios", url: "/admin/domains", icon: Globe },
+  { title: "Gateways", url: "/admin/integrations", icon: CreditCard },
+  { title: "Billing", url: "/admin/billing", icon: Wallet },
+  { title: "Comunicações", url: "/admin/communications", icon: Mail },
+  { title: "Webhook", url: "/admin/webhooks", icon: Webhook },
+  { title: "WhatsApp", url: "/admin/whatsapp", icon: MessageCircle },
   { title: "Notificações", url: "/admin/notifications", icon: Bell },
-  { title: "Webhooks", url: "/admin/webhooks", icon: Webhook },
-  { title: "Configurações", url: "/admin/settings", icon: Settings },
   { title: "App Mobile", url: "/admin/pwa", icon: Smartphone },
-  { title: "Fiscalizar", url: "/admin/health", icon: ShieldCheck },
+  { title: "Minha conta", url: "/admin/my-account", icon: User },
 ];
 
 export function AdminSidebar() {
@@ -72,16 +79,20 @@ export function AdminSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const { signOut, user, isSuperAdmin } = useAuth();
+  const [configOpen, setConfigOpen] = useState(() =>
+    configItems.some((item) => location.pathname === item.url)
+  );
 
   const superAdminItems = [
     { title: "Painel Plataforma", url: "/admin/platform", icon: Crown },
-    { title: "Billing", url: "/admin/billing", icon: CreditCard },
+    { title: "Billing Global", url: "/admin/billing", icon: CreditCard },
+    { title: "Fiscalizar", url: "/admin/health", icon: ShieldCheck },
   ];
 
   const renderItems = (items: { title: string; url: string; icon: any }[]) => (
     <SidebarMenu>
       {items.map((item) => (
-        <SidebarMenuItem key={item.title}>
+        <SidebarMenuItem key={item.title + item.url}>
           <SidebarMenuButton asChild>
             <NavLink
               to={item.url}
@@ -116,7 +127,37 @@ export function AdminSidebar() {
               </div>
             )}
           </SidebarGroupLabel>
-          <SidebarGroupContent>{renderItems(mainItems)}</SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* MENU */}
+        <SidebarGroup>
+          <SidebarGroupLabel>
+            {!collapsed && <span className="text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/60">Menu</span>}
+          </SidebarGroupLabel>
+          <SidebarGroupContent>{renderItems(menuItems)}</SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* GERAL - Configurações (collapsible) */}
+        <SidebarGroup>
+          <SidebarGroupLabel>
+            {!collapsed && <span className="text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/60">Geral</span>}
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            {collapsed ? (
+              renderItems(configItems)
+            ) : (
+              <Collapsible open={configOpen} onOpenChange={setConfigOpen}>
+                <CollapsibleTrigger className="flex items-center gap-2 w-full px-3 py-2 rounded-md hover:bg-sidebar-accent/60 transition-colors text-sm text-sidebar-foreground">
+                  <Settings className="h-4 w-4 mr-1" />
+                  <span>Configurações</span>
+                  <ChevronDown className={`w-3.5 h-3.5 ml-auto transition-transform ${configOpen ? "rotate-180" : ""}`} />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pl-2 mt-1">
+                  {renderItems(configItems)}
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+          </SidebarGroupContent>
         </SidebarGroup>
 
         {/* Super Admin */}

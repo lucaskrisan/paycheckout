@@ -33,9 +33,13 @@ import Emails from "./pages/admin/Emails";
 import PwaSettings from "./pages/admin/PwaSettings";
 import MetaAds from "./pages/admin/MetaAds";
 import Billing from "./pages/admin/Billing";
+import Domains from "./pages/admin/Domains";
+import WhatsApp from "./pages/admin/WhatsApp";
+import Communications from "./pages/admin/Communications";
+import MyAccount from "./pages/admin/MyAccount";
+import Metrics from "./pages/admin/Metrics";
 import NotFound from "./pages/NotFound";
 import InstallPrompt from "./components/InstallPrompt";
-
 
 const queryClient = new QueryClient();
 
@@ -78,6 +82,11 @@ const App = () => (
               <Route path="meta-ads" element={<MetaAds />} />
               <Route path="billing" element={<Billing />} />
               <Route path="platform" element={<SuperAdminDashboard />} />
+              <Route path="domains" element={<Domains />} />
+              <Route path="whatsapp" element={<WhatsApp />} />
+              <Route path="communications" element={<Communications />} />
+              <Route path="my-account" element={<MyAccount />} />
+              <Route path="metrics" element={<Metrics />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
