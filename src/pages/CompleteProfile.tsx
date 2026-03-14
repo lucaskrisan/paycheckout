@@ -55,7 +55,7 @@ const validateCpf = (cpf: string) => {
 };
 
 const CompleteProfile = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refreshRoles } = useAuth();
   const navigate = useNavigate();
   const [cpf, setCpf] = useState("");
   const [phone, setPhone] = useState("");
