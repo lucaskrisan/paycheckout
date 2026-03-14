@@ -134,15 +134,18 @@ async function listCampaigns(accountId: string, datePreset: string, since?: stri
   return results;
 }
 
-async function listAdSets(accountId: string, datePreset: string, since?: string, until?: string) {
-  const fields = 'id,name,status,campaign_id,daily_budget,lifetime_budget,budget_remaining,optimization_goal,billing_event';
+async function listAdSets(accountId: string, datePreset: string, since?: string, until?: string, includeAll = false, dailyBreakdown = false) {
+  const fields = 'id,name,status,campaign_id,daily_budget,lifetime_budget,budget_remaining,optimization_goal,billing_event,effective_status,start_time';
   const insightFields = 'spend,impressions,reach,frequency,cpm,ctr,cpc,actions,action_values,cost_per_action_type,purchase_roas';
 
-  const adsets = await metaFetch(`/${accountId}/adsets`, {
-    fields,
-    filtering: JSON.stringify([{ field: 'effective_status', operator: 'IN', value: ['ACTIVE'] }]),
-    limit: '200',
-  });
+  const fetchParams: Record<string, string> = { fields, limit: '200' };
+  if (!includeAll) {
+    fetchParams.filtering = JSON.stringify([{ field: 'effective_status', operator: 'IN', value: ['ACTIVE'] }]);
+  } else {
+    fetchParams.filtering = JSON.stringify([{ field: 'effective_status', operator: 'IN', value: ['ACTIVE', 'PAUSED', 'CAMPAIGN_PAUSED', 'ADSET_PAUSED', 'IN_PROCESS', 'WITH_ISSUES'] }]);
+  }
+
+  const adsets = await metaFetch(`/${accountId}/adsets`, fetchParams);
 
   const results = [];
   for (const adset of (adsets.data || [])) {
@@ -153,10 +156,17 @@ async function listAdSets(accountId: string, datePreset: string, since?: string,
       } else {
         insightParams.date_preset = datePreset || 'today';
       }
+      if (dailyBreakdown) {
+        insightParams.time_increment = '1';
+      }
       const insights = await metaFetch(`/${adset.id}/insights`, insightParams);
-      results.push({ ...adset, insights: insights.data?.[0] || null });
+      results.push({ 
+        ...adset, 
+        insights: dailyBreakdown ? (insights.data || []) : (insights.data?.[0] || null),
+        daily_insights: dailyBreakdown ? (insights.data || []) : undefined,
+      });
     } catch {
-      results.push({ ...adset, insights: null });
+      results.push({ ...adset, insights: dailyBreakdown ? [] : null, daily_insights: dailyBreakdown ? [] : undefined });
     }
   }
 
