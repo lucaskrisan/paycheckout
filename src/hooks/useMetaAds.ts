@@ -80,6 +80,7 @@ export function useMetaAds() {
   const [campaigns, setCampaigns] = useState<MetaCampaign[]>([]);
   const [adsets, setAdsets] = useState<MetaAdSet[]>([]);
   const [ads, setAds] = useState<MetaAd[]>([]);
+  const [accountInsights, setAccountInsights] = useState<MetaInsights | null>(null);
   const [loading, setLoading] = useState(false);
   const [datePreset, setDatePreset] = useState<DatePreset>("today");
   const [customRange, setCustomRange] = useState<{ since: string; until: string } | null>(null);
@@ -244,13 +245,56 @@ export function useMetaAds() {
     setSelectedAccounts(accounts.map((a) => a.id));
   }, [accounts]);
 
+  const fetchAccountInsights = useCallback(async () => {
+    if (selectedAccounts.length === 0) return;
+    try {
+      const results = await Promise.all(
+        selectedAccounts.map((accId) =>
+          callMetaAds({ action: "account_insights", account_id: accId, ...getDateParams() })
+        )
+      );
+      // Merge insights from all selected accounts
+      const merged: MetaInsights = { spend: "0", impressions: "0", reach: "0", frequency: "0", cpm: "0", ctr: "0", cpc: "0", actions: [], action_values: [], cost_per_action_type: [], purchase_roas: [] };
+      for (const ins of results) {
+        if (!ins) continue;
+        merged.spend = String(parseFloat(merged.spend) + parseFloat(ins.spend || "0"));
+        merged.impressions = String(parseFloat(merged.impressions) + parseFloat(ins.impressions || "0"));
+        merged.reach = String(parseFloat(merged.reach) + parseFloat(ins.reach || "0"));
+        // Merge actions
+        for (const a of (ins.actions || [])) {
+          const existing = merged.actions!.find((e) => e.action_type === a.action_type);
+          if (existing) existing.value = String(parseFloat(existing.value) + parseFloat(a.value));
+          else merged.actions!.push({ ...a });
+        }
+        for (const a of (ins.action_values || [])) {
+          const existing = merged.action_values!.find((e) => e.action_type === a.action_type);
+          if (existing) existing.value = String(parseFloat(existing.value) + parseFloat(a.value));
+          else merged.action_values!.push({ ...a });
+        }
+        for (const a of (ins.cost_per_action_type || [])) {
+          const existing = merged.cost_per_action_type!.find((e) => e.action_type === a.action_type);
+          if (existing) existing.value = String((parseFloat(existing.value) + parseFloat(a.value)) / 2);
+          else merged.cost_per_action_type!.push({ ...a });
+        }
+        for (const a of (ins.purchase_roas || [])) {
+          const existing = merged.purchase_roas!.find((e) => e.action_type === a.action_type);
+          if (existing) existing.value = String(parseFloat(existing.value) + parseFloat(a.value));
+          else merged.purchase_roas!.push({ ...a });
+        }
+      }
+      setAccountInsights(merged);
+    } catch {
+      // fallback: keep null, page will use campaign aggregation
+    }
+  }, [selectedAccounts, getDateParams]);
+
   return {
     accounts, selectedAccounts, setSelectedAccounts, toggleAccount, selectAllAccounts,
-    campaigns, adsets, ads,
+    campaigns, adsets, ads, accountInsights,
     loading, datePreset, setDatePreset,
     customRange, setCustomRange,
     lastRefresh,
-    fetchAccounts, fetchCampaigns, fetchAdSets, fetchAds,
+    fetchAccounts, fetchCampaigns, fetchAdSets, fetchAds, fetchAccountInsights,
     toggleStatus, updateBudget, duplicate,
   };
 }

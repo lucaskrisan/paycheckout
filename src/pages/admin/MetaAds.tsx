@@ -14,10 +14,10 @@ import { formatCurrency, getResults, getConversionValue } from "@/components/adm
 export default function MetaAds() {
   const {
     accounts, selectedAccounts, setSelectedAccounts, toggleAccount, selectAllAccounts,
-    campaigns, adsets, ads,
+    campaigns, adsets, ads, accountInsights,
     loading, datePreset, setDatePreset,
     customRange, setCustomRange, lastRefresh,
-    fetchAccounts, fetchCampaigns, fetchAdSets, fetchAds,
+    fetchAccounts, fetchCampaigns, fetchAdSets, fetchAds, fetchAccountInsights,
     toggleStatus, updateBudget, duplicate,
   } = useMetaAds();
 
@@ -29,6 +29,7 @@ export default function MetaAds() {
   useEffect(() => {
     if (selectedAccounts.length === 0) return;
     fetchCampaigns();
+    fetchAccountInsights();
   }, [selectedAccounts, datePreset, customRange]);
 
   useEffect(() => {
@@ -39,23 +40,31 @@ export default function MetaAds() {
 
   const handleRefresh = () => {
     fetchCampaigns();
+    fetchAccountInsights();
     if (mainTab === "campanhas") {
       if (dataTab === "adsets") fetchAdSets();
       else if (dataTab === "ads") fetchAds();
     }
   };
 
-  const summary = campaigns.reduce(
-    (acc, item) => {
-      const ins = item.insights;
-      if (!ins) return acc;
-      acc.spend += parseFloat(ins.spend || "0");
-      acc.results += getResults(ins);
-      acc.convValue += getConversionValue(ins);
-      return acc;
-    },
-    { spend: 0, results: 0, convValue: 0 }
-  );
+  // Use account-level insights (most accurate) with campaign fallback
+  const summary = accountInsights
+    ? {
+        spend: parseFloat(accountInsights.spend || "0"),
+        results: getResults(accountInsights),
+        convValue: getConversionValue(accountInsights),
+      }
+    : campaigns.reduce(
+        (acc, item) => {
+          const ins = item.insights;
+          if (!ins) return acc;
+          acc.spend += parseFloat(ins.spend || "0");
+          acc.results += getResults(ins);
+          acc.convValue += getConversionValue(ins);
+          return acc;
+        },
+        { spend: 0, results: 0, convValue: 0 }
+      );
 
   const globalROAS = summary.spend > 0 ? summary.convValue / summary.spend : 0;
 
