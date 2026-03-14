@@ -22,7 +22,7 @@ const Login = () => {
 
   useEffect(() => {
     if (!authLoading && user) {
-      navigate(isAdmin ? "/admin" : "/minha-conta", { replace: true });
+      navigate(isAdmin ? "/admin" : "/aguardando-aprovacao", { replace: true });
     }
   }, [user, isAdmin, authLoading, navigate]);
 
