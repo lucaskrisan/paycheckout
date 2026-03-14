@@ -12,15 +12,6 @@ interface Props {
   roas: number;
 }
 
-interface LifetimeData {
-  campaigns: Array<{
-    name: string;
-    account_name: string;
-    insights_today: any;
-    insights_7d: any;
-    insights_lifetime: any;
-  }>;
-}
 
 function extractPurchases(insights: any): number {
   if (!insights?.actions) return 0;
