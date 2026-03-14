@@ -12,7 +12,6 @@ import {
   Search,
   PlayCircle,
   ChevronDown,
-  Settings,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -30,33 +29,48 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+interface PortalCourse {
+  id: string;
+  title: string;
+  description: string | null;
+  cover_image_url: string | null;
+  access_token?: string;
+  source: "created" | "purchased";
+}
+
 const CustomerPortal = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get("token");
 
   const [loading, setLoading] = useState(true);
-  const [customer, setCustomer] = useState<any>(null);
-  const [courses, setCourses] = useState<any[]>([]);
+  const [customerName, setCustomerName] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [courses, setCourses] = useState<PortalCourse[]>([]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
 
   const { user, loading: authLoading, isAdmin, signOut } = useAuth();
 
-  useEffect(() => {
-    if (token || authLoading) return;
-    navigate(user ? "/completar-perfil" : "/login?signup=true", { replace: true });
-  }, [token, user, authLoading, navigate]);
+  // MODE 1: Token-based (buyer accessing via link)
+  // MODE 2: Authenticated admin/producer (preview their own courses + purchased)
+  const isAuthMode = !token && !!user;
 
   useEffect(() => {
-    if (!token) {
-      setLoading(false);
+    if (authLoading) return;
+    if (!token && !user) {
+      navigate("/login?signup=true", { replace: true });
       return;
     }
-    loadPortalData();
-  }, [token]);
+    if (token) {
+      loadTokenData();
+    } else if (user) {
+      loadAuthData();
+    }
+  }, [token, user, authLoading]);
 
-  const loadPortalData = async () => {
+  // Load data via access_token (buyer mode)
+  const loadTokenData = async () => {
     try {
       const { data: accessData } = await supabase
         .from("member_access")
@@ -67,7 +81,7 @@ const CustomerPortal = () => {
 
       if (!accessData) {
         toast.error("Link inválido ou expirado");
-        navigate(user ? "/completar-perfil" : "/login?signup=true", { replace: true });
+        navigate("/login?signup=true", { replace: true });
         setLoading(false);
         return;
       }
@@ -78,13 +92,10 @@ const CustomerPortal = () => {
         .eq("id", accessData.customer_id)
         .single();
 
-      if (!customerData) {
-        navigate(user ? "/completar-perfil" : "/login?signup=true", { replace: true });
-        setLoading(false);
-        return;
+      if (customerData) {
+        setCustomerName(customerData.name);
+        setCustomerEmail(customerData.email);
       }
-
-      setCustomer(customerData);
 
       const { data: accessList } = await supabase
         .from("member_access")
@@ -96,6 +107,7 @@ const CustomerPortal = () => {
           accessList.map((a: any) => ({
             ...a.courses,
             access_token: a.access_token,
+            source: "purchased" as const,
           }))
         );
       }
@@ -106,12 +118,140 @@ const CustomerPortal = () => {
     setLoading(false);
   };
 
+  // Load data via authenticated user (producer preview mode)
+  const loadAuthData = async () => {
+    try {
+      const userId = user!.id;
+      const email = user!.email || "";
+
+      // Get profile name
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", userId)
+        .single();
+
+      setCustomerName(profile?.full_name || email.split("@")[0]);
+      setCustomerEmail(email);
+
+      const allCourses: PortalCourse[] = [];
+
+      // 1. Courses created by this producer
+      const { data: ownCourses } = await supabase
+        .from("courses")
+        .select("id, title, description, cover_image_url")
+        .eq("user_id", userId);
+
+      if (ownCourses) {
+        for (const c of ownCourses) {
+          allCourses.push({ ...c, source: "created" });
+        }
+      }
+
+      // 2. Courses purchased (via customers table matching email)
+      const { data: custData } = await supabase
+        .from("customers")
+        .select("id")
+        .eq("email", email)
+        .limit(1)
+        .maybeSingle();
+
+      if (custData) {
+        const { data: accessList } = await supabase
+          .from("member_access")
+          .select("access_token, courses(*)")
+          .eq("customer_id", custData.id);
+
+        if (accessList) {
+          for (const a of accessList as any[]) {
+            // Avoid duplicates if producer bought their own course
+            if (!allCourses.some((c) => c.id === a.courses?.id)) {
+              allCourses.push({
+                ...a.courses,
+                access_token: a.access_token,
+                source: "purchased",
+              });
+            }
+          }
+        }
+      }
+
+      setCourses(allCourses);
+    } catch (err) {
+      console.error("Auth portal error:", err);
+    }
+    setLoading(false);
+  };
+
+  const handleOpenCourse = async (course: PortalCourse) => {
+    if (course.access_token) {
+      // Has a real access token — open member area with it
+      navigate(`/membros?token=${course.access_token}`);
+      return;
+    }
+
+    // Producer previewing own course — find or create a temporary access
+    // Look for any existing member_access for this course
+    const { data: existing } = await supabase
+      .from("member_access")
+      .select("access_token")
+      .eq("course_id", course.id)
+      .limit(1)
+      .maybeSingle();
+
+    if (existing) {
+      navigate(`/membros?token=${existing.access_token}`);
+    } else {
+      // No access exists — need a customer_id first
+      const email = user?.email || "";
+      let customerId: string | null = null;
+
+      const { data: custData } = await supabase
+        .from("customers")
+        .select("id")
+        .eq("email", email)
+        .limit(1)
+        .maybeSingle();
+
+      if (custData) {
+        customerId = custData.id;
+      } else {
+        // Create a customer record for the producer
+        const { data: newCust } = await supabase
+          .from("customers")
+          .insert({ name: customerName || "Produtor", email, user_id: user!.id })
+          .select("id")
+          .single();
+        customerId = newCust?.id || null;
+      }
+
+      if (!customerId) {
+        toast.error("Erro ao criar acesso de preview");
+        return;
+      }
+
+      const { data: newAccess } = await supabase
+        .from("member_access")
+        .insert({ course_id: course.id, customer_id: customerId })
+        .select("access_token")
+        .single();
+
+      if (newAccess) {
+        navigate(`/membros?token=${newAccess.access_token}`);
+      } else {
+        toast.error("Erro ao criar acesso de preview");
+      }
+    }
+  };
+
   const filteredCourses = courses.filter((c) => {
     if (search && !c.title?.toLowerCase().includes(search.toLowerCase())) return false;
+    if (filter === "created") return c.source === "created";
+    if (filter === "purchased") return c.source === "purchased";
     return true;
   });
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -119,7 +259,7 @@ const CustomerPortal = () => {
     );
   }
 
-  if (!token || !customer) {
+  if (!token && !user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -127,7 +267,7 @@ const CustomerPortal = () => {
     );
   }
 
-  const firstName = customer.name?.split(" ")[0] || "Aluno";
+  const firstName = customerName?.split(" ")[0] || "Aluno";
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -151,11 +291,11 @@ const CustomerPortal = () => {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-64">
             <div className="px-3 py-2.5">
-              <p className="text-sm font-medium text-foreground">{customer.name}</p>
-              <p className="text-xs text-muted-foreground truncate">{customer.email}</p>
+              <p className="text-sm font-medium text-foreground">{customerName}</p>
+              <p className="text-xs text-muted-foreground truncate">{customerEmail}</p>
             </div>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate(`/minha-conta?token=${token}`)}>
+            <DropdownMenuItem onClick={() => navigate("/minha-conta" + (token ? `?token=${token}` : ""))}>
               <BookOpen className="w-4 h-4 mr-2" />
               Meus cursos
             </DropdownMenuItem>
@@ -190,11 +330,13 @@ const CustomerPortal = () => {
             />
           </div>
           <Select value={filter} onValueChange={setFilter}>
-            <SelectTrigger className="w-[140px] bg-card border-border">
+            <SelectTrigger className="w-[160px] bg-card border-border">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Ativos</SelectItem>
+              <SelectItem value="all">Todos</SelectItem>
+              {isAuthMode && <SelectItem value="created">Meus cursos</SelectItem>}
+              <SelectItem value="purchased">Comprados</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -207,7 +349,7 @@ const CustomerPortal = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredCourses.map((course: any) => (
+            {filteredCourses.map((course) => (
               <div
                 key={course.id}
                 className="bg-card rounded-xl border border-border overflow-hidden shadow-sm hover:shadow-lg transition-shadow group"
@@ -229,14 +371,21 @@ const CustomerPortal = () => {
 
                 {/* Info */}
                 <div className="p-4">
-                  <h3 className="font-bold text-foreground text-sm mb-3 line-clamp-2 min-h-[2.5rem]">
-                    {course.title}
-                  </h3>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="font-bold text-foreground text-sm line-clamp-2 flex-1 min-h-[2.5rem]">
+                      {course.title}
+                    </h3>
+                    {isAuthMode && course.source === "created" && (
+                      <span className="text-[10px] font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full whitespace-nowrap">
+                        Meu curso
+                      </span>
+                    )}
+                  </div>
                   <button
-                    onClick={() => navigate(`/membros?token=${course.access_token}`)}
+                    onClick={() => handleOpenCourse(course)}
                     className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors"
                   >
-                    Acessar
+                    {course.source === "created" && !course.access_token ? "Visualizar" : "Acessar"}
                     <PlayCircle className="w-4 h-4" />
                   </button>
                 </div>
