@@ -132,6 +132,7 @@ export function MetaDataTable({
               <Th right>Cliques</Th>
               <Th right>Alcance</Th>
               <Th right>Frequência</Th>
+              <Th right>Saturação</Th>
               <Th>Ações</Th>
             </TableRow>
           </TableHeader>
