@@ -2,111 +2,115 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* PayCheckout Design System — Bold, premium, uniquely ours */
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 220 20% 10%;
+    --background: 210 20% 98%;
+    --foreground: 220 25% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 20% 10%;
+    --card-foreground: 220 25% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 10%;
+    --popover-foreground: 220 25% 10%;
 
-    --primary: 145 65% 42%;
+    --primary: 152 60% 40%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 20% 10%;
+    --secondary: 215 20% 95%;
+    --secondary-foreground: 220 25% 10%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 10% 46%;
+    --muted: 215 18% 95%;
+    --muted-foreground: 215 12% 50%;
 
-    --accent: 220 14% 96%;
-    --accent-foreground: 220 20% 10%;
+    --accent: 215 20% 95%;
+    --accent-foreground: 220 25% 10%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 145 65% 42%;
+    --border: 215 15% 90%;
+    --input: 215 15% 90%;
+    --ring: 152 60% 40%;
 
-    --radius: 0.75rem;
+    --radius: 0.625rem;
 
-    --checkout-surface: 220 20% 14%;
+    /* Checkout (buyer-facing) */
+    --checkout-surface: 220 22% 12%;
     --checkout-surface-foreground: 220 14% 96%;
-    --checkout-highlight: 145 65% 42%;
+    --checkout-highlight: 152 60% 40%;
     --checkout-highlight-foreground: 0 0% 100%;
     --checkout-muted: 220 10% 46%;
-    --checkout-badge: 45 93% 47%;
+    --checkout-badge: 40 95% 55%;
 
-    --sidebar-background: 0 0% 7%;
-    --sidebar-foreground: 0 0% 70%;
-    --sidebar-primary: 145 65% 42%;
+    /* Sidebar — deep charcoal with subtle blue */
+    --sidebar-background: 220 28% 8%;
+    --sidebar-foreground: 215 15% 58%;
+    --sidebar-primary: 152 60% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 14%;
+    --sidebar-accent: 220 22% 14%;
     --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 0 0% 16%;
-    --sidebar-ring: 145 65% 42%;
+    --sidebar-border: 220 20% 15%;
+    --sidebar-ring: 152 60% 45%;
 
-    /* Member area - Netflix dark theme */
-    --member-bg: 220 20% 6%;
-    --member-surface: 220 18% 10%;
-    --member-surface-hover: 220 16% 14%;
-    --member-surface-active: 220 14% 18%;
+    /* Member area */
+    --member-bg: 220 22% 6%;
+    --member-surface: 220 20% 10%;
+    --member-surface-hover: 220 18% 14%;
+    --member-surface-active: 220 16% 18%;
     --member-foreground: 0 0% 95%;
-    --member-foreground-muted: 220 10% 55%;
-    --member-accent: 145 65% 50%;
-    --member-accent-glow: 145 80% 60%;
-    --member-border: 220 15% 16%;
-    --member-gradient-start: 145 65% 42%;
-    --member-gradient-end: 160 70% 36%;
-    --member-locked: 220 10% 30%;
-    --member-gold: 45 93% 55%;
+    --member-foreground-muted: 215 12% 55%;
+    --member-accent: 152 60% 50%;
+    --member-accent-glow: 152 75% 60%;
+    --member-border: 220 18% 16%;
+    --member-gradient-start: 152 60% 40%;
+    --member-gradient-end: 168 65% 36%;
+    --member-locked: 215 12% 30%;
+    --member-gold: 40 95% 55%;
+
+    /* Brand extras */
+    --brand-gradient: linear-gradient(135deg, hsl(152 60% 40%), hsl(168 65% 36%));
+    --brand-glow: 0 8px 32px -8px hsl(152 60% 40% / 0.35);
   }
 
   .dark {
-    --background: 222 30% 8%;
-    --foreground: 210 20% 90%;
+    --background: 222 28% 7%;
+    --foreground: 210 20% 92%;
 
-    --card: 222 30% 12%;
-    --card-foreground: 210 20% 90%;
+    --card: 222 26% 11%;
+    --card-foreground: 210 20% 92%;
 
-    --popover: 222 30% 12%;
-    --popover-foreground: 210 20% 90%;
+    --popover: 222 26% 11%;
+    --popover-foreground: 210 20% 92%;
 
-    --primary: 145 65% 42%;
+    --primary: 152 60% 45%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 222 25% 16%;
-    --secondary-foreground: 210 20% 90%;
+    --secondary: 222 22% 15%;
+    --secondary-foreground: 210 20% 92%;
 
-    --muted: 222 20% 18%;
-    --muted-foreground: 220 10% 55%;
+    --muted: 222 18% 16%;
+    --muted-foreground: 215 12% 50%;
 
-    --accent: 222 25% 16%;
-    --accent-foreground: 210 20% 90%;
+    --accent: 222 22% 15%;
+    --accent-foreground: 210 20% 92%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 222 15% 20%;
-    --input: 222 15% 20%;
-    --ring: 145 65% 42%;
+    --border: 222 18% 18%;
+    --input: 222 18% 18%;
+    --ring: 152 60% 45%;
 
-    --sidebar-background: 222 30% 6%;
-    --sidebar-foreground: 0 0% 70%;
-    --sidebar-primary: 145 65% 42%;
+    --sidebar-background: 222 30% 5%;
+    --sidebar-foreground: 215 15% 55%;
+    --sidebar-primary: 152 60% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 25% 14%;
+    --sidebar-accent: 222 24% 12%;
     --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 222 15% 16%;
-    --sidebar-ring: 145 65% 42%;
+    --sidebar-border: 222 18% 14%;
+    --sidebar-ring: 152 60% 45%;
   }
 }
 

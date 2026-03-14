@@ -162,7 +162,6 @@ export default function AdminLayout() {
         const evt = payload.new;
         if (!evt || evt.visitor_id?.startsWith("sim_")) return;
         
-        // Throttle: max 1 toast per 3 seconds
         const now = Date.now();
         if (now - lastToastRef.current < 3000) return;
         lastToastRef.current = now;
@@ -206,54 +205,56 @@ export default function AdminLayout() {
       <div className="h-screen flex w-full overflow-hidden">
         <AdminSidebar />
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          {/* Green top bar with gamification — Kiwify style */}
-          <div className="h-10 bg-primary flex items-center justify-between px-4">
+          {/* Top bar — gamification + actions */}
+          <div className="h-11 bg-primary flex items-center justify-between px-4 gap-3">
             <HeaderGamification totalRevenue={totalRevenue} />
-            <button
-              onClick={toggleTheme}
-              className="w-7 h-7 rounded-full bg-primary-foreground/20 flex items-center justify-center text-primary-foreground/80 hover:text-primary-foreground transition-colors"
-              title={isDark ? "Modo claro" : "Modo escuro"}
-            >
-              {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-            </button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 text-primary-foreground/90 hover:text-primary-foreground text-sm font-medium transition-colors">
-                  <div className="w-7 h-7 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-                    <User className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleTheme}
+                className="w-7 h-7 rounded-full bg-primary-foreground/15 hover:bg-primary-foreground/25 flex items-center justify-center text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+                title={isDark ? "Modo claro" : "Modo escuro"}
+              >
+                {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 text-primary-foreground/90 hover:text-primary-foreground text-sm font-medium transition-colors">
+                    <div className="w-7 h-7 rounded-full bg-primary-foreground/15 flex items-center justify-center">
+                      <User className="w-3.5 h-3.5" />
+                    </div>
+                    <span className="hidden md:inline max-w-[180px] truncate">{user?.email}</span>
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="px-3 py-2">
+                    <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                   </div>
-                  <span className="hidden md:inline max-w-[180px] truncate">{user?.email}</span>
-                  <ChevronDown className="w-3.5 h-3.5" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <div className="px-3 py-2">
-                  <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-                </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate("/admin/notifications")}>
-                  <Bell className="w-4 h-4 mr-2" />
-                  Notificações
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => {
-                  // Open member area preview — find first course access token
-                  window.open("/membros", "_blank");
-                }}>
-                  <Eye className="w-4 h-4 mr-2" />
-                  Mudar para painel do aluno
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={async () => { await signOut(); navigate("/login"); }}>
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Sair
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate("/admin/notifications")}>
+                    <Bell className="w-4 h-4 mr-2" />
+                    Notificações
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => window.open("/membros", "_blank")}>
+                    <Eye className="w-4 h-4 mr-2" />
+                    Mudar para painel do aluno
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={async () => { await signOut(); navigate("/login"); }}>
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sair
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
-          <header className="h-14 flex items-center border-b border-border px-4 bg-card">
-            <SidebarTrigger className="mr-4" />
-            <span className="font-display font-bold text-foreground">Painel Admin</span>
+
+          {/* Header */}
+          <header className="h-12 flex items-center border-b border-border px-4 bg-card">
+            <SidebarTrigger className="mr-3" />
+            <span className="font-display font-bold text-foreground text-sm">Painel Admin</span>
           </header>
+
           <main className="flex-1 p-6 bg-background overflow-y-auto overflow-x-hidden">
             <Outlet />
           </main>
