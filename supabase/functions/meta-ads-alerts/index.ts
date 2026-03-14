@@ -178,7 +178,7 @@ function analyzeAndGenerateAlerts(campaigns: any[]): AlertMsg[] {
   } else if (score >= 60) {
     alerts.push({
       priority: 'info',
-      title: `👍 Dia bom — Score ${score}/100`,
+      title: `👍 AntonyAD: Dia bom — Score ${score}/100`,
       body: `ROAS ${globalROAS.toFixed(2)}x | ${totalResults} vendas. AÇÃO: Mantenha tudo rodando. ${winners.length > 0 ? 'Pode escalar "' + winners[0].name.substring(0, 25) + '" em 20% com segurança.' : 'Aguarde winners consolidarem.'}`,
     });
   } else if (score >= 40) {
