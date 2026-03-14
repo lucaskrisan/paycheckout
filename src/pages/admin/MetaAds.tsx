@@ -14,10 +14,10 @@ import { formatCurrency, getResults, getConversionValue } from "@/components/adm
 export default function MetaAds() {
   const {
     accounts, selectedAccounts, setSelectedAccounts, toggleAccount, selectAllAccounts,
-    campaigns, adsets, ads,
+    campaigns, adsets, ads, accountInsights,
     loading, datePreset, setDatePreset,
     customRange, setCustomRange, lastRefresh,
-    fetchAccounts, fetchCampaigns, fetchAdSets, fetchAds,
+    fetchAccounts, fetchCampaigns, fetchAdSets, fetchAds, fetchAccountInsights,
     toggleStatus, updateBudget, duplicate,
   } = useMetaAds();
 
