@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LayoutGrid, Megaphone, Layers, FileImage, BarChart3, Table2 } from "lucide-react";
+import { LayoutGrid, Megaphone, Layers, FileImage, BarChart3, Table2, Bell } from "lucide-react";
 import { useMetaAds } from "@/hooks/useMetaAds";
 import { MetaAdsHeader } from "@/components/admin/meta-ads/MetaAdsHeader";
 import { MetaDataTable } from "@/components/admin/meta-ads/MetaDataTable";
