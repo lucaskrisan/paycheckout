@@ -36,8 +36,8 @@ Deno.serve(async (req) => {
     const description = settings?.description || 'Plataforma de vendas';
     const themeColor = settings?.theme_color || '#16a34a';
     const bgColor = settings?.background_color || '#ffffff';
-    const icon192 = settings?.icon_192_url || '/pwa-192x192.png';
-    const icon512 = settings?.icon_512_url || '/pwa-512x512.png';
+    const icon192 = settings?.icon_192_url || '/brand-icon.webp';
+    const icon512 = settings?.icon_512_url || '/brand-icon.webp';
 
     const manifest = {
       name: appName,
@@ -53,13 +53,13 @@ Deno.serve(async (req) => {
         {
           src: icon192,
           sizes: '192x192',
-          type: 'image/png',
+          type: icon192.endsWith('.webp') ? 'image/webp' : 'image/png',
           purpose: 'any maskable',
         },
         {
           src: icon512,
           sizes: '512x512',
-          type: 'image/png',
+          type: icon512.endsWith('.webp') ? 'image/webp' : 'image/png',
           purpose: 'any maskable',
         },
       ],
