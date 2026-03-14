@@ -138,7 +138,11 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
                 <p className="text-xs text-muted-foreground">
                   {form.provider === "asaas"
                     ? "Configure a chave API nas Secrets do projeto (ASAAS_API_KEY). Encontre em: Minha Conta > Integrações > API"
-                    : "Configure a chave API nas Secrets do projeto (PAGARME_API_KEY)."}
+                    : form.provider === "pagarme"
+                    ? "Configure a chave API nas Secrets do projeto (PAGARME_API_KEY)."
+                    : form.provider === "mercadopago"
+                    ? "Configure o Access Token nas Secrets do projeto (MERCADOPAGO_ACCESS_TOKEN). Encontre em: Suas Integrações > Credenciais"
+                    : "Configure a Secret Key nas Secrets do projeto (STRIPE_SECRET_KEY). Encontre em: Dashboard > Developers > API Keys"}
                 </p>
               </div>
             </div>
