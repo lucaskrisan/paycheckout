@@ -203,9 +203,14 @@ const CustomerPortal = () => {
               </ol>
             </div>
 
-            <Button onClick={() => navigate("/")} className="w-full gap-2">
-              Voltar ao início
-            </Button>
+            <div className="space-y-2">
+              <Button onClick={() => navigate("/login")} className="w-full gap-2">
+                Entrar com Google
+              </Button>
+              <Button variant="outline" onClick={() => navigate("/")} className="w-full gap-2">
+                Voltar ao início
+              </Button>
+            </div>
           </div>
 
           <p className="text-[11px] text-muted-foreground">
