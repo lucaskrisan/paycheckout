@@ -42,6 +42,7 @@ import MyAccount from "./pages/admin/MyAccount";
 import Metrics from "./pages/admin/Metrics";
 import NotFound from "./pages/NotFound";
 import PendingApproval from "./pages/PendingApproval";
+import CompleteProfile from "./pages/CompleteProfile";
 import InstallPrompt from "./components/InstallPrompt";
 
 const queryClient = new QueryClient();
@@ -61,6 +62,7 @@ const App = () => (
             <Route path="/membros" element={<MemberArea />} />
             <Route path="/minha-conta" element={<CustomerPortal />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/completar-perfil" element={<CompleteProfile />} />
             <Route path="/aguardando-aprovacao" element={<PendingApproval />} />
             <Route path="/admin/products/:productId/checkout-builder" element={<CheckoutBuilder />} />
             <Route path="/admin/products/:productId/checkout-builder/:configId" element={<CheckoutBuilder />} />
