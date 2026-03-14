@@ -190,7 +190,7 @@ function analyzeAndGenerateAlerts(campaigns: any[]): AlertMsg[] {
   } else {
     alerts.push({
       priority: 'critical',
-      title: `🚨 AÇÃO URGENTE! Score ${score}/100`,
+      title: `🚨 AntonyAD: AÇÃO URGENTE! Score ${score}/100`,
       body: `ROAS ${globalROAS.toFixed(2)}x | Gasto ${fmt(totalSpend)} | ${totalResults} vendas. FAÇA AGORA: ${losers.length > 0 ? 'Pause "' + losers[0].name.substring(0, 25) + '" imediatamente. ' : ''}Reduza orçamento geral em 20%. Proteja seu capital.`,
     });
   }
