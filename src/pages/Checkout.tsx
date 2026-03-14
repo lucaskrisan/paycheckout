@@ -490,7 +490,7 @@ const Checkout = () => {
         pixCode={pixData?.pixCode}
         externalOrderId={pixData?.orderId}
         onPaymentConfirmed={() => {
-          trackPurchase(finalAmount);
+          trackPurchase(finalAmount, "BRL", pixData?.orderId);
           markPurchased();
         }}
       />
