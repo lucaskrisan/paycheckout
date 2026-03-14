@@ -37,6 +37,7 @@ interface BillingAccount {
   card_brand: string | null;
   created_at: string;
   full_name?: string;
+  monthly_sales?: number;
 }
 
 interface BillingTransaction {
