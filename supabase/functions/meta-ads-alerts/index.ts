@@ -294,7 +294,10 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('[meta-ads-alerts] Starting analysis...');
+    const body = await req.json().catch(() => ({}));
+    const isFullReport = body?.action === 'full_report';
+
+    console.log(`[meta-ads-alerts] Starting ${isFullReport ? 'full report' : 'analysis'}...`);
 
     // Fetch all active accounts
     const accountIds = await getAllActiveAccounts();
@@ -306,7 +309,67 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Fetch campaigns from all accounts
+    // Full report mode: return raw campaign data with 7-day daily breakdown
+    if (isFullReport) {
+      const insightFields = 'spend,impressions,reach,frequency,cpm,ctr,cpc,actions,action_values,cost_per_action_type,purchase_roas';
+      const allData = [];
+      for (const accId of accountIds) {
+        try {
+          // Get account name
+          const accInfo = await metaFetch(`/${accId}`, { fields: 'name' });
+          
+          // Campaigns with 7-day breakdown
+          const campaigns = await metaFetch(`/${accId}/campaigns`, {
+            fields: 'id,name,status,objective,daily_budget,lifetime_budget,effective_status,start_time',
+            filtering: JSON.stringify([{ field: 'effective_status', operator: 'IN', value: ['ACTIVE', 'PAUSED', 'IN_PROCESS', 'WITH_ISSUES'] }]),
+            limit: '200',
+          });
+
+          for (const c of (campaigns.data || [])) {
+            try {
+              const todayInsights = await metaFetch(`/${c.id}/insights`, { fields: insightFields, date_preset: 'today' });
+              const weekInsights = await metaFetch(`/${c.id}/insights`, { fields: insightFields, date_preset: 'last_7d', time_increment: '1' });
+              
+              // Adsets for this campaign
+              const adsets = await metaFetch(`/${accId}/adsets`, {
+                fields: 'id,name,status,effective_status,daily_budget,optimization_goal',
+                filtering: JSON.stringify([{ field: 'campaign.id', operator: 'EQUAL', value: c.id }]),
+                limit: '100',
+              });
+
+              const adsetData = [];
+              for (const as of (adsets.data || [])) {
+                try {
+                  const asInsights = await metaFetch(`/${as.id}/insights`, { fields: insightFields, date_preset: 'last_7d' });
+                  adsetData.push({ ...as, insights_7d: asInsights.data?.[0] || null });
+                } catch {
+                  adsetData.push({ ...as, insights_7d: null });
+                }
+              }
+
+              allData.push({
+                account_id: accId,
+                account_name: accInfo.name || accId,
+                ...c,
+                insights_today: todayInsights.data?.[0] || null,
+                insights_7d_daily: weekInsights.data || [],
+                adsets: adsetData,
+              });
+            } catch (err) {
+              allData.push({ account_id: accId, account_name: accInfo.name || accId, ...c, insights_today: null, insights_7d_daily: [], adsets: [] });
+            }
+          }
+        } catch (err) {
+          console.error(`[meta-ads-alerts] Report error for ${accId}:`, err.message);
+        }
+      }
+
+      return new Response(JSON.stringify({ success: true, campaigns: allData }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Fetch campaigns from all accounts (normal alert mode)
     const allCampaigns = [];
     for (const accId of accountIds) {
       try {
