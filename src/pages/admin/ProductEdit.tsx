@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import FacebookDomainManager from "@/components/admin/FacebookDomainManager";
 import OrderBumpDialog from "@/components/admin/OrderBumpDialog";
+import UpsellOfferDialog from "@/components/admin/UpsellOfferDialog";
 
 interface PixelEntry {
   id?: string;
