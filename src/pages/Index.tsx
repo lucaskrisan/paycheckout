@@ -1,22 +1,33 @@
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { Navigate, Link } from "react-router-dom";
+import { Navigate, Link, useNavigate } from "react-router-dom";
+import { resolveUserDestination } from "@/lib/resolveUserDestination";
 import { Button } from "@/components/ui/button";
 import { Loader2, CreditCard, GraduationCap, BarChart3, Zap, Shield, ArrowRight, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 const Index = () => {
-  const { user, isAdmin, loading } = useAuth();
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  const [resolving, setResolving] = useState(false);
 
-  if (loading) {
+  useEffect(() => {
+    if (loading || !user) return;
+    let cancelled = false;
+    setResolving(true);
+    resolveUserDestination()
+      .then((dest) => { if (!cancelled) navigate(dest, { replace: true }); })
+      .catch(() => { if (!cancelled) navigate("/completar-perfil", { replace: true }); });
+    return () => { cancelled = true; };
+  }, [user, loading, navigate]);
+
+  if (loading || resolving) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
-
-  if (user && isAdmin) return <Navigate to="/admin" replace />;
-  if (user) return <Navigate to="/minha-conta" replace />;
 
   return (
     <div className="min-h-screen bg-background">
