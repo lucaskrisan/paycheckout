@@ -10,6 +10,7 @@ interface Props {
   conversionValue: number;
   results: number;
   roas: number;
+  selectedAccounts?: string[];
 }
 
 
