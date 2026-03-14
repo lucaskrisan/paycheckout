@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.meta-ads]
 verify_jwt = false
+
+[functions.meta-emq]
+verify_jwt = false
