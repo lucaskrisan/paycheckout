@@ -69,6 +69,7 @@ const CATEGORY_ORDER: Category[] = [
 ];
 
 const SystemHealth = () => {
+  const { user } = useAuth();
   const [results, setResults] = useState<CheckResult[]>([]);
   const [running, setRunning] = useState(false);
   const [lastRun, setLastRun] = useState<Date | null>(null);
