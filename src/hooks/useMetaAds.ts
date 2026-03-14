@@ -108,14 +108,16 @@ export function useMetaAds() {
   }, [selectedAccounts.length]);
 
   const fetchForAccounts = useCallback(
-    async (action: string, accountIds: string[]) => {
+    async (action: string, accountIds: string[], extraParams: Record<string, any> = {}) => {
       const results = await Promise.all(
         accountIds.map(async (accId) => {
           try {
             const data = await callMetaAds({
               action,
               account_id: accId,
+              include_all: true,
               ...getDateParams(),
+              ...extraParams,
             });
             const accName = accounts.find((a) => a.id === accId)?.name || accId;
             return (data || []).map((item: any) => ({
