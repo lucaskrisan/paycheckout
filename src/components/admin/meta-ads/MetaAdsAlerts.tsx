@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   AlertTriangle, TrendingDown, Trophy, Brain,
-  ThermometerSun, Activity, Target, ShieldAlert, Rocket, Pause,
+  ThermometerSun, Activity, Target, ShieldAlert, Rocket, Pause, Users,
 } from "lucide-react";
 import type { MetaCampaign } from "@/hooks/useMetaAds";
 import { getResults, getCPA, getROAS, getConversionValue, formatCurrency } from "./MetaInsightsHelpers";
@@ -122,7 +122,46 @@ function generateAlerts(campaigns: MetaCampaign[]): Alert[] {
     const cpa = getCPA(c.insights);
     const roas = getROAS(c.insights);
     const ctr = parseFloat(c.insights!.ctr || "0");
-    
+    const freq = parseFloat(c.insights!.frequency || "0");
+    const cpm = parseFloat(c.insights!.cpm || "0");
+    const reach = parseInt(c.insights!.reach || "0", 10);
+    const impressions = parseInt(c.insights!.impressions || "0", 10);
+
+    // 🚨 AUDIENCE SATURATION DETECTION (multi-signal)
+    const saturationSignals: string[] = [];
+    let saturationScore = 0;
+
+    if (freq > 3) { saturationSignals.push(`Freq ${freq.toFixed(2)} (>3)`); saturationScore += 30; }
+    else if (freq > 2) { saturationSignals.push(`Freq ${freq.toFixed(2)} (>2)`); saturationScore += 15; }
+
+    if (ctr < 0.6 && spend > 10) { saturationSignals.push(`CTR ${ctr.toFixed(2)}% (baixo)`); saturationScore += 25; }
+
+    if (cpm > 70) { saturationSignals.push(`CPM ${formatCurrency(cpm)} (alto)`); saturationScore += 20; }
+
+    if (roas > 0 && roas < 0.8 && spend > 20) { saturationSignals.push(`ROAS ${roas.toFixed(2)}x (caindo)`); saturationScore += 25; }
+
+    if (reach > 0 && impressions / reach > 4) {
+      const impPerReach = (impressions / reach).toFixed(1);
+      saturationSignals.push(`${impPerReach} imp/pessoa`);
+      saturationScore += 20;
+    }
+
+    if (saturationScore >= 50) {
+      const severity = saturationScore >= 70 ? "danger" : "warning";
+      const actionText = saturationScore >= 70
+        ? "Audiência esgotada. Pause este conjunto, expanda o público-alvo ou duplique com novo público lookalike. Criativos novos são obrigatórios."
+        : "Sinais de saturação aparecendo. Monitore nas próximas 24h. Se piorar, troque criativos e expanda públicos.";
+
+      alerts.push({
+        id: `saturation-${c.id}`,
+        type: severity,
+        icon: <Users className="w-5 h-5" />,
+        title: saturationScore >= 70 ? "🚨 Audiência saturada!" : "⚠️ Saturação em andamento",
+        description: `${actionText}\n\nSinais: ${saturationSignals.join(" · ")}`,
+        campaign: c.name,
+        metric: `Score: ${saturationScore}/100`,
+      });
+    }
 
     // Winner detection: ROAS > 2 and has results
     if (roas >= 2 && results >= 2) {
@@ -163,8 +202,8 @@ function generateAlerts(campaigns: MetaCampaign[]): Alert[] {
       });
     }
 
-    // Low CTR (creative fatigue signal)
-    if (ctr < 0.8 && spend > 15) {
+    // Low CTR (creative fatigue signal) — only if not already caught by saturation
+    if (ctr < 0.8 && spend > 15 && saturationScore < 50) {
       alerts.push({
         id: `low-ctr-${c.id}`,
         type: "warning",
