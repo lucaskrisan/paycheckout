@@ -53,13 +53,13 @@ Deno.serve(async (req) => {
         {
           src: icon192,
           sizes: '192x192',
-          type: 'image/png',
+          type: icon192.endsWith('.webp') ? 'image/webp' : 'image/png',
           purpose: 'any maskable',
         },
         {
           src: icon512,
           sizes: '512x512',
-          type: 'image/png',
+          type: icon512.endsWith('.webp') ? 'image/webp' : 'image/png',
           purpose: 'any maskable',
         },
       ],
