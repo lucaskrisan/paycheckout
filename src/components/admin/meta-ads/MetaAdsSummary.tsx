@@ -10,9 +10,7 @@ interface Props {
   conversionValue: number;
   results: number;
   roas: number;
-  selectedAccounts?: string[];
 }
-
 
 export function MetaAdsSummary({ spend, conversionValue, results, roas }: Props) {
   const [orderMetrics, setOrderMetrics] = useState({
@@ -38,72 +36,14 @@ export function MetaAdsSummary({ spend, conversionValue, results, roas }: Props)
     setOrderMetrics({ pendingAmount: pending, chargebackAmount: chargeback, refundedAmount: refunded });
   }, []);
 
-  const fetchLifetime = useCallback(async () => {
-    setLoadingLifetime(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("meta-ads-alerts", {
-        body: { action: "full_report", account_ids: selectedAccounts || [] },
-      });
-      if (error || !data?.campaigns) return;
-
-      let totalSpend = 0, totalRevenue = 0, totalPurchases = 0;
-      let totalSpend7d = 0, totalRevenue7d = 0, totalPurchases7d = 0;
-      const campaignList: any[] = [];
-
-      for (const c of data.campaigns) {
-        const lt = c.insights_lifetime;
-        const w = c.insights_7d;
-        if (lt) {
-          const s = parseFloat(lt.spend || "0");
-          const r = extractRevenue(lt);
-          const p = extractPurchases(lt);
-          totalSpend += s;
-          totalRevenue += r;
-          totalPurchases += p;
-          campaignList.push({
-            name: c.name,
-            account: c.account_name,
-            purchases: p,
-            revenue: r,
-            spend: s,
-            roas: s > 0 ? r / s : 0,
-            dateRange: `${lt.date_start} → ${lt.date_stop}`,
-          });
-        }
-        if (w) {
-          totalSpend7d += parseFloat(w.spend || "0");
-          totalRevenue7d += extractRevenue(w);
-          totalPurchases7d += extractPurchases(w);
-        }
-      }
-
-      setLifetime({
-        spend: totalSpend,
-        revenue: totalRevenue,
-        purchases: totalPurchases,
-        roas: totalSpend > 0 ? totalRevenue / totalSpend : 0,
-        spend7d: totalSpend7d,
-        revenue7d: totalRevenue7d,
-        purchases7d: totalPurchases7d,
-        roas7d: totalSpend7d > 0 ? totalRevenue7d / totalSpend7d : 0,
-        campaigns: campaignList.sort((a, b) => b.purchases - a.purchases),
-      });
-    } catch (err) {
-      console.error("Lifetime fetch error:", err);
-    } finally {
-      setLoadingLifetime(false);
-    }
-  }, [selectedAccounts]);
-
   useEffect(() => {
     fetchOrderMetrics();
-    fetchLifetime();
     const ch = supabase
       .channel("summary-orders")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => fetchOrderMetrics())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [fetchOrderMetrics, fetchLifetime]);
+  }, [fetchOrderMetrics]);
 
   const lucro = conversionValue - spend;
   const roi = spend > 0 ? lucro / spend : 0;
