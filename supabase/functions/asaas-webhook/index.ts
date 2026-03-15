@@ -194,68 +194,73 @@ Deno.serve(async (req) => {
     // Firing again here with a different event_id (payment.id) caused Meta to count purchases 2x.
     if ((event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED') && orderData?.product_id && orderData?.customer_id) {
 
-      // --- Member access ---
-      const { data: product } = await supabase
-        .from('products')
-        .select('is_subscription, billing_cycle')
-        .eq('id', orderData.product_id)
-        .maybeSingle();
+      // --- Member access (main product + bump products) ---
+      const productIdsForAccess = [orderData.product_id];
+      const bumpIds = (orderData.metadata as any)?.bump_product_ids;
+      if (Array.isArray(bumpIds)) {
+        productIdsForAccess.push(...bumpIds);
+      }
 
-      // Find course linked to this product
-      const { data: course } = await supabase
+      // Find all courses linked to these products
+      const { data: courses } = await supabase
         .from('courses')
-        .select('id, title')
-        .eq('product_id', orderData.product_id)
-        .maybeSingle();
+        .select('id, title, product_id')
+        .in('product_id', productIdsForAccess);
 
-      if (course) {
-        const { data: existingAccess } = await supabase
-          .from('member_access')
-          .select('id')
-          .eq('customer_id', orderData.customer_id)
-          .eq('course_id', course.id)
-          .maybeSingle();
+      if (courses && courses.length > 0) {
+        for (const course of courses) {
+          const { data: product } = await supabase
+            .from('products')
+            .select('is_subscription, billing_cycle')
+            .eq('id', course.product_id)
+            .maybeSingle();
 
-        if (product?.is_subscription) {
-          // Subscription: extend expiration
-          const cycleDays: Record<string, number> = {
-            weekly: 7, biweekly: 14, monthly: 30, quarterly: 90, semiannually: 180, yearly: 365,
-          };
-          const days = cycleDays[product.billing_cycle] || 30;
-          const expiresAt = new Date();
-          expiresAt.setDate(expiresAt.getDate() + days + 3);
+          const { data: existingAccess } = await supabase
+            .from('member_access')
+            .select('id')
+            .eq('customer_id', orderData.customer_id)
+            .eq('course_id', course.id)
+            .maybeSingle();
 
-          if (existingAccess) {
-            await supabase
+          if (product?.is_subscription) {
+            const cycleDays: Record<string, number> = {
+              weekly: 7, biweekly: 14, monthly: 30, quarterly: 90, semiannually: 180, yearly: 365,
+            };
+            const days = cycleDays[product.billing_cycle] || 30;
+            const expiresAt = new Date();
+            expiresAt.setDate(expiresAt.getDate() + days + 3);
+
+            if (existingAccess) {
+              await supabase
+                .from('member_access')
+                .update({ expires_at: expiresAt.toISOString() })
+                .eq('id', existingAccess.id);
+              console.log('[asaas-webhook] Extended member access:', existingAccess.id);
+            } else {
+              const { data: newAccess } = await supabase
+                .from('member_access')
+                .insert({ customer_id: orderData.customer_id, course_id: course.id, expires_at: expiresAt.toISOString() })
+                .select('access_token')
+                .single();
+              console.log('[asaas-webhook] Created subscription member access for course:', course.id);
+              if (newAccess) {
+                await sendAccessEmail(supabase, orderData.customer_id, course, newAccess.access_token);
+              }
+            }
+          } else if (!existingAccess) {
+            const { data: newAccess, error: accessErr } = await supabase
               .from('member_access')
-              .update({ expires_at: expiresAt.toISOString() })
-              .eq('id', existingAccess.id);
-            console.log('[asaas-webhook] Extended member access:', existingAccess.id);
-          } else {
-            const { data: newAccess } = await supabase
-              .from('member_access')
-              .insert({ customer_id: orderData.customer_id, course_id: course.id, expires_at: expiresAt.toISOString() })
+              .insert({ customer_id: orderData.customer_id, course_id: course.id })
               .select('access_token')
               .single();
-            console.log('[asaas-webhook] Created subscription member access for course:', course.id);
-            if (newAccess) {
-              await sendAccessEmail(supabase, orderData.customer_id, course, newAccess.access_token);
-            }
-          }
-        } else if (!existingAccess) {
-          // One-time purchase: create permanent access
-          const { data: newAccess, error: accessErr } = await supabase
-            .from('member_access')
-            .insert({ customer_id: orderData.customer_id, course_id: course.id })
-            .select('access_token')
-            .single();
 
-          if (accessErr) {
-            console.error('[asaas-webhook] Error creating member access:', accessErr);
-          } else {
-            console.log('[asaas-webhook] Created member access for course:', course.id);
-            if (newAccess) {
-              await sendAccessEmail(supabase, orderData.customer_id, course, newAccess.access_token);
+            if (accessErr) {
+              console.error('[asaas-webhook] Error creating member access for course:', course.id, accessErr);
+            } else {
+              console.log('[asaas-webhook] Created member access for course:', course.id, course.title);
+              if (newAccess) {
+                await sendAccessEmail(supabase, orderData.customer_id, course, newAccess.access_token);
+              }
             }
           }
         }

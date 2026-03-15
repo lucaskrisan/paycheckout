@@ -167,6 +167,7 @@ Deno.serve(async (req) => {
           coupon_id: coupon_id || null,
           checkout_url: checkout_url || null,
           client_secret: piData.client_secret,
+          bump_product_ids: (bump_product_ids && bump_product_ids.length > 0) ? bump_product_ids : null,
           ...(utms || {}),
         },
       });

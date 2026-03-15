@@ -251,6 +251,7 @@ Deno.serve(async (req) => {
             coupon_id: coupon_id || null,
             installments: installments || '1',
             checkout_url: checkout_url || null,
+            bump_product_ids: (bump_product_ids && bump_product_ids.length > 0) ? bump_product_ids : null,
             ...(utms || {}),
           },
         })
