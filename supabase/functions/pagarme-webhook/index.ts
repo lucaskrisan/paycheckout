@@ -108,10 +108,87 @@ Deno.serve(async (req) => {
       }
     }
 
-    // On confirmed payment, create member access + send email
-    // NOTE: CAPI Purchase is already fired from the checkout (Browser + CAPI with same event_id for dedup).
-    // Firing again here with a different event_id caused Meta to count purchases 2x.
+    // On confirmed payment, create member access + send email + CAPI fallback
     if (status === 'paid' && orderData?.product_id && orderData?.customer_id) {
+
+      // --- CAPI Purchase fallback ---
+      // If user closed the checkout before polling detected the payment,
+      // no Purchase event was fired. Check pixel_events and fire if missing.
+      try {
+        const { data: existingPurchase } = await supabase
+          .from('pixel_events')
+          .select('id')
+          .eq('product_id', orderData.product_id)
+          .eq('event_name', 'Purchase')
+          .eq('source', 'server')
+          .gte('created_at', new Date(Date.now() - 3600000).toISOString()) // last hour
+          .limit(10);
+
+        // Check if any Purchase event matches this order
+        const orderIdStr = orderData.id;
+        const { data: purchaseWithOrderId } = await supabase
+          .from('pixel_events')
+          .select('id')
+          .eq('product_id', orderData.product_id)
+          .eq('event_name', 'Purchase')
+          .like('event_id', `%${externalId}%`)
+          .limit(1);
+
+        const alreadyFired = (purchaseWithOrderId && purchaseWithOrderId.length > 0);
+
+        if (!alreadyFired) {
+          console.log('[pagarme-webhook] Purchase NOT fired by checkout, sending CAPI fallback');
+
+          // Get customer data for CAPI
+          const { data: custData } = await supabase
+            .from('customers')
+            .select('name, email, phone, cpf')
+            .eq('id', orderData.customer_id)
+            .single();
+
+          if (custData) {
+            const capiEventId = `Purchase_webhook_${externalId}`;
+            const checkoutUrl = (orderData.metadata as any)?.checkout_url || `https://paycheckout.lovable.app/checkout/${orderData.product_id}`;
+
+            // Fire CAPI via our own edge function
+            const capiResponse = await fetch(
+              `${Deno.env.get('SUPABASE_URL')}/functions/v1/facebook-capi`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+                },
+                body: JSON.stringify({
+                  product_id: orderData.product_id,
+                  event_name: 'Purchase',
+                  event_id: capiEventId,
+                  event_source_url: checkoutUrl,
+                  customer: {
+                    name: custData.name,
+                    email: custData.email,
+                    phone: custData.phone,
+                    cpf: custData.cpf,
+                  },
+                  custom_data: {
+                    value: Number(orderData.amount),
+                    currency: 'BRL',
+                    content_type: 'product',
+                    order_id: orderData.id,
+                  },
+                  log_browser: true,
+                }),
+              }
+            );
+            const capiResult = await capiResponse.json();
+            console.log('[pagarme-webhook] CAPI fallback result:', JSON.stringify(capiResult));
+          }
+        } else {
+          console.log('[pagarme-webhook] Purchase already fired by checkout, skipping CAPI');
+        }
+      } catch (capiErr) {
+        console.error('[pagarme-webhook] CAPI fallback error (non-blocking):', capiErr);
+      }
 
       // --- Member access ---
       try {
