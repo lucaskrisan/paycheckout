@@ -94,7 +94,11 @@ const PixelEventsDashboard = ({ products }: Props) => {
         const ne = payload.new as PixelEvent;
         if (filterProduct !== "all" && ne.product_id !== filterProduct) return;
         if (ne.visitor_id?.startsWith("sim_")) return;
-        setEvents((prev) => [ne, ...prev].slice(0, 1000));
+        setEvents((prev) => [ne, ...prev].slice(0, 500));
+        // Update count for this event type
+        if (ne.event_name) {
+          setEventCounts((prev) => ({ ...prev, [ne.event_name]: (prev[ne.event_name] || 0) + 1 }));
+        }
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
