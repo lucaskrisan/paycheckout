@@ -318,7 +318,7 @@ const Dashboard = () => {
             variant="ghost"
             size="icon"
             className="h-9 w-9"
-            onClick={() => loadData(true)}
+            onClick={() => loadData(true, true)}
             disabled={refreshing}
           >
             <RefreshCcw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
