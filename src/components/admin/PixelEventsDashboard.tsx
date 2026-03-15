@@ -49,21 +49,19 @@ const PixelEventsDashboard = ({ products }: Props) => {
   const [period, setPeriod] = useState("24h");
   const [feedView, setFeedView] = useState<"feed" | "journeys">("feed");
 
-  // --- Data loading (unchanged logic) ---
   const loadEvents = async () => {
     const hoursBack = period === "1h" ? 1 : period === "6h" ? 6 : period === "24h" ? 24 : 168;
     const since = subHours(new Date(), hoursBack).toISOString();
     let query = supabase
-      .from("pixel_events" as any)
+      .from("pixel_events")
       .select("id, product_id, event_name, source, created_at, customer_name, visitor_id, event_id")
       .gte("created_at", since)
       .order("created_at", { ascending: false })
       .limit(1000);
     if (filterProduct !== "all") query = query.eq("product_id", filterProduct);
     const { data } = await query;
-    // Filter out simulated test events
-    const real = ((data as any) || []).filter((e: PixelEvent) => !e.visitor_id?.startsWith("sim_"));
-    setEvents(real);
+    const real = (data || []).filter((e) => !e.visitor_id?.startsWith("sim_"));
+    setEvents(real as PixelEvent[]);
   };
 
   useEffect(() => { loadEvents(); }, [filterProduct, period]);
@@ -74,14 +72,13 @@ const PixelEventsDashboard = ({ products }: Props) => {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "pixel_events" }, (payload) => {
         const ne = payload.new as PixelEvent;
         if (filterProduct !== "all" && ne.product_id !== filterProduct) return;
-        if (ne.visitor_id?.startsWith("sim_")) return; // Ignore test events
+        if (ne.visitor_id?.startsWith("sim_")) return;
         setEvents((prev) => [ne, ...prev].slice(0, 1000));
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [filterProduct]);
 
-  // --- Computed data (unchanged logic) ---
   const eventCounts = useMemo(() => {
     const c: Record<string, number> = {};
     events.forEach((e) => { c[e.event_name] = (c[e.event_name] || 0) + 1; });
@@ -123,7 +120,6 @@ const PixelEventsDashboard = ({ products }: Props) => {
   const recentEvents = events.slice(0, 80);
   const orderedEventNames = ["PageView", "ViewContent", "InitiateCheckout", "Lead", "AddPaymentInfo", "AddToCart", "Purchase"];
 
-  // Group events by event_id to show Browser+CAPI as one row
   const groupedEvents = useMemo(() => {
     const map = new Map<string, GroupedEvent>();
     const ungrouped: GroupedEvent[] = [];
@@ -176,11 +172,11 @@ const PixelEventsDashboard = ({ products }: Props) => {
               transition={{ duration: 2, repeat: Infinity }}
             />
           </div>
-          <h3 className="text-sm font-semibold text-slate-200">Eventos em Tempo Real</h3>
+          <h3 className="text-sm font-semibold text-foreground">Eventos em Tempo Real</h3>
         </div>
         <div className="flex items-center gap-2">
           <Select value={filterProduct} onValueChange={setFilterProduct}>
-            <SelectTrigger className="w-[170px] bg-slate-800/60 border-slate-700/50 text-slate-300 text-xs h-8">
+            <SelectTrigger className="w-[170px] bg-muted/60 border-border text-foreground text-xs h-8">
               <SelectValue placeholder="Todos os produtos" />
             </SelectTrigger>
             <SelectContent>
@@ -189,7 +185,7 @@ const PixelEventsDashboard = ({ products }: Props) => {
             </SelectContent>
           </Select>
           <Select value={period} onValueChange={setPeriod}>
-            <SelectTrigger className="w-[110px] bg-slate-800/60 border-slate-700/50 text-slate-300 text-xs h-8">
+            <SelectTrigger className="w-[110px] bg-muted/60 border-border text-foreground text-xs h-8">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -209,12 +205,12 @@ const PixelEventsDashboard = ({ products }: Props) => {
           const count = eventCounts[name] || 0;
           const Icon = cfg?.icon || Zap;
           return (
-            <div key={name} className="rounded-lg bg-slate-800/50 border border-slate-700/30 px-2.5 py-2.5">
+            <div key={name} className="rounded-lg bg-muted/50 border border-border/30 px-2.5 py-2.5">
               <div className="flex items-center gap-1.5 mb-1">
                 <Icon className="w-3 h-3 shrink-0" style={{ color: cfg?.color }} />
-                <span className="text-[10px] text-slate-500 font-medium truncate">{cfg?.label}</span>
+                <span className="text-[10px] text-muted-foreground font-medium truncate">{cfg?.label}</span>
               </div>
-              <span className="text-base font-bold text-slate-100 font-mono tabular-nums">{count}</span>
+              <span className="text-base font-bold text-foreground font-mono tabular-nums">{count}</span>
             </div>
           );
         })}
@@ -227,10 +223,10 @@ const PixelEventsDashboard = ({ products }: Props) => {
           { label: "Lead → Purchase", value: funnel.leadToPurchase, color: "#a78bfa" },
           { label: "Conversão geral", value: funnel.overall, color: "#34d399" },
         ].map((item) => (
-          <div key={item.label} className="rounded-lg bg-slate-800/50 border border-slate-700/30 px-3 py-3 text-center">
-            <p className="text-[10px] text-slate-500 font-medium mb-1">{item.label}</p>
+          <div key={item.label} className="rounded-lg bg-muted/50 border border-border/30 px-3 py-3 text-center">
+            <p className="text-[10px] text-muted-foreground font-medium mb-1">{item.label}</p>
             <p className="text-lg font-bold font-mono tabular-nums" style={{ color: item.color }}>{item.value}%</p>
-            <div className="mt-2 h-[3px] rounded-full bg-slate-700/50 overflow-hidden">
+            <div className="mt-2 h-[3px] rounded-full bg-muted overflow-hidden">
               <motion.div
                 className="h-full rounded-full"
                 style={{ backgroundColor: item.color }}
@@ -244,24 +240,24 @@ const PixelEventsDashboard = ({ products }: Props) => {
       </div>
 
       {/* ── Chart ── */}
-      <div className="rounded-xl bg-slate-800/40 border border-slate-700/20 p-5">
+      <div className="rounded-xl bg-muted/40 border border-border/20 p-5">
         <div className="flex items-center gap-2 mb-4">
           <div className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-          <p className="text-xs text-slate-400 font-medium">Sinais · {period === "7d" ? "diário" : "por hora"}</p>
+          <p className="text-xs text-muted-foreground font-medium">Sinais · {period === "7d" ? "diário" : "por hora"}</p>
         </div>
         <div className="h-[220px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} barCategoryGap="20%">
-              <XAxis dataKey="label" tick={{ fontSize: 9, fill: '#475569' }} stroke="#334155" tickLine={false} axisLine={false} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 9, fill: '#475569' }} stroke="#334155" tickLine={false} axisLine={false} width={28} />
+              <XAxis dataKey="label" tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} stroke="hsl(var(--border))" tickLine={false} axisLine={false} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} stroke="hsl(var(--border))" tickLine={false} axisLine={false} width={28} />
               <Tooltip
-                cursor={{ fill: 'rgba(255,255,255,0.03)' }}
-                contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155", borderRadius: 8, fontSize: 11, color: "#e2e8f0" }}
-                labelStyle={{ color: "#94a3b8", fontSize: 10 }}
+                cursor={{ fill: 'hsl(var(--muted) / 0.3)' }}
+                contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 11, color: "hsl(var(--foreground))" }}
+                labelStyle={{ color: "hsl(var(--muted-foreground))", fontSize: 10 }}
               />
               <Bar dataKey="count" radius={[3, 3, 0, 0]}>
                 {chartData.map((entry, i) => (
-                  <Cell key={i} fill={entry.count > 0 ? "#22d3ee" : "#1e293b"} fillOpacity={entry.count > 0 ? 0.7 : 0.3} />
+                  <Cell key={i} fill={entry.count > 0 ? "#22d3ee" : "hsl(var(--muted))"} fillOpacity={entry.count > 0 ? 0.7 : 0.3} />
                 ))}
               </Bar>
             </BarChart>
@@ -269,10 +265,10 @@ const PixelEventsDashboard = ({ products }: Props) => {
         </div>
       </div>
 
-      {/* ── Feed ao Vivo — Full Width ── */}
-      <div className="rounded-xl bg-gradient-to-b from-slate-900/90 to-slate-950/95 border border-slate-700/20 flex flex-col overflow-hidden">
+      {/* ── Feed ao Vivo ── */}
+      <div className="rounded-xl bg-card border border-border/20 flex flex-col overflow-hidden">
         {/* Feed Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-700/20 bg-slate-800/20">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-border/20 bg-muted/20">
           <div className="flex items-center gap-3">
             <div className="relative flex items-center justify-center">
               <motion.div
@@ -283,13 +279,13 @@ const PixelEventsDashboard = ({ products }: Props) => {
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 relative z-10" />
             </div>
             {/* View Toggle */}
-            <div className="flex items-center bg-slate-800/60 rounded-lg p-0.5 border border-slate-700/40">
+            <div className="flex items-center bg-muted/60 rounded-lg p-0.5 border border-border/40">
               <button
                 onClick={() => setFeedView("feed")}
                 className={`px-3 py-1 text-[11px] font-semibold rounded-md transition-all ${
                   feedView === "feed"
-                    ? "bg-slate-700/80 text-slate-200 shadow-sm"
-                    : "text-slate-500 hover:text-slate-400"
+                    ? "bg-accent text-accent-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Feed
@@ -298,19 +294,19 @@ const PixelEventsDashboard = ({ products }: Props) => {
                 onClick={() => setFeedView("journeys")}
                 className={`px-3 py-1 text-[11px] font-semibold rounded-md transition-all ${
                   feedView === "journeys"
-                    ? "bg-slate-700/80 text-slate-200 shadow-sm"
-                    : "text-slate-500 hover:text-slate-400"
+                    ? "bg-accent text-accent-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Jornadas
               </button>
             </div>
-            <span className="text-[10px] font-mono text-slate-500 bg-slate-800/60 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-mono text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full">
               {groupedEvents.length} sinais
             </span>
           </div>
           {feedView === "feed" && (
-            <div className="flex items-center gap-3 text-[10px] text-slate-500">
+            <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
               <span className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-sm bg-cyan-500/60" /> Pixel
               </span>
@@ -334,10 +330,10 @@ const PixelEventsDashboard = ({ products }: Props) => {
                 animate={{ opacity: [0.3, 0.7, 0.3] }}
                 transition={{ duration: 3, repeat: Infinity }}
               >
-                <Radio className="w-8 h-8 text-slate-700" />
+                <Radio className="w-8 h-8 text-muted-foreground/50" />
               </motion.div>
-              <p className="text-sm text-slate-600 font-medium">Aguardando sinais...</p>
-              <p className="text-[11px] text-slate-700">Os eventos aparecerão aqui em tempo real</p>
+              <p className="text-sm text-muted-foreground font-medium">Aguardando sinais...</p>
+              <p className="text-[11px] text-muted-foreground/70">Os eventos aparecerão aqui em tempo real</p>
             </div>
           ) : (
             <AnimatePresence mode="popLayout">
@@ -357,12 +353,12 @@ const PixelEventsDashboard = ({ products }: Props) => {
                     transition={{ duration: 0.2, ease: "easeOut" }}
                     className={`
                       group flex items-center gap-3 px-5 py-3 
-                      border-b border-slate-800/40 last:border-b-0
-                      hover:bg-slate-800/30 transition-all duration-200
-                      ${index === 0 ? "bg-slate-800/20" : ""}
+                      border-b border-border/40 last:border-b-0
+                      hover:bg-muted/30 transition-all duration-200
+                      ${index === 0 ? "bg-muted/20" : ""}
                     `}
                   >
-                    <span className="text-[11px] font-mono text-slate-500 tabular-nums w-[58px] shrink-0">
+                    <span className="text-[11px] font-mono text-muted-foreground tabular-nums w-[58px] shrink-0">
                       {format(new Date(g.created_at), "HH:mm:ss")}
                     </span>
                     <div className="relative flex items-center justify-center w-7 h-7 shrink-0">
@@ -370,26 +366,26 @@ const PixelEventsDashboard = ({ products }: Props) => {
                         className="absolute inset-0 rounded-lg opacity-20 group-hover:opacity-30 transition-opacity"
                         style={{ backgroundColor: cfg?.color || "#475569" }}
                       />
-                      <Icon className="w-3.5 h-3.5 relative z-10" style={{ color: cfg?.color || "#94a3b8" }} />
+                      <Icon className="w-3.5 h-3.5 relative z-10" style={{ color: cfg?.color || "hsl(var(--muted-foreground))" }} />
                     </div>
                     <span
                       className="text-[13px] font-semibold min-w-[110px] shrink-0"
-                      style={{ color: cfg?.color || "#94a3b8" }}
+                      style={{ color: cfg?.color || "hsl(var(--muted-foreground))" }}
                     >
                       {cfg?.label || g.event_name}
                     </span>
                     {g.customer_name && (
-                      <span className="text-[12px] text-slate-300 font-medium truncate max-w-[180px]">
+                      <span className="text-[12px] text-foreground/80 font-medium truncate max-w-[180px]">
                         {g.customer_name.split(' ')[0]}
                       </span>
                     )}
                     {productName && (
-                      <span className="text-[11px] text-slate-500 truncate max-w-[160px] hidden sm:inline">
+                      <span className="text-[11px] text-muted-foreground truncate max-w-[160px] hidden sm:inline">
                         {productName}
                       </span>
                     )}
                     <span className="flex-1" />
-                    {/* Source badges — grouped */}
+                    {/* Source badges */}
                     {isDual ? (
                       <span className="flex items-center gap-1 text-[9px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full shrink-0 bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
                         <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />

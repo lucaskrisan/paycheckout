@@ -67,7 +67,6 @@ const CustomerJourneyFeed = ({ events, products }: Props) => {
         return true;
       });
 
-      // Calculate funnel progress (0-100)
       const reachedSteps = new Set(uniqueSteps.map((e) => e.event_name));
       let maxIndex = -1;
       FUNNEL_STEPS.forEach((step, i) => {
@@ -99,10 +98,10 @@ const CustomerJourneyFeed = ({ events, products }: Props) => {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
         <motion.div animate={{ opacity: [0.3, 0.7, 0.3] }} transition={{ duration: 3, repeat: Infinity }}>
-          <UserCheck className="w-8 h-8 text-slate-700" />
+          <UserCheck className="w-8 h-8 text-muted-foreground/50" />
         </motion.div>
-        <p className="text-sm text-slate-600 font-medium">Nenhuma jornada identificada</p>
-        <p className="text-[11px] text-slate-700">As jornadas aparecem quando clientes preenchem o formulário</p>
+        <p className="text-sm text-muted-foreground font-medium">Nenhuma jornada identificada</p>
+        <p className="text-[11px] text-muted-foreground/70">As jornadas aparecem quando clientes preenchem o formulário</p>
       </div>
     );
   }
@@ -113,11 +112,11 @@ const CustomerJourneyFeed = ({ events, products }: Props) => {
   return (
     <div>
       {/* Summary */}
-      <div className="flex items-center gap-3 px-5 py-3 border-b border-slate-800/40">
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800/50 border border-slate-700/30">
-          <UserCheck className="w-3 h-3 text-slate-400" />
-          <span className="text-[11px] font-semibold text-slate-300">{journeys.length}</span>
-          <span className="text-[10px] text-slate-500">visitantes</span>
+      <div className="flex items-center gap-3 px-5 py-3 border-b border-border/40">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border border-border/30">
+          <UserCheck className="w-3 h-3 text-muted-foreground" />
+          <span className="text-[11px] font-semibold text-foreground">{journeys.length}</span>
+          <span className="text-[10px] text-muted-foreground">visitantes</span>
         </div>
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/20">
           <Loader2 className="w-3 h-3 text-amber-400" />
@@ -130,17 +129,17 @@ const CustomerJourneyFeed = ({ events, products }: Props) => {
           <span className="text-[10px] text-emerald-400/60">convertidos</span>
         </div>
         {journeys.length > 0 && (
-          <div className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800/50 border border-slate-700/30">
+          <div className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 border border-border/30">
             <TrendingUp className="w-3 h-3 text-cyan-400" />
             <span className="text-[11px] font-semibold text-cyan-400">
               {((completedCount / journeys.length) * 100).toFixed(0)}%
             </span>
-            <span className="text-[10px] text-slate-500">taxa</span>
+            <span className="text-[10px] text-muted-foreground">taxa</span>
           </div>
         )}
       </div>
 
-      <div className="divide-y divide-slate-800/40">
+      <div className="divide-y divide-border/40">
         <AnimatePresence mode="popLayout">
           {journeys.map((journey) => (
             <motion.div
@@ -149,7 +148,7 @@ const CustomerJourneyFeed = ({ events, products }: Props) => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="px-5 py-4 hover:bg-slate-800/20 transition-colors"
+              className="px-5 py-4 hover:bg-muted/20 transition-colors"
             >
               {/* Header */}
               <div className="flex items-center gap-3 mb-3">
@@ -157,14 +156,14 @@ const CustomerJourneyFeed = ({ events, products }: Props) => {
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
                     journey.completed
                       ? "bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30"
-                      : "bg-slate-700/50 text-slate-400 ring-1 ring-slate-600/30"
+                      : "bg-muted text-muted-foreground ring-1 ring-border/30"
                   }`}
                 >
                   {journey.firstName.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-[13px] font-semibold text-slate-200 truncate">
+                    <span className="text-[13px] font-semibold text-foreground truncate">
                       {journey.firstName}
                     </span>
                     {journey.completed ? (
@@ -179,9 +178,9 @@ const CustomerJourneyFeed = ({ events, products }: Props) => {
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
                     {journey.productName && (
-                      <span className="text-[10px] text-slate-500 truncate">{journey.productName}</span>
+                      <span className="text-[10px] text-muted-foreground truncate">{journey.productName}</span>
                     )}
-                    <span className="text-[10px] text-slate-600">
+                    <span className="text-[10px] text-muted-foreground/60">
                       · {format(new Date(journey.lastEvent.created_at), "HH:mm:ss")}
                     </span>
                   </div>
@@ -200,14 +199,14 @@ const CustomerJourneyFeed = ({ events, products }: Props) => {
                         <div
                           className="flex items-center justify-center w-6 h-6 rounded-full transition-all relative group/step"
                           style={{
-                            backgroundColor: reached ? `${step.color}25` : "rgba(51,65,85,0.3)",
-                            border: `1.5px solid ${reached ? step.color : "rgba(71,85,105,0.3)"}`,
+                            backgroundColor: reached ? `${step.color}25` : "hsl(var(--muted))",
+                            border: `1.5px solid ${reached ? step.color : "hsl(var(--border))"}`,
                           }}
                           title={EVENT_LABELS[step.key] || step.key}
                         >
                           <Icon
                             className="w-2.5 h-2.5"
-                            style={{ color: reached ? step.color : "#475569" }}
+                            style={{ color: reached ? step.color : "hsl(var(--muted-foreground))" }}
                           />
                           {reached && step.key === "Purchase" && (
                             <motion.div
@@ -223,7 +222,7 @@ const CustomerJourneyFeed = ({ events, products }: Props) => {
                             style={{
                               backgroundColor: reached && journey.reachedSteps.has(FUNNEL_STEPS[i + 1]?.key)
                                 ? step.color
-                                : "rgba(71,85,105,0.25)",
+                                : "hsl(var(--border))",
                             }}
                           />
                         )}
@@ -240,7 +239,7 @@ const CustomerJourneyFeed = ({ events, products }: Props) => {
 
               {/* Last action label */}
               <div className="ml-10">
-                <span className="text-[10px] text-slate-500 italic">
+                <span className="text-[10px] text-muted-foreground italic">
                   Último: {EVENT_LABELS[journey.lastEvent.event_name] || journey.lastEvent.event_name}
                 </span>
               </div>
