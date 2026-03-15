@@ -190,133 +190,142 @@ Deno.serve(async (req) => {
         console.error('[pagarme-webhook] CAPI fallback error (non-blocking):', capiErr);
       }
 
-      // --- Member access ---
+      // --- Member access (main product + bump products) ---
       try {
-        // Find course linked to this product
-        const { data: course } = await supabase
+        // Collect all product IDs that need access: main + bumps
+        const productIdsForAccess = [orderData.product_id];
+        const bumpIds = (orderData.metadata as any)?.bump_product_ids;
+        if (Array.isArray(bumpIds)) {
+          productIdsForAccess.push(...bumpIds);
+        }
+
+        // Find all courses linked to these products
+        const { data: courses } = await supabase
           .from('courses')
-          .select('id, title')
-          .eq('product_id', orderData.product_id)
-          .maybeSingle();
+          .select('id, title, product_id')
+          .in('product_id', productIdsForAccess);
 
-        if (course) {
-          // Check if access already exists
-          const { data: existingAccess } = await supabase
-            .from('member_access')
-            .select('id')
-            .eq('customer_id', orderData.customer_id)
-            .eq('course_id', course.id)
-            .maybeSingle();
-
-          if (!existingAccess) {
-            // Create member access
-            const { data: newAccess, error: accessErr } = await supabase
+        if (courses && courses.length > 0) {
+          for (const course of courses) {
+            // Check if access already exists
+            const { data: existingAccess } = await supabase
               .from('member_access')
-              .insert({
-                customer_id: orderData.customer_id,
-                course_id: course.id,
-              })
-              .select('access_token')
-              .single();
+              .select('id')
+              .eq('customer_id', orderData.customer_id)
+              .eq('course_id', course.id)
+              .maybeSingle();
 
-            if (accessErr) {
-              console.error('[pagarme-webhook] Error creating member access:', accessErr);
-            } else {
-              console.log('[pagarme-webhook] Member access created for course:', course.id);
+            if (!existingAccess) {
+              // Create member access
+              const { data: newAccess, error: accessErr } = await supabase
+                .from('member_access')
+                .insert({
+                  customer_id: orderData.customer_id,
+                  course_id: course.id,
+                  order_id: orderData.id,
+                })
+                .select('access_token')
+                .single();
 
-              // Send access email
-              try {
-                const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-                if (RESEND_API_KEY && newAccess?.access_token) {
-                  const { data: customerData } = await supabase
-                    .from('customers')
-                    .select('name, email')
-                    .eq('id', orderData.customer_id)
-                    .single();
+              if (accessErr) {
+                console.error('[pagarme-webhook] Error creating member access for course:', course.id, accessErr);
+              } else {
+                console.log('[pagarme-webhook] Member access created for course:', course.id, course.title);
 
-                  if (customerData) {
-                    const siteUrl = 'https://paycheckout.lovable.app';
-                    const accessUrl = `${siteUrl}/membros?token=${newAccess.access_token}`;
+                // Send access email
+                try {
+                  const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+                  if (RESEND_API_KEY && newAccess?.access_token) {
+                    const { data: customerData } = await supabase
+                      .from('customers')
+                      .select('name, email')
+                      .eq('id', orderData.customer_id)
+                      .single();
 
-                    const emailHtml = `
-                      <!DOCTYPE html>
-                      <html>
-                      <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-                      <body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-                        <div style="max-width:560px;margin:40px auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-                          <div style="background:linear-gradient(135deg,#22c55e,#16a34a);padding:32px 40px;text-align:center;">
-                            <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">🎉 Pagamento confirmado!</h1>
-                          </div>
-                          <div style="padding:32px 40px;">
-                            <p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 16px;">
-                              Olá <strong>${customerData.name.split(' ')[0]}</strong>,
-                            </p>
-                            <p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 24px;">
-                              Seu pagamento foi confirmado e seu acesso ao curso <strong>"${course.title}"</strong> está liberado! 🚀
-                            </p>
-                            <div style="text-align:center;margin:32px 0;">
-                              <a href="${accessUrl}" style="display:inline-block;background:linear-gradient(135deg,#22c55e,#16a34a);color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:8px;font-size:16px;font-weight:600;box-shadow:0 4px 12px rgba(34,197,94,0.4);">
-                                Acessar Curso
-                              </a>
+                    if (customerData) {
+                      const siteUrl = 'https://paycheckout.lovable.app';
+                      const accessUrl = `${siteUrl}/membros?token=${newAccess.access_token}`;
+
+                      const emailHtml = `
+                        <!DOCTYPE html>
+                        <html>
+                        <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+                        <body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                          <div style="max-width:560px;margin:40px auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+                            <div style="background:linear-gradient(135deg,#22c55e,#16a34a);padding:32px 40px;text-align:center;">
+                              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">🎉 Pagamento confirmado!</h1>
                             </div>
-                            <p style="color:#6b7280;font-size:13px;line-height:1.5;margin:24px 0 0;padding-top:20px;border-top:1px solid #e5e7eb;">
-                              Ou copie e cole este link no seu navegador:<br>
-                              <a href="${accessUrl}" style="color:#22c55e;word-break:break-all;">${accessUrl}</a>
-                            </p>
+                            <div style="padding:32px 40px;">
+                              <p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 16px;">
+                                Olá <strong>${customerData.name.split(' ')[0]}</strong>,
+                              </p>
+                              <p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 24px;">
+                                Seu pagamento foi confirmado e seu acesso ao curso <strong>"${course.title}"</strong> está liberado! 🚀
+                              </p>
+                              <div style="text-align:center;margin:32px 0;">
+                                <a href="${accessUrl}" style="display:inline-block;background:linear-gradient(135deg,#22c55e,#16a34a);color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:8px;font-size:16px;font-weight:600;box-shadow:0 4px 12px rgba(34,197,94,0.4);">
+                                  Acessar Curso
+                                </a>
+                              </div>
+                              <p style="color:#6b7280;font-size:13px;line-height:1.5;margin:24px 0 0;padding-top:20px;border-top:1px solid #e5e7eb;">
+                                Ou copie e cole este link no seu navegador:<br>
+                                <a href="${accessUrl}" style="color:#22c55e;word-break:break-all;">${accessUrl}</a>
+                              </p>
+                            </div>
+                            <div style="background:#f9fafb;padding:20px 40px;text-align:center;">
+                              <p style="color:#9ca3af;font-size:12px;margin:0;">
+                                Guarde este email — ele contém seu link de acesso ao curso.
+                              </p>
+                            </div>
                           </div>
-                          <div style="background:#f9fafb;padding:20px 40px;text-align:center;">
-                            <p style="color:#9ca3af;font-size:12px;margin:0;">
-                              Guarde este email — ele contém seu link de acesso ao curso.
-                            </p>
-                          </div>
-                        </div>
-                      </body>
-                      </html>
-                    `;
+                        </body>
+                        </html>
+                      `;
 
-                    const emailRes = await fetch('https://api.resend.com/emails', {
-                      method: 'POST',
-                      headers: {
-                        'Authorization': `Bearer ${RESEND_API_KEY}`,
-                        'Content-Type': 'application/json',
-                      },
-                      body: JSON.stringify({
-                        from: 'PayCheckout <noreply@paolasemfiltro.com>',
-                        to: [customerData.email],
-                        subject: `🎉 Acesso liberado — "${course.title}"`,
-                        html: emailHtml,
-                      }),
-                    });
-                    const emailData = await emailRes.json();
-
-                    // Log email
-                    try {
-                      await supabase.from('email_logs').insert({
-                        user_id: orderData.user_id,
-                        to_email: customerData.email,
-                        to_name: customerData.name,
-                        subject: `🎉 Acesso liberado — "${course.title}"`,
-                        html_body: emailHtml,
-                        email_type: 'payment_confirmed',
-                        status: emailRes.ok ? 'sent' : 'failed',
-                        resend_id: emailData?.id || null,
-                        customer_id: orderData.customer_id,
-                        product_id: orderData.product_id,
-                        source: 'pagarme-webhook',
+                      const emailRes = await fetch('https://api.resend.com/emails', {
+                        method: 'POST',
+                        headers: {
+                          'Authorization': `Bearer ${RESEND_API_KEY}`,
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                          from: 'PayCheckout <noreply@paolasemfiltro.com>',
+                          to: [customerData.email],
+                          subject: `🎉 Acesso liberado — "${course.title}"`,
+                          html: emailHtml,
+                        }),
                       });
-                    } catch (logErr) {
-                      console.error('[pagarme-webhook] Email log error:', logErr);
-                    }
+                      const emailData = await emailRes.json();
 
-                    console.log('[pagarme-webhook] Access email sent to', customerData.email);
+                      // Log email
+                      try {
+                        await supabase.from('email_logs').insert({
+                          user_id: orderData.user_id,
+                          to_email: customerData.email,
+                          to_name: customerData.name,
+                          subject: `🎉 Acesso liberado — "${course.title}"`,
+                          html_body: emailHtml,
+                          email_type: 'payment_confirmed',
+                          status: emailRes.ok ? 'sent' : 'failed',
+                          resend_id: emailData?.id || null,
+                          customer_id: orderData.customer_id,
+                          product_id: course.product_id,
+                          source: 'pagarme-webhook',
+                        });
+                      } catch (logErr) {
+                        console.error('[pagarme-webhook] Email log error:', logErr);
+                      }
+
+                      console.log('[pagarme-webhook] Access email sent to', customerData.email, 'for course:', course.title);
+                    }
                   }
+                } catch (emailErr) {
+                  console.error('[pagarme-webhook] Email error (non-blocking):', emailErr);
                 }
-              } catch (emailErr) {
-                console.error('[pagarme-webhook] Email error (non-blocking):', emailErr);
               }
+            } else {
+              console.log('[pagarme-webhook] Member access already exists for course:', course.id);
             }
-          } else {
-            console.log('[pagarme-webhook] Member access already exists for course:', course.id);
           }
         }
       } catch (memberErr) {
