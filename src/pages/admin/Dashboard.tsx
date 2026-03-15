@@ -58,8 +58,8 @@ const Dashboard = () => {
   const [selectedProductId, setSelectedProductId] = useState("all");
   const isSyncingOrdersRef = useRef(false);
 
-  const syncOrdersWithGateway = useCallback(async () => {
-    if (isSyncingOrdersRef.current) return;
+  const syncOrdersWithGateway = useCallback(async (): Promise<boolean> => {
+    if (isSyncingOrdersRef.current) return false;
 
     isSyncingOrdersRef.current = true;
     try {
@@ -69,9 +69,13 @@ const Dashboard = () => {
 
       if (error) {
         console.error("[dashboard] reconcile-orders error:", error);
+        return false;
       }
+
+      return true;
     } catch (err) {
       console.error("[dashboard] reconcile-orders unexpected error:", err);
+      return false;
     } finally {
       isSyncingOrdersRef.current = false;
     }
@@ -85,7 +89,7 @@ const Dashboard = () => {
     while (true) {
       const { data, error } = await supabase
         .from("orders")
-        .select("*")
+        .select("id, created_at, status, amount, platform_fee_amount, payment_method, product_id")
         .order("created_at", { ascending: false })
         .range(from, from + pageSize - 1);
 
@@ -106,30 +110,49 @@ const Dashboard = () => {
     return allOrders;
   }, []);
 
+  const fetchAndSetData = useCallback(async () => {
+    if (!user) return;
+
+    const [allOrders, cartsRes, productsRes] = await Promise.all([
+      fetchAllOrders(),
+      supabase
+        .from("abandoned_carts")
+        .select("id, created_at, recovered")
+        .order("created_at", { ascending: false })
+        .limit(500),
+      supabase.from("products").select("id, name").eq("user_id", user.id),
+    ]);
+
+    setOrders(allOrders);
+    setAbandonedCarts(cartsRes.data || []);
+    setProducts(productsRes.data || []);
+  }, [fetchAllOrders, user]);
+
   const loadData = useCallback(async (isRefresh = false, shouldSync = false) => {
     if (!user) return;
     if (isRefresh) setRefreshing(true);
 
     try {
-      if (shouldSync) {
-        await syncOrdersWithGateway();
-      }
-
-      const [allOrders, cartsRes, productsRes] = await Promise.all([
-        fetchAllOrders(),
-        supabase.from("abandoned_carts").select("*").order("created_at", { ascending: false }).limit(500),
-        supabase.from("products").select("id, name").eq("user_id", user.id),
-      ]);
-
-      setOrders(allOrders);
-      setAbandonedCarts(cartsRes.data || []);
-      setProducts(productsRes.data || []);
+      await fetchAndSetData();
     } catch (error) {
       console.error("[dashboard] loadData error:", error);
     } finally {
       if (isRefresh) setRefreshing(false);
     }
-  }, [fetchAllOrders, syncOrdersWithGateway, user]);
+
+    if (shouldSync) {
+      void (async () => {
+        const synced = await syncOrdersWithGateway();
+        if (!synced) return;
+
+        try {
+          await fetchAndSetData();
+        } catch (error) {
+          console.error("[dashboard] post-sync loadData error:", error);
+        }
+      })();
+    }
+  }, [fetchAndSetData, syncOrdersWithGateway, user]);
 
   useEffect(() => {
     loadData(false, true);
