@@ -51,6 +51,30 @@ const CustomerJourneyFeed = ({ events, products }: Props) => {
       map.get(key)!.push(e);
     });
 
+    // Merge groups that share the same customer_name (e.g. webhook events without visitor_id
+    // and browser events with visitor_id both belonging to the same person)
+    const nameToKey = new Map<string, string>();
+    const mergeTargets = new Map<string, string>();
+
+    for (const [key, evts] of map) {
+      const named = evts.find((e) => e.customer_name);
+      if (!named) continue;
+      const normName = named.customer_name!.trim().toLowerCase();
+      if (nameToKey.has(normName)) {
+        // Mark this key to merge into the existing one
+        mergeTargets.set(key, nameToKey.get(normName)!);
+      } else {
+        nameToKey.set(normName, key);
+      }
+    }
+
+    for (const [sourceKey, targetKey] of mergeTargets) {
+      const sourceEvts = map.get(sourceKey) || [];
+      const targetEvts = map.get(targetKey) || [];
+      targetEvts.push(...sourceEvts);
+      map.delete(sourceKey);
+    }
+
     const result = Array.from(map.entries()).map(([key, evts]) => {
       const sorted = [...evts].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
       const namedEvent = sorted.find((e) => e.customer_name);
