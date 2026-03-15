@@ -204,8 +204,9 @@ const Dashboard = () => {
   const pending = useMemo(() => filtered.filter((o) => o.status === "pending"), [filtered]);
   const refunded = useMemo(() => filtered.filter((o) => o.status === "refunded"), [filtered]);
 
-  const totalBruto = approved.reduce((s, o) => s + Number(o.amount), 0);
-  const totalLiquido = totalBruto * (1 - platformFee / 100);
+  const totalBruto = approved.reduce((s, o) => s + Number(o.amount || 0), 0);
+  const totalTaxas = approved.reduce((s, o) => s + Number(o.platform_fee_amount || 0), 0);
+  const totalLiquido = totalBruto - totalTaxas;
   const totalVendas = approved.length;
   const totalPendente = pending.reduce((s, o) => s + Number(o.amount), 0);
 
