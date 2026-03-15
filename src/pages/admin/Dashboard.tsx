@@ -208,7 +208,7 @@ const Dashboard = () => {
   const totalTaxas = approved.reduce((s, o) => s + Number(o.platform_fee_amount || 0), 0);
   const totalLiquido = totalBruto - totalTaxas;
   const totalVendas = approved.length;
-  const totalPendente = pending.reduce((s, o) => s + Number(o.amount), 0);
+  const totalPendente = pending.reduce((s, o) => s + Number(o.amount || 0), 0);
 
 
   const cardAttempts = filtered.filter((o) => o.payment_method === "credit_card");
