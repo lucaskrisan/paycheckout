@@ -217,13 +217,17 @@ const CustomerPortal = () => {
 
   const handleOpenCourse = async (course: PortalCourse) => {
     if (course.access_token) {
-      // Has a real access token — open member area with it
       navigate(`/membros?token=${course.access_token}`);
       return;
     }
 
+    // Product without a linked course — nothing to preview yet
+    if (course.id.startsWith("product-")) {
+      toast.info("Este produto ainda não possui uma área de membros vinculada. Crie um curso na aba 'Área de Membros' do produto.");
+      return;
+    }
+
     // Producer previewing own course — find or create a temporary access
-    // Look for any existing member_access for this course
     const { data: existing } = await supabase
       .from("member_access")
       .select("access_token")
@@ -234,7 +238,6 @@ const CustomerPortal = () => {
     if (existing) {
       navigate(`/membros?token=${existing.access_token}`);
     } else {
-      // No access exists — need a customer_id first
       const email = user?.email || "";
       let customerId: string | null = null;
 
@@ -248,7 +251,6 @@ const CustomerPortal = () => {
       if (custData) {
         customerId = custData.id;
       } else {
-        // Create a customer record for the producer
         const { data: newCust } = await supabase
           .from("customers")
           .insert({ name: customerName || "Produtor", email, user_id: user!.id })
@@ -262,17 +264,19 @@ const CustomerPortal = () => {
         return;
       }
 
-      const { data: newAccess } = await supabase
+      const { data: newAccess, error: accessError } = await supabase
         .from("member_access")
         .insert({ course_id: course.id, customer_id: customerId })
         .select("access_token")
         .single();
 
-      if (newAccess) {
-        navigate(`/membros?token=${newAccess.access_token}`);
-      } else {
+      if (accessError || !newAccess) {
+        console.error("Error creating preview access:", accessError);
         toast.error("Erro ao criar acesso de preview");
+        return;
       }
+
+      navigate(`/membros?token=${newAccess.access_token}`);
     }
   };
 
