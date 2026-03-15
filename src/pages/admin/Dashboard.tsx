@@ -89,7 +89,7 @@ const Dashboard = () => {
     while (true) {
       const { data, error } = await supabase
         .from("orders")
-        .select("id, created_at, status, amount, platform_fee_amount, payment_method, product_id")
+        .select("id, created_at, status, amount, platform_fee_amount, payment_method, product_id, metadata")
         .order("created_at", { ascending: false })
         .range(from, from + pageSize - 1);
 
