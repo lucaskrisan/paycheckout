@@ -4,9 +4,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Loader2, ExternalLink, CheckCircle2, AlertCircle, Globe, Code2, Zap,
   Activity, XCircle, AlertTriangle, Play, RefreshCw, Search, Link2, FileCode,
+  Settings2, Radio,
 } from "lucide-react";
 import TrackingScriptGenerator from "@/components/admin/TrackingScriptGenerator";
 import UtmAttributionTable from "@/components/admin/UtmAttributionTable";
@@ -59,20 +61,17 @@ const Tracking = () => {
   const [domains, setDomains] = useState<{ id: string; domain: string; verified: boolean }[]>([]);
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
 
-  // Diagnostics state
   const [selectedProduct, setSelectedProduct] = useState<string>("");
   const [diagLoading, setDiagLoading] = useState(false);
   const [diagResults, setDiagResults] = useState<DiagResult[] | null>(null);
   const [diagSummary, setDiagSummary] = useState<DiagSummary | null>(null);
 
-  // Page verification state
   const [pageUrl, setPageUrl] = useState("");
   const [pageChecking, setPageChecking] = useState(false);
   const [pageChecks, setPageChecks] = useState<DiagCheck[] | null>(null);
 
   useEffect(() => {
     if (!user) return;
-
     const load = async () => {
       const [pixelRes, domainRes] = await Promise.all([
         supabase
@@ -95,8 +94,6 @@ const Tracking = () => {
           has_capi: !!p.capi_token,
         }));
         setPixels(mapped);
-
-        // Extract unique products that have Facebook pixels
         const fbPixels = mapped.filter((p) => p.platform === "facebook");
         const uniqueProds = Array.from(
           new Map(fbPixels.map((p) => [p.product_id, { id: p.product_id, name: p.product_name }])).values()
@@ -104,51 +101,30 @@ const Tracking = () => {
         setProducts(uniqueProds);
         if (uniqueProds.length > 0) setSelectedProduct(uniqueProds[0].id);
       }
-
-      if (domainRes.data) {
-        setDomains(domainRes.data as any);
-      }
-
+      if (domainRes.data) setDomains(domainRes.data as any);
       setLoading(false);
     };
-
     load();
   }, [user]);
 
   const runDiagnostics = async () => {
-    if (!selectedProduct) {
-      toast.error("Selecione um produto");
-      return;
-    }
+    if (!selectedProduct) { toast.error("Selecione um produto"); return; }
     setDiagLoading(true);
     setDiagResults(null);
     setDiagSummary(null);
-
     try {
       const { data, error } = await supabase.functions.invoke("meta-diagnostics", {
         body: { product_id: selectedProduct },
       });
-
-      if (error) {
-        console.error("[Diagnostics] invoke error:", error);
-        throw new Error(typeof error === 'object' && error.message ? error.message : 'Falha na conexão com o servidor');
-      }
-      if (data?.error) {
-        throw new Error(data.error);
-      }
-
+      if (error) throw new Error(typeof error === 'object' && error.message ? error.message : 'Falha na conexão');
+      if (data?.error) throw new Error(data.error);
       setDiagResults(data.results || []);
       setDiagSummary(data.summary || null);
-
-      if (data.summary?.errors > 0) {
-        toast.error(`${data.summary.errors} problema(s) encontrado(s)`);
-      } else if (data.summary?.warnings > 0) {
-        toast.warning(`${data.summary.warnings} aviso(s) — rastreamento funcional mas pode melhorar`);
-      } else {
-        toast.success("Rastreamento 100% saudável! 🎯");
-      }
+      if (data.summary?.errors > 0) toast.error(`${data.summary.errors} problema(s) encontrado(s)`);
+      else if (data.summary?.warnings > 0) toast.warning(`${data.summary.warnings} aviso(s)`);
+      else toast.success("Rastreamento 100% saudável! 🎯");
     } catch (err: any) {
-      toast.error("Erro ao executar diagnóstico: " + (err.message || "Tente novamente"));
+      toast.error("Erro: " + (err.message || "Tente novamente"));
     } finally {
       setDiagLoading(false);
     }
@@ -157,125 +133,69 @@ const Tracking = () => {
   const verifyPage = useCallback(async () => {
     const url = pageUrl.trim();
     if (!url) { toast.error("Cole a URL da página"); return; }
-    if (!url.startsWith("http")) { toast.error("URL deve começar com http:// ou https://"); return; }
-
+    if (!url.startsWith("http")) { toast.error("URL deve começar com http(s)://"); return; }
     setPageChecking(true);
     setPageChecks(null);
-
     const checks: DiagCheck[] = [];
-
     try {
-      // 1) Fetch page HTML via edge function proxy (avoids CORS)
       const { data: htmlData, error: fetchErr } = await supabase.functions.invoke("meta-diagnostics", {
         body: { action: "verify_page", url },
       });
-
       if (fetchErr || !htmlData?.html) {
-        // If edge function doesn't support it, do client-side checks
-        checks.push({
-          name: "Acesso à página",
-          status: "warning",
-          detail: "Não foi possível acessar a página remotamente. Verifique manualmente no navegador.",
-        });
+        checks.push({ name: "Acesso à página", status: "warning", detail: "Não foi possível acessar remotamente." });
       } else {
         const html: string = htmlData.html;
+        if (html.includes("fbevents.js")) checks.push({ name: "Meta Pixel SDK", status: "pass", detail: "fbevents.js encontrado ✅" });
+        else checks.push({ name: "Meta Pixel SDK", status: "error", detail: "fbevents.js NÃO encontrado!" });
 
-        // Check for fbevents.js
-        if (html.includes("fbevents.js")) {
-          checks.push({ name: "Meta Pixel SDK", status: "pass", detail: "fbevents.js encontrado na página ✅" });
-        } else {
-          checks.push({ name: "Meta Pixel SDK", status: "error", detail: "fbevents.js NÃO encontrado! O script do pixel não está carregando." });
-        }
+        if (html.includes("fbq('init'") || html.includes('fbq("init"')) checks.push({ name: "fbq init", status: "pass", detail: "Inicialização do Pixel encontrada ✅" });
+        else if (html.includes("public_product_pixels")) checks.push({ name: "fbq init (dinâmico)", status: "pass", detail: "Pixel carregado via PayCheckout API ✅" });
+        else checks.push({ name: "fbq init", status: "error", detail: "Nenhuma inicialização de Pixel encontrada." });
 
-        // Check for fbq('init'
-        if (html.includes("fbq('init'") || html.includes('fbq("init"') || html.includes("fbq(\"init\"")) {
-          checks.push({ name: "fbq init", status: "pass", detail: "Inicialização do Pixel encontrada na página ✅" });
-        } else if (html.includes("public_product_pixels")) {
-          checks.push({ name: "fbq init (dinâmico)", status: "pass", detail: "Pixel carregado dinamicamente via PayCheckout API ✅" });
-        } else {
-          checks.push({ name: "fbq init", status: "error", detail: "Nenhuma inicialização de Pixel encontrada." });
-        }
+        if (html.includes("PageView")) checks.push({ name: "PageView", status: "pass", detail: "Evento PageView detectado ✅" });
+        else checks.push({ name: "PageView", status: "warning", detail: "Pode ser disparado dinamicamente" });
 
-        // Check for PageView
-        if (html.includes("PageView")) {
-          checks.push({ name: "PageView", status: "pass", detail: "Evento PageView detectado ✅" });
-        } else {
-          checks.push({ name: "PageView", status: "warning", detail: "PageView não encontrado no HTML (pode ser disparado dinamicamente)" });
-        }
+        if (html.includes("ViewContent")) checks.push({ name: "ViewContent", status: "pass", detail: "ViewContent detectado ✅" });
+        else checks.push({ name: "ViewContent", status: "warning", detail: "Não encontrado no HTML" });
 
-        // Check for ViewContent
-        if (html.includes("ViewContent")) {
-          checks.push({ name: "ViewContent", status: "pass", detail: "Evento ViewContent detectado — público de topo de funil ativo ✅" });
-        } else {
-          checks.push({ name: "ViewContent", status: "warning", detail: "ViewContent não encontrado. Recomendado para criar público 'viu a oferta mas não abriu checkout'." });
-        }
+        if (html.includes("utm_source") || html.includes("pc_utms")) checks.push({ name: "Captura de UTMs", status: "pass", detail: "Lógica de UTMs encontrada ✅" });
+        else checks.push({ name: "Captura de UTMs", status: "error", detail: "Nenhuma lógica de UTMs encontrada." });
 
-        // Check for UTM capture
-        if (html.includes("utm_source") || html.includes("pc_utms")) {
-          checks.push({ name: "Captura de UTMs", status: "pass", detail: "Lógica de captura de UTMs encontrada ✅" });
-        } else {
-          checks.push({ name: "Captura de UTMs", status: "error", detail: "Nenhuma lógica de captura de UTMs encontrada. Os parâmetros não serão passados ao checkout." });
-        }
+        if (html.includes("fbclid")) checks.push({ name: "Cross-domain fbclid", status: "pass", detail: "Propagação de fbclid ativa ✅" });
+        else checks.push({ name: "Cross-domain fbclid", status: "warning", detail: "fbclid não propagado." });
 
-        // Check for fbclid cross-domain propagation
-        if (html.includes("fbclid")) {
-          checks.push({ name: "Cross-domain fbclid", status: "pass", detail: "Propagação de fbclid para o checkout detectada — atribuição cross-domain ativa ✅" });
-        } else {
-          checks.push({ name: "Cross-domain fbclid", status: "warning", detail: "fbclid não está sendo propagado. A atribuição pode ser perdida na troca de domínio." });
-        }
+        if (html.includes("_fbp") || html.includes("fbp=")) checks.push({ name: "Cross-domain _fbp", status: "pass", detail: "Propagação de _fbp ativa ✅" });
+        else checks.push({ name: "Cross-domain _fbp", status: "warning", detail: "_fbp não propagado." });
 
-        // Check for _fbp cross-domain propagation
-        if (html.includes("_fbp") || html.includes("fbp=") || html.includes("fbpCookie")) {
-          checks.push({ name: "Cross-domain _fbp", status: "pass", detail: "Propagação de _fbp para o checkout detectada — cookie restaurado cross-domain ✅" });
-        } else {
-          checks.push({ name: "Cross-domain _fbp", status: "warning", detail: "_fbp não está sendo passado ao checkout. O Match Quality pode ser reduzido." });
-        }
+        if (html.includes("_fbc")) checks.push({ name: "Cookie _fbc", status: "pass", detail: "Cookie _fbc na LP ✅" });
+        else checks.push({ name: "Cookie _fbc", status: "warning", detail: "Cookie _fbc não criado na LP." });
 
-        // Check for _fbc cookie creation
-        if (html.includes("_fbc")) {
-          checks.push({ name: "Cookie _fbc", status: "pass", detail: "Criação de cookie _fbc na LP detectada ✅" });
-        } else {
-          checks.push({ name: "Cookie _fbc", status: "warning", detail: "Cookie _fbc não está sendo criado na LP. Será gerado apenas no checkout." });
-        }
+        if (html.includes("goToCheckout")) checks.push({ name: "URL Decorator", status: "pass", detail: "goToCheckout encontrado ✅" });
+        else checks.push({ name: "URL Decorator", status: "warning", detail: "goToCheckout não encontrado." });
 
-        // Check for goToCheckout
-        if (html.includes("goToCheckout")) {
-          checks.push({ name: "URL Decorator (goToCheckout)", status: "pass", detail: "Função de redirecionamento com propagação de parâmetros encontrada ✅" });
-        } else {
-          checks.push({ name: "URL Decorator (goToCheckout)", status: "warning", detail: "Função goToCheckout não encontrada. Verifique se os botões usam links diretos." });
-        }
-
-        // Check for PayCheckout product ID
         const productIdRegex = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
         const foundIds = html.match(productIdRegex) || [];
         const myProductIds = pixels.map(p => p.product_id);
         const matchedProducts = [...new Set(foundIds)].filter(id => myProductIds.includes(id));
-
         if (matchedProducts.length > 0) {
           const names = matchedProducts.map(id => pixels.find(p => p.product_id === id)?.product_name).filter(Boolean);
-          checks.push({ name: "Link do checkout", status: "pass", detail: `Produto(s) detectado(s): ${names.join(", ")} ✅` });
+          checks.push({ name: "Link do checkout", status: "pass", detail: `Produto(s): ${names.join(", ")} ✅` });
         } else {
-          checks.push({ name: "Link do checkout", status: "error", detail: "Nenhum ID de produto do PayCheckout encontrado na página." });
+          checks.push({ name: "Link do checkout", status: "error", detail: "Nenhum produto PayCheckout encontrado." });
         }
 
-        // Check for config ID
-        if (html.includes("config=") || html.includes("config'") || html.includes("configId")) {
-          checks.push({ name: "Config ID", status: "pass", detail: "Referência a config de checkout encontrada ✅" });
-        } else {
-          checks.push({ name: "Config ID", status: "warning", detail: "Nenhum config ID encontrado — pode estar usando a oferta padrão." });
-        }
+        if (html.includes("config=") || html.includes("configId")) checks.push({ name: "Config ID", status: "pass", detail: "Config de checkout encontrada ✅" });
+        else checks.push({ name: "Config ID", status: "warning", detail: "Usando oferta padrão." });
       }
     } catch (err: any) {
       checks.push({ name: "Erro geral", status: "error", detail: err.message || "Erro desconhecido" });
     }
-
     setPageChecks(checks);
     setPageChecking(false);
-
     const errors = checks.filter(c => c.status === "error").length;
     const warnings = checks.filter(c => c.status === "warning").length;
-    if (errors > 0) toast.error(`${errors} problema(s) encontrado(s) na página`);
-    else if (warnings > 0) toast.warning(`Página OK com ${warnings} aviso(s)`);
+    if (errors > 0) toast.error(`${errors} problema(s)`);
+    else if (warnings > 0) toast.warning(`OK com ${warnings} aviso(s)`);
     else toast.success("Página 100% configurada! 🎯");
   }, [pageUrl, pixels]);
 
@@ -307,7 +227,6 @@ const Tracking = () => {
   const uniqueProductIds = [...new Set(pixels.map((p) => p.product_id))];
   const totalPixels = pixels.length;
   const capiEnabled = pixels.filter((p) => p.has_capi).length;
-
   const healthScore = diagSummary
     ? Math.round((diagSummary.passed / Math.max(diagSummary.total, 1)) * 100)
     : null;
@@ -324,7 +243,7 @@ const Tracking = () => {
       </div>
 
       {/* ── Stats ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         {[
           { icon: Code2, label: "Pixels", value: totalPixels, color: "#22d3ee" },
           { icon: Zap, label: "CAPI ativo", value: capiEnabled, color: "#a78bfa" },
@@ -345,89 +264,148 @@ const Tracking = () => {
       {/* ── Onboarding Guide ── */}
       <TrackingOnboardingGuide hasPixels={totalPixels > 0} />
 
-      {/* ── Full Audit ── */}
-      {user && <TrackingFullAudit userId={user.id} />}
+      {/* ── Tabs ── */}
+      <Tabs defaultValue="audit" className="space-y-4">
+        <TabsList className="bg-slate-800/60 border border-slate-700/30 p-1 gap-1">
+          <TabsTrigger value="audit" className="text-xs gap-1.5 data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">
+            <Search className="w-3.5 h-3.5" /> Auditoria
+          </TabsTrigger>
+          <TabsTrigger value="events" className="text-xs gap-1.5 data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">
+            <Radio className="w-3.5 h-3.5" /> Eventos
+          </TabsTrigger>
+          <TabsTrigger value="integration" className="text-xs gap-1.5 data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">
+            <Code2 className="w-3.5 h-3.5" /> Integração
+          </TabsTrigger>
+          <TabsTrigger value="config" className="text-xs gap-1.5 data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">
+            <Settings2 className="w-3.5 h-3.5" /> Configuração
+          </TabsTrigger>
+        </TabsList>
 
-      {/* ── EMQ Panel ── */}
-      <MetaEmqPanel products={products} />
+        {/* ═══ TAB: Auditoria ═══ */}
+        <TabsContent value="audit" className="space-y-5 mt-0">
+          {user && <TrackingFullAudit userId={user.id} />}
+          <MetaEmqPanel products={products} />
 
-      {/* ── Real-time Events ── */}
-      <PixelEventsDashboard products={products} />
+          {/* Diagnostics */}
+          <div className="rounded-lg bg-slate-800/50 border border-slate-700/30 overflow-hidden">
+            <div className="px-4 py-3 border-b border-slate-700/30 flex items-center gap-2.5">
+              <Activity className="w-4 h-4 text-cyan-400" />
+              <div>
+                <h2 className="text-sm font-semibold text-slate-200">Diagnóstico do Meta</h2>
+                <p className="text-[10px] text-slate-500">Pixel ID · Domínio · CAPI · Graph API</p>
+              </div>
+            </div>
+            <div className="p-4 space-y-3">
+              {products.length === 0 ? (
+                <p className="text-xs text-slate-500">Nenhum pixel Facebook configurado.</p>
+              ) : (
+                <>
+                  <div className="flex items-end gap-3">
+                    <div className="flex-1 space-y-1">
+                      <label className="text-xs font-medium text-slate-400">Produto</label>
+                      <Select value={selectedProduct} onValueChange={setSelectedProduct}>
+                        <SelectTrigger className="bg-slate-800/60 border-slate-700/50 text-slate-300 text-xs">
+                          <SelectValue placeholder="Selecione um produto" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {products.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button onClick={runDiagnostics} disabled={diagLoading} size="sm" className="gap-1.5 text-xs">
+                      {diagLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : diagResults ? <RefreshCw className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                      {diagLoading ? "Analisando..." : diagResults ? "Rodar novamente" : "Executar"}
+                    </Button>
+                  </div>
 
-      {/* ── Diagnostics ── */}
-      <div className="rounded-lg bg-slate-800/50 border border-slate-700/30 overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-700/30 flex items-center gap-2.5">
-          <Activity className="w-4 h-4 text-cyan-400" />
-          <div>
-            <h2 className="text-sm font-semibold text-slate-200">Diagnóstico do Meta</h2>
-            <p className="text-[10px] text-slate-500">Pixel ID · Domínio · CAPI · Graph API</p>
+                  {diagSummary && healthScore !== null && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-slate-400">Saúde do rastreamento</span>
+                        <span className={`text-xl font-bold font-mono tabular-nums ${
+                          healthScore === 100 ? "text-emerald-400" :
+                          healthScore >= 70 ? "text-amber-400" : "text-red-400"
+                        }`}>{healthScore}%</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-slate-700/50 overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-700"
+                          style={{
+                            width: `${healthScore}%`,
+                            backgroundColor: healthScore === 100 ? "#34d399" : healthScore >= 70 ? "#fbbf24" : "#f87171"
+                          }}
+                        />
+                      </div>
+                      <div className="flex gap-4 text-[10px]">
+                        <span className="flex items-center gap-1 text-emerald-400"><CheckCircle2 className="w-2.5 h-2.5" /> {diagSummary.passed} OK</span>
+                        <span className="flex items-center gap-1 text-amber-400"><AlertTriangle className="w-2.5 h-2.5" /> {diagSummary.warnings} Avisos</span>
+                        <span className="flex items-center gap-1 text-red-400"><XCircle className="w-2.5 h-2.5" /> {diagSummary.errors} Erros</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {diagResults && diagResults.map((result) => (
+                    <div key={result.pixel_id} className="rounded-md bg-slate-900/50 border border-slate-700/20 overflow-hidden">
+                      <div className="px-3 py-2 border-b border-slate-700/20 flex items-center gap-2">
+                        <Code2 className="w-3.5 h-3.5 text-slate-500" />
+                        <span className="font-mono text-xs font-medium text-slate-300">{result.pixel_id}</span>
+                      </div>
+                      <div className="divide-y divide-slate-700/15">
+                        {result.checks.map((check, i) => (
+                          <div key={i} className="px-3 py-2.5 flex items-start gap-2.5">
+                            {statusIcon(check.status)}
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium text-slate-300">{check.name}</p>
+                              <p className="text-[10px] text-slate-500 mt-0.5">{check.detail}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
           </div>
-        </div>
-        <div className="p-4 space-y-3">
-          {products.length === 0 ? (
-            <p className="text-xs text-slate-500">Nenhum pixel Facebook configurado.</p>
-          ) : (
-            <>
+
+          {/* Page Verification */}
+          <div className="rounded-lg bg-slate-800/50 border border-slate-700/30 overflow-hidden">
+            <div className="px-4 py-3 border-b border-slate-700/30 flex items-center gap-2.5">
+              <FileCode className="w-4 h-4 text-violet-400" />
+              <div>
+                <h2 className="text-sm font-semibold text-slate-200">Verificação de Página Externa</h2>
+                <p className="text-[10px] text-slate-500">Audite o tracking da sua landing page</p>
+              </div>
+            </div>
+            <div className="p-4 space-y-3">
               <div className="flex items-end gap-3">
                 <div className="flex-1 space-y-1">
-                  <label className="text-xs font-medium text-slate-400">Produto</label>
-                  <Select value={selectedProduct} onValueChange={setSelectedProduct}>
-                    <SelectTrigger className="bg-slate-800/60 border-slate-700/50 text-slate-300 text-xs">
-                      <SelectValue placeholder="Selecione um produto" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {products.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button onClick={runDiagnostics} disabled={diagLoading} size="sm" className="gap-1.5 text-xs">
-                  {diagLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : diagResults ? <RefreshCw className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                  {diagLoading ? "Analisando..." : diagResults ? "Rodar novamente" : "Executar"}
-                </Button>
-              </div>
-
-              {diagSummary && healthScore !== null && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-400">Saúde do rastreamento</span>
-                    <span className={`text-xl font-bold font-mono tabular-nums ${
-                      healthScore === 100 ? "text-emerald-400" :
-                      healthScore >= 70 ? "text-amber-400" : "text-red-400"
-                    }`}>{healthScore}%</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-slate-700/50 overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-700"
-                      style={{
-                        width: `${healthScore}%`,
-                        backgroundColor: healthScore === 100 ? "#34d399" : healthScore >= 70 ? "#fbbf24" : "#f87171"
-                      }}
+                  <label className="text-xs font-medium text-slate-400">URL da página</label>
+                  <div className="relative">
+                    <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+                    <Input
+                      value={pageUrl}
+                      onChange={(e) => setPageUrl(e.target.value)}
+                      placeholder="https://suapagina.com"
+                      className="pl-9 bg-slate-800/60 border-slate-700/50 text-slate-300 text-xs placeholder:text-slate-600"
                     />
                   </div>
-                  <div className="flex gap-4 text-[10px]">
-                    <span className="flex items-center gap-1 text-emerald-400">
-                      <CheckCircle2 className="w-2.5 h-2.5" /> {diagSummary.passed} OK
-                    </span>
-                    <span className="flex items-center gap-1 text-amber-400">
-                      <AlertTriangle className="w-2.5 h-2.5" /> {diagSummary.warnings} Avisos
-                    </span>
-                    <span className="flex items-center gap-1 text-red-400">
-                      <XCircle className="w-2.5 h-2.5" /> {diagSummary.errors} Erros
-                    </span>
-                  </div>
                 </div>
-              )}
-
-              {diagResults && diagResults.map((result) => (
-                <div key={result.pixel_id} className="rounded-md bg-slate-900/50 border border-slate-700/20 overflow-hidden">
+                <Button onClick={verifyPage} disabled={pageChecking} size="sm" className="gap-1.5 text-xs">
+                  {pageChecking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+                  {pageChecking ? "Verificando..." : "Verificar"}
+                </Button>
+              </div>
+              {pageChecks && (
+                <div className="rounded-md bg-slate-900/50 border border-slate-700/20 overflow-hidden">
                   <div className="px-3 py-2 border-b border-slate-700/20 flex items-center gap-2">
-                    <Code2 className="w-3.5 h-3.5 text-slate-500" />
-                    <span className="font-mono text-xs font-medium text-slate-300">{result.pixel_id}</span>
+                    <Globe className="w-3.5 h-3.5 text-slate-500" />
+                    <span className="text-xs font-medium text-slate-300 truncate">{pageUrl}</span>
                   </div>
                   <div className="divide-y divide-slate-700/15">
-                    {result.checks.map((check, i) => (
+                    {pageChecks.map((check, i) => (
                       <div key={i} className="px-3 py-2.5 flex items-start gap-2.5">
                         {statusIcon(check.status)}
                         <div className="min-w-0">
@@ -438,143 +416,96 @@ const Tracking = () => {
                     ))}
                   </div>
                 </div>
-              ))}
-
-              {diagResults && diagResults.length === 0 && (
-                <p className="text-xs text-slate-500 text-center py-4">Nenhum pixel Facebook neste produto.</p>
               )}
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* ── Page Verification ── */}
-      <div className="rounded-lg bg-slate-800/50 border border-slate-700/30 overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-700/30 flex items-center gap-2.5">
-          <FileCode className="w-4 h-4 text-violet-400" />
-          <div>
-            <h2 className="text-sm font-semibold text-slate-200">Verificação de Página Externa</h2>
-            <p className="text-[10px] text-slate-500">Audite o tracking da sua landing page</p>
-          </div>
-        </div>
-        <div className="p-4 space-y-3">
-          <div className="flex items-end gap-3">
-            <div className="flex-1 space-y-1">
-              <label className="text-xs font-medium text-slate-400">URL da página</label>
-              <div className="relative">
-                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
-                <Input
-                  value={pageUrl}
-                  onChange={(e) => setPageUrl(e.target.value)}
-                  placeholder="https://suapagina.com"
-                  className="pl-9 bg-slate-800/60 border-slate-700/50 text-slate-300 text-xs placeholder:text-slate-600"
-                />
-              </div>
             </div>
-            <Button onClick={verifyPage} disabled={pageChecking} size="sm" className="gap-1.5 text-xs">
-              {pageChecking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
-              {pageChecking ? "Verificando..." : "Verificar"}
-            </Button>
+          </div>
+        </TabsContent>
+
+        {/* ═══ TAB: Eventos ═══ */}
+        <TabsContent value="events" className="space-y-5 mt-0">
+          <PixelEventsDashboard products={products} />
+          <UtmAttributionTable />
+        </TabsContent>
+
+        {/* ═══ TAB: Integração ═══ */}
+        <TabsContent value="integration" className="space-y-5 mt-0">
+          <TrackingScriptGenerator pixels={pixels} products={products} checkoutBaseUrl="https://paycheckout.lovable.app" />
+        </TabsContent>
+
+        {/* ═══ TAB: Configuração ═══ */}
+        <TabsContent value="config" className="space-y-5 mt-0">
+          {/* Pixels by Product */}
+          <div>
+            <h2 className="text-sm font-semibold text-slate-200 mb-2">Pixels por produto</h2>
+            {uniqueProductIds.length === 0 ? (
+              <div className="rounded-lg bg-slate-800/50 border border-slate-700/30 p-8 text-center">
+                <Code2 className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+                <p className="text-xs text-slate-400">Nenhum pixel configurado</p>
+                <p className="text-[10px] text-slate-600 mt-1">Configure em Produtos → Editar → Configurações</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {uniqueProductIds.map((productId) => {
+                  const productPixels = pixels.filter((p) => p.product_id === productId);
+                  const productName = productPixels[0]?.product_name || "Produto";
+                  return (
+                    <div key={productId} className="rounded-lg bg-slate-800/50 border border-slate-700/30 overflow-hidden">
+                      <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-700/30">
+                        <h3 className="text-xs font-semibold text-slate-200">{productName}</h3>
+                        <Button size="sm" variant="ghost" className="text-[10px] gap-1 text-slate-400 hover:text-slate-200 h-7" onClick={() => navigate(`/admin/products/${productId}/edit`)}>
+                          Editar <ExternalLink className="w-2.5 h-2.5" />
+                        </Button>
+                      </div>
+                      <div className="divide-y divide-slate-700/20">
+                        {productPixels.map((px, i) => (
+                          <div key={i} className="px-4 py-2.5 flex items-center gap-2.5 text-xs">
+                            <Badge variant="outline" className={`text-[10px] ${platformColors[px.platform] || "border-slate-600 text-slate-400"}`}>
+                              {px.platform}
+                            </Badge>
+                            <span className="font-mono text-slate-300 text-[11px]">{px.pixel_id}</span>
+                            {px.domain && <span className="text-[10px] text-slate-500">via {px.domain}</span>}
+                            <div className="ml-auto">
+                              {px.has_capi ? (
+                                <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-400 border-emerald-500/20 gap-1">
+                                  <CheckCircle2 className="w-2.5 h-2.5" /> CAPI
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-400 border-amber-500/20 gap-1">
+                                  <AlertCircle className="w-2.5 h-2.5" /> Sem CAPI
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          {pageChecks && (
-            <div className="rounded-md bg-slate-900/50 border border-slate-700/20 overflow-hidden">
-              <div className="px-3 py-2 border-b border-slate-700/20 flex items-center gap-2">
-                <Globe className="w-3.5 h-3.5 text-slate-500" />
-                <span className="text-xs font-medium text-slate-300 truncate">{pageUrl}</span>
-              </div>
-              <div className="divide-y divide-slate-700/15">
-                {pageChecks.map((check, i) => (
-                  <div key={i} className="px-3 py-2.5 flex items-start gap-2.5">
-                    {statusIcon(check.status)}
-                    <div className="min-w-0">
-                      <p className="text-xs font-medium text-slate-300">{check.name}</p>
-                      <p className="text-[10px] text-slate-500 mt-0.5">{check.detail}</p>
-                    </div>
+          {/* Domains */}
+          {domains.length > 0 && (
+            <div>
+              <h2 className="text-sm font-semibold text-slate-200 mb-2">Domínios verificados</h2>
+              <div className="rounded-lg bg-slate-800/50 border border-slate-700/30 divide-y divide-slate-700/20">
+                {domains.map((d) => (
+                  <div key={d.id} className="px-4 py-2.5 flex items-center gap-2.5 text-xs">
+                    <Globe className="w-3.5 h-3.5 text-slate-500" />
+                    <span className="text-slate-300">{d.domain}</span>
+                    <Badge variant="outline" className={`ml-auto text-[10px] ${
+                      d.verified ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                    }`}>
+                      {d.verified ? "Verificado" : "Pendente"}
+                    </Badge>
                   </div>
                 ))}
               </div>
             </div>
           )}
-        </div>
-      </div>
-
-      {/* ── Script Generator + UTM ── */}
-      <TrackingScriptGenerator pixels={pixels} products={products} checkoutBaseUrl="https://paycheckout.lovable.app" />
-
-      {/* ── UTM Attribution ── */}
-      <UtmAttributionTable />
-
-      {/* ── Pixels by Product ── */}
-      <div>
-        <h2 className="text-sm font-semibold text-slate-200 mb-2">Pixels por produto</h2>
-        {uniqueProductIds.length === 0 ? (
-          <div className="rounded-lg bg-slate-800/50 border border-slate-700/30 p-8 text-center">
-            <Code2 className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-            <p className="text-xs text-slate-400">Nenhum pixel configurado</p>
-            <p className="text-[10px] text-slate-600 mt-1">Configure em Produtos → Editar → Configurações</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {uniqueProductIds.map((productId) => {
-              const productPixels = pixels.filter((p) => p.product_id === productId);
-              const productName = productPixels[0]?.product_name || "Produto";
-              return (
-                <div key={productId} className="rounded-lg bg-slate-800/50 border border-slate-700/30 overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-700/30">
-                    <h3 className="text-xs font-semibold text-slate-200">{productName}</h3>
-                    <Button size="sm" variant="ghost" className="text-[10px] gap-1 text-slate-400 hover:text-slate-200 h-7" onClick={() => navigate(`/admin/products/${productId}/edit`)}>
-                      Editar <ExternalLink className="w-2.5 h-2.5" />
-                    </Button>
-                  </div>
-                  <div className="divide-y divide-slate-700/20">
-                    {productPixels.map((px, i) => (
-                      <div key={i} className="px-4 py-2.5 flex items-center gap-2.5 text-xs">
-                        <Badge variant="outline" className={`text-[10px] ${platformColors[px.platform] || "border-slate-600 text-slate-400"}`}>
-                          {px.platform}
-                        </Badge>
-                        <span className="font-mono text-slate-300 text-[11px]">{px.pixel_id}</span>
-                        {px.domain && <span className="text-[10px] text-slate-500">via {px.domain}</span>}
-                        <div className="ml-auto">
-                          {px.has_capi ? (
-                            <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-400 border-emerald-500/20 gap-1">
-                              <CheckCircle2 className="w-2.5 h-2.5" /> CAPI
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-400 border-amber-500/20 gap-1">
-                              <AlertCircle className="w-2.5 h-2.5" /> Sem CAPI
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* ── Domains ── */}
-      {domains.length > 0 && (
-        <div>
-          <h2 className="text-sm font-semibold text-slate-200 mb-2">Domínios verificados</h2>
-          <div className="rounded-lg bg-slate-800/50 border border-slate-700/30 divide-y divide-slate-700/20">
-            {domains.map((d) => (
-              <div key={d.id} className="px-4 py-2.5 flex items-center gap-2.5 text-xs">
-                <Globe className="w-3.5 h-3.5 text-slate-500" />
-                <span className="text-slate-300">{d.domain}</span>
-                <Badge variant="outline" className={`ml-auto text-[10px] ${
-                  d.verified ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                }`}>
-                  {d.verified ? "Verificado" : "Pendente"}
-                </Badge>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
