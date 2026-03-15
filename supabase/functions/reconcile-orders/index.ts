@@ -11,25 +11,31 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Auth check - only admins
-    const authHeader = req.headers.get('Authorization');
-    const supabaseUser = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      { global: { headers: { Authorization: authHeader || '' } } }
-    );
-    const { data: { user } } = await supabaseUser.auth.getUser();
-    if (!user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const supabase = createClient(
+    // Auth check - admins or service role
+    const authHeader = req.headers.get('Authorization') || '';
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
+    
+    // Check if it's a service_role call or an authenticated admin
+    const isServiceRole = authHeader.includes(Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    if (!isServiceRole) {
+      const supabaseUser = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_ANON_KEY')!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+      const { data: { user } } = await supabaseUser.auth.getUser();
+      if (!user) {
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    const supabase = supabaseAdmin;
 
     const PAGARME_API_KEY = Deno.env.get('PAGARME_API_KEY');
     if (!PAGARME_API_KEY) {
