@@ -41,8 +41,22 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get all pending orders from last 48 hours with external_id (Pagar.me orders)
-    const since = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+    // Get all pending orders with external_id (Pagar.me orders)
+    // Default window: 30 days; can be overridden with body.hours_back (max 90 days)
+    let hoursBack = 24 * 30;
+    if (req.method === 'POST') {
+      try {
+        const body = await req.json();
+        const inputHours = Number(body?.hours_back);
+        if (Number.isFinite(inputHours) && inputHours > 0 && inputHours <= 24 * 90) {
+          hoursBack = inputHours;
+        }
+      } catch {
+        // Ignore invalid/empty body and keep default
+      }
+    }
+
+    const since = new Date(Date.now() - hoursBack * 60 * 60 * 1000).toISOString();
     const { data: pendingOrders, error: fetchErr } = await supabase
       .from('orders')
       .select('id, external_id, amount, product_id, customer_id, user_id, metadata, payment_method')
