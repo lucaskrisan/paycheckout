@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Loader2, ExternalLink, CheckCircle2, AlertCircle, Globe, Code2, Zap,
   Activity, XCircle, AlertTriangle, Play, RefreshCw, Search, Link2, FileCode,
-  BarChart3, Settings2, Radio,
+  Settings2, Radio,
 } from "lucide-react";
 import TrackingScriptGenerator from "@/components/admin/TrackingScriptGenerator";
 import UtmAttributionTable from "@/components/admin/UtmAttributionTable";
