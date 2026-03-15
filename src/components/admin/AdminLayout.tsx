@@ -33,28 +33,33 @@ function useOneSignalInit(email: string | undefined) {
     script.onload = () => {
       (window as any).OneSignalDeferred = (window as any).OneSignalDeferred || [];
       (window as any).OneSignalDeferred.push(async (OneSignal: any) => {
-        await OneSignal.init({
-          appId: "5ba5218a-5026-4270-92ce-d2e0ab5509e0",
-          serviceWorkerParam: { scope: "/" },
-          serviceWorkerPath: "/pwa-sw.js",
-          serviceWorkerUpdaterPath: "/pwa-sw.js",
-          notifyButton: { enable: true },
-          allowLocalhostAsSecureOrigin: true,
-          promptOptions: {
-            slidedown: {
-              prompts: [{
-                type: "push",
-                autoPrompt: true,
-                text: {
-                  actionMessage: "Deseja receber notificações de vendas em tempo real?",
-                  acceptButton: "Permitir",
-                  cancelButton: "Agora não",
-                },
-                delay: { pageViews: 1, timeDelay: 3 },
-              }],
+        try {
+          await OneSignal.init({
+            appId: "5ba5218a-5026-4270-92ce-d2e0ab5509e0",
+            serviceWorkerParam: { scope: "/" },
+            serviceWorkerPath: "/OneSignalSDKWorker.js",
+            serviceWorkerUpdaterPath: "/OneSignalSDKUpdaterWorker.js",
+            notifyButton: { enable: false },
+            allowLocalhostAsSecureOrigin: true,
+            promptOptions: {
+              slidedown: {
+                prompts: [{
+                  type: "push",
+                  autoPrompt: true,
+                  text: {
+                    actionMessage: "Deseja receber notificações de vendas em tempo real?",
+                    acceptButton: "Permitir",
+                    cancelButton: "Agora não",
+                  },
+                  delay: { pageViews: 1, timeDelay: 2 },
+                }],
+              },
             },
-          },
-        });
+          });
+          console.log("[OneSignal] initialized, permission:", await OneSignal.Notifications.permission);
+        } catch (err) {
+          console.error("[OneSignal] init error:", err);
+        }
       });
     };
     document.head.appendChild(script);
