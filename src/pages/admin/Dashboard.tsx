@@ -101,8 +101,18 @@ const Dashboard = () => {
   }, [syncOrdersWithGateway, user]);
 
   useEffect(() => {
-    loadData();
-  }, [user]);
+    loadData(false, true);
+  }, [loadData, user]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const interval = window.setInterval(() => {
+      loadData(false, true);
+    }, 5 * 60 * 1000);
+
+    return () => window.clearInterval(interval);
+  }, [loadData, user]);
 
   // Realtime: listen for new approved sales and play Ka-CHING
   useEffect(() => {
