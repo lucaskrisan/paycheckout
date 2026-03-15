@@ -147,7 +147,7 @@ Deno.serve(async (req) => {
             .single();
 
           if (custData) {
-            const capiEventId = `Purchase_webhook_${externalId}`;
+            const capiEventId = externalId;
             const checkoutUrl = (orderData.metadata as any)?.checkout_url || `https://paycheckout.lovable.app/checkout/${orderData.product_id}`;
 
             // Fire CAPI via our own edge function
