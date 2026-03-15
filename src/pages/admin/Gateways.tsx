@@ -30,7 +30,7 @@ const providerLabels: Record<string, string> = {
 };
 
 const Gateways = () => {
-  const { user } = useAuth();
+  
   const navigate = useNavigate();
   const [orders, setOrders] = useState<any[]>([]);
   const [gateways, setGateways] = useState<GatewayConfig[]>([]);
