@@ -210,14 +210,6 @@ const Dashboard = () => {
   const totalVendas = approved.length;
   const totalPendente = pending.reduce((s, o) => s + Number(o.amount), 0);
 
-  // Gamification data (always from ALL orders, not period-filtered)
-  const allApproved = useMemo(() => orders.filter((o) => o.status === "paid" || o.status === "approved"), [orders]);
-  const approvedToday = useMemo(() => {
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-    return allApproved.filter((o) => new Date(o.created_at) >= startOfDay).length;
-  }, [allApproved]);
-  const allTimeRevenue = useMemo(() => allApproved.reduce((s, o) => s + Number(o.amount), 0), [allApproved]);
 
   const cardAttempts = filtered.filter((o) => o.payment_method === "credit_card");
   const cardApproved = cardAttempts.filter((o) => o.status === "paid" || o.status === "approved");
