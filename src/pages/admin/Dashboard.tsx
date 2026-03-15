@@ -58,22 +58,47 @@ const Dashboard = () => {
   const [selectedProductId, setSelectedProductId] = useState("all");
   const isSyncingOrdersRef = useRef(false);
 
-  const loadData = useCallback(async (isRefresh = false) => {
+  const syncOrdersWithGateway = useCallback(async () => {
+    if (isSyncingOrdersRef.current) return;
+
+    isSyncingOrdersRef.current = true;
+    try {
+      const { error } = await supabase.functions.invoke("reconcile-orders", {
+        body: { hours_back: 24 * 30 },
+      });
+
+      if (error) {
+        console.error("[dashboard] reconcile-orders error:", error);
+      }
+    } catch (err) {
+      console.error("[dashboard] reconcile-orders unexpected error:", err);
+    } finally {
+      isSyncingOrdersRef.current = false;
+    }
+  }, []);
+
+  const loadData = useCallback(async (isRefresh = false, shouldSync = false) => {
     if (!user) return;
     if (isRefresh) setRefreshing(true);
-    const [ordersRes, cartsRes, feeRes, productsRes] = await Promise.all([
-      supabase.from("orders").select("*"),
-      supabase.from("abandoned_carts").select("*").order("created_at", { ascending: false }).limit(500),
-      supabase.from("platform_settings").select("platform_fee_percent").limit(1).single(),
-      supabase.from("products").select("id, name").eq("user_id", user.id),
-    ]);
-    setOrders(ordersRes.data || []);
-    setAbandonedCarts(cartsRes.data || []);
-    if (feeRes.data?.platform_fee_percent != null) setPlatformFee(Number(feeRes.data.platform_fee_percent));
-    setProducts(productsRes.data || []);
-    setLoading(false);
-    if (isRefresh) setRefreshing(false);
-  }, [user]);
+
+    try {
+      if (shouldSync) {
+        await syncOrdersWithGateway();
+      }
+
+      const [ordersRes, cartsRes, productsRes] = await Promise.all([
+        supabase.from("orders").select("*"),
+        supabase.from("abandoned_carts").select("*").order("created_at", { ascending: false }).limit(500),
+        supabase.from("products").select("id, name").eq("user_id", user.id),
+      ]);
+
+      setOrders(ordersRes.data || []);
+      setAbandonedCarts(cartsRes.data || []);
+      setProducts(productsRes.data || []);
+    } finally {
+      if (isRefresh) setRefreshing(false);
+    }
+  }, [syncOrdersWithGateway, user]);
 
   useEffect(() => {
     loadData();
