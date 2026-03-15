@@ -511,6 +511,42 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* UTM Attribution */}
+      {utmRows.length > 0 && (
+        <Card className="border border-border bg-card shadow-none">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Globe className="w-4 h-4 text-muted-foreground" />
+              <h3 className="text-sm font-semibold text-foreground">Atribuição UTM</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-muted-foreground text-left">
+                    <th className="pb-2 font-medium">Origem</th>
+                    <th className="pb-2 font-medium">Campanha</th>
+                    <th className="pb-2 font-medium">Meio</th>
+                    <th className="pb-2 font-medium text-right">Vendas</th>
+                    <th className="pb-2 font-medium text-right">Receita</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {utmRows.map((row, i) => (
+                    <tr key={i} className="border-b border-border/50">
+                      <td className="py-2 text-foreground">{row.source}</td>
+                      <td className="py-2 text-foreground truncate max-w-[200px]">{row.campaign}</td>
+                      <td className="py-2 text-foreground truncate max-w-[150px]">{row.medium}</td>
+                      <td className="py-2 text-foreground text-right">{row.count}</td>
+                      <td className="py-2 text-foreground text-right font-medium">{fmt(row.revenue)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
