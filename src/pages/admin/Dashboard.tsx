@@ -429,8 +429,8 @@ const Dashboard = () => {
           onClick={() => navigate("/admin/orders")}
         >
           <CardContent className="p-5 flex items-center gap-4">
-            <div className="p-2.5 rounded-full bg-yellow-500/10">
-              <Clock className="w-5 h-5 text-yellow-500" />
+            <div className="p-2.5 rounded-full bg-muted">
+              <Clock className="w-5 h-5 text-muted-foreground" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Vendas pendentes</p>
