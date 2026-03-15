@@ -100,11 +100,6 @@ const PixelEventsDashboard = ({ products }: Props) => {
     return () => { supabase.removeChannel(channel); };
   }, [filterProduct]);
 
-  const eventCounts = useMemo(() => {
-    const c: Record<string, number> = {};
-    events.forEach((e) => { c[e.event_name] = (c[e.event_name] || 0) + 1; });
-    return c;
-  }, [events]);
 
   const chartData = useMemo(() => {
     const hoursBack = period === "1h" ? 1 : period === "6h" ? 6 : period === "24h" ? 24 : 168;
