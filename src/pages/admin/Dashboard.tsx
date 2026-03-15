@@ -173,6 +173,7 @@ const Dashboard = () => {
   const totalBruto = approved.reduce((s, o) => s + Number(o.amount), 0);
   const totalLiquido = totalBruto * (1 - platformFee / 100);
   const totalVendas = approved.length;
+  const totalPendente = pending.reduce((s, o) => s + Number(o.amount), 0);
 
   // Gamification data (always from ALL orders, not period-filtered)
   const allApproved = useMemo(() => orders.filter((o) => o.status === "paid" || o.status === "approved"), [orders]);
