@@ -77,6 +77,35 @@ const Dashboard = () => {
     }
   }, []);
 
+  const fetchAllOrders = useCallback(async () => {
+    const pageSize = 1000;
+    let from = 0;
+    const allOrders: any[] = [];
+
+    while (true) {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .range(from, from + pageSize - 1);
+
+      if (error) {
+        throw error;
+      }
+
+      const chunk = data || [];
+      allOrders.push(...chunk);
+
+      if (chunk.length < pageSize) {
+        break;
+      }
+
+      from += pageSize;
+    }
+
+    return allOrders;
+  }, []);
+
   const loadData = useCallback(async (isRefresh = false, shouldSync = false) => {
     if (!user) return;
     if (isRefresh) setRefreshing(true);
@@ -86,19 +115,21 @@ const Dashboard = () => {
         await syncOrdersWithGateway();
       }
 
-      const [ordersRes, cartsRes, productsRes] = await Promise.all([
-        supabase.from("orders").select("*"),
+      const [allOrders, cartsRes, productsRes] = await Promise.all([
+        fetchAllOrders(),
         supabase.from("abandoned_carts").select("*").order("created_at", { ascending: false }).limit(500),
         supabase.from("products").select("id, name").eq("user_id", user.id),
       ]);
 
-      setOrders(ordersRes.data || []);
+      setOrders(allOrders);
       setAbandonedCarts(cartsRes.data || []);
       setProducts(productsRes.data || []);
+    } catch (error) {
+      console.error("[dashboard] loadData error:", error);
     } finally {
       if (isRefresh) setRefreshing(false);
     }
-  }, [syncOrdersWithGateway, user]);
+  }, [fetchAllOrders, syncOrdersWithGateway, user]);
 
   useEffect(() => {
     loadData(false, true);
