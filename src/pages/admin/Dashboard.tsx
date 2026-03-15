@@ -58,7 +58,22 @@ const Dashboard = () => {
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("all");
 
-  const initialLoadDone = useRef(false);
+  const loadData = useCallback(async (isRefresh = false) => {
+    if (!user) return;
+    if (isRefresh) setRefreshing(true);
+    const [ordersRes, cartsRes, feeRes, productsRes] = await Promise.all([
+      supabase.from("orders").select("*"),
+      supabase.from("abandoned_carts").select("*").order("created_at", { ascending: false }).limit(500),
+      supabase.from("platform_settings").select("platform_fee_percent").limit(1).single(),
+      supabase.from("products").select("id, name").eq("user_id", user.id),
+    ]);
+    setOrders(ordersRes.data || []);
+    setAbandonedCarts(cartsRes.data || []);
+    if (feeRes.data?.platform_fee_percent != null) setPlatformFee(Number(feeRes.data.platform_fee_percent));
+    setProducts(productsRes.data || []);
+    setLoading(false);
+    if (isRefresh) setRefreshing(false);
+  }, [user]);
 
   useEffect(() => {
     loadData();
@@ -76,7 +91,6 @@ const Dashboard = () => {
         (payload) => {
           const newRow = payload.new as any;
           const oldRow = payload.old as any;
-          // Only trigger when status changes TO paid/approved
           if (
             (newRow.status === "paid" || newRow.status === "approved") &&
             oldRow.status !== "paid" && oldRow.status !== "approved"
@@ -86,7 +100,6 @@ const Dashboard = () => {
             toast.success(`💰 Nova venda aprovada! R$ ${amount}`, {
               duration: 5000,
             });
-            // Refresh data
             loadData();
           }
         }
@@ -112,23 +125,6 @@ const Dashboard = () => {
       supabase.removeChannel(channel);
     };
   }, [user, loadData]);
-
-  const loadData = useCallback(async (isRefresh = false) => {
-    if (!user) return;
-    if (isRefresh) setRefreshing(true);
-    const [ordersRes, cartsRes, feeRes, productsRes] = await Promise.all([
-      supabase.from("orders").select("*"),
-      supabase.from("abandoned_carts").select("*").order("created_at", { ascending: false }).limit(500),
-      supabase.from("platform_settings").select("platform_fee_percent").limit(1).single(),
-      supabase.from("products").select("id, name").eq("user_id", user.id),
-    ]);
-    setOrders(ordersRes.data || []);
-    setAbandonedCarts(cartsRes.data || []);
-    if (feeRes.data?.platform_fee_percent != null) setPlatformFee(Number(feeRes.data.platform_fee_percent));
-    setProducts(productsRes.data || []);
-    setLoading(false);
-    if (isRefresh) setRefreshing(false);
-  }, [user]);
 
   const filterByPeriod = (items: any[]) => {
     const now = new Date();
