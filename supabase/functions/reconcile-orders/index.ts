@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
     }
 
     if (!pendingOrders || pendingOrders.length === 0) {
-      return new Response(JSON.stringify({ reconciled: 0, message: 'No pending orders to reconcile' }), {
+      return new Response(JSON.stringify({ reconciled: 0, window_hours: hoursBack, message: 'No pending orders to reconcile' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
