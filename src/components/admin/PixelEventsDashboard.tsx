@@ -57,7 +57,7 @@ const PixelEventsDashboard = ({ products }: Props) => {
       .select("id, product_id, event_name, source, created_at, customer_name, visitor_id, event_id")
       .gte("created_at", since)
       .order("created_at", { ascending: false })
-      .limit(1000);
+      .limit(5000);
     if (filterProduct !== "all") query = query.eq("product_id", filterProduct);
     const { data } = await query;
     const real = (data || []).filter((e) => !e.visitor_id?.startsWith("sim_"));
