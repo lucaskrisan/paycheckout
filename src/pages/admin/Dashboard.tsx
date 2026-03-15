@@ -89,7 +89,7 @@ const Dashboard = () => {
     while (true) {
       const { data, error } = await supabase
         .from("orders")
-        .select("id, created_at, status, amount, platform_fee_amount, payment_method, product_id")
+        .select("id, created_at, status, amount, platform_fee_amount, payment_method, product_id, metadata")
         .order("created_at", { ascending: false })
         .range(from, from + pageSize - 1);
 
@@ -307,6 +307,23 @@ const Dashboard = () => {
     return Object.entries(days).map(([name, total]) => ({ name, total }));
   }, [approved, period]);
 
+  // UTM Attribution from approved orders
+  const utmRows = useMemo(() => {
+    const map = new Map<string, { source: string; campaign: string; medium: string; count: number; revenue: number }>();
+    approved.forEach((o) => {
+      const meta = (o.metadata || {}) as Record<string, any>;
+      const source = meta.utm_source;
+      if (!source) return;
+      const campaign = meta.utm_campaign || "(sem campanha)";
+      const medium = meta.utm_medium || "(sem medium)";
+      const key = `${source}|||${campaign}|||${medium}`;
+      const existing = map.get(key);
+      if (existing) { existing.count += 1; existing.revenue += Number(o.amount) || 0; }
+      else { map.set(key, { source, campaign, medium, count: 1, revenue: Number(o.amount) || 0 }); }
+    });
+    return Array.from(map.values()).sort((a, b) => b.revenue - a.revenue);
+  }, [approved]);
+
   const fmt = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
 
   // Kiwify-style metric cards — 2-column grid on right
@@ -511,6 +528,42 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* UTM Attribution */}
+      {utmRows.length > 0 && (
+        <Card className="border border-border bg-card shadow-none">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Globe className="w-4 h-4 text-muted-foreground" />
+              <h3 className="text-sm font-semibold text-foreground">Atribuição UTM</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-muted-foreground text-left">
+                    <th className="pb-2 font-medium">Origem</th>
+                    <th className="pb-2 font-medium">Campanha</th>
+                    <th className="pb-2 font-medium">Meio</th>
+                    <th className="pb-2 font-medium text-right">Vendas</th>
+                    <th className="pb-2 font-medium text-right">Receita</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {utmRows.map((row, i) => (
+                    <tr key={i} className="border-b border-border/50">
+                      <td className="py-2 text-foreground">{row.source}</td>
+                      <td className="py-2 text-foreground truncate max-w-[200px]">{row.campaign}</td>
+                      <td className="py-2 text-foreground truncate max-w-[150px]">{row.medium}</td>
+                      <td className="py-2 text-foreground text-right">{row.count}</td>
+                      <td className="py-2 text-foreground text-right font-medium">{fmt(row.revenue)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
