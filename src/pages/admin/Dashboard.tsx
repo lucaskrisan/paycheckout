@@ -135,7 +135,7 @@ const Dashboard = () => {
             toast.success(`💰 Nova venda aprovada! R$ ${amount}`, {
               duration: 5000,
             });
-            loadData();
+            loadData(false, false);
           }
         }
       )
