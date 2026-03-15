@@ -1,5 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { playNotificationSound } from "@/lib/notificationSounds";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import {
   DollarSign,
@@ -56,10 +58,6 @@ const Dashboard = () => {
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("all");
 
-  useEffect(() => {
-    loadData();
-  }, [user]);
-
   const loadData = useCallback(async (isRefresh = false) => {
     if (!user) return;
     if (isRefresh) setRefreshing(true);
@@ -76,6 +74,57 @@ const Dashboard = () => {
     setLoading(false);
     if (isRefresh) setRefreshing(false);
   }, [user]);
+
+  useEffect(() => {
+    loadData();
+  }, [user]);
+
+  // Realtime: listen for new approved sales and play Ka-CHING
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel("dashboard-sales-sound")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "orders" },
+        (payload) => {
+          const newRow = payload.new as any;
+          const oldRow = payload.old as any;
+          if (
+            (newRow.status === "paid" || newRow.status === "approved") &&
+            oldRow.status !== "paid" && oldRow.status !== "approved"
+          ) {
+            playNotificationSound("kaching");
+            const amount = Number(newRow.amount || 0).toFixed(2).replace(".", ",");
+            toast.success(`💰 Nova venda aprovada! R$ ${amount}`, {
+              duration: 5000,
+            });
+            loadData();
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "orders" },
+        (payload) => {
+          const newRow = payload.new as any;
+          if (newRow.status === "paid" || newRow.status === "approved") {
+            playNotificationSound("kaching");
+            const amount = Number(newRow.amount || 0).toFixed(2).replace(".", ",");
+            toast.success(`💰 Nova venda aprovada! R$ ${amount}`, {
+              duration: 5000,
+            });
+            loadData();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, loadData]);
 
   const filterByPeriod = (items: any[]) => {
     const now = new Date();
