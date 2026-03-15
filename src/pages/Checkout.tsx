@@ -416,8 +416,8 @@ const Checkout = () => {
                         <span className="text-[#B12704] text-lg leading-none">➜</span>
                         <Checkbox
                           checked={selectedBumps.has(bump.id)}
-                          onCheckedChange={() => toggleBump(bump.id)}
-                          className="border-[#007185] data-[state=checked]:bg-[#007185]"
+                          className="border-[#007185] data-[state=checked]:bg-[#007185] pointer-events-none"
+                          tabIndex={-1}
                         />
                       </div>
                       {bump.use_product_image && bump.bump_product?.image_url && (
