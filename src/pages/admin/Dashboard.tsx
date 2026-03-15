@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { playNotificationSound } from "@/lib/notificationSounds";
 import { toast } from "sonner";
@@ -53,32 +53,97 @@ const Dashboard = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [abandonedCarts, setAbandonedCarts] = useState<any[]>([]);
   const [period, setPeriod] = useState<Period>("today");
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [platformFee, setPlatformFee] = useState(4.99);
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("all");
+  const isSyncingOrdersRef = useRef(false);
 
-  const loadData = useCallback(async (isRefresh = false) => {
+  const syncOrdersWithGateway = useCallback(async () => {
+    if (isSyncingOrdersRef.current) return;
+
+    isSyncingOrdersRef.current = true;
+    try {
+      const { error } = await supabase.functions.invoke("reconcile-orders", {
+        body: { hours_back: 24 * 30 },
+      });
+
+      if (error) {
+        console.error("[dashboard] reconcile-orders error:", error);
+      }
+    } catch (err) {
+      console.error("[dashboard] reconcile-orders unexpected error:", err);
+    } finally {
+      isSyncingOrdersRef.current = false;
+    }
+  }, []);
+
+  const fetchAllOrders = useCallback(async () => {
+    const pageSize = 1000;
+    let from = 0;
+    const allOrders: any[] = [];
+
+    while (true) {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .range(from, from + pageSize - 1);
+
+      if (error) {
+        throw error;
+      }
+
+      const chunk = data || [];
+      allOrders.push(...chunk);
+
+      if (chunk.length < pageSize) {
+        break;
+      }
+
+      from += pageSize;
+    }
+
+    return allOrders;
+  }, []);
+
+  const loadData = useCallback(async (isRefresh = false, shouldSync = false) => {
     if (!user) return;
     if (isRefresh) setRefreshing(true);
-    const [ordersRes, cartsRes, feeRes, productsRes] = await Promise.all([
-      supabase.from("orders").select("*"),
-      supabase.from("abandoned_carts").select("*").order("created_at", { ascending: false }).limit(500),
-      supabase.from("platform_settings").select("platform_fee_percent").limit(1).single(),
-      supabase.from("products").select("id, name").eq("user_id", user.id),
-    ]);
-    setOrders(ordersRes.data || []);
-    setAbandonedCarts(cartsRes.data || []);
-    if (feeRes.data?.platform_fee_percent != null) setPlatformFee(Number(feeRes.data.platform_fee_percent));
-    setProducts(productsRes.data || []);
-    setLoading(false);
-    if (isRefresh) setRefreshing(false);
-  }, [user]);
+
+    try {
+      if (shouldSync) {
+        await syncOrdersWithGateway();
+      }
+
+      const [allOrders, cartsRes, productsRes] = await Promise.all([
+        fetchAllOrders(),
+        supabase.from("abandoned_carts").select("*").order("created_at", { ascending: false }).limit(500),
+        supabase.from("products").select("id, name").eq("user_id", user.id),
+      ]);
+
+      setOrders(allOrders);
+      setAbandonedCarts(cartsRes.data || []);
+      setProducts(productsRes.data || []);
+    } catch (error) {
+      console.error("[dashboard] loadData error:", error);
+    } finally {
+      if (isRefresh) setRefreshing(false);
+    }
+  }, [fetchAllOrders, syncOrdersWithGateway, user]);
 
   useEffect(() => {
-    loadData();
-  }, [user]);
+    loadData(false, true);
+  }, [loadData, user]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const interval = window.setInterval(() => {
+      loadData(false, true);
+    }, 5 * 60 * 1000);
+
+    return () => window.clearInterval(interval);
+  }, [loadData, user]);
 
   // Realtime: listen for new approved sales and play Ka-CHING
   useEffect(() => {
@@ -101,7 +166,7 @@ const Dashboard = () => {
             toast.success(`💰 Nova venda aprovada! R$ ${amount}`, {
               duration: 5000,
             });
-            loadData();
+            loadData(false, false);
           }
         }
       )
@@ -116,7 +181,7 @@ const Dashboard = () => {
             toast.success(`💰 Nova venda aprovada! R$ ${amount}`, {
               duration: 5000,
             });
-            loadData();
+            loadData(false, false);
           }
         }
       )
@@ -170,19 +235,12 @@ const Dashboard = () => {
   const pending = useMemo(() => filtered.filter((o) => o.status === "pending"), [filtered]);
   const refunded = useMemo(() => filtered.filter((o) => o.status === "refunded"), [filtered]);
 
-  const totalBruto = approved.reduce((s, o) => s + Number(o.amount), 0);
-  const totalLiquido = totalBruto * (1 - platformFee / 100);
+  const totalBruto = approved.reduce((s, o) => s + Number(o.amount || 0), 0);
+  const totalTaxas = approved.reduce((s, o) => s + Number(o.platform_fee_amount || 0), 0);
+  const totalLiquido = totalBruto - totalTaxas;
   const totalVendas = approved.length;
-  const totalPendente = pending.reduce((s, o) => s + Number(o.amount), 0);
+  const totalPendente = pending.reduce((s, o) => s + Number(o.amount || 0), 0);
 
-  // Gamification data (always from ALL orders, not period-filtered)
-  const allApproved = useMemo(() => orders.filter((o) => o.status === "paid" || o.status === "approved"), [orders]);
-  const approvedToday = useMemo(() => {
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-    return allApproved.filter((o) => new Date(o.created_at) >= startOfDay).length;
-  }, [allApproved]);
-  const allTimeRevenue = useMemo(() => allApproved.reduce((s, o) => s + Number(o.amount), 0), [allApproved]);
 
   const cardAttempts = filtered.filter((o) => o.payment_method === "credit_card");
   const cardApproved = cardAttempts.filter((o) => o.status === "paid" || o.status === "approved");
@@ -291,7 +349,7 @@ const Dashboard = () => {
             variant="ghost"
             size="icon"
             className="h-9 w-9"
-            onClick={() => loadData(true)}
+            onClick={() => loadData(true, true)}
             disabled={refreshing}
           >
             <RefreshCcw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
@@ -402,8 +460,8 @@ const Dashboard = () => {
           onClick={() => navigate("/admin/orders")}
         >
           <CardContent className="p-5 flex items-center gap-4">
-            <div className="p-2.5 rounded-full bg-yellow-500/10">
-              <Clock className="w-5 h-5 text-yellow-500" />
+            <div className="p-2.5 rounded-full bg-muted">
+              <Clock className="w-5 h-5 text-muted-foreground" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Vendas pendentes</p>

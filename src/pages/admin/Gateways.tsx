@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,9 +7,9 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  Wallet, TrendingUp, DollarSign, CreditCard, ArrowUpRight, ArrowDownLeft, BarChart3,
+  Wallet, TrendingUp, DollarSign, CreditCard, ArrowDownLeft, BarChart3,
 } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+
 import { useNavigate } from "react-router-dom";
 
 export interface GatewayConfig {
@@ -30,32 +30,63 @@ const providerLabels: Record<string, string> = {
 };
 
 const Gateways = () => {
-  const { user } = useAuth();
+  
   const navigate = useNavigate();
   const [orders, setOrders] = useState<any[]>([]);
   const [gateways, setGateways] = useState<GatewayConfig[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadData();
+  const fetchAllOrders = useCallback(async () => {
+    const pageSize = 1000;
+    let from = 0;
+    const allOrders: any[] = [];
+
+    while (true) {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .range(from, from + pageSize - 1);
+
+      if (error) throw error;
+
+      const chunk = data || [];
+      allOrders.push(...chunk);
+
+      if (chunk.length < pageSize) break;
+      from += pageSize;
+    }
+
+    return allOrders;
   }, []);
 
-  const loadData = async () => {
-    const [ordersRes, gwRes] = await Promise.all([
-      supabase.from("orders").select("*").order("created_at", { ascending: false }).limit(50),
-      supabase.from("payment_gateways").select("*").order("created_at"),
-    ]);
+  const loadData = useCallback(async () => {
+    setLoading(true);
 
-    if (ordersRes.data) setOrders(ordersRes.data);
-    if (gwRes.data) {
-      setGateways(gwRes.data.map((g: any) => ({
-        id: g.id, provider: g.provider, name: g.name, environment: g.environment,
-        active: g.active, payment_methods: (g.payment_methods as string[]) || [],
-        config: (g.config as Record<string, any>) || {},
-      })));
+    try {
+      const [allOrders, gwRes] = await Promise.all([
+        fetchAllOrders(),
+        supabase.from("payment_gateways").select("*").order("created_at"),
+      ]);
+
+      setOrders(allOrders);
+      if (gwRes.data) {
+        setGateways(gwRes.data.map((g: any) => ({
+          id: g.id, provider: g.provider, name: g.name, environment: g.environment,
+          active: g.active, payment_methods: (g.payment_methods as string[]) || [],
+          config: (g.config as Record<string, any>) || {},
+        })));
+      }
+    } catch (error) {
+      console.error("[gateways] loadData error:", error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  };
+  }, [fetchAllOrders]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const paidOrders = orders.filter(o => o.status === "paid" || o.status === "approved");
   const pendingOrders = orders.filter(o => o.status === "pending");
