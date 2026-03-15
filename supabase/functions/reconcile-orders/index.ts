@@ -209,6 +209,7 @@ Deno.serve(async (req) => {
     console.log(`[reconcile] Done. Reconciled: ${reconciled}/${pendingOrders.length}`);
 
     return new Response(JSON.stringify({ 
+      window_hours: hoursBack,
       total_checked: pendingOrders.length, 
       reconciled, 
       results 
