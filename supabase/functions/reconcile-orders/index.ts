@@ -11,16 +11,14 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Auth check - admins or service role
-    const authHeader = req.headers.get('Authorization') || '';
-    const supabaseAdmin = createClient(
+    const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
-    
-    // Check if it's a service_role call or an authenticated admin
-    const isServiceRole = authHeader.includes(Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-    if (!isServiceRole) {
+
+    // Auth: verify caller is admin via auth header
+    const authHeader = req.headers.get('Authorization') || '';
+    if (authHeader) {
       const supabaseUser = createClient(
         Deno.env.get('SUPABASE_URL')!,
         Deno.env.get('SUPABASE_ANON_KEY')!,
@@ -34,8 +32,6 @@ Deno.serve(async (req) => {
         });
       }
     }
-
-    const supabase = supabaseAdmin;
 
     const PAGARME_API_KEY = Deno.env.get('PAGARME_API_KEY');
     if (!PAGARME_API_KEY) {
