@@ -53,11 +53,10 @@ const Dashboard = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [abandonedCarts, setAbandonedCarts] = useState<any[]>([]);
   const [period, setPeriod] = useState<Period>("today");
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [platformFee, setPlatformFee] = useState(4.99);
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("all");
+  const isSyncingOrdersRef = useRef(false);
 
   const loadData = useCallback(async (isRefresh = false) => {
     if (!user) return;
