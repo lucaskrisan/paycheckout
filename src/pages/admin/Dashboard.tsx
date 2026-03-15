@@ -12,6 +12,7 @@ import {
   AlertOctagon,
   ShoppingCart,
   Globe,
+  Clock,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -166,11 +167,13 @@ const Dashboard = () => {
 
   const filtered = useMemo(() => filterByPeriod(productFiltered), [productFiltered, period]);
   const approved = useMemo(() => filtered.filter((o) => o.status === "paid" || o.status === "approved"), [filtered]);
+  const pending = useMemo(() => filtered.filter((o) => o.status === "pending"), [filtered]);
   const refunded = useMemo(() => filtered.filter((o) => o.status === "refunded"), [filtered]);
 
   const totalBruto = approved.reduce((s, o) => s + Number(o.amount), 0);
   const totalLiquido = totalBruto * (1 - platformFee / 100);
   const totalVendas = approved.length;
+  const totalPendente = pending.reduce((s, o) => s + Number(o.amount), 0);
 
   // Gamification data (always from ALL orders, not period-filtered)
   const allApproved = useMemo(() => orders.filter((o) => o.status === "paid" || o.status === "approved"), [orders]);
@@ -392,6 +395,23 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         ))}
+
+        {/* Pending sales card */}
+        <Card
+          className="border border-border bg-card shadow-none cursor-pointer hover:bg-muted/40 transition-colors"
+          onClick={() => navigate("/admin/orders")}
+        >
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="p-2.5 rounded-full bg-yellow-500/10">
+              <Clock className="w-5 h-5 text-yellow-500" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Vendas pendentes</p>
+              <p className="text-xl font-bold text-foreground">{pending.length}</p>
+              <p className="text-xs text-muted-foreground">{fmt(totalPendente)} aguardando</p>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Abandoned carts card */}
         <Card
