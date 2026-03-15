@@ -167,6 +167,7 @@ const Dashboard = () => {
 
   const filtered = useMemo(() => filterByPeriod(productFiltered), [productFiltered, period]);
   const approved = useMemo(() => filtered.filter((o) => o.status === "paid" || o.status === "approved"), [filtered]);
+  const pending = useMemo(() => filtered.filter((o) => o.status === "pending"), [filtered]);
   const refunded = useMemo(() => filtered.filter((o) => o.status === "refunded"), [filtered]);
 
   const totalBruto = approved.reduce((s, o) => s + Number(o.amount), 0);
