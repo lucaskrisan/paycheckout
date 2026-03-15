@@ -7,7 +7,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  Wallet, TrendingUp, DollarSign, CreditCard, ArrowUpRight, ArrowDownLeft, BarChart3,
+  Wallet, TrendingUp, DollarSign, CreditCard, ArrowDownLeft, BarChart3,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
