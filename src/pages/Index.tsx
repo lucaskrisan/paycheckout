@@ -1,16 +1,16 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Link, useNavigate } from "react-router-dom";
 import { resolveUserDestination } from "@/lib/resolveUserDestination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Loader2, CreditCard, GraduationCap, BarChart3, Zap, Shield, ArrowRight,
+  Loader2, CreditCard, GraduationCap, BarChart3, Shield, ArrowRight,
   CheckCircle2, Globe, Target, ShoppingCart, Paintbrush, Bell, Webhook,
-  QrCode, FileText, Users, TrendingUp, Sparkles, ChevronRight, Play,
+  QrCode, FileText, Users, TrendingUp, Sparkles,
   Mail, MessageCircle, Layers,
 } from "lucide-react";
-import { motion, useInView } from "framer-motion";
+import { motion } from "framer-motion";
 import panteraMascot from "@/assets/pantera-mascot.png";
 
 const Index = () => {
