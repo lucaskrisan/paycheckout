@@ -45,23 +45,44 @@ const EVENT_CONFIG: Record<string, { label: string; color: string; icon: any }> 
 
 const PixelEventsDashboard = ({ products }: Props) => {
   const [events, setEvents] = useState<PixelEvent[]>([]);
+  const [eventCounts, setEventCounts] = useState<Record<string, number>>({});
   const [filterProduct, setFilterProduct] = useState("all");
   const [period, setPeriod] = useState("24h");
   const [feedView, setFeedView] = useState<"feed" | "journeys">("feed");
 
+  const getHoursBack = () => period === "1h" ? 1 : period === "6h" ? 6 : period === "24h" ? 24 : 168;
+
   const loadEvents = async () => {
-    const hoursBack = period === "1h" ? 1 : period === "6h" ? 6 : period === "24h" ? 24 : 168;
-    const since = subHours(new Date(), hoursBack).toISOString();
-    let query = supabase
+    const since = subHours(new Date(), getHoursBack()).toISOString();
+
+    // Load recent events for feed (limited)
+    let feedQuery = supabase
       .from("pixel_events")
       .select("id, product_id, event_name, source, created_at, customer_name, visitor_id, event_id")
       .gte("created_at", since)
       .order("created_at", { ascending: false })
-      .limit(5000);
-    if (filterProduct !== "all") query = query.eq("product_id", filterProduct);
-    const { data } = await query;
-    const real = (data || []).filter((e) => !e.visitor_id?.startsWith("sim_"));
+      .limit(500);
+    if (filterProduct !== "all") feedQuery = feedQuery.eq("product_id", filterProduct);
+    const { data: feedData } = await feedQuery;
+    const real = (feedData || []).filter((e) => !e.visitor_id?.startsWith("sim_"));
     setEvents(real as PixelEvent[]);
+
+    // Load accurate counts per event_name using paginated fetches
+    const counts: Record<string, number> = {};
+    const eventNames = ["PageView", "ViewContent", "InitiateCheckout", "Lead", "AddPaymentInfo", "AddToCart", "Purchase"];
+    
+    await Promise.all(eventNames.map(async (eventName) => {
+      let countQuery = supabase
+        .from("pixel_events")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", since)
+        .eq("event_name", eventName);
+      if (filterProduct !== "all") countQuery = countQuery.eq("product_id", filterProduct);
+      const { count } = await countQuery;
+      counts[eventName] = count || 0;
+    }));
+
+    setEventCounts(counts);
   };
 
   useEffect(() => { loadEvents(); }, [filterProduct, period]);
