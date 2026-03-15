@@ -203,6 +203,7 @@ Deno.serve(async (req) => {
           gateway: 'mercadopago',
           coupon_id: coupon_id || null,
           checkout_url: checkout_url || null,
+          bump_product_ids: (bump_product_ids && bump_product_ids.length > 0) ? bump_product_ids : null,
           ...(utms || {}),
         },
       })
