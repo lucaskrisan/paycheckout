@@ -453,9 +453,14 @@ Deno.serve(async (req) => {
 
     if (!paymentRes.ok) {
       console.error('Asaas payment error:', JSON.stringify(paymentData));
+      const payErrDesc = paymentData?.errors?.[0]?.description || '';
+      let payUserMsg = 'Não foi possível processar o pagamento. Verifique seus dados e tente novamente.';
+      if (/card|cartão|credit|refused|recusad/i.test(payErrDesc)) payUserMsg = 'Pagamento recusado. Verifique os dados do cartão e tente novamente.';
+      else if (/cpf|cnpj/i.test(payErrDesc)) payUserMsg = 'CPF inválido. Verifique o número e tente novamente.';
+      else if (/insufficient|saldo/i.test(payErrDesc)) payUserMsg = 'Saldo insuficiente. Tente outro método de pagamento.';
       return new Response(
-        JSON.stringify({ error: 'Payment creation failed', details: paymentData }),
-        { status: paymentRes.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: payUserMsg }),
+        { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
