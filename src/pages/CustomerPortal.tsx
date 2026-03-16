@@ -112,7 +112,7 @@ const CustomerPortal = () => {
         setCustomerEmail(customerData.email);
       }
 
-      const { data: accessList } = await supabase
+      const { data: accessList } = await tokenClient
         .from("member_access")
         .select("*, courses(*)")
         .eq("customer_id", accessData.customer_id);
