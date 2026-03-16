@@ -46,8 +46,6 @@ import NotFound from "./pages/NotFound";
 import PendingApproval from "./pages/PendingApproval";
 import CompleteProfile from "./pages/CompleteProfile";
 import InstallPrompt from "./components/InstallPrompt";
-import SalesPageBuilder from "./pages/admin/SalesPageBuilder";
-import SalesPage from "./pages/SalesPage";
 
 const queryClient = new QueryClient();
 
@@ -70,8 +68,6 @@ const App = () => (
             <Route path="/aguardando-aprovacao" element={<PendingApproval />} />
             <Route path="/admin/products/:productId/checkout-builder" element={<CheckoutBuilder />} />
             <Route path="/admin/products/:productId/checkout-builder/:configId" element={<CheckoutBuilder />} />
-            <Route path="/admin/products/:productId/sales-page" element={<SalesPageBuilder />} />
-            <Route path="/v/:slug" element={<SalesPage />} />
             <Route path="/admin" element={<><InstallPrompt /><AdminLayout /></>}>
               <Route index element={<Dashboard />} />
               <Route path="orders" element={<Orders />} />
