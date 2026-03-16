@@ -411,14 +411,15 @@ Deno.serve(async (req) => {
           const { data: notifSettings } = await supabaseAdmin
             .from('notification_settings')
             .select('send_approved, show_product_name')
-            .eq('send_approved', true);
+            .eq('user_id', productOwnerId || '')
+            .eq('send_approved', true)
+            .maybeSingle();
 
-          if (notifSettings && notifSettings.length > 0) {
+          if (notifSettings) {
             const formattedAmount = Number(amount).toFixed(2).replace('.', ',');
             const title = '🔄 Nova assinatura!';
-            const showProductName = notifSettings.some((s) => s.show_product_name);
-            const message = `${customer.name} • 💳 R$ ${formattedAmount}/mês${showProductName ? ` • ${productName}` : ''}`;
-             await sendPushNotification(title, message, 'https://checkout.panterapay.com.br/admin/orders');
+            const message = `${customer.name} • 💳 R$ ${formattedAmount}/mês${notifSettings.show_product_name ? ` • ${productName}` : ''}`;
+             await sendPushNotification(title, message, productOwnerId || undefined, 'https://checkout.panterapay.com.br/admin/orders');
           }
         } catch (notifErr) {
           console.error('[create-asaas-payment] Notification error:', notifErr);
