@@ -16,16 +16,28 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // Auth: verify caller is admin via auth header
+    // Auth: verify caller is authenticated (admin user or service-role/cron)
     const authHeader = req.headers.get('Authorization') || '';
-    if (authHeader) {
+    const token = authHeader.replace('Bearer ', '');
+    
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Allow service-role key (used by cron jobs) to bypass user check
+    const isServiceRole = token === Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!isServiceRole) {
       const supabaseUser = createClient(
         Deno.env.get('SUPABASE_URL')!,
         Deno.env.get('SUPABASE_ANON_KEY')!,
         { global: { headers: { Authorization: authHeader } } }
       );
-      const { data: { user } } = await supabaseUser.auth.getUser();
-      if (!user) {
+      const { data, error: claimsError } = await supabaseUser.auth.getClaims(token);
+      if (claimsError || !data?.claims?.sub) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), {
           status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
