@@ -1,5 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Input } from "@/components/ui/input";
@@ -52,6 +54,19 @@ const CustomerPortal = () => {
 
   const { user, loading: authLoading, isAdmin, signOut } = useAuth();
 
+  // Token-based Supabase client (sends x-access-token header for RLS)
+  const tokenClient = useMemo(() => {
+    if (!token) return supabase;
+    return createClient<Database>(
+      import.meta.env.VITE_SUPABASE_URL,
+      import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      {
+        global: { headers: { "x-access-token": token } },
+        auth: { persistSession: false, autoRefreshToken: false },
+      }
+    );
+  }, [token]);
+
   // MODE 1: Token-based (buyer accessing via link)
   // MODE 2: Authenticated admin/producer (preview their own courses + purchased)
   const isAuthMode = !token && !!user;
@@ -72,7 +87,7 @@ const CustomerPortal = () => {
   // Load data via access_token (buyer mode)
   const loadTokenData = async () => {
     try {
-      const { data: accessData } = await supabase
+      const { data: accessData } = await tokenClient
         .from("member_access")
         .select("customer_id, course_id")
         .eq("access_token", token!)
@@ -86,7 +101,7 @@ const CustomerPortal = () => {
         return;
       }
 
-      const { data: customerData } = await supabase
+      const { data: customerData } = await tokenClient
         .from("customers")
         .select("*")
         .eq("id", accessData.customer_id)
@@ -97,7 +112,7 @@ const CustomerPortal = () => {
         setCustomerEmail(customerData.email);
       }
 
-      const { data: accessList } = await supabase
+      const { data: accessList } = await tokenClient
         .from("member_access")
         .select("*, courses(*)")
         .eq("customer_id", accessData.customer_id);
