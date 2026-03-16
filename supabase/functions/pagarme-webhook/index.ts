@@ -340,14 +340,17 @@ Deno.serve(async (req) => {
     // Send push notification on confirmed PIX sale
     if (status === 'paid' && orderData) {
       try {
+        const ownerId = orderData.user_id;
         const { data: notifSettings } = await supabase
           .from('notification_settings')
           .select('send_approved, show_product_name')
-          .eq('send_approved', true);
+          .eq('user_id', ownerId || '')
+          .eq('send_approved', true)
+          .maybeSingle();
 
-        console.log('[pagarme-webhook] send_approved users:', notifSettings?.length || 0);
+        console.log('[pagarme-webhook] notifSettings for owner:', ownerId, notifSettings ? 'found' : 'none');
 
-        if (notifSettings && notifSettings.length > 0) {
+        if (notifSettings) {
           const amount = Number(orderData.amount).toFixed(2).replace('.', ',');
           const method = orderData.payment_method === 'pix' ? '💠 PIX' : '💳 Cartão';
 
@@ -372,11 +375,10 @@ Deno.serve(async (req) => {
             if (cust) customerName = cust.name;
           }
 
-          const showProductName = notifSettings.some((s) => s.show_product_name);
           const title = '💰 Nova venda confirmada!';
-          const message = `${customerName || 'Cliente'} • ${method} R$ ${amount}${showProductName ? ` • ${productName}` : ''}`;
+          const message = `${customerName || 'Cliente'} • ${method} R$ ${amount}${notifSettings.show_product_name ? ` • ${productName}` : ''}`;
 
-          await sendPushNotification(title, message, 'https://checkout.panterapay.com.br/admin/orders');
+          await sendPushNotification(title, message, ownerId || undefined, 'https://checkout.panterapay.com.br/admin/orders');
         }
       } catch (notifErr) {
         console.error('[pagarme-webhook] Notification error (non-blocking):', notifErr);
