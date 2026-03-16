@@ -68,28 +68,38 @@ function ensureFbp(): string {
 }
 
 /**
+ * Extract a raw query parameter value WITHOUT URL-decoding.
+ * URLSearchParams.get() auto-decodes percent-encoded chars, which modifies
+ * Meta's fbclid (new format uses base64 with special chars). Meta flags
+ * modified fbclid as a diagnostic error that hurts EMQ.
+ */
+function getRawParam(name: string): string | null {
+  const search = window.location.search.substring(1); // remove leading "?"
+  const regex = new RegExp(`(?:^|&)${name}=([^&]*)`);
+  const match = search.match(regex);
+  return match ? match[1] : null;
+}
+
+/**
  * Capture fbclid / fbp from URL params (cross-domain propagation).
- * If fbclid is present in the URL, generate _fbc cookie.
- * If fbp is present in the URL and no _fbp cookie exists, set it.
+ * Uses raw extraction (no URL-decoding) to preserve fbclid integrity.
  */
 function hydrateClickParams() {
-  const params = new URLSearchParams(window.location.search);
-
   // fbc passed cross-domain (already formatted fb.1.xxx.fbclid) → _fbc cookie
-  const fbcParam = params.get("fbc");
+  const fbcParam = getRawParam("fbc");
   if (fbcParam && fbcParam.startsWith("fb.") && !getCookie("_fbc")) {
     setCookie("_fbc", fbcParam, 90);
   }
 
   // fbclid → _fbc cookie (fallback if fbc param wasn't passed)
-  const fbclid = params.get("fbclid");
+  const fbclid = getRawParam("fbclid");
   if (fbclid && !getCookie("_fbc")) {
     const fbc = `fb.1.${Date.now()}.${fbclid}`;
     setCookie("_fbc", fbc, 90);
   }
 
-  // fbp passed cross-domain → _fbp cookie
-  const fbpParam = params.get("fbp");
+  // fbp passed cross-domain → _fbp cookie (safe to use URLSearchParams here)
+  const fbpParam = getRawParam("fbp");
   if (fbpParam && fbpParam.startsWith("fb.") && !getCookie("_fbp")) {
     setCookie("_fbp", fbpParam, 390);
   }
