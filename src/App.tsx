@@ -42,6 +42,7 @@ import Communications from "./pages/admin/Communications";
 import MyAccount from "./pages/admin/MyAccount";
 import Metrics from "./pages/admin/Metrics";
 import ProducerBilling from "./pages/admin/ProducerBilling";
+import Blacklist from "./pages/admin/Blacklist";
 import NotFound from "./pages/NotFound";
 import PendingApproval from "./pages/PendingApproval";
 import CompleteProfile from "./pages/CompleteProfile";
@@ -99,6 +100,7 @@ const App = () => (
               <Route path="upsell" element={<Upsell />} />
               <Route path="roadmap" element={<Roadmap />} />
               <Route path="manual" element={<TechnicalManual />} />
+              <Route path="blacklist" element={<Blacklist />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
