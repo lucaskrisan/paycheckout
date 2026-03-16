@@ -189,10 +189,74 @@ Deno.serve(async (req) => {
       }
     }
 
-    // On confirmed payment, handle member access
-    // NOTE: CAPI Purchase is already fired from the checkout (Browser + CAPI with same event_id for dedup).
-    // Firing again here with a different event_id (payment.id) caused Meta to count purchases 2x.
+    // On confirmed payment, handle CAPI fallback + member access
     if ((event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED') && orderData?.product_id && orderData?.customer_id) {
+
+      // --- CAPI Purchase fallback ---
+      // If browser tracking failed (adblock, user navigated away), fire CAPI as safety net.
+      // Uses payment.id as event_id — same ID the checkout used — so Meta deduplicates correctly.
+      try {
+        const { data: purchaseWithPaymentId } = await supabase
+          .from('pixel_events')
+          .select('id')
+          .eq('product_id', orderData.product_id)
+          .eq('event_name', 'Purchase')
+          .eq('source', 'server')
+          .like('event_id', `%${payment.id}%`)
+          .limit(1);
+
+        const alreadyFired = (purchaseWithPaymentId && purchaseWithPaymentId.length > 0);
+
+        if (!alreadyFired) {
+          console.log('[asaas-webhook] Purchase NOT fired by checkout, sending CAPI fallback');
+
+          const { data: custData } = await supabase
+            .from('customers')
+            .select('name, email, phone, cpf')
+            .eq('id', orderData.customer_id)
+            .single();
+
+          if (custData) {
+            const checkoutUrl = (orderData.metadata as any)?.checkout_url || `https://paycheckout.lovable.app/checkout/${orderData.product_id}`;
+
+            const capiResponse = await fetch(
+              `${Deno.env.get('SUPABASE_URL')}/functions/v1/facebook-capi`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+                },
+                body: JSON.stringify({
+                  product_id: orderData.product_id,
+                  event_name: 'Purchase',
+                  event_id: payment.id,
+                  event_source_url: checkoutUrl,
+                  customer: {
+                    name: custData.name,
+                    email: custData.email,
+                    phone: custData.phone,
+                    cpf: custData.cpf,
+                  },
+                  custom_data: {
+                    value: Number(orderData.amount),
+                    currency: 'BRL',
+                    content_type: 'product',
+                    order_id: orderData.id,
+                  },
+                  log_browser: true,
+                }),
+              }
+            );
+            const capiResult = await capiResponse.json();
+            console.log('[asaas-webhook] CAPI fallback result:', JSON.stringify(capiResult));
+          }
+        } else {
+          console.log('[asaas-webhook] Purchase already fired by checkout, skipping CAPI');
+        }
+      } catch (capiErr) {
+        console.error('[asaas-webhook] CAPI fallback error (non-blocking):', capiErr);
+      }
 
       // --- Member access (main product + bump products) ---
       const productIdsForAccess = [orderData.product_id];
