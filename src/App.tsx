@@ -47,6 +47,7 @@ import NotFound from "./pages/NotFound";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Cookies from "./pages/Cookies";
+import Disclaimer from "./pages/Disclaimer";
 import PendingApproval from "./pages/PendingApproval";
 import CompleteProfile from "./pages/CompleteProfile";
 import InstallPrompt from "./components/InstallPrompt";
