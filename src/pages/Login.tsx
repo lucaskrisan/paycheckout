@@ -79,8 +79,16 @@ const Login = () => {
     }
   };
 
-
-
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+    if (result?.error) {
+      toast.error("Erro ao entrar com Google");
+      setGoogleLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-background">
