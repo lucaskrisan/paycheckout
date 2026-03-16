@@ -10,6 +10,11 @@ import CTASection from "@/components/landing/CTASection";
 import LandingFooter from "@/components/landing/LandingFooter";
 import LandingHeader from "@/components/landing/LandingHeader";
 import ShowcaseSection from "@/components/landing/ShowcaseSection";
+import WhatsAppSection from "@/components/landing/WhatsAppSection";
+import IntegrationsSection from "@/components/landing/IntegrationsSection";
+import NotificationsSection from "@/components/landing/NotificationsSection";
+import AchievementsSection from "@/components/landing/AchievementsSection";
+import CheckoutCustomSection from "@/components/landing/CheckoutCustomSection";
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -47,8 +52,13 @@ const Index = () => {
       <LandingHeader />
       <HeroSection />
       <ShowcaseSection />
+      <WhatsAppSection />
       <FeaturesGrid />
+      <CheckoutCustomSection />
+      <IntegrationsSection />
+      <NotificationsSection />
       <AllFeatures />
+      <AchievementsSection />
       <CTASection />
       <LandingFooter />
     </div>
