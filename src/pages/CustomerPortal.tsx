@@ -87,7 +87,7 @@ const CustomerPortal = () => {
   // Load data via access_token (buyer mode)
   const loadTokenData = async () => {
     try {
-      const { data: accessData } = await supabase
+      const { data: accessData } = await tokenClient
         .from("member_access")
         .select("customer_id, course_id")
         .eq("access_token", token!)
