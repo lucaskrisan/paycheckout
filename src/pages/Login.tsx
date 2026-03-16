@@ -100,9 +100,10 @@ const Login = () => {
         <div className="w-full max-w-[460px]">
           {/* Logo */}
           <div className="flex items-center justify-center gap-2.5 mb-10">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-              <Zap className="w-5 h-5 text-primary-foreground" />
-            </div>
+            <img src={panteraMascot} alt="PanteraPay" className="w-10 h-10 drop-shadow-[0_0_12px_rgba(0,230,118,0.3)]" />
+            <span className="font-display font-extrabold text-xl tracking-tight text-foreground">
+              Pantera<span className="text-primary">Pay</span>
+            </span>
           </div>
 
           <div className="text-center mb-8">
