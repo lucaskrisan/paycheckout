@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-async function sendPushNotification(title: string, message: string, url?: string, iconUrl?: string) {
+async function sendPushNotification(title: string, message: string, targetUserId?: string, url?: string, iconUrl?: string) {
   const appId = Deno.env.get('ONESIGNAL_APP_ID');
   const apiKey = Deno.env.get('ONESIGNAL_REST_API_KEY');
   if (!appId || !apiKey) return;
@@ -13,12 +13,16 @@ async function sendPushNotification(title: string, message: string, url?: string
   try {
     const payload: Record<string, unknown> = {
       app_id: appId,
-      included_segments: ['Total Subscriptions'],
       target_channel: 'push',
       headings: { en: title },
       contents: { en: message },
       chrome_web_icon: iconUrl || 'https://checkout.panterapay.com.br/pwa-192x192.png',
     };
+    if (targetUserId) {
+      payload.filters = [{ field: 'tag', key: 'user_id', relation: '=', value: targetUserId }];
+    } else {
+      payload.included_segments = ['Total Subscriptions'];
+    }
     if (url) payload.url = url;
 
     await fetch('https://api.onesignal.com/notifications', {
