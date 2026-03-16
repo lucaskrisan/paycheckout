@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { resolveUserDestination } from "@/lib/resolveUserDestination";
-import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { motion } from "framer-motion";
-import panteraMascot from "@/assets/pantera-mascot.png";
 import HeroSection from "@/components/landing/HeroSection";
 import FeaturesGrid from "@/components/landing/FeaturesGrid";
 import AllFeatures from "@/components/landing/AllFeatures";
