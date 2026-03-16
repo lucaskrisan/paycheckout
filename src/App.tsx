@@ -46,6 +46,8 @@ import NotFound from "./pages/NotFound";
 import PendingApproval from "./pages/PendingApproval";
 import CompleteProfile from "./pages/CompleteProfile";
 import InstallPrompt from "./components/InstallPrompt";
+import SalesPageBuilder from "./pages/admin/SalesPageBuilder";
+import SalesPage from "./pages/SalesPage";
 
 const queryClient = new QueryClient();
 
