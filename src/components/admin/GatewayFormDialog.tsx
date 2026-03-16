@@ -135,14 +135,25 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
 
               <div className="space-y-1.5">
                 <Label>API Key *</Label>
+                <Input
+                  type="password"
+                  value={form.config.api_key ?? ""}
+                  onChange={(e) => updateConfig("api_key", e.target.value)}
+                  placeholder={
+                    form.provider === "asaas" ? "Cole sua API Key do Asaas" :
+                    form.provider === "pagarme" ? "Cole sua Secret Key do Pagar.me" :
+                    form.provider === "mercadopago" ? "Cole seu Access Token do Mercado Pago" :
+                    "Cole sua Secret Key do Stripe"
+                  }
+                />
                 <p className="text-xs text-muted-foreground">
                   {form.provider === "asaas"
-                    ? "Configure a chave API nas Secrets do projeto (ASAAS_API_KEY). Encontre em: Minha Conta > Integrações > API"
+                    ? "Encontre em: Minha Conta > Integrações > API"
                     : form.provider === "pagarme"
-                    ? "Configure a chave API nas Secrets do projeto (PAGARME_API_KEY)."
+                    ? "Encontre em: Pagar.me Dashboard > Configurações > Chaves"
                     : form.provider === "mercadopago"
-                    ? "Configure o Access Token nas Secrets do projeto (MERCADOPAGO_ACCESS_TOKEN). Encontre em: Suas Integrações > Credenciais"
-                    : "Configure a Secret Key nas Secrets do projeto (STRIPE_SECRET_KEY). Encontre em: Dashboard > Developers > API Keys"}
+                    ? "Encontre em: Suas Integrações > Credenciais"
+                    : "Encontre em: Dashboard > Developers > API Keys"}
                 </p>
               </div>
             </div>
