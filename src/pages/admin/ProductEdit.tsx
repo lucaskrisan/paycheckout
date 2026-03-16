@@ -450,12 +450,13 @@ const ProductEdit = () => {
 
         {/* Tabs */}
         <Tabs defaultValue="general">
-          <TabsList className="bg-transparent border-b border-border rounded-none h-auto p-0 gap-0 w-full justify-start">
+          <TabsList className="bg-transparent border-b border-border rounded-none h-auto p-0 gap-0 w-full justify-start overflow-x-auto">
             <TabsTrigger value="general" className={tabStyle}>Geral</TabsTrigger>
             <TabsTrigger value="members" className={tabStyle}>Área de membros</TabsTrigger>
             <TabsTrigger value="config" className={tabStyle}>Configurações</TabsTrigger>
             <TabsTrigger value="checkout" className={tabStyle}>Checkout</TabsTrigger>
             <TabsTrigger value="links" className={tabStyle}>Links</TabsTrigger>
+            <TabsTrigger value="salespage" className={tabStyle}>Página de Vendas</TabsTrigger>
           </TabsList>
 
           {/* Geral */}
@@ -1425,6 +1426,24 @@ const ProductEdit = () => {
                   </Button>
                 </div>
               )}
+            </div>
+          </TabsContent>
+
+          {/* Página de Vendas */}
+          <TabsContent value="salespage" className="mt-8">
+            <div className="space-y-4">
+              <div className="text-center py-10 space-y-4">
+                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto">
+                  <ExternalLink className="w-7 h-7 text-primary" />
+                </div>
+                <h3 className="text-lg font-bold text-foreground">Página de Vendas</h3>
+                <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                  Monte sua página de vendas com blocos visuais: Hero, Benefícios, Depoimentos, FAQ, Garantia e mais.
+                </p>
+                <Button onClick={() => navigate(`/admin/products/${productId}/sales-page`)}>
+                  <ExternalLink className="w-4 h-4 mr-2" /> Abrir Builder
+                </Button>
+              </div>
             </div>
           </TabsContent>
         </Tabs>
