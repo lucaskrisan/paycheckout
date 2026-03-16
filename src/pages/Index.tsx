@@ -10,6 +10,7 @@ import SocialProof from "@/components/landing/SocialProof";
 import CTASection from "@/components/landing/CTASection";
 import LandingFooter from "@/components/landing/LandingFooter";
 import LandingHeader from "@/components/landing/LandingHeader";
+import ComparisonSection from "@/components/landing/ComparisonSection";
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -31,24 +32,25 @@ const Index = () => {
 
   if (loading || (user && resolving && !resolved)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#050505]">
-        <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white overflow-x-hidden selection:bg-emerald-500/20">
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/20">
       {/* Ambient glow */}
       <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-[radial-gradient(ellipse,_rgba(16,185,129,0.07)_0%,_transparent_70%)]" />
-        <div className="absolute bottom-0 right-0 w-[600px] h-[400px] bg-[radial-gradient(ellipse,_rgba(16,185,129,0.03)_0%,_transparent_70%)]" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[700px] bg-[radial-gradient(ellipse,_rgba(0,230,118,0.05)_0%,_transparent_70%)]" />
+        <div className="absolute bottom-0 right-0 w-[600px] h-[400px] bg-[radial-gradient(ellipse,_rgba(212,175,55,0.02)_0%,_transparent_70%)]" />
       </div>
 
       <LandingHeader />
       <HeroSection />
       <SocialProof />
       <FeaturesGrid />
+      <ComparisonSection />
       <AllFeatures />
       <CTASection />
       <LandingFooter />
