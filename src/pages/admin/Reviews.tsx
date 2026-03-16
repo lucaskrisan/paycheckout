@@ -12,6 +12,7 @@ interface Review {
   lesson_id: string;
   member_access_id: string;
   customer_name: string;
+  customer_email?: string;
   rating: number;
   comment: string | null;
   approved: boolean;
