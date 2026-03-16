@@ -135,7 +135,7 @@ export default function AdminLayout() {
   const [notificationSound, setNotificationSound] = useState("kaching");
   const [playApprovedSaleSound, setPlayApprovedSaleSound] = useState(true);
 
-  useOneSignalInit(user?.email ?? undefined);
+  useOneSignalInit(user?.id ?? undefined);
 
   useEffect(() => {
     if (!user?.id) return;
