@@ -21,9 +21,9 @@ import {
 const SUPER_ADMIN_EMAIL = "trafegocomkrisan@gmail.com";
 const PAID_STATUSES = new Set(["paid", "approved"]);
 
-function useOneSignalInit(email: string | undefined) {
+function useOneSignalInit(userId: string | undefined) {
   useEffect(() => {
-    if (!email || email !== SUPER_ADMIN_EMAIL) return;
+    if (!userId) return;
     if ((window as any).__oneSignalLoaded) return;
     (window as any).__oneSignalLoaded = true;
 
@@ -56,14 +56,16 @@ function useOneSignalInit(email: string | undefined) {
               },
             },
           });
-          console.log("[OneSignal] initialized, permission:", await OneSignal.Notifications.permission);
+          // Tag this device with the producer's user_id for targeted push
+          await OneSignal.User.addTag("user_id", userId);
+          console.log("[OneSignal] initialized with user_id tag:", userId);
         } catch (err) {
           console.error("[OneSignal] init error:", err);
         }
       });
     };
     document.head.appendChild(script);
-  }, [email]);
+  }, [userId]);
 }
 
 // Component that re-checks roles and redirects non-admin users safely
