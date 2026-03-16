@@ -8,9 +8,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { lovable } from "@/integrations/lovable/index";
 import panteraMascot from "@/assets/pantera-mascot.png";
 import { motion } from "framer-motion";
-
 import { toast } from "sonner";
-import { Eye, EyeOff, Shield, Zap, TrendingUp, Lock } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, CheckCircle2 } from "lucide-react";
 
 const formatCpfCnpj = (value: string) => {
   const digits = value.replace(/\D/g, "");
@@ -69,10 +68,7 @@ const Login = () => {
           setLoading(false);
           return;
         }
-        await signUp(email, password, fullName, {
-          phone: phone,
-          cpf: cpf,
-        });
+        await signUp(email, password, fullName, { phone, cpf });
         await signIn(email, password);
       } else {
         await signIn(email, password);
@@ -96,131 +92,47 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-background">
-      {/* Left side — Authority branding panel */}
-      <div className="hidden lg:flex lg:w-[50%] relative overflow-hidden">
-        {/* Deep dark background */}
-        <div className="absolute inset-0 bg-background" />
+      {/* LEFT — Form */}
+      <div className="flex-1 flex flex-col justify-center px-6 py-10 sm:px-10 lg:px-16 xl:px-24 overflow-y-auto relative">
+        {/* Subtle ambient glow */}
+        <div className="absolute top-0 left-0 w-[400px] h-[400px] rounded-full blur-[160px] opacity-[0.04] pointer-events-none"
+          style={{ background: "radial-gradient(circle, hsl(var(--primary)) 0%, transparent 70%)" }} />
 
-        {/* Animated glow orbs */}
         <motion.div
-          className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full blur-[120px]"
-          style={{ background: "radial-gradient(circle, rgba(0,230,118,0.12) 0%, transparent 70%)" }}
-          animate={{ scale: [1, 1.15, 1], opacity: [0.6, 1, 0.6] }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute bottom-0 -left-20 w-[400px] h-[400px] rounded-full blur-[100px]"
-          style={{ background: "radial-gradient(circle, rgba(212,175,55,0.08) 0%, transparent 70%)" }}
-          animate={{ scale: [1, 1.1, 1], opacity: [0.4, 0.8, 0.4] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        />
-
-        {/* Subtle grid */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
-          backgroundSize: "32px 32px",
-        }} />
-
-        <div className="relative z-10 flex flex-col justify-between p-12 xl:p-16 w-full">
+          className="w-full max-w-[460px] mx-auto"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
           {/* Logo */}
-          <div className="flex items-center gap-3">
-            <img src={panteraMascot} alt="PanteraPay" className="w-12 h-12 drop-shadow-[0_0_20px_rgba(0,230,118,0.4)]" />
-            <span className="font-display font-extrabold text-2xl tracking-tight text-foreground">
+          <div className="flex items-center gap-3 mb-12">
+            <img src={panteraMascot} alt="PanteraPay" className="w-10 h-10 drop-shadow-[0_0_16px_hsl(var(--primary)/0.4)]" />
+            <span className="font-display font-extrabold text-xl tracking-tight text-foreground">
               Pantera<span className="text-primary">Pay</span>
             </span>
           </div>
 
-          {/* Main value prop */}
-          <div className="space-y-8 max-w-lg">
-            <motion.h2
-              className="text-4xl xl:text-5xl font-black text-foreground leading-[1.08] tracking-[-0.03em] font-display"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              A infraestrutura de{" "}
-              <span className="text-transparent bg-clip-text" style={{ backgroundImage: "linear-gradient(90deg, #00E676, #D4AF37)" }}>
-                pagamentos
-              </span>{" "}
-              que escala com você.
-            </motion.h2>
-
-            <p className="text-muted-foreground text-[15px] leading-relaxed max-w-md">
-              Checkout de alta conversão, multi-gateway, rastreamento perfeito e área de membros integrada. Tudo que você precisa para faturar sem limite.
-            </p>
-
-            {/* Authority metrics */}
-            <div className="grid grid-cols-3 gap-4 pt-2">
-              {[
-                { value: "99.9%", label: "Uptime", icon: Shield },
-                { value: "<2s", label: "PIX confirmado", icon: Zap },
-                { value: "+34%", label: "Conversão média", icon: TrendingUp },
-              ].map((stat, i) => (
-                <motion.div
-                  key={stat.label}
-                  className="bg-card/60 border border-border rounded-xl p-4 backdrop-blur-sm"
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.3 + i * 0.1 }}
-                >
-                  <stat.icon className="w-4 h-4 text-primary mb-2" />
-                  <p className="text-xl font-black text-foreground font-mono">{stat.value}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">{stat.label}</p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-
-          {/* Trust footer */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Lock className="w-3.5 h-3.5" />
-              <span className="text-[11px] uppercase tracking-[0.15em] font-medium">
-                Criptografia de ponta a ponta · PCI DSS Compliant
-              </span>
-            </div>
-            <div className="flex items-center gap-6">
-              {["Mercado Pago", "Asaas", "Stripe", "Pagar.me"].map((name) => (
-                <span key={name} className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-[0.1em]">
-                  {name}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Right side — Form */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-10 sm:px-8 overflow-y-auto">
-        {/* Mobile logo */}
-        <div className="flex lg:hidden items-center gap-2.5 mb-8">
-          <img src={panteraMascot} alt="PanteraPay" className="w-10 h-10 drop-shadow-[0_0_12px_rgba(0,230,118,0.3)]" />
-          <span className="font-display font-extrabold text-xl tracking-tight text-foreground">
-            Pantera<span className="text-primary">Pay</span>
-          </span>
-        </div>
-
-        <div className="w-full max-w-[440px]">
+          {/* Heading */}
           <div className="mb-8">
-            <h1 className="text-2xl font-black text-foreground tracking-tight">
+            <h1 className="text-3xl font-black text-foreground tracking-[-0.02em] leading-tight">
               {isSignUp ? "Crie sua conta" : "Bem-vindo de volta"}
             </h1>
-            <p className="text-sm text-muted-foreground mt-1.5">
+            <p className="text-muted-foreground mt-2 text-[15px]">
               {isSignUp
                 ? "Comece a vender em minutos. Sem taxa de adesão."
                 : "Entre na sua conta para continuar."}
             </p>
           </div>
 
-          {/* Google sign in — first for authority */}
+          {/* Google */}
           <Button
             type="button"
             variant="outline"
-            className="w-full h-12 gap-2.5 font-semibold border-border hover:bg-muted/50 mb-5"
+            className="w-full h-[52px] gap-3 font-semibold text-[14px] border-border/60 bg-card/50 hover:bg-card hover:border-border mb-6 rounded-xl transition-all duration-200"
             disabled={googleLoading}
             onClick={handleGoogleSignIn}
           >
-            <svg className="w-4 h-4" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
               <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
@@ -229,47 +141,48 @@ const Login = () => {
             {googleLoading ? "Conectando..." : isSignUp ? "Cadastrar com Google" : "Entrar com Google"}
           </Button>
 
-          <div className="relative flex items-center gap-3 mb-5">
-            <div className="flex-1 border-t border-border" />
-            <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">ou com e-mail</span>
-            <div className="flex-1 border-t border-border" />
+          <div className="relative flex items-center gap-4 mb-6">
+            <div className="flex-1 border-t border-border/40" />
+            <span className="text-[11px] text-muted-foreground/60 font-medium uppercase tracking-[0.15em]">ou</span>
+            <div className="flex-1 border-t border-border/40" />
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-5">
             {isSignUp && (
-              <div className="space-y-1.5">
-                <Label htmlFor="name" className="text-sm font-medium">Nome completo</Label>
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-[13px] font-medium text-muted-foreground">Nome completo</Label>
                 <Input
                   id="name"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Seu nome completo"
-                  className="h-11 bg-card border-border"
+                  placeholder="Como gostaria de ser chamado"
+                  className="h-[52px] bg-card/40 border-border/50 rounded-xl text-[14px] placeholder:text-muted-foreground/40 focus:border-primary/50 focus:bg-card/60 transition-all duration-200"
                   required
                 />
               </div>
             )}
 
-            <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-sm font-medium">E-mail</Label>
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-[13px] font-medium text-muted-foreground">E-mail</Label>
               <Input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="seu@email.com"
-                className="h-11 bg-card border-border"
+                className="h-[52px] bg-card/40 border-border/50 rounded-xl text-[14px] placeholder:text-muted-foreground/40 focus:border-primary/50 focus:bg-card/60 transition-all duration-200"
                 required
               />
             </div>
 
             {isSignUp && (
-              <div className="space-y-1.5">
-                <Label htmlFor="phone" className="text-sm font-medium">Telefone</Label>
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="text-[13px] font-medium text-muted-foreground">Telefone</Label>
                 <div className="flex gap-2">
-                  <div className="flex items-center gap-1.5 border border-border rounded-md px-3 h-11 shrink-0 bg-card">
+                  <div className="flex items-center gap-1.5 border border-border/50 rounded-xl px-3.5 h-[52px] shrink-0 bg-card/40">
                     <span className="text-base">🇧🇷</span>
-                    <span className="text-sm text-muted-foreground">+55</span>
+                    <span className="text-[13px] text-muted-foreground/60">+55</span>
                   </div>
                   <Input
                     id="phone"
@@ -277,19 +190,19 @@ const Login = () => {
                     onChange={(e) => setPhone(formatPhone(e.target.value))}
                     placeholder="(11) 96123-4567"
                     maxLength={15}
-                    className="h-11 bg-card border-border flex-1"
+                    className="h-[52px] bg-card/40 border-border/50 rounded-xl text-[14px] placeholder:text-muted-foreground/40 focus:border-primary/50 focus:bg-card/60 transition-all duration-200 flex-1"
                     required
                   />
                 </div>
               </div>
             )}
 
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-sm font-medium">Senha</Label>
+                <Label htmlFor="password" className="text-[13px] font-medium text-muted-foreground">Senha</Label>
                 {!isSignUp && (
-                  <button type="button" className="text-xs text-primary hover:text-primary/80 font-medium transition-colors">
-                    Esqueceu a senha?
+                  <button type="button" className="text-[12px] text-primary/70 hover:text-primary font-medium transition-colors">
+                    Esqueceu?
                   </button>
                 )}
               </div>
@@ -300,14 +213,14 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Mínimo 6 caracteres"
-                  className="pr-10 h-11 bg-card border-border"
+                  className="pr-11 h-[52px] bg-card/40 border-border/50 rounded-xl text-[14px] placeholder:text-muted-foreground/40 focus:border-primary/50 focus:bg-card/60 transition-all duration-200"
                   required
                   minLength={6}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-muted-foreground transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -316,23 +229,17 @@ const Login = () => {
 
             {isSignUp && (
               <>
-                <div className="space-y-1.5">
-                  <Label htmlFor="cpf" className="text-sm font-medium">CPF ou CNPJ</Label>
-                  <div className="flex gap-2">
-                    <div className="flex items-center gap-1.5 border border-border rounded-md px-3 h-11 shrink-0 bg-card">
-                      <span className="text-base">🇧🇷</span>
-                      <span className="text-sm text-muted-foreground">Brasil</span>
-                    </div>
-                    <Input
-                      id="cpf"
-                      value={cpf}
-                      onChange={(e) => setCpf(formatCpfCnpj(e.target.value))}
-                      placeholder="CPF ou CNPJ"
-                      maxLength={18}
-                      className="h-11 bg-card border-border flex-1"
-                      required
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cpf" className="text-[13px] font-medium text-muted-foreground">CPF ou CNPJ</Label>
+                  <Input
+                    id="cpf"
+                    value={cpf}
+                    onChange={(e) => setCpf(formatCpfCnpj(e.target.value))}
+                    placeholder="000.000.000-00"
+                    maxLength={18}
+                    className="h-[52px] bg-card/40 border-border/50 rounded-xl text-[14px] placeholder:text-muted-foreground/40 focus:border-primary/50 focus:bg-card/60 transition-all duration-200"
+                    required
+                  />
                 </div>
 
                 <div className="flex items-start gap-3 pt-1">
@@ -340,12 +247,12 @@ const Login = () => {
                     id="terms"
                     checked={acceptTerms}
                     onCheckedChange={(v) => setAcceptTerms(v === true)}
-                    className="mt-0.5"
+                    className="mt-0.5 border-border/50 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                   />
-                  <label htmlFor="terms" className="text-sm text-muted-foreground leading-relaxed cursor-pointer">
+                  <label htmlFor="terms" className="text-[13px] text-muted-foreground/70 leading-relaxed cursor-pointer">
                     Concordo com os{" "}
-                    <span className="text-primary font-medium hover:underline">Termos de Serviço</span> e{" "}
-                    <span className="text-primary font-medium hover:underline">Política de Privacidade</span>.
+                    <span className="text-primary/80 hover:text-primary font-medium transition-colors">Termos de Serviço</span> e{" "}
+                    <span className="text-primary/80 hover:text-primary font-medium transition-colors">Política de Privacidade</span>.
                   </label>
                 </div>
               </>
@@ -353,18 +260,19 @@ const Login = () => {
 
             <Button
               type="submit"
-              className="w-full h-12 font-bold mt-2 text-[14px] shadow-[0_4px_20px_rgba(0,230,118,0.25)] hover:shadow-[0_4px_30px_rgba(0,230,118,0.4)] transition-all"
+              className="w-full h-[52px] font-bold text-[14px] rounded-xl gap-2 mt-1 shadow-[0_0_30px_hsl(var(--primary)/0.15)] hover:shadow-[0_0_40px_hsl(var(--primary)/0.25)] transition-all duration-300"
               disabled={loading}
             >
               {loading ? "Aguarde..." : isSignUp ? "Criar conta grátis" : "Entrar"}
+              {!loading && <ArrowRight className="w-4 h-4" />}
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-8 text-center">
             <button
               type="button"
               onClick={() => setIsSignUp(!isSignUp)}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="text-[13px] text-muted-foreground/60 hover:text-muted-foreground transition-colors"
             >
               {isSignUp ? (
                 <>Já tem conta? <span className="text-primary font-semibold">Entrar</span></>
@@ -374,13 +282,113 @@ const Login = () => {
             </button>
           </div>
 
-          <div className="mt-8 flex items-center justify-center gap-3 text-[11px] text-muted-foreground">
-            <span className="hover:text-foreground cursor-pointer transition-colors">Termos</span>
+          <div className="mt-10 flex items-center justify-center gap-4 text-[11px] text-muted-foreground/30">
+            <span className="hover:text-muted-foreground/60 cursor-pointer transition-colors">Termos</span>
             <span>·</span>
-            <span className="hover:text-foreground cursor-pointer transition-colors">Privacidade</span>
+            <span className="hover:text-muted-foreground/60 cursor-pointer transition-colors">Privacidade</span>
             <span>·</span>
-            <span className="hover:text-foreground cursor-pointer transition-colors">Suporte</span>
+            <span className="hover:text-muted-foreground/60 cursor-pointer transition-colors">Suporte</span>
           </div>
+        </motion.div>
+      </div>
+
+      {/* RIGHT — Authority panel */}
+      <div className="hidden lg:flex lg:w-[48%] relative overflow-hidden">
+        <div className="absolute inset-0 bg-card/30" />
+
+        {/* Glow orbs */}
+        <motion.div
+          className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full blur-[150px] pointer-events-none"
+          style={{ background: "radial-gradient(circle, hsl(var(--primary) / 0.08) 0%, transparent 70%)" }}
+          animate={{ scale: [1, 1.1, 1], opacity: [0.5, 0.8, 0.5] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full blur-[120px] pointer-events-none"
+          style={{ background: "radial-gradient(circle, hsl(142 71% 45% / 0.06) 0%, transparent 70%)" }}
+          animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.6, 0.3] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+        />
+
+        {/* Grid pattern */}
+        <div className="absolute inset-0 opacity-[0.02]" style={{
+          backgroundImage: "linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)",
+          backgroundSize: "48px 48px",
+        }} />
+
+        <div className="relative z-10 flex flex-col justify-center p-12 xl:p-20 w-full">
+          {/* Headline */}
+          <motion.div
+            className="space-y-6 max-w-md"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
+              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              <span className="text-[11px] font-semibold text-primary uppercase tracking-[0.1em]">Plataforma ativa</span>
+            </div>
+
+            <h2 className="text-[2.5rem] xl:text-[3rem] font-black text-foreground leading-[1.05] tracking-[-0.03em] font-display">
+              Venda mais com{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-[hsl(142,71%,65%)]">
+                infraestrutura
+              </span>{" "}
+              de verdade.
+            </h2>
+
+            <p className="text-muted-foreground/70 text-[15px] leading-relaxed">
+              Multi-gateway, checkout otimizado, rastreamento perfeito e área de membros — tudo integrado.
+            </p>
+          </motion.div>
+
+          {/* Social proof cards */}
+          <motion.div
+            className="mt-12 space-y-3"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
+            {[
+              { metric: "99.9%", label: "Uptime garantido", desc: "Infraestrutura enterprise" },
+              { metric: "<2s", label: "PIX confirmado", desc: "Aprovação instantânea" },
+              { metric: "+34%", label: "Mais conversão", desc: "Checkout otimizado" },
+            ].map((item, i) => (
+              <motion.div
+                key={item.label}
+                className="flex items-center gap-4 p-4 rounded-2xl bg-card/40 border border-border/30 backdrop-blur-sm"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, delay: 0.5 + i * 0.1 }}
+              >
+                <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 shrink-0">
+                  <span className="text-lg font-black text-primary font-mono">{item.metric}</span>
+                </div>
+                <div>
+                  <p className="text-[14px] font-bold text-foreground">{item.label}</p>
+                  <p className="text-[12px] text-muted-foreground/50">{item.desc}</p>
+                </div>
+                <CheckCircle2 className="w-4 h-4 text-primary/40 ml-auto shrink-0" />
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* Trust bar */}
+          <motion.div
+            className="mt-12 pt-8 border-t border-border/20"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.8 }}
+          >
+            <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground/30 font-semibold mb-4">Integrado com</p>
+            <div className="flex items-center gap-6">
+              {["Stripe", "Mercado Pago", "Asaas", "Pagar.me"].map((name) => (
+                <span key={name} className="text-[11px] font-bold text-muted-foreground/25 uppercase tracking-wide">
+                  {name}
+                </span>
+              ))}
+            </div>
+          </motion.div>
         </div>
       </div>
     </div>
