@@ -176,7 +176,7 @@ Deno.serve(async (req) => {
                     .single();
 
                   if (customerData) {
-                    const siteUrl = 'https://paycheckout.lovable.app';
+                    const siteUrl = 'https://checkout.panterapay.com.br';
                     const accessUrl = `${siteUrl}/membros?token=${newAccess.access_token}`;
 
                     const emailHtml = `
