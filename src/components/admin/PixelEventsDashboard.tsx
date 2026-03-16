@@ -88,21 +88,32 @@ const PixelEventsDashboard = ({ products }: Props) => {
   useEffect(() => { loadEvents(); }, [filterProduct, period]);
 
   useEffect(() => {
+    const since = subHours(new Date(), getHoursBack()).getTime();
+    const seenEventIds = new Set<string>();
+
     const channel = supabase
-      .channel("pixel-events-realtime")
+      .channel(`pixel-events-realtime-${filterProduct}-${period}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "pixel_events" }, (payload) => {
         const ne = payload.new as PixelEvent;
         if (filterProduct !== "all" && ne.product_id !== filterProduct) return;
         if (ne.visitor_id?.startsWith("sim_")) return;
+        // Ignore events outside the selected period
+        if (new Date(ne.created_at).getTime() < since) return;
+
         setEvents((prev) => [ne, ...prev].slice(0, 500));
-        // Update count for this event type
+
+        // Only increment counter once per event_id to avoid double-counting DUAL events
         if (ne.event_name) {
-          setEventCounts((prev) => ({ ...prev, [ne.event_name]: (prev[ne.event_name] || 0) + 1 }));
+          const dedupKey = ne.event_id || ne.id;
+          if (!seenEventIds.has(dedupKey)) {
+            seenEventIds.add(dedupKey);
+            setEventCounts((prev) => ({ ...prev, [ne.event_name]: (prev[ne.event_name] || 0) + 1 }));
+          }
         }
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [filterProduct]);
+  }, [filterProduct, period]);
 
 
   const chartData = useMemo(() => {
