@@ -621,6 +621,7 @@ const MemberArea = () => {
                   <ArrowLeft className="w-4 h-4 text-[hsl(220,10%,50%)]" />
                   <span className="text-white text-sm font-medium">Meus Cursos</span>
                 </button>
+              </div>
             </motion.div>
           </>
         )}
