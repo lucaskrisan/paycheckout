@@ -54,6 +54,19 @@ const CustomerPortal = () => {
 
   const { user, loading: authLoading, isAdmin, signOut } = useAuth();
 
+  // Token-based Supabase client (sends x-access-token header for RLS)
+  const tokenClient = useMemo(() => {
+    if (!token) return supabase;
+    return createClient<Database>(
+      import.meta.env.VITE_SUPABASE_URL,
+      import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      {
+        global: { headers: { "x-access-token": token } },
+        auth: { persistSession: false, autoRefreshToken: false },
+      }
+    );
+  }, [token]);
+
   // MODE 1: Token-based (buyer accessing via link)
   // MODE 2: Authenticated admin/producer (preview their own courses + purchased)
   const isAuthMode = !token && !!user;
