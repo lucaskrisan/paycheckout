@@ -164,6 +164,9 @@ const Reviews = () => {
                       </div>
                       <div>
                         <span className="font-semibold text-sm">{r.customer_name}</span>
+                        {r.customer_email && (
+                          <p className="text-xs text-muted-foreground">{r.customer_email}</p>
+                        )}
                         <div className="flex items-center gap-0.5">
                           {[1, 2, 3, 4, 5].map((s) => (
                             <Star
