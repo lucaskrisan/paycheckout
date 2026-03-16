@@ -42,6 +42,12 @@ const Reviews = () => {
               title
             )
           )
+        ),
+        member_access (
+          customers (
+            name,
+            email
+          )
         )
       `)
       .order("created_at", { ascending: false });
@@ -56,6 +62,8 @@ const Reviews = () => {
       ...r,
       lesson_title: r.course_lessons?.title || "Aula desconhecida",
       course_title: r.course_lessons?.course_modules?.courses?.title || "",
+      customer_name: r.member_access?.customers?.name || r.customer_name || "Aluno",
+      customer_email: r.member_access?.customers?.email || null,
     }));
 
     setReviews(enriched);
