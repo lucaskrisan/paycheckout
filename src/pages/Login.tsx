@@ -111,7 +111,7 @@ const Login = () => {
               {isSignUp ? "Crie sua conta" : "Acesse sua conta"}
             </h1>
             <p className="text-sm text-muted-foreground mt-1.5">
-              {isSignUp ? "Informe seus dados para continuar." : "Bem-vindo de volta ao PayCheckout."}
+              {isSignUp ? "Informe seus dados para continuar." : "Bem-vindo de volta ao PanteraPay."}
             </p>
           </div>
 
