@@ -81,6 +81,7 @@ const CheckoutSuccess = () => {
         body: {
           order_id: orderId,
           upsell_product_id: offer.upsell_product.id,
+          customer_email: email,
         },
       });
 
