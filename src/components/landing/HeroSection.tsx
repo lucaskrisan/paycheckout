@@ -145,7 +145,7 @@ const HeroSection = () => {
     <section className="relative z-10 overflow-hidden">
       <Sparkles />
 
-      <div className="container max-w-7xl mx-auto px-6 py-20 lg:py-28">
+      <div className="container max-w-7xl mx-auto px-6 pt-20 pb-28 lg:pt-32 lg:pb-36">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
           {/* Left — copy + mascot */}
           <motion.div
