@@ -142,10 +142,10 @@ const HeroSection = () => {
   const [email, setEmail] = useState("");
 
   return (
-    <section className="relative z-10 min-h-[90vh] flex items-center overflow-hidden">
+    <section className="relative z-10 overflow-hidden">
       <Sparkles />
 
-      <div className="container max-w-7xl mx-auto px-6 py-20 lg:py-28">
+      <div className="container max-w-7xl mx-auto px-6 pt-20 pb-28 lg:pt-32 lg:pb-36">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
           {/* Left — copy + mascot */}
           <motion.div
@@ -230,7 +230,7 @@ const HeroSection = () => {
       </div>
 
       {/* Partners bar */}
-      <div className="absolute bottom-0 left-0 right-0 border-t border-white/[0.04] bg-[#0B0B0D]/80 backdrop-blur-sm py-5">
+      <div className="border-t border-white/[0.04] bg-white/[0.01] py-6 mt-8">
         <div className="container max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-center gap-6 md:gap-12 flex-wrap">
             {[
