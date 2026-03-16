@@ -12,6 +12,7 @@ interface Review {
   lesson_id: string;
   member_access_id: string;
   customer_name: string;
+  customer_email?: string;
   rating: number;
   comment: string | null;
   approved: boolean;
@@ -41,6 +42,12 @@ const Reviews = () => {
               title
             )
           )
+        ),
+        member_access (
+          customers (
+            name,
+            email
+          )
         )
       `)
       .order("created_at", { ascending: false });
@@ -55,6 +62,8 @@ const Reviews = () => {
       ...r,
       lesson_title: r.course_lessons?.title || "Aula desconhecida",
       course_title: r.course_lessons?.course_modules?.courses?.title || "",
+      customer_name: r.member_access?.customers?.name || r.customer_name || "Aluno",
+      customer_email: r.member_access?.customers?.email || null,
     }));
 
     setReviews(enriched);
@@ -155,6 +164,9 @@ const Reviews = () => {
                       </div>
                       <div>
                         <span className="font-semibold text-sm">{r.customer_name}</span>
+                        {r.customer_email && (
+                          <p className="text-xs text-muted-foreground">{r.customer_email}</p>
+                        )}
                         <div className="flex items-center gap-0.5">
                           {[1, 2, 3, 4, 5].map((s) => (
                             <Star
