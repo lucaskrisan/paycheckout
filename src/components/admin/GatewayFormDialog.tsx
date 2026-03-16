@@ -56,6 +56,10 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
       toast.error("Nome da conexão é obrigatório");
       return;
     }
+    if (!form.config.api_key?.trim()) {
+      toast.error("API Key é obrigatória");
+      return;
+    }
     setSaving(true);
 
     const payload = {
