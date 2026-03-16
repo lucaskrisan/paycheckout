@@ -146,18 +146,17 @@ Deno.serve(async (req) => {
       const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       const { data: recentOrder } = await supabaseAdmin
         .from('orders')
-        .select('id, status')
+        .select('id, status, customer_id')
         .eq('product_id', product_id)
         .in('status', ['pending', 'paid', 'approved'])
         .gte('created_at', fiveMinAgo)
         .limit(1);
 
       if (recentOrder && recentOrder.length > 0) {
-        // Check if same customer email
         const { data: recentCustomer } = await supabaseAdmin
           .from('customers')
           .select('email')
-          .eq('id', (await supabaseAdmin.from('orders').select('customer_id').eq('id', recentOrder[0].id).single()).data?.customer_id || '')
+          .eq('id', recentOrder[0].customer_id)
           .maybeSingle();
 
         if (recentCustomer?.email?.toLowerCase() === customer.email.toLowerCase()) {
