@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 function buildFullHtml(emailBody: string, productName: string, productPrice: string, checkoutUrl: string, companyName: string, primaryColor: string, logoUrl?: string) {
@@ -37,6 +37,28 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // --- JWT Authentication ---
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseAuth = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    // --- End Authentication ---
+
     const body = await req.json();
     const { order_id, preview, subject: editedSubject, body: editedBody } = body;
     if (!order_id) throw new Error("order_id is required");
@@ -55,6 +77,17 @@ serve(async (req) => {
       .single();
 
     if (orderErr || !order) throw new Error("Order not found");
+
+    // Verify caller owns this order
+    if (order.user_id !== user.id) {
+      const { data: isSuperAdmin } = await supabase.rpc("is_super_admin", { _user_id: user.id });
+      if (!isSuperAdmin) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     if (order.status !== "pending") throw new Error("Order is not pending");
     if (order.payment_method !== "pix") throw new Error("Order is not PIX");
     if (!order.customers?.email) throw new Error("Customer email not found");
@@ -105,7 +138,6 @@ serve(async (req) => {
 
       const emailData = await emailRes.json();
 
-      // Log email
       try {
         await supabase.from('email_logs').insert({
           user_id: order.user_id,
@@ -211,7 +243,7 @@ O cliente gerou o PIX mas não pagou ainda.`,
       );
     }
 
-    // Direct send (legacy, no preview)
+    // Direct send
     if (!resendKey) throw new Error("RESEND_API_KEY not configured");
     const fullHtml = buildFullHtml(emailBody, productName, productPrice, checkoutUrl, companyName, primaryColor, settings?.logo_url);
 
@@ -228,7 +260,6 @@ O cliente gerou o PIX mas não pagou ainda.`,
 
     const emailData = await emailRes.json();
 
-    // Log email
     try {
       await supabase.from('email_logs').insert({
         user_id: order.user_id,
