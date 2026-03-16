@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/useAuth";
+import { lovable } from "@/integrations/lovable";
 import panteraMascot from "@/assets/pantera-mascot.png";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
