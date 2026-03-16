@@ -456,7 +456,6 @@ const ProductEdit = () => {
             <TabsTrigger value="config" className={tabStyle}>Configurações</TabsTrigger>
             <TabsTrigger value="checkout" className={tabStyle}>Checkout</TabsTrigger>
             <TabsTrigger value="links" className={tabStyle}>Links</TabsTrigger>
-            <TabsTrigger value="salespage" className={tabStyle}>Página de Vendas</TabsTrigger>
           </TabsList>
 
           {/* Geral */}
