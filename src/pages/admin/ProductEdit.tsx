@@ -697,7 +697,7 @@ const ProductEdit = () => {
                           }
                           // Link new
                           if (v) {
-                            await supabase.from("courses").update({ product_id: productId }).eq("id", v);
+                            await supabase.from("courses").update({ product_id: productId, user_id: user?.id }).eq("id", v);
                             toast.success("Área de membros vinculada!");
                           }
                         }
