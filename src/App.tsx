@@ -45,6 +45,7 @@ import ProducerBilling from "./pages/admin/ProducerBilling";
 import Blacklist from "./pages/admin/Blacklist";
 import NotFound from "./pages/NotFound";
 import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 import PendingApproval from "./pages/PendingApproval";
 import CompleteProfile from "./pages/CompleteProfile";
 import InstallPrompt from "./components/InstallPrompt";
@@ -69,6 +70,7 @@ const App = () => (
             <Route path="/completar-perfil" element={<CompleteProfile />} />
             <Route path="/aguardando-aprovacao" element={<PendingApproval />} />
             <Route path="/termos" element={<Terms />} />
+            <Route path="/privacidade" element={<Privacy />} />
             <Route path="/admin/products/:productId/checkout-builder" element={<CheckoutBuilder />} />
             <Route path="/admin/products/:productId/checkout-builder/:configId" element={<CheckoutBuilder />} />
             <Route path="/admin" element={<><InstallPrompt /><AdminLayout /></>}>
