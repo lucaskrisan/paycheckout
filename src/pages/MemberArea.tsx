@@ -565,12 +565,14 @@ const MemberArea = () => {
               <Crown className="w-4 h-4" />
               <span className="hidden sm:inline">Catálogo</span>
             </button>
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center"
+            <button
+              onClick={() => navigate("/minha-conta" + (token ? `?token=${token}` : ""))}
+              className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-[hsl(220,16%,18%)]"
               style={{ background: "hsl(220 18% 14%)" }}
+              title="Meus cursos"
             >
-              <User className="w-4 h-4 text-[hsl(0,0%,60%)]" />
-            </div>
+              <ArrowLeft className="w-4 h-4 text-[hsl(0,0%,60%)]" />
+            </button>
           </div>
         </div>
       </header>
