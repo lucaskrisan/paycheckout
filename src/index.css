@@ -2,115 +2,126 @@
 @tailwind components;
 @tailwind utilities;
 
-/* PayCheckout Design System — Bold, premium, uniquely ours */
+/* PanteraPay Design System — Predador Estratégico */
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 220 25% 10%;
+    /* Light mode keeps a clean feel but uses brand tones */
+    --background: 240 8% 97%;
+    --foreground: 240 8% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 25% 10%;
+    --card-foreground: 240 8% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 25% 10%;
+    --popover-foreground: 240 8% 8%;
 
-    --primary: 152 60% 40%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 151 100% 45%;
+    --primary-foreground: 0 0% 0%;
 
-    --secondary: 215 20% 95%;
-    --secondary-foreground: 220 25% 10%;
+    --secondary: 240 5% 93%;
+    --secondary-foreground: 240 8% 8%;
 
-    --muted: 215 18% 95%;
-    --muted-foreground: 215 12% 50%;
+    --muted: 240 5% 93%;
+    --muted-foreground: 240 5% 44%;
 
-    --accent: 215 20% 95%;
-    --accent-foreground: 220 25% 10%;
+    --accent: 240 5% 93%;
+    --accent-foreground: 240 8% 8%;
 
-    --destructive: 0 72% 55%;
+    --destructive: 0 100% 66%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 215 15% 90%;
-    --input: 215 15% 90%;
-    --ring: 152 60% 40%;
+    --border: 240 5% 88%;
+    --input: 240 5% 88%;
+    --ring: 151 100% 45%;
 
-    --radius: 0.625rem;
+    --radius: 0.5rem;
 
-    /* Checkout (buyer-facing) */
-    --checkout-surface: 220 22% 12%;
-    --checkout-surface-foreground: 220 14% 96%;
-    --checkout-highlight: 152 60% 40%;
-    --checkout-highlight-foreground: 0 0% 100%;
-    --checkout-muted: 220 10% 46%;
-    --checkout-badge: 40 95% 55%;
+    /* Checkout (buyer-facing) — dark premium */
+    --checkout-surface: 240 8% 8%;
+    --checkout-surface-foreground: 0 0% 100%;
+    --checkout-highlight: 151 100% 45%;
+    --checkout-highlight-foreground: 0 0% 0%;
+    --checkout-muted: 240 5% 44%;
+    --checkout-badge: 43 64% 52%;
 
-    /* Sidebar — deep charcoal with subtle blue */
-    --sidebar-background: 220 28% 8%;
-    --sidebar-foreground: 215 15% 58%;
-    --sidebar-primary: 152 60% 45%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 22% 14%;
-    --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 220 20% 15%;
-    --sidebar-ring: 152 60% 45%;
+    /* Sidebar — Preto Profundo */
+    --sidebar-background: 240 8% 4%;
+    --sidebar-foreground: 240 5% 63%;
+    --sidebar-primary: 151 100% 45%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 240 8% 13%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 240 5% 17%;
+    --sidebar-ring: 151 100% 45%;
 
-    /* Member area */
-    --member-bg: 220 22% 6%;
-    --member-surface: 220 20% 10%;
-    --member-surface-hover: 220 18% 14%;
-    --member-surface-active: 220 16% 18%;
-    --member-foreground: 0 0% 95%;
-    --member-foreground-muted: 215 12% 55%;
-    --member-accent: 152 60% 50%;
-    --member-accent-glow: 152 75% 60%;
-    --member-border: 220 18% 16%;
-    --member-gradient-start: 152 60% 40%;
-    --member-gradient-end: 168 65% 36%;
-    --member-locked: 215 12% 30%;
-    --member-gold: 40 95% 55%;
+    /* Member area — ultra dark */
+    --member-bg: 240 8% 4%;
+    --member-surface: 240 8% 8%;
+    --member-surface-hover: 240 8% 13%;
+    --member-surface-active: 240 7% 17%;
+    --member-foreground: 0 0% 100%;
+    --member-foreground-muted: 240 5% 63%;
+    --member-accent: 151 100% 45%;
+    --member-accent-glow: 151 100% 55%;
+    --member-border: 240 5% 17%;
+    --member-gradient-start: 151 100% 45%;
+    --member-gradient-end: 145 100% 39%;
+    --member-locked: 240 5% 24%;
+    --member-gold: 43 64% 52%;
 
     /* Brand extras */
-    --brand-gradient: linear-gradient(135deg, hsl(152 60% 40%), hsl(168 65% 36%));
-    --brand-glow: 0 8px 32px -8px hsl(152 60% 40% / 0.35);
+    --brand-gradient: linear-gradient(90deg, #00E676, #00C853, #D4AF37);
+    --brand-glow: 0 8px 32px -8px hsl(151 100% 45% / 0.35);
+
+    /* Status colors */
+    --status-success: 151 100% 45%;
+    --status-warning: 45 100% 51%;
+    --status-error: 0 100% 66%;
+    --status-chargeback: 14 100% 50%;
+
+    /* Gold / Premium */
+    --gold: 43 64% 52%;
+    --gold-soft: 43 86% 69%;
   }
 
   .dark {
-    --background: 222 28% 7%;
-    --foreground: 210 20% 92%;
+    --background: 240 8% 4%;
+    --foreground: 0 0% 100%;
 
-    --card: 222 26% 11%;
-    --card-foreground: 210 20% 92%;
+    --card: 240 8% 8%;
+    --card-foreground: 0 0% 100%;
 
-    --popover: 222 26% 11%;
-    --popover-foreground: 210 20% 92%;
+    --popover: 240 8% 8%;
+    --popover-foreground: 0 0% 100%;
 
-    --primary: 152 60% 45%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 151 100% 45%;
+    --primary-foreground: 0 0% 0%;
 
-    --secondary: 222 22% 15%;
-    --secondary-foreground: 210 20% 92%;
+    --secondary: 240 7% 17%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 222 18% 16%;
-    --muted-foreground: 215 12% 50%;
+    --muted: 240 8% 13%;
+    --muted-foreground: 240 5% 63%;
 
-    --accent: 222 22% 15%;
-    --accent-foreground: 210 20% 92%;
+    --accent: 240 7% 17%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 55%;
+    --destructive: 0 100% 66%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 222 18% 18%;
-    --input: 222 18% 18%;
-    --ring: 152 60% 45%;
+    --border: 240 5% 17%;
+    --input: 240 8% 13%;
+    --ring: 151 100% 45%;
 
-    --sidebar-background: 222 30% 5%;
-    --sidebar-foreground: 215 15% 55%;
-    --sidebar-primary: 152 60% 45%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 24% 12%;
-    --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 222 18% 14%;
-    --sidebar-ring: 152 60% 45%;
+    --sidebar-background: 240 8% 4%;
+    --sidebar-foreground: 240 5% 63%;
+    --sidebar-primary: 151 100% 45%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 240 8% 13%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 240 5% 17%;
+    --sidebar-ring: 151 100% 45%;
   }
 }
 
