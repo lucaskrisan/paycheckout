@@ -279,7 +279,7 @@ Deno.serve(async (req) => {
           await sendPushNotification(
             '💰 Nova venda via Mercado Pago!',
             `${customerName || 'Cliente'} • ${method} R$ ${amount}${showProductName ? ` • ${productName}` : ''}`,
-            'https://paycheckout.lovable.app/admin/orders'
+            'https://checkout.panterapay.com.br/admin/orders'
           );
         }
       } catch (notifErr) {

@@ -368,7 +368,7 @@ Deno.serve(async (req) => {
           const title = '💰 Nova venda confirmada!';
           const message = `${customerName || 'Cliente'} • ${method} R$ ${amount}${showProductName ? ` • ${productName}` : ''}`;
 
-          await sendPushNotification(title, message, 'https://paycheckout.lovable.app/admin/orders');
+          await sendPushNotification(title, message, 'https://checkout.panterapay.com.br/admin/orders');
         }
       } catch (notifErr) {
         console.error('[asaas-webhook] Notification error (non-blocking):', notifErr);

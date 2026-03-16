@@ -501,7 +501,7 @@ Deno.serve(async (req) => {
           const showProductName = notifSettings.some((s) => s.show_product_name);
           const title = '💰 Venda aprovada!';
           const message = `${customer.name} • 💳 Cartão R$ ${formattedAmount}${showProductName ? ` • ${productName}` : ''}`;
-          await sendPushNotification(title, message, 'https://paycheckout.lovable.app/admin/orders');
+          await sendPushNotification(title, message, 'https://checkout.panterapay.com.br/admin/orders');
         }
       } catch (notifErr) {
         console.error('[create-asaas-payment] Notification error:', notifErr);
