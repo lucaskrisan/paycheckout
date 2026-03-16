@@ -101,7 +101,7 @@ const CustomerPortal = () => {
         return;
       }
 
-      const { data: customerData } = await supabase
+      const { data: customerData } = await tokenClient
         .from("customers")
         .select("*")
         .eq("id", accessData.customer_id)
