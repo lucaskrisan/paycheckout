@@ -45,8 +45,8 @@ Deno.serve(async (req) => {
   try {
     console.log('[create-pix-payment] request received');
 
-    const PAGARME_API_KEY = Deno.env.get('PAGARME_API_KEY');
-    if (!PAGARME_API_KEY) throw new Error('PAGARME_API_KEY not configured');
+    // API key will be resolved per-producer below
+    let PAGARME_API_KEY: string | null = null;
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
