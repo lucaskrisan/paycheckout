@@ -6,33 +6,33 @@
 
 @layer base {
   :root {
-    /* Light mode keeps a clean feel but uses brand tones */
-    --background: 240 8% 97%;
-    --foreground: 240 8% 8%;
+    /* PanteraPay is dark-first — root IS dark */
+    --background: 240 8% 4%;
+    --foreground: 0 0% 100%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 240 8% 8%;
+    --card: 240 8% 8%;
+    --card-foreground: 0 0% 100%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 8% 8%;
+    --popover: 240 8% 8%;
+    --popover-foreground: 0 0% 100%;
 
     --primary: 151 100% 45%;
     --primary-foreground: 0 0% 0%;
 
-    --secondary: 240 5% 93%;
-    --secondary-foreground: 240 8% 8%;
+    --secondary: 240 7% 17%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 240 5% 93%;
-    --muted-foreground: 240 5% 44%;
+    --muted: 240 8% 13%;
+    --muted-foreground: 240 5% 63%;
 
-    --accent: 240 5% 93%;
-    --accent-foreground: 240 8% 8%;
+    --accent: 240 7% 17%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 100% 66%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 5% 88%;
-    --input: 240 5% 88%;
+    --border: 240 5% 17%;
+    --input: 240 8% 13%;
     --ring: 151 100% 45%;
 
     --radius: 0.5rem;
@@ -85,43 +85,35 @@
     --gold-soft: 43 86% 69%;
   }
 
-  .dark {
-    --background: 240 8% 4%;
-    --foreground: 0 0% 100%;
+  /* Light override for admin forms / specific light contexts if needed */
+  .light {
+    --background: 240 8% 97%;
+    --foreground: 240 8% 8%;
 
-    --card: 240 8% 8%;
-    --card-foreground: 0 0% 100%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 8% 8%;
 
-    --popover: 240 8% 8%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 8% 8%;
 
     --primary: 151 100% 45%;
     --primary-foreground: 0 0% 0%;
 
-    --secondary: 240 7% 17%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 240 5% 93%;
+    --secondary-foreground: 240 8% 8%;
 
-    --muted: 240 8% 13%;
-    --muted-foreground: 240 5% 63%;
+    --muted: 240 5% 93%;
+    --muted-foreground: 240 5% 44%;
 
-    --accent: 240 7% 17%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 240 5% 93%;
+    --accent-foreground: 240 8% 8%;
 
     --destructive: 0 100% 66%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 5% 17%;
-    --input: 240 8% 13%;
+    --border: 240 5% 88%;
+    --input: 240 5% 88%;
     --ring: 151 100% 45%;
-
-    --sidebar-background: 240 8% 4%;
-    --sidebar-foreground: 240 5% 63%;
-    --sidebar-primary: 151 100% 45%;
-    --sidebar-primary-foreground: 0 0% 0%;
-    --sidebar-accent: 240 8% 13%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 240 5% 17%;
-    --sidebar-ring: 151 100% 45%;
   }
 }
 
