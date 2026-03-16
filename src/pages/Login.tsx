@@ -9,7 +9,7 @@ import { lovable } from "@/integrations/lovable/index";
 import panteraMascot from "@/assets/pantera-mascot.png";
 
 import { toast } from "sonner";
-import { Eye, EyeOff, Star, Zap } from "lucide-react";
+import { Eye, EyeOff, Star } from "lucide-react";
 
 const formatCpfCnpj = (value: string) => {
   const digits = value.replace(/\D/g, "");
