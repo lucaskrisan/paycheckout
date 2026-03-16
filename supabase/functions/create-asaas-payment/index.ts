@@ -49,8 +49,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const ASAAS_API_KEY = Deno.env.get('ASAAS_API_KEY');
-    if (!ASAAS_API_KEY) throw new Error('ASAAS_API_KEY not configured');
+    // API key will be resolved per-producer below
+    let ASAAS_API_KEY: string | null = null;
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,

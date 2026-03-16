@@ -11,8 +11,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
-    if (!STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY not configured');
+    // API key will be resolved per-producer below
+    let STRIPE_SECRET_KEY: string | null = null;
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,

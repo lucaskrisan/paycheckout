@@ -11,8 +11,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const MERCADOPAGO_ACCESS_TOKEN = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN');
-    if (!MERCADOPAGO_ACCESS_TOKEN) throw new Error('MERCADOPAGO_ACCESS_TOKEN not configured');
+    // API key will be resolved per-producer below
+    let MERCADOPAGO_ACCESS_TOKEN: string | null = null;
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
