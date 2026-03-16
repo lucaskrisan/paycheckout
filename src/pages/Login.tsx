@@ -275,7 +275,7 @@ const Login = () => {
       </div>
 
       {/* Right side - Dark branding panel */}
-      <div className="hidden lg:flex lg:w-[45%] relative bg-[hsl(220,28%,8%)] overflow-hidden">
+      <div className="hidden lg:flex lg:w-[45%] relative bg-[#0B0B0D] overflow-hidden">
         {/* Subtle grid pattern */}
         <div className="absolute inset-0 opacity-[0.03]">
           <div className="absolute inset-0" style={{
@@ -294,8 +294,8 @@ const Login = () => {
               Seu produto digital faturando com automações reais de maneira eficiente
             </h2>
 
-            <p className="text-emerald-400/80 italic text-base">
-              "PayCheckout é o ecossistema que faltava para eu escalar milhões."
+            <p className="text-primary/80 italic text-base">
+              "PanteraPay é o ecossistema que faltava para eu escalar milhões."
             </p>
 
             <div className="flex items-center gap-2">
@@ -307,12 +307,10 @@ const Login = () => {
 
             {/* Dashboard preview mockup */}
             <div className="mt-8 rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-sm p-1 shadow-2xl">
-              <div className="rounded-lg bg-[hsl(220,25%,12%)] p-4 space-y-3">
+              <div className="rounded-lg bg-[#141417] p-4 space-y-3">
                 <div className="flex items-center gap-2 mb-4">
-                  <div className="w-7 h-7 bg-primary/20 rounded-lg flex items-center justify-center">
-                    <Zap className="w-3.5 h-3.5 text-primary" />
-                  </div>
-                  <span className="text-white/80 text-xs font-medium">PayCheckout</span>
+                  <img src={panteraMascot} alt="" className="w-7 h-7" />
+                  <span className="text-white/80 text-xs font-medium">PanteraPay</span>
                   <span className="text-white/40 text-xs ml-auto">Dashboard</span>
                 </div>
 
