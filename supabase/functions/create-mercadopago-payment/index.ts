@@ -11,8 +11,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const MERCADOPAGO_ACCESS_TOKEN = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN');
-    if (!MERCADOPAGO_ACCESS_TOKEN) throw new Error('MERCADOPAGO_ACCESS_TOKEN not configured');
+    // API key will be resolved per-producer below
+    let MERCADOPAGO_ACCESS_TOKEN: string | null = null;
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -160,6 +160,29 @@ Deno.serve(async (req) => {
           { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
+    }
+
+    // Resolve Mercado Pago token from producer's gateway config
+    if (productOwnerId) {
+      const { data: gw } = await supabaseAdmin
+        .from('payment_gateways')
+        .select('config')
+        .eq('user_id', productOwnerId)
+        .eq('provider', 'mercadopago')
+        .eq('active', true)
+        .maybeSingle();
+      if (gw?.config && typeof gw.config === 'object' && (gw.config as any).api_key) {
+        MERCADOPAGO_ACCESS_TOKEN = (gw.config as any).api_key;
+      }
+    }
+    if (!MERCADOPAGO_ACCESS_TOKEN) {
+      MERCADOPAGO_ACCESS_TOKEN = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN') || null;
+    }
+    if (!MERCADOPAGO_ACCESS_TOKEN) {
+      return new Response(
+        JSON.stringify({ error: 'Gateway de pagamento não configurado. O produtor precisa configurar o Mercado Pago.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Upsert customer

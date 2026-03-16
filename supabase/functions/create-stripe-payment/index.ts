@@ -11,8 +11,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
-    if (!STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY not configured');
+    // API key will be resolved per-producer below
+    let STRIPE_SECRET_KEY: string | null = null;
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -103,6 +103,29 @@ Deno.serve(async (req) => {
           { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
+    }
+
+    // Resolve Stripe key from producer's gateway config
+    if (productOwnerId) {
+      const { data: gw } = await supabaseAdmin
+        .from('payment_gateways')
+        .select('config')
+        .eq('user_id', productOwnerId)
+        .eq('provider', 'stripe')
+        .eq('active', true)
+        .maybeSingle();
+      if (gw?.config && typeof gw.config === 'object' && (gw.config as any).api_key) {
+        STRIPE_SECRET_KEY = (gw.config as any).api_key;
+      }
+    }
+    if (!STRIPE_SECRET_KEY) {
+      STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY') || null;
+    }
+    if (!STRIPE_SECRET_KEY) {
+      return new Response(
+        JSON.stringify({ error: 'Gateway de pagamento não configurado. O produtor precisa configurar o Stripe.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Upsert customer

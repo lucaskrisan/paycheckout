@@ -45,8 +45,8 @@ Deno.serve(async (req) => {
   try {
     console.log('[create-pix-payment] request received');
 
-    const PAGARME_API_KEY = Deno.env.get('PAGARME_API_KEY');
-    if (!PAGARME_API_KEY) throw new Error('PAGARME_API_KEY not configured');
+    // API key will be resolved per-producer below
+    let PAGARME_API_KEY: string | null = null;
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -198,6 +198,30 @@ Deno.serve(async (req) => {
           { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
+    }
+
+    // Resolve Pagar.me API key from producer's gateway config
+    if (productOwnerId) {
+      const { data: gw } = await supabaseAdmin
+        .from('payment_gateways')
+        .select('config')
+        .eq('user_id', productOwnerId)
+        .eq('provider', 'pagarme')
+        .eq('active', true)
+        .maybeSingle();
+      if (gw?.config && typeof gw.config === 'object' && (gw.config as any).api_key) {
+        PAGARME_API_KEY = (gw.config as any).api_key;
+      }
+    }
+    // Fallback to global env key (super admin / legacy)
+    if (!PAGARME_API_KEY) {
+      PAGARME_API_KEY = Deno.env.get('PAGARME_API_KEY') || null;
+    }
+    if (!PAGARME_API_KEY) {
+      return new Response(
+        JSON.stringify({ error: 'Gateway de pagamento não configurado. O produtor precisa configurar o Pagar.me.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Upsert customer
