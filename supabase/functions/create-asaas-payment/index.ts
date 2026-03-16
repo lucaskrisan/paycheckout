@@ -17,7 +17,7 @@ async function sendPushNotification(title: string, message: string, url?: string
       target_channel: 'push',
       headings: { en: title },
       contents: { en: message },
-      chrome_web_icon: iconUrl || 'https://paycheckout.lovable.app/pwa-192x192.png',
+      chrome_web_icon: iconUrl || 'https://checkout.panterapay.com.br/pwa-192x192.png',
     };
     if (url) payload.url = url;
 
@@ -382,7 +382,7 @@ Deno.serve(async (req) => {
             const title = '🔄 Nova assinatura!';
             const showProductName = notifSettings.some((s) => s.show_product_name);
             const message = `${customer.name} • 💳 R$ ${formattedAmount}/mês${showProductName ? ` • ${productName}` : ''}`;
-            await sendPushNotification(title, message, 'https://paycheckout.lovable.app/admin/orders');
+             await sendPushNotification(title, message, 'https://checkout.panterapay.com.br/admin/orders');
           }
         } catch (notifErr) {
           console.error('[create-asaas-payment] Notification error:', notifErr);
@@ -501,7 +501,7 @@ Deno.serve(async (req) => {
           const showProductName = notifSettings.some((s) => s.show_product_name);
           const title = '💰 Venda aprovada!';
           const message = `${customer.name} • 💳 Cartão R$ ${formattedAmount}${showProductName ? ` • ${productName}` : ''}`;
-          await sendPushNotification(title, message, 'https://paycheckout.lovable.app/admin/orders');
+          await sendPushNotification(title, message, 'https://checkout.panterapay.com.br/admin/orders');
         }
       } catch (notifErr) {
         console.error('[create-asaas-payment] Notification error:', notifErr);

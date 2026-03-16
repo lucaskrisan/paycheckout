@@ -170,7 +170,7 @@ Deno.serve(async (req) => {
                       product_id: order.product_id,
                       event_name: 'Purchase',
                       event_id: order.external_id,
-                      event_source_url: `https://paycheckout.lovable.app/checkout/${order.product_id}`,
+                      event_source_url: `https://checkout.panterapay.com.br/checkout/${order.product_id}`,
                       customer: { name: custData.name, email: custData.email, phone: custData.phone, cpf: custData.cpf },
                       custom_data: { value: Number(order.amount), currency: 'BRL', content_type: 'product', order_id: order.id },
                       log_browser: true,

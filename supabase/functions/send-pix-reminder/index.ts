@@ -106,7 +106,7 @@ serve(async (req) => {
     if (customerEmail) checkoutParams.set("email", customerEmail);
     if (customerPhone) checkoutParams.set("phone", customerPhone);
     if (customerCpf) checkoutParams.set("cpf", customerCpf);
-    const checkoutUrl = `https://paycheckout.lovable.app/checkout/${order.product_id}?${checkoutParams.toString()}`;
+    const checkoutUrl = `https://checkout.panterapay.com.br/checkout/${order.product_id}?${checkoutParams.toString()}`;
 
     // Get checkout settings for branding
     const { data: settings } = await supabase

@@ -643,7 +643,7 @@ Views:
 
 13.4 Capacitor
   • Configuração para build mobile (capacitor.config.ts)
-  • Servidor: paycheckout.lovable.app
+  • Servidor: checkout.panterapay.com.br
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 14. DATABASE TRIGGERS E FUNCTIONS

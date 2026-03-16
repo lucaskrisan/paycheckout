@@ -20,7 +20,7 @@ async function sendPushNotification(title: string, message: string, url?: string
         target_channel: 'push',
         headings: { en: title },
         contents: { en: message },
-        chrome_web_icon: 'https://paycheckout.lovable.app/pwa-192x192.png',
+        chrome_web_icon: 'https://checkout.panterapay.com.br/pwa-192x192.png',
         ...(url ? { url } : {}),
       }),
     });
@@ -176,7 +176,7 @@ Deno.serve(async (req) => {
                     .single();
 
                   if (customerData) {
-                    const siteUrl = 'https://paycheckout.lovable.app';
+                    const siteUrl = 'https://checkout.panterapay.com.br';
                     const accessUrl = `${siteUrl}/membros?token=${newAccess.access_token}`;
 
                     const emailHtml = `
@@ -279,7 +279,7 @@ Deno.serve(async (req) => {
           await sendPushNotification(
             '💰 Nova venda via Mercado Pago!',
             `${customerName || 'Cliente'} • ${method} R$ ${amount}${showProductName ? ` • ${productName}` : ''}`,
-            'https://paycheckout.lovable.app/admin/orders'
+            'https://checkout.panterapay.com.br/admin/orders'
           );
         }
       } catch (notifErr) {

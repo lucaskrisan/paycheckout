@@ -20,7 +20,7 @@ async function sendPushNotification(title: string, message: string, url?: string
       target_channel: 'push',
       headings: { en: title },
       contents: { en: message },
-      chrome_web_icon: iconUrl || 'https://paycheckout.lovable.app/pwa-192x192.png',
+      chrome_web_icon: iconUrl || 'https://checkout.panterapay.com.br/pwa-192x192.png',
     };
     if (url) payload.url = url;
 
@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
 
           if (custData) {
             const capiEventId = externalId;
-            const checkoutUrl = (orderData.metadata as any)?.checkout_url || `https://paycheckout.lovable.app/checkout/${orderData.product_id}`;
+            const checkoutUrl = (orderData.metadata as any)?.checkout_url || `https://checkout.panterapay.com.br/checkout/${orderData.product_id}`;
 
             // Fire CAPI via our own edge function
             const capiResponse = await fetch(
@@ -243,7 +243,7 @@ Deno.serve(async (req) => {
                       .single();
 
                     if (customerData) {
-                      const siteUrl = 'https://paycheckout.lovable.app';
+                      const siteUrl = 'https://checkout.panterapay.com.br';
                       const accessUrl = `${siteUrl}/membros?token=${newAccess.access_token}`;
 
                       const emailHtml = `
@@ -372,7 +372,7 @@ Deno.serve(async (req) => {
           const title = '💰 Nova venda confirmada!';
           const message = `${customerName || 'Cliente'} • ${method} R$ ${amount}${showProductName ? ` • ${productName}` : ''}`;
 
-          await sendPushNotification(title, message, 'https://paycheckout.lovable.app/admin/orders');
+          await sendPushNotification(title, message, 'https://checkout.panterapay.com.br/admin/orders');
         }
       } catch (notifErr) {
         console.error('[pagarme-webhook] Notification error (non-blocking):', notifErr);
