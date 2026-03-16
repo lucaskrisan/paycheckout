@@ -270,9 +270,15 @@ Deno.serve(async (req) => {
 
     if (!response.ok) {
       console.error('[create-pix-payment] Pagar.me error:', JSON.stringify(data));
+      // Map known gateway errors to user-friendly messages
+      const gatewayMsg = data?.errors?.[0]?.message || data?.message || '';
+      let userMessage = 'Não foi possível gerar o PIX. Verifique seus dados e tente novamente.';
+      if (/cpf|document/i.test(gatewayMsg)) userMessage = 'CPF inválido. Verifique o número e tente novamente.';
+      else if (/phone|telefone/i.test(gatewayMsg)) userMessage = 'Telefone inválido. Verifique o número e tente novamente.';
+      else if (/email/i.test(gatewayMsg)) userMessage = 'E-mail inválido. Verifique e tente novamente.';
       return new Response(
-        JSON.stringify({ error: 'Payment creation failed', details: data }),
-        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: userMessage }),
+        { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 

@@ -260,9 +260,14 @@ Deno.serve(async (req) => {
         customerData.id = searchData.data[0].id;
       } else {
         console.error('Asaas customer error:', JSON.stringify(customerData));
+        const errDesc = customerData?.errors?.[0]?.description || '';
+        let userMsg = 'Não foi possível processar seus dados. Verifique e tente novamente.';
+        if (/cpf|cnpj/i.test(errDesc)) userMsg = 'CPF inválido. Verifique o número e tente novamente.';
+        else if (/email/i.test(errDesc)) userMsg = 'E-mail inválido. Verifique e tente novamente.';
+        else if (/phone|telefone/i.test(errDesc)) userMsg = 'Telefone inválido. Verifique o número e tente novamente.';
         return new Response(
-          JSON.stringify({ error: 'Failed to create customer', details: customerData }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ error: userMsg }),
+          { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
     }
@@ -361,9 +366,13 @@ Deno.serve(async (req) => {
 
       if (!subRes.ok) {
         console.error('Asaas subscription error:', JSON.stringify(subData));
+        const subErrDesc = subData?.errors?.[0]?.description || '';
+        let subUserMsg = 'Não foi possível criar a assinatura. Verifique seus dados e tente novamente.';
+        if (/card|cartão|credit/i.test(subErrDesc)) subUserMsg = 'Dados do cartão inválidos. Verifique e tente novamente.';
+        else if (/cpf|cnpj/i.test(subErrDesc)) subUserMsg = 'CPF inválido. Verifique o número e tente novamente.';
         return new Response(
-          JSON.stringify({ error: 'Subscription creation failed', details: subData }),
-          { status: subRes.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ error: subUserMsg }),
+          { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
@@ -444,9 +453,14 @@ Deno.serve(async (req) => {
 
     if (!paymentRes.ok) {
       console.error('Asaas payment error:', JSON.stringify(paymentData));
+      const payErrDesc = paymentData?.errors?.[0]?.description || '';
+      let payUserMsg = 'Não foi possível processar o pagamento. Verifique seus dados e tente novamente.';
+      if (/card|cartão|credit|refused|recusad/i.test(payErrDesc)) payUserMsg = 'Pagamento recusado. Verifique os dados do cartão e tente novamente.';
+      else if (/cpf|cnpj/i.test(payErrDesc)) payUserMsg = 'CPF inválido. Verifique o número e tente novamente.';
+      else if (/insufficient|saldo/i.test(payErrDesc)) payUserMsg = 'Saldo insuficiente. Tente outro método de pagamento.';
       return new Response(
-        JSON.stringify({ error: 'Payment creation failed', details: paymentData }),
-        { status: paymentRes.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: payUserMsg }),
+        { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
