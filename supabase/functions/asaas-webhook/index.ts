@@ -217,7 +217,7 @@ Deno.serve(async (req) => {
             .single();
 
           if (custData) {
-            const checkoutUrl = (orderData.metadata as any)?.checkout_url || `https://paycheckout.lovable.app/checkout/${orderData.product_id}`;
+            const checkoutUrl = (orderData.metadata as any)?.checkout_url || `https://checkout.panterapay.com.br/checkout/${orderData.product_id}`;
 
             const capiResponse = await fetch(
               `${Deno.env.get('SUPABASE_URL')}/functions/v1/facebook-capi`,
