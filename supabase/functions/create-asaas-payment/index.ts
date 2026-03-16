@@ -260,9 +260,14 @@ Deno.serve(async (req) => {
         customerData.id = searchData.data[0].id;
       } else {
         console.error('Asaas customer error:', JSON.stringify(customerData));
+        const errDesc = customerData?.errors?.[0]?.description || '';
+        let userMsg = 'Não foi possível processar seus dados. Verifique e tente novamente.';
+        if (/cpf|cnpj/i.test(errDesc)) userMsg = 'CPF inválido. Verifique o número e tente novamente.';
+        else if (/email/i.test(errDesc)) userMsg = 'E-mail inválido. Verifique e tente novamente.';
+        else if (/phone|telefone/i.test(errDesc)) userMsg = 'Telefone inválido. Verifique o número e tente novamente.';
         return new Response(
-          JSON.stringify({ error: 'Failed to create customer', details: customerData }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ error: userMsg }),
+          { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
     }
