@@ -136,6 +136,22 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Anti-fraud: check blacklist (CPF + Email)
+    {
+      const cleanCpfCheck = customer.cpf?.replace(/\D/g, '') || '';
+      const checks = [];
+      if (customer.email) checks.push(supabaseAdmin.from('fraud_blacklist').select('id').eq('type', 'email').eq('value', customer.email.toLowerCase()).maybeSingle());
+      if (cleanCpfCheck) checks.push(supabaseAdmin.from('fraud_blacklist').select('id').eq('type', 'cpf').eq('value', cleanCpfCheck).maybeSingle());
+      const results = await Promise.all(checks);
+      if (results.some(r => r.data)) {
+        console.warn(`[create-asaas-payment] Blacklisted customer blocked: ${customer.email}`);
+        return new Response(
+          JSON.stringify({ error: 'Não foi possível processar este pagamento. Entre em contato com o suporte.' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     // Anti-fraud: detect duplicate purchase (same email + product in last 5 min)
     if (product_id && customer.email) {
       const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
