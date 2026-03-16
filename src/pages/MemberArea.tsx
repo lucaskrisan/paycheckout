@@ -610,7 +610,17 @@ const MemberArea = () => {
                   </button>
                 </div>
                 <SidebarContent />
-              </div>
+                <button
+                  onClick={() => navigate("/minha-conta" + (token ? `?token=${token}` : ""))}
+                  className="w-full flex items-center gap-3 p-4 mt-3 rounded-2xl border transition-all hover:bg-[hsl(220,16%,13%)]"
+                  style={{
+                    background: "hsl(220 18% 10%)",
+                    borderColor: "hsl(220 15% 14%)",
+                  }}
+                >
+                  <ArrowLeft className="w-4 h-4 text-[hsl(220,10%,50%)]" />
+                  <span className="text-white text-sm font-medium">Meus Cursos</span>
+                </button>
             </motion.div>
           </>
         )}
