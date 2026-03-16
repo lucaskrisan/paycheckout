@@ -6,40 +6,41 @@ import { motion } from "framer-motion";
 import { SectionHeader } from "./FeaturesGrid";
 
 const allFeatures = [
-  { icon: BarChart3, title: "Dashboard em tempo real", desc: "Vendas, receita e métricas com notificação Ka-CHING." },
-  { icon: Globe, title: "Multi-gateway", desc: "Pagar.me, Asaas, Mercado Pago e Stripe." },
-  { icon: ShoppingCart, title: "Recuperação de carrinho", desc: "Capture e recupere vendas perdidas." },
-  { icon: Users, title: "Cupons de desconto", desc: "Cupons por produto com limite e validade." },
-  { icon: Layers, title: "Order bumps", desc: "Ofertas complementares direto no checkout." },
-  { icon: Webhook, title: "Webhooks", desc: "Integre com qualquer plataforma via HMAC." },
-  { icon: Bell, title: "Notificações push", desc: "Alertas de venda em tempo real via PWA." },
-  { icon: Mail, title: "E-mails transacionais", desc: "Envio automático de confirmação e acesso." },
-  { icon: TrendingUp, title: "Atribuição UTM", desc: "Saiba qual campanha gerou cada venda." },
-  { icon: FileText, title: "Relatórios avançados", desc: "Métricas por método, chargeback e reembolso." },
-  { icon: Shield, title: "Segurança total", desc: "RLS, SSL e antifraude em todos os gateways." },
-  { icon: MessageCircle, title: "WhatsApp (em breve)", desc: "Recuperação e entrega via WhatsApp." },
+  { icon: BarChart3, title: "Dashboard em tempo real", desc: "Cada venda aparece ao vivo. Com notificação Ka-CHING que vicia." },
+  { icon: Globe, title: "Multi-gateway inteligente", desc: "Pagar.me, Asaas, Mercado Pago e Stripe. Failover automático." },
+  { icon: ShoppingCart, title: "Recuperação de carrinho", desc: "Captura quem desistiu e traz de volta. Dinheiro que ia pro lixo." },
+  { icon: Users, title: "Cupons estratégicos", desc: "Cupons por produto com limite, validade e rastreamento de uso." },
+  { icon: Layers, title: "Order bumps", desc: "Ofertas complementares no checkout. +23% de ticket médio." },
+  { icon: Webhook, title: "Webhooks HMAC", desc: "Integre com qualquer plataforma com segurança militar." },
+  { icon: Bell, title: "Push em tempo real", desc: "Cada venda grita no seu celular. Dopamina pura, 24/7." },
+  { icon: Mail, title: "E-mails automáticos", desc: "Confirmação, acesso, lembrete. Tudo no piloto automático." },
+  { icon: TrendingUp, title: "Atribuição UTM", desc: "Saiba exatamente qual campanha trouxe cada centavo." },
+  { icon: FileText, title: "Relatórios cirúrgicos", desc: "Métricas por método, chargeback, reembolso. Dados que decidem." },
+  { icon: Shield, title: "Segurança blindada", desc: "RLS, SSL, antifraude. Seu dinheiro protegido em todos os gateways." },
+  { icon: MessageCircle, title: "WhatsApp (em breve)", desc: "Recuperação e entrega via WhatsApp. O canal que todo mundo usa." },
 ];
 
 const AllFeatures = () => (
-  <section id="all-features" className="relative z-10 container max-w-7xl mx-auto px-6 py-28">
+  <section id="all-features" className="relative z-10 container max-w-7xl mx-auto px-6 py-32">
     <SectionHeader
+      badge="Arsenal completo"
       title="Tudo que um "
       highlight="predador precisa."
-      subtitle="Funcionalidades completas para dominar o mercado digital."
+      subtitle="18+ funcionalidades que plataformas de R$ 497/mês nem sonham em oferecer. E aqui é grátis."
     />
-    <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mt-16">
+    <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mt-20">
       {allFeatures.map((f, i) => (
         <motion.div
           key={f.title}
-          className="group bg-white/[0.015] border border-white/[0.04] rounded-xl p-5 hover:border-emerald-500/15 hover:bg-white/[0.03] transition-all duration-500"
+          className="group bg-white/[0.015] border border-white/[0.04] rounded-xl p-5 hover:border-primary/15 hover:bg-white/[0.03] transition-all duration-500"
           initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-30px" }}
           transition={{ duration: 0.4, delay: i * 0.03 }}
         >
-          <f.icon className="w-[18px] h-[18px] text-emerald-500/50 mb-3 group-hover:text-emerald-400 transition-colors duration-300" />
+          <f.icon className="w-[18px] h-[18px] text-primary/40 mb-3 group-hover:text-primary transition-colors duration-300" />
           <h3 className="text-[13px] font-bold text-white mb-1 tracking-tight">{f.title}</h3>
-          <p className="text-[12px] text-zinc-600 leading-relaxed font-light">{f.desc}</p>
+          <p className="text-[12px] text-[#6A6A75] leading-relaxed font-light">{f.desc}</p>
         </motion.div>
       ))}
     </div>
