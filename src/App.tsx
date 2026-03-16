@@ -45,6 +45,7 @@ import ProducerBilling from "./pages/admin/ProducerBilling";
 import Blacklist from "./pages/admin/Blacklist";
 import NotFound from "./pages/NotFound";
 import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 import PendingApproval from "./pages/PendingApproval";
 import CompleteProfile from "./pages/CompleteProfile";
 import InstallPrompt from "./components/InstallPrompt";
