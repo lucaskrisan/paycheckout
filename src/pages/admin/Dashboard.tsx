@@ -330,9 +330,9 @@ const Dashboard = () => {
   const metricCards = [
     {
       icon: DollarSign,
-      label: "Valor líquido",
-      value: fmt(totalLiquido),
-      sub: `Bruto: ${fmt(totalBruto)} (taxa: ${fmt(totalTaxas)})`,
+      label: totalTaxas > 0 ? "Valor líquido" : "Faturamento",
+      value: totalTaxas > 0 ? fmt(totalLiquido) : fmt(totalBruto),
+      sub: totalTaxas > 0 ? `Bruto: ${fmt(totalBruto)} (taxa: ${fmt(totalTaxas)})` : undefined,
     },
     {
       icon: TrendingUp,
