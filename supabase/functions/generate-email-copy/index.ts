@@ -10,10 +10,37 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // --- JWT Authentication ---
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseAuth = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    // --- End Authentication ---
+
     const { funnel_type, customer_name, customer_email, product_name, product_price, product_description, order_id } = await req.json();
 
     const lovableKey = Deno.env.get("LOVABLE_API_KEY");
     if (!lovableKey) throw new Error("LOVABLE_API_KEY not configured");
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
 
     // If order_id provided, fetch real product data
     let realProductName = product_name || "Produto";
@@ -22,10 +49,6 @@ serve(async (req) => {
     let realCustomerName = customer_name || "Cliente";
 
     if (order_id) {
-      const supabase = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-      );
       const { data: order } = await supabase
         .from("orders")
         .select("*, customers(name, email), products(name, price, description)")
@@ -33,6 +56,16 @@ serve(async (req) => {
         .single();
 
       if (order) {
+        // Verify caller owns this order
+        if (order.user_id !== user.id) {
+          const { data: isSuperAdmin } = await supabase.rpc("is_super_admin", { _user_id: user.id });
+          if (!isSuperAdmin) {
+            return new Response(JSON.stringify({ error: "Forbidden" }), {
+              status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+        }
+
         realProductName = order.products?.name || realProductName;
         realProductPrice = Number(order.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 });
         realProductDescription = order.products?.description || realProductDescription;
