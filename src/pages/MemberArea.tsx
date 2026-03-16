@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import {
+  ArrowLeft,
   BookOpen,
   CheckCircle2,
   Circle,
@@ -564,12 +565,14 @@ const MemberArea = () => {
               <Crown className="w-4 h-4" />
               <span className="hidden sm:inline">Catálogo</span>
             </button>
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center"
+            <button
+              onClick={() => navigate("/minha-conta" + (token ? `?token=${token}` : ""))}
+              className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-[hsl(220,16%,18%)]"
               style={{ background: "hsl(220 18% 14%)" }}
+              title="Meus cursos"
             >
-              <User className="w-4 h-4 text-[hsl(0,0%,60%)]" />
-            </div>
+              <ArrowLeft className="w-4 h-4 text-[hsl(0,0%,60%)]" />
+            </button>
           </div>
         </div>
       </header>
@@ -607,6 +610,17 @@ const MemberArea = () => {
                   </button>
                 </div>
                 <SidebarContent />
+                <button
+                  onClick={() => navigate("/minha-conta" + (token ? `?token=${token}` : ""))}
+                  className="w-full flex items-center gap-3 p-4 mt-3 rounded-2xl border transition-all hover:bg-[hsl(220,16%,13%)]"
+                  style={{
+                    background: "hsl(220 18% 10%)",
+                    borderColor: "hsl(220 15% 14%)",
+                  }}
+                >
+                  <ArrowLeft className="w-4 h-4 text-[hsl(220,10%,50%)]" />
+                  <span className="text-white text-sm font-medium">Meus Cursos</span>
+                </button>
               </div>
             </motion.div>
           </>

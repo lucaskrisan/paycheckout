@@ -242,43 +242,46 @@ const CustomerPortal = () => {
       return;
     }
 
-    // Producer previewing own course — find or create a temporary access
+    // Producer previewing own course — find or create access for their own customer record
+    const email = user?.email || "";
+    let customerId: string | null = null;
+
+    // Find or create the producer's customer record
+    const { data: custData } = await supabase
+      .from("customers")
+      .select("id")
+      .eq("email", email)
+      .limit(1)
+      .maybeSingle();
+
+    if (custData) {
+      customerId = custData.id;
+    } else {
+      const { data: newCust } = await supabase
+        .from("customers")
+        .insert({ name: customerName || "Produtor", email, user_id: user!.id })
+        .select("id")
+        .single();
+      customerId = newCust?.id || null;
+    }
+
+    if (!customerId) {
+      toast.error("Erro ao criar acesso de preview");
+      return;
+    }
+
+    // Check if this producer already has access to this course
     const { data: existing } = await supabase
       .from("member_access")
       .select("access_token")
       .eq("course_id", course.id)
+      .eq("customer_id", customerId)
       .limit(1)
       .maybeSingle();
 
     if (existing) {
       navigate(`/membros?token=${existing.access_token}`);
     } else {
-      const email = user?.email || "";
-      let customerId: string | null = null;
-
-      const { data: custData } = await supabase
-        .from("customers")
-        .select("id")
-        .eq("email", email)
-        .limit(1)
-        .maybeSingle();
-
-      if (custData) {
-        customerId = custData.id;
-      } else {
-        const { data: newCust } = await supabase
-          .from("customers")
-          .insert({ name: customerName || "Produtor", email, user_id: user!.id })
-          .select("id")
-          .single();
-        customerId = newCust?.id || null;
-      }
-
-      if (!customerId) {
-        toast.error("Erro ao criar acesso de preview");
-        return;
-      }
-
       const { data: newAccess, error: accessError } = await supabase
         .from("member_access")
         .insert({ course_id: course.id, customer_id: customerId })
