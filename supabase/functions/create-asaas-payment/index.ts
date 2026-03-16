@@ -382,7 +382,7 @@ Deno.serve(async (req) => {
             const title = '🔄 Nova assinatura!';
             const showProductName = notifSettings.some((s) => s.show_product_name);
             const message = `${customer.name} • 💳 R$ ${formattedAmount}/mês${showProductName ? ` • ${productName}` : ''}`;
-            await sendPushNotification(title, message, 'https://paycheckout.lovable.app/admin/orders');
+             await sendPushNotification(title, message, 'https://checkout.panterapay.com.br/admin/orders');
           }
         } catch (notifErr) {
           console.error('[create-asaas-payment] Notification error:', notifErr);
