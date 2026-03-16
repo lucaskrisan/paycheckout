@@ -162,6 +162,29 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Resolve Mercado Pago token from producer's gateway config
+    if (productOwnerId) {
+      const { data: gw } = await supabaseAdmin
+        .from('payment_gateways')
+        .select('config')
+        .eq('user_id', productOwnerId)
+        .eq('provider', 'mercadopago')
+        .eq('active', true)
+        .maybeSingle();
+      if (gw?.config && typeof gw.config === 'object' && (gw.config as any).api_key) {
+        MERCADOPAGO_ACCESS_TOKEN = (gw.config as any).api_key;
+      }
+    }
+    if (!MERCADOPAGO_ACCESS_TOKEN) {
+      MERCADOPAGO_ACCESS_TOKEN = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN') || null;
+    }
+    if (!MERCADOPAGO_ACCESS_TOKEN) {
+      return new Response(
+        JSON.stringify({ error: 'Gateway de pagamento não configurado. O produtor precisa configurar o Mercado Pago.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Upsert customer
     const { data: existingCustomer } = await supabaseAdmin
       .from('customers')

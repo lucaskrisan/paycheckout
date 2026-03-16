@@ -195,6 +195,29 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Resolve Asaas API key from producer's gateway config
+    if (productOwnerId) {
+      const { data: gw } = await supabaseAdmin
+        .from('payment_gateways')
+        .select('config')
+        .eq('user_id', productOwnerId)
+        .eq('provider', 'asaas')
+        .eq('active', true)
+        .maybeSingle();
+      if (gw?.config && typeof gw.config === 'object' && (gw.config as any).api_key) {
+        ASAAS_API_KEY = (gw.config as any).api_key;
+      }
+    }
+    if (!ASAAS_API_KEY) {
+      ASAAS_API_KEY = Deno.env.get('ASAAS_API_KEY') || null;
+    }
+    if (!ASAAS_API_KEY) {
+      return new Response(
+        JSON.stringify({ error: 'Gateway de pagamento não configurado. O produtor precisa configurar o Asaas.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Upsert customer
     const { data: existingCustomer } = await supabaseAdmin
       .from('customers')
