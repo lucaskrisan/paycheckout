@@ -4,62 +4,40 @@ import { motion } from "framer-motion";
 const features = [
   {
     icon: CreditCard,
-    title: "Checkout que hipnotiza",
-    desc: "Seu cliente entra, não consegue sair sem comprar. Timer inteligente, prova social em tempo real e design que elimina objeções.",
-    tag: "Conversão",
+    title: "Checkout ultra-conversivo",
+    desc: "Otimizado para maximizar vendas com timer, prova social e design que elimina objeções antes do clique.",
   },
   {
     icon: QrCode,
     title: "PIX, cartão e boleto",
-    desc: "94% de aprovação no PIX. Desconto inteligente que empurra o cliente pro pagamento instantâneo. Dinheiro na conta em segundos.",
-    tag: "Pagamento",
+    desc: "Aceita todos os métodos de pagamento. PIX com 94% de aprovação e desconto inteligente integrado.",
   },
   {
     icon: GraduationCap,
-    title: "Área de membros inclusa",
-    desc: "Entrega cursos, módulos e materiais automaticamente. Zero trabalho manual. O aluno comprou? Acesso liberado. Ponto.",
-    tag: "Entrega",
+    title: "Área de membros integrada",
+    desc: "Entregue cursos, módulos e materiais automaticamente após a compra. Zero trabalho manual.",
   },
   {
     icon: Paintbrush,
-    title: "Checkout builder visual",
-    desc: "Monte seu checkout perfeito em minutos. Drag & drop. Sem código. Sem pedir favor pra designer. Você no controle.",
-    tag: "Criação",
+    title: "Builder visual de checkout",
+    desc: "Monte seu checkout perfeito em minutos. Drag & drop, sem código, sem depender de ninguém.",
   },
   {
     icon: Sparkles,
     title: "One-click upsell",
-    desc: "O cliente acabou de comprar e já recebe uma oferta irrecusável. Sem redigitar dados. Ticket médio explode.",
-    tag: "Receita",
+    desc: "Ofertas pós-compra sem redigitar dados. Aumente o ticket médio em até 37% automaticamente.",
   },
   {
     icon: Target,
-    title: "Rastreamento militar",
-    desc: "Pixel + CAPI com deduplicação DUAL ✓. EMQ otimizado. Cada centavo de anúncio rastreado. Seu ROAS agradece.",
-    tag: "Tracking",
+    title: "Rastreamento avançado Meta",
+    desc: "Pixel + CAPI com deduplicação DUAL ✓ e EMQ otimizado. Cada centavo de anúncio rastreado.",
   },
 ];
-
-const FeaturesGrid = () => (
-  <section id="features" className="relative z-10 container max-w-7xl mx-auto px-6 py-32">
-    <SectionHeader
-      badge="Por que PanteraPay?"
-      title="Enquanto você perde vendas, "
-      highlight="seus concorrentes lucram."
-      subtitle="Cada funcionalidade foi desenhada com um único objetivo: colocar mais dinheiro no seu bolso."
-    />
-    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mt-20">
-      {features.map((f, i) => (
-        <FeatureCard key={f.title} {...f} index={i} />
-      ))}
-    </div>
-  </section>
-);
 
 export function SectionHeader({ title, highlight, subtitle, badge }: { title: string; highlight: string; subtitle: string; badge?: string }) {
   return (
     <motion.div
-      className="text-center max-w-2xl mx-auto"
+      className="max-w-2xl"
       initial={{ opacity: 0, y: 25 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
@@ -76,32 +54,42 @@ export function SectionHeader({ title, highlight, subtitle, badge }: { title: st
           {highlight}
         </span>
       </h2>
-      <p className="text-sm text-[#6A6A75] mt-5 font-light leading-relaxed max-w-lg mx-auto">{subtitle}</p>
+      <p className="text-sm text-[#6A6A75] mt-5 font-light leading-relaxed max-w-lg">{subtitle}</p>
     </motion.div>
   );
 }
 
-function FeatureCard({ icon: Icon, title, desc, tag, index }: { icon: any; title: string; desc: string; tag: string; index: number }) {
+const FeaturesGrid = () => (
+  <section id="features" className="relative z-10 container max-w-7xl mx-auto px-6 py-28">
+    <SectionHeader
+      title="Uma plataforma, "
+      highlight="controle total."
+      subtitle="Tudo que você precisa para vender online com alta performance."
+    />
+    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mt-16">
+      {features.map((f, i) => (
+        <FeatureCard key={f.title} {...f} index={i} />
+      ))}
+    </div>
+  </section>
+);
+
+function FeatureCard({ icon: Icon, title, desc, index }: { icon: any; title: string; desc: string; index: number }) {
   return (
     <motion.div
-      className="group relative bg-white/[0.015] border border-white/[0.05] rounded-2xl p-8 hover:border-primary/20 hover:bg-white/[0.03] transition-all duration-500 overflow-hidden"
-      initial={{ opacity: 0, y: 25 }}
+      className="group relative bg-white/[0.02] border border-white/[0.05] rounded-2xl p-7 hover:border-primary/20 hover:bg-white/[0.04] transition-all duration-500 overflow-hidden"
+      initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: 0.5, delay: index * 0.08, ease: [0.16, 1, 0.3, 1] }}
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.04] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
       <div className="relative z-10">
-        <div className="flex items-center justify-between mb-6">
-          <div className="w-12 h-12 bg-primary/[0.07] border border-primary/10 rounded-xl flex items-center justify-center group-hover:bg-primary/[0.12] group-hover:border-primary/20 transition-all duration-500">
-            <Icon className="w-5 h-5 text-primary/70 group-hover:text-primary transition-colors duration-300" />
-          </div>
-          <span className="text-[9px] font-bold text-[#3A3A40] uppercase tracking-[0.2em] group-hover:text-primary/40 transition-colors">
-            {tag}
-          </span>
+        <div className="w-12 h-12 bg-primary/[0.08] border border-primary/10 rounded-xl flex items-center justify-center mb-5 group-hover:bg-primary/[0.12] group-hover:border-primary/20 transition-all duration-500">
+          <Icon className="w-5 h-5 text-primary/80 group-hover:text-primary transition-colors duration-300" />
         </div>
-        <h3 className="font-bold text-[16px] text-white mb-2.5 tracking-tight">{title}</h3>
-        <p className="text-[13px] text-[#6A6A75] leading-[1.7] font-light">{desc}</p>
+        <h3 className="font-bold text-[15px] text-white mb-2 tracking-tight">{title}</h3>
+        <p className="text-[13px] text-[#6A6A75] leading-relaxed font-light">{desc}</p>
       </div>
     </motion.div>
   );
