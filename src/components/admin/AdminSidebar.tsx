@@ -88,6 +88,7 @@ const configItems = [
   { title: "Webhook", url: "/admin/webhooks", icon: Webhook },
   { title: "WhatsApp", url: "/admin/whatsapp", icon: Smartphone },
   { title: "Notificações", url: "/admin/notifications", icon: Bell },
+  { title: "Blacklist", url: "/admin/blacklist", icon: ShieldCheck },
   { title: "App Mobile", url: "/admin/pwa", icon: Smartphone },
   { title: "Minha conta", url: "/admin/my-account", icon: User },
 ];

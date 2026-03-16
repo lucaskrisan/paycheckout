@@ -100,6 +100,7 @@ const App = () => (
               <Route path="upsell" element={<Upsell />} />
               <Route path="roadmap" element={<Roadmap />} />
               <Route path="manual" element={<TechnicalManual />} />
+              <Route path="blacklist" element={<Blacklist />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
