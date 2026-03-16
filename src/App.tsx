@@ -44,6 +44,7 @@ import Metrics from "./pages/admin/Metrics";
 import ProducerBilling from "./pages/admin/ProducerBilling";
 import Blacklist from "./pages/admin/Blacklist";
 import NotFound from "./pages/NotFound";
+import Terms from "./pages/Terms";
 import PendingApproval from "./pages/PendingApproval";
 import CompleteProfile from "./pages/CompleteProfile";
 import InstallPrompt from "./components/InstallPrompt";
