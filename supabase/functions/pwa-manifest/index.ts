@@ -31,13 +31,13 @@ Deno.serve(async (req) => {
     }
 
     // Defaults
-    const appName = settings?.app_name || 'PayCheckout';
-    const shortName = settings?.short_name || 'PayCheckout';
-    const description = settings?.description || 'Plataforma de vendas';
-    const themeColor = settings?.theme_color || '#16a34a';
-    const bgColor = settings?.background_color || '#ffffff';
-    const icon192 = settings?.icon_192_url || '/brand-icon.webp';
-    const icon512 = settings?.icon_512_url || '/brand-icon.webp';
+    const appName = settings?.app_name || 'PanteraPay';
+    const shortName = settings?.short_name || 'PanteraPay';
+    const description = settings?.description || 'Plataforma completa de vendas';
+    const themeColor = settings?.theme_color || '#10b981';
+    const bgColor = settings?.background_color || '#050505';
+    const icon192 = settings?.icon_192_url || '/pwa-192x192.png';
+    const icon512 = settings?.icon_512_url || '/pwa-512x512.png';
 
     const manifest = {
       name: appName,
