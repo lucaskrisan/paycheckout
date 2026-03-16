@@ -254,7 +254,7 @@ const Dashboard = () => {
   }, [orders, selectedProductId]);
 
   const filtered = useMemo(() => filterByPeriod(productFiltered), [productFiltered, period]);
-  const approved = useMemo(() => filtered.filter((o) => o.status === "paid" || o.status === "approved"), [filtered]);
+  const approved = useMemo(() => filtered.filter((o) => ["paid", "approved", "confirmed"].includes(o.status)), [filtered]);
   const pending = useMemo(() => filtered.filter((o) => o.status === "pending"), [filtered]);
   const refunded = useMemo(() => filtered.filter((o) => o.status === "refunded"), [filtered]);
 
