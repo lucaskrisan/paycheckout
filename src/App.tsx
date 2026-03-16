@@ -48,6 +48,7 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Cookies from "./pages/Cookies";
 import Disclaimer from "./pages/Disclaimer";
+import ProhibitedContent from "./pages/ProhibitedContent";
 import PendingApproval from "./pages/PendingApproval";
 import CompleteProfile from "./pages/CompleteProfile";
 import InstallPrompt from "./components/InstallPrompt";
@@ -75,6 +76,7 @@ const App = () => (
             <Route path="/privacidade" element={<Privacy />} />
             <Route path="/cookies" element={<Cookies />} />
             <Route path="/isencao-financeira" element={<Disclaimer />} />
+            <Route path="/produtos-proibidos" element={<ProhibitedContent />} />
             <Route path="/admin/products/:productId/checkout-builder" element={<CheckoutBuilder />} />
             <Route path="/admin/products/:productId/checkout-builder/:configId" element={<CheckoutBuilder />} />
             <Route path="/admin" element={<><InstallPrompt /><AdminLayout /></>}>
