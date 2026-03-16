@@ -384,14 +384,15 @@ Deno.serve(async (req) => {
       const { data: notifSettings } = await supabaseAdmin
         .from('notification_settings')
         .select('send_pending, show_product_name')
-        .eq('send_pending', true);
+        .eq('user_id', productOwnerId || '')
+        .eq('send_pending', true)
+        .maybeSingle();
 
-      if (notifSettings && notifSettings.length > 0) {
-        const showProductName = notifSettings.some((s) => s.show_product_name);
+      if (notifSettings) {
         const formattedAmount = Number(amount).toFixed(2).replace('.', ',');
         const title = '💠 PIX gerado!';
-        const message = `${customer.name} gerou um PIX de R$ ${formattedAmount}${showProductName ? ` • ${productName}` : ''}`;
-        await sendPushNotification(title, message, 'https://checkout.panterapay.com.br/admin/orders');
+        const message = `${customer.name} gerou um PIX de R$ ${formattedAmount}${notifSettings.show_product_name ? ` • ${productName}` : ''}`;
+        await sendPushNotification(title, message, productOwnerId || undefined, 'https://checkout.panterapay.com.br/admin/orders');
       }
     } catch (notifErr) {
       console.error('[create-pix-payment] Notification error:', notifErr);
