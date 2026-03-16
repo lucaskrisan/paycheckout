@@ -366,9 +366,13 @@ Deno.serve(async (req) => {
 
       if (!subRes.ok) {
         console.error('Asaas subscription error:', JSON.stringify(subData));
+        const subErrDesc = subData?.errors?.[0]?.description || '';
+        let subUserMsg = 'Não foi possível criar a assinatura. Verifique seus dados e tente novamente.';
+        if (/card|cartão|credit/i.test(subErrDesc)) subUserMsg = 'Dados do cartão inválidos. Verifique e tente novamente.';
+        else if (/cpf|cnpj/i.test(subErrDesc)) subUserMsg = 'CPF inválido. Verifique o número e tente novamente.';
         return new Response(
-          JSON.stringify({ error: 'Subscription creation failed', details: subData }),
-          { status: subRes.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ error: subUserMsg }),
+          { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
