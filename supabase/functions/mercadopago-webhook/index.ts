@@ -260,12 +260,15 @@ Deno.serve(async (req) => {
 
       // Push notification
       try {
+        const ownerId = orderData.user_id;
         const { data: notifSettings } = await supabase
           .from('notification_settings')
           .select('send_approved, show_product_name')
-          .eq('send_approved', true);
+          .eq('user_id', ownerId || '')
+          .eq('send_approved', true)
+          .maybeSingle();
 
-        if (notifSettings && notifSettings.length > 0) {
+        if (notifSettings) {
           const amount = Number(orderData.amount).toFixed(2).replace('.', ',');
           const method = orderData.payment_method === 'pix' ? '💠 PIX' : '💳 Cartão';
 
@@ -281,10 +284,10 @@ Deno.serve(async (req) => {
             if (cust) customerName = cust.name;
           }
 
-          const showProductName = notifSettings.some((s: any) => s.show_product_name);
           await sendPushNotification(
             '💰 Nova venda via Mercado Pago!',
-            `${customerName || 'Cliente'} • ${method} R$ ${amount}${showProductName ? ` • ${productName}` : ''}`,
+            `${customerName || 'Cliente'} • ${method} R$ ${amount}${notifSettings.show_product_name ? ` • ${productName}` : ''}`,
+            ownerId || undefined,
             'https://checkout.panterapay.com.br/admin/orders'
           );
         }
