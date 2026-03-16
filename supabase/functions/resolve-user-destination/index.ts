@@ -85,11 +85,15 @@ Deno.serve(async (req) => {
       isAdmin = true;
     }
 
+    // Priority: admin/super_admin always goes to /admin, even if they also bought courses.
+    // Only pure buyers (no admin role) go to /minha-conta.
     const destination = !profileCompleted
       ? "/completar-perfil"
-      : buyerToken
-        ? `/minha-conta?token=${buyerToken}`
-        : "/admin";
+      : isAdmin
+        ? "/admin"
+        : buyerToken
+          ? `/minha-conta?token=${buyerToken}`
+          : "/admin";
 
     return new Response(
       JSON.stringify({
