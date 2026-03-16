@@ -307,22 +307,6 @@ const Dashboard = () => {
     return Object.entries(days).map(([name, total]) => ({ name, total }));
   }, [approved, period]);
 
-  // UTM Attribution from approved orders
-  const utmRows = useMemo(() => {
-    const map = new Map<string, { source: string; campaign: string; medium: string; count: number; revenue: number }>();
-    approved.forEach((o) => {
-      const meta = (o.metadata || {}) as Record<string, any>;
-      const source = meta.utm_source;
-      if (!source) return;
-      const campaign = meta.utm_campaign || "(sem campanha)";
-      const medium = meta.utm_medium || "(sem medium)";
-      const key = `${source}|||${campaign}|||${medium}`;
-      const existing = map.get(key);
-      if (existing) { existing.count += 1; existing.revenue += Number(o.amount) || 0; }
-      else { map.set(key, { source, campaign, medium, count: 1, revenue: Number(o.amount) || 0 }); }
-    });
-    return Array.from(map.values()).sort((a, b) => b.revenue - a.revenue);
-  }, [approved]);
 
   const fmt = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
 
