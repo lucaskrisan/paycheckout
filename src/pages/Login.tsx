@@ -258,7 +258,7 @@ const Login = () => {
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               {isSignUp ? (
-                <>Já possui uma conta no PayCheckout? <span className="text-primary font-semibold">Acessar</span></>
+                <>Já possui uma conta no PanteraPay? <span className="text-primary font-semibold">Acessar</span></>
               ) : (
                 <>Não tem conta? <span className="text-primary font-semibold">Cadastre-se grátis</span></>
               )}
