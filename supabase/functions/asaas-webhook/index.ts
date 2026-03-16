@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-async function sendPushNotification(title: string, message: string, url?: string, iconUrl?: string) {
+async function sendPushNotification(title: string, message: string, targetUserId?: string, url?: string, iconUrl?: string) {
   const appId = Deno.env.get('ONESIGNAL_APP_ID');
   const apiKey = Deno.env.get('ONESIGNAL_REST_API_KEY');
   if (!appId || !apiKey) {
@@ -16,12 +16,16 @@ async function sendPushNotification(title: string, message: string, url?: string
   try {
     const payload: Record<string, unknown> = {
       app_id: appId,
-      included_segments: ['Total Subscriptions'],
       target_channel: 'push',
       headings: { en: title },
       contents: { en: message },
       chrome_web_icon: iconUrl || 'https://checkout.panterapay.com.br/pwa-192x192.png',
     };
+    if (targetUserId) {
+      payload.filters = [{ field: 'tag', key: 'user_id', relation: '=', value: targetUserId }];
+    } else {
+      payload.included_segments = ['Total Subscriptions'];
+    }
     if (url) payload.url = url;
 
     const response = await fetch('https://api.onesignal.com/notifications', {
@@ -334,12 +338,15 @@ Deno.serve(async (req) => {
     // Send push notification on confirmed sale
     if ((event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED') && orderData) {
       try {
+        const ownerId = orderData.user_id;
         const { data: notifSettings } = await supabase
           .from('notification_settings')
           .select('send_approved, show_product_name')
-          .eq('send_approved', true);
+          .eq('user_id', ownerId || '')
+          .eq('send_approved', true)
+          .maybeSingle();
 
-        if (notifSettings && notifSettings.length > 0) {
+        if (notifSettings) {
           const amount = Number(orderData.amount).toFixed(2).replace('.', ',');
           const method = orderData.payment_method === 'pix' ? '💠 PIX' : '💳 Cartão';
 
@@ -364,11 +371,10 @@ Deno.serve(async (req) => {
             if (cust) customerName = cust.name;
           }
 
-          const showProductName = notifSettings.some((s) => s.show_product_name);
           const title = '💰 Nova venda confirmada!';
-          const message = `${customerName || 'Cliente'} • ${method} R$ ${amount}${showProductName ? ` • ${productName}` : ''}`;
+          const message = `${customerName || 'Cliente'} • ${method} R$ ${amount}${notifSettings.show_product_name ? ` • ${productName}` : ''}`;
 
-          await sendPushNotification(title, message, 'https://checkout.panterapay.com.br/admin/orders');
+          await sendPushNotification(title, message, ownerId || undefined, 'https://checkout.panterapay.com.br/admin/orders');
         }
       } catch (notifErr) {
         console.error('[asaas-webhook] Notification error (non-blocking):', notifErr);
