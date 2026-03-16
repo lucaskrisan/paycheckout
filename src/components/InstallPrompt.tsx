@@ -108,7 +108,7 @@ const InstallPrompt = () => {
               <Smartphone size={28} />
             </div>
             <div>
-              <h3 className="font-bold text-lg">Instalar PayCheckout</h3>
+              <h3 className="font-bold text-lg">Instalar PanteraPay</h3>
               <p className="text-sm opacity-90">Acesso rápido na tela inicial</p>
             </div>
           </div>
