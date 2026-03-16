@@ -20,7 +20,7 @@ async function sendPushNotification(title: string, message: string, url?: string
       target_channel: 'push',
       headings: { en: title },
       contents: { en: message },
-      chrome_web_icon: iconUrl || 'https://paycheckout.lovable.app/pwa-192x192.png',
+      chrome_web_icon: iconUrl || 'https://checkout.panterapay.com.br/pwa-192x192.png',
     };
     if (url) payload.url = url;
 
