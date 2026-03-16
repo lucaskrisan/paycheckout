@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    const { order_id, upsell_product_id } = await req.json();
+    const { order_id, upsell_product_id, customer_email } = await req.json();
 
     if (!order_id || !upsell_product_id) {
       return new Response(
@@ -25,7 +25,24 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get original order
+    // --- Authentication: JWT or customer_email verification ---
+    let callerVerified = false;
+
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      const supabaseAuth = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_ANON_KEY')!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+      const { data: { user } } = await supabaseAuth.auth.getUser();
+      if (user) {
+        callerVerified = true;
+        console.log('[process-upsell] Authenticated via JWT:', user.id);
+      }
+    }
+
+    // Get original order (need it for both auth check and processing)
     const { data: originalOrder, error: orderErr } = await supabaseAdmin
       .from('orders')
       .select('id, customer_id, user_id, product_id, external_id, payment_method, metadata, status')
@@ -39,6 +56,34 @@ Deno.serve(async (req) => {
       );
     }
 
+    // If not JWT-authenticated, verify customer_email matches order's customer
+    if (!callerVerified) {
+      if (!customer_email) {
+        return new Response(
+          JSON.stringify({ error: 'Autenticação necessária. Forneça customer_email ou faça login.' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const { data: customer } = await supabaseAdmin
+        .from('customers')
+        .select('email')
+        .eq('id', originalOrder.customer_id)
+        .single();
+
+      if (!customer || customer.email.toLowerCase() !== customer_email.toLowerCase()) {
+        console.warn('[process-upsell] Email mismatch for order:', order_id);
+        return new Response(
+          JSON.stringify({ error: 'Não autorizado' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      callerVerified = true;
+      console.log('[process-upsell] Verified via customer_email:', customer_email);
+    }
+
+    // --- Business validation ---
     if (originalOrder.status !== 'paid' && originalOrder.status !== 'approved') {
       return new Response(
         JSON.stringify({ error: 'Pedido original não está aprovado' }),
@@ -53,7 +98,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get the Asaas customer ID from original order metadata
     const metadata = originalOrder.metadata as Record<string, any> || {};
     const asaasCustomerId = metadata.asaas_customer_id;
     const creditCardToken = metadata.credit_card_token;
@@ -137,7 +181,7 @@ Deno.serve(async (req) => {
     if (!paymentRes.ok) {
       console.error('[process-upsell] Asaas payment error:', JSON.stringify(paymentData));
       return new Response(
-        JSON.stringify({ error: 'Falha ao processar pagamento do upsell', details: paymentData }),
+        JSON.stringify({ error: 'Falha ao processar pagamento do upsell' }),
         { status: paymentRes.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -216,7 +260,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('[process-upsell] Error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'Erro interno ao processar upsell' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
