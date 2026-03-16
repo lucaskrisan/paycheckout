@@ -6,9 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/useAuth";
 import { lovable } from "@/integrations/lovable/index";
+import panteraMascot from "@/assets/pantera-mascot.png";
 
 import { toast } from "sonner";
-import { Eye, EyeOff, Star, Zap } from "lucide-react";
+import { Eye, EyeOff, Star } from "lucide-react";
 
 const formatCpfCnpj = (value: string) => {
   const digits = value.replace(/\D/g, "");
@@ -100,9 +101,10 @@ const Login = () => {
         <div className="w-full max-w-[460px]">
           {/* Logo */}
           <div className="flex items-center justify-center gap-2.5 mb-10">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-              <Zap className="w-5 h-5 text-primary-foreground" />
-            </div>
+            <img src={panteraMascot} alt="PanteraPay" className="w-10 h-10 drop-shadow-[0_0_12px_rgba(0,230,118,0.3)]" />
+            <span className="font-display font-extrabold text-xl tracking-tight text-foreground">
+              Pantera<span className="text-primary">Pay</span>
+            </span>
           </div>
 
           <div className="text-center mb-8">
@@ -110,7 +112,7 @@ const Login = () => {
               {isSignUp ? "Crie sua conta" : "Acesse sua conta"}
             </h1>
             <p className="text-sm text-muted-foreground mt-1.5">
-              {isSignUp ? "Informe seus dados para continuar." : "Bem-vindo de volta ao PayCheckout."}
+              {isSignUp ? "Informe seus dados para continuar." : "Bem-vindo de volta ao PanteraPay."}
             </p>
           </div>
 
@@ -257,7 +259,7 @@ const Login = () => {
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               {isSignUp ? (
-                <>Já possui uma conta no PayCheckout? <span className="text-primary font-semibold">Acessar</span></>
+                <>Já possui uma conta no PanteraPay? <span className="text-primary font-semibold">Acessar</span></>
               ) : (
                 <>Não tem conta? <span className="text-primary font-semibold">Cadastre-se grátis</span></>
               )}
@@ -274,7 +276,7 @@ const Login = () => {
       </div>
 
       {/* Right side - Dark branding panel */}
-      <div className="hidden lg:flex lg:w-[45%] relative bg-[hsl(220,28%,8%)] overflow-hidden">
+      <div className="hidden lg:flex lg:w-[45%] relative bg-[#0B0B0D] overflow-hidden">
         {/* Subtle grid pattern */}
         <div className="absolute inset-0 opacity-[0.03]">
           <div className="absolute inset-0" style={{
@@ -293,8 +295,8 @@ const Login = () => {
               Seu produto digital faturando com automações reais de maneira eficiente
             </h2>
 
-            <p className="text-emerald-400/80 italic text-base">
-              "PayCheckout é o ecossistema que faltava para eu escalar milhões."
+            <p className="text-primary/80 italic text-base">
+              "PanteraPay é o ecossistema que faltava para eu escalar milhões."
             </p>
 
             <div className="flex items-center gap-2">
@@ -306,12 +308,10 @@ const Login = () => {
 
             {/* Dashboard preview mockup */}
             <div className="mt-8 rounded-xl border border-white/10 bg-white/[0.03] backdrop-blur-sm p-1 shadow-2xl">
-              <div className="rounded-lg bg-[hsl(220,25%,12%)] p-4 space-y-3">
+              <div className="rounded-lg bg-[#141417] p-4 space-y-3">
                 <div className="flex items-center gap-2 mb-4">
-                  <div className="w-7 h-7 bg-primary/20 rounded-lg flex items-center justify-center">
-                    <Zap className="w-3.5 h-3.5 text-primary" />
-                  </div>
-                  <span className="text-white/80 text-xs font-medium">PayCheckout</span>
+                  <img src={panteraMascot} alt="" className="w-7 h-7" />
+                  <span className="text-white/80 text-xs font-medium">PanteraPay</span>
                   <span className="text-white/40 text-xs ml-auto">Dashboard</span>
                 </div>
 
