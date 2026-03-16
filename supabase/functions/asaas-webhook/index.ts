@@ -53,7 +53,7 @@ async function sendAccessEmail(supabase: any, customerId: string, course: { id: 
 
     if (!customer) return;
 
-    const siteUrl = 'https://paycheckout.lovable.app';
+    const siteUrl = 'https://checkout.panterapay.com.br';
     const accessUrl = `${siteUrl}/membros?token=${accessToken}`;
 
     const emailHtml = `
