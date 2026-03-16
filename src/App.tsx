@@ -72,6 +72,7 @@ const App = () => (
             <Route path="/aguardando-aprovacao" element={<PendingApproval />} />
             <Route path="/termos" element={<Terms />} />
             <Route path="/privacidade" element={<Privacy />} />
+            <Route path="/cookies" element={<Cookies />} />
             <Route path="/admin/products/:productId/checkout-builder" element={<CheckoutBuilder />} />
             <Route path="/admin/products/:productId/checkout-builder/:configId" element={<CheckoutBuilder />} />
             <Route path="/admin" element={<><InstallPrompt /><AdminLayout /></>}>
