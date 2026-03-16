@@ -13,6 +13,7 @@ import {
   Bell,
   MessageCircle,
   ShieldCheck,
+  ShieldBan,
   Webhook,
   Mail,
   Smartphone,
