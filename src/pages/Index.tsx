@@ -6,11 +6,10 @@ import { Loader2 } from "lucide-react";
 import HeroSection from "@/components/landing/HeroSection";
 import FeaturesGrid from "@/components/landing/FeaturesGrid";
 import AllFeatures from "@/components/landing/AllFeatures";
-import SocialProof from "@/components/landing/SocialProof";
 import CTASection from "@/components/landing/CTASection";
 import LandingFooter from "@/components/landing/LandingFooter";
 import LandingHeader from "@/components/landing/LandingHeader";
-import ComparisonSection from "@/components/landing/ComparisonSection";
+import ShowcaseSection from "@/components/landing/ShowcaseSection";
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -42,15 +41,13 @@ const Index = () => {
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/20">
       {/* Ambient glow */}
       <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[700px] bg-[radial-gradient(ellipse,_rgba(0,230,118,0.05)_0%,_transparent_70%)]" />
-        <div className="absolute bottom-0 right-0 w-[600px] h-[400px] bg-[radial-gradient(ellipse,_rgba(212,175,55,0.02)_0%,_transparent_70%)]" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[700px] bg-[radial-gradient(ellipse,_rgba(0,230,118,0.04)_0%,_transparent_70%)]" />
       </div>
 
       <LandingHeader />
       <HeroSection />
-      <SocialProof />
+      <ShowcaseSection />
       <FeaturesGrid />
-      <ComparisonSection />
       <AllFeatures />
       <CTASection />
       <LandingFooter />
