@@ -89,7 +89,6 @@ const configItems = [
   { title: "Webhook", url: "/admin/webhooks", icon: Webhook },
   { title: "WhatsApp", url: "/admin/whatsapp", icon: Smartphone },
   { title: "Notificações", url: "/admin/notifications", icon: Bell },
-  { title: "Blacklist", url: "/admin/blacklist", icon: ShieldBan },
   { title: "App Mobile", url: "/admin/pwa", icon: Smartphone },
   { title: "Minha conta", url: "/admin/my-account", icon: User },
 ];
@@ -99,6 +98,7 @@ const superAdminItems = [
   { title: "Meta Ads", url: "/admin/meta-ads", icon: Megaphone },
   { title: "Painel Plataforma", url: "/admin/platform", icon: Crown },
   { title: "Billing", url: "/admin/billing", icon: Wallet },
+  { title: "Blacklist", url: "/admin/blacklist", icon: ShieldBan },
   { title: "Roadmap", url: "/admin/roadmap", icon: ClipboardList },
   { title: "Fiscalizar", url: "/admin/health", icon: ShieldCheck },
 ];
