@@ -230,7 +230,7 @@ const HeroSection = () => {
       </div>
 
       {/* Partners bar */}
-      <div className="absolute bottom-0 left-0 right-0 border-t border-white/[0.04] bg-[#0B0B0D]/80 backdrop-blur-sm py-5">
+      <div className="border-t border-white/[0.04] bg-white/[0.01] py-6 mt-8">
         <div className="container max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-center gap-6 md:gap-12 flex-wrap">
             {[
