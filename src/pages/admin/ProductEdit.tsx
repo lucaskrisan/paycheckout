@@ -450,12 +450,13 @@ const ProductEdit = () => {
 
         {/* Tabs */}
         <Tabs defaultValue="general">
-          <TabsList className="bg-transparent border-b border-border rounded-none h-auto p-0 gap-0 w-full justify-start">
+          <TabsList className="bg-transparent border-b border-border rounded-none h-auto p-0 gap-0 w-full justify-start overflow-x-auto">
             <TabsTrigger value="general" className={tabStyle}>Geral</TabsTrigger>
             <TabsTrigger value="members" className={tabStyle}>Área de membros</TabsTrigger>
             <TabsTrigger value="config" className={tabStyle}>Configurações</TabsTrigger>
             <TabsTrigger value="checkout" className={tabStyle}>Checkout</TabsTrigger>
             <TabsTrigger value="links" className={tabStyle}>Links</TabsTrigger>
+            <TabsTrigger value="salespage" className={tabStyle}>Página de Vendas</TabsTrigger>
           </TabsList>
 
           {/* Geral */}
