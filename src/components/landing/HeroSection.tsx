@@ -142,7 +142,7 @@ const HeroSection = () => {
   const [email, setEmail] = useState("");
 
   return (
-    <section className="relative z-10 min-h-[90vh] flex items-center overflow-hidden">
+    <section className="relative z-10 overflow-hidden">
       <Sparkles />
 
       <div className="container max-w-7xl mx-auto px-6 py-20 lg:py-28">
