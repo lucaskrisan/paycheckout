@@ -187,6 +187,37 @@ const Roadmap = () => {
     (t) => t.priority === "critical" && t.status !== "done"
   ).length;
 
+  const renderTaskRow = (task: Task) => {
+    const StatusIcon = statusConfig[task.status]?.icon || Circle;
+    const pConfig = priorityConfig[task.priority] || priorityConfig.medium;
+    return (
+      <TableRow key={task.id} className={task.status === "done" ? "opacity-50" : ""}>
+        <TableCell>
+          <Checkbox checked={task.status === "done"} onCheckedChange={() => toggleStatus(task)} />
+        </TableCell>
+        <TableCell>
+          <div className="cursor-pointer" onClick={() => setSelectedTask(task)}>
+            <p className={`text-sm font-medium ${task.status === "done" ? "line-through" : ""}`}>{task.title}</p>
+            {task.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{task.description}</p>}
+            {task.due_date && <p className="text-[10px] text-muted-foreground mt-0.5">📅 {new Date(task.due_date).toLocaleDateString("pt-BR")}</p>}
+          </div>
+        </TableCell>
+        <TableCell className="hidden sm:table-cell"><Badge variant="outline" className="text-xs">{task.category || "Geral"}</Badge></TableCell>
+        <TableCell className="text-center"><Badge className={`text-[10px] ${pConfig.color}`}>{pConfig.label}</Badge></TableCell>
+        <TableCell className="text-center hidden sm:table-cell">
+          <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+            <StatusIcon className="w-3.5 h-3.5" />{statusConfig[task.status]?.label || task.status}
+          </div>
+        </TableCell>
+        <TableCell>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => deleteTask(task.id)} disabled={deletingId === task.id}>
+            {deletingId === task.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+          </Button>
+        </TableCell>
+      </TableRow>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
