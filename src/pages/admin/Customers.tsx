@@ -2,11 +2,44 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Search, ShoppingBag, Tag, ExternalLink, User } from "lucide-react";
+
+interface OrderRow {
+  id: string;
+  amount: number;
+  status: string;
+  payment_method: string;
+  created_at: string;
+  metadata: Record<string, any> | null;
+  product_id: string | null;
+  products: { name: string } | null;
+}
+
+interface CustomerRow {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  cpf: string | null;
+  created_at: string;
+  orders: OrderRow[];
+}
+
+const statusMap: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+  paid: { label: "Pago", variant: "default" },
+  approved: { label: "Aprovado", variant: "default" },
+  pending: { label: "Pendente", variant: "secondary" },
+  failed: { label: "Falhou", variant: "destructive" },
+  refunded: { label: "Reembolsado", variant: "outline" },
+  cancelled: { label: "Cancelado", variant: "destructive" },
+};
 
 const Customers = () => {
-  const [customers, setCustomers] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<CustomerRow[]>([]);
   const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<CustomerRow | null>(null);
 
   useEffect(() => {
     loadCustomers();
@@ -15,15 +48,24 @@ const Customers = () => {
   const loadCustomers = async () => {
     const { data } = await supabase
       .from("customers")
-      .select("*, orders(id, amount, status, created_at)")
+      .select("*, orders(id, amount, status, payment_method, created_at, metadata, product_id, products(name))")
       .order("created_at", { ascending: false });
-    setCustomers(data || []);
+    setCustomers((data as any) || []);
   };
 
   const filtered = customers.filter((c) => {
     const s = search.toLowerCase();
     return c.name.toLowerCase().includes(s) || c.email.toLowerCase().includes(s) || c.cpf?.includes(s);
   });
+
+  const getUtms = (meta: Record<string, any> | null) => {
+    if (!meta) return null;
+    const utms: Record<string, string> = {};
+    for (const key of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]) {
+      if (meta[key]) utms[key] = meta[key];
+    }
+    return Object.keys(utms).length > 0 ? utms : null;
+  };
 
   return (
     <div className="space-y-6">
@@ -65,17 +107,24 @@ const Customers = () => {
                   </tr>
                 ) : (
                   filtered.map((c) => {
-                    const totalSpent = (c.orders || [])
-                      .filter((o: any) => o.status === "paid" || o.status === "approved")
-                      .reduce((sum: number, o: any) => sum + Number(o.amount), 0);
+                    const paidOrders = (c.orders || []).filter(
+                      (o) => o.status === "paid" || o.status === "approved"
+                    );
+                    const totalSpent = paidOrders.reduce((sum, o) => sum + Number(o.amount), 0);
                     return (
-                      <tr key={c.id} className="border-b border-border/50 hover:bg-muted/20">
+                      <tr
+                        key={c.id}
+                        className="border-b border-border/50 hover:bg-muted/20 cursor-pointer transition-colors"
+                        onClick={() => setSelected(c)}
+                      >
                         <td className="py-3 px-4 font-medium">{c.name}</td>
                         <td className="py-3 px-4 text-muted-foreground">{c.email}</td>
                         <td className="py-3 px-4 text-muted-foreground">{c.phone || "—"}</td>
                         <td className="py-3 px-4 text-muted-foreground font-mono text-xs">{c.cpf || "—"}</td>
                         <td className="py-3 px-4">{c.orders?.length || 0}</td>
-                        <td className="py-3 px-4 font-medium">R$ {totalSpent.toFixed(2).replace(".", ",")}</td>
+                        <td className="py-3 px-4 font-medium text-primary">
+                          R$ {totalSpent.toFixed(2).replace(".", ",")}
+                        </td>
                       </tr>
                     );
                   })
@@ -85,6 +134,104 @@ const Customers = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Customer Detail Drawer */}
+      <Sheet open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+          {selected && (
+            <>
+              <SheetHeader>
+                <SheetTitle className="flex items-center gap-2">
+                  <User className="w-5 h-5 text-primary" />
+                  {selected.name}
+                </SheetTitle>
+              </SheetHeader>
+
+              <div className="mt-4 space-y-2 text-sm">
+                <p><span className="text-muted-foreground">E-mail:</span> {selected.email}</p>
+                <p><span className="text-muted-foreground">Telefone:</span> {selected.phone || "—"}</p>
+                <p><span className="text-muted-foreground">CPF:</span> <span className="font-mono">{selected.cpf || "—"}</span></p>
+                <p><span className="text-muted-foreground">Cliente desde:</span> {new Date(selected.created_at).toLocaleDateString("pt-BR")}</p>
+              </div>
+
+              <div className="mt-6">
+                <h3 className="font-semibold text-foreground flex items-center gap-2 mb-3">
+                  <ShoppingBag className="w-4 h-4" />
+                  Pedidos ({selected.orders?.length || 0})
+                </h3>
+
+                {(!selected.orders || selected.orders.length === 0) ? (
+                  <p className="text-muted-foreground text-sm">Nenhum pedido encontrado.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {[...selected.orders]
+                      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                      .map((order) => {
+                        const st = statusMap[order.status] || { label: order.status, variant: "secondary" as const };
+                        const utms = getUtms(order.metadata);
+                        const bumpIds = order.metadata?.bump_product_ids as string[] | null;
+
+                        return (
+                          <Card key={order.id} className="border border-border/60">
+                            <CardContent className="p-3 space-y-2">
+                              {/* Header */}
+                              <div className="flex items-center justify-between">
+                                <span className="font-medium text-foreground">
+                                  R$ {Number(order.amount).toFixed(2).replace(".", ",")}
+                                </span>
+                                <Badge variant={st.variant}>{st.label}</Badge>
+                              </div>
+
+                              {/* Product */}
+                              <p className="text-sm">
+                                <span className="text-muted-foreground">Produto:</span>{" "}
+                                <span className="font-medium">{order.products?.name || "—"}</span>
+                              </p>
+
+                              {/* Bumps */}
+                              {bumpIds && bumpIds.length > 0 && (
+                                <p className="text-xs text-muted-foreground">
+                                  + {bumpIds.length} order bump{bumpIds.length > 1 ? "s" : ""}
+                                </p>
+                              )}
+
+                              {/* Method + Date */}
+                              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                <span>
+                                  {order.payment_method === "pix" ? "PIX" : order.payment_method === "credit_card" ? "Cartão" : order.payment_method}
+                                  {order.metadata?.installments && Number(order.metadata.installments) > 1
+                                    ? ` ${order.metadata.installments}x`
+                                    : ""}
+                                </span>
+                                <span>{new Date(order.created_at).toLocaleString("pt-BR")}</span>
+                              </div>
+
+                              {/* UTMs */}
+                              {utms && (
+                                <div className="pt-1 border-t border-border/40">
+                                  <p className="text-xs font-medium text-muted-foreground flex items-center gap-1 mb-1">
+                                    <Tag className="w-3 h-3" /> UTMs
+                                  </p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {Object.entries(utms).map(([key, val]) => (
+                                      <Badge key={key} variant="outline" className="text-[10px] font-mono">
+                                        {key.replace("utm_", "")}: {val}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
