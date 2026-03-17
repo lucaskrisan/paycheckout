@@ -63,33 +63,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    let initialSessionResolved = false;
 
+    // Set up listener FIRST but only allow it to set loading=false 
+    // after getSession has resolved (prevents race condition on OAuth redirect)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (_event, newSession) => {
         if (!mounted) return;
-        setSession(session);
-        setUser(session?.user ?? null);
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
         
-        if (session?.user) {
+        if (newSession?.user) {
           setTimeout(async () => {
             if (!mounted) return;
             await Promise.all([
-              checkRoles(session.user.id),
-              checkProfileCompleted(session.user.id),
+              checkRoles(newSession.user.id),
+              checkProfileCompleted(newSession.user.id),
             ]);
-            setLoading(false);
+            if (initialSessionResolved) setLoading(false);
           }, 0);
         } else {
           setIsAdmin(false);
           setIsSuperAdmin(false);
           setProfileCompleted(null);
-          setLoading(false);
+          // Only set loading false if initial session already resolved
+          // This prevents flashing landing page during OAuth callback hydration
+          if (initialSessionResolved) setLoading(false);
         }
       }
     );
 
+    // getSession is the source of truth for the initial load
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!mounted) return;
+      initialSessionResolved = true;
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {

@@ -69,12 +69,20 @@ const Login = () => {
           return;
         }
         await signUp(email, password, fullName, { phone, cpf });
-        await signIn(email, password);
+        // Don't auto-login — email confirmation may be required
+        toast.success("Conta criada! Verifique seu e-mail para confirmar o cadastro.", { duration: 8000 });
+        setLoading(false);
+        setIsSignUp(false); // Switch to login view
       } else {
         await signIn(email, password);
       }
     } catch (err: any) {
-      toast.error(err.message || "Erro na autenticação");
+      const msg = err.message || "Erro na autenticação";
+      if (msg.includes("Email not confirmed")) {
+        toast.error("E-mail ainda não confirmado. Verifique sua caixa de entrada.");
+      } else {
+        toast.error(msg);
+      }
       setLoading(false);
     }
   };
