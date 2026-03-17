@@ -296,7 +296,10 @@ const Roadmap = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        <div>
+                        <div
+                          className="cursor-pointer"
+                          onClick={() => setSelectedTask(task)}
+                        >
                           <p
                             className={`text-sm font-medium ${
                               task.status === "done" ? "line-through" : ""
@@ -305,7 +308,7 @@ const Roadmap = () => {
                             {task.title}
                           </p>
                           {task.description && (
-                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
                               {task.description}
                             </p>
                           )}
