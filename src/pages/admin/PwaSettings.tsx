@@ -248,7 +248,7 @@ const PwaSettings = () => {
                   <Input
                     value={settings.short_name}
                     onChange={(e) => setSettings((p) => ({ ...p, short_name: e.target.value }))}
-                    placeholder="PayCheckout"
+                    placeholder="PanteraPay"
                   />
                 </div>
               </div>
