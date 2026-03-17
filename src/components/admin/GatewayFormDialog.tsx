@@ -326,12 +326,17 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
                 </div>
 
                 <Separator />
-                {/* Pagar.me Hub */}
-                <div className="space-y-4">
-                  <h3 className="text-sm font-semibold text-foreground">Pagar.me Hub</h3>
-                  <p className="text-xs text-muted-foreground">Integração OAuth - Melhor compatibilidade e respostas</p>
-                  <Button variant="outline" className="w-full" onClick={() => toast.info("Configure a integração OAuth no painel do Pagar.me")}>
-                    Integrar com o Pagar.me
+                {/* Pagar.me guide */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-foreground">📋 Como obter sua Secret Key</h3>
+                  <ol className="text-xs text-muted-foreground space-y-1.5 list-decimal list-inside">
+                    <li>Acesse <strong>dashboard.pagar.me</strong></li>
+                    <li>Vá em <strong>Configurações → Chaves</strong></li>
+                    <li>Copie a <strong>Secret Key</strong> (começa com <code className="bg-muted px-1 rounded">sk_</code>)</li>
+                    <li>Cole no campo <strong>API Key</strong> acima</li>
+                  </ol>
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => window.open("https://dashboard.pagar.me", "_blank")}>
+                    Abrir Dashboard Pagar.me ↗
                   </Button>
                 </div>
 
