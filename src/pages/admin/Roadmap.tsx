@@ -237,6 +237,32 @@ const Roadmap = () => {
         )}
       </div>
 
+      {/* Category summary cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+        {categoryOptions.map((cat) => {
+          const catTasks = tasks.filter((t) => (t.category || "Geral") === cat);
+          const pending = catTasks.filter((t) => t.status !== "done").length;
+          const done = catTasks.filter((t) => t.status === "done").length;
+          if (catTasks.length === 0) return null;
+          return (
+            <Card
+              key={cat}
+              className={`cursor-pointer transition-all hover:border-primary/50 ${filterCategory === cat ? "border-primary ring-1 ring-primary/30" : "border-border/50"}`}
+              onClick={() => setFilterCategory(filterCategory === cat ? "all" : cat)}
+            >
+              <CardContent className="p-3">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide truncate">{cat}</p>
+                <div className="flex items-baseline gap-1.5 mt-1">
+                  <span className="text-lg font-bold text-foreground">{pending}</span>
+                  <span className="text-[10px] text-muted-foreground">pendentes</span>
+                </div>
+                <p className="text-[10px] text-muted-foreground">{done} ✓ feitos</p>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
       {/* Filters + Table */}
       <Card className="border-border/50">
         <CardHeader className="pb-3">
