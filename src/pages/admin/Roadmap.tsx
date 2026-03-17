@@ -420,6 +420,70 @@ const Roadmap = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Task Detail Dialog */}
+      <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {selectedTask && statusConfig[selectedTask.status] && (() => {
+                const Icon = statusConfig[selectedTask.status].icon;
+                return <Icon className="w-5 h-5" />;
+              })()}
+              {selectedTask?.title}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedTask && (
+            <div className="space-y-4 py-2">
+              {selectedTask.description && (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Descrição</label>
+                  <p className="text-sm text-foreground mt-1 whitespace-pre-wrap">{selectedTask.description}</p>
+                </div>
+              )}
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Prioridade</label>
+                  <div className="mt-1">
+                    <Badge className={`text-xs ${(priorityConfig[selectedTask.priority] || priorityConfig.medium).color}`}>
+                      {(priorityConfig[selectedTask.priority] || priorityConfig.medium).label}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Status</label>
+                  <p className="text-sm mt-1">{statusConfig[selectedTask.status]?.label || selectedTask.status}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Categoria</label>
+                  <p className="text-sm mt-1">{selectedTask.category || "Geral"}</p>
+                </div>
+              </div>
+              {selectedTask.due_date && (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Prazo</label>
+                  <p className="text-sm mt-1">📅 {new Date(selectedTask.due_date).toLocaleDateString("pt-BR")}</p>
+                </div>
+              )}
+              <div className="pt-2 border-t border-border/50">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    const text = `${selectedTask.title}${selectedTask.description ? '\n' + selectedTask.description : ''}`;
+                    navigator.clipboard.writeText(text);
+                    toast.success("Copiado!");
+                  }}
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copiar tarefa
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
