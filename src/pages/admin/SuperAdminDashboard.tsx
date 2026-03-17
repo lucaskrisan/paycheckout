@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Users, DollarSign, ShoppingCart, TrendingUp, Search, ShieldCheck, ShieldX, Loader2,
   Crown, Eye, ArrowLeft, CreditCard, AlertTriangle, Ban, CheckCircle, RefreshCcw,
-  Activity, Webhook, Mail, Package, BarChart3, Wallet,
+  Activity, Webhook, Mail, Package, BarChart3, Wallet, Server, ExternalLink,
+  CircleDollarSign, Zap, Bell, Shield, Brain, Globe,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
