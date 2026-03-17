@@ -168,8 +168,17 @@ const Roadmap = () => {
   const filtered = tasks.filter((t) => {
     if (filterStatus !== "all" && t.status !== filterStatus) return false;
     if (filterPriority !== "all" && t.priority !== filterPriority) return false;
+    if (filterCategory !== "all" && (t.category || "Geral") !== filterCategory) return false;
     return true;
   });
+
+  // Group filtered tasks by category for the category view
+  const groupedByCategory = filtered.reduce<Record<string, Task[]>>((acc, t) => {
+    const cat = t.category || "Geral";
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(t);
+    return acc;
+  }, {});
 
   const todoCount = tasks.filter((t) => t.status === "todo").length;
   const inProgressCount = tasks.filter((t) => t.status === "in_progress").length;
