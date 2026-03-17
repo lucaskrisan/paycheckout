@@ -210,7 +210,7 @@ const Notifications = () => {
               <div>
                 <p className="font-semibold text-foreground">Instalar App no Celular</p>
                 <p className="text-sm text-muted-foreground">
-                  Instale o PayCheckout como app para receber notificações push no celular.
+                  Instale o PanteraPay como app para receber notificações push no celular.
                 </p>
               </div>
             </div>
