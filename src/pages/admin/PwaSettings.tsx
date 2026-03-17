@@ -439,7 +439,7 @@ const PwaSettings = () => {
                       <div className="w-6 h-6 rounded-md bg-white/20" />
                     )}
                     <span className="text-white text-sm font-semibold truncate">
-                      {settings.app_name || "PayCheckout"}
+                      {settings.app_name || "PanteraPay"}
                     </span>
                   </div>
 
