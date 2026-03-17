@@ -337,6 +337,7 @@ const SuperAdminDashboard = () => {
           <TabsTrigger value="producers"><Users className="w-4 h-4 mr-1.5" />Produtores</TabsTrigger>
           <TabsTrigger value="financial"><Wallet className="w-4 h-4 mr-1.5" />Financeiro</TabsTrigger>
           <TabsTrigger value="logs"><Activity className="w-4 h-4 mr-1.5" />Logs & Auditoria</TabsTrigger>
+          <TabsTrigger value="api-costs"><Server className="w-4 h-4 mr-1.5" />Custos APIs</TabsTrigger>
           <TabsTrigger value="users"><ShieldCheck className="w-4 h-4 mr-1.5" />Gerenciar Usuários</TabsTrigger>
         </TabsList>
 
