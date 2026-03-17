@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Users, DollarSign, ShoppingCart, TrendingUp, Search, ShieldCheck, ShieldX, Loader2,
   Crown, Eye, ArrowLeft, CreditCard, AlertTriangle, Ban, CheckCircle, RefreshCcw,
-  Activity, Webhook, Mail, Package, BarChart3, Wallet,
+  Activity, Webhook, Mail, Package, BarChart3, Wallet, Server,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -337,6 +337,7 @@ const SuperAdminDashboard = () => {
           <TabsTrigger value="producers"><Users className="w-4 h-4 mr-1.5" />Produtores</TabsTrigger>
           <TabsTrigger value="financial"><Wallet className="w-4 h-4 mr-1.5" />Financeiro</TabsTrigger>
           <TabsTrigger value="logs"><Activity className="w-4 h-4 mr-1.5" />Logs & Auditoria</TabsTrigger>
+          <TabsTrigger value="api-costs"><Server className="w-4 h-4 mr-1.5" />Custos APIs</TabsTrigger>
           <TabsTrigger value="users"><ShieldCheck className="w-4 h-4 mr-1.5" />Gerenciar Usuários</TabsTrigger>
         </TabsList>
 
@@ -608,6 +609,161 @@ const SuperAdminDashboard = () => {
                   <div><p className="text-muted-foreground">Emails Enviados</p><p className="text-xl font-bold">{emailLogs.length}</p></div>
                   <div><p className="text-muted-foreground">Contas Billing</p><p className="text-xl font-bold">{billingAccounts.length}</p></div>
                   <div><p className="text-muted-foreground">Bloqueados</p><p className="text-xl font-bold text-destructive">{billingAccounts.filter((b) => b.blocked).length}</p></div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* ═══ API COSTS TAB ═══ */}
+        <TabsContent value="api-costs">
+          <div className="space-y-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Server className="w-5 h-5" /> Todas as APIs Pagas — Controle de Custos
+                </CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Visão completa de todas as APIs que geram custo. Mantenha saldo em dia para evitar interrupções.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Serviço</TableHead>
+                      <TableHead>Função</TableHead>
+                      <TableHead>Modelo de Cobrança</TableHead>
+                      <TableHead className="text-center">Free Tier</TableHead>
+                      <TableHead className="text-right">Custo Estimado</TableHead>
+                      <TableHead className="text-center">Status Config</TableHead>
+                      <TableHead>Onde Recarregar</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {/* Resend */}
+                    <TableRow>
+                      <TableCell className="font-medium">Resend</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">Envio de emails transacionais (acesso, recuperação, notificações)</TableCell>
+                      <TableCell className="text-xs">Por email enviado</TableCell>
+                      <TableCell className="text-center"><Badge variant="default" className="text-xs">100/dia grátis</Badge></TableCell>
+                      <TableCell className="text-right text-xs">~$0.001/email após free tier<br/><span className="text-muted-foreground">({emailLogs.length} emails registrados)</span></TableCell>
+                      <TableCell className="text-center"><Badge variant="default" className="text-xs gap-1"><CheckCircle className="w-3 h-3" /> Configurado</Badge></TableCell>
+                      <TableCell className="text-xs"><a href="https://resend.com/overview" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">resend.com/overview</a></TableCell>
+                    </TableRow>
+
+                    {/* Asaas */}
+                    <TableRow>
+                      <TableCell className="font-medium">Asaas</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">Gateway de pagamento (PIX, cartão, boleto)</TableCell>
+                      <TableCell className="text-xs">Taxa por transação aprovada</TableCell>
+                      <TableCell className="text-center"><Badge variant="outline" className="text-xs">Sem free tier</Badge></TableCell>
+                      <TableCell className="text-right text-xs">PIX: R$0,99/tx<br/>Cartão: 3,49% + R$0,49<br/>Boleto: R$1,99</TableCell>
+                      <TableCell className="text-center"><Badge variant="default" className="text-xs gap-1"><CheckCircle className="w-3 h-3" /> Configurado</Badge></TableCell>
+                      <TableCell className="text-xs"><a href="https://www.asaas.com/financial/balance" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">asaas.com/financial</a></TableCell>
+                    </TableRow>
+
+                    {/* Pagar.me */}
+                    <TableRow>
+                      <TableCell className="font-medium">Pagar.me</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">Gateway de pagamento alternativo (split/marketplace)</TableCell>
+                      <TableCell className="text-xs">Taxa por transação aprovada</TableCell>
+                      <TableCell className="text-center"><Badge variant="outline" className="text-xs">Sem free tier</Badge></TableCell>
+                      <TableCell className="text-right text-xs">PIX: 0,99%<br/>Cartão: 3,19% + R$0,39<br/>Boleto: R$3,49</TableCell>
+                      <TableCell className="text-center"><Badge variant="default" className="text-xs gap-1"><CheckCircle className="w-3 h-3" /> Configurado</Badge></TableCell>
+                      <TableCell className="text-xs"><a href="https://dashboard.pagar.me" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">dashboard.pagar.me</a></TableCell>
+                    </TableRow>
+
+                    {/* Meta / Facebook CAPI */}
+                    <TableRow>
+                      <TableCell className="font-medium">Meta (Facebook CAPI)</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">Conversions API — rastreamento server-side de eventos</TableCell>
+                      <TableCell className="text-xs">Gratuito (usa Meta token)</TableCell>
+                      <TableCell className="text-center"><Badge variant="default" className="text-xs">100% grátis</Badge></TableCell>
+                      <TableCell className="text-right text-xs">$0 — sem custo direto<br/><span className="text-muted-foreground">(custo está no Ad Spend)</span></TableCell>
+                      <TableCell className="text-center"><Badge variant="default" className="text-xs gap-1"><CheckCircle className="w-3 h-3" /> Configurado</Badge></TableCell>
+                      <TableCell className="text-xs"><a href="https://business.facebook.com/settings" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">business.facebook.com</a></TableCell>
+                    </TableRow>
+
+                    {/* OneSignal */}
+                    <TableRow>
+                      <TableCell className="font-medium">OneSignal</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">Push notifications web/mobile para clientes</TableCell>
+                      <TableCell className="text-xs">Por subscriber ativo/mês</TableCell>
+                      <TableCell className="text-center"><Badge variant="default" className="text-xs">10K subs grátis</Badge></TableCell>
+                      <TableCell className="text-right text-xs">Free: até 10K subs<br/>Growth: a partir de $9/mês</TableCell>
+                      <TableCell className="text-center"><Badge variant="default" className="text-xs gap-1"><CheckCircle className="w-3 h-3" /> Configurado</Badge></TableCell>
+                      <TableCell className="text-xs"><a href="https://dashboard.onesignal.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">dashboard.onesignal.com</a></TableCell>
+                    </TableRow>
+
+                    {/* PushAlert */}
+                    <TableRow>
+                      <TableCell className="font-medium">PushAlert</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">Push notifications alternativo</TableCell>
+                      <TableCell className="text-xs">Por subscriber/mês</TableCell>
+                      <TableCell className="text-center"><Badge variant="default" className="text-xs">3K subs grátis</Badge></TableCell>
+                      <TableCell className="text-right text-xs">Free: até 3K subs<br/>Business: $12/mês</TableCell>
+                      <TableCell className="text-center"><Badge variant="default" className="text-xs gap-1"><CheckCircle className="w-3 h-3" /> Configurado</Badge></TableCell>
+                      <TableCell className="text-xs"><a href="https://pushalert.co/dashboard" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">pushalert.co/dashboard</a></TableCell>
+                    </TableRow>
+
+                    {/* Cloudflare Turnstile */}
+                    <TableRow>
+                      <TableCell className="font-medium">Cloudflare Turnstile</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">Captcha anti-bot no login e checkout</TableCell>
+                      <TableCell className="text-xs">Gratuito ilimitado</TableCell>
+                      <TableCell className="text-center"><Badge variant="default" className="text-xs">Ilimitado grátis</Badge></TableCell>
+                      <TableCell className="text-right text-xs">$0 — sempre gratuito</TableCell>
+                      <TableCell className="text-center"><Badge variant="default" className="text-xs gap-1"><CheckCircle className="w-3 h-3" /> Configurado</Badge></TableCell>
+                      <TableCell className="text-xs"><a href="https://dash.cloudflare.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">dash.cloudflare.com</a></TableCell>
+                    </TableRow>
+
+                    {/* Lovable AI */}
+                    <TableRow>
+                      <TableCell className="font-medium">Lovable AI</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">Geração de copy de emails com IA</TableCell>
+                      <TableCell className="text-xs">Incluso no plano Lovable</TableCell>
+                      <TableCell className="text-center"><Badge variant="default" className="text-xs">Incluso</Badge></TableCell>
+                      <TableCell className="text-right text-xs">$0 — incluso no plano</TableCell>
+                      <TableCell className="text-center"><Badge variant="default" className="text-xs gap-1"><CheckCircle className="w-3 h-3" /> Configurado</Badge></TableCell>
+                      <TableCell className="text-xs text-muted-foreground">Gerenciado automaticamente</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* Resumo de custos */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">💡 Resumo Rápido de Custos</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div className="p-3 rounded-lg bg-muted/50 border">
+                    <p className="text-xs text-muted-foreground font-medium mb-1">🟢 APIs Gratuitas (sem custo)</p>
+                    <ul className="text-xs space-y-0.5 text-foreground">
+                      <li>• Meta CAPI — sempre grátis</li>
+                      <li>• Cloudflare Turnstile — sempre grátis</li>
+                      <li>• Lovable AI — incluso no plano</li>
+                    </ul>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50 border">
+                    <p className="text-xs text-muted-foreground font-medium mb-1">🟡 APIs com Free Tier (monitorar)</p>
+                    <ul className="text-xs space-y-0.5 text-foreground">
+                      <li>• Resend — 100 emails/dia grátis</li>
+                      <li>• OneSignal — 10K subscribers grátis</li>
+                      <li>• PushAlert — 3K subscribers grátis</li>
+                    </ul>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50 border">
+                    <p className="text-xs text-muted-foreground font-medium mb-1">🔴 APIs Pagas (custo por transação)</p>
+                    <ul className="text-xs space-y-0.5 text-foreground">
+                      <li>• Asaas — taxa por venda aprovada</li>
+                      <li>• Pagar.me — taxa por venda aprovada</li>
+                      <li className="text-muted-foreground italic">Custo coberto pelo split do produtor</li>
+                    </ul>
+                  </div>
                 </div>
               </CardContent>
             </Card>
