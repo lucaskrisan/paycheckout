@@ -14,6 +14,8 @@ const LandingFooter = () => (
         © {new Date().getFullYear()} PanteraPay · Move money like a predator.
       </p>
       <div className="flex items-center gap-6 text-[11px] text-[#6A6A75] uppercase tracking-wider font-medium">
+        <Link to="/privacidade" className="hover:text-primary transition-colors duration-300">Privacidade</Link>
+        <Link to="/termos" className="hover:text-primary transition-colors duration-300">Termos</Link>
         <Link to="/login" className="hover:text-primary transition-colors duration-300">Entrar</Link>
         <Link to="/login?signup=true" className="hover:text-primary transition-colors duration-300">Criar conta grátis</Link>
       </div>
