@@ -85,6 +85,7 @@ const Roadmap = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterPriority, setFilterPriority] = useState<string>("all");
+  const [filterCategory, setFilterCategory] = useState<string>("all");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
