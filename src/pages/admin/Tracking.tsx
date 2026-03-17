@@ -181,7 +181,7 @@ const Tracking = () => {
           const names = matchedProducts.map(id => pixels.find(p => p.product_id === id)?.product_name).filter(Boolean);
           checks.push({ name: "Link do checkout", status: "pass", detail: `Produto(s): ${names.join(", ")} ✅` });
         } else {
-          checks.push({ name: "Link do checkout", status: "error", detail: "Nenhum produto PayCheckout encontrado." });
+          checks.push({ name: "Link do checkout", status: "error", detail: "Nenhum produto PanteraPay encontrado." });
         }
 
         if (html.includes("config=") || html.includes("configId")) checks.push({ name: "Config ID", status: "pass", detail: "Config de checkout encontrada ✅" });
