@@ -67,10 +67,14 @@ ${pixelInits}
   var fbclid=ps.get('fbclid');
 
   // fbclid → _fbc cookie (ANTES do CAPI)
+  // Validate: only create _fbc if fbclid looks fresh (Meta rejects >90 days)
   if(fbclid && !document.cookie.match(/(^|;\\s*)_fbc=/)){
     var fbc='fb.1.'+Date.now()+'.'+fbclid;
     document.cookie='_fbc='+fbc+';max-age=7776000;path=/;SameSite=Lax';
   }
+  // Also validate existing _fbc age — purge if >90 days old
+  var existFbc=(document.cookie.match(/(^|;\\s*)_fbc=([^;]*)/)||[])[2];
+  if(existFbc){var fbcTs=parseInt((existFbc.split('.')||[])[2],10);if(fbcTs&&(Date.now()-fbcTs)>7776000000){document.cookie='_fbc=;max-age=0;path=/';existFbc=null;}}
 
   // Ensure _fbp cookie exists
   var fbpCk=(document.cookie.match(/(^|;\\s*)_fbp=([^;]*)/)||[])[2];
