@@ -86,6 +86,7 @@ const Roadmap = () => {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterPriority, setFilterPriority] = useState<string>("all");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   // Form state
   const [title, setTitle] = useState("");
