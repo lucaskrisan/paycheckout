@@ -38,7 +38,7 @@ import {
   Clock,
   CheckCircle2,
   Circle,
-  Eye,
+  
   Copy,
 } from "lucide-react";
 import { toast } from "sonner";
