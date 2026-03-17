@@ -240,7 +240,7 @@ const PwaSettings = () => {
                   <Input
                     value={settings.app_name}
                     onChange={(e) => setSettings((p) => ({ ...p, app_name: e.target.value }))}
-                    placeholder="PayCheckout"
+                    placeholder="PanteraPay"
                   />
                 </div>
                 <div className="space-y-1.5">
