@@ -163,7 +163,19 @@ Deno.serve(async (req) => {
 
     // CRITICAL: Only send fbc/fbp if they have actual values (not empty strings)
     // Meta flags empty fbc as "received but empty" which hurts EMQ score
-    if (fbc && typeof fbc === 'string' && fbc.startsWith('fb.')) userData.fbc = fbc;
+    // Also validate fbc age — Meta rejects ClickIDs older than 90 days
+    if (fbc && typeof fbc === 'string' && fbc.startsWith('fb.')) {
+      const fbcParts = fbc.split('.');
+      if (fbcParts.length >= 3) {
+        const fbcTimestamp = parseInt(fbcParts[2], 10);
+        const ninetyDaysMs = 90 * 24 * 60 * 60 * 1000;
+        if (!isNaN(fbcTimestamp) && (Date.now() - fbcTimestamp) < ninetyDaysMs) {
+          userData.fbc = fbc;
+        } else {
+          console.log(`[facebook-capi] Skipping expired fbc (age > 90 days): ${fbc}`);
+        }
+      }
+    }
     if (fbp && typeof fbp === 'string' && fbp.startsWith('fb.')) userData.fbp = fbp;
 
     // Always send country for Brazilian users (boosts EMQ significantly)
