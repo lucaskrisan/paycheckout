@@ -312,12 +312,16 @@ Deno.serve(async (req) => {
 
     // Check if Pagar.me order failed (e.g. invalid CPF, fraud check)
     if (data.status === 'failed') {
-      const failReason = data.charges?.[0]?.last_transaction?.gateway_response?.errors?.[0]?.message
-        || data.charges?.[0]?.last_transaction?.status
-        || 'Falha no processamento';
       console.error('[create-pix-payment] Pagar.me order failed:', JSON.stringify(data));
+      // Sanitize: never expose gateway_response internals to browser
+      const rawReason = data.charges?.[0]?.last_transaction?.gateway_response?.errors?.[0]?.message
+        || data.charges?.[0]?.last_transaction?.status || '';
+      let userMessage = 'Não foi possível gerar o PIX. Verifique seus dados e tente novamente.';
+      if (/cpf|document/i.test(rawReason)) userMessage = 'CPF inválido. Verifique o número e tente novamente.';
+      else if (/phone|telefone/i.test(rawReason)) userMessage = 'Telefone inválido. Verifique o número e tente novamente.';
+      else if (/fraud|antifraude/i.test(rawReason)) userMessage = 'Pagamento não autorizado. Tente novamente ou use outro método.';
       return new Response(
-        JSON.stringify({ error: `Falha ao gerar o PIX: ${failReason}. Verifique seus dados e tente novamente.` }),
+        JSON.stringify({ error: userMessage }),
         { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -510,7 +514,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('[create-pix-payment] Error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'Erro interno ao processar pagamento. Tente novamente.' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
