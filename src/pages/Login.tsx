@@ -291,10 +291,12 @@ const Login = () => {
               </>
             )}
 
+            <TurnstileWidget onVerify={handleTurnstileVerify} onExpire={handleTurnstileExpire} />
+
             <Button
               type="submit"
               className="w-full h-[52px] font-bold text-[14px] rounded-xl gap-2 mt-1 shadow-[0_0_30px_hsl(var(--primary)/0.15)] hover:shadow-[0_0_40px_hsl(var(--primary)/0.25)] transition-all duration-300"
-              disabled={loading}
+              disabled={loading || !turnstileToken}
             >
               {loading ? "Aguarde..." : isSignUp ? "Criar conta grátis" : "Entrar"}
               {!loading && <ArrowRight className="w-4 h-4" />}
