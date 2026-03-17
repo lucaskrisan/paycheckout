@@ -88,7 +88,12 @@ function hydrateClickParams() {
   // fbc passed cross-domain (already formatted fb.1.xxx.fbclid) → _fbc cookie
   const fbcParam = getRawParam("fbc");
   if (fbcParam && fbcParam.startsWith("fb.") && !getCookie("_fbc")) {
-    setCookie("_fbc", fbcParam, 90);
+    // Validate age — Meta rejects ClickIDs older than 90 days
+    const fbcTs = parseInt(fbcParam.split(".")[2], 10);
+    const isExpired = fbcTs && (Date.now() - fbcTs) > 90 * 24 * 60 * 60 * 1000;
+    if (!isExpired) {
+      setCookie("_fbc", fbcParam, 90);
+    }
   }
 
   // fbclid → _fbc cookie (fallback if fbc param wasn't passed)
@@ -96,6 +101,15 @@ function hydrateClickParams() {
   if (fbclid && !getCookie("_fbc")) {
     const fbc = `fb.1.${Date.now()}.${fbclid}`;
     setCookie("_fbc", fbc, 90);
+  }
+
+  // Purge existing _fbc if older than 90 days
+  const existingFbc = getCookie("_fbc");
+  if (existingFbc) {
+    const ts = parseInt(existingFbc.split(".")[2], 10);
+    if (ts && (Date.now() - ts) > 90 * 24 * 60 * 60 * 1000) {
+      document.cookie = "_fbc=;max-age=0;path=/";
+    }
   }
 
   // fbp passed cross-domain → _fbp cookie (safe to use URLSearchParams here)
