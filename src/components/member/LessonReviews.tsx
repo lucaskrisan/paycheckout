@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Star, Send, MessageCircle, Clock } from "lucide-react";
+import { Star, Send, MessageCircle, Clock, ThumbsUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -37,11 +37,11 @@ export default function LessonReviews({
   }, [lessonId, memberAccessId]);
 
   const loadReviews = async () => {
+    // Fetch all reviews visible to this user (approved + own via RLS)
     const { data } = await client
       .from("lesson_reviews")
       .select("*")
       .eq("lesson_id", lessonId)
-      .eq("member_access_id", memberAccessId)
       .order("created_at", { ascending: false });
 
     if (data) {
@@ -91,14 +91,14 @@ export default function LessonReviews({
     }
   };
 
-  const approvedReviews = reviews.filter(
-    (r) => r.approved || r.member_access_id === memberAccessId
+  const approvedReviews = reviews.filter((r) => r.approved);
+  const myPendingReview = reviews.find(
+    (r) => r.member_access_id === memberAccessId && !r.approved
   );
 
   const avgRating =
-    reviews.filter((r) => r.approved).length > 0
-      ? reviews.filter((r) => r.approved).reduce((a, r) => a + r.rating, 0) /
-        reviews.filter((r) => r.approved).length
+    approvedReviews.length > 0
+      ? approvedReviews.reduce((a, r) => a + r.rating, 0) / approvedReviews.length
       : 0;
 
   return (
@@ -111,17 +111,18 @@ export default function LessonReviews({
         borderColor: "hsl(220 15% 14%)",
       }}
     >
+      {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-white font-bold text-sm flex items-center gap-2">
           <MessageCircle className="w-4 h-4 text-[hsl(145,65%,50%)]" />
-          Avaliações & Comentários
+          Avaliações da Aula
         </h3>
         {avgRating > 0 && (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full" style={{ background: "hsl(220,18%,14%)" }}>
             <Star className="w-4 h-4 fill-[hsl(45,93%,55%)] text-[hsl(45,93%,55%)]" />
             <span className="text-white text-sm font-bold">{avgRating.toFixed(1)}</span>
             <span className="text-[hsl(220,10%,40%)] text-xs">
-              ({reviews.filter((r) => r.approved).length})
+              ({approvedReviews.length} {approvedReviews.length === 1 ? "avaliação" : "avaliações"})
             </span>
           </div>
         )}
@@ -129,14 +130,11 @@ export default function LessonReviews({
 
       {/* Submit form */}
       <div
-        className="rounded-xl p-4 mb-5"
-        style={{ background: "hsl(220,18%,14%)" }}
+        className="rounded-xl p-4 mb-5 border"
+        style={{ background: "hsl(220,18%,14%)", borderColor: "hsl(220,15%,18%)" }}
       >
         <p className="text-[hsl(220,10%,55%)] text-xs mb-1">
           {myReview ? "Editar sua avaliação" : "Deixe sua avaliação"}
-        </p>
-        <p className="text-[hsl(220,10%,40%)] text-[11px] mb-3">
-          Sua avaliação é privada e visível apenas para você e para o produtor do curso.
         </p>
 
         {/* Stars */}
@@ -175,7 +173,7 @@ export default function LessonReviews({
           onChange={(e) => setComment(e.target.value)}
           placeholder="Escreva seu comentário sobre esta aula..."
           rows={3}
-          className="w-full rounded-lg border px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2"
+          className="w-full rounded-lg border px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[hsl(145,65%,42%)]"
           style={{
             background: "hsl(220,18%,10%)",
             borderColor: "hsl(220,15%,20%)",
@@ -184,7 +182,7 @@ export default function LessonReviews({
         />
 
         <div className="flex items-center justify-between mt-3">
-          {myReview && !myReview.approved && (
+          {myPendingReview && (
             <span className="flex items-center gap-1 text-[hsl(45,93%,55%)] text-xs">
               <Clock className="w-3 h-3" />
               Aguardando aprovação
@@ -192,7 +190,8 @@ export default function LessonReviews({
           )}
           {myReview?.approved && (
             <span className="flex items-center gap-1 text-[hsl(145,65%,50%)] text-xs">
-              ✓ Publicada
+              <ThumbsUp className="w-3 h-3" />
+              Publicada
             </span>
           )}
           {!myReview && <div />}
@@ -212,48 +211,49 @@ export default function LessonReviews({
         </div>
       </div>
 
-      {/* Reviews list */}
+      {/* Public approved reviews list */}
       <AnimatePresence>
         {approvedReviews.length > 0 ? (
           <div className="space-y-3">
-            {approvedReviews.map((r) => (
+            <p className="text-[hsl(220,10%,45%)] text-xs font-medium uppercase tracking-wider mb-2">
+              Avaliações publicadas
+            </p>
+            {approvedReviews.map((r, i) => (
               <motion.div
                 key={r.id}
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="rounded-xl p-4 relative"
-                style={{ background: "hsl(220,18%,14%)" }}
+                transition={{ delay: i * 0.05 }}
+                className="rounded-xl p-4 border"
+                style={{
+                  background: "hsl(220,18%,14%)",
+                  borderColor: "hsl(220,15%,18%)",
+                }}
               >
-                {r.member_access_id === memberAccessId && !r.approved && (
-                  <span
-                    className="absolute top-3 right-3 px-2 py-0.5 rounded text-[10px] font-medium"
-                    style={{
-                      background: "hsl(45,93%,20%)",
-                      color: "hsl(45,93%,60%)",
-                    }}
-                  >
-                    Pendente
-                  </span>
-                )}
                 <div className="flex items-center gap-2 mb-2">
                   <div
-                    className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
                     style={{
                       backgroundImage:
-                        "linear-gradient(135deg, hsl(220,18%,22%), hsl(220,15%,28%))",
-                      color: "hsl(0,0%,70%)",
+                        "linear-gradient(135deg, hsl(145,65%,35%), hsl(160,70%,30%))",
+                      color: "white",
                     }}
                   >
                     {r.customer_name.charAt(0).toUpperCase()}
                   </div>
-                  <span className="text-white text-sm font-medium">
-                    {r.customer_name}
-                  </span>
-                  <div className="flex items-center gap-0.5 ml-auto">
+                  <div className="flex-1 min-w-0">
+                    <span className="text-white text-sm font-medium">
+                      {r.customer_name}
+                    </span>
+                    <p className="text-[hsl(220,10%,30%)] text-[10px]">
+                      {new Date(r.created_at).toLocaleDateString("pt-BR")}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-0.5">
                     {[1, 2, 3, 4, 5].map((s) => (
                       <Star
                         key={s}
-                        className="w-3 h-3"
+                        className="w-3.5 h-3.5"
                         style={{
                           fill:
                             s <= r.rating ? "hsl(45,93%,55%)" : "transparent",
@@ -267,20 +267,26 @@ export default function LessonReviews({
                   </div>
                 </div>
                 {r.comment && (
-                  <p className="text-[hsl(0,0%,70%)] text-sm leading-relaxed">
-                    {r.comment}
+                  <p className="text-[hsl(0,0%,75%)] text-sm leading-relaxed pl-10">
+                    "{r.comment}"
                   </p>
                 )}
-                <p className="text-[hsl(220,10%,30%)] text-[10px] mt-2">
-                  {new Date(r.created_at).toLocaleDateString("pt-BR")}
-                </p>
+                {r.member_access_id === memberAccessId && (
+                  <span className="inline-block mt-2 ml-10 text-[10px] font-medium px-2 py-0.5 rounded-full"
+                    style={{ background: "hsl(145,65%,15%)", color: "hsl(145,65%,55%)" }}>
+                    Sua avaliação
+                  </span>
+                )}
               </motion.div>
             ))}
           </div>
         ) : (
-          <p className="text-[hsl(220,10%,35%)] text-sm text-center py-4">
-            Seja o primeiro a avaliar esta aula!
-          </p>
+          <div className="text-center py-6">
+            <Star className="w-8 h-8 mx-auto mb-2" style={{ color: "hsl(220,10%,25%)" }} />
+            <p className="text-[hsl(220,10%,35%)] text-sm">
+              Seja o primeiro a avaliar esta aula!
+            </p>
+          </div>
         )}
       </AnimatePresence>
     </motion.div>
