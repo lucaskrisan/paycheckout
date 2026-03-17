@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,8 @@ import panteraMascot from "@/assets/pantera-mascot.png";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Eye, EyeOff, ArrowRight, CheckCircle2 } from "lucide-react";
+import TurnstileWidget from "@/components/TurnstileWidget";
+import { supabase } from "@/integrations/supabase/client";
 
 const formatCpfCnpj = (value: string) => {
   const digits = value.replace(/\D/g, "");
@@ -50,8 +52,17 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const { signIn, signUp, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+
+  const handleTurnstileVerify = useCallback((token: string) => {
+    setTurnstileToken(token);
+  }, []);
+
+  const handleTurnstileExpire = useCallback(() => {
+    setTurnstileToken(null);
+  }, []);
 
   useEffect(() => {
     if (authLoading || !user) return;
@@ -62,6 +73,18 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     try {
+      // Verify Turnstile token server-side
+      if (turnstileToken) {
+        const { data: verification, error: verifyError } = await supabase.functions.invoke('verify-turnstile', {
+          body: { token: turnstileToken },
+        });
+        if (verifyError || !verification?.success) {
+          toast.error("Verificação de segurança falhou. Tente novamente.");
+          setLoading(false);
+          return;
+        }
+      }
+
       if (isSignUp) {
         if (!acceptTerms) {
           toast.error("Aceite os termos para continuar");
@@ -268,10 +291,12 @@ const Login = () => {
               </>
             )}
 
+            <TurnstileWidget onVerify={handleTurnstileVerify} onExpire={handleTurnstileExpire} />
+
             <Button
               type="submit"
               className="w-full h-[52px] font-bold text-[14px] rounded-xl gap-2 mt-1 shadow-[0_0_30px_hsl(var(--primary)/0.15)] hover:shadow-[0_0_40px_hsl(var(--primary)/0.25)] transition-all duration-300"
-              disabled={loading}
+              disabled={loading || !turnstileToken}
             >
               {loading ? "Aguarde..." : isSignUp ? "Criar conta grátis" : "Entrar"}
               {!loading && <ArrowRight className="w-4 h-4" />}
