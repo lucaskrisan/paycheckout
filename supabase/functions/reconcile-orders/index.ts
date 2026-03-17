@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
         const pagarmeOrder = await pagarmeRes.json();
         const pagarmeStatus = pagarmeOrder.status;
 
-        console.log(`[reconcile] ${order.external_id}: Pagar.me=${pagarmeStatus}, PayCheckout=pending`);
+        console.log(`[reconcile] ${order.external_id}: Pagar.me=${pagarmeStatus}, PanteraPay=pending`);
 
         // Get customer name for logging
         let customerName = '';

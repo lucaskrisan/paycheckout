@@ -26,8 +26,8 @@ interface PwaSettingsData {
 }
 
 const defaults: PwaSettingsData = {
-  app_name: "PayCheckout",
-  short_name: "PayCheckout",
+  app_name: "PanteraPay",
+  short_name: "PanteraPay",
   description: "Plataforma de vendas",
   theme_color: "#16a34a",
   background_color: "#ffffff",
@@ -240,7 +240,7 @@ const PwaSettings = () => {
                   <Input
                     value={settings.app_name}
                     onChange={(e) => setSettings((p) => ({ ...p, app_name: e.target.value }))}
-                    placeholder="PayCheckout"
+                    placeholder="PanteraPay"
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -248,7 +248,7 @@ const PwaSettings = () => {
                   <Input
                     value={settings.short_name}
                     onChange={(e) => setSettings((p) => ({ ...p, short_name: e.target.value }))}
-                    placeholder="PayCheckout"
+                    placeholder="PanteraPay"
                   />
                 </div>
               </div>
@@ -439,7 +439,7 @@ const PwaSettings = () => {
                       <div className="w-6 h-6 rounded-md bg-white/20" />
                     )}
                     <span className="text-white text-sm font-semibold truncate">
-                      {settings.app_name || "PayCheckout"}
+                      {settings.app_name || "PanteraPay"}
                     </span>
                   </div>
 

@@ -223,7 +223,7 @@ Deno.serve(async (req) => {
                       method: 'POST',
                       headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
                       body: JSON.stringify({
-                        from: 'PayCheckout <noreply@paolasemfiltro.com>',
+                        from: 'PanteraPay <noreply@paolasemfiltro.com>',
                         to: [customerData.email],
                         subject: `🎉 Acesso liberado — "${course.title}"`,
                         html: emailHtml,

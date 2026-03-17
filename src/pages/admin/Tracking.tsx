@@ -149,7 +149,7 @@ const Tracking = () => {
         else checks.push({ name: "Meta Pixel SDK", status: "error", detail: "fbevents.js NÃO encontrado!" });
 
         if (html.includes("fbq('init'") || html.includes('fbq("init"')) checks.push({ name: "fbq init", status: "pass", detail: "Inicialização do Pixel encontrada ✅" });
-        else if (html.includes("public_product_pixels")) checks.push({ name: "fbq init (dinâmico)", status: "pass", detail: "Pixel carregado via PayCheckout API ✅" });
+        else if (html.includes("public_product_pixels")) checks.push({ name: "fbq init (dinâmico)", status: "pass", detail: "Pixel carregado via PanteraPay API ✅" });
         else checks.push({ name: "fbq init", status: "error", detail: "Nenhuma inicialização de Pixel encontrada." });
 
         if (html.includes("PageView")) checks.push({ name: "PageView", status: "pass", detail: "Evento PageView detectado ✅" });
@@ -181,7 +181,7 @@ const Tracking = () => {
           const names = matchedProducts.map(id => pixels.find(p => p.product_id === id)?.product_name).filter(Boolean);
           checks.push({ name: "Link do checkout", status: "pass", detail: `Produto(s): ${names.join(", ")} ✅` });
         } else {
-          checks.push({ name: "Link do checkout", status: "error", detail: "Nenhum produto PayCheckout encontrado." });
+          checks.push({ name: "Link do checkout", status: "error", detail: "Nenhum produto PanteraPay encontrado." });
         }
 
         if (html.includes("config=") || html.includes("configId")) checks.push({ name: "Config ID", status: "pass", detail: "Config de checkout encontrada ✅" });

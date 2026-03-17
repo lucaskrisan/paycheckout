@@ -154,7 +154,7 @@ export function AdminSidebar() {
                 </div>
                 <div className="flex flex-col min-w-0">
                   <span className="font-display font-bold text-sidebar-accent-foreground text-sm leading-tight">
-                    PayCheckout
+                    PanteraPay
                   </span>
                   <span className="text-[10px] text-sidebar-foreground truncate max-w-[130px]">
                     {user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Produtor"}

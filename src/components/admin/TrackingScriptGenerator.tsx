@@ -44,7 +44,7 @@ export default function TrackingScriptGenerator({ pixels, products, checkoutBase
     const domain = productPixels[0]?.domain || "";
     const fbSrc = domain ? `https://${domain}/en_US/fbevents.js` : "https://connect.facebook.net/en_US/fbevents.js";
 
-    return `<!-- PayCheckout Tracking · ${selectedProductName} -->
+    return `<!-- PanteraPay Tracking · ${selectedProductName} -->
 <script>
 (function(){
   // === Guard anti-loop: só executa 1x por sessão ===
