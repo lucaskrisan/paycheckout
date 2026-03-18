@@ -7,9 +7,7 @@ import {
   DollarSign,
   TrendingUp,
   CreditCard,
-  FileText,
   RefreshCcw,
-  AlertOctagon,
   ShoppingCart,
   Globe,
   Clock,
@@ -277,13 +275,6 @@ const Dashboard = () => {
 
   const refundRate = filtered.length > 0 ? ((refunded.length / filtered.length) * 100).toFixed(0) : "0";
 
-  const boletoOrders = filtered.filter((o) => o.payment_method === "boleto");
-  const boletoApproved = boletoOrders.filter((o) => o.status === "paid" || o.status === "approved");
-  const boletoConversionRate = boletoOrders.length > 0 ? ((boletoApproved.length / boletoOrders.length) * 100).toFixed(0) : "0";
-  const boletoGenerated = boletoOrders.length;
-
-  const chargebackOrders = filtered.filter((o) => o.status === "chargeback");
-  const chargebackRate = filtered.length > 0 ? ((chargebackOrders.length / filtered.length) * 100).toFixed(0) : "0";
 
   // Organic vs Paid breakdown
   const paidSales = approved.filter((o) => {
@@ -352,21 +343,6 @@ const Dashboard = () => {
       icon: RefreshCcw,
       label: "Reembolso",
       value: `${refundRate} %`,
-    },
-    {
-      icon: FileText,
-      label: "Conversão boleto",
-      value: `${boletoConversionRate} %`,
-    },
-    {
-      icon: AlertOctagon,
-      label: "Chargeback",
-      value: `${chargebackRate} %`,
-    },
-    {
-      icon: FileText,
-      label: "Boletos gerados",
-      value: String(boletoGenerated),
     },
     {
       icon: Megaphone,
