@@ -56,10 +56,71 @@ const Products = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir?")) return;
-    await supabase.from("products").delete().eq("id", id);
-    toast.success("Produto excluído");
-    loadProducts();
+    if (!confirm("Tem certeza que deseja excluir este produto e todos os dados relacionados?")) return;
+    try {
+      // Delete dependent records in order to avoid FK constraint violations
+      // 1. Tables referencing product_id directly
+      await Promise.all([
+        supabase.from("abandoned_carts").delete().eq("product_id", id),
+        supabase.from("pixel_events").delete().eq("product_id", id),
+        supabase.from("emq_snapshots").delete().eq("product_id", id),
+        supabase.from("product_pixels").delete().eq("product_id", id),
+        supabase.from("checkout_builder_configs").delete().eq("product_id", id),
+        supabase.from("coupons").delete().eq("product_id", id),
+        supabase.from("email_logs").delete().eq("product_id", id),
+        supabase.from("sales_pages").delete().eq("product_id", id),
+      ]);
+
+      // 2. Order bumps (references product_id AND bump_product_id)
+      await Promise.all([
+        supabase.from("order_bumps").delete().eq("product_id", id),
+        supabase.from("order_bumps").delete().eq("bump_product_id", id),
+      ]);
+
+      // 3. Upsell offers (references product_id AND upsell_product_id)
+      await Promise.all([
+        supabase.from("upsell_offers").delete().eq("product_id", id),
+        supabase.from("upsell_offers").delete().eq("upsell_product_id", id),
+      ]);
+
+      // 4. Courses and nested content (lessons → modules → courses)
+      const { data: courses } = await supabase.from("courses").select("id").eq("product_id", id);
+      if (courses && courses.length > 0) {
+        const courseIds = courses.map((c) => c.id);
+        const { data: modules } = await supabase.from("course_modules").select("id").in("course_id", courseIds);
+        if (modules && modules.length > 0) {
+          const moduleIds = modules.map((m) => m.id);
+          const { data: lessons } = await supabase.from("course_lessons").select("id").in("module_id", moduleIds);
+          if (lessons && lessons.length > 0) {
+            const lessonIds = lessons.map((l) => l.id);
+            await Promise.all([
+              supabase.from("lesson_materials").delete().in("lesson_id", lessonIds),
+              supabase.from("lesson_progress").delete().in("lesson_id", lessonIds),
+              supabase.from("lesson_reviews").delete().in("lesson_id", lessonIds),
+            ]);
+          }
+          await supabase.from("course_lessons").delete().in("module_id", moduleIds);
+        }
+        await supabase.from("course_modules").delete().in("course_id", courseIds);
+        await Promise.all([
+          supabase.from("member_access").delete().in("course_id", courseIds),
+          supabase.from("courses").delete().in("id", courseIds),
+        ]);
+      }
+
+      // 5. Orders referencing this product
+      await supabase.from("orders").delete().eq("product_id", id);
+
+      // 6. Finally delete the product itself
+      const { error } = await supabase.from("products").delete().eq("id", id);
+      if (error) throw error;
+
+      toast.success("Produto excluído com sucesso!");
+      loadProducts();
+    } catch (err: any) {
+      console.error("Erro ao excluir produto:", err);
+      toast.error("Erro ao excluir produto: " + (err.message || "Erro desconhecido"));
+    }
   };
 
   const openDialog = () => {
