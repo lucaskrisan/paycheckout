@@ -13,6 +13,8 @@ import {
   ShoppingCart,
   Globe,
   Clock,
+  Megaphone,
+  Leaf,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
