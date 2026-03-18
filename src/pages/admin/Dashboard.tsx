@@ -13,6 +13,8 @@ import {
   ShoppingCart,
   Globe,
   Clock,
+  Megaphone,
+  Leaf,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -283,6 +285,18 @@ const Dashboard = () => {
   const chargebackOrders = filtered.filter((o) => o.status === "chargeback");
   const chargebackRate = filtered.length > 0 ? ((chargebackOrders.length / filtered.length) * 100).toFixed(0) : "0";
 
+  // Organic vs Paid breakdown
+  const paidSales = approved.filter((o) => {
+    const meta = o.metadata as any;
+    return meta?.utm_source;
+  });
+  const organicSales = approved.filter((o) => {
+    const meta = o.metadata as any;
+    return !meta?.utm_source;
+  });
+  const organicRevenue = organicSales.reduce((s, o) => s + Number(o.amount || 0), 0);
+  const paidRevenue = paidSales.reduce((s, o) => s + Number(o.amount || 0), 0);
+
   // Abandoned carts metrics
   const filteredCarts = useMemo(() => filterByPeriod(abandonedCarts), [abandonedCarts, period]);
   const totalAbandoned = filteredCarts.length;
@@ -353,6 +367,18 @@ const Dashboard = () => {
       icon: FileText,
       label: "Boletos gerados",
       value: String(boletoGenerated),
+    },
+    {
+      icon: Megaphone,
+      label: "Vendas Pagas (Ads)",
+      value: `${paidSales.length}`,
+      sub: fmt(paidRevenue),
+    },
+    {
+      icon: Leaf,
+      label: "Vendas Orgânicas",
+      value: `${organicSales.length}`,
+      sub: fmt(organicRevenue),
     },
   ];
 
