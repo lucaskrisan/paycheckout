@@ -347,21 +347,6 @@ const Dashboard = () => {
       value: `${refundRate} %`,
     },
     {
-      icon: FileText,
-      label: "Conversão boleto",
-      value: `${boletoConversionRate} %`,
-    },
-    {
-      icon: AlertOctagon,
-      label: "Chargeback",
-      value: `${chargebackRate} %`,
-    },
-    {
-      icon: FileText,
-      label: "Boletos gerados",
-      value: String(boletoGenerated),
-    },
-    {
       icon: Megaphone,
       label: "Vendas Pagas (Ads)",
       value: `${paidSales.length}`,
