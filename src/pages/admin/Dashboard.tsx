@@ -368,6 +368,18 @@ const Dashboard = () => {
       label: "Boletos gerados",
       value: String(boletoGenerated),
     },
+    {
+      icon: Megaphone,
+      label: "Vendas Pagas (Ads)",
+      value: `${paidSales.length}`,
+      sub: fmt(paidRevenue),
+    },
+    {
+      icon: Leaf,
+      label: "Vendas Orgânicas",
+      value: `${organicSales.length}`,
+      sub: fmt(organicRevenue),
+    },
   ];
 
   return (
