@@ -17,6 +17,7 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AUTH_BOOT_TIMEOUT_MS = 5000;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -32,7 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from("user_roles")
         .select("role")
         .eq("user_id", userId);
-      
+
       if (error) {
         console.error("Error checking roles:", error);
         setIsAdmin(false);
@@ -66,14 +67,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let mounted = true;
     let initialSessionResolved = false;
 
-    // Set up listener FIRST but only allow it to set loading=false 
+    const forceFinishLoading = window.setTimeout(() => {
+      if (!mounted || initialSessionResolved) return;
+      console.warn("Auth bootstrap timeout reached, releasing loading state.");
+      initialSessionResolved = true;
+      setLoading(false);
+    }, AUTH_BOOT_TIMEOUT_MS);
+
+    // Set up listener FIRST but only allow it to set loading=false
     // after getSession has resolved (prevents race condition on OAuth redirect)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, newSession) => {
         if (!mounted) return;
         setSession(newSession);
         setUser(newSession?.user ?? null);
-        
+
         if (newSession?.user) {
           setTimeout(async () => {
             if (!mounted) return;
@@ -87,8 +95,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsAdmin(false);
           setIsSuperAdmin(false);
           setProfileCompleted(null);
-          // Only set loading false if initial session already resolved
-          // This prevents flashing landing page during OAuth callback hydration
           if (initialSessionResolved) setLoading(false);
         }
       }
@@ -98,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!mounted) return;
       initialSessionResolved = true;
+      window.clearTimeout(forceFinishLoading);
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -111,6 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       mounted = false;
+      window.clearTimeout(forceFinishLoading);
       subscription.unsubscribe();
     };
   }, []);
@@ -131,7 +139,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     if (error) throw error;
 
-    // If phone/cpf provided, update profile immediately
     if (data?.user?.id && (extra?.phone || extra?.cpf)) {
       const updates: Record<string, any> = {};
       if (extra.phone) updates.phone = extra.phone.replace(/\D/g, "");
