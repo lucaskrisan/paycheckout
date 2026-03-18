@@ -24,27 +24,53 @@ const Index = () => {
 
   useEffect(() => {
     if (loading) return;
-    if (!user) { setResolving(false); setResolved(false); return; }
+    if (!user) {
+      setResolving(false);
+      setResolved(false);
+      return;
+    }
     if (resolved) return;
+
     let cancelled = false;
     setResolving(true);
+
     resolveUserDestination()
-      .then((dest) => { if (!cancelled) { setResolved(true); navigate(dest, { replace: true }); } })
-      .catch(() => { if (!cancelled) { setResolved(true); navigate("/completar-perfil", { replace: true }); } });
-    return () => { cancelled = true; };
+      .then((dest) => {
+        if (!cancelled) {
+          setResolved(true);
+          navigate(dest, { replace: true });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setResolved(true);
+          navigate("/completar-perfil", { replace: true });
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [user, loading, navigate, resolved]);
 
   if (loading || (user && resolving && !resolved)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="min-h-screen flex items-center justify-center bg-background px-6">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full border border-primary/20 bg-card shadow-[0_0_40px_hsl(var(--primary)/0.18)]">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-base font-semibold text-foreground">Carregando PanteraPay...</p>
+            <p className="text-sm text-muted-foreground">Se demorar mais de alguns segundos, atualize a preview.</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/20">
-      {/* Ambient glow */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[700px] bg-[radial-gradient(ellipse,_rgba(0,230,118,0.04)_0%,_transparent_70%)]" />
       </div>
