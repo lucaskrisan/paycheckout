@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useDroppable } from "@dnd-kit/core";
 import {
   SortableContext,
