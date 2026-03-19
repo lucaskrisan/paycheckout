@@ -44,6 +44,7 @@ import MyAccount from "./pages/admin/MyAccount";
 import Metrics from "./pages/admin/Metrics";
 import ProducerBilling from "./pages/admin/ProducerBilling";
 import Blacklist from "./pages/admin/Blacklist";
+import ApiKeys from "./pages/admin/ApiKeys";
 import NotFound from "./pages/NotFound";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
