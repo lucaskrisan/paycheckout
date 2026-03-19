@@ -98,6 +98,7 @@ const superAdminItems = [
   { title: "Meta Ads", url: "/admin/meta-ads", icon: Megaphone },
   { title: "Painel Plataforma", url: "/admin/platform", icon: Crown },
   { title: "Billing", url: "/admin/billing", icon: Wallet },
+  { title: "API Keys", url: "/admin/api-keys", icon: Key },
   { title: "Blacklist", url: "/admin/blacklist", icon: ShieldBan },
   { title: "Roadmap", url: "/admin/roadmap", icon: ClipboardList },
   { title: "Fiscalizar", url: "/admin/health", icon: ShieldCheck },
