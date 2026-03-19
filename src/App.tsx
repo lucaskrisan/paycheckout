@@ -113,6 +113,7 @@ const App = () => (
               <Route path="roadmap" element={<Roadmap />} />
               <Route path="manual" element={<TechnicalManual />} />
               <Route path="blacklist" element={<Blacklist />} />
+              <Route path="api-keys" element={<ApiKeys />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
