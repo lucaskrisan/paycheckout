@@ -21,7 +21,7 @@ import {
   Zap,
   User,
   Paintbrush,
-  
+  Key,
   Activity,
   TrendingUp,
   Megaphone,
