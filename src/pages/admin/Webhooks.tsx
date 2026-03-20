@@ -2,31 +2,35 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card } from "@/components/ui/card";
 import {
-  Webhook, Plus, Trash2, Copy, Eye, EyeOff, Loader2, ExternalLink,
-  Send, RotateCcw, CheckCircle2, XCircle, Clock, AlertTriangle,
-  ChevronDown, ChevronUp, FileText,
+  Webhook, Search, Loader2, Send, MoreVertical, Copy, Eye, EyeOff,
+  Trash2, RotateCcw, CheckCircle2, XCircle, Clock, ChevronDown,
+  ChevronUp, FileText, AlertTriangle, ArrowLeft, HelpCircle,
 } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const AVAILABLE_EVENTS = [
-  { value: "payment.approved", label: "Pagamento Aprovado" },
-  { value: "payment.failed", label: "Pagamento Falhou" },
+  { value: "payment.approved", label: "Compra aprovada" },
+  { value: "payment.failed", label: "Compra recusada" },
   { value: "payment.refunded", label: "Reembolso" },
-  { value: "subscription.created", label: "Assinatura Criada" },
-  { value: "subscription.canceled", label: "Assinatura Cancelada" },
-  { value: "checkout.completed", label: "Checkout Concluído" },
-  { value: "order.paid", label: "Venda Aprovada (legacy)" },
+  { value: "checkout.completed", label: "Checkout concluído" },
+  { value: "subscription.created", label: "Assinatura criada" },
+  { value: "subscription.canceled", label: "Assinatura cancelada" },
+  { value: "order.paid", label: "Venda aprovada (legacy)" },
   { value: "order.refunded", label: "Reembolso (legacy)" },
   { value: "order.cancelled", label: "Cancelamento (legacy)" },
 ];
@@ -64,38 +68,31 @@ export default function Webhooks() {
   const [deliveries, setDeliveries] = useState<WebhookDelivery[]>([]);
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [filterProduct, setFilterProduct] = useState("all");
+  const [activeTab, setActiveTab] = useState("webhooks");
+
+  // Create drawer state
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [newName, setNewName] = useState("");
   const [newUrl, setNewUrl] = useState("");
-  const [newDescription, setNewDescription] = useState("");
-  const [newEvents, setNewEvents] = useState<Set<string>>(new Set(["payment.approved"]));
+  const [newEvents, setNewEvents] = useState<Set<string>>(new Set());
   const [newProductId, setNewProductId] = useState<string>("all");
   const [adding, setAdding] = useState(false);
-  const [showSecrets, setShowSecrets] = useState<Set<string>>(new Set());
-  const [expandedDelivery, setExpandedDelivery] = useState<string | null>(null);
-  const [selectedEndpoint, setSelectedEndpoint] = useState<string>("all");
-  const [deliveryFilter, setDeliveryFilter] = useState<string>("all");
   const [testing, setTesting] = useState<string | null>(null);
   const [resending, setResending] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("endpoints");
+
+  // Logs state
+  const [selectedEndpoint, setSelectedEndpoint] = useState<string>("all");
+  const [deliveryFilter, setDeliveryFilter] = useState<string>("all");
+  const [expandedDelivery, setExpandedDelivery] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!user) return;
     const [epRes, dlRes, prodRes] = await Promise.all([
-      supabase
-        .from("webhook_endpoints")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("webhook_deliveries")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(100),
-      supabase
-        .from("products")
-        .select("id, name")
-        .eq("user_id", user.id)
-        .order("name"),
+      supabase.from("webhook_endpoints").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+      supabase.from("webhook_deliveries").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(100),
+      supabase.from("products").select("id, name").eq("user_id", user.id).order("name"),
     ]);
     setEndpoints((epRes.data as any[]) || []);
     setDeliveries((dlRes.data as any[]) || []);
@@ -111,28 +108,30 @@ export default function Webhooks() {
     if (newEvents.size === 0) { toast.error("Selecione pelo menos um evento"); return; }
 
     setAdding(true);
-    const { error } = await supabase
-      .from("webhook_endpoints")
-      .insert({
-        user_id: user.id,
-        url: newUrl.trim(),
-        events: Array.from(newEvents),
-        product_id: newProductId === "all" ? null : newProductId,
-        description: newDescription.trim() || null,
-      });
+    const { error } = await supabase.from("webhook_endpoints").insert({
+      user_id: user.id,
+      url: newUrl.trim(),
+      events: Array.from(newEvents),
+      product_id: newProductId === "all" ? null : newProductId,
+      description: newName.trim() || null,
+    });
 
     if (error) {
-      toast.error("Erro ao adicionar webhook");
-      console.error(error);
+      toast.error("Erro ao criar webhook");
     } else {
-      toast.success("Webhook adicionado!");
-      setNewUrl("");
-      setNewDescription("");
-      setNewEvents(new Set(["payment.approved"]));
-      setNewProductId("all");
+      toast.success("Webhook criado!");
+      resetDrawer();
       load();
     }
     setAdding(false);
+  };
+
+  const resetDrawer = () => {
+    setNewName("");
+    setNewUrl("");
+    setNewEvents(new Set());
+    setNewProductId("all");
+    setDrawerOpen(false);
   };
 
   const toggleActive = async (id: string, active: boolean) => {
@@ -144,19 +143,6 @@ export default function Webhooks() {
     await supabase.from("webhook_endpoints").delete().eq("id", id);
     setEndpoints((prev) => prev.filter((e) => e.id !== id));
     toast.success("Webhook removido");
-  };
-
-  const copySecret = (secret: string) => {
-    navigator.clipboard.writeText(secret);
-    toast.success("Secret copiado!");
-  };
-
-  const toggleEventOnNew = (event: string) => {
-    setNewEvents((prev) => {
-      const next = new Set(prev);
-      if (next.has(event)) next.delete(event); else next.add(event);
-      return next;
-    });
   };
 
   const testWebhook = async (endpointId: string) => {
@@ -173,7 +159,7 @@ export default function Webhooks() {
         toast.error(`Teste falhou: ${res.data?.response || res.error?.message}`);
       }
       load();
-    } catch (err) {
+    } catch {
       toast.error("Erro ao testar webhook");
     }
     setTesting(null);
@@ -181,26 +167,57 @@ export default function Webhooks() {
 
   const resendDelivery = async (deliveryId: string) => {
     setResending(deliveryId);
-    const delivery = deliveries.find(d => d.id === deliveryId);
-    if (!delivery) return;
-
-    // Reset to retrying
-    await supabase
-      .from("webhook_deliveries")
-      .update({
-        status: "retrying",
-        attempt: 0,
-        next_retry_at: new Date().toISOString(),
-        completed_at: null,
-      })
-      .eq("id", deliveryId);
-
-    // Trigger retry processor
+    await supabase.from("webhook_deliveries").update({
+      status: "retrying", attempt: 0, next_retry_at: new Date().toISOString(), completed_at: null,
+    }).eq("id", deliveryId);
     await supabase.functions.invoke("webhook-retry");
     toast.success("Webhook reenviado!");
     await load();
     setResending(null);
   };
+
+  const toggleEventOnNew = (event: string) => {
+    setNewEvents((prev) => {
+      const next = new Set(prev);
+      next.has(event) ? next.delete(event) : next.add(event);
+      return next;
+    });
+  };
+
+  const selectAllEvents = () => {
+    if (newEvents.size === AVAILABLE_EVENTS.length) {
+      setNewEvents(new Set());
+    } else {
+      setNewEvents(new Set(AVAILABLE_EVENTS.map(e => e.value)));
+    }
+  };
+
+  // Filtered endpoints
+  const filteredEndpoints = endpoints.filter(ep => {
+    if (filterProduct !== "all" && ep.product_id !== filterProduct && ep.product_id !== null) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      const matchUrl = ep.url.toLowerCase().includes(q);
+      const matchDesc = ep.description?.toLowerCase().includes(q);
+      const matchProduct = products.find(p => p.id === ep.product_id)?.name.toLowerCase().includes(q);
+      if (!matchUrl && !matchDesc && !matchProduct) return false;
+    }
+    return true;
+  });
+
+  const filteredDeliveries = deliveries.filter(d => {
+    if (selectedEndpoint !== "all" && d.endpoint_id !== selectedEndpoint) return false;
+    if (deliveryFilter !== "all" && d.status !== deliveryFilter) return false;
+    return true;
+  });
+
+  const getProductName = (productId: string | null) => {
+    if (!productId) return "Todos os produtos";
+    return products.find(p => p.id === productId)?.name || "—";
+  };
+
+  const getEventLabel = (value: string) =>
+    AVAILABLE_EVENTS.find(e => e.value === value)?.label || value;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -217,12 +234,6 @@ export default function Webhooks() {
     }
   };
 
-  const filteredDeliveries = deliveries.filter(d => {
-    if (selectedEndpoint !== "all" && d.endpoint_id !== selectedEndpoint) return false;
-    if (deliveryFilter !== "all" && d.status !== deliveryFilter) return false;
-    return true;
-  });
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -233,162 +244,143 @@ export default function Webhooks() {
 
   return (
     <div className="space-y-6">
-      <div>
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <Webhook className="w-8 h-8 text-foreground" />
         <h1 className="text-2xl font-bold text-foreground">Webhooks</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Receba notificações automáticas via POST — compatível com Zapier, N8N, Make e qualquer sistema.
-        </p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="endpoints" className="gap-2">
-            <Webhook className="w-4 h-4" /> Endpoints
-          </TabsTrigger>
+          <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
           <TabsTrigger value="logs" className="gap-2">
-            <FileText className="w-4 h-4" /> Logs
+            Logs
             {deliveries.filter(d => d.status === "failed").length > 0 && (
               <Badge variant="destructive" className="ml-1 text-[10px] px-1.5 py-0">
                 {deliveries.filter(d => d.status === "failed").length}
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="docs" className="gap-2">
-            <FileText className="w-4 h-4" /> Documentação
-          </TabsTrigger>
+          <TabsTrigger value="docs">Documentação</TabsTrigger>
         </TabsList>
 
-        {/* ENDPOINTS TAB */}
-        <TabsContent value="endpoints" className="space-y-4 mt-4">
-          {/* Add new webhook */}
-          <Card className="p-5 space-y-4">
-            <div className="flex items-center gap-2">
-              <Plus className="w-5 h-5 text-primary" />
-              <h2 className="font-semibold text-foreground text-sm">Criar Webhook</h2>
+        {/* WEBHOOKS TAB - Kiwify style table */}
+        <TabsContent value="webhooks" className="mt-6 space-y-4">
+          {/* Toolbar: Search + Filter + Create */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <div className="relative flex-1 max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="pl-9"
+              />
             </div>
-
-            <div className="space-y-3">
-              <Input
-                placeholder="https://hooks.zapier.com/..."
-                value={newUrl}
-                onChange={(e) => setNewUrl(e.target.value)}
-              />
-              <Input
-                placeholder="Descrição (opcional)"
-                value={newDescription}
-                onChange={(e) => setNewDescription(e.target.value)}
-              />
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-foreground">Produto:</p>
-                  <Select value={newProductId} onValueChange={setNewProductId}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos os produtos</SelectItem>
-                      {products.map(p => (
-                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-foreground">Eventos:</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                  {AVAILABLE_EVENTS.map((ev) => (
-                    <label key={ev.value} className="flex items-center gap-2 cursor-pointer text-sm">
-                      <Checkbox
-                        checked={newEvents.has(ev.value)}
-                        onCheckedChange={() => toggleEventOnNew(ev.value)}
-                      />
-                      <span className="text-foreground">{ev.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <Button onClick={addEndpoint} disabled={adding || !newUrl.trim()} className="gap-2">
-                {adding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Webhook className="w-4 h-4" />}
-                Criar Webhook
+            <Select value={filterProduct} onValueChange={setFilterProduct}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Todos os produtos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os produtos</SelectItem>
+                {products.map(p => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="sm:ml-auto">
+              <Button onClick={() => setDrawerOpen(true)} className="gap-2">
+                Criar webhook
               </Button>
             </div>
-          </Card>
+          </div>
 
-          {/* Existing endpoints */}
-          {endpoints.length === 0 ? (
-            <Card className="p-8 text-center">
-              <Webhook className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+          {/* Table */}
+          {filteredEndpoints.length === 0 ? (
+            <div className="border rounded-lg p-12 text-center">
+              <Webhook className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
               <p className="text-sm text-muted-foreground">Nenhum webhook configurado ainda.</p>
-            </Card>
+              <Button variant="outline" className="mt-4" onClick={() => setDrawerOpen(true)}>
+                Criar primeiro webhook
+              </Button>
+            </div>
           ) : (
-            <div className="space-y-3">
-              {endpoints.map((ep) => (
-                <Card key={ep.id} className="p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <ExternalLink className="w-4 h-4 text-muted-foreground shrink-0" />
-                      <div className="min-w-0">
-                        <span className="text-sm font-mono text-foreground truncate block">{ep.url}</span>
-                        {ep.description && (
-                          <span className="text-xs text-muted-foreground">{ep.description}</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-1 text-xs"
-                        disabled={testing === ep.id}
-                        onClick={() => testWebhook(ep.id)}
-                      >
-                        {testing === ep.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
-                        Testar
-                      </Button>
-                      <Switch checked={ep.active} onCheckedChange={() => toggleActive(ep.id, ep.active)} />
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteEndpoint(ep.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-1.5">
-                    {ep.events.map((ev) => (
-                      <Badge key={ev} variant="outline" className="text-xs">
-                        {AVAILABLE_EVENTS.find((a) => a.value === ev)?.label || ev}
-                      </Badge>
-                    ))}
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Secret:</span>
-                    <code className="text-xs font-mono text-foreground bg-muted px-2 py-0.5 rounded">
-                      {showSecrets.has(ep.id) ? ep.secret : "••••••••••••••••"}
-                    </code>
-                    <Button
-                      variant="ghost" size="icon" className="h-6 w-6"
-                      onClick={() => setShowSecrets((prev) => {
-                        const next = new Set(prev);
-                        next.has(ep.id) ? next.delete(ep.id) : next.add(ep.id);
-                        return next;
-                      })}
-                    >
-                      {showSecrets.has(ep.id) ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => copySecret(ep.secret)}>
-                      <Copy className="w-3 h-3" />
-                    </Button>
-                  </div>
-                </Card>
-              ))}
+            <div className="border rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/30">
+                    <TableHead className="font-semibold text-xs uppercase tracking-wider">Produto</TableHead>
+                    <TableHead className="font-semibold text-xs uppercase tracking-wider">Nome</TableHead>
+                    <TableHead className="font-semibold text-xs uppercase tracking-wider">URL</TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredEndpoints.map(ep => (
+                    <TableRow key={ep.id} className="group">
+                      <TableCell className="font-medium text-sm">
+                        {getProductName(ep.product_id)}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        <div className="flex items-center gap-2">
+                          <span>{ep.description || ep.events.map(getEventLabel).join(", ")}</span>
+                          {!ep.active && (
+                            <Badge variant="secondary" className="text-[10px]">Inativo</Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground font-mono max-w-[300px]">
+                        <span className="truncate block">{ep.url}</span>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => testWebhook(ep.id)}
+                              disabled={testing === ep.id}
+                            >
+                              <Send className="w-4 h-4 mr-2" />
+                              Testar Webhook
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => {
+                              navigator.clipboard.writeText(ep.secret);
+                              toast.success("Token copiado!");
+                            }}>
+                              <Copy className="w-4 h-4 mr-2" />
+                              Copiar Token
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => toggleActive(ep.id, ep.active)}>
+                              {ep.active ? (
+                                <><EyeOff className="w-4 h-4 mr-2" />Desativar</>
+                              ) : (
+                                <><Eye className="w-4 h-4 mr-2" />Ativar</>
+                              )}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => deleteEndpoint(ep.id)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
         </TabsContent>
 
         {/* LOGS TAB */}
-        <TabsContent value="logs" className="space-y-4 mt-4">
+        <TabsContent value="logs" className="mt-6 space-y-4">
           <div className="flex flex-wrap gap-3 items-center">
             <Select value={selectedEndpoint} onValueChange={setSelectedEndpoint}>
               <SelectTrigger className="w-[220px]"><SelectValue placeholder="Filtrar por endpoint" /></SelectTrigger>
@@ -396,12 +388,11 @@ export default function Webhooks() {
                 <SelectItem value="all">Todos os endpoints</SelectItem>
                 {endpoints.map(ep => (
                   <SelectItem key={ep.id} value={ep.id}>
-                    {ep.url.replace(/^https?:\/\//, '').substring(0, 40)}
+                    {ep.description || ep.url.replace(/^https?:\/\//, '').substring(0, 40)}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-
             <Select value={deliveryFilter} onValueChange={setDeliveryFilter}>
               <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -411,17 +402,16 @@ export default function Webhooks() {
                 <SelectItem value="retrying">Retentando</SelectItem>
               </SelectContent>
             </Select>
-
             <Button variant="outline" size="sm" onClick={load} className="gap-1">
               <RotateCcw className="w-3 h-3" /> Atualizar
             </Button>
           </div>
 
           {filteredDeliveries.length === 0 ? (
-            <Card className="p-8 text-center">
-              <FileText className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+            <div className="border rounded-lg p-12 text-center">
+              <FileText className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
               <p className="text-sm text-muted-foreground">Nenhum log encontrado.</p>
-            </Card>
+            </div>
           ) : (
             <div className="space-y-2">
               {filteredDeliveries.map(d => {
@@ -449,7 +439,6 @@ export default function Webhooks() {
                       </span>
                       {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                     </button>
-
                     {isExpanded && (
                       <div className="border-t p-3 space-y-3 bg-muted/30">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -464,22 +453,10 @@ export default function Webhooks() {
                             <pre className="text-xs bg-background border rounded p-2 overflow-auto max-h-48 font-mono">
                               {d.last_response_body || d.last_error || "Sem resposta"}
                             </pre>
-                            {d.last_response_status && (
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Status HTTP: {d.last_response_status}
-                              </p>
-                            )}
                           </div>
                         </div>
-
                         {d.status === "failed" && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="gap-1"
-                            disabled={resending === d.id}
-                            onClick={() => resendDelivery(d.id)}
-                          >
+                          <Button variant="outline" size="sm" className="gap-1" disabled={resending === d.id} onClick={() => resendDelivery(d.id)}>
                             {resending === d.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
                             Reenviar
                           </Button>
@@ -494,10 +471,120 @@ export default function Webhooks() {
         </TabsContent>
 
         {/* DOCS TAB */}
-        <TabsContent value="docs" className="space-y-4 mt-4">
+        <TabsContent value="docs" className="mt-6 space-y-4">
           <WebhookDocs />
         </TabsContent>
       </Tabs>
+
+      {/* CREATE WEBHOOK DRAWER - Kiwify style */}
+      <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <SheetContent className="sm:max-w-md overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="text-lg">Criar webhook</SheetTitle>
+          </SheetHeader>
+
+          <div className="space-y-5 mt-6">
+            {/* Nome */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Nome</label>
+              <Input
+                placeholder="Ex: Venda Aprovada"
+                value={newName}
+                onChange={e => setNewName(e.target.value)}
+              />
+            </div>
+
+            {/* URL */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">URL do Webhook</label>
+              <Input
+                placeholder="https://example.com/api/pbd/?u=5df7741ff..."
+                value={newUrl}
+                onChange={e => setNewUrl(e.target.value)}
+              />
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!newUrl.trim() || adding}
+                  onClick={async () => {
+                    if (!newUrl.startsWith("http")) {
+                      toast.error("URL inválida");
+                      return;
+                    }
+                    toast.info("Use o botão 'Testar Webhook' após criar o endpoint");
+                  }}
+                >
+                  Testar Webhook
+                </Button>
+              </div>
+            </div>
+
+            {/* Token info */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Token</label>
+              <Input
+                readOnly
+                value="Gerado automaticamente após criar"
+                className="bg-muted text-muted-foreground"
+              />
+              <div className="flex items-center gap-2 text-sm text-primary">
+                <HelpCircle className="w-4 h-4" />
+                <span className="cursor-pointer hover:underline" onClick={() => { setDrawerOpen(false); setActiveTab("docs"); }}>
+                  Aprenda mais sobre os webhooks
+                </span>
+              </div>
+            </div>
+
+            {/* Produtos */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Produtos</label>
+              <Select value={newProductId} onValueChange={setNewProductId}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos que sou produtor</SelectItem>
+                  {products.map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Eventos */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-foreground">Evento</label>
+                <button
+                  className="text-sm text-primary hover:underline"
+                  onClick={selectAllEvents}
+                >
+                  {newEvents.size === AVAILABLE_EVENTS.length ? "(Desmarcar todos)" : "(Selecionar todos)"}
+                </button>
+              </div>
+              <div className="space-y-2.5">
+                {AVAILABLE_EVENTS.map(ev => (
+                  <label key={ev.value} className="flex items-center gap-3 cursor-pointer">
+                    <Checkbox
+                      checked={newEvents.has(ev.value)}
+                      onCheckedChange={() => toggleEventOnNew(ev.value)}
+                    />
+                    <span className="text-sm text-foreground">{ev.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-end gap-3 mt-8 pt-4 border-t">
+            <Button variant="outline" onClick={resetDrawer}>Cancelar</Button>
+            <Button onClick={addEndpoint} disabled={adding || !newUrl.trim() || newEvents.size === 0}>
+              {adding ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Criar
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
@@ -575,10 +662,8 @@ function WebhookDocs() {
         <h3 className="text-sm font-semibold text-foreground">Segurança — Validação de Assinatura</h3>
         <p className="text-xs text-muted-foreground">
           Cada requisição inclui o header <code className="bg-muted px-1 rounded">x-panttera-signature</code> com
-          uma assinatura HMAC-SHA256 do body usando seu secret. <strong>Sempre valide essa assinatura</strong> para
-          garantir que a requisição veio da Panttera.
+          uma assinatura HMAC-SHA256 do body usando seu secret. <strong>Sempre valide essa assinatura</strong>.
         </p>
-
         <div className="space-y-3">
           <p className="text-xs font-medium text-foreground">Node.js:</p>
           <pre className="text-xs bg-muted rounded p-3 overflow-auto font-mono">
@@ -595,7 +680,6 @@ function validateSignature(body, signature, secret) {
   );
 }
 
-// No seu handler:
 app.post('/webhook', (req, res) => {
   const sig = req.headers['x-panttera-signature'];
   const body = JSON.stringify(req.body);
@@ -604,29 +688,22 @@ app.post('/webhook', (req, res) => {
     return res.status(401).send('Invalid signature');
   }
   
-  // Processar evento...
   const event = req.body;
   console.log('Evento:', event.type, event.id);
-  
-  // IMPORTANTE: Responda com 200 rapidamente
   res.status(200).send('OK');
 });`}
           </pre>
 
           <p className="text-xs font-medium text-foreground">Python:</p>
           <pre className="text-xs bg-muted rounded p-3 overflow-auto font-mono">
-{`import hmac
-import hashlib
+{`import hmac, hashlib
 
-def validate_signature(body: str, signature: str, secret: str) -> bool:
+def validate_signature(body, signature, secret):
     expected = hmac.new(
-        secret.encode(),
-        body.encode(),
-        hashlib.sha256
+        secret.encode(), body.encode(), hashlib.sha256
     ).hexdigest()
     return hmac.compare_digest(signature, expected)
 
-# Flask example:
 @app.route('/webhook', methods=['POST'])
 def handle_webhook():
     sig = request.headers.get('x-panttera-signature')
@@ -636,8 +713,6 @@ def handle_webhook():
         return 'Invalid signature', 401
     
     event = request.json
-    print(f"Evento: {event['type']} {event['id']}")
-    
     return 'OK', 200`}
           </pre>
         </div>
@@ -650,7 +725,7 @@ def handle_webhook():
           <li><strong>3 tentativas</strong> com backoff exponencial: 5s → 30s → 2min</li>
           <li>Após 3 falhas, o evento é marcado como <strong>falho</strong></li>
           <li>Eventos falhos podem ser reenviados manualmente na aba <strong>Logs</strong></li>
-          <li>Cada evento possui um <strong>ID único</strong> para idempotência (evitar duplicatas)</li>
+          <li>Cada evento possui um <strong>ID único</strong> para idempotência</li>
         </ul>
       </Card>
 
@@ -667,7 +742,7 @@ def handle_webhook():
             <tbody className="text-muted-foreground">
               <tr className="border-b"><td className="p-2 font-mono">Content-Type</td><td className="p-2">application/json</td></tr>
               <tr className="border-b"><td className="p-2 font-mono">x-panttera-signature</td><td className="p-2">HMAC-SHA256 do body com seu secret</td></tr>
-              <tr className="border-b"><td className="p-2 font-mono">x-panttera-event</td><td className="p-2">Tipo do evento (ex: payment.approved)</td></tr>
+              <tr className="border-b"><td className="p-2 font-mono">x-panttera-event</td><td className="p-2">Tipo do evento</td></tr>
               <tr><td className="p-2 font-mono">User-Agent</td><td className="p-2">Panttera-Webhooks/1.0</td></tr>
             </tbody>
           </table>
@@ -681,10 +756,9 @@ def handle_webhook():
             <h3 className="text-sm font-semibold text-foreground">Boas Práticas</h3>
             <ul className="text-xs text-muted-foreground space-y-1.5 list-disc list-inside mt-2">
               <li>Responda com <strong>HTTP 200</strong> o mais rápido possível</li>
-              <li>Processe o evento de forma <strong>assíncrona</strong> se possível</li>
-              <li>Use o <strong>event.id</strong> para evitar processar o mesmo evento duas vezes</li>
+              <li>Processe o evento de forma <strong>assíncrona</strong></li>
+              <li>Use o <strong>event.id</strong> para evitar duplicatas</li>
               <li>Sempre <strong>valide a assinatura</strong> antes de processar</li>
-              <li>Recomendamos usar <a href="https://requestbin.com/" target="_blank" className="text-primary underline">RequestBin</a> para testar</li>
             </ul>
           </div>
         </div>
