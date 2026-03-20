@@ -98,9 +98,8 @@ function AdminAccessRedirect({
 
         setChecked(true);
 
-        // Route through root resolver to avoid stale role state trapping users in onboarding
         if (hasAdminRole) {
-          navigate("/", { replace: true });
+          navigate("/admin", { replace: true });
           return;
         }
 
@@ -108,7 +107,7 @@ function AdminAccessRedirect({
       } catch {
         if (cancelled) return;
         setChecked(true);
-        navigate("/", { replace: true });
+        navigate("/login", { replace: true });
       }
     };
 

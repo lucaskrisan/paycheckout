@@ -1,4 +1,5 @@
 import {
+  BookOpen,
   LayoutDashboard,
   ShoppingCart,
   Package,
@@ -102,6 +103,7 @@ const superAdminItems = [
   { title: "Blacklist", url: "/admin/blacklist", icon: ShieldBan },
   { title: "Roadmap", url: "/admin/roadmap", icon: ClipboardList },
   { title: "Fiscalizar", url: "/admin/health", icon: ShieldCheck },
+  { title: "Manual Técnico", url: "/admin/manual", icon: BookOpen },
 ];
 
 /* ── Componente ────────────────────────────────────── */
