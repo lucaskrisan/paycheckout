@@ -452,9 +452,10 @@ ROTAS ESPECIAIS
      • buyerToken → /minha-conta?token=xxx
      • fallback → /admin
 
-6.6 Verificação Turnstile
-  • Cloudflare Turnstile integrado no checkout
-  • Edge Function: verify-turnstile
+6.6 Verificação Turnstile (Cloudflare)
+   • Cloudflare Turnstile integrado no checkout E na landing page
+   • Na landing: ao clicar "Entrar", Turnstile valida antes de redirecionar ao login
+   • Edge Function: verify-turnstile
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 7. SISTEMA DE ACESSO E MONETIZAÇÃO
