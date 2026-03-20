@@ -247,7 +247,7 @@ Deno.serve(async (req) => {
                       .single();
 
                     if (customerData) {
-                      const siteUrl = 'https://checkout.panterapay.com.br';
+                      const siteUrl = 'https://app.panttera.com.br';
                       const accessUrl = `${siteUrl}/membros?token=${newAccess.access_token}`;
 
                       const emailHtml = `
