@@ -294,7 +294,7 @@ const Login = () => {
               </>
             )}
 
-            <TurnstileWidget onVerify={handleTurnstileVerify} onExpire={handleTurnstileExpire} />
+            {/* Turnstile moved above Google button */}
 
             <Button
               type="submit"
