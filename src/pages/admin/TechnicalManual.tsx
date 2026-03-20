@@ -861,11 +861,10 @@ Build:
   • Gamificação de vendas no dashboard
 
 20.2 Pontos de Atenção
-  • Recuperação de senha não implementada (reset password flow)
-  • Webhook retry/backoff não implementado (fire-and-forget)
-  • Rate limiting não implementado nas Edge Functions
-  • Busca de clientes limitada a 1000 registros (limite Supabase)
-  • Checkout Builder sem preview mobile
+   • Recuperação de senha não implementada (reset password flow)
+   • Rate limiting não implementado nas Edge Functions
+   • Busca de clientes limitada a 1000 registros (limite Supabase)
+   • Checkout Builder sem preview mobile
 
 20.3 Preparação para Escala
   • Arquitetura serverless (Edge Functions escalam automaticamente)
