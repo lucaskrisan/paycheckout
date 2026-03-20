@@ -164,7 +164,7 @@ const WhatsAppSection = () => (
                       Liberei um <span className="font-bold text-primary">cupom de 15% OFF</span> pra você 🔥
                     </p>
                     <p className="text-[11px] text-primary mt-1 underline">
-                      checkout.panterapay.com/kit-pro?cupom=VOLTA15
+                      app.panttera.com.br/kit-pro?cupom=VOLTA15
                     </p>
                     <p className="text-[8px] text-[#6A6A75] text-right mt-1 flex items-center justify-end gap-1">
                       16:45 <CheckCheck className="w-3 h-3 text-[#25D366]" />
