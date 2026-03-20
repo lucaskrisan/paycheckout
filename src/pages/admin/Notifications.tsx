@@ -220,7 +220,7 @@ const Notifications = () => {
               </Button>
             ) : (
               <p className="text-xs text-muted-foreground shrink-0 max-w-[200px] text-right">
-                Abra <strong>checkout.panterapay.com.br</strong> no celular → Menu → "Adicionar à tela inicial"
+                Abra <strong>app.panttera.com.br</strong> no celular → Menu → "Adicionar à tela inicial"
               </p>
             )}
           </CardContent>

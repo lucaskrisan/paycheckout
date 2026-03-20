@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
     }
 
     // Build access URL
-    const siteUrl = Deno.env.get('SITE_URL') || 'https://checkout.panterapay.com.br';
+    const siteUrl = Deno.env.get('SITE_URL') || 'https://app.panttera.com.br';
     const accessUrl = `${siteUrl}/membros?token=${access_token}`;
 
     // Send email via Resend

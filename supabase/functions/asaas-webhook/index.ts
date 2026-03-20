@@ -374,7 +374,7 @@ Deno.serve(async (req) => {
           const title = '💰 Nova venda confirmada!';
           const message = `${customerName || 'Cliente'} • ${method} R$ ${amount}${notifSettings.show_product_name ? ` • ${productName}` : ''}`;
 
-          await sendPushNotification(title, message, ownerId || undefined, 'https://checkout.panterapay.com.br/admin/orders');
+          await sendPushNotification(title, message, ownerId || undefined, 'https://app.panttera.com.br/admin/orders');
         }
       } catch (notifErr) {
         console.error('[asaas-webhook] Notification error (non-blocking):', notifErr);

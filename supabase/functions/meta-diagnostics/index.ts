@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
               event_name: 'PageView',
               event_time: Math.floor(Date.now() / 1000),
               event_id: `diag_${Date.now()}`,
-              event_source_url: 'https://checkout.panterapay.com.br/diagnostics',
+              event_source_url: 'https://app.panttera.com.br/diagnostics',
               action_source: 'website',
               user_data: {
                 client_ip_address: '0.0.0.0',

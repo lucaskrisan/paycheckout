@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
 
     let notifTitle = '🎉 Ka-ching! Mais uma venda!';
     let notifBody = 'João Silva • 💠 PIX R$ 197,00 • Curso Premium';
-    let iconUrl = 'https://checkout.panterapay.com.br/pwa-192x192.png';
+    let iconUrl = 'https://app.panttera.com.br/pwa-192x192.png';
 
     // Try to get user's PWA settings for the notification template
     const authHeader = req.headers.get('Authorization');

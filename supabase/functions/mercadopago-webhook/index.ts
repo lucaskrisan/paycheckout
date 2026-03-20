@@ -288,7 +288,7 @@ Deno.serve(async (req) => {
             '💰 Nova venda via Mercado Pago!',
             `${customerName || 'Cliente'} • ${method} R$ ${amount}${notifSettings.show_product_name ? ` • ${productName}` : ''}`,
             ownerId || undefined,
-            'https://checkout.panterapay.com.br/admin/orders'
+            'https://app.panttera.com.br/admin/orders'
           );
         }
       } catch (notifErr) {

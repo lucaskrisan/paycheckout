@@ -396,7 +396,7 @@ Deno.serve(async (req) => {
         const formattedAmount = Number(amount).toFixed(2).replace('.', ',');
         const title = '💠 PIX gerado!';
         const message = `${customer.name} gerou um PIX de R$ ${formattedAmount}${notifSettings.show_product_name ? ` • ${productName}` : ''}`;
-        await sendPushNotification(title, message, productOwnerId || undefined, 'https://checkout.panterapay.com.br/admin/orders');
+        await sendPushNotification(title, message, productOwnerId || undefined, 'https://app.panttera.com.br/admin/orders');
       }
     } catch (notifErr) {
       console.error('[create-pix-payment] Notification error:', notifErr);

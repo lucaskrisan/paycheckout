@@ -287,7 +287,7 @@ const CheckoutBuilder = () => {
             variant="outline"
             className="h-7 text-xs gap-1"
             onClick={() => {
-              const previewUrl = new URL(`https://checkout.panterapay.com.br/checkout/${productId}`);
+              const previewUrl = new URL(`https://app.panttera.com.br/checkout/${productId}`);
               if (dbConfigId) previewUrl.searchParams.set("config", dbConfigId);
               window.open(previewUrl.toString(), "_blank");
             }}
