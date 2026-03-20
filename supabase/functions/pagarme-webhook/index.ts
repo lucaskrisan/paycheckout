@@ -152,7 +152,7 @@ Deno.serve(async (req) => {
 
           if (custData) {
             const capiEventId = externalId;
-            const checkoutUrl = (orderData.metadata as any)?.checkout_url || `https://checkout.panterapay.com.br/checkout/${orderData.product_id}`;
+            const checkoutUrl = (orderData.metadata as any)?.checkout_url || `https://app.panttera.com.br/checkout/${orderData.product_id}`;
 
             // Fire CAPI via our own edge function
             const capiResponse = await fetch(
