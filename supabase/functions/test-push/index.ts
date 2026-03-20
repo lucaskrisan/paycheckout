@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
       headings: { en: notifTitle },
       contents: { en: notifBody },
       chrome_web_icon: iconUrl,
-      url: 'https://checkout.panterapay.com.br/admin/orders',
+      url: 'https://app.panttera.com.br/admin/orders',
     };
 
     const response = await fetch('https://api.onesignal.com/notifications', {
