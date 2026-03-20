@@ -452,9 +452,10 @@ ROTAS ESPECIAIS
      • buyerToken → /minha-conta?token=xxx
      • fallback → /admin
 
-6.6 Verificação Turnstile
-  • Cloudflare Turnstile integrado no checkout
-  • Edge Function: verify-turnstile
+6.6 Verificação Turnstile (Cloudflare)
+   • Cloudflare Turnstile integrado no checkout E na landing page
+   • Na landing: ao clicar "Entrar", Turnstile valida antes de redirecionar ao login
+   • Edge Function: verify-turnstile
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 7. SISTEMA DE ACESSO E MONETIZAÇÃO
@@ -504,6 +505,9 @@ ROTAS ESPECIAIS
 │ test-push                │ Testar notificação push                │
 │ verify-turnstile         │ Validar Cloudflare Turnstile           │
 │ reconcile-orders         │ Reconciliar pedidos                    │
+│ webhook-test             │ Testar webhook com payload simulado    │
+│ webhook-retry            │ Reprocessar webhooks com falha (backoff│
+│                          │ exponencial: 5s, 30s, 2min)            │
 │ meta-ads                 │ Consultar dados Meta Ads               │
 │ meta-ads-alerts          │ Alertas de Meta Ads                    │
 │ meta-diagnostics         │ Diagnóstico de pixels                  │
@@ -857,11 +861,10 @@ Build:
   • Gamificação de vendas no dashboard
 
 20.2 Pontos de Atenção
-  • Recuperação de senha não implementada (reset password flow)
-  • Webhook retry/backoff não implementado (fire-and-forget)
-  • Rate limiting não implementado nas Edge Functions
-  • Busca de clientes limitada a 1000 registros (limite Supabase)
-  • Checkout Builder sem preview mobile
+   • Recuperação de senha não implementada (reset password flow)
+   • Rate limiting não implementado nas Edge Functions
+   • Busca de clientes limitada a 1000 registros (limite Supabase)
+   • Checkout Builder sem preview mobile
 
 20.3 Preparação para Escala
   • Arquitetura serverless (Edge Functions escalam automaticamente)
