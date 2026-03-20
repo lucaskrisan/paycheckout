@@ -16,7 +16,7 @@ async function sendPushNotification(title: string, message: string, targetUserId
       target_channel: 'push',
       headings: { en: title },
       contents: { en: message },
-      chrome_web_icon: 'https://checkout.panterapay.com.br/pwa-192x192.png',
+      chrome_web_icon: 'https://app.panttera.com.br/pwa-192x192.png',
     };
     if (targetUserId) {
       payload.filters = [{ field: 'tag', key: 'user_id', relation: '=', value: targetUserId }];
