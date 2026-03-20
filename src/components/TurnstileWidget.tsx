@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { forwardRef, useEffect, useRef, useCallback } from "react";
 
 const SITE_KEY = "0x4AAAAAACsSrQ-0RiyeU2_T";
 
@@ -7,9 +7,22 @@ interface TurnstileWidgetProps {
   onExpire?: () => void;
 }
 
-const TurnstileWidget = ({ onVerify, onExpire }: TurnstileWidgetProps) => {
+const TurnstileWidget = forwardRef<HTMLDivElement, TurnstileWidgetProps>(({ onVerify, onExpire }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
+
+  const setContainerRef = useCallback((node: HTMLDivElement | null) => {
+    containerRef.current = node;
+
+    if (!ref) return;
+
+    if (typeof ref === "function") {
+      ref(node);
+      return;
+    }
+
+    ref.current = node;
+  }, [ref]);
 
   const renderWidget = useCallback(() => {
     if (!containerRef.current || !(window as any).turnstile) return;
@@ -50,7 +63,9 @@ const TurnstileWidget = ({ onVerify, onExpire }: TurnstileWidgetProps) => {
     };
   }, [renderWidget]);
 
-  return <div ref={containerRef} />;
-};
+  return <div ref={setContainerRef} />;
+});
+
+TurnstileWidget.displayName = "TurnstileWidget";
 
 export default TurnstileWidget;
