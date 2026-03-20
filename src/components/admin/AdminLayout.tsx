@@ -107,7 +107,7 @@ function AdminAccessRedirect({
       } catch {
         if (cancelled) return;
         setChecked(true);
-        navigate("/", { replace: true });
+        navigate("/login", { replace: true });
       }
     };
 
