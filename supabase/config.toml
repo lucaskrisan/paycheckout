@@ -27,6 +27,12 @@ verify_jwt = false
 [functions.fire-webhooks]
 verify_jwt = false
 
+[functions.webhook-retry]
+verify_jwt = false
+
+[functions.webhook-test]
+verify_jwt = false
+
 [functions.generate-email-copy]
 verify_jwt = false
 
