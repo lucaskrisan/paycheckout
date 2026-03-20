@@ -1,37 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://checkout.panterapay.com.br/</loc>
+    <loc>https://app.panttera.com.br/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://checkout.panterapay.com.br/login</loc>
+    <loc>https://app.panttera.com.br/login</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://checkout.panterapay.com.br/termos</loc>
+    <loc>https://app.panttera.com.br/termos</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://checkout.panterapay.com.br/privacidade</loc>
+    <loc>https://app.panttera.com.br/privacidade</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://checkout.panterapay.com.br/cookies</loc>
+    <loc>https://app.panttera.com.br/cookies</loc>
     <changefreq>yearly</changefreq>
     <priority>0.2</priority>
   </url>
   <url>
-    <loc>https://checkout.panterapay.com.br/isencao-financeira</loc>
+    <loc>https://app.panttera.com.br/isencao-financeira</loc>
     <changefreq>yearly</changefreq>
     <priority>0.2</priority>
   </url>
   <url>
-    <loc>https://checkout.panterapay.com.br/produtos-proibidos</loc>
+    <loc>https://app.panttera.com.br/produtos-proibidos</loc>
     <changefreq>yearly</changefreq>
     <priority>0.2</priority>
   </url>

@@ -19,7 +19,7 @@ async function sendPushNotification(title: string, message: string, targetUserId
       target_channel: 'push',
       headings: { en: title },
       contents: { en: message },
-      chrome_web_icon: iconUrl || 'https://checkout.panterapay.com.br/pwa-192x192.png',
+      chrome_web_icon: iconUrl || 'https://app.panttera.com.br/pwa-192x192.png',
     };
     if (targetUserId) {
       payload.filters = [{ field: 'tag', key: 'user_id', relation: '=', value: targetUserId }];
@@ -57,7 +57,7 @@ async function sendAccessEmail(supabase: any, customerId: string, course: { id: 
 
     if (!customer) return;
 
-    const siteUrl = 'https://checkout.panterapay.com.br';
+    const siteUrl = 'https://app.panttera.com.br';
     const accessUrl = `${siteUrl}/membros?token=${accessToken}`;
 
     const emailHtml = `
@@ -221,7 +221,7 @@ Deno.serve(async (req) => {
             .single();
 
           if (custData) {
-            const checkoutUrl = (orderData.metadata as any)?.checkout_url || `https://checkout.panterapay.com.br/checkout/${orderData.product_id}`;
+            const checkoutUrl = (orderData.metadata as any)?.checkout_url || `https://app.panttera.com.br/checkout/${orderData.product_id}`;
 
             const capiResponse = await fetch(
               `${Deno.env.get('SUPABASE_URL')}/functions/v1/facebook-capi`,
@@ -374,7 +374,7 @@ Deno.serve(async (req) => {
           const title = '💰 Nova venda confirmada!';
           const message = `${customerName || 'Cliente'} • ${method} R$ ${amount}${notifSettings.show_product_name ? ` • ${productName}` : ''}`;
 
-          await sendPushNotification(title, message, ownerId || undefined, 'https://checkout.panterapay.com.br/admin/orders');
+          await sendPushNotification(title, message, ownerId || undefined, 'https://app.panttera.com.br/admin/orders');
         }
       } catch (notifErr) {
         console.error('[asaas-webhook] Notification error (non-blocking):', notifErr);

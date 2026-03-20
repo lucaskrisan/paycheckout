@@ -272,8 +272,8 @@ async function sendPush(title: string, body: string, url?: string) {
     target_channel: 'push',
     headings: { en: title },
     contents: { en: body },
-    chrome_web_icon: 'https://checkout.panterapay.com.br/pwa-192x192.png',
-    url: url || 'https://checkout.panterapay.com.br/admin/meta-ads',
+    chrome_web_icon: 'https://app.panttera.com.br/pwa-192x192.png',
+    url: url || 'https://app.panttera.com.br/admin/meta-ads',
   };
 
   const res = await fetch('https://api.onesignal.com/notifications', {

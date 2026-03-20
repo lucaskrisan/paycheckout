@@ -48,7 +48,7 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
-const PUBLISHED_URL = "https://checkout.panterapay.com.br";
+const PUBLISHED_URL = "https://app.panttera.com.br";
 const getPublicUrl = () =>
   window.location.hostname.includes("lovable") ? PUBLISHED_URL : window.location.origin;
 

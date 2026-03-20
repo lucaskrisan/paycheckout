@@ -430,7 +430,7 @@ const Tracking = () => {
 
         {/* ═══ TAB: Integração ═══ */}
         <TabsContent value="integration" className="space-y-5 mt-0">
-          <TrackingScriptGenerator pixels={pixels} products={products} checkoutBaseUrl="https://checkout.panterapay.com.br" />
+          <TrackingScriptGenerator pixels={pixels} products={products} checkoutBaseUrl="https://app.panttera.com.br" />
         </TabsContent>
 
         {/* ═══ TAB: Configuração ═══ */}

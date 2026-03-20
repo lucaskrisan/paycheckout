@@ -21,7 +21,7 @@ import { Label } from "@/components/ui/label";
 import { MoreVertical, Search, Pencil, Trash2, Copy, ExternalLink, ArrowLeft, Link as LinkIcon } from "lucide-react";
 import { toast } from "sonner";
 
-const PUBLISHED_URL = "https://checkout.panterapay.com.br";
+const PUBLISHED_URL = "https://app.panttera.com.br";
 const getPublicUrl = () => (window.location.hostname.includes("lovable") ? PUBLISHED_URL : window.location.origin);
 
 interface Product {

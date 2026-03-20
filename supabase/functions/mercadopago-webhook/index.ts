@@ -16,7 +16,7 @@ async function sendPushNotification(title: string, message: string, targetUserId
       target_channel: 'push',
       headings: { en: title },
       contents: { en: message },
-      chrome_web_icon: 'https://checkout.panterapay.com.br/pwa-192x192.png',
+      chrome_web_icon: 'https://app.panttera.com.br/pwa-192x192.png',
     };
     if (targetUserId) {
       payload.filters = [{ field: 'tag', key: 'user_id', relation: '=', value: targetUserId }];
@@ -182,7 +182,7 @@ Deno.serve(async (req) => {
                     .single();
 
                   if (customerData) {
-                    const siteUrl = 'https://checkout.panterapay.com.br';
+                    const siteUrl = 'https://app.panttera.com.br';
                     const accessUrl = `${siteUrl}/membros?token=${newAccess.access_token}`;
 
                     const emailHtml = `
@@ -288,7 +288,7 @@ Deno.serve(async (req) => {
             '💰 Nova venda via Mercado Pago!',
             `${customerName || 'Cliente'} • ${method} R$ ${amount}${notifSettings.show_product_name ? ` • ${productName}` : ''}`,
             ownerId || undefined,
-            'https://checkout.panterapay.com.br/admin/orders'
+            'https://app.panttera.com.br/admin/orders'
           );
         }
       } catch (notifErr) {

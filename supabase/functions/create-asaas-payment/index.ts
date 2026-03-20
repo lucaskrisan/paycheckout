@@ -16,7 +16,7 @@ async function sendPushNotification(title: string, message: string, targetUserId
       target_channel: 'push',
       headings: { en: title },
       contents: { en: message },
-      chrome_web_icon: iconUrl || 'https://checkout.panterapay.com.br/pwa-192x192.png',
+      chrome_web_icon: iconUrl || 'https://app.panttera.com.br/pwa-192x192.png',
     };
     if (targetUserId) {
       payload.filters = [{ field: 'tag', key: 'user_id', relation: '=', value: targetUserId }];
@@ -419,7 +419,7 @@ Deno.serve(async (req) => {
             const formattedAmount = Number(amount).toFixed(2).replace('.', ',');
             const title = '🔄 Nova assinatura!';
             const message = `${customer.name} • 💳 R$ ${formattedAmount}/mês${notifSettings.show_product_name ? ` • ${productName}` : ''}`;
-             await sendPushNotification(title, message, productOwnerId || undefined, 'https://checkout.panterapay.com.br/admin/orders');
+             await sendPushNotification(title, message, productOwnerId || undefined, 'https://app.panttera.com.br/admin/orders');
           }
         } catch (notifErr) {
           console.error('[create-asaas-payment] Notification error:', notifErr);
@@ -544,7 +544,7 @@ Deno.serve(async (req) => {
           const formattedAmount = Number(amount).toFixed(2).replace('.', ',');
           const title = '💰 Venda aprovada!';
           const message = `${customer.name} • 💳 Cartão R$ ${formattedAmount}${notifSettings.show_product_name ? ` • ${productName}` : ''}`;
-          await sendPushNotification(title, message, productOwnerId || undefined, 'https://checkout.panterapay.com.br/admin/orders');
+          await sendPushNotification(title, message, productOwnerId || undefined, 'https://app.panttera.com.br/admin/orders');
         }
       } catch (notifErr) {
         console.error('[create-asaas-payment] Notification error:', notifErr);
