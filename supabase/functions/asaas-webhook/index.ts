@@ -178,18 +178,39 @@ Deno.serve(async (req) => {
       console.error('[asaas-webhook] Error updating order:', error);
     }
 
-    // Fire user webhooks (non-blocking)
+    // Fire user webhooks (non-blocking) — dispatch BOTH modern and legacy event names
     if (orderData?.id && orderData?.user_id) {
-      const webhookEvent = status === 'paid' ? 'order.paid' : status === 'refunded' ? 'order.refunded' : status === 'cancelled' ? 'order.cancelled' : null;
-      if (webhookEvent) {
-        fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/fire-webhooks`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-          },
-          body: JSON.stringify({ event: webhookEvent, order_id: orderData.id, user_id: orderData.user_id }),
-        }).catch(err => console.error('[asaas-webhook] fire-webhooks error:', err));
+      const eventPairs: string[][] = [];
+      if (status === 'paid') eventPairs.push(['payment.approved', 'order.paid']);
+      else if (status === 'refunded') eventPairs.push(['payment.refunded', 'order.refunded']);
+      else if (status === 'cancelled') eventPairs.push(['payment.failed', 'order.cancelled']);
+
+      // Detect subscription events
+      if (event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED') {
+        // Check if this is a subscription product
+        if (orderData.product_id) {
+          const { data: subProduct } = await supabase
+            .from('products')
+            .select('is_subscription')
+            .eq('id', orderData.product_id)
+            .maybeSingle();
+          if (subProduct?.is_subscription) {
+            eventPairs.push(['subscription.created']);
+          }
+        }
+      }
+
+      for (const events of eventPairs) {
+        for (const evt of events) {
+          fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/fire-webhooks`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+            },
+            body: JSON.stringify({ event: evt, order_id: orderData.id, user_id: orderData.user_id }),
+          }).catch(err => console.error('[asaas-webhook] fire-webhooks error:', err));
+        }
       }
     }
 
