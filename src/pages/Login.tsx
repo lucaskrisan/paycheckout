@@ -157,12 +157,15 @@ const Login = () => {
           </div>
 
 
+          {/* Turnstile — must pass before any action */}
+          <TurnstileWidget onVerify={handleTurnstileVerify} onExpire={handleTurnstileExpire} />
+
           {/* Google */}
           <Button
             type="button"
             variant="outline"
-            className="w-full h-[52px] gap-3 font-semibold text-[14px] border-border/60 bg-card/50 hover:bg-card hover:border-border mb-6 rounded-xl transition-all duration-200"
-            disabled={googleLoading}
+            className="w-full h-[52px] gap-3 font-semibold text-[14px] border-border/60 bg-card/50 hover:bg-card hover:border-border mb-6 rounded-xl transition-all duration-200 mt-4"
+            disabled={googleLoading || !turnstileToken}
             onClick={handleGoogleSignIn}
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -291,7 +294,7 @@ const Login = () => {
               </>
             )}
 
-            <TurnstileWidget onVerify={handleTurnstileVerify} onExpire={handleTurnstileExpire} />
+            {/* Turnstile moved above Google button */}
 
             <Button
               type="submit"
