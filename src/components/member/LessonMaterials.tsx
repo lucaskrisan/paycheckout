@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Download, FileText, Link2, Video, File } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { Download, FileText, Link2, Video, File, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -18,6 +18,15 @@ const materialIcons: Record<string, typeof FileText> = {
   video: Video,
 };
 
+const BUCKET = "course-materials";
+
+function extractStoragePath(url: string | null): string | null {
+  if (!url) return null;
+  // Match /storage/v1/object/public/course-materials/... or /storage/v1/object/course-materials/...
+  const match = url.match(/\/storage\/v1\/object\/(?:public\/)?course-materials\/(.+)/);
+  return match ? match[1] : null;
+}
+
 export default function LessonMaterials({
   lessonId,
   client,
@@ -26,6 +35,7 @@ export default function LessonMaterials({
   client: SupabaseClient;
 }) {
   const [materials, setMaterials] = useState<Material[]>([]);
+  const [downloading, setDownloading] = useState<string | null>(null);
 
   useEffect(() => {
     client
@@ -35,6 +45,40 @@ export default function LessonMaterials({
       .order("sort_order")
       .then(({ data }) => setMaterials(data || []));
   }, [lessonId]);
+
+  const handleDownload = useCallback(async (material: Material) => {
+    if (!material.file_url) return;
+
+    const storagePath = extractStoragePath(material.file_url);
+
+    // If it's not a storage URL (external link), open directly
+    if (!storagePath) {
+      window.open(material.file_url, "_blank");
+      return;
+    }
+
+    setDownloading(material.id);
+    try {
+      // Generate a signed URL valid for 1 hour
+      const { data, error } = await client.storage
+        .from(BUCKET)
+        .createSignedUrl(storagePath, 3600);
+
+      if (error || !data?.signedUrl) {
+        console.error("Signed URL error:", error);
+        // Fallback: try direct URL
+        window.open(material.file_url, "_blank");
+        return;
+      }
+
+      window.open(data.signedUrl, "_blank");
+    } catch (err) {
+      console.error("Download error:", err);
+      window.open(material.file_url, "_blank");
+    } finally {
+      setDownloading(null);
+    }
+  }, [client]);
 
   if (materials.length === 0) return null;
 
@@ -55,13 +99,13 @@ export default function LessonMaterials({
       <div className="space-y-2">
         {materials.map((m) => {
           const Icon = materialIcons[m.material_type] || File;
+          const isLoading = downloading === m.id;
           return (
-            <a
+            <button
               key={m.id}
-              href={m.file_url || "#"}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 p-3 rounded-xl transition-all hover:scale-[1.01]"
+              onClick={() => handleDownload(m)}
+              disabled={isLoading}
+              className="flex items-center gap-3 p-3 rounded-xl transition-all hover:scale-[1.01] w-full text-left"
               style={{ background: "hsl(220,18%,14%)" }}
             >
               <div
@@ -76,8 +120,12 @@ export default function LessonMaterials({
                   <p className="text-[hsl(220,10%,45%)] text-xs truncate">{m.description}</p>
                 )}
               </div>
-              <Download className="w-4 h-4 text-[hsl(220,10%,40%)] flex-shrink-0" />
-            </a>
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 text-[hsl(145,65%,50%)] flex-shrink-0 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4 text-[hsl(220,10%,40%)] flex-shrink-0" />
+              )}
+            </button>
           );
         })}
       </div>
