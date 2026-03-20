@@ -504,6 +504,9 @@ ROTAS ESPECIAIS
 │ test-push                │ Testar notificação push                │
 │ verify-turnstile         │ Validar Cloudflare Turnstile           │
 │ reconcile-orders         │ Reconciliar pedidos                    │
+│ webhook-test             │ Testar webhook com payload simulado    │
+│ webhook-retry            │ Reprocessar webhooks com falha (backoff│
+│                          │ exponencial: 5s, 30s, 2min)            │
 │ meta-ads                 │ Consultar dados Meta Ads               │
 │ meta-ads-alerts          │ Alertas de Meta Ads                    │
 │ meta-diagnostics         │ Diagnóstico de pixels                  │
