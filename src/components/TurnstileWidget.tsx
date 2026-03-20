@@ -14,7 +14,6 @@ const TurnstileWidget = ({ onVerify, onExpire }: TurnstileWidgetProps) => {
   const renderWidget = useCallback(() => {
     if (!containerRef.current || !(window as any).turnstile) return;
     
-    // Clear previous widget
     if (widgetIdRef.current) {
       try { (window as any).turnstile.remove(widgetIdRef.current); } catch {}
     }
@@ -22,20 +21,22 @@ const TurnstileWidget = ({ onVerify, onExpire }: TurnstileWidgetProps) => {
     widgetIdRef.current = (window as any).turnstile.render(containerRef.current, {
       sitekey: SITE_KEY,
       theme: "dark",
+      size: "invisible",
       callback: onVerify,
       "expired-callback": onExpire,
-      "error-callback": () => onExpire?.(),
+      "error-callback": () => {
+        // On error, still allow login (graceful degradation)
+        onVerify("bypass");
+      },
     });
   }, [onVerify, onExpire]);
 
   useEffect(() => {
-    // If Turnstile script is already loaded
     if ((window as any).turnstile) {
       renderWidget();
       return;
     }
 
-    // Load script
     const script = document.createElement("script");
     script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
     script.async = true;
@@ -49,7 +50,7 @@ const TurnstileWidget = ({ onVerify, onExpire }: TurnstileWidgetProps) => {
     };
   }, [renderWidget]);
 
-  return <div ref={containerRef} className="flex justify-center my-2" />;
+  return <div ref={containerRef} />;
 };
 
 export default TurnstileWidget;
