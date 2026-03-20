@@ -1,4 +1,5 @@
 import {
+  BookOpen,
   LayoutDashboard,
   ShoppingCart,
   Package,
