@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
 
         // Fetch diagnostic data via data_sources edge 
         const diagResponse = await fetch(
-          `https://graph.facebook.com/v22.0/${pixel.pixel_id}/events?fields=event_name,event_count,event_match_quality&access_token=${META_ACCESS_TOKEN}`
+          `https://graph.facebook.com/v22.0/${pixel.pixel_id}/events?fields=event_name,event_count,event_match_quality&access_token=${pixel.capi_token}`
         );
         const diagData = await diagResponse.json();
 
