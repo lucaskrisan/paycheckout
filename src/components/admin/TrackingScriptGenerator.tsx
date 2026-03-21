@@ -130,7 +130,7 @@ ${pixelInits}
     if(m) q.push('fbc='+encodeURIComponent(m[2]));
     var m2=document.cookie.match(/(^|;\\s*)_fbp=([^;]*)/);
     if(m2) q.push('fbp='+encodeURIComponent(m2[2]));
-    if(fbclid) q.push('fbclid='+encodeURIComponent(fbclid));
+    
     if(vid) q.push('vid='+encodeURIComponent(vid));
     if(configId) q.push('config='+encodeURIComponent(configId));
     location.href=base+(q.length?'?'+q.join('&'):'');
