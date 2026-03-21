@@ -402,6 +402,41 @@ Deno.serve(async (req) => {
       }
     }
 
+    // --- Billing recharge confirmation ---
+    // Fires when a producer pays their recharge PIX
+    // externalReference starts with 'recharge_' to distinguish from product sales
+    if (
+      (event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED') &&
+      typeof payment.externalReference === 'string' &&
+      payment.externalReference.startsWith('recharge_')
+    ) {
+      try {
+        const { data: recharge } = await supabase
+          .from('billing_recharges')
+          .select('id, user_id, amount, status')
+          .eq('external_id', payment.id)
+          .eq('status', 'pending')
+          .maybeSingle();
+        if (recharge) {
+          await supabase.rpc('add_billing_credit', {
+            p_user_id: recharge.user_id,
+            p_amount: recharge.amount,
+            p_description: `Recarga via PIX — R$${Number(recharge.amount).toFixed(2).replace('.', ',')}`,
+          });
+          await supabase
+            .from('billing_recharges')
+            .update({
+              status: 'confirmed',
+              confirmed_at: new Date().toISOString(),
+            })
+            .eq('id', recharge.id);
+          console.log(`[asaas-webhook] Recharge confirmed: R$${recharge.amount} for user ${recharge.user_id}`);
+        }
+      } catch (rechargeErr) {
+        console.error('[asaas-webhook] Recharge error (non-blocking):', rechargeErr);
+      }
+    }
+
     return new Response(JSON.stringify({ received: true, status }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

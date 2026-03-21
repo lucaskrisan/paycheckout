@@ -10,7 +10,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   CreditCard, TrendingUp, QrCode, Plus, Receipt, DollarSign, ArrowUpRight, ArrowDownLeft,
+  Loader2, ClipboardCopy, CheckCircle2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 
 interface TierRow {
@@ -57,6 +59,45 @@ const ProducerBilling = () => {
   const [transactions, setTransactions] = useState<BillingTransaction[]>([]);
   const [tiers, setTiers] = useState<TierRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pixAmount, setPixAmount] = useState<number>(50);
+  const [pixLoading, setPixLoading] = useState(false);
+  const [pixResult, setPixResult] = useState<{
+    pix_code: string | null;
+    qr_code_url: string | null;
+    amount: number;
+  } | null>(null);
+  const [copying, setCopying] = useState(false);
+
+  const handleGeneratePix = async () => {
+    setPixLoading(true);
+    setPixResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('billing-recharge', {
+        body: { amount: pixAmount },
+      });
+      if (error) throw new Error(error.message);
+      if (!data?.success) throw new Error('Erro ao gerar PIX');
+      setPixResult(data);
+      toast.success('QR Code gerado! Pague para adicionar saldo.');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao gerar PIX');
+    } finally {
+      setPixLoading(false);
+    }
+  };
+
+  const handleCopyPix = async () => {
+    if (!pixResult?.pix_code) return;
+    setCopying(true);
+    try {
+      await navigator.clipboard.writeText(pixResult.pix_code);
+      toast.success('Código PIX copiado!');
+    } catch {
+      toast.error('Erro ao copiar');
+    } finally {
+      setTimeout(() => setCopying(false), 2000);
+    }
+  };
 
   useEffect(() => {
     if (!user?.id) return;
@@ -103,13 +144,23 @@ const ProducerBilling = () => {
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Taxas a Pagar</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Saldo Disponível</CardTitle>
               <Receipt className="w-4 h-4 text-muted-foreground" />
             </div>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold text-foreground">{fmt(balance)}</p>
-            <p className="text-xs text-muted-foreground mt-1">Taxas acumuladas no período</p>
+            <div className="flex flex-wrap gap-1 mt-2">
+              {account?.blocked && (
+                <Badge variant="destructive" className="text-xs">CONTA BLOQUEADA</Badge>
+              )}
+              {!account?.blocked && balance < 0 && (
+                <Badge variant="destructive" className="text-xs">Saldo negativo</Badge>
+              )}
+              {!account?.blocked && balance >= 0 && balance < 20 && (
+                <Badge className="text-xs bg-amber-500 hover:bg-amber-500">Saldo baixo</Badge>
+              )}
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -185,15 +236,79 @@ const ProducerBilling = () => {
             <TabsContent value="pix">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Pagar via PIX</CardTitle>
-                  <CardDescription>Adicione crédito pré-pago à sua conta</CardDescription>
+                  <CardTitle className="text-base">Adicionar Saldo via PIX</CardTitle>
+                  <CardDescription>O saldo é creditado automaticamente em até 1 minuto após o pagamento</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <QrCode className="w-10 h-10 text-muted-foreground/40 mb-3" />
-                    <p className="text-sm text-muted-foreground mb-4">Gere um QR Code para adicionar crédito</p>
-                    <Button variant="outline" size="sm" className="gap-2"><Plus className="w-4 h-4" /> Gerar PIX</Button>
-                  </div>
+                <CardContent className="space-y-4">
+                  {!pixResult ? (
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Valor da recarga</label>
+                        <div className="flex gap-2 flex-wrap">
+                          {[20, 50, 100, 200, 500].map((v) => (
+                            <button
+                              key={v}
+                              onClick={() => setPixAmount(v)}
+                              className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                                pixAmount === v
+                                  ? 'border-primary bg-primary text-primary-foreground'
+                                  : 'border-border bg-muted/30 hover:bg-muted'
+                              }`}
+                            >
+                              {fmt(v)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <Button
+                        className="w-full gap-2"
+                        onClick={handleGeneratePix}
+                        disabled={pixLoading}
+                      >
+                        {pixLoading ? (
+                          <><Loader2 className="w-4 h-4 animate-spin" /> Gerando PIX...</>
+                        ) : (
+                          <><QrCode className="w-4 h-4" /> Gerar QR Code — {fmt(pixAmount)}</>
+                        )}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-4">
+                      {pixResult.qr_code_url && (
+                        <img
+                          src={pixResult.qr_code_url}
+                          alt="QR Code PIX"
+                          className="w-48 h-48 rounded-lg border"
+                        />
+                      )}
+                      <p className="text-sm font-medium text-center">
+                        Pague {fmt(pixResult.amount)} via PIX
+                      </p>
+                      {pixResult.pix_code && (
+                        <Button
+                          variant="outline"
+                          className="w-full gap-2"
+                          onClick={handleCopyPix}
+                        >
+                          {copying ? (
+                            <><CheckCircle2 className="w-4 h-4 text-green-500" /> Copiado!</>
+                          ) : (
+                            <><ClipboardCopy className="w-4 h-4" /> Copiar código PIX</>
+                          )}
+                        </Button>
+                      )}
+                      <p className="text-xs text-muted-foreground text-center">
+                        Saldo creditado automaticamente em até 1 minuto após o pagamento
+                      </p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setPixResult(null)}
+                      >
+                        Gerar novo PIX
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
