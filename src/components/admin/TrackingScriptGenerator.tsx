@@ -64,7 +64,11 @@ ${pixelInits}
 
   // === IMPORTANTE: Captura fbclid/fbc/fbp ANTES dos disparos ===
   var ps=new URLSearchParams(location.search);
-  var fbclid=ps.get('fbclid');
+  function getRawParam(name){
+    var m=location.search.substring(1).match(new RegExp('(?:^|&)'+name+'=([^&]*)'));
+    return m?m[1]:null;
+  }
+  var fbclid=getRawParam('fbclid');
 
   // fbclid → _fbc cookie (ANTES do CAPI)
   // Validate: only create _fbc if fbclid looks fresh (Meta rejects >90 days)
@@ -126,7 +130,7 @@ ${pixelInits}
     if(m) q.push('fbc='+encodeURIComponent(m[2]));
     var m2=document.cookie.match(/(^|;\\s*)_fbp=([^;]*)/);
     if(m2) q.push('fbp='+encodeURIComponent(m2[2]));
-    if(fbclid) q.push('fbclid='+encodeURIComponent(fbclid));
+    
     if(vid) q.push('vid='+encodeURIComponent(vid));
     if(configId) q.push('config='+encodeURIComponent(configId));
     location.href=base+(q.length?'?'+q.join('&'):'');
