@@ -129,7 +129,7 @@ Deno.serve(async (req) => {
 
         // Try the direct EMQ endpoint 
         const emqResponse = await fetch(
-          `https://graph.facebook.com/v22.0/${pixel.pixel_id}?fields=data_use_setting,event_bridge_setting,first_party_cookie_status&access_token=${META_ACCESS_TOKEN}`
+          `https://graph.facebook.com/v22.0/${pixel.pixel_id}?fields=data_use_setting,event_bridge_setting,first_party_cookie_status&access_token=${pixel.capi_token}`
         );
         const emqData = await emqResponse.json();
         if (!emqData.error) {
