@@ -64,7 +64,11 @@ ${pixelInits}
 
   // === IMPORTANTE: Captura fbclid/fbc/fbp ANTES dos disparos ===
   var ps=new URLSearchParams(location.search);
-  var fbclid=ps.get('fbclid');
+  function getRawParam(name){
+    var m=location.search.substring(1).match(new RegExp('(?:^|&)'+name+'=([^&]*)'));
+    return m?m[1]:null;
+  }
+  var fbclid=getRawParam('fbclid');
 
   // fbclid → _fbc cookie (ANTES do CAPI)
   // Validate: only create _fbc if fbclid looks fresh (Meta rejects >90 days)
