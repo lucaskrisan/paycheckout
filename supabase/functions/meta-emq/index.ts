@@ -80,13 +80,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    const META_ACCESS_TOKEN = Deno.env.get('META_ACCESS_TOKEN');
-    if (!META_ACCESS_TOKEN) {
-      return new Response(
-        JSON.stringify({ error: 'META_ACCESS_TOKEN não configurado' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
 
     const results: any[] = [];
 
