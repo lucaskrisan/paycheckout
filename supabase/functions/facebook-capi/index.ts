@@ -181,9 +181,16 @@ Deno.serve(async (req) => {
     // Always send country for Brazilian users (boosts EMQ significantly)
     (userData as any).country = [await hashSHA256('br')];
 
-    // Always send visitor_id as external_id for consistent cross-event matching (boosts EMQ)
+    // Build external_id array: CPF (primary) + visitor_id (session continuity)
+    const externalIds: string[] = [];
+    if (customer?.cpf) {
+      externalIds.push(await hashSHA256(customer.cpf.replace(/\D/g, '')));
+    }
     if (visitor_id) {
-      userData.external_id = [await hashSHA256(visitor_id)];
+      externalIds.push(await hashSHA256(visitor_id));
+    }
+    if (externalIds.length > 0) {
+      userData.external_id = externalIds;
     }
 
     if (customer?.email) {
@@ -191,7 +198,8 @@ Deno.serve(async (req) => {
     }
     if (customer?.phone) {
       const phone = customer.phone.replace(/\D/g, '');
-      const formatted = phone.startsWith('55') ? phone : `55${phone}`;
+      const withCountry = phone.startsWith('55') ? phone : `55${phone}`;
+      const formatted = `+${withCountry}`;
       userData.ph = [await hashSHA256(formatted)];
     }
     if (customer?.name) {
@@ -200,10 +208,6 @@ Deno.serve(async (req) => {
       if (parts.length > 1) {
         userData.ln = [await hashSHA256(parts.slice(1).join(' '))];
       }
-    }
-    if (customer?.cpf) {
-      // If CPF exists, use it as external_id instead (stronger identifier)
-      userData.external_id = [await hashSHA256(customer.cpf.replace(/\D/g, ''))];
     }
 
     const event: CAPIEvent = {

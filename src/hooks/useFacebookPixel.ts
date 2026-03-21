@@ -257,13 +257,20 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
   const setAdvancedMatching = useCallback((customer: CustomerInfo) => {
     customerRef.current = customer;
 
+    // Re-enrich top-of-funnel events with customer data for better EMQ (CAPI only, no browser duplicate)
+    const enrichId = generateEventId("PageView_enrich");
+    sendCAPI("PageView", enrichId, {
+      content_type: "product",
+      content_ids: productId ? [productId] : [],
+    });
+
     if (!window.fbq || pixelIdsRef.current.length === 0) return;
 
     const nameParts = normalizeParam(customer.name).split(" ");
     const firstName = nameParts[0] || "";
     const lastName = nameParts.slice(1).join(" ") || "";
     const phone = digitsOnly(customer.phone);
-    const formattedPhone = phone.startsWith("55") ? phone : `55${phone}`;
+    const formattedPhone = phone.startsWith("55") ? `+${phone}` : `+55${phone}`;
 
     const userData: Record<string, string> = {};
     if (customer.email) userData.em = normalizeParam(customer.email);
@@ -275,7 +282,7 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     pixelIdsRef.current.forEach((pixelId) => {
       window.fbq("init", pixelId, userData);
     });
-  }, []);
+  }, [productId, sendCAPI]);
 
   /**
    * Track AddPaymentInfo event (when user selects payment method).
