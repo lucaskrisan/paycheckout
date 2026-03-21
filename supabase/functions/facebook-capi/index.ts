@@ -59,6 +59,7 @@ Deno.serve(async (req) => {
       visitor_id,
       user_agent,
       log_browser,
+      payment_method,
     } = await req.json();
 
     if (!product_id || !event_name) {
