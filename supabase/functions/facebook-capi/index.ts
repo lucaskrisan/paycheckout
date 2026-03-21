@@ -59,6 +59,7 @@ Deno.serve(async (req) => {
       visitor_id,
       user_agent,
       log_browser,
+      payment_method,
     } = await req.json();
 
     if (!product_id || !event_name) {
@@ -85,7 +86,7 @@ Deno.serve(async (req) => {
     // Get pixels with CAPI tokens for this product
     const { data: pixels } = await supabase
       .from('product_pixels')
-      .select('pixel_id, capi_token')
+      .select('pixel_id, capi_token, fire_on_pix, fire_on_boleto')
       .eq('product_id', product_id)
       .eq('platform', 'facebook')
       .not('capi_token', 'is', null);
@@ -228,6 +229,16 @@ Deno.serve(async (req) => {
     // Send to each pixel that has a CAPI token
     for (const pixel of pixels) {
       if (!pixel.capi_token) continue;
+
+      // Respect fire_on_pix / fire_on_boleto flags (skip only if explicitly false)
+      if (payment_method === 'pix' && pixel.fire_on_pix === false) {
+        console.log(`[facebook-capi] Skipping pixel ${pixel.pixel_id} — fire_on_pix disabled`);
+        continue;
+      }
+      if (payment_method === 'boleto' && pixel.fire_on_boleto === false) {
+        console.log(`[facebook-capi] Skipping pixel ${pixel.pixel_id} — fire_on_boleto disabled`);
+        continue;
+      }
 
       try {
         const response = await fetch(
