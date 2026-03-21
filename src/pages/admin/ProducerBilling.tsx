@@ -4,13 +4,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   CreditCard, TrendingUp, QrCode, Plus, Receipt, DollarSign, ArrowUpRight, ArrowDownLeft,
-  Loader2, ClipboardCopy, CheckCircle2,
+  Loader2, ClipboardCopy, CheckCircle2, AlertTriangle, XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
@@ -139,6 +140,39 @@ const ProducerBilling = () => {
         <Button variant="outline" className="gap-2"><Plus className="w-4 h-4" /> Adicionar Crédito</Button>
       </div>
 
+      {/* Low balance / blocked banner */}
+      {account?.blocked && (
+        <Alert className="border-red-500/50 bg-red-500/10">
+          <XCircle className="h-4 w-4 text-red-500" />
+          <AlertDescription className="text-red-400 font-medium">
+            Sua conta está <strong>bloqueada</strong>. Adicione saldo via PIX para reativar seus checkouts imediatamente.
+            <Button
+              size="sm"
+              className="ml-3 h-7 bg-red-500 hover:bg-red-600 text-white"
+              onClick={() => document.getElementById('pix-tab')?.click()}
+            >
+              Recarregar agora
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+      {!account?.blocked && balance < 20 && balance >= 0 && (
+        <Alert className="border-amber-500/50 bg-amber-500/10">
+          <AlertTriangle className="h-4 w-4 text-amber-500" />
+          <AlertDescription className="text-amber-400">
+            Saldo baixo: <strong>{fmt(balance)}</strong> restantes. Recarregue para não ter seus checkouts bloqueados.
+            <Button
+              size="sm"
+              variant="outline"
+              className="ml-3 h-7 border-amber-500/50 text-amber-400 hover:bg-amber-500/10"
+              onClick={() => document.getElementById('pix-tab')?.click()}
+            >
+              Adicionar saldo
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
@@ -150,15 +184,14 @@ const ProducerBilling = () => {
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold text-foreground">{fmt(balance)}</p>
+            <p className="text-xs text-muted-foreground mt-1">Saldo pré-pago disponível</p>
             <div className="flex flex-wrap gap-1 mt-2">
-              {account?.blocked && (
-                <Badge variant="destructive" className="text-xs">CONTA BLOQUEADA</Badge>
-              )}
-              {!account?.blocked && balance < 0 && (
-                <Badge variant="destructive" className="text-xs">Saldo negativo</Badge>
-              )}
-              {!account?.blocked && balance >= 0 && balance < 20 && (
-                <Badge className="text-xs bg-amber-500 hover:bg-amber-500">Saldo baixo</Badge>
+              {account?.blocked ? (
+                <Badge variant="destructive" className="text-xs">BLOQUEADA</Badge>
+              ) : balance < 20 ? (
+                <Badge className="text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/20">Saldo baixo</Badge>
+              ) : (
+                <Badge className="text-xs bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/20">Ativo</Badge>
               )}
             </div>
           </CardContent>
@@ -206,7 +239,7 @@ const ProducerBilling = () => {
           <Tabs defaultValue="card">
             <TabsList>
               <TabsTrigger value="card" className="gap-2"><CreditCard className="w-4 h-4" /> Cartão</TabsTrigger>
-              <TabsTrigger value="pix" className="gap-2"><QrCode className="w-4 h-4" /> PIX</TabsTrigger>
+              <TabsTrigger id="pix-tab" value="pix" className="gap-2"><QrCode className="w-4 h-4" /> PIX</TabsTrigger>
             </TabsList>
             <TabsContent value="card">
               <Card>
