@@ -122,7 +122,7 @@ Deno.serve(async (req) => {
 
         // Also try the server_events endpoint for CAPI-specific quality
         const serverResponse = await fetch(
-          `https://graph.facebook.com/v22.0/${pixel.pixel_id}/server_events?fields=event_name,event_time&access_token=${META_ACCESS_TOKEN}`
+          `https://graph.facebook.com/v22.0/${pixel.pixel_id}/server_events?fields=event_name,event_time&access_token=${pixel.capi_token}`
         );
         const serverData = await serverResponse.json();
         pixelResult.server_events_available = !serverData.error;
