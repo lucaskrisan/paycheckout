@@ -230,6 +230,16 @@ Deno.serve(async (req) => {
     for (const pixel of pixels) {
       if (!pixel.capi_token) continue;
 
+      // Respect fire_on_pix / fire_on_boleto flags (skip only if explicitly false)
+      if (payment_method === 'pix' && pixel.fire_on_pix === false) {
+        console.log(`[facebook-capi] Skipping pixel ${pixel.pixel_id} — fire_on_pix disabled`);
+        continue;
+      }
+      if (payment_method === 'boleto' && pixel.fire_on_boleto === false) {
+        console.log(`[facebook-capi] Skipping pixel ${pixel.pixel_id} — fire_on_boleto disabled`);
+        continue;
+      }
+
       try {
         const response = await fetch(
           `https://graph.facebook.com/v22.0/${pixel.pixel_id}/events`,
