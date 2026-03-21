@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
     // Get pixels with CAPI tokens for this product
     const { data: pixels } = await supabase
       .from('product_pixels')
-      .select('pixel_id, capi_token')
+      .select('pixel_id, capi_token, fire_on_pix, fire_on_boleto')
       .eq('product_id', product_id)
       .eq('platform', 'facebook')
       .not('capi_token', 'is', null);
