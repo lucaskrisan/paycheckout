@@ -235,6 +235,53 @@ Deno.serve(async (req) => {
       amount: finalPrice,
     });
 
+    // CAPI Purchase for upsell (non-blocking)
+    if (orderStatus === 'approved' && upsellOrder?.id) {
+      try {
+        const { data: custData } = await supabaseAdmin
+          .from('customers')
+          .select('name, email, phone, cpf')
+          .eq('id', originalOrder.customer_id)
+          .single();
+
+        if (custData) {
+          await fetch(
+            `${Deno.env.get('SUPABASE_URL')}/functions/v1/facebook-capi`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+              },
+              body: JSON.stringify({
+                product_id: upsell_product_id,
+                event_name: 'Purchase',
+                event_id: String(paymentData.id),
+                event_source_url: `https://app.panttera.com.br/checkout/sucesso`,
+                customer: {
+                  name: custData.name,
+                  email: custData.email,
+                  phone: custData.phone,
+                  cpf: custData.cpf,
+                },
+                custom_data: {
+                  value: finalPrice,
+                  currency: 'BRL',
+                  content_type: 'product',
+                  order_id: upsellOrder.id,
+                },
+                log_browser: false,
+              }),
+            }
+          ).catch(err => console.error('[process-upsell] CAPI error:', err));
+
+          console.log('[process-upsell] CAPI Purchase fired for upsell order', upsellOrder.id);
+        }
+      } catch (capiErr) {
+        console.error('[process-upsell] CAPI fallback error (non-blocking):', capiErr);
+      }
+    }
+
     // Fire webhooks (non-blocking)
     if (upsellOrder?.id && originalOrder.user_id && orderStatus === 'approved') {
       fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/fire-webhooks`, {
