@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
         // Fetch event quality data from Meta Graph API
         // The data_sources endpoint provides EMQ info
         const response = await fetch(
-          `https://graph.facebook.com/v22.0/${pixel.pixel_id}?fields=name,event_stats&access_token=${META_ACCESS_TOKEN}`
+          `https://graph.facebook.com/v22.0/${pixel.pixel_id}?fields=name,event_stats&access_token=${pixel.capi_token}`
         );
         const pixelData = await response.json();
 
