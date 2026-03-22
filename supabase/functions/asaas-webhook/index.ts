@@ -356,6 +356,33 @@ Deno.serve(async (req) => {
       }
     }
 
+    // --- Billing low balance notification ---
+    if ((event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED') && orderData?.user_id) {
+      try {
+        const { data: billingAcc } = await supabase
+          .from('billing_accounts')
+          .select('balance, blocked')
+          .eq('user_id', orderData.user_id)
+          .maybeSingle();
+        if (billingAcc && (billingAcc.blocked || Number(billingAcc.balance) < 20)) {
+          fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/billing-notify`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+            },
+            body: JSON.stringify({
+              user_id: orderData.user_id,
+              balance: billingAcc.balance,
+              is_blocked: billingAcc.blocked,
+            }),
+          }).catch(err => console.error('[asaas-webhook] billing-notify error:', err));
+        }
+      } catch (notifyErr) {
+        console.error('[asaas-webhook] billing notify check error (non-blocking):', notifyErr);
+      }
+    }
+
     // Send push notification on confirmed sale
     if ((event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED') && orderData) {
       try {
