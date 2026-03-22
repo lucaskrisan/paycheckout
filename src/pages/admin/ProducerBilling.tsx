@@ -74,7 +74,7 @@ const ProducerBilling = () => {
     setPixResult(null);
     try {
       const { data, error } = await supabase.functions.invoke('billing-recharge', {
-        body: { amount: pixAmount },
+        body: { amount: pixAmount, method: 'pix' },
       });
       if (error) throw new Error(error.message);
       if (!data?.success) throw new Error('Erro ao gerar PIX');
