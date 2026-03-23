@@ -69,6 +69,19 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Server-side email validation — prevents corrupted emails (e.g. CPF digits leaking into email)
+    const emailStr = String(customer.email).trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(emailStr)) {
+      console.warn(`[create-pix-payment] Invalid email rejected: ${emailStr}`);
+      return new Response(
+        JSON.stringify({ error: 'E-mail inválido. Verifique o endereço digitado.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    // Sanitize email for downstream use
+    customer.email = emailStr;
+
     const cleanCpf = customer.cpf.replace(/\D/g, '');
     const cleanPhone = customer.phone?.replace(/\D/g, '') || '';
 
