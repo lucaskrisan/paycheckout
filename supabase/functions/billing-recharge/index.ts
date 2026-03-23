@@ -179,7 +179,7 @@ Deno.serve(async (req) => {
         return jsonResponse({ success: false, error: 'Gateway cartão não configurado' });
       }
 
-      const ASAAS_ENV = Deno.env.get('ASAAS_ENV') || 'sandbox';
+      const ASAAS_ENV = Deno.env.get('ASAAS_ENV') || 'production';
       const baseUrl = ASAAS_ENV === 'production'
         ? 'https://api.asaas.com/v3'
         : 'https://sandbox.asaas.com/api/v3';
