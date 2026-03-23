@@ -72,10 +72,10 @@ Deno.serve(async (req) => {
     );
 
     const body = await req.json();
-    const { card_number, card_name, card_expiry_month, card_expiry_year, card_cvv, card_cpf } = body;
+    const { card_number, card_name, card_expiry_month, card_expiry_year, card_cvv, card_cpf, card_cep } = body;
 
     // Validate required fields
-    if (!card_number || !card_name || !card_expiry_month || !card_expiry_year || !card_cvv || !card_cpf) {
+    if (!card_number || !card_name || !card_expiry_month || !card_expiry_year || !card_cvv || !card_cpf || !card_cep) {
       return jsonResponse({ success: false, error: 'Todos os campos do cartão são obrigatórios' });
     }
 
