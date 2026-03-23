@@ -127,7 +127,7 @@ const ProducerBilling = () => {
   });
 
   const handleValidateCard = async () => {
-    if (!cardForm.number || !cardForm.name || !cardForm.expiryMonth || !cardForm.expiryYear || !cardForm.cvv || !cardForm.cpf) {
+    if (!cardForm.number || !cardForm.name || !cardForm.expiryMonth || !cardForm.expiryYear || !cardForm.cvv || !cardForm.cpf || !cardForm.cep) {
       toast.error("Preencha todos os campos do cartão");
       return;
     }
