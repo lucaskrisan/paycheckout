@@ -142,6 +142,7 @@ const ProducerBilling = () => {
           card_expiry_year: cardForm.expiryYear,
           card_cvv: cardForm.cvv,
           card_cpf: cardForm.cpf.replace(/\D/g, ''),
+          card_cep: cardForm.cep.replace(/\D/g, ''),
         },
       });
 
