@@ -74,6 +74,8 @@ const CustomerForm = ({ data, onChange }: CustomerFormProps) => {
         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#565959]" />
         <Input
           type="email"
+          inputMode="email"
+          autoComplete="email"
           value={data.email}
           onChange={(e) => handleChange("email", e.target.value)}
           placeholder="E-mail"
