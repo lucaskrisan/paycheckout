@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
           status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      const externalRef = `recharge_${user.id}_${Date.now()}`;
+      const externalRef = `rch_${user.id.slice(0, 8)}_${Date.now()}`;
       const orderPayload = {
         code: externalRef,
         items: [
