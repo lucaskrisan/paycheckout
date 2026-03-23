@@ -57,7 +57,8 @@ export function useCheckoutPresence(mode: "track" | "watch", productId?: string)
   const connect = useCallback(() => {
     cleanupChannel();
 
-    const channel = supabase.channel("checkout-presence", {
+    const channelName = `checkout-presence-${visitorIdRef.current}-${Date.now()}`;
+    const channel = supabase.channel(channelName, {
       config: {
         presence: { key: mode === "track" ? visitorIdRef.current : "_watcher" },
         broadcast: { self: false, ack: false },
