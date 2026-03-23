@@ -159,7 +159,7 @@ Deno.serve(async (req) => {
         asaasCustomerId = createData.id;
       }
       const dueDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-      const externalRef = `recharge_${user.id}_${Date.now()}`;
+      const externalRef = `rch_${user.id.slice(0, 8)}_${Date.now()}`;
       // Create card payment link (tokenized)
       const chargeRes = await fetch(`${baseUrl}/payments`, {
         method: 'POST',
