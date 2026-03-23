@@ -88,6 +88,8 @@ const CustomerForm = ({ data, onChange }: CustomerFormProps) => {
           <div className="relative">
             <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#565959]" />
             <Input
+              inputMode="numeric"
+              autoComplete="off"
               value={data.cpf}
               onChange={(e) => handleChange("cpf", e.target.value)}
               placeholder="CPF"

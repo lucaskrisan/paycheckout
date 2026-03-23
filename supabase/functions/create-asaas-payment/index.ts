@@ -71,6 +71,18 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Server-side email validation
+    const emailStr = String(customer.email).trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(emailStr)) {
+      console.warn(`[create-asaas-payment] Invalid email rejected: ${emailStr}`);
+      return new Response(
+        JSON.stringify({ error: 'E-mail inválido. Verifique o endereço digitado.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    customer.email = emailStr;
+
     // Get product info and VALIDATE price server-side
     let productOwnerId: string | null = null;
     let productName = 'Produto';
