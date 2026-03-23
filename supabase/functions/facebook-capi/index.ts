@@ -249,7 +249,7 @@ Deno.serve(async (req) => {
         results.push({ pixel_id: pixel.pixel_id, success: response.ok, data });
       } catch (err) {
         console.error(`[facebook-capi] Pixel ${pixel.pixel_id} error:`, err);
-        results.push({ pixel_id: pixel.pixel_id, success: false, error: err.message });
+        results.push({ pixel_id: pixel.pixel_id, success: false, error: (err as Error).message });
       }
     }
 
