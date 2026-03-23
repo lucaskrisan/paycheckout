@@ -153,7 +153,7 @@ const ProducerBilling = () => {
 
       toast.success(`Cartão •••• ${data.card_last4} validado com sucesso!`);
       setShowCardModal(false);
-      setCardForm({ number: "", name: "", expiryMonth: "", expiryYear: "", cvv: "", cpf: "" });
+      setCardForm({ number: "", name: "", expiryMonth: "", expiryYear: "", cvv: "", cpf: "", cep: "" });
       loadData();
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, 'Erro ao validar cartão'));
