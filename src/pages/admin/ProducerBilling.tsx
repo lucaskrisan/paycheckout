@@ -76,7 +76,8 @@ const ProducerBilling = () => {
       const { data, error } = await supabase.functions.invoke('billing-recharge', {
         body: { amount: pixAmount, method: 'pix' },
       });
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(error.message || 'Erro ao gerar PIX');
+      if (data?.error) throw new Error(data.error);
       if (!data?.success) throw new Error('Erro ao gerar PIX');
       setPixResult(data);
       toast.success('QR Code gerado! Pague para adicionar saldo.');

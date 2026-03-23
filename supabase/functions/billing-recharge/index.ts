@@ -37,6 +37,15 @@ Deno.serve(async (req) => {
     }
     const name = user.user_metadata?.full_name || user.email!.split('@')[0];
     const email = user.email!;
+
+    // Fetch profile for CPF (required by Pagar.me for PIX)
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('cpf, phone')
+      .eq('id', user.id)
+      .maybeSingle();
+    const cpf = profile?.cpf?.replace(/\D/g, '') || null;
+
     // ─────────────────────────────────────────
     // PIX via Pagar.me
     // ─────────────────────────────────────────
@@ -45,6 +54,11 @@ Deno.serve(async (req) => {
       if (!PAGARME_API_KEY) {
         return new Response(JSON.stringify({ error: 'Gateway PIX não configurado' }), {
           status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      if (!cpf) {
+        return new Response(JSON.stringify({ error: 'CPF necessário para gerar PIX. Complete seu perfil.' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
       const externalRef = `recharge_${user.id}_${Date.now()}`;
@@ -62,6 +76,8 @@ Deno.serve(async (req) => {
           name,
           email,
           type: 'individual',
+          document: cpf,
+          document_type: 'cpf',
         },
         payments: [
           {
