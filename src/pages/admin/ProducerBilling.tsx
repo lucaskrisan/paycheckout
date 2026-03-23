@@ -5,13 +5,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
+import {
   CreditCard, TrendingUp, QrCode, Plus, Receipt, DollarSign, ArrowUpRight, ArrowDownLeft,
-  Loader2, ClipboardCopy, CheckCircle2, AlertTriangle, XCircle,
+  Loader2, ClipboardCopy, CheckCircle2, AlertTriangle, XCircle, Info,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
@@ -54,6 +58,19 @@ interface BillingTransaction {
 const fmt = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+const formatCardNumber = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 16);
+  return digits.replace(/(\d{4})(?=\d)/g, "$1 ");
+};
+
+const formatCpf = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  return digits
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+};
+
 const ProducerBilling = () => {
   const { user } = useAuth();
   const [account, setAccount] = useState<BillingAccount | null>(null);
@@ -70,8 +87,53 @@ const ProducerBilling = () => {
   const [copying, setCopying] = useState(false);
   const [cardAmount, setCardAmount] = useState<number>(50);
   const [cardLoading, setCardLoading] = useState(false);
+  const [showCardModal, setShowCardModal] = useState(false);
+  const [cardValidating, setCardValidating] = useState(false);
+  const [cardForm, setCardForm] = useState({
+    number: "",
+    name: "",
+    expiryMonth: "",
+    expiryYear: "",
+    cvv: "",
+    cpf: "",
+  });
 
-  const handleGenerateCard = async () => {
+  const handleValidateCard = async () => {
+    if (!cardForm.number || !cardForm.name || !cardForm.expiryMonth || !cardForm.expiryYear || !cardForm.cvv || !cardForm.cpf) {
+      toast.error("Preencha todos os campos do cartão");
+      return;
+    }
+
+    setCardValidating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('billing-validate-card', {
+        body: {
+          card_number: cardForm.number.replace(/\s/g, ''),
+          card_name: cardForm.name,
+          card_expiry_month: cardForm.expiryMonth,
+          card_expiry_year: cardForm.expiryYear,
+          card_cvv: cardForm.cvv,
+          card_cpf: cardForm.cpf.replace(/\D/g, ''),
+        },
+      });
+
+      const functionError = (data as { error?: string; success?: boolean } | null)?.error;
+      if (error || functionError || !data?.success) {
+        throw new Error(functionError || error?.message || 'Erro ao validar cartão');
+      }
+
+      toast.success(`Cartão •••• ${data.card_last4} validado com sucesso!`);
+      setShowCardModal(false);
+      setCardForm({ number: "", name: "", expiryMonth: "", expiryYear: "", cvv: "", cpf: "" });
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao validar cartão');
+    } finally {
+      setCardValidating(false);
+    }
+  };
+
+  const handleChargeCard = async () => {
     setCardLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('billing-recharge', {
@@ -79,16 +141,16 @@ const ProducerBilling = () => {
       });
       const functionError = (data as { error?: string; success?: boolean } | null)?.error;
       if (error || functionError || !data?.success) {
-        throw new Error(functionError || error?.message || 'Erro ao gerar cobrança');
+        if ((data as any)?.needs_card) {
+          setShowCardModal(true);
+          return;
+        }
+        throw new Error(functionError || error?.message || 'Erro ao cobrar no cartão');
       }
-      if (data.payment_link) {
-        window.open(data.payment_link, '_blank');
-        toast.success('Link de pagamento aberto! Complete o pagamento na nova aba.');
-      } else {
-        toast.success('Cobrança criada! Aguarde a confirmação.');
-      }
+      toast.success(`Recarga de ${fmt(cardAmount)} processada com sucesso!`);
+      loadData();
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao gerar cobrança no cartão');
+      toast.error(err.message || 'Erro ao cobrar no cartão');
     } finally {
       setCardLoading(false);
     }
@@ -157,6 +219,8 @@ const ProducerBilling = () => {
   const usagePercent = toleranceLimit > 0 ? Math.min(100, (balance / toleranceLimit) * 100) : 0;
   const colors = COLOR_MAP[currentTier?.color ?? "gray"] ?? COLOR_MAP.gray;
 
+  const inputClass = "h-11 bg-background border-border text-foreground placeholder:text-muted-foreground rounded-lg focus:border-primary focus:ring-primary";
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -164,18 +228,20 @@ const ProducerBilling = () => {
           <h1 className="font-display text-2xl font-bold text-foreground">Billing</h1>
           <p className="text-sm text-muted-foreground">Gerencie suas taxas e pagamentos</p>
         </div>
-        <Button variant="outline" className="gap-2"><Plus className="w-4 h-4" /> Adicionar Crédito</Button>
+        <Button variant="outline" className="gap-2" onClick={() => document.getElementById('pix-tab')?.click()}>
+          <Plus className="w-4 h-4" /> Adicionar Crédito
+        </Button>
       </div>
 
       {/* Low balance / blocked banner */}
       {account?.blocked && (
-        <Alert className="border-red-500/50 bg-red-500/10">
-          <XCircle className="h-4 w-4 text-red-500" />
-          <AlertDescription className="text-red-400 font-medium">
+        <Alert className="border-destructive/50 bg-destructive/10">
+          <XCircle className="h-4 w-4 text-destructive" />
+          <AlertDescription className="text-destructive font-medium">
             Sua conta está <strong>bloqueada</strong>. Adicione saldo via PIX para reativar seus checkouts imediatamente.
             <Button
               size="sm"
-              className="ml-3 h-7 bg-red-500 hover:bg-red-600 text-white"
+              className="ml-3 h-7 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
               onClick={() => document.getElementById('pix-tab')?.click()}
             >
               Recarregar agora
@@ -268,57 +334,75 @@ const ProducerBilling = () => {
               <TabsTrigger value="card" className="gap-2"><CreditCard className="w-4 h-4" /> Cartão</TabsTrigger>
               <TabsTrigger id="pix-tab" value="pix" className="gap-2"><QrCode className="w-4 h-4" /> PIX</TabsTrigger>
             </TabsList>
+
+            {/* CARD TAB */}
             <TabsContent value="card">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Adicionar Saldo via Cartão</CardTitle>
-                  <CardDescription>Pague com cartão de crédito via link seguro do gateway</CardDescription>
+                  <CardTitle className="text-base">Cartão de Crédito</CardTitle>
+                  <CardDescription>Cartão para cobrança automática de taxas</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Valor da recarga</label>
-                    <div className="flex gap-2 flex-wrap">
-                      {[20, 50, 100, 200, 500].map((v) => (
-                        <button
-                          key={v}
-                          onClick={() => setCardAmount(v)}
-                          className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
-                            cardAmount === v
-                              ? 'border-primary bg-primary text-primary-foreground'
-                              : 'border-border bg-muted/30 hover:bg-muted'
-                          }`}
-                        >
-                          {fmt(v)}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <Button
-                    className="w-full gap-2"
-                    onClick={handleGenerateCard}
-                    disabled={cardLoading}
-                  >
-                    {cardLoading ? (
-                      <><Loader2 className="w-4 h-4 animate-spin" /> Gerando cobrança...</>
-                    ) : (
-                      <><CreditCard className="w-4 h-4" /> Pagar com Cartão — {fmt(cardAmount)}</>
-                    )}
-                  </Button>
-                  <p className="text-xs text-muted-foreground text-center">
-                    Você será redirecionado para uma página segura do gateway de pagamento
-                  </p>
-                  {account?.card_last4 && (
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border mt-2">
-                      <CreditCard className="w-6 h-6 text-muted-foreground" />
-                      <div>
-                        <p className="font-medium text-sm">{account.card_brand?.toUpperCase()} •••• {account.card_last4}</p>
-                        <p className="text-xs text-muted-foreground">Último cartão utilizado</p>
+                  {account?.card_last4 ? (
+                    <>
+                      <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50 border">
+                        <div className="flex items-center gap-3">
+                          <CreditCard className="w-8 h-8 text-muted-foreground" />
+                          <div>
+                            <p className="font-medium text-sm">{account.card_brand?.toUpperCase()} •••• {account.card_last4}</p>
+                            <p className="text-xs text-muted-foreground">Cartão validado e ativo</p>
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="sm" onClick={() => setShowCardModal(true)}>
+                          Trocar cartão
+                        </Button>
                       </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Valor da recarga</label>
+                        <div className="flex gap-2 flex-wrap">
+                          {[20, 50, 100, 200, 500].map((v) => (
+                            <button
+                              key={v}
+                              onClick={() => setCardAmount(v)}
+                              className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                                cardAmount === v
+                                  ? 'border-primary bg-primary text-primary-foreground'
+                                  : 'border-border bg-muted/30 hover:bg-muted'
+                              }`}
+                            >
+                              {fmt(v)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <Button
+                        className="w-full gap-2"
+                        onClick={handleChargeCard}
+                        disabled={cardLoading}
+                      >
+                        {cardLoading ? (
+                          <><Loader2 className="w-4 h-4 animate-spin" /> Processando...</>
+                        ) : (
+                          <><CreditCard className="w-4 h-4" /> Recarregar {fmt(cardAmount)} no cartão •••• {account.card_last4}</>
+                        )}
+                      </Button>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                      <CreditCard className="w-10 h-10 text-muted-foreground/40 mb-3" />
+                      <p className="text-sm text-muted-foreground mb-4">Nenhum cartão cadastrado</p>
+                      <Button variant="outline" size="sm" onClick={() => setShowCardModal(true)}>
+                        Adicionar Cartão
+                      </Button>
                     </div>
                   )}
                 </CardContent>
               </Card>
             </TabsContent>
+
+            {/* PIX TAB */}
             <TabsContent value="pix">
               <Card>
                 <CardHeader>
@@ -480,6 +564,109 @@ const ProducerBilling = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Card Validation Modal */}
+      <Dialog open={showCardModal} onOpenChange={setShowCardModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex justify-center mb-2">
+              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                <CreditCard className="w-7 h-7 text-primary" />
+              </div>
+            </div>
+            <DialogTitle className="text-center">Validar Cartão</DialogTitle>
+            <DialogDescription className="text-center">
+              Adicione um cartão de crédito para usar como forma de pagamento das taxas
+            </DialogDescription>
+          </DialogHeader>
+
+          <Alert className="border-amber-500/50 bg-amber-500/10">
+            <Info className="h-4 w-4 text-amber-500" />
+            <AlertDescription className="text-amber-400 text-sm">
+              Faremos uma validação de R$ 3,00 que será estornada imediatamente. Nenhum valor será cobrado.
+            </AlertDescription>
+          </Alert>
+
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Número do Cartão</label>
+              <Input
+                value={cardForm.number}
+                onChange={(e) => setCardForm({ ...cardForm, number: formatCardNumber(e.target.value) })}
+                placeholder="0000 0000 0000 0000"
+                className={`${inputClass} font-mono tracking-wider`}
+                maxLength={19}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Nome no Cartão</label>
+              <Input
+                value={cardForm.name}
+                onChange={(e) => setCardForm({ ...cardForm, name: e.target.value.toUpperCase() })}
+                placeholder="NOME COMO ESTÁ NO CARTÃO"
+                className={inputClass}
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Mês</label>
+                <Input
+                  value={cardForm.expiryMonth}
+                  onChange={(e) => setCardForm({ ...cardForm, expiryMonth: e.target.value.replace(/\D/g, '').slice(0, 2) })}
+                  placeholder="MM"
+                  className={inputClass}
+                  maxLength={2}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Ano</label>
+                <Input
+                  value={cardForm.expiryYear}
+                  onChange={(e) => setCardForm({ ...cardForm, expiryYear: e.target.value.replace(/\D/g, '').slice(0, 2) })}
+                  placeholder="AA"
+                  className={inputClass}
+                  maxLength={2}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">CVV</label>
+                <Input
+                  value={cardForm.cvv}
+                  onChange={(e) => setCardForm({ ...cardForm, cvv: e.target.value.replace(/\D/g, '').slice(0, 4) })}
+                  placeholder="123"
+                  className={inputClass}
+                  maxLength={4}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">CPF do Titular</label>
+              <Input
+                value={cardForm.cpf}
+                onChange={(e) => setCardForm({ ...cardForm, cpf: formatCpf(e.target.value) })}
+                placeholder="000.000.000-00"
+                className={inputClass}
+                maxLength={14}
+              />
+            </div>
+
+            <Button
+              className="w-full gap-2"
+              onClick={handleValidateCard}
+              disabled={cardValidating}
+            >
+              {cardValidating ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Validando cartão...</>
+              ) : (
+                "Validar Cartão"
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

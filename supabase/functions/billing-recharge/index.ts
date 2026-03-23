@@ -184,6 +184,22 @@ Deno.serve(async (req) => {
         ? 'https://api.asaas.com/v3'
         : 'https://sandbox.asaas.com/api/v3';
 
+      // Check if user has a saved card token
+      const { data: billingAccount } = await supabaseAdmin
+        .from('billing_accounts')
+        .select('card_token, card_last4, card_brand')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!billingAccount?.card_token) {
+        return jsonResponse({
+          success: false,
+          error: 'Nenhum cartão cadastrado. Valide um cartão primeiro.',
+          needs_card: true,
+        });
+      }
+
+      // Find or create Asaas customer
       const searchRes = await fetch(
         `${baseUrl}/customers?email=${encodeURIComponent(email)}`,
         { headers: { 'access_token': ASAAS_API_KEY } }
@@ -215,9 +231,10 @@ Deno.serve(async (req) => {
         asaasCustomerId = createData.id;
       }
 
-      const dueDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const dueDate = new Date().toISOString().split('T')[0];
       const externalRef = `recharge_${user.id.slice(0, 8)}_${Date.now()}`;
 
+      // Charge using saved card token
       const chargeRes = await fetch(`${baseUrl}/payments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
@@ -228,15 +245,31 @@ Deno.serve(async (req) => {
           dueDate,
           description: `Recarga PanteraPay — R$${amount.toFixed(2).replace('.', ',')}`,
           externalReference: externalRef,
+          creditCardToken: billingAccount.card_token,
+          remoteIp: req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || '0.0.0.0',
         }),
       });
       const chargeData = await chargeRes.json();
 
       if (!chargeRes.ok || !chargeData.id) {
         console.error('[billing-recharge] Asaas card error:', chargeData);
+
+        // If token is invalid/expired, clear it
+        if (chargeData.errors?.some?.((e: any) => e.code === 'invalid_creditCardToken')) {
+          await supabaseAdmin
+            .from('billing_accounts')
+            .update({ card_token: null, card_last4: null, card_brand: null, updated_at: new Date().toISOString() })
+            .eq('user_id', user.id);
+          return jsonResponse({
+            success: false,
+            error: 'Cartão expirado ou inválido. Cadastre um novo cartão.',
+            needs_card: true,
+          });
+        }
+
         return jsonResponse({
           success: false,
-          error: getGatewayErrorMessage(chargeData, 'Erro ao gerar cobrança no cartão'),
+          error: getGatewayErrorMessage(chargeData, 'Erro ao cobrar no cartão'),
         });
       }
 
@@ -244,14 +277,24 @@ Deno.serve(async (req) => {
         user_id: user.id,
         amount,
         external_id: chargeData.id,
-        status: 'pending',
+        status: chargeData.status === 'CONFIRMED' ? 'confirmed' : 'pending',
       });
+
+      // If payment confirmed immediately, add credit
+      if (chargeData.status === 'CONFIRMED' || chargeData.status === 'RECEIVED') {
+        await supabaseAdmin.rpc('add_billing_credit', {
+          p_user_id: user.id,
+          p_amount: amount,
+          p_description: `Recarga via Cartão •••• ${billingAccount.card_last4} — R$${amount.toFixed(2).replace('.', ',')}`,
+        });
+      }
 
       return jsonResponse({
         success: true,
         method: 'card',
         payment_id: chargeData.id,
-        payment_link: chargeData.invoiceUrl || null,
+        status: chargeData.status,
+        card_last4: billingAccount.card_last4,
         amount,
       });
     }
