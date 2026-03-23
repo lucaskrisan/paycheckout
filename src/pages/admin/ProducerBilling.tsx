@@ -68,6 +68,31 @@ const ProducerBilling = () => {
     amount: number;
   } | null>(null);
   const [copying, setCopying] = useState(false);
+  const [cardAmount, setCardAmount] = useState<number>(50);
+  const [cardLoading, setCardLoading] = useState(false);
+
+  const handleGenerateCard = async () => {
+    setCardLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('billing-recharge', {
+        body: { amount: cardAmount, method: 'card' },
+      });
+      const functionError = (data as { error?: string; success?: boolean } | null)?.error;
+      if (error || functionError || !data?.success) {
+        throw new Error(functionError || error?.message || 'Erro ao gerar cobrança');
+      }
+      if (data.payment_link) {
+        window.open(data.payment_link, '_blank');
+        toast.success('Link de pagamento aberto! Complete o pagamento na nova aba.');
+      } else {
+        toast.success('Cobrança criada! Aguarde a confirmação.');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao gerar cobrança no cartão');
+    } finally {
+      setCardLoading(false);
+    }
+  };
 
   const handleGeneratePix = async () => {
     setPixLoading(true);
