@@ -76,9 +76,10 @@ const ProducerBilling = () => {
       const { data, error } = await supabase.functions.invoke('billing-recharge', {
         body: { amount: pixAmount, method: 'pix' },
       });
-      if (error) throw new Error(error.message || 'Erro ao gerar PIX');
-      if (data?.error) throw new Error(data.error);
-      if (!data?.success) throw new Error('Erro ao gerar PIX');
+      const functionError = (data as { error?: string; success?: boolean } | null)?.error;
+      if (error || functionError || !data?.success) {
+        throw new Error(functionError || error?.message || 'Erro ao gerar PIX');
+      }
       setPixResult(data);
       toast.success('QR Code gerado! Pague para adicionar saldo.');
     } catch (err: any) {
@@ -271,7 +272,7 @@ const ProducerBilling = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Adicionar Saldo via PIX</CardTitle>
-                  <CardDescription>O saldo é creditado automaticamente em até 1 minuto após o pagamento</CardDescription>
+                  <CardDescription>O saldo é creditado automaticamente após a confirmação e a taxa de 3% só incide acima de R$ 1.000,00 no mês</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {!pixResult ? (
