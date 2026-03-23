@@ -243,7 +243,7 @@ Deno.serve(async (req) => {
                       customer_id: orderData.customer_id,
                       product_id: orderData.product_id,
                       source: 'mercadopago-webhook',
-                    }).then(() => {}).catch(logErr => console.error('[mp-webhook] Email log error:', logErr));
+                    });
 
                     console.log('[mp-webhook] Access email sent to', customerData.email);
                   }
