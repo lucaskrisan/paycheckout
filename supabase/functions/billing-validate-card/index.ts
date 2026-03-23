@@ -216,7 +216,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 3. Immediately refund the validation charge — CRITICAL: must always refund
+    // 4. Immediately refund the validation charge — CRITICAL: must always refund
     try {
       const refundRes = await fetch(`${baseUrl}/payments/${validationData.id}/refund`, {
         method: 'POST',
