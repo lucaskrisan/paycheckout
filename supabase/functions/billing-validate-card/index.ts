@@ -97,6 +97,9 @@ Deno.serve(async (req) => {
     if (card_cvv.length < 3 || card_cvv.length > 4) {
       return jsonResponse({ success: false, error: 'CVV inválido' });
     }
+    if (cleanCep.length !== 8) {
+      return jsonResponse({ success: false, error: 'CEP inválido' });
+    }
 
     const name = user.user_metadata?.full_name || user.email!.split('@')[0];
     const email = user.email!;
