@@ -152,9 +152,9 @@ Deno.serve(async (req) => {
     const validationPayload = {
       customer: asaasCustomerId,
       billingType: 'CREDIT_CARD',
-      value: 3.00,
+      value: 5.00,
       dueDate,
-      description: 'Validação de cartão PanteraPay (será estornada)',
+      description: 'Validação de cartão PanteraPay (será estornada automaticamente)',
       creditCard: {
         holderName: card_name,
         number: cleanNumber,
