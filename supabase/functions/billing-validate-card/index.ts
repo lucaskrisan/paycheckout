@@ -147,14 +147,9 @@ Deno.serve(async (req) => {
       asaasCustomerId = createData.id;
     }
 
-    const dueDate = new Date().toISOString().split('T')[0];
-    // 2. Make validation charge with card data and capture token for future charges
-    const validationPayload = {
+    // 2. Tokenize card first via dedicated endpoint
+    const tokenizePayload = {
       customer: asaasCustomerId,
-      billingType: 'CREDIT_CARD',
-      value: 5.00,
-      dueDate,
-      description: 'Validação de cartão PanteraPay (será estornada automaticamente)',
       creditCard: {
         holderName: card_name,
         number: cleanNumber,
@@ -174,6 +169,36 @@ Deno.serve(async (req) => {
       remoteIp: req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || '0.0.0.0',
     };
 
+    const tokenizeRes = await fetch(`${baseUrl}/creditCard/tokenize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
+      body: JSON.stringify(tokenizePayload),
+    });
+
+    const tokenizeData = await tokenizeRes.json();
+    const creditCardToken = tokenizeData.creditCardToken;
+
+    if (!tokenizeRes.ok || !creditCardToken) {
+      console.error('[billing-validate-card] Tokenize error:', JSON.stringify(tokenizeData));
+      return jsonResponse({
+        success: false,
+        error: getGatewayErrorMessage(tokenizeData, 'Não foi possível tokenizar o cartão. Verifique os dados.'),
+      });
+    }
+
+    console.log('[billing-validate-card] Card tokenized successfully:', creditCardToken);
+
+    // 3. Make R$5 validation charge using token to confirm card is real
+    const dueDate = new Date().toISOString().split('T')[0];
+    const validationPayload = {
+      customer: asaasCustomerId,
+      billingType: 'CREDIT_CARD',
+      value: 5.00,
+      dueDate,
+      description: 'Validação de cartão PanteraPay (será estornada automaticamente)',
+      creditCardToken,
+    };
+
     const validationRes = await fetch(`${baseUrl}/payments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
@@ -188,15 +213,6 @@ Deno.serve(async (req) => {
       return jsonResponse({
         success: false,
         error: getGatewayErrorMessage(validationData, 'Cartão recusado. Verifique os dados e tente novamente.'),
-      });
-    }
-
-    const creditCardToken = validationData.creditCard?.creditCardToken;
-    if (!creditCardToken) {
-      console.error('[billing-validate-card] Missing token after validation:', JSON.stringify(validationData));
-      return jsonResponse({
-        success: false,
-        error: 'Não foi possível ativar cobranças automáticas com este cartão. Tente outro cartão ou use outro método.',
       });
     }
 
