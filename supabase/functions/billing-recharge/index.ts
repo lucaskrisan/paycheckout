@@ -24,17 +24,29 @@ const normalizePhone = (phone?: string | null) => {
   };
 };
 
-const getGatewayErrorMessage = (data: any, fallback: string) => {
-  if (data?.errors && typeof data.errors === 'object') {
-    const messages = Object.values(data.errors)
-      .flat()
-      .filter(Boolean)
-      .join(' ');
+const extractErrorMessages = (value: unknown): string[] => {
+  if (!value) return [];
+  if (typeof value === 'string') return value.trim() ? [value] : [];
+  if (Array.isArray(value)) return value.flatMap(extractErrorMessages);
+  if (typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    const preferred = [record.description, record.message, record.error]
+      .flatMap(extractErrorMessages);
 
-    if (messages) return messages;
+    if (preferred.length > 0) return preferred;
+
+    return Object.values(record).flatMap(extractErrorMessages);
   }
 
-  return data?.message || fallback;
+  return [String(value)];
+};
+
+const getGatewayErrorMessage = (data: any, fallback: string) => {
+  const messages = extractErrorMessages(data?.errors);
+  if (messages.length > 0) return messages.join(' ');
+
+  const fallbackMessages = extractErrorMessages(data?.message ?? data?.error);
+  return fallbackMessages.length > 0 ? fallbackMessages.join(' ') : fallback;
 };
 
 Deno.serve(async (req) => {
