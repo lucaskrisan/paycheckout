@@ -153,7 +153,7 @@ Deno.serve(async (req) => {
           checks.push({
             name: 'Conexão CAPI → Meta',
             status: 'error',
-            detail: `Falha de conexão: ${capiErr.message}`,
+            detail: `Falha de conexão: ${(capiErr as Error).message}`,
           });
         }
       }
