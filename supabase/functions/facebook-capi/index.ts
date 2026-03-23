@@ -94,37 +94,28 @@ Deno.serve(async (req) => {
     // Log event to pixel_events for dashboard
     const customerName = customer?.name || null;
 
-    const insertPromises: Promise<any>[] = [];
+    await supabase.from('pixel_events').insert({
+      product_id,
+      event_name,
+      source: 'server',
+      event_id: event_id || null,
+      user_id: productOwnerId,
+      customer_name: customerName,
+      visitor_id: visitor_id || null,
+    });
 
-    insertPromises.push(
-      supabase.from('pixel_events').insert({
+    // If caller signals browser pixel also fired, log a "browser" entry so dashboard shows DUAL ✓
+    if (log_browser) {
+      await supabase.from('pixel_events').insert({
         product_id,
         event_name,
-        source: 'server',
+        source: 'browser',
         event_id: event_id || null,
         user_id: productOwnerId,
         customer_name: customerName,
         visitor_id: visitor_id || null,
-      })
-    );
-
-    // If caller signals browser pixel also fired, log a "browser" entry so dashboard shows DUAL ✓
-    if (log_browser) {
-      insertPromises.push(
-        supabase.from('pixel_events').insert({
-          product_id,
-          event_name,
-          source: 'browser',
-          event_id: event_id || null,
-          user_id: productOwnerId,
-          customer_name: customerName,
-          visitor_id: visitor_id || null,
-        })
-      );
+      });
     }
-
-    // Await all inserts so Deno doesn't kill them before completion
-    await Promise.all(insertPromises);
 
     if (!pixels || pixels.length === 0) {
       return new Response(
