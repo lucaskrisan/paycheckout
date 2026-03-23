@@ -82,6 +82,7 @@ Deno.serve(async (req) => {
     // Sanitize inputs
     const cleanNumber = card_number.replace(/\D/g, '');
     const cleanCpf = card_cpf.replace(/\D/g, '');
+    const cleanCep = (card_cep || '').replace(/\D/g, '');
     const cleanMonth = String(card_expiry_month).padStart(2, '0');
     const cleanYear = String(card_expiry_year).length === 2 
       ? `20${card_expiry_year}` 
