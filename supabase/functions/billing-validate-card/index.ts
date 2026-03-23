@@ -11,6 +11,31 @@ const jsonResponse = (body: Record<string, unknown>, status = 200) =>
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 
+const extractErrorMessages = (value: unknown): string[] => {
+  if (!value) return [];
+  if (typeof value === 'string') return value.trim() ? [value] : [];
+  if (Array.isArray(value)) return value.flatMap(extractErrorMessages);
+  if (typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    const preferred = [record.description, record.message, record.error]
+      .flatMap(extractErrorMessages);
+
+    if (preferred.length > 0) return preferred;
+
+    return Object.values(record).flatMap(extractErrorMessages);
+  }
+
+  return [String(value)];
+};
+
+const getGatewayErrorMessage = (data: Record<string, unknown>, fallback: string) => {
+  const messages = extractErrorMessages(data.errors);
+  if (messages.length > 0) return messages.join(' ');
+
+  const fallbackMessages = extractErrorMessages(data.message ?? data.error);
+  return fallbackMessages.length > 0 ? fallbackMessages.join(' ') : fallback;
+};
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
@@ -75,14 +100,23 @@ Deno.serve(async (req) => {
     const name = user.user_metadata?.full_name || user.email!.split('@')[0];
     const email = user.email!;
 
-    // Get or fetch profile phone
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('phone')
-      .eq('id', user.id)
-      .maybeSingle();
+    // Get phone from profile or latest customer record
+    const [{ data: profile }, { data: recentCustomer }] = await Promise.all([
+      supabaseAdmin
+        .from('profiles')
+        .select('phone')
+        .eq('id', user.id)
+        .maybeSingle(),
+      supabaseAdmin
+        .from('customers')
+        .select('phone')
+        .eq('email', email)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
 
-    const phone = profile?.phone || '';
+    const phone = profile?.phone || recentCustomer?.phone || '';
 
     // 1. Find or create Asaas customer
     const searchRes = await fetch(
@@ -113,65 +147,60 @@ Deno.serve(async (req) => {
       asaasCustomerId = createData.id;
     }
 
-    // 2. Tokenize card via Asaas
-    const tokenRes = await fetch(`${baseUrl}/creditCard/tokenizeCreditCard`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
-      body: JSON.stringify({
-        customer: asaasCustomerId,
-        creditCard: {
-          holderName: card_name,
-          number: cleanNumber,
-          expiryMonth: cleanMonth,
-          expiryYear: cleanYear,
-          ccv: card_cvv,
-        },
-        creditCardHolderInfo: {
-          name: card_name,
-          email,
-          cpfCnpj: cleanCpf,
-          phone: phone || '00000000000',
-          postalCode: '00000000',
-          addressNumber: '0',
-          addressComplement: '',
-        },
-      }),
-    });
-
-    const tokenData = await tokenRes.json();
-
-    if (!tokenRes.ok || !tokenData.creditCardToken) {
-      console.error('[billing-validate-card] Tokenization error:', JSON.stringify(tokenData));
-      const errorMsg = tokenData.errors 
-        ? Object.values(tokenData.errors).flat().filter(Boolean).join(' ')
-        : tokenData.message || 'Erro ao validar cartão. Verifique os dados.';
-      return jsonResponse({ success: false, error: errorMsg });
-    }
-
-    // 3. Make validation charge of R$ 3.00
     const dueDate = new Date().toISOString().split('T')[0];
+    // 2. Make validation charge with card data and capture token for future charges
+    const validationPayload = {
+      customer: asaasCustomerId,
+      billingType: 'CREDIT_CARD',
+      value: 3.00,
+      dueDate,
+      description: 'Validação de cartão PanteraPay (será estornada)',
+      creditCard: {
+        holderName: card_name,
+        number: cleanNumber,
+        expiryMonth: cleanMonth,
+        expiryYear: cleanYear,
+        ccv: card_cvv,
+      },
+      creditCardHolderInfo: {
+        name: card_name,
+        email,
+        cpfCnpj: cleanCpf,
+        phone: phone || cleanNumber.slice(-11),
+        postalCode: '00000000',
+        addressNumber: '0',
+        addressComplement: '',
+      },
+      remoteIp: req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || '0.0.0.0',
+    };
+
     const validationRes = await fetch(`${baseUrl}/payments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
-      body: JSON.stringify({
-        customer: asaasCustomerId,
-        billingType: 'CREDIT_CARD',
-        value: 3.00,
-        dueDate,
-        description: 'Validação de cartão PanteraPay (será estornada)',
-        creditCardToken: tokenData.creditCardToken,
-        remoteIp: req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || '0.0.0.0',
-      }),
+      body: JSON.stringify(validationPayload),
     });
 
     const validationData = await validationRes.json();
+    const failedStatuses = new Set(['REFUSED', 'FAILED', 'CANCELLED']);
 
-    if (!validationRes.ok || !validationData.id) {
+    if (!validationRes.ok || !validationData.id || failedStatuses.has(validationData.status)) {
       console.error('[billing-validate-card] Validation charge error:', JSON.stringify(validationData));
-      return jsonResponse({ success: false, error: 'Cartão recusado. Verifique os dados e tente novamente.' });
+      return jsonResponse({
+        success: false,
+        error: getGatewayErrorMessage(validationData, 'Cartão recusado. Verifique os dados e tente novamente.'),
+      });
     }
 
-    // 4. Immediately refund the validation charge
+    const creditCardToken = validationData.creditCard?.creditCardToken;
+    if (!creditCardToken) {
+      console.error('[billing-validate-card] Missing token after validation:', JSON.stringify(validationData));
+      return jsonResponse({
+        success: false,
+        error: 'Não foi possível ativar cobranças automáticas com este cartão. Tente outro cartão ou use outro método.',
+      });
+    }
+
+    // 3. Immediately refund the validation charge
     try {
       await fetch(`${baseUrl}/payments/${validationData.id}/refund`, {
         method: 'POST',
@@ -183,15 +212,15 @@ Deno.serve(async (req) => {
       console.error('[billing-validate-card] Refund error (non-blocking):', refundErr);
     }
 
-    // 5. Save token to billing_accounts
-    const last4 = tokenData.creditCardNumber || cleanNumber.slice(-4);
-    const brand = tokenData.creditCardBrand || 'unknown';
+    // 4. Save token to billing_accounts
+    const last4 = validationData.creditCard?.creditCardNumber?.slice(-4) || cleanNumber.slice(-4);
+    const brand = validationData.creditCard?.creditCardBrand || 'unknown';
 
     await supabaseAdmin
       .from('billing_accounts')
       .upsert({
         user_id: user.id,
-        card_token: tokenData.creditCardToken,
+        card_token: creditCardToken,
         card_last4: last4,
         card_brand: brand,
         updated_at: new Date().toISOString(),

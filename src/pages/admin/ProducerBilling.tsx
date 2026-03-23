@@ -71,6 +71,33 @@ const formatCpf = (value: string) => {
     .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
 };
 
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (!error) return fallback;
+  if (typeof error === "string") return error;
+  if (error instanceof Error) return error.message || fallback;
+  if (Array.isArray(error)) {
+    const message = error
+      .map((item) => getErrorMessage(item, ""))
+      .filter(Boolean)
+      .join(" ");
+    return message || fallback;
+  }
+  if (typeof error === "object") {
+    const record = error as Record<string, unknown>;
+    const preferred = getErrorMessage(record.description ?? record.message ?? record.error, "");
+    if (preferred) return preferred;
+
+    const nested = Object.values(record)
+      .map((value) => getErrorMessage(value, ""))
+      .filter(Boolean)
+      .join(" ");
+
+    return nested || fallback;
+  }
+
+  return fallback;
+};
+
 const ProducerBilling = () => {
   const { user } = useAuth();
   const [account, setAccount] = useState<BillingAccount | null>(null);
@@ -117,17 +144,17 @@ const ProducerBilling = () => {
         },
       });
 
-      const functionError = (data as { error?: string; success?: boolean } | null)?.error;
+      const functionError = (data as { error?: unknown; success?: boolean } | null)?.error;
       if (error || functionError || !data?.success) {
-        throw new Error(functionError || error?.message || 'Erro ao validar cartão');
+        throw new Error(getErrorMessage(functionError ?? error, 'Erro ao validar cartão'));
       }
 
       toast.success(`Cartão •••• ${data.card_last4} validado com sucesso!`);
       setShowCardModal(false);
       setCardForm({ number: "", name: "", expiryMonth: "", expiryYear: "", cvv: "", cpf: "" });
       loadData();
-    } catch (err: any) {
-      toast.error(err.message || 'Erro ao validar cartão');
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, 'Erro ao validar cartão'));
     } finally {
       setCardValidating(false);
     }
@@ -139,18 +166,18 @@ const ProducerBilling = () => {
       const { data, error } = await supabase.functions.invoke('billing-recharge', {
         body: { amount: cardAmount, method: 'card' },
       });
-      const functionError = (data as { error?: string; success?: boolean } | null)?.error;
+      const functionError = (data as { error?: unknown; success?: boolean } | null)?.error;
       if (error || functionError || !data?.success) {
         if ((data as any)?.needs_card) {
           setShowCardModal(true);
           return;
         }
-        throw new Error(functionError || error?.message || 'Erro ao cobrar no cartão');
+        throw new Error(getErrorMessage(functionError ?? error, 'Erro ao cobrar no cartão'));
       }
       toast.success(`Recarga de ${fmt(cardAmount)} processada com sucesso!`);
       loadData();
-    } catch (err: any) {
-      toast.error(err.message || 'Erro ao cobrar no cartão');
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, 'Erro ao cobrar no cartão'));
     } finally {
       setCardLoading(false);
     }
@@ -163,14 +190,14 @@ const ProducerBilling = () => {
       const { data, error } = await supabase.functions.invoke('billing-recharge', {
         body: { amount: pixAmount, method: 'pix' },
       });
-      const functionError = (data as { error?: string; success?: boolean } | null)?.error;
+      const functionError = (data as { error?: unknown; success?: boolean } | null)?.error;
       if (error || functionError || !data?.success) {
-        throw new Error(functionError || error?.message || 'Erro ao gerar PIX');
+        throw new Error(getErrorMessage(functionError ?? error, 'Erro ao gerar PIX'));
       }
       setPixResult(data);
       toast.success('QR Code gerado! Pague para adicionar saldo.');
-    } catch (err: any) {
-      toast.error(err.message || 'Erro ao gerar PIX');
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, 'Erro ao gerar PIX'));
     } finally {
       setPixLoading(false);
     }
