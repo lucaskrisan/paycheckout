@@ -152,9 +152,9 @@ Deno.serve(async (req) => {
     const validationPayload = {
       customer: asaasCustomerId,
       billingType: 'CREDIT_CARD',
-      value: 3.00,
+      value: 5.00,
       dueDate,
-      description: 'Validação de cartão PanteraPay (será estornada)',
+      description: 'Validação de cartão PanteraPay (será estornada automaticamente)',
       creditCard: {
         holderName: card_name,
         number: cleanNumber,
@@ -200,16 +200,21 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 3. Immediately refund the validation charge
+    // 3. Immediately refund the validation charge — CRITICAL: must always refund
     try {
-      await fetch(`${baseUrl}/payments/${validationData.id}/refund`, {
+      const refundRes = await fetch(`${baseUrl}/payments/${validationData.id}/refund`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
-        body: JSON.stringify({ value: 3.00, description: 'Estorno de validação de cartão' }),
+        body: JSON.stringify({ value: 5.00, description: 'Estorno automático de validação de cartão' }),
       });
-      console.log('[billing-validate-card] Refund issued for validation charge:', validationData.id);
+      const refundData = await refundRes.json();
+      console.log('[billing-validate-card] Refund result for', validationData.id, ':', JSON.stringify(refundData));
+      
+      if (!refundRes.ok) {
+        console.error('[billing-validate-card] Refund FAILED — manual refund needed for payment:', validationData.id);
+      }
     } catch (refundErr) {
-      console.error('[billing-validate-card] Refund error (non-blocking):', refundErr);
+      console.error('[billing-validate-card] Refund exception — manual refund needed for payment:', validationData.id, refundErr);
     }
 
     // 4. Save token to billing_accounts
