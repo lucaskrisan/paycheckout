@@ -72,20 +72,19 @@ Deno.serve(async (req) => {
     );
 
     const body = await req.json();
-    const { card_number, card_name, card_expiry_month, card_expiry_year, card_cvv, card_cpf, card_cep } = body;
+    const { card_number, card_name, card_expiry_month, card_expiry_year, card_cvv, card_cpf } = body;
 
     // Validate required fields
-    if (!card_number || !card_name || !card_expiry_month || !card_expiry_year || !card_cvv || !card_cpf || !card_cep) {
+    if (!card_number || !card_name || !card_expiry_month || !card_expiry_year || !card_cvv || !card_cpf) {
       return jsonResponse({ success: false, error: 'Todos os campos do cartão são obrigatórios' });
     }
 
     // Sanitize inputs
     const cleanNumber = card_number.replace(/\D/g, '');
     const cleanCpf = card_cpf.replace(/\D/g, '');
-    const cleanCep = (card_cep || '').replace(/\D/g, '');
     const cleanMonth = String(card_expiry_month).padStart(2, '0');
-    const cleanYear = String(card_expiry_year).length === 2 
-      ? `20${card_expiry_year}` 
+    const cleanYear = String(card_expiry_year).length === 2
+      ? `20${card_expiry_year}`
       : String(card_expiry_year);
 
     if (cleanNumber.length < 13 || cleanNumber.length > 19) {
@@ -96,9 +95,6 @@ Deno.serve(async (req) => {
     }
     if (card_cvv.length < 3 || card_cvv.length > 4) {
       return jsonResponse({ success: false, error: 'CVV inválido' });
-    }
-    if (cleanCep.length !== 8) {
-      return jsonResponse({ success: false, error: 'CEP inválido' });
     }
 
     const name = user.user_metadata?.full_name || user.email!.split('@')[0];
@@ -171,7 +167,7 @@ Deno.serve(async (req) => {
         email,
         cpfCnpj: cleanCpf,
         phone: phone || cleanNumber.slice(-11),
-        postalCode: cleanCep,
+        postalCode: '01310100',
         addressNumber: '0',
         addressComplement: '',
       },
