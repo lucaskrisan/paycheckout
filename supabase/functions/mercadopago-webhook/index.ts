@@ -297,66 +297,68 @@ Deno.serve(async (req) => {
       }
 
       // CAPI Purchase fallback — fire if checkout didn't already
-      try {
-        const { data: purchaseAlreadyFired } = await supabase
-          .from('pixel_events')
-          .select('id')
-          .eq('product_id', orderData.product_id)
-          .eq('event_name', 'Purchase')
-          .eq('source', 'server')
-          .like('event_id', `%${paymentId}%`)
-          .limit(1);
+      if (orderData) {
+        try {
+          const { data: purchaseAlreadyFired } = await supabase
+            .from('pixel_events')
+            .select('id')
+            .eq('product_id', orderData.product_id!)
+            .eq('event_name', 'Purchase')
+            .eq('source', 'server')
+            .like('event_id', `%${paymentId}%`)
+            .limit(1);
 
-        const alreadyFired = (purchaseAlreadyFired && purchaseAlreadyFired.length > 0);
+          const alreadyFired = (purchaseAlreadyFired && purchaseAlreadyFired.length > 0);
 
-        if (!alreadyFired) {
-          const { data: custData } = await supabase
-            .from('customers')
-            .select('name, email, phone, cpf')
-            .eq('id', orderData.customer_id)
-            .single();
+          if (!alreadyFired) {
+            const { data: custData } = await supabase
+              .from('customers')
+              .select('name, email, phone, cpf')
+              .eq('id', orderData.customer_id!)
+              .single();
 
-          if (custData) {
-            const checkoutUrl = (orderData.metadata as any)?.checkout_url
-              || `https://app.panttera.com.br/checkout/${orderData.product_id}`;
+            if (custData) {
+              const checkoutUrl = (orderData.metadata as any)?.checkout_url
+                || `https://app.panttera.com.br/checkout/${orderData.product_id}`;
 
-            await fetch(
-              `${Deno.env.get('SUPABASE_URL')}/functions/v1/facebook-capi`,
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-                },
-                body: JSON.stringify({
-                  product_id: orderData.product_id,
-                  event_name: 'Purchase',
-                  event_id: paymentId,
-                  event_source_url: checkoutUrl,
-                  customer: {
-                    name: custData.name,
-                    email: custData.email,
-                    phone: custData.phone,
-                    cpf: custData.cpf,
+              await fetch(
+                `${Deno.env.get('SUPABASE_URL')}/functions/v1/facebook-capi`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
                   },
-                  custom_data: {
-                    value: Number(orderData.amount),
-                    currency: 'BRL',
-                    content_type: 'product',
-                    order_id: orderData.id,
-                  },
-                  log_browser: true,
-                }),
-              }
-            ).catch(err => console.error('[mp-webhook] CAPI fallback error:', err));
+                  body: JSON.stringify({
+                    product_id: orderData.product_id,
+                    event_name: 'Purchase',
+                    event_id: paymentId,
+                    event_source_url: checkoutUrl,
+                    customer: {
+                      name: custData.name,
+                      email: custData.email,
+                      phone: custData.phone,
+                      cpf: custData.cpf,
+                    },
+                    custom_data: {
+                      value: Number(orderData.amount),
+                      currency: 'BRL',
+                      content_type: 'product',
+                      order_id: orderData.id,
+                    },
+                    log_browser: true,
+                  }),
+                }
+              ).catch((err: unknown) => console.error('[mp-webhook] CAPI fallback error:', err));
 
-            console.log('[mp-webhook] CAPI Purchase fallback fired for order', orderData.id);
+              console.log('[mp-webhook] CAPI Purchase fallback fired for order', orderData.id);
+            }
+          } else {
+            console.log('[mp-webhook] Purchase already fired by checkout, skipping CAPI');
           }
-        } else {
-          console.log('[mp-webhook] Purchase already fired by checkout, skipping CAPI');
+        } catch (capiErr) {
+          console.error('[mp-webhook] CAPI fallback error (non-blocking):', capiErr);
         }
-      } catch (capiErr) {
-        console.error('[mp-webhook] CAPI fallback error (non-blocking):', capiErr);
       }
 
     return new Response(JSON.stringify({ received: true, status }), {
