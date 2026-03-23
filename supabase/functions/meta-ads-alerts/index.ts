@@ -385,7 +385,7 @@ Deno.serve(async (req) => {
         const campaigns = await getCampaignsForAccount(accId);
         allCampaigns.push(...campaigns);
       } catch (err) {
-        console.error(`[meta-ads-alerts] Error fetching account ${accId}:`, err.message);
+        console.error(`[meta-ads-alerts] Error fetching account ${accId}:`, (err as Error).message);
       }
     }
 
@@ -411,8 +411,8 @@ Deno.serve(async (req) => {
         pushResults.push({ title: alert.title, sent: !!result.id });
         console.log(`[meta-ads-alerts] Push sent: ${alert.title}`);
       } catch (err) {
-        console.error(`[meta-ads-alerts] Push error:`, err.message);
-        pushResults.push({ title: alert.title, sent: false, error: err.message });
+        console.error(`[meta-ads-alerts] Push error:`, (err as Error).message);
+        pushResults.push({ title: alert.title, sent: false, error: (err as Error).message });
       }
     }
 
@@ -428,8 +428,8 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('[meta-ads-alerts] Error:', error.message);
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('[meta-ads-alerts] Error:', (error as Error).message);
+    return new Response(JSON.stringify({ error: (error as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       } catch (fetchErr) {
-        return new Response(JSON.stringify({ error: fetchErr.message, html: null }), {
+        return new Response(JSON.stringify({ error: (fetchErr as Error).message, html: null }), {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -153,7 +153,7 @@ Deno.serve(async (req) => {
           checks.push({
             name: 'Conexão CAPI → Meta',
             status: 'error',
-            detail: `Falha de conexão: ${capiErr.message}`,
+            detail: `Falha de conexão: ${(capiErr as Error).message}`,
           });
         }
       }
@@ -202,8 +202,8 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('[meta-diagnostics] Error:', error?.message, error?.stack);
-    return new Response(JSON.stringify({ error: error?.message || 'Unknown error' }), {
+    console.error('[meta-diagnostics] Error:', (error as Error)?.message, (error as Error)?.stack);
+    return new Response(JSON.stringify({ error: (error as Error)?.message || 'Unknown error' }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

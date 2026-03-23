@@ -94,37 +94,28 @@ Deno.serve(async (req) => {
     // Log event to pixel_events for dashboard
     const customerName = customer?.name || null;
 
-    const insertPromises: Promise<any>[] = [];
+    await supabase.from('pixel_events').insert({
+      product_id,
+      event_name,
+      source: 'server',
+      event_id: event_id || null,
+      user_id: productOwnerId,
+      customer_name: customerName,
+      visitor_id: visitor_id || null,
+    });
 
-    insertPromises.push(
-      supabase.from('pixel_events').insert({
+    // If caller signals browser pixel also fired, log a "browser" entry so dashboard shows DUAL ✓
+    if (log_browser) {
+      await supabase.from('pixel_events').insert({
         product_id,
         event_name,
-        source: 'server',
+        source: 'browser',
         event_id: event_id || null,
         user_id: productOwnerId,
         customer_name: customerName,
         visitor_id: visitor_id || null,
-      })
-    );
-
-    // If caller signals browser pixel also fired, log a "browser" entry so dashboard shows DUAL ✓
-    if (log_browser) {
-      insertPromises.push(
-        supabase.from('pixel_events').insert({
-          product_id,
-          event_name,
-          source: 'browser',
-          event_id: event_id || null,
-          user_id: productOwnerId,
-          customer_name: customerName,
-          visitor_id: visitor_id || null,
-        })
-      );
+      });
     }
-
-    // Await all inserts so Deno doesn't kill them before completion
-    await Promise.all(insertPromises);
 
     if (!pixels || pixels.length === 0) {
       return new Response(
@@ -258,7 +249,7 @@ Deno.serve(async (req) => {
         results.push({ pixel_id: pixel.pixel_id, success: response.ok, data });
       } catch (err) {
         console.error(`[facebook-capi] Pixel ${pixel.pixel_id} error:`, err);
-        results.push({ pixel_id: pixel.pixel_id, success: false, error: err.message });
+        results.push({ pixel_id: pixel.pixel_id, success: false, error: (err as Error).message });
       }
     }
 
@@ -269,7 +260,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('[facebook-capi] Error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error as Error).message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
