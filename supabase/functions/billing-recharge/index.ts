@@ -1,72 +1,116 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const jsonResponse = (body: Record<string, unknown>, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+
+const normalizePhone = (phone?: string | null) => {
+  const digits = phone?.replace(/\D/g, '') || '';
+  const localPhone = digits.startsWith('55') && digits.length >= 12 ? digits.slice(2) : digits;
+
+  if (localPhone.length < 10) return null;
+
+  return {
+    country_code: '55',
+    area_code: localPhone.slice(0, 2),
+    number: localPhone.slice(2),
+  };
+};
+
+const getGatewayErrorMessage = (data: any, fallback: string) => {
+  if (data?.errors && typeof data.errors === 'object') {
+    const messages = Object.values(data.errors)
+      .flat()
+      .filter(Boolean)
+      .join(' ');
+
+    if (messages) return messages;
+  }
+
+  return data?.message || fallback;
+};
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return jsonResponse({ success: false, error: 'Unauthorized' }, 401);
     }
+
     const supabaseAuth = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_ANON_KEY')!,
       { global: { headers: { Authorization: authHeader } } }
     );
+
     const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
     if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return jsonResponse({ success: false, error: 'Unauthorized' }, 401);
     }
+
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
+
     const body = await req.json();
     const amount = Number(body.amount);
-    const method = body.method || 'pix'; // 'pix' or 'card'
+    const method = body.method || 'pix';
+
     if (!amount || amount < 10) {
-      return new Response(JSON.stringify({ error: 'Valor mínimo de recarga é R$10' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return jsonResponse({ success: false, error: 'Valor mínimo de recarga é R$10' });
     }
+
     const name = user.user_metadata?.full_name || user.email!.split('@')[0];
     const email = user.email!;
 
-    // Fetch profile for CPF (required by Pagar.me for PIX)
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('cpf, phone')
-      .eq('id', user.id)
-      .maybeSingle();
-    const cpf = profile?.cpf?.replace(/\D/g, '') || null;
+    const [{ data: profile }, { data: recentCustomer }] = await Promise.all([
+      supabaseAdmin
+        .from('profiles')
+        .select('cpf, phone')
+        .eq('id', user.id)
+        .maybeSingle(),
+      supabaseAdmin
+        .from('customers')
+        .select('cpf, phone')
+        .eq('email', email)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
 
-    // ─────────────────────────────────────────
-    // PIX via Pagar.me
-    // ─────────────────────────────────────────
+    const cpf = (profile?.cpf || recentCustomer?.cpf || '').replace(/\D/g, '') || null;
+    const phone = normalizePhone(profile?.phone || recentCustomer?.phone || null);
+
     if (method === 'pix') {
       const PAGARME_API_KEY = Deno.env.get('PAGARME_API_KEY');
       if (!PAGARME_API_KEY) {
-        return new Response(JSON.stringify({ error: 'Gateway PIX não configurado' }), {
-          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        return jsonResponse({ success: false, error: 'Gateway PIX não configurado' });
       }
+
       if (!cpf) {
-        return new Response(JSON.stringify({ error: 'CPF necessário para gerar PIX. Complete seu perfil.' }), {
-          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        return jsonResponse({ success: false, error: 'CPF necessário para gerar PIX. Complete seu perfil.' });
       }
-      const externalRef = `rch_${user.id.slice(0, 8)}_${Date.now()}`;
+
+      if (!phone) {
+        return jsonResponse({ success: false, error: 'Telefone necessário para gerar PIX. Complete seu perfil.' });
+      }
+
+      const externalRef = `recharge_${user.id.slice(0, 8)}_${Date.now()}`;
       const orderPayload = {
         code: externalRef,
         items: [
           {
-            amount: Math.round(amount * 100), // centavos
+            amount: Math.round(amount * 100),
             description: `Recarga PanteraPay — R$${amount.toFixed(2).replace('.', ',')}`,
             quantity: 1,
             code: 'billing-recharge',
@@ -77,7 +121,10 @@ Deno.serve(async (req) => {
           email,
           type: 'individual',
           document: cpf,
-          document_type: 'cpf',
+          document_type: 'CPF',
+          phones: {
+            mobile_phone: phone,
+          },
         },
         payments: [
           {
@@ -86,6 +133,7 @@ Deno.serve(async (req) => {
           },
         ],
       };
+
       const response = await fetch('https://api.pagar.me/core/v5/orders', {
         method: 'POST',
         headers: {
@@ -94,23 +142,27 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify(orderPayload),
       });
+
       const data = await response.json();
       if (!response.ok || data.status === 'failed') {
         console.error('[billing-recharge] Pagar.me error:', JSON.stringify(data));
-        return new Response(JSON.stringify({ error: 'Erro ao gerar PIX. Tente novamente.' }), {
-          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        return jsonResponse({
+          success: false,
+          error: getGatewayErrorMessage(data, 'Erro ao gerar PIX. Tente novamente.'),
         });
       }
+
       const charge = data.charges?.[0];
       const pixData = charge?.last_transaction;
-      // Save pending recharge
+
       await supabaseAdmin.from('billing_recharges').insert({
         user_id: user.id,
         amount,
         external_id: data.id,
         status: 'pending',
       });
-      return new Response(JSON.stringify({
+
+      return jsonResponse({
         success: true,
         method: 'pix',
         payment_id: data.id,
@@ -118,28 +170,26 @@ Deno.serve(async (req) => {
         qr_code_url: pixData?.qr_code_url || null,
         expires_at: pixData?.expires_at || null,
         amount,
-      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      });
     }
-    // ─────────────────────────────────────────
-    // Card via Asaas
-    // ─────────────────────────────────────────
+
     if (method === 'card') {
       const ASAAS_API_KEY = Deno.env.get('ASAAS_API_KEY');
       if (!ASAAS_API_KEY) {
-        return new Response(JSON.stringify({ error: 'Gateway cartão não configurado' }), {
-          status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        return jsonResponse({ success: false, error: 'Gateway cartão não configurado' });
       }
+
       const ASAAS_ENV = Deno.env.get('ASAAS_ENV') || 'sandbox';
       const baseUrl = ASAAS_ENV === 'production'
         ? 'https://api.asaas.com/v3'
         : 'https://sandbox.asaas.com/api/v3';
-      // Find or create Asaas customer by email
+
       const searchRes = await fetch(
         `${baseUrl}/customers?email=${encodeURIComponent(email)}`,
         { headers: { 'access_token': ASAAS_API_KEY } }
       );
       const searchData = await searchRes.json();
+
       let asaasCustomerId: string;
       if (searchData.data?.[0]?.id) {
         asaasCustomerId = searchData.data[0].id;
@@ -147,20 +197,27 @@ Deno.serve(async (req) => {
         const createRes = await fetch(`${baseUrl}/customers`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
-          body: JSON.stringify({ name, email }),
+          body: JSON.stringify({
+            name,
+            email,
+            cpfCnpj: cpf || undefined,
+            phone: profile?.phone || recentCustomer?.phone || undefined,
+          }),
         });
         const createData = await createRes.json();
         if (!createData.id) {
           console.error('[billing-recharge] Asaas customer error:', createData);
-          return new Response(JSON.stringify({ error: 'Erro ao criar cliente no gateway' }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          return jsonResponse({
+            success: false,
+            error: getGatewayErrorMessage(createData, 'Erro ao criar cliente no gateway'),
           });
         }
         asaasCustomerId = createData.id;
       }
+
       const dueDate = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-      const externalRef = `rch_${user.id.slice(0, 8)}_${Date.now()}`;
-      // Create card payment link (tokenized)
+      const externalRef = `recharge_${user.id.slice(0, 8)}_${Date.now()}`;
+
       const chargeRes = await fetch(`${baseUrl}/payments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
@@ -174,34 +231,34 @@ Deno.serve(async (req) => {
         }),
       });
       const chargeData = await chargeRes.json();
+
       if (!chargeRes.ok || !chargeData.id) {
         console.error('[billing-recharge] Asaas card error:', chargeData);
-        return new Response(JSON.stringify({ error: 'Erro ao gerar cobrança no cartão' }), {
-          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        return jsonResponse({
+          success: false,
+          error: getGatewayErrorMessage(chargeData, 'Erro ao gerar cobrança no cartão'),
         });
       }
-      // Save pending recharge
+
       await supabaseAdmin.from('billing_recharges').insert({
         user_id: user.id,
         amount,
         external_id: chargeData.id,
         status: 'pending',
       });
-      return new Response(JSON.stringify({
+
+      return jsonResponse({
         success: true,
         method: 'card',
         payment_id: chargeData.id,
         payment_link: chargeData.invoiceUrl || null,
         amount,
-      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      });
     }
-    return new Response(JSON.stringify({ error: 'Método inválido. Use pix ou card.' }), {
-      status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  } catch (error: any) {
+
+    return jsonResponse({ success: false, error: 'Método inválido. Use pix ou card.' });
+  } catch (error: unknown) {
     console.error('[billing-recharge] Error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return jsonResponse({ success: false, error: error instanceof Error ? error.message : 'Erro interno ao processar recarga' }, 500);
   }
 });
