@@ -315,9 +315,10 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('[meta-ads] Error:', error?.message);
-    return new Response(JSON.stringify({ error: error?.message || 'Unknown error' }), {
-      status: error?.message === 'Unauthorized' || error?.message === 'Invalid token' ? 401 : error?.message === 'Forbidden' ? 403 : 500,
+    const errMsg = (error as Error)?.message || 'Unknown error';
+    console.error('[meta-ads] Error:', errMsg);
+    return new Response(JSON.stringify({ error: errMsg }), {
+      status: errMsg === 'Unauthorized' || errMsg === 'Invalid token' ? 401 : errMsg === 'Forbidden' ? 403 : 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
