@@ -123,6 +123,7 @@ const ProducerBilling = () => {
     expiryYear: "",
     cvv: "",
     cpf: "",
+    cep: "",
   });
 
   const handleValidateCard = async () => {
