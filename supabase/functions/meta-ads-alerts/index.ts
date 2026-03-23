@@ -385,7 +385,7 @@ Deno.serve(async (req) => {
         const campaigns = await getCampaignsForAccount(accId);
         allCampaigns.push(...campaigns);
       } catch (err) {
-        console.error(`[meta-ads-alerts] Error fetching account ${accId}:`, err.message);
+        console.error(`[meta-ads-alerts] Error fetching account ${accId}:`, (err as Error).message);
       }
     }
 
