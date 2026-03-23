@@ -121,6 +121,36 @@ export type Database = {
         }
         Relationships: []
       }
+      billing_recharges: {
+        Row: {
+          amount: number
+          confirmed_at: string | null
+          created_at: string
+          external_id: string
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          confirmed_at?: string | null
+          created_at?: string
+          external_id: string
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          confirmed_at?: string | null
+          created_at?: string
+          external_id?: string
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       billing_tiers: {
         Row: {
           color: string
@@ -1672,6 +1702,10 @@ export type Database = {
       }
     }
     Functions: {
+      add_billing_credit: {
+        Args: { p_amount: number; p_description: string; p_user_id: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
