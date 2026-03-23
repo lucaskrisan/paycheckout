@@ -411,8 +411,8 @@ Deno.serve(async (req) => {
         pushResults.push({ title: alert.title, sent: !!result.id });
         console.log(`[meta-ads-alerts] Push sent: ${alert.title}`);
       } catch (err) {
-        console.error(`[meta-ads-alerts] Push error:`, err.message);
-        pushResults.push({ title: alert.title, sent: false, error: err.message });
+        console.error(`[meta-ads-alerts] Push error:`, (err as Error).message);
+        pushResults.push({ title: alert.title, sent: false, error: (err as Error).message });
       }
     }
 
