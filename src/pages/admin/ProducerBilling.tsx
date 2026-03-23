@@ -271,23 +271,49 @@ const ProducerBilling = () => {
             <TabsContent value="card">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Cartão de Crédito</CardTitle>
-                  <CardDescription>Cartão para cobrança automática de taxas</CardDescription>
+                  <CardTitle className="text-base">Adicionar Saldo via Cartão</CardTitle>
+                  <CardDescription>Pague com cartão de crédito via link seguro do gateway</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  {account?.card_last4 ? (
-                    <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border">
-                      <CreditCard className="w-8 h-8 text-muted-foreground" />
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Valor da recarga</label>
+                    <div className="flex gap-2 flex-wrap">
+                      {[20, 50, 100, 200, 500].map((v) => (
+                        <button
+                          key={v}
+                          onClick={() => setCardAmount(v)}
+                          className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                            cardAmount === v
+                              ? 'border-primary bg-primary text-primary-foreground'
+                              : 'border-border bg-muted/30 hover:bg-muted'
+                          }`}
+                        >
+                          {fmt(v)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <Button
+                    className="w-full gap-2"
+                    onClick={handleGenerateCard}
+                    disabled={cardLoading}
+                  >
+                    {cardLoading ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Gerando cobrança...</>
+                    ) : (
+                      <><CreditCard className="w-4 h-4" /> Pagar com Cartão — {fmt(cardAmount)}</>
+                    )}
+                  </Button>
+                  <p className="text-xs text-muted-foreground text-center">
+                    Você será redirecionado para uma página segura do gateway de pagamento
+                  </p>
+                  {account?.card_last4 && (
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border mt-2">
+                      <CreditCard className="w-6 h-6 text-muted-foreground" />
                       <div>
                         <p className="font-medium text-sm">{account.card_brand?.toUpperCase()} •••• {account.card_last4}</p>
-                        <p className="text-xs text-muted-foreground">Cobrança automática ativa</p>
+                        <p className="text-xs text-muted-foreground">Último cartão utilizado</p>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-8 text-center">
-                      <CreditCard className="w-10 h-10 text-muted-foreground/40 mb-3" />
-                      <p className="text-sm text-muted-foreground mb-4">Nenhum cartão cadastrado</p>
-                      <Button variant="outline" size="sm">Adicionar Cartão</Button>
                     </div>
                   )}
                 </CardContent>
