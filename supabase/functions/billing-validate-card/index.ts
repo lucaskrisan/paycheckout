@@ -171,7 +171,7 @@ Deno.serve(async (req) => {
         email,
         cpfCnpj: cleanCpf,
         phone: phone || cleanNumber.slice(-11),
-        postalCode: '00000000',
+        postalCode: cleanCep,
         addressNumber: '0',
         addressComplement: '',
       },

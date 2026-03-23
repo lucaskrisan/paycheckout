@@ -671,15 +671,31 @@ const ProducerBilling = () => {
               </div>
             </div>
 
-            <div>
-              <label className="text-sm font-medium mb-1.5 block">CPF do Titular</label>
-              <Input
-                value={cardForm.cpf}
-                onChange={(e) => setCardForm({ ...cardForm, cpf: formatCpf(e.target.value) })}
-                placeholder="000.000.000-00"
-                className={inputClass}
-                maxLength={14}
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">CPF do Titular</label>
+                <Input
+                  value={cardForm.cpf}
+                  onChange={(e) => setCardForm({ ...cardForm, cpf: formatCpf(e.target.value) })}
+                  placeholder="000.000.000-00"
+                  className={inputClass}
+                  maxLength={14}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">CEP</label>
+                <Input
+                  value={cardForm.cep}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/\D/g, '').slice(0, 8);
+                    const formatted = v.length > 5 ? `${v.slice(0, 5)}-${v.slice(5)}` : v;
+                    setCardForm({ ...cardForm, cep: formatted });
+                  }}
+                  placeholder="00000-000"
+                  className={inputClass}
+                  maxLength={9}
+                />
+              </div>
             </div>
 
             <Button
