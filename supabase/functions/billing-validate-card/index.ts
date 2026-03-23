@@ -233,9 +233,9 @@ Deno.serve(async (req) => {
       console.error('[billing-validate-card] Refund exception — manual refund needed for payment:', validationData.id, refundErr);
     }
 
-    // 4. Save token to billing_accounts
-    const last4 = validationData.creditCard?.creditCardNumber?.slice(-4) || cleanNumber.slice(-4);
-    const brand = validationData.creditCard?.creditCardBrand || 'unknown';
+    // 5. Save token to billing_accounts
+    const last4 = validationData.creditCard?.creditCardNumber?.slice(-4) || tokenizeData.creditCardNumber?.slice(-4) || cleanNumber.slice(-4);
+    const brand = validationData.creditCard?.creditCardBrand || tokenizeData.creditCardBrand || 'unknown';
 
     await supabaseAdmin
       .from('billing_accounts')
