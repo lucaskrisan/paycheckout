@@ -68,3 +68,27 @@ verify_jwt = false
 
 [functions.reconcile-orders]
 verify_jwt = false
+
+[functions.billing-recharge]
+verify_jwt = false
+
+[functions.billing-validate-card]
+verify_jwt = false
+
+[functions.billing-notify]
+verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = false
+
+[functions.verify-turnstile]
+verify_jwt = false
+
+[functions.resolve-user-destination]
+verify_jwt = false
+
+[functions.meta-ads-alerts]
+verify_jwt = false
+
+[functions.meta-emq-monitor]
+verify_jwt = false
