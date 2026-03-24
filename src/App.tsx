@@ -23,6 +23,7 @@ import Courses from "./pages/admin/Courses";
 import Coupons from "./pages/admin/Coupons";
 import AbandonedCarts from "./pages/admin/AbandonedCarts";
 import Integrations from "./pages/admin/Integrations";
+import CrispChat from "./pages/admin/CrispChat";
 import SuperAdminDashboard from "./pages/admin/SuperAdminDashboard";
 import CheckoutBuilder from "./pages/admin/CheckoutBuilder";
 import Notifications from "./pages/admin/Notifications";
