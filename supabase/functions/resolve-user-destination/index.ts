@@ -79,21 +79,17 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Auto-promote producer only when profile is complete and user is not buyer
-    if (profileCompleted && !buyerToken && !isAdmin) {
-      await supabaseAdmin.from("user_roles").insert({ user_id: user.id, role: "admin" });
-      isAdmin = true;
-    }
-
+    // No auto-promote — admin role is granted manually by super_admin only.
     // Priority: admin/super_admin always goes to /admin, even if they also bought courses.
     // Only pure buyers (no admin role) go to /minha-conta.
+    // Users with no role and no buyer access go to pending-approval page.
     const destination = !profileCompleted
       ? "/completar-perfil"
       : isAdmin
         ? "/admin"
         : buyerToken
           ? `/minha-conta?token=${buyerToken}`
-          : "/admin";
+          : "/aguardando-aprovacao";
 
     return new Response(
       JSON.stringify({
