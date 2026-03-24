@@ -619,8 +619,8 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
             </div>
 
             <div className="flex gap-3 pt-2">
-              <Button onClick={handleSave} disabled={saving} className="flex-1">
-                {saving ? "Salvando..." : isEditing ? "Salvar Alterações" : "Criar Conexão"}
+              <Button onClick={handleSave} disabled={saving || validating} className="flex-1">
+                {validating ? "Validando chave..." : saving ? "Salvando..." : isEditing ? "Validar e Salvar" : "Validar e Criar Conexão"}
               </Button>
               <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
             </div>
