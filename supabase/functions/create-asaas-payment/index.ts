@@ -126,11 +126,17 @@ Deno.serve(async (req) => {
         if (coupon_id && prod.show_coupon !== false) {
           const { data: couponData } = await supabaseAdmin
             .from('coupons')
-            .select('discount_type, discount_value, active')
+            .select('discount_type, discount_value, active, max_uses, used_count')
             .eq('id', coupon_id)
             .eq('active', true)
             .maybeSingle();
           if (couponData) {
+            if (couponData.max_uses != null && couponData.used_count >= couponData.max_uses) {
+              return new Response(
+                JSON.stringify({ error: 'Cupom atingiu o limite de usos.' }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+              );
+            }
             couponDiscount = couponData.discount_type === 'percent'
               ? serverPrice * (couponData.discount_value / 100)
               : couponData.discount_value;
@@ -274,8 +280,9 @@ Deno.serve(async (req) => {
       .select('config, environment')
       .eq('provider', 'asaas')
       .eq('active', true)
+      .eq('user_id', productOwnerId)
       .limit(1)
-      .single();
+      .maybeSingle();
 
     const gateway_config = gatewayData?.config as Record<string, any> || {};
     const environment = gatewayData?.environment || 'sandbox';
