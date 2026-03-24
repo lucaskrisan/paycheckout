@@ -29,10 +29,21 @@ const CrispChat = () => {
     setLoaded(true);
   };
 
+  const extractCrispId = (input: string): string | null => {
+    if (!input) return null;
+    const trimmed = input.trim();
+    // If user pasted the full script tag, extract the CRISP_WEBSITE_ID
+    const match = trimmed.match(/CRISP_WEBSITE_ID\s*=\s*["']([a-f0-9-]+)["']/i);
+    if (match) return match[1];
+    // If it's already a clean UUID-like ID
+    if (/^[a-f0-9-]{30,50}$/i.test(trimmed)) return trimmed;
+    return null;
+  };
+
   const saveCrisp = async () => {
     if (!user?.id) return;
     setSaving(true);
-    const trimmed = crispId.trim() || null;
+    const extracted = extractCrispId(crispId) || null;
 
     const { data: existing } = await supabase
       .from("checkout_settings")
@@ -44,16 +55,17 @@ const CrispChat = () => {
     if (existing) {
       ({ error } = await supabase
         .from("checkout_settings")
-        .update({ crisp_website_id: trimmed } as any)
+        .update({ crisp_website_id: extracted } as any)
         .eq("user_id", user.id));
     } else {
       ({ error } = await supabase
         .from("checkout_settings")
-        .insert({ user_id: user.id, crisp_website_id: trimmed } as any));
+        .insert({ user_id: user.id, crisp_website_id: extracted } as any));
     }
 
     if (error) toast.error("Erro ao salvar Crisp");
-    else toast.success(trimmed ? "Crisp ativado no checkout!" : "Crisp removido do checkout");
+    else toast.success(extracted ? "Crisp ativado no checkout!" : "Crisp removido do checkout");
+    if (extracted) setCrispId(extracted);
     setSaving(false);
   };
 
