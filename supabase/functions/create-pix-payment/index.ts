@@ -317,6 +317,20 @@ Deno.serve(async (req) => {
 
     if (!response.ok) {
       console.error('[create-pix-payment] Pagar.me error:', JSON.stringify(data));
+
+      // Log gateway failure for the producer
+      if (productOwnerId) {
+        const gatewayErrDetail = data?.errors?.[0]?.message || data?.message || `HTTP ${response.status}`;
+        await supabaseAdmin.from('internal_tasks').insert({
+          user_id: productOwnerId,
+          title: `Falha no gateway Pagar.me (PIX)`,
+          description: `Produto: ${productName} (${product_id}). Erro: ${gatewayErrDetail}. Cliente: ${customer.email}`,
+          priority: 'high',
+          status: 'todo',
+          category: 'gateway_error',
+        }).then(r => { if (r.error) console.error('[create-pix-payment] Failed to log gateway alert:', r.error); });
+      }
+
       // Map known gateway errors to user-friendly messages
       const gatewayMsg = data?.errors?.[0]?.message || data?.message || '';
       let userMessage = 'Não foi possível gerar o PIX. Verifique seus dados e tente novamente.';
