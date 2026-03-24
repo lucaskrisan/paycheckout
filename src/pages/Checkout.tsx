@@ -204,7 +204,14 @@ const Checkout = () => {
   // Crisp chat — loads if producer configured crisp_website_id, OR hardcoded for super admin
   useEffect(() => {
     if (loading) return;
-    const crispId = checkoutSettings?.crisp_website_id || (isOwnerSuperAdmin ? "1d36332d-054f-443b-9a5d-1980537839eb" : null);
+    // Extract clean Crisp ID from potentially full script tag stored in DB
+    const rawCrispId = checkoutSettings?.crisp_website_id;
+    let cleanCrispId: string | null = null;
+    if (rawCrispId) {
+      const match = rawCrispId.match(/CRISP_WEBSITE_ID\s*=\s*["']([a-f0-9-]+)["']/i);
+      cleanCrispId = match ? match[1] : (/^[a-f0-9-]{30,50}$/i.test(rawCrispId.trim()) ? rawCrispId.trim() : null);
+    }
+    const crispId = cleanCrispId || (isOwnerSuperAdmin ? "1d36332d-054f-443b-9a5d-1980537839eb" : null);
     if (!crispId) return;
 
     // Reset existing Crisp if ID changed
