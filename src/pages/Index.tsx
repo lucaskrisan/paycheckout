@@ -53,22 +53,6 @@ const Index = () => {
     };
   }, [user, loading, navigate, resolved]);
 
-  if (loading || (user && resolving && !resolved)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-6">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full border border-primary/20 bg-card shadow-[0_0_40px_hsl(var(--primary)/0.18)]">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-          <div className="space-y-1">
-            <p className="text-base font-semibold text-foreground">Carregando PanteraPay...</p>
-            <p className="text-sm text-muted-foreground">Se demorar mais de alguns segundos, atualize a preview.</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   // Load Crisp chat on landing page (super admin hardcoded ID)
   useEffect(() => {
     const crispId = "1d36332d-054f-443b-9a5d-1980537839eb";
@@ -89,6 +73,22 @@ const Index = () => {
       document.querySelectorAll('.crisp-client').forEach(el => el.remove());
     };
   }, []);
+
+  if (loading || (user && resolving && !resolved)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-6">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full border border-primary/20 bg-card shadow-[0_0_40px_hsl(var(--primary)/0.18)]">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-base font-semibold text-foreground">Carregando PanteraPay...</p>
+            <p className="text-sm text-muted-foreground">Se demorar mais de alguns segundos, atualize a preview.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/20">
