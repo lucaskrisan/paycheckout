@@ -121,10 +121,9 @@ const SystemHealth = () => {
     // ═══════════════════════════════════════
     const edgeFns = [
       { name: "create-pix-payment", label: "Criar Pagamento PIX", body: {} },
-      { name: "create-asaas-payment", label: "Criar Pagamento Asaas", body: {} },
+      { name: "create-pagarme-card-payment", label: "Criar Pagamento Cartão (Pagar.me)", body: {} },
       { name: "check-order-status", label: "Verificar Status Pedido", body: { external_id: "health-check" } },
       { name: "pagarme-webhook", label: "Webhook Pagar.me", body: { type: "health_check", data: {} } },
-      { name: "asaas-webhook", label: "Webhook Asaas", body: { event: "health_check", payment: {} } },
       { name: "send-access-link", label: "Enviar Link de Acesso", body: {} },
       { name: "facebook-capi", label: "Facebook CAPI", body: {} },
       { name: "meta-diagnostics", label: "Diagnóstico Meta", body: {} },
