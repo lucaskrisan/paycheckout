@@ -271,7 +271,18 @@ const Checkout = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(customer.email.trim())) { toast.error("E-mail inválido. Verifique o endereço digitado."); return; }
     if (!isValidCPF(customer.cpf)) { toast.error("CPF inválido. Verifique o número digitado."); return; }
-    if (paymentMethod === "credit_card" && (!creditCard.number || !creditCard.name || !creditCard.expiry || !creditCard.cvv)) { toast.error("Preencha todos os dados do cartão"); return; }
+    const [expMonth, expYear] = creditCard.expiry.split("/");
+    if (paymentMethod === "credit_card") {
+      if (!creditCard.number || !creditCard.name.trim() || !creditCard.expiry || !creditCard.cvv) {
+        toast.error("Preencha todos os dados do cartão");
+        return;
+      }
+
+      if (!expMonth || !expYear || expMonth.length !== 2 || expYear.length !== 2) {
+        toast.error("Preencha a validade do cartão corretamente");
+        return;
+      }
+    }
 
     trackAddToCartMain();
     setIsSubmitting(true);
@@ -306,7 +317,6 @@ const Checkout = () => {
         else throw new Error("Falha ao gerar o PIX. Tente novamente.");
       } else {
         const bumpProductIds2 = orderBumps.filter((b) => selectedBumps.has(b.id)).map((b) => b.bump_product.id);
-        const [expMonth, expYear] = creditCard.expiry.split("/");
         const utmParams2 = new URLSearchParams(window.location.search);
         const utms2 = {
           utm_source: utmParams2.get("utm_source") || undefined,

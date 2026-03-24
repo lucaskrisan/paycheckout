@@ -59,11 +59,21 @@ const CreditCardForm = ({ data, onChange, totalAmount }: CreditCardFormProps) =>
 
   return (
     <div className="space-y-3">
+      <Input
+        value={data.name}
+        onChange={(e) => handleChange("name", e.target.value)}
+        placeholder="Nome impresso no cartão"
+        autoComplete="cc-name"
+        className={inputClass}
+      />
+
       <div className="relative">
         <Input
           value={data.number}
           onChange={(e) => handleChange("number", e.target.value)}
           placeholder="Número do cartão"
+          inputMode="numeric"
+          autoComplete="cc-number"
           className={`${inputClass} pr-10 font-mono tracking-wider`}
         />
         <CreditCard className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#565959]" />
@@ -97,6 +107,8 @@ const CreditCardForm = ({ data, onChange, totalAmount }: CreditCardFormProps) =>
             value={data.cvv}
             onChange={(e) => handleChange("cvv", e.target.value)}
             placeholder="CVV"
+            inputMode="numeric"
+            autoComplete="cc-csc"
             className={`${inputClass} pr-8 font-mono`}
           />
           <HelpCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#565959]" />

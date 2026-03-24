@@ -71,6 +71,16 @@ Deno.serve(async (req) => {
       );
     }
 
+    if (payment_method === 'credit_card') {
+      const holderName = String(customer?.creditCard?.holderName || '').trim();
+      if (!holderName) {
+        customer.creditCard = {
+          ...(customer.creditCard || {}),
+          holderName: String(customer.name).trim(),
+        };
+      }
+    }
+
     // Server-side email validation
     const emailStr = String(customer.email).trim();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
