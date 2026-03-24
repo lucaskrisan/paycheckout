@@ -108,9 +108,46 @@ Deno.serve(async (req) => {
       );
     }
 
+    // --- AUTH: Only allow service_role or the actual order owner ---
+    const authHeader = req.headers.get('Authorization');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const isServiceRole = authHeader === `Bearer ${serviceRoleKey}`;
+
+    if (!isServiceRole) {
+      // Validate JWT and check ownership
+      if (!authHeader) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const userClient = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_ANON_KEY') || Deno.env.get('SUPABASE_PUBLISHABLE_KEY')!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+
+      const { data: { user }, error: authErr } = await userClient.auth.getUser();
+      if (authErr || !user) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Caller must be the order owner
+      if (user.id !== user_id) {
+        return new Response(
+          JSON.stringify({ error: 'Forbidden' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      serviceRoleKey
     );
 
     // Get active webhook endpoints for this user and event
@@ -161,12 +198,9 @@ Deno.serve(async (req) => {
     const results: any[] = [];
 
     for (const ep of filteredEndpoints) {
-      // Generate unique event ID for idempotency
       const eventId = `evt_${crypto.randomUUID().replace(/-/g, '').substring(0, 24)}`;
-
       const payload = buildPayload(event, order, eventId);
 
-      // Create delivery record
       const { data: delivery } = await supabase
         .from('webhook_deliveries')
         .insert({
@@ -183,10 +217,8 @@ Deno.serve(async (req) => {
         .select('id')
         .single();
 
-      // Attempt delivery
       const result = await deliverWebhook(ep.url, ep.secret, payload, event);
 
-      // Update delivery record
       if (result.success) {
         await supabase
           .from('webhook_deliveries')
@@ -201,8 +233,7 @@ Deno.serve(async (req) => {
 
         console.log(`[fire-webhooks] ✅ ${event} → ${ep.url}: ${result.status}`);
       } else {
-        // Schedule retry
-        const nextDelay = RETRY_DELAYS[0]; // 5 seconds for first retry
+        const nextDelay = RETRY_DELAYS[0];
         const nextRetry = new Date(Date.now() + nextDelay * 1000).toISOString();
 
         await supabase
