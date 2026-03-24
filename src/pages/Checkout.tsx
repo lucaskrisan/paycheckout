@@ -206,17 +206,28 @@ const Checkout = () => {
     if (loading) return;
     const crispId = checkoutSettings?.crisp_website_id || (isOwnerSuperAdmin ? "1d36332d-054f-443b-9a5d-1980537839eb" : null);
     if (!crispId) return;
-    if ((window as any).$crisp) return;
-    (window as any).$crisp = [];
-    (window as any).CRISP_WEBSITE_ID = crispId;
-    const s = document.createElement("script");
-    s.src = "https://client.crisp.chat/l.js";
-    s.async = true;
-    document.head.appendChild(s);
-    return () => {
-      s.remove();
+
+    // Reset existing Crisp if ID changed
+    if ((window as any).CRISP_WEBSITE_ID && (window as any).CRISP_WEBSITE_ID !== crispId) {
       delete (window as any).$crisp;
       delete (window as any).CRISP_WEBSITE_ID;
+      document.querySelectorAll('[id^="crisp"]').forEach(el => el.remove());
+      document.querySelectorAll('.crisp-client').forEach(el => el.remove());
+    }
+
+    if (!(window as any).CRISP_WEBSITE_ID) {
+      (window as any).$crisp = [];
+      (window as any).CRISP_WEBSITE_ID = crispId;
+      const s = document.createElement("script");
+      s.src = "https://client.crisp.chat/l.js";
+      s.async = true;
+      document.head.appendChild(s);
+    }
+
+    return () => {
+      delete (window as any).$crisp;
+      delete (window as any).CRISP_WEBSITE_ID;
+      document.querySelectorAll('script[src*="crisp.chat"]').forEach(el => el.remove());
       document.querySelectorAll('[id^="crisp"]').forEach(el => el.remove());
       document.querySelectorAll('.crisp-client').forEach(el => el.remove());
     };
