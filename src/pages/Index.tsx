@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { resolveUserDestination } from "@/lib/resolveUserDestination";
@@ -52,6 +52,27 @@ const Index = () => {
       cancelled = true;
     };
   }, [user, loading, navigate, resolved]);
+
+  // Load Crisp chat on landing page (super admin hardcoded ID)
+  useEffect(() => {
+    const crispId = "1d36332d-054f-443b-9a5d-1980537839eb";
+    if ((window as any).CRISP_WEBSITE_ID) return;
+
+    (window as any).$crisp = [];
+    (window as any).CRISP_WEBSITE_ID = crispId;
+    const s = document.createElement("script");
+    s.src = "https://client.crisp.chat/l.js";
+    s.async = true;
+    document.head.appendChild(s);
+
+    return () => {
+      delete (window as any).$crisp;
+      delete (window as any).CRISP_WEBSITE_ID;
+      document.querySelectorAll('script[src*="crisp.chat"]').forEach(el => el.remove());
+      document.querySelectorAll('[id^="crisp"]').forEach(el => el.remove());
+      document.querySelectorAll('.crisp-client').forEach(el => el.remove());
+    };
+  }, []);
 
   if (loading || (user && resolving && !resolved)) {
     return (
