@@ -217,20 +217,52 @@ Deno.serve(async (req) => {
     }
 
     // 4. Immediately refund the validation charge — CRITICAL: must always refund
-    try {
-      const refundRes = await fetch(`${baseUrl}/payments/${validationData.id}/refund`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
-        body: JSON.stringify({ value: 5.00, description: 'Estorno automático de validação de cartão' }),
-      });
-      const refundData = await refundRes.json();
-      console.log('[billing-validate-card] Refund result for', validationData.id, ':', JSON.stringify(refundData));
-      
-      if (!refundRes.ok) {
-        console.error('[billing-validate-card] Refund FAILED — manual refund needed for payment:', validationData.id);
+    // Retry up to 3 times with exponential backoff
+    let refundSuccess = false;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        if (attempt > 0) {
+          await new Promise(r => setTimeout(r, attempt * 2000)); // 0, 2s, 4s
+        }
+        const refundRes = await fetch(`${baseUrl}/payments/${validationData.id}/refund`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
+          body: JSON.stringify({ value: 5.00, description: 'Estorno automático de validação de cartão' }),
+        });
+        const refundData = await refundRes.json();
+        console.log(`[billing-validate-card] Refund attempt ${attempt + 1} for ${validationData.id}:`, JSON.stringify(refundData));
+
+        if (refundRes.ok) {
+          refundSuccess = true;
+          break;
+        }
+      } catch (refundErr) {
+        console.error(`[billing-validate-card] Refund attempt ${attempt + 1} exception:`, refundErr);
       }
-    } catch (refundErr) {
-      console.error('[billing-validate-card] Refund exception — manual refund needed for payment:', validationData.id, refundErr);
+    }
+
+    if (!refundSuccess) {
+      console.error('[billing-validate-card] ALL refund attempts FAILED for payment:', validationData.id);
+      // Still save the token but warn the user
+      const last4Fallback = validationData.creditCard?.creditCardNumber?.slice(-4) || cleanNumber.slice(-4);
+      const brandFallback = validationData.creditCard?.creditCardBrand || 'unknown';
+
+      await supabaseAdmin
+        .from('billing_accounts')
+        .upsert({
+          user_id: user.id,
+          card_token: creditCardToken,
+          card_last4: last4Fallback,
+          card_brand: brandFallback,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id' });
+
+      return jsonResponse({
+        success: false,
+        error: 'Cartão validado mas o estorno de R$5,00 falhou. Entre em contato com o suporte.',
+        card_saved: true,
+        refund_payment_id: validationData.id,
+      });
     }
 
     // 5. Save token to billing_accounts

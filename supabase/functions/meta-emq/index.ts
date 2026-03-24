@@ -91,9 +91,21 @@ Deno.serve(async (req) => {
       };
 
       try {
+        const fetchWithTimeout = async (url: string, timeoutMs = 10000) => {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), timeoutMs);
+          try {
+            const res = await fetch(url, { signal: controller.signal });
+            clearTimeout(timeout);
+            return res;
+          } catch (err) {
+            clearTimeout(timeout);
+            throw err;
+          }
+        };
+
         // Fetch event quality data from Meta Graph API
-        // The data_sources endpoint provides EMQ info
-        const response = await fetch(
+        const response = await fetchWithTimeout(
           `https://graph.facebook.com/v22.0/${pixel.pixel_id}?fields=name,event_stats&access_token=${pixel.capi_token}`
         );
         const pixelData = await response.json();
@@ -106,7 +118,7 @@ Deno.serve(async (req) => {
         }
 
         // Fetch diagnostic data via data_sources edge 
-        const diagResponse = await fetch(
+        const diagResponse = await fetchWithTimeout(
           `https://graph.facebook.com/v22.0/${pixel.pixel_id}/events?fields=event_name,event_count,event_match_quality&access_token=${pixel.capi_token}`
         );
         const diagData = await diagResponse.json();
@@ -121,14 +133,14 @@ Deno.serve(async (req) => {
         }
 
         // Also try the server_events endpoint for CAPI-specific quality
-        const serverResponse = await fetch(
+        const serverResponse = await fetchWithTimeout(
           `https://graph.facebook.com/v22.0/${pixel.pixel_id}/server_events?fields=event_name,event_time&access_token=${pixel.capi_token}`
         );
         const serverData = await serverResponse.json();
         pixelResult.server_events_available = !serverData.error;
 
         // Try the direct EMQ endpoint 
-        const emqResponse = await fetch(
+        const emqResponse = await fetchWithTimeout(
           `https://graph.facebook.com/v22.0/${pixel.pixel_id}?fields=data_use_setting,event_bridge_setting,first_party_cookie_status&access_token=${pixel.capi_token}`
         );
         const emqData = await emqResponse.json();
