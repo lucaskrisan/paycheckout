@@ -51,6 +51,7 @@ interface CheckoutSettings {
   primary_color: string | null;
   custom_css: string | null;
   company_name: string | null;
+  crisp_website_id: string | null;
 }
 
 interface CouponData {
@@ -145,7 +146,7 @@ const Checkout = () => {
         if (p.user_id) {
           // Check if producer is blocked
           const [{ data: settings }, { data: billingAcc }, { data: ownerRoles }] = await Promise.all([
-            supabase.from("checkout_settings").select("logo_url, primary_color, custom_css, company_name").eq("user_id", p.user_id).maybeSingle(),
+            supabase.from("checkout_settings").select("logo_url, primary_color, custom_css, company_name, crisp_website_id").eq("user_id", p.user_id).maybeSingle(),
             supabase.from("billing_accounts").select("blocked").eq("user_id", p.user_id).maybeSingle(),
             supabase.from("user_roles").select("role").eq("user_id", p.user_id).eq("role", "super_admin"),
           ]);
@@ -200,13 +201,14 @@ const Checkout = () => {
     return () => { document.documentElement.style.removeProperty("--checkout-brand"); if (styleEl) styleEl.remove(); };
   }, [checkoutSettings]);
 
-  // Crisp chat — only for super admin's checkouts
+  // Crisp chat — loads if producer configured crisp_website_id, OR hardcoded for super admin
   useEffect(() => {
-    if (!isOwnerSuperAdmin || loading) return;
-    const CRISP_ID = "1d36332d-054f-443b-9a5d-1980537839eb";
-    if ((window as any).$crisp) return; // already loaded
+    if (loading) return;
+    const crispId = checkoutSettings?.crisp_website_id || (isOwnerSuperAdmin ? "1d36332d-054f-443b-9a5d-1980537839eb" : null);
+    if (!crispId) return;
+    if ((window as any).$crisp) return;
     (window as any).$crisp = [];
-    (window as any).CRISP_WEBSITE_ID = CRISP_ID;
+    (window as any).CRISP_WEBSITE_ID = crispId;
     const s = document.createElement("script");
     s.src = "https://client.crisp.chat/l.js";
     s.async = true;
@@ -215,11 +217,10 @@ const Checkout = () => {
       s.remove();
       delete (window as any).$crisp;
       delete (window as any).CRISP_WEBSITE_ID;
-      // Remove crisp iframe if present
       document.querySelectorAll('[id^="crisp"]').forEach(el => el.remove());
       document.querySelectorAll('.crisp-client').forEach(el => el.remove());
     };
-  }, [isOwnerSuperAdmin, loading]);
+  }, [isOwnerSuperAdmin, loading, checkoutSettings?.crisp_website_id]);
 
   const toggleBump = (bumpId: string) => {
     setSelectedBumps((prev) => {

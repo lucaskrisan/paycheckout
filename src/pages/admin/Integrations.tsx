@@ -3,11 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Settings2, Trash2, CreditCard, Wallet, ArrowRightLeft } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Settings2, Trash2, CreditCard, Wallet, ArrowRightLeft, MessageCircle, Save, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GatewayFormDialog from "@/components/admin/GatewayFormDialog";
 import type { GatewayConfig } from "@/pages/admin/Gateways";
+import { useAuth } from "@/hooks/useAuth";
 
 const providerLabels: Record<string, string> = {
   asaas: "Asaas",
@@ -28,11 +30,9 @@ interface CatalogItem {
 }
 
 const catalog: CatalogItem[] = [
-  // Split
   { id: "mp-s", provider: "mercadopago", name: "Mercado Pago", description: "O Mercado Pago é uma fintech da América Latina criada pelo Mercado Livre, focada em vendas e cobranças para empresas.", color: "#009EE3", initials: "MP", tab: "split" },
   { id: "pg-s", provider: "pagarme", name: "Pagar.me", description: "A Pagar.me é uma plataforma completa de pagamentos com suporte a PIX, cartão de crédito e boleto. Integração robusta e painel de controle intuitivo.", color: "#55C157", initials: "Pg", badge: "Mais utilizado", tab: "split" },
   { id: "st-s", provider: "stripe", name: "Stripe", description: "O método de pagamento perfeito para compras internacionais, aceita pagamentos de todo o mundo.", color: "#635BFF", initials: "S", tab: "split" },
-  // Sob Demanda
   { id: "as-d", provider: "asaas", name: "Asaas", description: "A Asaas oferece pagamentos via PIX e Cartão de Crédito com integração simplificada, suporte dedicado e alta taxa de aprovação.", color: "#0066FF", initials: "As", tab: "sob_demanda" },
   { id: "pg-d", provider: "pagarme", name: "Pagar.me", description: "A Pagar.me é uma plataforma completa de pagamentos com suporte a PIX, cartão de crédito e boleto.", color: "#55C157", initials: "Pg", badge: "NOVO", tab: "sob_demanda" },
   { id: "mp-d", provider: "mercadopago", name: "Mercado Pago", description: "O Mercado Pago é uma fintech da América Latina criada pelo Mercado Livre, focada em vendas e cobranças para empresas.", color: "#009EE3", initials: "MP", tab: "sob_demanda" },
@@ -47,12 +47,59 @@ const defaultConfigs: Record<string, Record<string, any>> = {
 };
 
 const Integrations = () => {
+  const { user } = useAuth();
   const [gateways, setGateways] = useState<GatewayConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingGateway, setEditingGateway] = useState<GatewayConfig | null>(null);
 
+  // Crisp
+  const [crispId, setCrispId] = useState("");
+  const [crispSaving, setCrispSaving] = useState(false);
+  const [crispLoaded, setCrispLoaded] = useState(false);
+
   useEffect(() => { loadGateways(); }, []);
+  useEffect(() => { if (user?.id) loadCrisp(); }, [user?.id]);
+
+  const loadCrisp = async () => {
+    if (!user?.id) return;
+    const { data } = await supabase
+      .from("checkout_settings")
+      .select("crisp_website_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if ((data as any)?.crisp_website_id) setCrispId((data as any).crisp_website_id);
+    setCrispLoaded(true);
+  };
+
+  const saveCrisp = async () => {
+    if (!user?.id) return;
+    setCrispSaving(true);
+    const trimmed = crispId.trim() || null;
+    
+    // Check if settings row exists
+    const { data: existing } = await supabase
+      .from("checkout_settings")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    let error;
+    if (existing) {
+      ({ error } = await supabase
+        .from("checkout_settings")
+        .update({ crisp_website_id: trimmed } as any)
+        .eq("user_id", user.id));
+    } else {
+      ({ error } = await supabase
+        .from("checkout_settings")
+        .insert({ user_id: user.id, crisp_website_id: trimmed } as any));
+    }
+
+    if (error) toast.error("Erro ao salvar Crisp");
+    else toast.success(trimmed ? "Crisp ativado no checkout!" : "Crisp removido do checkout");
+    setCrispSaving(false);
+  };
 
   const loadGateways = async () => {
     const { data, error } = await supabase.from("payment_gateways").select("*").order("created_at");
@@ -168,6 +215,39 @@ const Integrations = () => {
         <h1 className="font-display text-2xl font-bold text-foreground">Integrações</h1>
         <p className="text-sm text-muted-foreground mt-1">Configure seus gateways de pagamento e integrações</p>
       </div>
+
+      {/* Crisp Chat Integration */}
+      {crispLoaded && (
+        <Card className="border border-border/50 bg-card">
+          <CardContent className="p-5 space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <MessageCircle className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground text-sm">Crisp Chat</h3>
+                <p className="text-xs text-muted-foreground">Chat ao vivo no seu checkout para atender clientes em tempo real</p>
+              </div>
+              {crispId && <Badge className="ml-auto text-[10px]">Ativo</Badge>}
+            </div>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Cole seu CRISP_WEBSITE_ID aqui (ex: 1d36332d-054f-443b-...)"
+                value={crispId}
+                onChange={e => setCrispId(e.target.value)}
+                className="text-xs"
+              />
+              <Button size="sm" onClick={saveCrisp} disabled={crispSaving} className="gap-1.5 shrink-0">
+                {crispSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                Salvar
+              </Button>
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              Acesse <a href="https://app.crisp.chat" target="_blank" rel="noopener noreferrer" className="text-primary underline">app.crisp.chat</a> → Settings → Website Settings → copie o Website ID. Deixe vazio para desativar.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Active gateways */}
       {!loading && activeGateways.length > 0 && (

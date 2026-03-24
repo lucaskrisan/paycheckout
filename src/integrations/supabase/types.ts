@@ -262,6 +262,7 @@ export type Database = {
         Row: {
           company_name: string | null
           countdown_minutes: number | null
+          crisp_website_id: string | null
           custom_css: string | null
           id: string
           logo_url: string | null
@@ -274,6 +275,7 @@ export type Database = {
         Insert: {
           company_name?: string | null
           countdown_minutes?: number | null
+          crisp_website_id?: string | null
           custom_css?: string | null
           id?: string
           logo_url?: string | null
@@ -286,6 +288,7 @@ export type Database = {
         Update: {
           company_name?: string | null
           countdown_minutes?: number | null
+          crisp_website_id?: string | null
           custom_css?: string | null
           id?: string
           logo_url?: string | null
