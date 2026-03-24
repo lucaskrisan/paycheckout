@@ -316,6 +316,20 @@ Deno.serve(async (req) => {
         customerData.id = searchData.data[0].id;
       } else {
         console.error('Asaas customer error:', JSON.stringify(customerData));
+
+        // Log gateway failure for the producer
+        if (productOwnerId) {
+          const errDetail = customerData?.errors?.[0]?.description || `HTTP ${customerRes.status}`;
+          await supabaseAdmin.from('internal_tasks').insert({
+            user_id: productOwnerId,
+            title: `Falha no gateway Asaas`,
+            description: `Produto: ${productName} (${product_id}). Erro: ${errDetail}. Cliente: ${customer.email}`,
+            priority: 'high',
+            status: 'todo',
+            category: 'gateway_error',
+          }).then(r => { if (r.error) console.error('[create-asaas-payment] Failed to log gateway alert:', r.error); });
+        }
+
         const errDesc = customerData?.errors?.[0]?.description || '';
         let userMsg = 'Não foi possível processar seus dados. Verifique e tente novamente.';
         if (/cpf|cnpj/i.test(errDesc)) userMsg = 'CPF inválido. Verifique o número e tente novamente.';
@@ -422,6 +436,15 @@ Deno.serve(async (req) => {
 
       if (!subRes.ok) {
         console.error('Asaas subscription error:', JSON.stringify(subData));
+        if (productOwnerId) {
+          const errDetail = subData?.errors?.[0]?.description || `HTTP ${subRes.status}`;
+          await supabaseAdmin.from('internal_tasks').insert({
+            user_id: productOwnerId,
+            title: `Falha no gateway Asaas (Assinatura)`,
+            description: `Produto: ${productName} (${product_id}). Erro: ${errDetail}. Cliente: ${customer.email}`,
+            priority: 'high', status: 'todo', category: 'gateway_error',
+          });
+        }
         const subErrDesc = subData?.errors?.[0]?.description || '';
         let subUserMsg = 'Não foi possível criar a assinatura. Verifique seus dados e tente novamente.';
         if (/card|cartão|credit/i.test(subErrDesc)) subUserMsg = 'Dados do cartão inválidos. Verifique e tente novamente.';
