@@ -232,6 +232,9 @@ Deno.serve(async (req) => {
       }
 
       try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000);
+
         const response = await fetch(
           `https://graph.facebook.com/v22.0/${pixel.pixel_id}/events`,
           {
@@ -241,8 +244,10 @@ Deno.serve(async (req) => {
               data: [event],
               access_token: pixel.capi_token,
             }),
+            signal: controller.signal,
           }
         );
+        clearTimeout(timeout);
 
         const data = await response.json();
         console.log(`[facebook-capi] Pixel ${pixel.pixel_id}:`, JSON.stringify(data));
