@@ -59,6 +59,14 @@ const PixModal = ({ open, onClose, totalAmount, qrCodeUrl, pixCode, externalOrde
     return () => { if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; } };
   }, [open, externalOrderId, paymentConfirmed, checkPayment]);
 
+  // Stop polling when timer expires
+  useEffect(() => {
+    if (timeLeft <= 0 && pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+  }, [timeLeft]);
+
   const handleCopy = async () => {
     if (!pixCode || copying) return;
     setCopying(true);

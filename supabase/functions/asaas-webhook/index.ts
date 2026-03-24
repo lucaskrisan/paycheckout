@@ -227,7 +227,7 @@ Deno.serve(async (req) => {
           .eq('product_id', orderData.product_id)
           .eq('event_name', 'Purchase')
           .eq('source', 'server')
-          .like('event_id', `%${payment.id}%`)
+          .eq('event_id', payment.id)
           .limit(1);
 
         const alreadyFired = (purchaseWithPaymentId && purchaseWithPaymentId.length > 0);
@@ -438,26 +438,29 @@ Deno.serve(async (req) => {
       payment.externalReference.startsWith('recharge_')
     ) {
       try {
+        // Use atomic update: only credit if status transitions from 'pending' to 'confirmed'
+        // This prevents double-credit when billing-recharge already credited on instant confirmation
         const { data: recharge } = await supabase
           .from('billing_recharges')
-          .select('id, user_id, amount, status')
+          .update({
+            status: 'confirmed',
+            confirmed_at: new Date().toISOString(),
+          })
           .eq('external_id', payment.id)
-          .eq('status', 'pending')
+          .eq('status', 'pending')  // Only matches if still pending (not already confirmed)
+          .select('id, user_id, amount')
           .maybeSingle();
+
         if (recharge) {
+          // Only add credit if we actually transitioned the status (was still pending)
           await supabase.rpc('add_billing_credit', {
             p_user_id: recharge.user_id,
             p_amount: recharge.amount,
-            p_description: `Recarga via PIX — R$${Number(recharge.amount).toFixed(2).replace('.', ',')}`,
+            p_description: `Recarga confirmada — R$${Number(recharge.amount).toFixed(2).replace('.', ',')}`,
           });
-          await supabase
-            .from('billing_recharges')
-            .update({
-              status: 'confirmed',
-              confirmed_at: new Date().toISOString(),
-            })
-            .eq('id', recharge.id);
           console.log(`[asaas-webhook] Recharge confirmed: R$${recharge.amount} for user ${recharge.user_id}`);
+        } else {
+          console.log('[asaas-webhook] Recharge already confirmed or not found, skipping credit');
         }
       } catch (rechargeErr) {
         console.error('[asaas-webhook] Recharge error (non-blocking):', rechargeErr);
