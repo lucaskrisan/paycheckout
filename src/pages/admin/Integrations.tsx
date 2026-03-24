@@ -3,8 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Settings2, Trash2, CreditCard, Wallet, ArrowRightLeft, MessageCircle, Save, Loader2 } from "lucide-react";
+import { Settings2, Trash2, CreditCard, Wallet, ArrowRightLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GatewayFormDialog from "@/components/admin/GatewayFormDialog";
@@ -53,53 +52,7 @@ const Integrations = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingGateway, setEditingGateway] = useState<GatewayConfig | null>(null);
 
-  // Crisp
-  const [crispId, setCrispId] = useState("");
-  const [crispSaving, setCrispSaving] = useState(false);
-  const [crispLoaded, setCrispLoaded] = useState(false);
-
   useEffect(() => { loadGateways(); }, []);
-  useEffect(() => { if (user?.id) loadCrisp(); }, [user?.id]);
-
-  const loadCrisp = async () => {
-    if (!user?.id) return;
-    const { data } = await supabase
-      .from("checkout_settings")
-      .select("crisp_website_id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    if ((data as any)?.crisp_website_id) setCrispId((data as any).crisp_website_id);
-    setCrispLoaded(true);
-  };
-
-  const saveCrisp = async () => {
-    if (!user?.id) return;
-    setCrispSaving(true);
-    const trimmed = crispId.trim() || null;
-    
-    // Check if settings row exists
-    const { data: existing } = await supabase
-      .from("checkout_settings")
-      .select("id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    let error;
-    if (existing) {
-      ({ error } = await supabase
-        .from("checkout_settings")
-        .update({ crisp_website_id: trimmed } as any)
-        .eq("user_id", user.id));
-    } else {
-      ({ error } = await supabase
-        .from("checkout_settings")
-        .insert({ user_id: user.id, crisp_website_id: trimmed } as any));
-    }
-
-    if (error) toast.error("Erro ao salvar Crisp");
-    else toast.success(trimmed ? "Crisp ativado no checkout!" : "Crisp removido do checkout");
-    setCrispSaving(false);
-  };
 
   const loadGateways = async () => {
     const { data, error } = await supabase.from("payment_gateways").select("*").order("created_at");
@@ -238,7 +191,7 @@ const Integrations = () => {
         </div>
       )}
 
-      {/* Catalog + Crisp tabs */}
+      {/* Catalog */}
       <Tabs defaultValue="split">
         <TabsList className="bg-muted/50">
           <TabsTrigger value="split" className="gap-1.5">
@@ -246,9 +199,6 @@ const Integrations = () => {
           </TabsTrigger>
           <TabsTrigger value="sob_demanda" className="gap-1.5">
             <Wallet className="w-3.5 h-3.5" /> Sob Demanda
-          </TabsTrigger>
-          <TabsTrigger value="crisp" className="gap-1.5">
-            <MessageCircle className="w-3.5 h-3.5" /> Crisp
           </TabsTrigger>
         </TabsList>
 
@@ -278,49 +228,6 @@ const Integrations = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {catalog.filter(i => i.tab === "sob_demanda").map(renderCatalogCard)}
           </div>
-        </TabsContent>
-
-        <TabsContent value="crisp" className="mt-4 space-y-4">
-          <Card className="border-border/30 bg-card/50">
-            <CardContent className="p-4">
-              <h3 className="font-semibold text-foreground text-sm">Crisp Chat — Atendimento ao Vivo</h3>
-              <p className="text-xs text-muted-foreground mt-1">
-                Adicione um chat ao vivo diretamente no seu checkout para atender clientes em tempo real e aumentar suas conversões.
-              </p>
-            </CardContent>
-          </Card>
-
-          {crispLoaded && (
-            <Card className="border border-border/50 bg-card">
-              <CardContent className="p-5 space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <MessageCircle className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground text-sm">Configurar Crisp Chat</h3>
-                    <p className="text-xs text-muted-foreground">O widget aparecerá automaticamente em todos os seus checkouts</p>
-                  </div>
-                  {crispId && <Badge className="ml-auto text-[10px]">Ativo</Badge>}
-                </div>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Cole seu CRISP_WEBSITE_ID aqui (ex: 1d36332d-054f-443b-...)"
-                    value={crispId}
-                    onChange={e => setCrispId(e.target.value)}
-                    className="text-xs"
-                  />
-                  <Button size="sm" onClick={saveCrisp} disabled={crispSaving} className="gap-1.5 shrink-0">
-                    {crispSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                    Salvar
-                  </Button>
-                </div>
-                <p className="text-[10px] text-muted-foreground">
-                  Acesse <a href="https://app.crisp.chat" target="_blank" rel="noopener noreferrer" className="text-primary underline">app.crisp.chat</a> → Settings → Website Settings → copie o Website ID. Deixe vazio para desativar.
-                </p>
-              </CardContent>
-            </Card>
-          )}
         </TabsContent>
       </Tabs>
 
