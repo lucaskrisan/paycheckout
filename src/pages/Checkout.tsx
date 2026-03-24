@@ -78,6 +78,7 @@ const Checkout = () => {
   const [builderLayout, setBuilderLayout] = useState<BuilderComponent[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<"credit_card" | "pix">("pix");
   const [checkoutSettings, setCheckoutSettings] = useState<CheckoutSettings | null>(null);
+  const [isOwnerSuperAdmin, setIsOwnerSuperAdmin] = useState(false);
   const [coupon, setCoupon] = useState<CouponData | null>(null);
 
   // Pre-fill customer data from query params (for reminder emails)
@@ -150,6 +151,7 @@ const Checkout = () => {
           ]);
           if (settings) setCheckoutSettings(settings);
           const isSuperAdmin = (ownerRoles as any[])?.length > 0;
+          setIsOwnerSuperAdmin(isSuperAdmin);
           if (!isSuperAdmin && (billingAcc as any)?.blocked === true) {
             setProducerBlocked(true);
             setLoading(false);
@@ -197,6 +199,27 @@ const Checkout = () => {
     if (checkoutSettings.custom_css) { styleEl = document.createElement("style"); styleEl.textContent = checkoutSettings.custom_css; document.head.appendChild(styleEl); }
     return () => { document.documentElement.style.removeProperty("--checkout-brand"); if (styleEl) styleEl.remove(); };
   }, [checkoutSettings]);
+
+  // Crisp chat — only for super admin's checkouts
+  useEffect(() => {
+    if (!isOwnerSuperAdmin || loading) return;
+    const CRISP_ID = "1d36332d-054f-443b-9a5d-1980537839eb";
+    if ((window as any).$crisp) return; // already loaded
+    (window as any).$crisp = [];
+    (window as any).CRISP_WEBSITE_ID = CRISP_ID;
+    const s = document.createElement("script");
+    s.src = "https://client.crisp.chat/l.js";
+    s.async = true;
+    document.head.appendChild(s);
+    return () => {
+      s.remove();
+      delete (window as any).$crisp;
+      delete (window as any).CRISP_WEBSITE_ID;
+      // Remove crisp iframe if present
+      document.querySelectorAll('[id^="crisp"]').forEach(el => el.remove());
+      document.querySelectorAll('.crisp-client').forEach(el => el.remove());
+    };
+  }, [isOwnerSuperAdmin, loading]);
 
   const toggleBump = (bumpId: string) => {
     setSelectedBumps((prev) => {
