@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
         ? "/admin"
         : buyerToken
           ? `/minha-conta?token=${buyerToken}`
-          : "/aprovacao-pendente";
+          : "/aguardando-aprovacao";
 
     return new Response(
       JSON.stringify({
