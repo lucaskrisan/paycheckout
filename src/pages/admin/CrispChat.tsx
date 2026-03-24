@@ -55,16 +55,17 @@ const CrispChat = () => {
     if (existing) {
       ({ error } = await supabase
         .from("checkout_settings")
-        .update({ crisp_website_id: trimmed } as any)
+        .update({ crisp_website_id: extracted } as any)
         .eq("user_id", user.id));
     } else {
       ({ error } = await supabase
         .from("checkout_settings")
-        .insert({ user_id: user.id, crisp_website_id: trimmed } as any));
+        .insert({ user_id: user.id, crisp_website_id: extracted } as any));
     }
 
     if (error) toast.error("Erro ao salvar Crisp");
-    else toast.success(trimmed ? "Crisp ativado no checkout!" : "Crisp removido do checkout");
+    else toast.success(extracted ? "Crisp ativado no checkout!" : "Crisp removido do checkout");
+    if (extracted) setCrispId(extracted);
     setSaving(false);
   };
 
