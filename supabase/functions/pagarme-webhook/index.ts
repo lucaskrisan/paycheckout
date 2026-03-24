@@ -50,7 +50,40 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const payload = await req.json();
+    const rawBody = await req.text();
+
+    // --- Webhook signature verification (HMAC-SHA1) ---
+    const PAGARME_WEBHOOK_SECRET = Deno.env.get('PAGARME_WEBHOOK_SECRET');
+    if (PAGARME_WEBHOOK_SECRET) {
+      const receivedSig = req.headers.get('x-hub-signature');
+      if (receivedSig) {
+        const expectedPrefix = 'sha1=';
+        const sigHex = receivedSig.startsWith(expectedPrefix) ? receivedSig.slice(expectedPrefix.length) : receivedSig;
+
+        const encoder = new TextEncoder();
+        const key = await crypto.subtle.importKey(
+          'raw',
+          encoder.encode(PAGARME_WEBHOOK_SECRET),
+          { name: 'HMAC', hash: 'SHA-1' },
+          false,
+          ['sign']
+        );
+        const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(rawBody));
+        const computed = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+        if (computed !== sigHex) {
+          console.error('[pagarme-webhook] Invalid webhook signature');
+          return new Response(JSON.stringify({ error: 'Invalid signature' }), {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+      }
+    } else {
+      console.warn('[pagarme-webhook] PAGARME_WEBHOOK_SECRET not set — skipping signature verification');
+    }
+
+    const payload = JSON.parse(rawBody);
     console.log('[pagarme-webhook] received event type:', payload.type);
 
     // Pagar.me v5 webhook format: { id, type, data: { id, status, charges, ... } }
@@ -142,7 +175,7 @@ Deno.serve(async (req) => {
           .select('id')
           .eq('product_id', orderData.product_id)
           .eq('event_name', 'Purchase')
-          .like('event_id', `%${externalId}%`)
+          .eq('event_id', externalId)
           .limit(1);
 
         const alreadyFired = (purchaseWithOrderId && purchaseWithOrderId.length > 0);
