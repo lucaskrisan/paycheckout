@@ -91,12 +91,6 @@ const OrderSummary = ({ items, discount = 0 }: OrderSummaryProps) => {
           <Lock className="w-4 h-4 text-checkout-highlight" />
           <span>Dados criptografados com SSL 256 bits</span>
         </div>
-        <div className="flex items-center gap-1 text-xs text-checkout-badge">
-          {[...Array(5)].map((_, i) => (
-            <Star key={i} className="w-3 h-3 fill-current" />
-          ))}
-          <span className="ml-1 text-checkout-muted">4.9/5 (2.847 avaliações)</span>
-        </div>
       </div>
     </div>
   );

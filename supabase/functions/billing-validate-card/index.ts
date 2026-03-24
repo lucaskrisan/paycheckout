@@ -243,24 +243,9 @@ Deno.serve(async (req) => {
 
     if (!refundSuccess) {
       console.error('[billing-validate-card] ALL refund attempts FAILED for payment:', validationData.id);
-      // Still save the token but warn the user
-      const last4Fallback = validationData.creditCard?.creditCardNumber?.slice(-4) || cleanNumber.slice(-4);
-      const brandFallback = validationData.creditCard?.creditCardBrand || 'unknown';
-
-      await supabaseAdmin
-        .from('billing_accounts')
-        .upsert({
-          user_id: user.id,
-          card_token: creditCardToken,
-          card_last4: last4Fallback,
-          card_brand: brandFallback,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'user_id' });
-
       return jsonResponse({
         success: false,
-        error: 'Cartão validado mas o estorno de R$5,00 falhou. Entre em contato com o suporte.',
-        card_saved: true,
+        error: 'Não foi possível estornar a cobrança de validação (R$5,00). Cartão NÃO foi salvo. Entre em contato com o suporte.',
         refund_payment_id: validationData.id,
       });
     }
