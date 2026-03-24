@@ -35,6 +35,7 @@ import {
 } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
 import { useCheckoutPresence } from "@/hooks/useCheckoutPresence";
+import GatewayAlerts from "@/components/admin/GatewayAlerts";
 
 type Period = "today" | "yesterday" | "7days" | "month" | "lastMonth" | "total";
 
@@ -410,6 +411,9 @@ const Dashboard = () => {
         </div>
       </div>
 
+
+      {/* Gateway configuration alerts */}
+      <GatewayAlerts />
 
       {/* Kiwify layout: chart left + 2 tall metric cards right on first row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
