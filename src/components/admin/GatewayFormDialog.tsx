@@ -31,9 +31,14 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
     config: {},
   });
   const [saving, setSaving] = useState(false);
+  const [validating, setValidating] = useState(false);
+  const [validated, setValidated] = useState(false);
 
   useEffect(() => {
-    if (gateway) setForm({ ...gateway });
+    if (gateway) {
+      setForm({ ...gateway });
+      setValidated(false);
+    }
   }, [gateway]);
 
   const isEditing = !!form.id;
@@ -51,6 +56,42 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
     }));
   };
 
+  const validateApiKey = async (): Promise<boolean> => {
+    setValidating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("validate-gateway", {
+        body: {
+          provider: form.provider,
+          api_key: form.config.api_key,
+          environment: form.environment,
+        },
+      });
+
+      if (error) {
+        toast.error("Erro ao validar chave. Tente novamente.");
+        return false;
+      }
+
+      if (!data.valid) {
+        toast.error(data.error || "Chave API inválida.");
+        return false;
+      }
+
+      if (data.warning) {
+        toast.warning(data.warning);
+      }
+
+      setValidated(true);
+      return true;
+    } catch (err) {
+      console.error("[validate-gateway]", err);
+      toast.error("Erro ao validar chave.");
+      return false;
+    } finally {
+      setValidating(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!form.name.trim()) {
       toast.error("Nome da conexão é obrigatório");
@@ -60,6 +101,11 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
       toast.error("API Key é obrigatória");
       return;
     }
+
+    // Validate API key before saving
+    const isValid = await validateApiKey();
+    if (!isValid) return;
+
     setSaving(true);
 
     const payload = {
@@ -84,7 +130,7 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
       toast.error("Erro ao salvar gateway");
       console.error(error);
     } else {
-      toast.success(isEditing ? "Gateway atualizado!" : "Gateway criado!");
+      toast.success(isEditing ? "Gateway atualizado! ✓ Chave validada" : "Gateway criado! ✓ Chave validada");
       onSaved();
       onOpenChange(false);
     }
