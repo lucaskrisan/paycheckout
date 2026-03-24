@@ -8,6 +8,7 @@ export interface CreditCardData {
   expiry: string;
   cvv: string;
   installments: string;
+  postalCode: string;
 }
 
 interface CreditCardFormProps {
@@ -21,11 +22,18 @@ const formatCardNumber = (value: string) => {
   return digits.replace(/(\d{4})(?=\d)/g, "$1 ");
 };
 
+const formatCEP = (value: string) => {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+  if (digits.length > 5) return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+  return digits;
+};
+
 const CreditCardForm = ({ data, onChange, totalAmount }: CreditCardFormProps) => {
   const handleChange = (field: keyof CreditCardData, value: string) => {
     let formatted = value;
     if (field === "number") formatted = formatCardNumber(value);
     if (field === "cvv") formatted = value.replace(/\D/g, "").slice(0, 4);
+    if (field === "postalCode") formatted = formatCEP(value);
     onChange({ ...data, [field]: formatted });
   };
 
@@ -114,6 +122,15 @@ const CreditCardForm = ({ data, onChange, totalAmount }: CreditCardFormProps) =>
           <HelpCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#565959]" />
         </div>
       </div>
+
+      <Input
+        value={data.postalCode}
+        onChange={(e) => handleChange("postalCode", e.target.value)}
+        placeholder="CEP do titular"
+        inputMode="numeric"
+        autoComplete="postal-code"
+        className={inputClass}
+      />
 
       <Select value={data.installments} onValueChange={(v) => handleChange("installments", v)}>
         <SelectTrigger className={inputClass}>
