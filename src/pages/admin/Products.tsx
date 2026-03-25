@@ -151,10 +151,11 @@ const Products = () => {
         billing_cycle: paymentType === "subscription" ? "monthly" : "monthly",
         price: 0,
         user_id: currentUser.id,
-      }).select("id").single();
+        moderation_status: "pending_review",
+      } as any).select("id").single();
 
       if (error) throw error;
-      toast.success("Produto criado!");
+      toast.success("Produto criado! Aguarde a aprovação para vender.");
       setDialogOpen(false);
       navigate(`/admin/products/${data.id}/edit`);
     } catch (err: any) {
