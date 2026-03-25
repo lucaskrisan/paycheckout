@@ -18,11 +18,8 @@ const materialIcons: Record<string, typeof FileText> = {
   video: Video,
 };
 
-const BUCKET = "course-materials";
-
 function extractStoragePath(url: string | null): string | null {
   if (!url) return null;
-  // Match /storage/v1/object/public/course-materials/... or /storage/v1/object/course-materials/...
   const match = url.match(/\/storage\/v1\/object\/(?:public\/)?course-materials\/(.+)/);
   return match ? match[1] : null;
 }
@@ -30,9 +27,11 @@ function extractStoragePath(url: string | null): string | null {
 export default function LessonMaterials({
   lessonId,
   client,
+  accessToken,
 }: {
   lessonId: string;
   client: SupabaseClient;
+  accessToken?: string;
 }) {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [downloading, setDownloading] = useState<string | null>(null);
@@ -59,26 +58,56 @@ export default function LessonMaterials({
 
     setDownloading(material.id);
     try {
-      // Generate a signed URL valid for 1 hour
-      const { data, error } = await client.storage
-        .from(BUCKET)
-        .createSignedUrl(storagePath, 3600);
+      // Use edge function to generate signed URL (works with private bucket)
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      };
 
-      if (error || !data?.signedUrl) {
-        console.error("Signed URL error:", error);
-        // Fallback: try direct URL
-        window.open(material.file_url, "_blank");
-        return;
+      if (accessToken) {
+        headers['x-access-token'] = accessToken;
       }
 
-      window.open(data.signedUrl, "_blank");
+      // Try to get auth session for admin users
+      const { data: { session } } = await client.auth.getSession();
+      if (session?.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+      }
+
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/signed-material-url`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ file_path: storagePath }),
+        }
+      );
+
+      const result = await res.json();
+
+      if (res.ok && result.signedUrl) {
+        window.open(result.signedUrl, "_blank");
+      } else {
+        console.error("Signed URL error:", result.error);
+        // Fallback: try client-side signed URL
+        const { data, error } = await client.storage
+          .from("course-materials")
+          .createSignedUrl(storagePath, 3600);
+        if (data?.signedUrl) {
+          window.open(data.signedUrl, "_blank");
+        } else {
+          console.error("Fallback error:", error);
+          alert("Não foi possível baixar o arquivo. Tente novamente em alguns instantes.");
+        }
+      }
     } catch (err) {
       console.error("Download error:", err);
-      window.open(material.file_url, "_blank");
+      alert("Erro ao baixar o arquivo. Tente novamente.");
     } finally {
       setDownloading(null);
     }
-  }, [client]);
+  }, [client, accessToken]);
 
   if (materials.length === 0) return null;
 

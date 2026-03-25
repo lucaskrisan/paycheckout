@@ -927,7 +927,7 @@ const MemberArea = () => {
                 </div>
 
                 {/* Complementary Materials */}
-                <LessonMaterials lessonId={activeLesson.id} client={tokenClient} />
+                <LessonMaterials lessonId={activeLesson.id} client={tokenClient} accessToken={token || undefined} />
 
                 {/* Reviews & Comments */}
                 <LessonReviews
