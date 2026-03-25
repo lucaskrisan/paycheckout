@@ -401,14 +401,26 @@ const ProductEdit = () => {
 
     if (isNew) {
       payload.user_id = user?.id;
+      payload.moderation_status = "pending_review";
       const { error } = await supabase.from("products" as any).insert(payload);
       if (error) { toast.error("Erro ao criar produto"); setSaving(false); return; }
-      toast.success("Produto criado!");
+      toast.success("Produto criado! Aguarde a aprovação para começar a vender.");
       navigate("/admin/products");
     } else {
+      // If product was rejected, resubmit for review
+      if (moderationStatus === "rejected") {
+        payload.moderation_status = "pending_review";
+        payload.rejection_reason = null;
+      }
       const { error } = await supabase.from("products" as any).update(payload).eq("id", productId);
       if (error) { toast.error("Erro ao atualizar"); setSaving(false); return; }
-      toast.success("Produto salvo!");
+      if (moderationStatus === "rejected") {
+        setModerationStatus("pending_review");
+        setRejectionReason("");
+        toast.success("Produto reenviado para revisão!");
+      } else {
+        toast.success("Produto salvo!");
+      }
     }
     setSaving(false);
   };
