@@ -453,6 +453,20 @@ const ProductEdit = () => {
           </Button>
         </div>
 
+        {/* Moderation status banner */}
+        {!isNew && moderationStatus === "pending_review" && (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+            <span className="text-yellow-400 text-sm font-medium">⏳ Este produto está em revisão. Os links de checkout ficarão ativos após aprovação.</span>
+          </div>
+        )}
+        {!isNew && moderationStatus === "rejected" && (
+          <div className="space-y-1 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/20">
+            <span className="text-red-400 text-sm font-medium">❌ Este produto foi reprovado.</span>
+            {rejectionReason && <p className="text-red-300/80 text-xs">Motivo: {rejectionReason}</p>}
+            <p className="text-red-300/60 text-[11px]">Edite o produto e salve para reenviar à revisão.</p>
+          </div>
+        )}
+
         {/* Tabs */}
         <Tabs defaultValue="general">
           <TabsList className="bg-transparent border-b border-border rounded-none h-auto p-0 gap-0 w-full justify-start overflow-x-auto">
