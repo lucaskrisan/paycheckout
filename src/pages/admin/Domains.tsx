@@ -19,9 +19,11 @@ const Domains = () => {
   }, []);
 
   const loadDomains = async () => {
+    if (!user) return;
     const { data } = await supabase
       .from("facebook_domains")
       .select("*")
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false });
     if (data) setDomains(data);
   };
