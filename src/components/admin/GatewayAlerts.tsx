@@ -52,8 +52,12 @@ const GatewayAlerts = () => {
         });
       }
 
-      // 2. Check sandbox gateways with active products
-      if (gateways?.some((g) => g.active && g.environment === "sandbox")) {
+      // 2. Check sandbox gateways — only warn if ALL active gateways are sandbox (no production one exists)
+      const activeGateways = gateways?.filter((g) => g.active) || [];
+      const hasProductionGateway = activeGateways.some((g) => g.environment === "production");
+      const hasSandboxGateway = activeGateways.some((g) => g.environment === "sandbox");
+
+      if (hasSandboxGateway && !hasProductionGateway && activeGateways.length > 0) {
         const { data: products } = await supabase
           .from("products")
           .select("id")
@@ -65,7 +69,7 @@ const GatewayAlerts = () => {
           result.push({
             id: "sandbox-warning",
             icon: ShieldAlert,
-            message: "Seu gateway está em modo teste (sandbox). Clientes reais não conseguirão pagar.",
+            message: "Todos os seus gateways ativos estão em modo teste (sandbox). Clientes reais não conseguirão pagar.",
             action: "Mudar para produção →",
             path: "/admin/integrations",
             variant: "warning",
