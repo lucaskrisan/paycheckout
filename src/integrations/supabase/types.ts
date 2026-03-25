@@ -515,6 +515,39 @@ export type Database = {
           },
         ]
       }
+      custom_domains: {
+        Row: {
+          cloudflare_hostname_id: string | null
+          created_at: string
+          hostname: string
+          id: string
+          ssl_status: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cloudflare_hostname_id?: string | null
+          created_at?: string
+          hostname: string
+          id?: string
+          ssl_status?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cloudflare_hostname_id?: string | null
+          created_at?: string
+          hostname?: string
+          id?: string
+          ssl_status?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           cpf: string | null
