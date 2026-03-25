@@ -1305,9 +1305,11 @@ export type Database = {
           id: string
           image_url: string | null
           is_subscription: boolean
+          moderation_status: string
           name: string
           original_price: number | null
           price: number
+          rejection_reason: string | null
           show_coupon: boolean
           updated_at: string
           user_id: string | null
@@ -1320,9 +1322,11 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_subscription?: boolean
+          moderation_status?: string
           name: string
           original_price?: number | null
           price?: number
+          rejection_reason?: string | null
           show_coupon?: boolean
           updated_at?: string
           user_id?: string | null
@@ -1335,9 +1339,11 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_subscription?: boolean
+          moderation_status?: string
           name?: string
           original_price?: number | null
           price?: number
+          rejection_reason?: string | null
           show_coupon?: boolean
           updated_at?: string
           user_id?: string | null
