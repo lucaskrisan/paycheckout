@@ -93,6 +93,8 @@ const ProductEdit = () => {
   const [upsellOffers, setUpsellOffers] = useState<any[]>([]);
   const [showUpsellDialog, setShowUpsellDialog] = useState(false);
   const [fbDomains, setFbDomains] = useState<{ id: string; domain: string; verified: boolean }[]>([]);
+  const [moderationStatus, setModerationStatus] = useState<string>("approved");
+  const [rejectionReason, setRejectionReason] = useState<string>("");
   const CATEGORIES = [
     "Saúde e Esportes", "Finanças e Investimentos", "Relacionamentos", "Negócios e Carreira",
     "Espiritualidade", "Sexualidade", "Entretenimento", "Culinária e Gastronomia", "Idiomas",
@@ -286,6 +288,8 @@ const ProductEdit = () => {
             billing_cycle: (data as any).billing_cycle || "monthly",
             show_coupon: (data as any).show_coupon !== false,
           });
+          setModerationStatus((data as any).moderation_status || "approved");
+          setRejectionReason((data as any).rejection_reason || "");
           setLoading(false);
         });
       loadPixels();
@@ -397,14 +401,26 @@ const ProductEdit = () => {
 
     if (isNew) {
       payload.user_id = user?.id;
+      payload.moderation_status = "pending_review";
       const { error } = await supabase.from("products" as any).insert(payload);
       if (error) { toast.error("Erro ao criar produto"); setSaving(false); return; }
-      toast.success("Produto criado!");
+      toast.success("Produto criado! Aguarde a aprovação para começar a vender.");
       navigate("/admin/products");
     } else {
+      // If product was rejected, resubmit for review
+      if (moderationStatus === "rejected") {
+        payload.moderation_status = "pending_review";
+        payload.rejection_reason = null;
+      }
       const { error } = await supabase.from("products" as any).update(payload).eq("id", productId);
       if (error) { toast.error("Erro ao atualizar"); setSaving(false); return; }
-      toast.success("Produto salvo!");
+      if (moderationStatus === "rejected") {
+        setModerationStatus("pending_review");
+        setRejectionReason("");
+        toast.success("Produto reenviado para revisão!");
+      } else {
+        toast.success("Produto salvo!");
+      }
     }
     setSaving(false);
   };
@@ -448,6 +464,20 @@ const ProductEdit = () => {
             Salvar produto
           </Button>
         </div>
+
+        {/* Moderation status banner */}
+        {!isNew && moderationStatus === "pending_review" && (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+            <span className="text-yellow-400 text-sm font-medium">⏳ Este produto está em revisão. Os links de checkout ficarão ativos após aprovação.</span>
+          </div>
+        )}
+        {!isNew && moderationStatus === "rejected" && (
+          <div className="space-y-1 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/20">
+            <span className="text-red-400 text-sm font-medium">❌ Este produto foi reprovado.</span>
+            {rejectionReason && <p className="text-red-300/80 text-xs">Motivo: {rejectionReason}</p>}
+            <p className="text-red-300/60 text-[11px]">Edite o produto e salve para reenviar à revisão.</p>
+          </div>
+        )}
 
         {/* Tabs */}
         <Tabs defaultValue="general">

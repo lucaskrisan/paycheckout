@@ -104,3 +104,6 @@ verify_jwt = false
 
 [functions.cloudflare-check-status]
 verify_jwt = false
+
+[functions.product-moderation-email]
+verify_jwt = false

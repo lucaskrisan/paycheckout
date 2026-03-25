@@ -46,6 +46,7 @@ import Metrics from "./pages/admin/Metrics";
 import ProducerBilling from "./pages/admin/ProducerBilling";
 import Blacklist from "./pages/admin/Blacklist";
 import ApiKeys from "./pages/admin/ApiKeys";
+import ProductReview from "./pages/admin/ProductReview";
 import NotFound from "./pages/NotFound";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
@@ -116,6 +117,7 @@ const App = () => (
               <Route path="manual" element={<TechnicalManual />} />
               <Route path="blacklist" element={<Blacklist />} />
               <Route path="api-keys" element={<ApiKeys />} />
+              <Route path="product-review" element={<ProductReview />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
