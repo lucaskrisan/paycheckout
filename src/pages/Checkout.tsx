@@ -134,6 +134,7 @@ const Checkout = () => {
       ]);
 
       if (productRes.error || !productRes.data) { setNotFound(true); }
+      else if ((productRes.data as any).moderation_status && (productRes.data as any).moderation_status !== "approved") { setNotFound(true); }
       else {
         const p = productRes.data as any;
         // Override price if config has a custom price

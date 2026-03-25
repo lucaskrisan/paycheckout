@@ -30,6 +30,8 @@ interface Product {
   price: number;
   active: boolean;
   is_subscription: boolean;
+  moderation_status?: string;
+  rejection_reason?: string;
 }
 
 const Products = () => {
@@ -52,8 +54,8 @@ const Products = () => {
   const loadProducts = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data } = await supabase.from("products").select("id, name, price, active, is_subscription").eq("user_id", user.id).order("created_at", { ascending: false });
-    setProducts(data || []);
+    const { data } = await supabase.from("products").select("id, name, price, active, is_subscription, moderation_status, rejection_reason").eq("user_id", user.id).order("created_at", { ascending: false });
+    setProducts((data || []) as any);
   };
 
   const handleDelete = async (id: string) => {
@@ -219,9 +221,19 @@ const Products = () => {
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">{fmt(p.price)}</TableCell>
                 <TableCell>
-                  <span className={`text-xs font-medium ${p.active ? "text-primary" : "text-muted-foreground"}`}>
-                    {p.active ? "Ativo" : "Inativo"}
-                  </span>
+                  {(p as any).moderation_status === "pending_review" ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                      Em revisão
+                    </span>
+                  ) : (p as any).moderation_status === "rejected" ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30" title={(p as any).rejection_reason || ""}>
+                      Reprovado
+                    </span>
+                  ) : (
+                    <span className={`text-xs font-medium ${p.active ? "text-primary" : "text-muted-foreground"}`}>
+                      {p.active ? "Ativo" : "Inativo"}
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   <div className="flex items-center gap-1 justify-end">
