@@ -93,6 +93,8 @@ const ProductEdit = () => {
   const [upsellOffers, setUpsellOffers] = useState<any[]>([]);
   const [showUpsellDialog, setShowUpsellDialog] = useState(false);
   const [fbDomains, setFbDomains] = useState<{ id: string; domain: string; verified: boolean }[]>([]);
+  const [moderationStatus, setModerationStatus] = useState<string>("approved");
+  const [rejectionReason, setRejectionReason] = useState<string>("");
   const CATEGORIES = [
     "Saúde e Esportes", "Finanças e Investimentos", "Relacionamentos", "Negócios e Carreira",
     "Espiritualidade", "Sexualidade", "Entretenimento", "Culinária e Gastronomia", "Idiomas",
@@ -286,6 +288,8 @@ const ProductEdit = () => {
             billing_cycle: (data as any).billing_cycle || "monthly",
             show_coupon: (data as any).show_coupon !== false,
           });
+          setModerationStatus((data as any).moderation_status || "approved");
+          setRejectionReason((data as any).rejection_reason || "");
           setLoading(false);
         });
       loadPixels();
