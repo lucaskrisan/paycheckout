@@ -95,3 +95,12 @@ verify_jwt = false
 
 [functions.stripe-webhook]
 verify_jwt = false
+
+[functions.cloudflare-add-hostname]
+verify_jwt = false
+
+[functions.cloudflare-remove-hostname]
+verify_jwt = false
+
+[functions.cloudflare-check-status]
+verify_jwt = false
