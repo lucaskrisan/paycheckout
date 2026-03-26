@@ -1,58 +1,222 @@
 import { useState, useEffect } from "react";
-import { BookOpen, ChevronDown, ChevronRight, Copy, CheckCircle2, ExternalLink, AlertTriangle } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronRight, Copy, CheckCircle2, ExternalLink, AlertTriangle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
-const webhookConfigs = [
+interface StepDetail {
+  title: string;
+  description: string;
+  warning?: string;
+}
+
+interface WebhookConfig {
+  provider: string;
+  label: string;
+  color: string;
+  initials: string;
+  url: string;
+  events: string[];
+  dashboardUrl: string;
+  stepByStep: StepDetail[];
+  importantNotes: string[];
+  commonMistakes: string[];
+}
+
+const webhookConfigs: WebhookConfig[] = [
   {
     provider: "pagarme",
     label: "Pagar.me",
     color: "#55C157",
+    initials: "Pg",
     url: `${SUPABASE_URL}/functions/v1/pagarme-webhook`,
     events: ["order.paid", "order.payment_failed", "order.canceled", "charge.paid", "charge.refunded", "subscription.created", "subscription.canceled"],
-    instructions: "No painel Pagar.me → Configurações → Webhooks → Novo Webhook → Cole a URL abaixo e selecione os eventos listados.",
     dashboardUrl: "https://dash.pagar.me",
-    tips: [
-      "Desative o Whitelist de IPs — nossas funções usam IPs dinâmicos.",
-      "A chave de API deve ter permissão de Leitura e Escrita (não Somente Leitura).",
-      "Use chaves com prefixo sk_live_ para produção."
+    stepByStep: [
+      {
+        title: "1. Acesse o painel da Pagar.me",
+        description: "Entre em dash.pagar.me com seu login e senha da Pagar.me.",
+      },
+      {
+        title: "2. Vá até Configurações → Webhooks",
+        description: "No menu lateral esquerdo, clique em CONFIGURAÇÕES (pode aparecer como ícone de engrenagem). Depois clique em \"Webhooks\" na lista de sub-menus.",
+      },
+      {
+        title: "3. Clique em \"Criar Webhook\" ou \"Novo\"",
+        description: "No canto superior direito da página de Webhooks, clique no botão para criar um novo webhook.",
+      },
+      {
+        title: "4. Ative o Status",
+        description: "O toggle de \"Status\" deve estar ATIVO (verde). Isso garante que o webhook vai funcionar imediatamente.",
+      },
+      {
+        title: "5. Cole a URL do webhook",
+        description: "No campo \"URL\", cole EXATAMENTE a URL abaixo. ⚠️ NÃO coloque seu e-mail neste campo — precisa ser a URL técnica que começa com https://",
+        warning: "O campo URL deve conter uma URL (endereço web), NÃO um e-mail. Exemplo correto: https://viplto... Exemplo errado: seuemail@gmail.com",
+      },
+      {
+        title: "6. Configure o máximo de tentativas",
+        description: "No campo \"Máximo de tentativas\", coloque o número 3 (três). Isso significa que se a primeira tentativa falhar, o sistema vai tentar mais 2 vezes.",
+      },
+      {
+        title: "7. Selecione os eventos obrigatórios",
+        description: "Role a página para baixo até a seção \"Eventos\". Você precisa marcar os eventos específicos listados abaixo. Clique no \"+\" ao lado de cada categoria para expandir e marcar os eventos individuais.",
+      },
+      {
+        title: "8. Salve o webhook",
+        description: "Clique no botão \"Salvar\" ou \"Criar\" no final da página. O webhook será ativado imediatamente.",
+      },
+    ],
+    importantNotes: [
+      "A chave de API (API Key) deve ter permissão de \"Leitura e Escrita\" — NÃO use chaves com permissão \"Somente Leitura\".",
+      "Use chaves com prefixo sk_live_ para produção. Chaves com sk_test_ são apenas para testes.",
+      "Desative o \"Whitelist de IPs\" nas configurações da Pagar.me. Nossas funções usam IPs dinâmicos que mudam a cada execução.",
+      "A \"Habilitar autenticação\" pode ficar desativada — nosso sistema já valida por assinatura HMAC.",
+    ],
+    commonMistakes: [
+      "❌ Colocar e-mail no campo URL — o campo URL aceita APENAS endereços web (https://...)",
+      "❌ Usar chave de API com permissão \"Somente Leitura\" — precisa ser \"Leitura e Escrita\"",
+      "❌ Esquecer de ativar o toggle de Status — o webhook fica inativo e não recebe notificações",
+      "❌ Não selecionar os eventos corretos — sem os eventos marcados, nenhuma notificação é enviada",
+      "❌ Deixar o Whitelist de IPs ativo — bloqueia nossas funções e os pagamentos não são confirmados",
     ],
   },
   {
     provider: "asaas",
     label: "Asaas",
     color: "#0066FF",
+    initials: "As",
     url: `${SUPABASE_URL}/functions/v1/asaas-webhook`,
     events: ["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED", "PAYMENT_OVERDUE", "PAYMENT_REFUNDED"],
-    instructions: "No painel Asaas → Integrações → Webhooks → Adicionar → Cole a URL abaixo e selecione os eventos.",
-    dashboardUrl: "https://www.asaas.com/webhooks",
-    tips: [
-      "O token de autenticação do webhook deve ser configurado como secret na plataforma.",
+    dashboardUrl: "https://www.asaas.com",
+    stepByStep: [
+      {
+        title: "1. Acesse o painel do Asaas",
+        description: "Entre em www.asaas.com com seu login e senha.",
+      },
+      {
+        title: "2. Vá até Integrações",
+        description: "No menu lateral, clique em \"Integrações\" ou \"Configurações\" → \"Integrações\".",
+      },
+      {
+        title: "3. Clique em \"Webhooks\"",
+        description: "Na página de integrações, localize a seção de Webhooks e clique para configurar.",
+      },
+      {
+        title: "4. Adicione um novo webhook",
+        description: "Clique em \"Adicionar\" ou \"Novo webhook\".",
+      },
+      {
+        title: "5. Cole a URL do webhook",
+        description: "No campo \"URL\", cole EXATAMENTE a URL abaixo. ⚠️ Este campo aceita APENAS URLs (endereços web começando com https://).",
+        warning: "NÃO coloque e-mail no campo URL. Cole apenas o endereço técnico que começa com https://",
+      },
+      {
+        title: "6. Selecione os eventos",
+        description: "Marque os eventos listados abaixo: PAYMENT_CONFIRMED, PAYMENT_RECEIVED, PAYMENT_OVERDUE e PAYMENT_REFUNDED.",
+      },
+      {
+        title: "7. Salve",
+        description: "Clique em \"Salvar\" para ativar o webhook.",
+      },
+    ],
+    importantNotes: [
+      "A API Key do Asaas está disponível em Configurações → Integrações → Chave de API.",
+      "Use a chave de Produção para vendas reais. A chave Sandbox é apenas para testes.",
+    ],
+    commonMistakes: [
+      "❌ Usar a chave de Sandbox em produção — as vendas reais não serão processadas",
+      "❌ Colocar e-mail no campo URL — precisa ser a URL técnica (https://...)",
     ],
   },
   {
     provider: "mercadopago",
     label: "Mercado Pago",
     color: "#009EE3",
+    initials: "MP",
     url: `${SUPABASE_URL}/functions/v1/mercadopago-webhook`,
     events: ["payment", "merchant_order"],
-    instructions: "No painel do Mercado Pago → Seu negócio → Configurações → Webhooks → Cole a URL abaixo.",
     dashboardUrl: "https://www.mercadopago.com.br/developers/panel/app",
-    tips: [],
+    stepByStep: [
+      {
+        title: "1. Acesse o painel de desenvolvedor",
+        description: "Entre em mercadopago.com.br/developers/panel com sua conta do Mercado Pago.",
+      },
+      {
+        title: "2. Selecione sua aplicação",
+        description: "Na lista de aplicações, clique na aplicação que você está usando para receber pagamentos.",
+      },
+      {
+        title: "3. Vá até \"Webhooks\"",
+        description: "No menu da aplicação, clique em \"Webhooks\" ou \"Notificações IPN\".",
+      },
+      {
+        title: "4. Configure a URL de notificação",
+        description: "No campo \"URL de produção\", cole EXATAMENTE a URL abaixo.",
+        warning: "Cole apenas a URL técnica (https://...), NÃO coloque e-mail.",
+      },
+      {
+        title: "5. Selecione os eventos",
+        description: "Marque \"Pagamentos\" (payment) e \"Ordens\" (merchant_order).",
+      },
+      {
+        title: "6. Salve as configurações",
+        description: "Clique em \"Salvar\" para ativar as notificações.",
+      },
+    ],
+    importantNotes: [
+      "O Access Token está em Credenciais → Produção → Access Token.",
+      "Use o Access Token de PRODUÇÃO, não o de teste.",
+    ],
+    commonMistakes: [
+      "❌ Usar credenciais de teste em produção",
+      "❌ Colocar e-mail no campo URL",
+    ],
   },
   {
     provider: "stripe",
     label: "Stripe",
     color: "#635BFF",
+    initials: "S",
     url: `${SUPABASE_URL}/functions/v1/stripe-webhook`,
     events: ["checkout.session.completed", "payment_intent.succeeded", "charge.refunded"],
-    instructions: "No Stripe Dashboard → Developers → Webhooks → Add endpoint → Cole a URL abaixo.",
     dashboardUrl: "https://dashboard.stripe.com/webhooks",
-    tips: [
-      "Copie o Signing Secret gerado pelo Stripe e configure como secret na plataforma."
+    stepByStep: [
+      {
+        title: "1. Acesse o Stripe Dashboard",
+        description: "Entre em dashboard.stripe.com com sua conta.",
+      },
+      {
+        title: "2. Vá até Developers → Webhooks",
+        description: "No menu superior, clique em \"Developers\" e depois em \"Webhooks\".",
+      },
+      {
+        title: "3. Clique em \"Add endpoint\"",
+        description: "No canto superior direito, clique em \"Add endpoint\".",
+      },
+      {
+        title: "4. Cole a URL do webhook",
+        description: "No campo \"Endpoint URL\", cole EXATAMENTE a URL abaixo.",
+        warning: "Cole apenas a URL (https://...), NÃO coloque e-mail.",
+      },
+      {
+        title: "5. Selecione os eventos",
+        description: "Clique em \"Select events\" e marque: checkout.session.completed, payment_intent.succeeded e charge.refunded.",
+      },
+      {
+        title: "6. Copie o Signing Secret",
+        description: "Após salvar, o Stripe vai gerar um \"Signing Secret\" (começa com whsec_). Copie este código — você vai precisar configurá-lo como secret na plataforma.",
+      },
+    ],
+    importantNotes: [
+      "O Signing Secret é gerado APÓS criar o webhook. Copie e guarde com segurança.",
+      "Certifique-se de estar no modo \"Live\" (produção) e não no modo \"Test\".",
+    ],
+    commonMistakes: [
+      "❌ Esquecer de copiar o Signing Secret após criar o webhook",
+      "❌ Criar o webhook no modo Test ao invés de Live",
     ],
   },
 ];
@@ -86,7 +250,7 @@ const IntegrationWebhookGuide = ({ installedProviders }: Props) => {
 
   const copyUrl = (url: string) => {
     navigator.clipboard.writeText(url);
-    toast.success("URL copiada!");
+    toast.success("URL copiada para a área de transferência!");
   };
 
   const relevantConfigs = hasAnyGateway
@@ -102,12 +266,12 @@ const IntegrationWebhookGuide = ({ installedProviders }: Props) => {
         <BookOpen className="w-4 h-4 text-primary" />
         <div className="text-left flex-1">
           <h2 className="text-sm font-semibold text-foreground">
-            Guia de Integração de Gateways
+            📋 Guia de Integração — Como configurar seu Gateway
           </h2>
           <p className="text-[10px] text-muted-foreground">
             {hasAnyGateway
-              ? "Configure os webhooks dos seus gateways para receber confirmações de pagamento"
-              : "⚡ Nenhum gateway instalado — siga o guia para começar a vender"}
+              ? "Configure os webhooks para que os pagamentos sejam confirmados automaticamente"
+              : "⚡ Nenhum gateway instalado — siga o passo a passo para começar a vender"}
           </p>
         </div>
         {expanded ? (
@@ -118,45 +282,60 @@ const IntegrationWebhookGuide = ({ installedProviders }: Props) => {
       </button>
 
       {expanded && (
-        <div className="px-4 pb-4 space-y-3">
-          {/* Intro */}
-          <div className="rounded-md bg-amber-500/5 border border-amber-500/20 p-3">
-            <p className="text-[11px] text-amber-300/80 leading-relaxed flex items-start gap-2">
-              <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+        <div className="px-4 pb-4 space-y-4">
+          {/* Critical warning */}
+          <div className="rounded-md bg-destructive/10 border border-destructive/30 p-3">
+            <p className="text-[11px] text-destructive leading-relaxed flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>
-                <strong>Importante:</strong> Sem o webhook configurado, os pagamentos não serão confirmados automaticamente.
-                A URL é a mesma para todos os produtores — basta copiar e colar no painel do gateway.
+                <strong>ATENÇÃO:</strong> Sem o webhook configurado corretamente, seus pagamentos <strong>NÃO serão confirmados automaticamente</strong>. 
+                Isso significa que mesmo que o cliente pague, o pedido vai ficar como "Pendente" para sempre.
               </span>
             </p>
           </div>
 
-          {/* Steps overview */}
-          <div className="grid gap-1.5">
-            <div className="flex items-center gap-2 px-1">
-              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/20 text-primary text-[10px] font-bold">1</span>
-              <span className="text-xs text-muted-foreground">Instale o gateway desejado no catálogo abaixo</span>
-            </div>
-            <div className="flex items-center gap-2 px-1">
-              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/20 text-primary text-[10px] font-bold">2</span>
-              <span className="text-xs text-muted-foreground">Preencha as credenciais (API Key / Secret Key)</span>
-            </div>
-            <div className="flex items-center gap-2 px-1">
-              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/20 text-primary text-[10px] font-bold">3</span>
-              <span className="text-xs text-muted-foreground">Copie a URL do webhook abaixo e cole no painel do gateway</span>
-            </div>
-            <div className="flex items-center gap-2 px-1">
-              <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/20 text-primary text-[10px] font-bold">4</span>
-              <span className="text-xs text-muted-foreground">Ative o gateway e faça uma venda de teste</span>
+          {/* What is a webhook */}
+          <div className="rounded-md bg-primary/5 border border-primary/20 p-3">
+            <div className="flex items-start gap-2">
+              <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-primary" />
+              <div className="text-[11px] text-muted-foreground leading-relaxed space-y-1">
+                <p><strong className="text-foreground">O que é um Webhook?</strong></p>
+                <p>É um "endereço de notificação" — uma URL que o gateway (Pagar.me, Asaas, etc.) usa para avisar nosso sistema quando um pagamento é aprovado, recusado ou reembolsado.</p>
+                <p>Sem ele, nosso sistema nunca fica sabendo que o cliente pagou.</p>
+              </div>
             </div>
           </div>
 
-          {/* Webhook URLs per provider */}
-          <div className="space-y-2 mt-2">
+          {/* Overview steps */}
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold text-foreground">Visão geral — 4 passos para começar a vender:</h3>
+            <div className="grid gap-2">
+              {[
+                { n: "1", text: "Instale o gateway desejado", sub: "Escolha no catálogo abaixo (ex: Pagar.me, Asaas, Mercado Pago ou Stripe)" },
+                { n: "2", text: "Preencha suas credenciais", sub: "Cole a API Key e Secret Key do seu gateway. Essas chaves ficam no painel do gateway." },
+                { n: "3", text: "Configure o Webhook", sub: "Copie a URL abaixo e cole no painel do gateway, na seção de Webhooks. Marque os eventos corretos." },
+                { n: "4", text: "Ative e teste", sub: "Ative o gateway aqui na plataforma e faça uma venda de teste para confirmar que tudo funciona." },
+              ].map((step) => (
+                <div key={step.n} className="flex items-start gap-2.5 px-1">
+                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 text-primary text-[10px] font-bold shrink-0 mt-0.5">
+                    {step.n}
+                  </span>
+                  <div>
+                    <span className="text-xs font-medium text-foreground">{step.text}</span>
+                    <p className="text-[10px] text-muted-foreground">{step.sub}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Per-gateway detailed guides */}
+          <div className="space-y-2">
             <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-              URLs de Webhook por Gateway
+              🔧 Tutorial detalhado por Gateway
             </h3>
             {relevantConfigs.map((wh) => (
-              <WebhookCard
+              <WebhookDetailCard
                 key={wh.provider}
                 config={wh}
                 isOpen={openProvider === wh.provider}
@@ -177,7 +356,7 @@ const IntegrationWebhookGuide = ({ installedProviders }: Props) => {
                 onClick={handleDismiss}
               >
                 <CheckCircle2 className="w-3 h-3 mr-1" />
-                Entendi, minimizar guia
+                Já configurei, minimizar guia
               </Button>
             </div>
           )}
@@ -187,14 +366,14 @@ const IntegrationWebhookGuide = ({ installedProviders }: Props) => {
   );
 };
 
-const WebhookCard = ({
+const WebhookDetailCard = ({
   config,
   isOpen,
   onToggle,
   onCopy,
   isInstalled,
 }: {
-  config: (typeof webhookConfigs)[0];
+  config: WebhookConfig;
   isOpen: boolean;
   onToggle: () => void;
   onCopy: (url: string) => void;
@@ -207,13 +386,13 @@ const WebhookCard = ({
         className="w-full px-3 py-2.5 flex items-center gap-3 hover:bg-muted/30 transition-colors"
       >
         <div
-          className="w-6 h-6 rounded flex items-center justify-center text-white text-[9px] font-bold shrink-0"
+          className="w-7 h-7 rounded-md flex items-center justify-center text-white text-[10px] font-bold shrink-0"
           style={{ backgroundColor: config.color }}
         >
-          {config.label.charAt(0)}
+          {config.initials}
         </div>
         <span className="text-xs font-medium text-foreground text-left flex-1">
-          {config.label}
+          Como configurar o {config.label}
         </span>
         {isInstalled && (
           <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-green-500/50 text-green-400">
@@ -228,44 +407,93 @@ const WebhookCard = ({
       </button>
 
       {isOpen && (
-        <div className="px-3 pb-3 pl-12 space-y-2">
-          <p className="text-[11px] text-muted-foreground leading-relaxed">
-            {config.instructions}
-          </p>
-
-          {/* Webhook URL */}
-          <div className="flex items-center gap-2">
-            <code className="flex-1 text-[10px] bg-background/80 border border-border/50 rounded px-2 py-1.5 text-foreground font-mono break-all select-all">
-              {config.url}
-            </code>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-7 w-7 shrink-0"
-              onClick={() => onCopy(config.url)}
-            >
-              <Copy className="w-3 h-3" />
-            </Button>
+        <div className="px-3 pb-4 space-y-4">
+          {/* Webhook URL - prominent */}
+          <div className="rounded-md bg-primary/5 border border-primary/30 p-3 space-y-2">
+            <p className="text-[11px] font-semibold text-foreground">
+              📋 URL do Webhook do {config.label} — Copie e cole no painel:
+            </p>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 text-[11px] bg-background border border-border rounded px-3 py-2 text-foreground font-mono break-all select-all leading-relaxed">
+                {config.url}
+              </code>
+              <Button
+                variant="default"
+                size="sm"
+                className="h-8 text-[10px] gap-1.5 shrink-0"
+                onClick={() => onCopy(config.url)}
+              >
+                <Copy className="w-3 h-3" />
+                Copiar URL
+              </Button>
+            </div>
+            <p className="text-[10px] text-destructive font-medium">
+              ⚠️ Cole esta URL no campo "URL" do webhook. NÃO coloque seu e-mail neste campo!
+            </p>
           </div>
 
-          {/* Events */}
-          <div className="flex flex-wrap gap-1">
-            <span className="text-[10px] text-muted-foreground mr-1">Eventos:</span>
-            {config.events.map((ev) => (
-              <Badge key={ev} variant="secondary" className="text-[9px] px-1.5 py-0 font-mono">
-                {ev}
-              </Badge>
-            ))}
-          </div>
-
-          {/* Tips */}
-          {config.tips.length > 0 && (
-            <div className="space-y-1">
-              {config.tips.map((tip, i) => (
-                <p key={i} className="text-[10px] text-muted-foreground/80 italic leading-relaxed">
-                  💡 {tip}
-                </p>
+          {/* Step by step */}
+          <div className="space-y-2">
+            <h4 className="text-[11px] font-semibold text-foreground">Passo a passo detalhado:</h4>
+            <div className="space-y-2">
+              {config.stepByStep.map((step, i) => (
+                <div key={i} className="rounded bg-background/50 border border-border/20 p-2.5 space-y-1">
+                  <p className="text-[11px] font-semibold text-foreground">{step.title}</p>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">{step.description}</p>
+                  {step.warning && (
+                    <div className="rounded bg-destructive/10 border border-destructive/20 px-2 py-1.5 mt-1">
+                      <p className="text-[10px] text-destructive font-medium leading-relaxed">
+                        ⚠️ {step.warning}
+                      </p>
+                    </div>
+                  )}
+                </div>
               ))}
+            </div>
+          </div>
+
+          {/* Events to select */}
+          <div className="space-y-1.5">
+            <h4 className="text-[11px] font-semibold text-foreground">
+              ✅ Eventos que você DEVE marcar:
+            </h4>
+            <div className="flex flex-wrap gap-1.5">
+              {config.events.map((ev) => (
+                <Badge key={ev} variant="secondary" className="text-[10px] px-2 py-0.5 font-mono bg-primary/10 text-primary border border-primary/20">
+                  {ev}
+                </Badge>
+              ))}
+            </div>
+            <p className="text-[10px] text-muted-foreground italic">
+              No painel do {config.label}, expanda cada categoria de eventos clicando no "+" e marque os itens acima.
+            </p>
+          </div>
+
+          {/* Important notes */}
+          {config.importantNotes.length > 0 && (
+            <div className="space-y-1.5">
+              <h4 className="text-[11px] font-semibold text-foreground">📌 Informações importantes:</h4>
+              <div className="space-y-1">
+                {config.importantNotes.map((note, i) => (
+                  <p key={i} className="text-[10px] text-muted-foreground leading-relaxed pl-3 border-l-2 border-primary/30">
+                    {note}
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Common mistakes */}
+          {config.commonMistakes.length > 0 && (
+            <div className="space-y-1.5">
+              <h4 className="text-[11px] font-semibold text-foreground">🚫 Erros comuns — NÃO faça isso:</h4>
+              <div className="rounded bg-destructive/5 border border-destructive/15 p-2.5 space-y-1">
+                {config.commonMistakes.map((mistake, i) => (
+                  <p key={i} className="text-[10px] text-muted-foreground leading-relaxed">
+                    {mistake}
+                  </p>
+                ))}
+              </div>
             </div>
           )}
 
@@ -274,10 +502,10 @@ const WebhookCard = ({
             href={config.dashboardUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-[10px] text-primary hover:text-primary/80 transition-colors"
+            className="inline-flex items-center gap-1.5 text-[11px] text-primary hover:text-primary/80 transition-colors font-medium"
           >
-            <ExternalLink className="w-3 h-3" />
-            Abrir painel do {config.label}
+            <ExternalLink className="w-3.5 h-3.5" />
+            Abrir painel do {config.label} em nova aba →
           </a>
         </div>
       )}
