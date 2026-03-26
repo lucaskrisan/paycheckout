@@ -24,6 +24,7 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
+    let authenticatedUserId: string | null = null;
     if (authHeader) {
       const token = authHeader.replace('Bearer ', '');
       const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
@@ -40,19 +41,7 @@ Deno.serve(async (req) => {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         }
-
-        // Only super_admin can access EMQ data (uses global META_ACCESS_TOKEN)
-        const { data: roles } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .eq('role', 'super_admin');
-        if (!roles || roles.length === 0) {
-          return new Response(JSON.stringify({ error: 'Forbidden' }), {
-            status: 403,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
+        authenticatedUserId = user.id;
       }
     }
 
@@ -65,13 +54,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get pixels with CAPI tokens for this product
-    const { data: pixels } = await supabase
+    // Get pixels with CAPI tokens for this product (scoped to user if not service role)
+    let pixelQuery = supabase
       .from('product_pixels')
       .select('pixel_id, capi_token')
       .eq('product_id', product_id)
       .eq('platform', 'facebook')
       .not('capi_token', 'is', null);
+
+    if (authenticatedUserId) {
+      pixelQuery = pixelQuery.eq('user_id', authenticatedUserId);
+    }
+
+    const { data: pixels } = await pixelQuery;
 
     if (!pixels || pixels.length === 0) {
       return new Response(
