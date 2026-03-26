@@ -36,14 +36,15 @@ const UpsellOfferDialog = ({ open, onClose, productId, onSaved }: UpsellOfferDia
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !user?.id) return;
     supabase
       .from("products")
       .select("id, name, price")
       .eq("active", true)
+      .eq("user_id", user.id)
       .neq("id", productId)
       .then(({ data }) => setProducts(data || []));
-  }, [open, productId]);
+  }, [open, productId, user?.id]);
 
   const selectedProduct = products.find((p) => p.id === selectedProductId);
   const discount = Number(discountPercent) || 0;
