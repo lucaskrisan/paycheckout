@@ -91,6 +91,7 @@ const contentTypeIcons: Record<string, typeof FileText> = {
   link: Link2,
   pdf: Download,
   video_embed: Video,
+  html: BookOpen,
 };
 
 const contentTypeLabels: Record<string, string> = {
@@ -98,6 +99,7 @@ const contentTypeLabels: Record<string, string> = {
   link: "Link Externo",
   pdf: "Arquivo PDF",
   video_embed: "Vídeo",
+  html: "Conteúdo Interativo",
 };
 
 const MemberArea = () => {
@@ -921,6 +923,13 @@ const MemberArea = () => {
                             </a>
                           )}
                         </div>
+                      )}
+
+                      {activeLesson.content_type === "html" && activeLesson.content && (
+                        <div
+                          className="prose prose-invert max-w-none [&_iframe]:w-full [&_iframe]:min-h-[500px] [&_iframe]:rounded-xl [&_iframe]:border-0"
+                          dangerouslySetInnerHTML={{ __html: activeLesson.content }}
+                        />
                       )}
                     </div>
                   )}
