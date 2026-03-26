@@ -12,13 +12,20 @@ interface StepDetail {
   warning?: string;
 }
 
+interface EventCategory {
+  category: string;
+  action: "marcar_todos" | "marcar_alguns" | "nao_marcar";
+  events?: string[];
+  note?: string;
+}
+
 interface WebhookConfig {
   provider: string;
   label: string;
   color: string;
   initials: string;
   url: string;
-  events: string[];
+  eventCategories: EventCategory[];
   dashboardUrl: string;
   stepByStep: StepDetail[];
   importantNotes: string[];
