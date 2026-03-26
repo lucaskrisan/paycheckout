@@ -91,6 +91,7 @@ const contentTypeIcons: Record<string, typeof FileText> = {
   link: Link2,
   pdf: Download,
   video_embed: Video,
+  html: BookOpen,
 };
 
 const contentTypeLabels: Record<string, string> = {
@@ -98,6 +99,7 @@ const contentTypeLabels: Record<string, string> = {
   link: "Link Externo",
   pdf: "Arquivo PDF",
   video_embed: "Vídeo",
+  html: "Conteúdo Interativo",
 };
 
 const MemberArea = () => {

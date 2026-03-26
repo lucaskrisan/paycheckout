@@ -491,7 +491,7 @@ const Courses = () => {
                         <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">{lesson.title}</p>
-                          <p className="text-xs text-muted-foreground capitalize">{lesson.content_type === "text" ? "Texto" : lesson.content_type === "video" ? "Vídeo" : lesson.content_type === "video_embed" ? "YouTube" : lesson.content_type === "pdf" ? "PDF" : lesson.content_type}</p>
+                          <p className="text-xs text-muted-foreground capitalize">{lesson.content_type === "text" ? "Texto" : lesson.content_type === "video" ? "Vídeo" : lesson.content_type === "video_embed" ? "YouTube" : lesson.content_type === "pdf" ? "PDF" : lesson.content_type === "html" ? "HTML" : lesson.content_type}</p>
                         </div>
                         <div className="flex gap-1 shrink-0">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditLesson(lesson)}>
@@ -557,6 +557,7 @@ const Courses = () => {
                   <SelectItem value="video">Vídeo (URL)</SelectItem>
                   <SelectItem value="video_embed">Vídeo YouTube</SelectItem>
                   <SelectItem value="pdf">PDF (URL)</SelectItem>
+                  <SelectItem value="html">HTML Personalizado</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -570,6 +571,18 @@ const Courses = () => {
                 <Label>URL do YouTube</Label>
                 <Input value={lessonForm.content} onChange={(e) => setLessonForm({ ...lessonForm, content: e.target.value })} placeholder="https://www.youtube.com/watch?v=..." />
                 <p className="text-xs text-muted-foreground">Cole a URL do vídeo do YouTube. A conversão para embed é automática.</p>
+              </div>
+            ) : lessonForm.content_type === "html" ? (
+              <div className="space-y-1.5">
+                <Label>Código HTML</Label>
+                <Textarea
+                  value={lessonForm.content}
+                  onChange={(e) => setLessonForm({ ...lessonForm, content: e.target.value })}
+                  rows={10}
+                  placeholder={'<iframe src="https://..." width="100%" height="700px" frameborder="0"></iframe>'}
+                  className="font-mono text-xs"
+                />
+                <p className="text-xs text-muted-foreground">Cole HTML, iframes do Google AI Studio, Notion, Canva ou qualquer embed. O código será renderizado diretamente na área de membros.</p>
               </div>
             ) : (
               <div className="space-y-1.5">
