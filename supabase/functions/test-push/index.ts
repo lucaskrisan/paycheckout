@@ -30,12 +30,14 @@ Deno.serve(async (req) => {
     let notifTitle = '🎉 Ka-ching! Mais uma venda!';
     let notifBody = 'João Silva • 💠 PIX R$ 197,00 • Curso Premium';
     let iconUrl = 'https://app.panttera.com.br/pwa-192x192.png';
+    let user: { id: string } | null = null;
 
     // Try to get user's PWA settings for the notification template
     const authHeader = req.headers.get('Authorization');
     if (authHeader) {
       const token = authHeader.replace('Bearer ', '');
-      const { data: { user } } = await supabase.auth.getUser(token);
+      const { data: { user: authUser } } = await supabase.auth.getUser(token);
+      user = authUser;
       
       if (user) {
         const { data: pwaSettings } = await supabase
