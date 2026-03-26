@@ -127,7 +127,7 @@ export default function MetaAds() {
             results={summary.results}
             roas={globalROAS}
           />
-          <MetaAdsFunnel />
+          <MetaAdsFunnel userId={useAuth().user?.id} />
           <MetaBudgetCalculator currentCPA={summary.results > 0 ? summary.spend / summary.results : undefined} />
         </TabsContent>
 
