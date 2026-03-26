@@ -39,7 +39,27 @@ const webhookConfigs: WebhookConfig[] = [
     color: "#55C157",
     initials: "Pg",
     url: `${SUPABASE_URL}/functions/v1/pagarme-webhook`,
-    events: ["order.paid", "order.payment_failed", "order.canceled", "charge.paid", "charge.refunded", "subscription.created", "subscription.canceled"],
+    eventCategories: [
+      { category: "PEDIDO", action: "marcar_alguns", events: ["order.paid", "order.payment_failed", "order.canceled"], note: "Clique no \"+\" ao lado de PEDIDO para expandir. Marque apenas estes 3 eventos." },
+      { category: "COBRANÇA", action: "marcar_alguns", events: ["charge.paid", "charge.refunded"], note: "Clique no \"+\" ao lado de COBRANÇA para expandir. Marque apenas estes 2 eventos." },
+      { category: "ASSINATURA", action: "marcar_alguns", events: ["subscription.created", "subscription.canceled"], note: "Clique no \"+\" ao lado de ASSINATURA. Marque apenas estes 2 eventos." },
+      { category: "ANTECIPAÇÃO", action: "nao_marcar" },
+      { category: "CARTÃO", action: "nao_marcar" },
+      { category: "CHECKOUT", action: "nao_marcar" },
+      { category: "CLIENTE", action: "nao_marcar" },
+      { category: "CONTA BANCÁRIA", action: "nao_marcar" },
+      { category: "DESCONTO", action: "nao_marcar" },
+      { category: "ENDEREÇO", action: "nao_marcar" },
+      { category: "FATURA", action: "nao_marcar" },
+      { category: "ITEM DA ASSINATURA", action: "nao_marcar" },
+      { category: "ITEM DO PEDIDO", action: "nao_marcar" },
+      { category: "ITEM DO PLANO", action: "nao_marcar" },
+      { category: "LINK DE PAGAMENTO", action: "nao_marcar" },
+      { category: "PLANO", action: "nao_marcar" },
+      { category: "RECEBEDOR", action: "nao_marcar" },
+      { category: "TRANSFERÊNCIA", action: "nao_marcar" },
+      { category: "USO", action: "nao_marcar" },
+    ],
     dashboardUrl: "https://dash.pagar.me",
     stepByStep: [
       {
@@ -96,7 +116,9 @@ const webhookConfigs: WebhookConfig[] = [
     color: "#0066FF",
     initials: "As",
     url: `${SUPABASE_URL}/functions/v1/asaas-webhook`,
-    events: ["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED", "PAYMENT_OVERDUE", "PAYMENT_REFUNDED"],
+    eventCategories: [
+      { category: "PAGAMENTO", action: "marcar_alguns", events: ["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED", "PAYMENT_OVERDUE", "PAYMENT_REFUNDED"], note: "Marque apenas estes 4 eventos de pagamento." },
+    ],
     dashboardUrl: "https://www.asaas.com",
     stepByStep: [
       {
@@ -144,7 +166,10 @@ const webhookConfigs: WebhookConfig[] = [
     color: "#009EE3",
     initials: "MP",
     url: `${SUPABASE_URL}/functions/v1/mercadopago-webhook`,
-    events: ["payment", "merchant_order"],
+    eventCategories: [
+      { category: "Pagamentos", action: "marcar_todos", note: "Marque \"Pagamentos\" (payment)." },
+      { category: "Ordens", action: "marcar_todos", note: "Marque \"Ordens\" (merchant_order)." },
+    ],
     dashboardUrl: "https://www.mercadopago.com.br/developers/panel/app",
     stepByStep: [
       {
@@ -188,7 +213,11 @@ const webhookConfigs: WebhookConfig[] = [
     color: "#635BFF",
     initials: "S",
     url: `${SUPABASE_URL}/functions/v1/stripe-webhook`,
-    events: ["checkout.session.completed", "payment_intent.succeeded", "charge.refunded"],
+    eventCategories: [
+      { category: "Checkout", action: "marcar_alguns", events: ["checkout.session.completed"], note: "Marque este evento." },
+      { category: "Payment Intent", action: "marcar_alguns", events: ["payment_intent.succeeded"], note: "Marque este evento." },
+      { category: "Charge", action: "marcar_alguns", events: ["charge.refunded"], note: "Marque este evento." },
+    ],
     dashboardUrl: "https://dashboard.stripe.com/webhooks",
     stepByStep: [
       {
