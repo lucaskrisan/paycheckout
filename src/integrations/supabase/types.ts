@@ -1308,6 +1308,7 @@ export type Database = {
           moderation_status: string
           name: string
           original_price: number | null
+          payment_settings: Json
           price: number
           rejection_reason: string | null
           show_coupon: boolean
@@ -1325,6 +1326,7 @@ export type Database = {
           moderation_status?: string
           name: string
           original_price?: number | null
+          payment_settings?: Json
           price?: number
           rejection_reason?: string | null
           show_coupon?: boolean
@@ -1342,6 +1344,7 @@ export type Database = {
           moderation_status?: string
           name?: string
           original_price?: number | null
+          payment_settings?: Json
           price?: number
           rejection_reason?: string | null
           show_coupon?: boolean
