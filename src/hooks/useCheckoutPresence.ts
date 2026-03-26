@@ -57,10 +57,12 @@ export function useCheckoutPresence(mode: "track" | "watch", productId?: string)
   const connect = useCallback(() => {
     cleanupChannel();
 
-    const channelName = `checkout-presence-${visitorIdRef.current}-${Date.now()}`;
+    // All trackers AND watchers MUST join the SAME channel to see each other.
+    // Use a fixed name so presence state is shared across all connections.
+    const channelName = "checkout-presence-global";
     const channel = supabase.channel(channelName, {
       config: {
-        presence: { key: mode === "track" ? visitorIdRef.current : "_watcher" },
+        presence: { key: mode === "track" ? visitorIdRef.current : `_watcher_${visitorIdRef.current}` },
         broadcast: { self: false, ack: false },
       },
     });
