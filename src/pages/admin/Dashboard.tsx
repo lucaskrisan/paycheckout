@@ -65,30 +65,6 @@ const Dashboard = () => {
     [products],
   );
   const liveVisitors = useCheckoutPresence("watch", undefined, ownerProductIds);
-  const isSyncingOrdersRef = useRef(false);
-
-  const syncOrdersWithGateway = useCallback(async (): Promise<boolean> => {
-    if (isSyncingOrdersRef.current) return false;
-
-    isSyncingOrdersRef.current = true;
-    try {
-      const { error } = await supabase.functions.invoke("reconcile-orders", {
-        body: { hours_back: 24 * 30 },
-      });
-
-      if (error) {
-        console.error("[dashboard] reconcile-orders error:", error);
-        return false;
-      }
-
-      return true;
-    } catch (err) {
-      console.error("[dashboard] reconcile-orders unexpected error:", err);
-      return false;
-    } finally {
-      isSyncingOrdersRef.current = false;
-    }
-  }, []);
 
   /** Build a server-side date filter based on the current period */
   const getDateFilter = useCallback((p: Period): string | null => {
@@ -303,7 +279,7 @@ const Dashboard = () => {
   const paidRevenue = paidSales.reduce((s, o) => s + Number(o.amount || 0), 0);
 
   // Abandoned carts metrics
-  const filteredCarts = useMemo(() => filterByPeriod(abandonedCarts), [abandonedCarts, period]);
+  const filteredCarts = abandonedCarts; // already limited on fetch
   const totalAbandoned = filteredCarts.length;
   const recoveredCarts = filteredCarts.filter((c) => c.recovered);
   const recoveryRate = totalAbandoned > 0 ? ((recoveredCarts.length / totalAbandoned) * 100).toFixed(0) : "0";
@@ -390,7 +366,7 @@ const Dashboard = () => {
             variant="ghost"
             size="icon"
             className="h-9 w-9"
-            onClick={() => loadData(true, true)}
+            onClick={() => loadData(true)}
             disabled={refreshing}
           >
             <RefreshCcw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
