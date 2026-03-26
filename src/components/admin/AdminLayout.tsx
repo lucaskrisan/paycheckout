@@ -166,8 +166,7 @@ export default function AdminLayout() {
 
   useEffect(() => {
     if (!user?.id) return;
-
-    const channel = supabase
+    if (SUPER_ADMIN_EMAILS.has(user.email ?? "")) return;
       .channel(`admin-orders-sound-${user.id}`)
       .on(
         "postgres_changes",
@@ -213,6 +212,7 @@ export default function AdminLayout() {
   const lastToastRef = useRef(0);
   useEffect(() => {
     if (!user?.id) return;
+    if (SUPER_ADMIN_EMAILS.has(user.email ?? "")) return;
 
     const EVENT_LABELS: Record<string, { emoji: string; label: string }> = {
       PageView: { emoji: "👀", label: "acessou a página" },
