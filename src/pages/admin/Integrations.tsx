@@ -170,6 +170,8 @@ const Integrations = () => {
         <p className="text-sm text-muted-foreground mt-1">Configure seus gateways de pagamento e integrações</p>
       </div>
 
+      <IntegrationWebhookGuide installedProviders={installedProviders} />
+
       {/* Active gateways */}
       {!loading && activeGateways.length > 0 && (
         <div className="space-y-3">
