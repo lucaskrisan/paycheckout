@@ -278,6 +278,44 @@ const Tracking = () => {
         ))}
       </div>
 
+      {/* ── Diagnostic Alert Banner ── */}
+      {alertIssues.length > 0 && (
+        <div className="rounded-lg border overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300"
+          style={{
+            borderColor: alertIssues.some(i => i.status === "error") ? "rgba(248,113,113,0.3)" : "rgba(251,191,36,0.3)",
+            backgroundColor: alertIssues.some(i => i.status === "error") ? "rgba(248,113,113,0.06)" : "rgba(251,191,36,0.06)",
+          }}
+        >
+          <div className="px-4 py-3 flex items-center gap-2.5">
+            <AlertCircle className="w-4 h-4 shrink-0" style={{
+              color: alertIssues.some(i => i.status === "error") ? "#f87171" : "#fbbf24"
+            }} />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-slate-200">
+                {alertIssues.filter(i => i.status === "error").length > 0
+                  ? `${alertIssues.filter(i => i.status === "error").length} problema(s) encontrado(s) no rastreamento`
+                  : `${alertIssues.length} aviso(s) no rastreamento`}
+              </p>
+              <div className="mt-1.5 space-y-1">
+                {alertIssues.map((issue, i) => (
+                  <div key={i} className="flex items-start gap-1.5">
+                    {issue.status === "error"
+                      ? <XCircle className="w-3 h-3 text-red-400 shrink-0 mt-0.5" />
+                      : <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0 mt-0.5" />}
+                    <p className="text-[10px] text-slate-400">
+                      <span className="font-medium text-slate-300">{issue.name}:</span> {issue.detail}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[9px] text-slate-600 mt-2 italic">
+                Corrija os itens acima e rode o diagnóstico novamente — este alerta desaparece quando tudo estiver OK ✅
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Onboarding Guide ── */}
       <TrackingOnboardingGuide hasPixels={totalPixels > 0} />
 
