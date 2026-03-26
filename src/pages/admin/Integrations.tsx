@@ -7,6 +7,7 @@ import { Settings2, Trash2, CreditCard, Wallet, ArrowRightLeft } from "lucide-re
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GatewayFormDialog from "@/components/admin/GatewayFormDialog";
+import IntegrationWebhookGuide from "@/components/admin/IntegrationWebhookGuide";
 import type { GatewayConfig } from "@/pages/admin/Gateways";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -168,6 +169,8 @@ const Integrations = () => {
         <h1 className="font-display text-2xl font-bold text-foreground">Integrações</h1>
         <p className="text-sm text-muted-foreground mt-1">Configure seus gateways de pagamento e integrações</p>
       </div>
+
+      <IntegrationWebhookGuide installedProviders={installedProviders} />
 
       {/* Active gateways */}
       {!loading && activeGateways.length > 0 && (
