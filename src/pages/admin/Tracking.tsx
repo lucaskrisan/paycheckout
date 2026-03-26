@@ -66,6 +66,8 @@ const Tracking = () => {
   const [diagLoading, setDiagLoading] = useState(false);
   const [diagResults, setDiagResults] = useState<DiagResult[] | null>(null);
   const [diagSummary, setDiagSummary] = useState<DiagSummary | null>(null);
+  const [alertIssues, setAlertIssues] = useState<DiagCheck[]>([]);
+  const autoRanRef = useRef(false);
 
   const [pageUrl, setPageUrl] = useState("");
   const [pageChecking, setPageChecking] = useState(false);
