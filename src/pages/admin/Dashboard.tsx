@@ -155,8 +155,8 @@ const Dashboard = () => {
   const fetchAndSetData = useCallback(async () => {
     if (!user) return;
 
-    const [allOrders, cartsRes, productsRes] = await Promise.all([
-      fetchAllOrders(),
+    const [periodOrders, cartsRes, productsRes] = await Promise.all([
+      fetchOrders(period),
       supabase
         .from("abandoned_carts")
         .select("id, created_at, recovered")
@@ -165,10 +165,10 @@ const Dashboard = () => {
       supabase.from("products").select("id, name").eq("user_id", user.id),
     ]);
 
-    setOrders(allOrders);
+    setOrders(periodOrders);
     setAbandonedCarts(cartsRes.data || []);
     setProducts(productsRes.data || []);
-  }, [fetchAllOrders, user]);
+  }, [fetchOrders, user, period]);
 
   const loadData = useCallback(async (isRefresh = false, shouldSync = false) => {
     if (!user) return;
