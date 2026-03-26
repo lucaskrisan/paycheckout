@@ -853,7 +853,7 @@ const ProductEdit = () => {
                   <div className="border border-border rounded-lg p-6 bg-card space-y-5">
                     <div className="space-y-1.5">
                       <Label>Método de pagamento</Label>
-                      <Select defaultValue="all">
+                      <Select value={form.payment_settings.payment_method} onValueChange={(v) => setForm((f) => ({ ...f, payment_settings: { ...f.payment_settings, payment_method: v } }))}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">Cartão de crédito, boleto e Pix</SelectItem>
@@ -868,13 +868,13 @@ const ProductEdit = () => {
                       <Label>Descrição na fatura do cartão</Label>
                       <div className="flex items-center">
                         <span className="inline-flex items-center px-3 text-xs text-muted-foreground bg-muted border border-r-0 border-input rounded-l-md h-10 font-semibold">KIWIFY*</span>
-                        <Input defaultValue="" placeholder="MEUPRODUTO" className="rounded-l-none uppercase" />
+                        <Input value={form.payment_settings.statement_descriptor} onChange={(e) => setForm((f) => ({ ...f, payment_settings: { ...f.payment_settings, statement_descriptor: e.target.value } }))} placeholder="MEUPRODUTO" className="rounded-l-none uppercase" />
                       </div>
                     </div>
 
                     <div className="space-y-1.5">
                       <Label>Parcelamento</Label>
-                      <Select defaultValue="12">
+                      <Select value={String(form.payment_settings.max_installments)} onValueChange={(v) => setForm((f) => ({ ...f, payment_settings: { ...f.payment_settings, max_installments: Number(v) } }))}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
                           {[1,2,3,4,5,6,7,8,9,10,11,12,15,18,21].map((n) => (
@@ -887,38 +887,38 @@ const ProductEdit = () => {
                     <div className="space-y-1.5">
                       <Label>Validade do boleto</Label>
                       <div className="flex items-center gap-2">
-                        <Input type="number" defaultValue="2" className="w-20" />
+                        <Input type="number" value={form.payment_settings.boleto_days} onChange={(e) => setForm((f) => ({ ...f, payment_settings: { ...f.payment_settings, boleto_days: Number(e.target.value) } }))} className="w-20" />
                         <span className="text-sm text-muted-foreground">dias corridos</span>
                       </div>
                     </div>
 
                     <div className="space-y-3 pt-2">
                       <div className="flex items-center gap-3">
-                        <Switch />
+                        <Switch checked={form.payment_settings.two_cards} onCheckedChange={(v) => setForm((f) => ({ ...f, payment_settings: { ...f.payment_settings, two_cards: v } }))} />
                         <Label className="text-sm">Habilitar pagamento com 2 cartões</Label>
                       </div>
                       <div className="flex items-center gap-3">
-                        <Switch />
+                        <Switch checked={form.payment_settings.card_pix} onCheckedChange={(v) => setForm((f) => ({ ...f, payment_settings: { ...f.payment_settings, card_pix: v } }))} />
                         <Label className="text-sm">Habilitar pagamento com Cartão + Pix</Label>
                       </div>
                       <div className="flex items-center gap-3">
-                        <Switch />
+                        <Switch checked={form.payment_settings.smart_installments} onCheckedChange={(v) => setForm((f) => ({ ...f, payment_settings: { ...f.payment_settings, smart_installments: v } }))} />
                         <Label className="text-sm">Habilitar parcelamento inteligente</Label>
                       </div>
                       <div className="flex items-center gap-3">
-                        <Switch defaultChecked />
+                        <Switch checked={form.payment_settings.repeat_email} onCheckedChange={(v) => setForm((f) => ({ ...f, payment_settings: { ...f.payment_settings, repeat_email: v } }))} />
                         <Label className="text-sm">Pedir para o comprador repetir o e-mail</Label>
                       </div>
                       <div className="flex items-center gap-3">
-                        <Switch />
+                        <Switch checked={form.payment_settings.collect_address} onCheckedChange={(v) => setForm((f) => ({ ...f, payment_settings: { ...f.payment_settings, collect_address: v } }))} />
                         <Label className="text-sm">Coletar o endereço do comprador</Label>
                       </div>
                       <div className="flex items-center gap-3">
-                        <Switch />
+                        <Switch checked={form.payment_settings.collect_instagram} onCheckedChange={(v) => setForm((f) => ({ ...f, payment_settings: { ...f.payment_settings, collect_instagram: v } }))} />
                         <Label className="text-sm">Coletar o Instagram do comprador</Label>
                       </div>
                       <div className="flex items-center gap-3">
-                        <Switch />
+                        <Switch checked={form.payment_settings.currency_conversion} onCheckedChange={(v) => setForm((f) => ({ ...f, payment_settings: { ...f.payment_settings, currency_conversion: v } }))} />
                         <Label className="text-sm">Conversão automática de moedas (recomendado)</Label>
                       </div>
                       <div className="flex items-center gap-3">
