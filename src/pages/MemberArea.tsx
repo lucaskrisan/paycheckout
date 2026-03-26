@@ -216,7 +216,8 @@ const MemberArea = () => {
 
       const { data: allCourses } = await tokenClient
         .from("courses")
-        .select("id, title, description, cover_image_url, product_id");
+        .select("id, title, description, cover_image_url, product_id, user_id")
+        .eq("user_id", courseData?.user_id || "");
 
       const { data: allAccesses } = await tokenClient
         .from("member_access")
@@ -236,6 +237,7 @@ const MemberArea = () => {
               .select("*")
               .eq("id", c.product_id)
               .eq("active", true)
+              .eq("user_id", courseData?.user_id || "")
               .single();
             product = prodData;
           }
@@ -245,7 +247,7 @@ const MemberArea = () => {
             hasAccess: accessedCourseIds.has(c.id),
           });
         }
-        setOtherCourses(coursesWithProducts);
+        setOtherCourses(coursesWithProducts.filter((c) => c.product || c.hasAccess));
       }
     } catch (err) {
       console.error("Error loading member data:", err);
