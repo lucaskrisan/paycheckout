@@ -924,6 +924,13 @@ const MemberArea = () => {
                           )}
                         </div>
                       )}
+
+                      {activeLesson.content_type === "html" && activeLesson.content && (
+                        <div
+                          className="prose prose-invert max-w-none [&_iframe]:w-full [&_iframe]:min-h-[500px] [&_iframe]:rounded-xl [&_iframe]:border-0"
+                          dangerouslySetInnerHTML={{ __html: activeLesson.content }}
+                        />
+                      )}
                     </div>
                   )}
                 </div>
