@@ -300,6 +300,20 @@ const ProductEdit = () => {
             is_subscription: (data as any).is_subscription || false,
             billing_cycle: (data as any).billing_cycle || "monthly",
             show_coupon: (data as any).show_coupon !== false,
+            payment_settings: {
+              payment_method: "all",
+              max_installments: 12,
+              boleto_days: 2,
+              two_cards: false,
+              card_pix: false,
+              smart_installments: false,
+              repeat_email: true,
+              collect_address: false,
+              collect_instagram: false,
+              currency_conversion: false,
+              statement_descriptor: "",
+              ...((data as any).payment_settings || {}),
+            },
           });
           setModerationStatus((data as any).moderation_status || "approved");
           setRejectionReason((data as any).rejection_reason || "");
