@@ -90,34 +90,67 @@ const Dashboard = () => {
     }
   }, []);
 
-  const fetchAllOrders = useCallback(async () => {
-    const pageSize = 1000;
-    let from = 0;
-    const allOrders: any[] = [];
-
-    while (true) {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("id, created_at, status, amount, platform_fee_amount, payment_method, product_id, metadata")
-        .order("created_at", { ascending: false })
-        .range(from, from + pageSize - 1);
-
-      if (error) {
-        throw error;
+  /** Build a server-side date filter based on the current period */
+  const getDateFilter = useCallback((p: Period): string | null => {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    switch (p) {
+      case "today":
+        return startOfDay.toISOString();
+      case "yesterday": {
+        const y = new Date(startOfDay);
+        y.setDate(y.getDate() - 1);
+        return y.toISOString();
       }
-
-      const chunk = data || [];
-      allOrders.push(...chunk);
-
-      if (chunk.length < pageSize) {
-        break;
+      case "7days": {
+        const w = new Date(startOfDay);
+        w.setDate(w.getDate() - 7);
+        return w.toISOString();
       }
+      case "month": {
+        const m = new Date(now.getFullYear(), now.getMonth(), 1);
+        return m.toISOString();
+      }
+      case "lastMonth": {
+        const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        return lm.toISOString();
+      }
+      case "total":
+        return null;
+      default:
+        return null;
+    }
+  }, []);
 
-      from += pageSize;
+  const fetchOrders = useCallback(async (p: Period) => {
+    let query = supabase
+      .from("orders")
+      .select("id, created_at, status, amount, platform_fee_amount, payment_method, product_id, metadata")
+      .order("created_at", { ascending: false });
+
+    const dateFrom = getDateFilter(p);
+    if (dateFrom) {
+      query = query.gte("created_at", dateFrom);
+      // For "yesterday" we also need an upper bound
+      if (p === "yesterday") {
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        query = query.lt("created_at", startOfToday.toISOString());
+      }
+      if (p === "lastMonth") {
+        const now = new Date();
+        const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+        query = query.lte("created_at", endOfLastMonth.toISOString());
+      }
     }
 
-    return allOrders;
-  }, []);
+    // Limit to 1000 rows max — should be enough for a single period
+    query = query.limit(1000);
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
+  }, [getDateFilter]);
 
   const fetchAndSetData = useCallback(async () => {
     if (!user) return;
