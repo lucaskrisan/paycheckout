@@ -77,25 +77,28 @@ const GatewayAlerts = () => {
         }
       }
 
-      // 3. Check for recent gateway failure alerts in internal_tasks (only for the producer's own tasks)
-      const { data: recentAlerts } = await supabase
-        .from("internal_tasks")
-        .select("id, title, description")
-        .eq("category", "gateway_error")
-        .eq("status", "todo")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(3);
+      // 3. Only show gateway failure alerts if the producer has NO active gateway at all
+      //    (if they have at least one working active gateway, these old tasks are noise)
+      if (!hasActive) {
+        const { data: recentAlerts } = await supabase
+          .from("internal_tasks")
+          .select("id, title, description")
+          .eq("category", "gateway_error")
+          .eq("status", "todo")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(3);
 
-      if (recentAlerts && recentAlerts.length > 0) {
-        result.push({
-          id: "gateway-failure",
-          icon: Wrench,
-          message: `${recentAlerts.length} falha(s) de gateway detectada(s). Verifique sua configuração.`,
-          action: "Corrigir configuração →",
-          path: "/admin/integrations",
-          variant: "error",
-        });
+        if (recentAlerts && recentAlerts.length > 0) {
+          result.push({
+            id: "gateway-failure",
+            icon: Wrench,
+            message: `${recentAlerts.length} falha(s) de gateway detectada(s). Verifique sua configuração.`,
+            action: "Corrigir configuração →",
+            path: "/admin/integrations",
+            variant: "error",
+          });
+        }
       }
 
       setAlerts(result);
