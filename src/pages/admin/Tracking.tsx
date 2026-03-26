@@ -424,7 +424,7 @@ const Tracking = () => {
 
         {/* ═══ TAB: Eventos ═══ */}
         <TabsContent value="events" className="space-y-5 mt-0">
-          <PixelEventsDashboard products={products} />
+          <PixelEventsDashboard products={products} userId={user?.id} />
           <UtmAttributionTable />
         </TabsContent>
 

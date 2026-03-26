@@ -84,6 +84,7 @@ export default function TrackingFullAudit({ userId }: Props) {
       const { data: recentEvents, count: totalCount } = await supabase
         .from("pixel_events" as any)
         .select("event_name, source, event_id, visitor_id", { count: "exact" })
+        .eq("user_id", userId)
         .gte("created_at", since24h)
         .limit(1000);
 

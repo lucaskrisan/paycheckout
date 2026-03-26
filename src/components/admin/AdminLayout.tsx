@@ -227,6 +227,8 @@ export default function AdminLayout() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "pixel_events" }, (payload: any) => {
         const evt = payload.new;
         if (!evt || evt.visitor_id?.startsWith("sim_")) return;
+        // Only show toasts for the current producer's own events
+        if (user?.id && evt.user_id !== user.id) return;
         
         const now = Date.now();
         if (now - lastToastRef.current < 3000) return;
