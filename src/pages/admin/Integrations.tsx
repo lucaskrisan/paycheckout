@@ -7,6 +7,7 @@ import { Settings2, Trash2, CreditCard, Wallet, ArrowRightLeft } from "lucide-re
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GatewayFormDialog from "@/components/admin/GatewayFormDialog";
+import IntegrationWebhookGuide from "@/components/admin/IntegrationWebhookGuide";
 import type { GatewayConfig } from "@/pages/admin/Gateways";
 import { useAuth } from "@/hooks/useAuth";
 
