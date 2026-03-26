@@ -170,7 +170,7 @@ const Dashboard = () => {
     setProducts(productsRes.data || []);
   }, [fetchOrders, user, period]);
 
-  const loadData = useCallback(async (isRefresh = false, shouldSync = false) => {
+  const loadData = useCallback(async (isRefresh = false) => {
     if (!user) return;
     if (isRefresh) setRefreshing(true);
 
@@ -181,34 +181,33 @@ const Dashboard = () => {
     } finally {
       if (isRefresh) setRefreshing(false);
     }
+  }, [fetchAndSetData, user]);
 
-    if (shouldSync) {
-      void (async () => {
-        const synced = await syncOrdersWithGateway();
-        if (!synced) return;
-
-        try {
-          await fetchAndSetData();
-        } catch (error) {
-          console.error("[dashboard] post-sync loadData error:", error);
-        }
-      })();
-    }
-  }, [fetchAndSetData, syncOrdersWithGateway, user]);
-
-  useEffect(() => {
-    loadData(false, true);
-  }, [loadData, user]);
-
+  // Background sync — runs once on mount, then every 5 min
   useEffect(() => {
     if (!user) return;
+    // Fire and forget — don't block UI
+    const doSync = async () => {
+      try {
+        const { error } = await supabase.functions.invoke("reconcile-orders", {
+          body: { hours_back: 24 * 30 },
+        });
+        if (!error) {
+          // Silently refresh data after sync
+          await fetchAndSetData();
+        }
+      } catch {}
+    };
 
-    const interval = window.setInterval(() => {
-      loadData(false, true);
-    }, 5 * 60 * 1000);
+    // Delay the first sync by 3 seconds so the UI loads first
+    const timeout = setTimeout(doSync, 3000);
+    const interval = setInterval(doSync, 5 * 60 * 1000);
 
-    return () => window.clearInterval(interval);
-  }, [loadData, user]);
+    return () => {
+      clearTimeout(timeout);
+      clearInterval(interval);
+    };
+  }, [user, fetchAndSetData]);
 
   // Realtime: listen for new approved sales and play Ka-CHING
   useEffect(() => {
