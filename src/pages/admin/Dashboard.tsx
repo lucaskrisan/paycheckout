@@ -51,13 +51,20 @@ const periodLabels: Record<Period, string> = {
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const liveVisitors = useCheckoutPresence("watch");
   const [orders, setOrders] = useState<any[]>([]);
   const [abandonedCarts, setAbandonedCarts] = useState<any[]>([]);
   const [period, setPeriod] = useState<Period>("today");
   const [refreshing, setRefreshing] = useState(false);
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("all");
+
+  // Pass producer's product IDs so presence is filtered to their checkouts only.
+  // undefined = super admin → sees all visitors.
+  const ownerProductIds = useMemo(
+    () => (products.length > 0 ? products.map((p) => p.id) : undefined),
+    [products],
+  );
+  const liveVisitors = useCheckoutPresence("watch", undefined, ownerProductIds);
   const isSyncingOrdersRef = useRef(false);
 
   const syncOrdersWithGateway = useCallback(async (): Promise<boolean> => {

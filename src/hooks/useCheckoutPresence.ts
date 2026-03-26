@@ -12,10 +12,19 @@ function safeId() {
 }
 
 /**
- * Robust real-time checkout visitor tracking.
- * Uses both Presence + Broadcast heartbeat fallback.
+ * Robust real-time checkout visitor tracking with multi-tenant isolation.
+ *
+ * "track" mode  → checkout page sends presence + heartbeat with product_id
+ * "watch" mode  → dashboard counts only visitors on the current user's products
+ *
+ * ownerProductIds: When in "watch" mode, pass the list of product IDs owned
+ * by the logged-in producer. If empty/undefined (super admin), counts ALL.
  */
-export function useCheckoutPresence(mode: "track" | "watch", productId?: string) {
+export function useCheckoutPresence(
+  mode: "track" | "watch",
+  productId?: string,
+  ownerProductIds?: string[],
+) {
   const [onlineCount, setOnlineCount] = useState(0);
 
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -25,17 +34,46 @@ export function useCheckoutPresence(mode: "track" | "watch", productId?: string)
 
   const visitorIdRef = useRef(safeId());
   const presenceCountRef = useRef(0);
-  const heartbeatMapRef = useRef<Map<string, number>>(new Map());
+  const heartbeatMapRef = useRef<Map<string, { ts: number; product_id: string }>>(new Map());
+  const ownerIdsRef = useRef<Set<string> | null>(null);
 
-  const updateCount = useCallback(() => {
+  // Keep ownerIdsRef in sync
+  useEffect(() => {
+    ownerIdsRef.current = ownerProductIds && ownerProductIds.length > 0
+      ? new Set(ownerProductIds)
+      : null; // null = super admin → show all
+  }, [ownerProductIds]);
+
+  /** Filter presence state to only count visitors on the producer's products */
+  const countPresenceForOwner = useCallback((state: Record<string, any[]>) => {
+    const allowed = ownerIdsRef.current;
+    let count = 0;
+    for (const [key, presences] of Object.entries(state)) {
+      if (key.startsWith("_watcher")) continue;
+      if (!allowed) { count++; continue; } // super admin sees all
+      const pid = presences?.[0]?.product_id;
+      if (pid && allowed.has(pid)) count++;
+    }
+    return count;
+  }, []);
+
+  const updateCount = useCallback((channel?: RealtimeChannel) => {
     const now = Date.now();
     const ttlMs = 25000;
+    const allowed = ownerIdsRef.current;
 
-    for (const [id, ts] of heartbeatMapRef.current.entries()) {
-      if (now - ts > ttlMs) heartbeatMapRef.current.delete(id);
+    // Clean stale heartbeats
+    for (const [id, entry] of heartbeatMapRef.current.entries()) {
+      if (now - entry.ts > ttlMs) heartbeatMapRef.current.delete(id);
     }
 
-    const heartbeatCount = heartbeatMapRef.current.size;
+    // Count heartbeats filtered by owner
+    let heartbeatCount = 0;
+    for (const entry of heartbeatMapRef.current.values()) {
+      if (!allowed || allowed.has(entry.product_id)) heartbeatCount++;
+    }
+
+    // Presence count (already filtered in syncPresence)
     setOnlineCount(Math.max(presenceCountRef.current, heartbeatCount));
   }, []);
 
@@ -58,7 +96,6 @@ export function useCheckoutPresence(mode: "track" | "watch", productId?: string)
     cleanupChannel();
 
     // All trackers AND watchers MUST join the SAME channel to see each other.
-    // Use a fixed name so presence state is shared across all connections.
     const channelName = "checkout-presence-global";
     const channel = supabase.channel(channelName, {
       config: {
@@ -72,9 +109,8 @@ export function useCheckoutPresence(mode: "track" | "watch", productId?: string)
     const syncPresence = () => {
       try {
         const state = channel.presenceState();
-        const visitors = Object.keys(state).filter((k) => k !== "_watcher");
-        presenceCountRef.current = visitors.length;
-        updateCount();
+        presenceCountRef.current = countPresenceForOwner(state);
+        updateCount(channel);
       } catch {
         // ignore sync errors
       }
@@ -85,10 +121,13 @@ export function useCheckoutPresence(mode: "track" | "watch", productId?: string)
       .on("presence", { event: "join" }, syncPresence)
       .on("presence", { event: "leave" }, syncPresence)
       .on("broadcast", { event: "checkout_ping" }, ({ payload }) => {
-        const id = (payload as { id?: string })?.id;
-        if (!id || id === "_watcher") return;
-        heartbeatMapRef.current.set(id, Date.now());
-        updateCount();
+        const p = payload as { id?: string; product_id?: string };
+        if (!p?.id || p.id.startsWith("_watcher")) return;
+        heartbeatMapRef.current.set(p.id, {
+          ts: Date.now(),
+          product_id: p.product_id || "unknown",
+        });
+        updateCount(channel);
       })
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
@@ -104,7 +143,7 @@ export function useCheckoutPresence(mode: "track" | "watch", productId?: string)
                 joined_at: new Date().toISOString(),
               });
             } catch {
-              // presence can fail silently on unstable connections; heartbeat fallback will still work
+              // presence can fail silently; heartbeat fallback will still work
             }
 
             const sendPing = async () => {
@@ -126,13 +165,13 @@ export function useCheckoutPresence(mode: "track" | "watch", productId?: string)
             await sendPing();
             heartbeatIntervalRef.current = setInterval(sendPing, 10000);
           } else {
-            cleanupIntervalRef.current = setInterval(updateCount, 5000);
+            cleanupIntervalRef.current = setInterval(() => updateCount(channel), 5000);
           }
         } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
           scheduleRetry();
         }
       });
-  }, [cleanupChannel, mode, productId, updateCount]);
+  }, [cleanupChannel, mode, productId, updateCount, countPresenceForOwner]);
 
   const scheduleRetry = useCallback(() => {
     if (retryRef.current) return;
