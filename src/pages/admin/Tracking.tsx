@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
@@ -66,6 +66,8 @@ const Tracking = () => {
   const [diagLoading, setDiagLoading] = useState(false);
   const [diagResults, setDiagResults] = useState<DiagResult[] | null>(null);
   const [diagSummary, setDiagSummary] = useState<DiagSummary | null>(null);
+  const [alertIssues, setAlertIssues] = useState<DiagCheck[]>([]);
+  const autoRanRef = useRef(false);
 
   const [pageUrl, setPageUrl] = useState("");
   const [pageChecking, setPageChecking] = useState(false);
@@ -108,19 +110,26 @@ const Tracking = () => {
     load();
   }, [user]);
 
-  const runDiagnostics = async () => {
-    if (!selectedProduct) { toast.error("Selecione um produto"); return; }
+  const runDiagnostics = async (productIdOverride?: string) => {
+    const prodId = productIdOverride || selectedProduct;
+    if (!prodId) { toast.error("Selecione um produto"); return; }
     setDiagLoading(true);
     setDiagResults(null);
     setDiagSummary(null);
     try {
       const { data, error } = await supabase.functions.invoke("meta-diagnostics", {
-        body: { product_id: selectedProduct },
+        body: { product_id: prodId },
       });
       if (error) throw new Error(typeof error === 'object' && error.message ? error.message : 'Falha na conexão');
       if (data?.error) throw new Error(data.error);
       setDiagResults(data.results || []);
       setDiagSummary(data.summary || null);
+
+      // Collect errors/warnings for the persistent alert
+      const allChecks = (data.results || []).flatMap((r: any) => r.checks || []);
+      const issues = allChecks.filter((c: DiagCheck) => c.status === "error" || c.status === "warning");
+      setAlertIssues(issues);
+
       if (data.summary?.errors > 0) toast.error(`${data.summary.errors} problema(s) encontrado(s)`);
       else if (data.summary?.warnings > 0) toast.warning(`${data.summary.warnings} aviso(s)`);
       else toast.success("Rastreamento 100% saudável! 🎯");
@@ -130,6 +139,13 @@ const Tracking = () => {
       setDiagLoading(false);
     }
   };
+
+  // Auto-run diagnostics on first load if products exist
+  useEffect(() => {
+    if (autoRanRef.current || products.length === 0 || !selectedProduct) return;
+    autoRanRef.current = true;
+    runDiagnostics(selectedProduct);
+  }, [products, selectedProduct]);
 
   const verifyPage = useCallback(async () => {
     const url = pageUrl.trim();
@@ -261,6 +277,44 @@ const Tracking = () => {
           </div>
         ))}
       </div>
+
+      {/* ── Diagnostic Alert Banner ── */}
+      {alertIssues.length > 0 && (
+        <div className="rounded-lg border overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300"
+          style={{
+            borderColor: alertIssues.some(i => i.status === "error") ? "rgba(248,113,113,0.3)" : "rgba(251,191,36,0.3)",
+            backgroundColor: alertIssues.some(i => i.status === "error") ? "rgba(248,113,113,0.06)" : "rgba(251,191,36,0.06)",
+          }}
+        >
+          <div className="px-4 py-3 flex items-center gap-2.5">
+            <AlertCircle className="w-4 h-4 shrink-0" style={{
+              color: alertIssues.some(i => i.status === "error") ? "#f87171" : "#fbbf24"
+            }} />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-slate-200">
+                {alertIssues.filter(i => i.status === "error").length > 0
+                  ? `${alertIssues.filter(i => i.status === "error").length} problema(s) encontrado(s) no rastreamento`
+                  : `${alertIssues.length} aviso(s) no rastreamento`}
+              </p>
+              <div className="mt-1.5 space-y-1">
+                {alertIssues.map((issue, i) => (
+                  <div key={i} className="flex items-start gap-1.5">
+                    {issue.status === "error"
+                      ? <XCircle className="w-3 h-3 text-red-400 shrink-0 mt-0.5" />
+                      : <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0 mt-0.5" />}
+                    <p className="text-[10px] text-slate-400">
+                      <span className="font-medium text-slate-300">{issue.name}:</span> {issue.detail}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[9px] text-slate-600 mt-2 italic">
+                Corrija os itens acima e rode o diagnóstico novamente — este alerta desaparece quando tudo estiver OK ✅
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Onboarding Guide ── */}
       <TrackingOnboardingGuide hasPixels={totalPixels > 0} />
