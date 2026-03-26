@@ -15,7 +15,7 @@ import { formatCurrency, getResults, getConversionValue } from "@/components/adm
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function MetaAds() {
-  const { isSuperAdmin } = useAuth();
+  const { isSuperAdmin, user } = useAuth();
   const {
     accounts, selectedAccounts, setSelectedAccounts, toggleAccount, selectAllAccounts,
     campaigns, adsets, ads, accountInsights,
@@ -127,7 +127,7 @@ export default function MetaAds() {
             results={summary.results}
             roas={globalROAS}
           />
-          <MetaAdsFunnel userId={useAuth().user?.id} />
+          <MetaAdsFunnel userId={user?.id} />
           <MetaBudgetCalculator currentCPA={summary.results > 0 ? summary.spend / summary.results : undefined} />
         </TabsContent>
 
