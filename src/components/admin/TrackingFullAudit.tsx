@@ -35,18 +35,36 @@ export default function TrackingFullAudit({ userId }: Props) {
       // ═══ 1. PIXELS & CAPI CONFIG ═══
       const { data: pixels } = await supabase
         .from("product_pixels")
-        .select("pixel_id, platform, domain, capi_token, product_id, products(name)")
+        .select("id, pixel_id, platform, domain, capi_token, product_id, products(name)")
         .eq("user_id", userId);
 
       const fbPixels = (pixels || []).filter((p: any) => p.platform === "facebook");
+
+      // Auto-sync: if the same pixel_id exists in multiple records and one has a token, copy it
+      const pixelTokenMap = new Map<string, string>();
+      fbPixels.forEach((p: any) => {
+        if (p.capi_token && p.capi_token.length > 20) pixelTokenMap.set(p.pixel_id, p.capi_token);
+      });
+      const toSync = fbPixels.filter((p: any) => (!p.capi_token || p.capi_token.length <= 20) && pixelTokenMap.has(p.pixel_id));
+      if (toSync.length > 0) {
+        await Promise.all(toSync.map((p: any) =>
+          supabase.from("product_pixels").update({ capi_token: pixelTokenMap.get(p.pixel_id) }).eq("id", p.id)
+        ));
+        // Update local data so audit reflects the fix
+        toSync.forEach((p: any) => { p.capi_token = pixelTokenMap.get(p.pixel_id); });
+      }
 
       if (fbPixels.length === 0) {
         results.push({ category: "Pixels", name: "Pixel Facebook", status: "error", detail: "Nenhum pixel Facebook configurado em nenhum produto." });
       } else {
         results.push({ category: "Pixels", name: "Pixels configurados", status: "pass", detail: `${fbPixels.length} pixel(s) Facebook ativo(s).` });
 
-        const withCapi = fbPixels.filter((p: any) => !!p.capi_token);
-        const withoutCapi = fbPixels.filter((p: any) => !p.capi_token);
+        const withCapi = fbPixels.filter((p: any) => !!p.capi_token && p.capi_token.length > 20);
+        const withoutCapi = fbPixels.filter((p: any) => !p.capi_token || p.capi_token.length <= 20);
+
+        if (toSync.length > 0) {
+          results.push({ category: "CAPI", name: "Auto-sync de tokens", status: "pass", detail: `${toSync.length} pixel(s) sincronizado(s) automaticamente com token CAPI existente.` });
+        }
 
         if (withCapi.length === fbPixels.length) {
           results.push({ category: "CAPI", name: "Tokens CAPI", status: "pass", detail: `Todos os ${withCapi.length} pixel(s) têm token CAPI configurado.` });
@@ -55,6 +73,7 @@ export default function TrackingFullAudit({ userId }: Props) {
         } else {
           results.push({ category: "CAPI", name: "Tokens CAPI", status: "error", detail: "Nenhum pixel tem token CAPI configurado. O rastreamento server-side está inativo." });
         }
+
 
         const withDomain = fbPixels.filter((p: any) => !!p.domain);
         if (withDomain.length > 0) {
