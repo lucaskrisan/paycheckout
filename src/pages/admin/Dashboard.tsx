@@ -65,65 +65,74 @@ const Dashboard = () => {
     [products],
   );
   const liveVisitors = useCheckoutPresence("watch", undefined, ownerProductIds);
-  const isSyncingOrdersRef = useRef(false);
 
-  const syncOrdersWithGateway = useCallback(async (): Promise<boolean> => {
-    if (isSyncingOrdersRef.current) return false;
-
-    isSyncingOrdersRef.current = true;
-    try {
-      const { error } = await supabase.functions.invoke("reconcile-orders", {
-        body: { hours_back: 24 * 30 },
-      });
-
-      if (error) {
-        console.error("[dashboard] reconcile-orders error:", error);
-        return false;
+  /** Build a server-side date filter based on the current period */
+  const getDateFilter = useCallback((p: Period): string | null => {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    switch (p) {
+      case "today":
+        return startOfDay.toISOString();
+      case "yesterday": {
+        const y = new Date(startOfDay);
+        y.setDate(y.getDate() - 1);
+        return y.toISOString();
       }
-
-      return true;
-    } catch (err) {
-      console.error("[dashboard] reconcile-orders unexpected error:", err);
-      return false;
-    } finally {
-      isSyncingOrdersRef.current = false;
+      case "7days": {
+        const w = new Date(startOfDay);
+        w.setDate(w.getDate() - 7);
+        return w.toISOString();
+      }
+      case "month": {
+        const m = new Date(now.getFullYear(), now.getMonth(), 1);
+        return m.toISOString();
+      }
+      case "lastMonth": {
+        const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        return lm.toISOString();
+      }
+      case "total":
+        return null;
+      default:
+        return null;
     }
   }, []);
 
-  const fetchAllOrders = useCallback(async () => {
-    const pageSize = 1000;
-    let from = 0;
-    const allOrders: any[] = [];
+  const fetchOrders = useCallback(async (p: Period) => {
+    let query = supabase
+      .from("orders")
+      .select("id, created_at, status, amount, platform_fee_amount, payment_method, product_id, metadata")
+      .order("created_at", { ascending: false });
 
-    while (true) {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("id, created_at, status, amount, platform_fee_amount, payment_method, product_id, metadata")
-        .order("created_at", { ascending: false })
-        .range(from, from + pageSize - 1);
-
-      if (error) {
-        throw error;
+    const dateFrom = getDateFilter(p);
+    if (dateFrom) {
+      query = query.gte("created_at", dateFrom);
+      // For "yesterday" we also need an upper bound
+      if (p === "yesterday") {
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        query = query.lt("created_at", startOfToday.toISOString());
       }
-
-      const chunk = data || [];
-      allOrders.push(...chunk);
-
-      if (chunk.length < pageSize) {
-        break;
+      if (p === "lastMonth") {
+        const now = new Date();
+        const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+        query = query.lte("created_at", endOfLastMonth.toISOString());
       }
-
-      from += pageSize;
     }
 
-    return allOrders;
-  }, []);
+    // Limit to 1000 rows max — should be enough for a single period
+    query = query.limit(1000);
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
+  }, [getDateFilter]);
 
   const fetchAndSetData = useCallback(async () => {
     if (!user) return;
 
-    const [allOrders, cartsRes, productsRes] = await Promise.all([
-      fetchAllOrders(),
+    const [periodOrders, cartsRes, productsRes] = await Promise.all([
+      fetchOrders(period),
       supabase
         .from("abandoned_carts")
         .select("id, created_at, recovered")
@@ -132,12 +141,12 @@ const Dashboard = () => {
       supabase.from("products").select("id, name").eq("user_id", user.id),
     ]);
 
-    setOrders(allOrders);
+    setOrders(periodOrders);
     setAbandonedCarts(cartsRes.data || []);
     setProducts(productsRes.data || []);
-  }, [fetchAllOrders, user]);
+  }, [fetchOrders, user, period]);
 
-  const loadData = useCallback(async (isRefresh = false, shouldSync = false) => {
+  const loadData = useCallback(async (isRefresh = false) => {
     if (!user) return;
     if (isRefresh) setRefreshing(true);
 
@@ -148,34 +157,38 @@ const Dashboard = () => {
     } finally {
       if (isRefresh) setRefreshing(false);
     }
+  }, [fetchAndSetData, user]);
 
-    if (shouldSync) {
-      void (async () => {
-        const synced = await syncOrdersWithGateway();
-        if (!synced) return;
-
-        try {
-          await fetchAndSetData();
-        } catch (error) {
-          console.error("[dashboard] post-sync loadData error:", error);
-        }
-      })();
-    }
-  }, [fetchAndSetData, syncOrdersWithGateway, user]);
-
-  useEffect(() => {
-    loadData(false, true);
-  }, [loadData, user]);
-
+  // Background sync — runs once on mount, then every 5 min
   useEffect(() => {
     if (!user) return;
+    // Fire and forget — don't block UI
+    const doSync = async () => {
+      try {
+        const { error } = await supabase.functions.invoke("reconcile-orders", {
+          body: { hours_back: 24 * 30 },
+        });
+        if (!error) {
+          // Silently refresh data after sync
+          await fetchAndSetData();
+        }
+      } catch {}
+    };
 
-    const interval = window.setInterval(() => {
-      loadData(false, true);
-    }, 5 * 60 * 1000);
+    // Delay the first sync by 3 seconds so the UI loads first
+    const timeout = setTimeout(doSync, 3000);
+    const interval = setInterval(doSync, 5 * 60 * 1000);
 
-    return () => window.clearInterval(interval);
-  }, [loadData, user]);
+    return () => {
+      clearTimeout(timeout);
+      clearInterval(interval);
+    };
+  }, [user, fetchAndSetData]);
+
+  // Initial load — fires when period changes too
+  useEffect(() => {
+    loadData(false);
+  }, [loadData]);
 
   // Realtime: listen for new approved sales and play Ka-CHING
   useEffect(() => {
@@ -198,7 +211,7 @@ const Dashboard = () => {
             toast.success(`💰 Nova venda aprovada! R$ ${amount}`, {
               duration: 5000,
             });
-            loadData(false, false);
+            loadData(false);
           }
         }
       )
@@ -213,7 +226,7 @@ const Dashboard = () => {
             toast.success(`💰 Nova venda aprovada! R$ ${amount}`, {
               duration: 5000,
             });
-            loadData(false, false);
+            loadData(false);
           }
         }
       )
@@ -224,45 +237,13 @@ const Dashboard = () => {
     };
   }, [user, loadData]);
 
-  const filterByPeriod = (items: any[]) => {
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    return items.filter((item) => {
-      const date = new Date(item.created_at);
-      switch (period) {
-        case "today":
-          return date >= startOfDay;
-        case "yesterday": {
-          const yesterday = new Date(startOfDay);
-          yesterday.setDate(yesterday.getDate() - 1);
-          return date >= yesterday && date < startOfDay;
-        }
-        case "7days": {
-          const week = new Date(startOfDay);
-          week.setDate(week.getDate() - 7);
-          return date >= week;
-        }
-        case "month":
-          return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-        case "lastMonth": {
-          const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-          const lmEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
-          return date >= lm && date <= lmEnd;
-        }
-        case "total":
-          return true;
-        default:
-          return true;
-      }
-    });
-  };
-
+  // Orders are already filtered server-side, just filter by product
   const productFiltered = useMemo(() => {
     if (selectedProductId === "all") return orders;
     return orders.filter((o) => o.product_id === selectedProductId);
   }, [orders, selectedProductId]);
 
-  const filtered = useMemo(() => filterByPeriod(productFiltered), [productFiltered, period]);
+  const filtered = productFiltered;
   const approved = useMemo(() => filtered.filter((o) => ["paid", "approved", "confirmed"].includes(o.status)), [filtered]);
   const pending = useMemo(() => filtered.filter((o) => o.status === "pending"), [filtered]);
   const refunded = useMemo(() => filtered.filter((o) => o.status === "refunded"), [filtered]);
@@ -298,7 +279,7 @@ const Dashboard = () => {
   const paidRevenue = paidSales.reduce((s, o) => s + Number(o.amount || 0), 0);
 
   // Abandoned carts metrics
-  const filteredCarts = useMemo(() => filterByPeriod(abandonedCarts), [abandonedCarts, period]);
+  const filteredCarts = abandonedCarts; // already limited on fetch
   const totalAbandoned = filteredCarts.length;
   const recoveredCarts = filteredCarts.filter((c) => c.recovered);
   const recoveryRate = totalAbandoned > 0 ? ((recoveredCarts.length / totalAbandoned) * 100).toFixed(0) : "0";
@@ -385,7 +366,7 @@ const Dashboard = () => {
             variant="ghost"
             size="icon"
             className="h-9 w-9"
-            onClick={() => loadData(true, true)}
+            onClick={() => loadData(true)}
             disabled={refreshing}
           >
             <RefreshCcw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
