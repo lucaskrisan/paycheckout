@@ -20,6 +20,7 @@ import {
 
 const SUPER_ADMIN_EMAIL = "trafegocomkrisan@gmail.com";
 const PAID_STATUSES = new Set(["paid", "approved"]);
+const SUPER_ADMIN_EMAILS = new Set([SUPER_ADMIN_EMAIL]);
 
 function useOneSignalInit(userId: string | undefined) {
   useEffect(() => {
