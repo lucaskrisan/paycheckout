@@ -20,6 +20,7 @@ import {
 
 const SUPER_ADMIN_EMAIL = "trafegocomkrisan@gmail.com";
 const PAID_STATUSES = new Set(["paid", "approved"]);
+const SUPER_ADMIN_EMAILS = new Set([SUPER_ADMIN_EMAIL]);
 
 function useOneSignalInit(userId: string | undefined) {
   useEffect(() => {
@@ -165,6 +166,7 @@ export default function AdminLayout() {
 
   useEffect(() => {
     if (!user?.id) return;
+    if (SUPER_ADMIN_EMAILS.has(user.email ?? "")) return;
 
     const channel = supabase
       .channel(`admin-orders-sound-${user.id}`)
@@ -212,6 +214,7 @@ export default function AdminLayout() {
   const lastToastRef = useRef(0);
   useEffect(() => {
     if (!user?.id) return;
+    if (SUPER_ADMIN_EMAILS.has(user.email ?? "")) return;
 
     const EVENT_LABELS: Record<string, { emoji: string; label: string }> = {
       PageView: { emoji: "👀", label: "acessou a página" },
