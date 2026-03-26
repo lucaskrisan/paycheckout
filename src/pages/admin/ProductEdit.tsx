@@ -1061,9 +1061,10 @@ const ProductEdit = () => {
                                 </span>
                               </Label>
                               <div className="flex items-center gap-2">
-                                <Select value={px.domain || ""} onValueChange={(v) => updatePixel(idx, "domain", v)}>
+                                <Select value={px.domain || "app.panttera.com.br"} onValueChange={(v) => updatePixel(idx, "domain", v)}>
                                   <SelectTrigger className="flex-1"><SelectValue placeholder="Selecione um domínio" /></SelectTrigger>
                                   <SelectContent>
+                                    <SelectItem value="app.panttera.com.br">app.panttera.com.br (padrão)</SelectItem>
                                     {fbDomains.map((d) => (
                                       <SelectItem key={d.id} value={d.domain}>{d.domain}</SelectItem>
                                     ))}
