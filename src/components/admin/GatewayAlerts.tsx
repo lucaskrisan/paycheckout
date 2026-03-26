@@ -77,12 +77,13 @@ const GatewayAlerts = () => {
         }
       }
 
-      // 3. Check for recent gateway failure alerts in internal_tasks
+      // 3. Check for recent gateway failure alerts in internal_tasks (only for the producer's own tasks)
       const { data: recentAlerts } = await supabase
         .from("internal_tasks")
         .select("id, title, description")
         .eq("category", "gateway_error")
         .eq("status", "todo")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(3);
 
