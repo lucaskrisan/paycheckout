@@ -167,6 +167,8 @@ export default function AdminLayout() {
   useEffect(() => {
     if (!user?.id) return;
     if (SUPER_ADMIN_EMAILS.has(user.email ?? "")) return;
+
+    const channel = supabase
       .channel(`admin-orders-sound-${user.id}`)
       .on(
         "postgres_changes",
