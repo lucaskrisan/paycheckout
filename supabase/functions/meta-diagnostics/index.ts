@@ -161,24 +161,24 @@ Deno.serve(async (req) => {
       // Check 5: Verify domain DNS (if configured)
       if (pixel.domain) {
         try {
-          const dnsCheck = await fetch(`https://pixels.${pixel.domain}`, {
+          const dnsCheck = await fetch(`https://${pixel.domain}`, {
             method: 'HEAD',
             redirect: 'manual',
           });
           // Any response (even redirect) means DNS resolves
           checks.push({
-            name: `DNS pixels.${pixel.domain}`,
+            name: `DNS ${pixel.domain}`,
             status: dnsCheck.status < 500 ? 'pass' : 'warning',
             detail: dnsCheck.status < 500
-              ? `pixels.${pixel.domain} respondendo (status ${dnsCheck.status})`
-              : `pixels.${pixel.domain} com erro (status ${dnsCheck.status})`,
+              ? `${pixel.domain} respondendo (status ${dnsCheck.status})`
+              : `${pixel.domain} com erro (status ${dnsCheck.status})`,
           });
           await dnsCheck.text(); // consume body
         } catch {
           checks.push({
-            name: `DNS pixels.${pixel.domain}`,
+            name: `DNS ${pixel.domain}`,
             status: 'error',
-            detail: `pixels.${pixel.domain} não respondeu — verifique o CNAME no DNS`,
+            detail: `${pixel.domain} não respondeu — verifique o DNS`,
           });
         }
       }
