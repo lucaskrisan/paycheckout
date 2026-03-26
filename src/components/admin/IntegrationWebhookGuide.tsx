@@ -12,13 +12,20 @@ interface StepDetail {
   warning?: string;
 }
 
+interface EventCategory {
+  category: string;
+  action: "marcar_todos" | "marcar_alguns" | "nao_marcar";
+  events?: string[];
+  note?: string;
+}
+
 interface WebhookConfig {
   provider: string;
   label: string;
   color: string;
   initials: string;
   url: string;
-  events: string[];
+  eventCategories: EventCategory[];
   dashboardUrl: string;
   stepByStep: StepDetail[];
   importantNotes: string[];
@@ -32,7 +39,27 @@ const webhookConfigs: WebhookConfig[] = [
     color: "#55C157",
     initials: "Pg",
     url: `${SUPABASE_URL}/functions/v1/pagarme-webhook`,
-    events: ["order.paid", "order.payment_failed", "order.canceled", "charge.paid", "charge.refunded", "subscription.created", "subscription.canceled"],
+    eventCategories: [
+      { category: "PEDIDO", action: "marcar_alguns", events: ["order.paid", "order.payment_failed", "order.canceled"], note: "Clique no \"+\" ao lado de PEDIDO para expandir. Marque apenas estes 3 eventos." },
+      { category: "COBRANÇA", action: "marcar_alguns", events: ["charge.paid", "charge.refunded"], note: "Clique no \"+\" ao lado de COBRANÇA para expandir. Marque apenas estes 2 eventos." },
+      { category: "ASSINATURA", action: "marcar_alguns", events: ["subscription.created", "subscription.canceled"], note: "Clique no \"+\" ao lado de ASSINATURA. Marque apenas estes 2 eventos." },
+      { category: "ANTECIPAÇÃO", action: "nao_marcar" },
+      { category: "CARTÃO", action: "nao_marcar" },
+      { category: "CHECKOUT", action: "nao_marcar" },
+      { category: "CLIENTE", action: "nao_marcar" },
+      { category: "CONTA BANCÁRIA", action: "nao_marcar" },
+      { category: "DESCONTO", action: "nao_marcar" },
+      { category: "ENDEREÇO", action: "nao_marcar" },
+      { category: "FATURA", action: "nao_marcar" },
+      { category: "ITEM DA ASSINATURA", action: "nao_marcar" },
+      { category: "ITEM DO PEDIDO", action: "nao_marcar" },
+      { category: "ITEM DO PLANO", action: "nao_marcar" },
+      { category: "LINK DE PAGAMENTO", action: "nao_marcar" },
+      { category: "PLANO", action: "nao_marcar" },
+      { category: "RECEBEDOR", action: "nao_marcar" },
+      { category: "TRANSFERÊNCIA", action: "nao_marcar" },
+      { category: "USO", action: "nao_marcar" },
+    ],
     dashboardUrl: "https://dash.pagar.me",
     stepByStep: [
       {
@@ -89,7 +116,9 @@ const webhookConfigs: WebhookConfig[] = [
     color: "#0066FF",
     initials: "As",
     url: `${SUPABASE_URL}/functions/v1/asaas-webhook`,
-    events: ["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED", "PAYMENT_OVERDUE", "PAYMENT_REFUNDED"],
+    eventCategories: [
+      { category: "PAGAMENTO", action: "marcar_alguns", events: ["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED", "PAYMENT_OVERDUE", "PAYMENT_REFUNDED"], note: "Marque apenas estes 4 eventos de pagamento." },
+    ],
     dashboardUrl: "https://www.asaas.com",
     stepByStep: [
       {
@@ -137,7 +166,10 @@ const webhookConfigs: WebhookConfig[] = [
     color: "#009EE3",
     initials: "MP",
     url: `${SUPABASE_URL}/functions/v1/mercadopago-webhook`,
-    events: ["payment", "merchant_order"],
+    eventCategories: [
+      { category: "Pagamentos", action: "marcar_todos", note: "Marque \"Pagamentos\" (payment)." },
+      { category: "Ordens", action: "marcar_todos", note: "Marque \"Ordens\" (merchant_order)." },
+    ],
     dashboardUrl: "https://www.mercadopago.com.br/developers/panel/app",
     stepByStep: [
       {
@@ -181,7 +213,11 @@ const webhookConfigs: WebhookConfig[] = [
     color: "#635BFF",
     initials: "S",
     url: `${SUPABASE_URL}/functions/v1/stripe-webhook`,
-    events: ["checkout.session.completed", "payment_intent.succeeded", "charge.refunded"],
+    eventCategories: [
+      { category: "Checkout", action: "marcar_alguns", events: ["checkout.session.completed"], note: "Marque este evento." },
+      { category: "Payment Intent", action: "marcar_alguns", events: ["payment_intent.succeeded"], note: "Marque este evento." },
+      { category: "Charge", action: "marcar_alguns", events: ["charge.refunded"], note: "Marque este evento." },
+    ],
     dashboardUrl: "https://dashboard.stripe.com/webhooks",
     stepByStep: [
       {
@@ -452,21 +488,53 @@ const WebhookDetailCard = ({
             </div>
           </div>
 
-          {/* Events to select */}
-          <div className="space-y-1.5">
+          {/* Event categories - detailed */}
+          <div className="space-y-2">
             <h4 className="text-[11px] font-semibold text-foreground">
-              ✅ Eventos que você DEVE marcar:
+              📋 Categorias de Eventos — O que marcar e o que NÃO marcar:
             </h4>
-            <div className="flex flex-wrap gap-1.5">
-              {config.events.map((ev) => (
-                <Badge key={ev} variant="secondary" className="text-[10px] px-2 py-0.5 font-mono bg-primary/10 text-primary border border-primary/20">
-                  {ev}
-                </Badge>
+            
+            {/* Categories to MARK */}
+            <div className="space-y-2">
+              {config.eventCategories.filter(c => c.action !== "nao_marcar").map((cat, i) => (
+                <div key={i} className="rounded bg-green-500/5 border border-green-500/20 p-2.5 space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-400 text-[10px] font-bold">✅ {cat.category}</span>
+                    <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-green-500/40 text-green-400">
+                      {cat.action === "marcar_todos" ? "Marcar todos" : "Marcar eventos específicos"}
+                    </Badge>
+                  </div>
+                  {cat.note && (
+                    <p className="text-[10px] text-muted-foreground">{cat.note}</p>
+                  )}
+                  {cat.events && cat.events.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {cat.events.map((ev) => (
+                        <Badge key={ev} variant="secondary" className="text-[10px] px-2 py-0.5 font-mono bg-green-500/10 text-green-400 border border-green-500/20">
+                          ✓ {ev}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
-            <p className="text-[10px] text-muted-foreground italic">
-              No painel do {config.label}, expanda cada categoria de eventos clicando no "+" e marque os itens acima.
-            </p>
+
+            {/* Categories to NOT mark */}
+            {config.eventCategories.some(c => c.action === "nao_marcar") && (
+              <div className="rounded bg-muted/30 border border-border/30 p-2.5 space-y-1.5">
+                <p className="text-[10px] font-semibold text-muted-foreground">
+                  ⛔ NÃO marque estas categorias (deixe todas desmarcadas):
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  {config.eventCategories.filter(c => c.action === "nao_marcar").map((cat, i) => (
+                    <Badge key={i} variant="outline" className="text-[9px] px-1.5 py-0 text-muted-foreground/60 border-border/40">
+                      {cat.category}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Important notes */}
