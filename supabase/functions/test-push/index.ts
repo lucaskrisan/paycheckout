@@ -30,12 +30,14 @@ Deno.serve(async (req) => {
     let notifTitle = '🎉 Ka-ching! Mais uma venda!';
     let notifBody = 'João Silva • 💠 PIX R$ 197,00 • Curso Premium';
     let iconUrl = 'https://app.panttera.com.br/pwa-192x192.png';
+    let user: { id: string } | null = null;
 
     // Try to get user's PWA settings for the notification template
     const authHeader = req.headers.get('Authorization');
     if (authHeader) {
       const token = authHeader.replace('Bearer ', '');
-      const { data: { user } } = await supabase.auth.getUser(token);
+      const { data: { user: authUser } } = await supabase.auth.getUser(token);
+      user = authUser;
       
       if (user) {
         const { data: pwaSettings } = await supabase
@@ -63,15 +65,21 @@ Deno.serve(async (req) => {
       }
     }
 
-    const payload = {
+    const payload: Record<string, unknown> = {
       app_id: appId,
-      included_segments: ['Total Subscriptions'],
       target_channel: 'push',
       headings: { en: notifTitle },
       contents: { en: notifBody },
       chrome_web_icon: iconUrl,
       url: 'https://app.panttera.com.br/admin/orders',
     };
+
+    // Target only the calling user's devices (not all subscribers)
+    if (user) {
+      payload.filters = [{ field: 'tag', key: 'user_id', relation: '=', value: user.id }];
+    } else {
+      payload.included_segments = ['Total Subscriptions'];
+    }
 
     const response = await fetch('https://api.onesignal.com/notifications', {
       method: 'POST',
