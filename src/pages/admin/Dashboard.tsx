@@ -209,6 +209,11 @@ const Dashboard = () => {
     };
   }, [user, fetchAndSetData]);
 
+  // Initial load — fires when period changes too
+  useEffect(() => {
+    loadData(false);
+  }, [loadData]);
+
   // Realtime: listen for new approved sales and play Ka-CHING
   useEffect(() => {
     if (!user) return;
@@ -230,7 +235,7 @@ const Dashboard = () => {
             toast.success(`💰 Nova venda aprovada! R$ ${amount}`, {
               duration: 5000,
             });
-            loadData(false, false);
+            loadData(false);
           }
         }
       )
@@ -245,7 +250,7 @@ const Dashboard = () => {
             toast.success(`💰 Nova venda aprovada! R$ ${amount}`, {
               duration: 5000,
             });
-            loadData(false, false);
+            loadData(false);
           }
         }
       )
@@ -256,45 +261,13 @@ const Dashboard = () => {
     };
   }, [user, loadData]);
 
-  const filterByPeriod = (items: any[]) => {
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    return items.filter((item) => {
-      const date = new Date(item.created_at);
-      switch (period) {
-        case "today":
-          return date >= startOfDay;
-        case "yesterday": {
-          const yesterday = new Date(startOfDay);
-          yesterday.setDate(yesterday.getDate() - 1);
-          return date >= yesterday && date < startOfDay;
-        }
-        case "7days": {
-          const week = new Date(startOfDay);
-          week.setDate(week.getDate() - 7);
-          return date >= week;
-        }
-        case "month":
-          return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-        case "lastMonth": {
-          const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-          const lmEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
-          return date >= lm && date <= lmEnd;
-        }
-        case "total":
-          return true;
-        default:
-          return true;
-      }
-    });
-  };
-
+  // Orders are already filtered server-side, just filter by product
   const productFiltered = useMemo(() => {
     if (selectedProductId === "all") return orders;
     return orders.filter((o) => o.product_id === selectedProductId);
   }, [orders, selectedProductId]);
 
-  const filtered = useMemo(() => filterByPeriod(productFiltered), [productFiltered, period]);
+  const filtered = productFiltered;
   const approved = useMemo(() => filtered.filter((o) => ["paid", "approved", "confirmed"].includes(o.status)), [filtered]);
   const pending = useMemo(() => filtered.filter((o) => o.status === "pending"), [filtered]);
   const refunded = useMemo(() => filtered.filter((o) => o.status === "refunded"), [filtered]);
