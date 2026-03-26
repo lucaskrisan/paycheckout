@@ -10,7 +10,7 @@ interface FunnelStage {
   percent: number;
 }
 
-export function MetaAdsFunnel() {
+export function MetaAdsFunnel({ userId }: { userId?: string }) {
   const [stages, setStages] = useState<FunnelStage[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -20,10 +20,10 @@ export function MetaAdsFunnel() {
       today.setHours(0, 0, 0, 0);
       const todayISO = today.toISOString();
 
-      const [{ data: events }, { data: orders }] = await Promise.all([
-        supabase.from("pixel_events").select("event_name").gte("created_at", todayISO),
-        supabase.from("orders").select("status").gte("created_at", todayISO),
-      ]);
+      let evQuery = supabase.from("pixel_events").select("event_name").gte("created_at", todayISO);
+      let ordQuery = supabase.from("orders").select("status").gte("created_at", todayISO);
+      if (userId) { evQuery = evQuery.eq("user_id", userId); ordQuery = ordQuery.eq("user_id", userId); }
+      const [{ data: events }, { data: orders }] = await Promise.all([evQuery, ordQuery]);
 
       const ec: Record<string, number> = {};
       (events || []).forEach((e) => { ec[e.event_name] = (ec[e.event_name] || 0) + 1; });

@@ -32,6 +32,7 @@ interface GroupedEvent {
 
 interface Props {
   products: { id: string; name: string }[];
+  userId?: string;
 }
 
 const EVENT_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
@@ -44,7 +45,7 @@ const EVENT_CONFIG: Record<string, { label: string; color: string; icon: any }> 
   Purchase: { label: "Purchase", color: "#34d399", icon: TrendingUp },
 };
 
-const PixelEventsDashboard = ({ products }: Props) => {
+const PixelEventsDashboard = ({ products, userId }: Props) => {
   const [events, setEvents] = useState<PixelEvent[]>([]);
   const [eventCounts, setEventCounts] = useState<Record<string, number>>({});
   const [filterProduct, setFilterProduct] = useState("all");
@@ -56,13 +57,14 @@ const PixelEventsDashboard = ({ products }: Props) => {
   const loadEvents = async () => {
     const since = subHours(new Date(), getHoursBack()).toISOString();
 
-    // Load recent events for feed (limited)
+    // Load recent events for feed (limited) — scoped to producer's own events
     let feedQuery = supabase
       .from("pixel_events")
       .select("id, product_id, event_name, source, created_at, customer_name, visitor_id, event_id")
       .gte("created_at", since)
       .order("created_at", { ascending: false })
       .limit(500);
+    if (userId) feedQuery = feedQuery.eq("user_id", userId);
     if (filterProduct !== "all") feedQuery = feedQuery.eq("product_id", filterProduct);
     const { data: feedData } = await feedQuery;
     const real = (feedData || []).filter((e) => !e.visitor_id?.startsWith("sim_"));
@@ -78,6 +80,7 @@ const PixelEventsDashboard = ({ products }: Props) => {
         .select("id", { count: "exact", head: true })
         .gte("created_at", since)
         .eq("event_name", eventName);
+      if (userId) countQuery = countQuery.eq("user_id", userId);
       if (filterProduct !== "all") countQuery = countQuery.eq("product_id", filterProduct);
       const { count } = await countQuery;
       counts[eventName] = count || 0;
@@ -95,7 +98,9 @@ const PixelEventsDashboard = ({ products }: Props) => {
     const channel = supabase
       .channel(`pixel-events-realtime-${filterProduct}-${period}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "pixel_events" }, (payload) => {
-        const ne = payload.new as PixelEvent;
+        const ne = payload.new as any;
+        // Isolate events by producer
+        if (userId && ne.user_id !== userId) return;
         if (filterProduct !== "all" && ne.product_id !== filterProduct) return;
         if (ne.visitor_id?.startsWith("sim_")) return;
         // Ignore events outside the selected period
