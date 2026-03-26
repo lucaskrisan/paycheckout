@@ -110,19 +110,26 @@ const Tracking = () => {
     load();
   }, [user]);
 
-  const runDiagnostics = async () => {
-    if (!selectedProduct) { toast.error("Selecione um produto"); return; }
+  const runDiagnostics = async (productIdOverride?: string) => {
+    const prodId = productIdOverride || selectedProduct;
+    if (!prodId) { toast.error("Selecione um produto"); return; }
     setDiagLoading(true);
     setDiagResults(null);
     setDiagSummary(null);
     try {
       const { data, error } = await supabase.functions.invoke("meta-diagnostics", {
-        body: { product_id: selectedProduct },
+        body: { product_id: prodId },
       });
       if (error) throw new Error(typeof error === 'object' && error.message ? error.message : 'Falha na conexão');
       if (data?.error) throw new Error(data.error);
       setDiagResults(data.results || []);
       setDiagSummary(data.summary || null);
+
+      // Collect errors/warnings for the persistent alert
+      const allChecks = (data.results || []).flatMap((r: any) => r.checks || []);
+      const issues = allChecks.filter((c: DiagCheck) => c.status === "error" || c.status === "warning");
+      setAlertIssues(issues);
+
       if (data.summary?.errors > 0) toast.error(`${data.summary.errors} problema(s) encontrado(s)`);
       else if (data.summary?.warnings > 0) toast.warning(`${data.summary.warnings} aviso(s)`);
       else toast.success("Rastreamento 100% saudável! 🎯");
@@ -132,6 +139,13 @@ const Tracking = () => {
       setDiagLoading(false);
     }
   };
+
+  // Auto-run diagnostics on first load if products exist
+  useEffect(() => {
+    if (autoRanRef.current || products.length === 0 || !selectedProduct) return;
+    autoRanRef.current = true;
+    runDiagnostics(selectedProduct);
+  }, [products, selectedProduct]);
 
   const verifyPage = useCallback(async () => {
     const url = pageUrl.trim();
