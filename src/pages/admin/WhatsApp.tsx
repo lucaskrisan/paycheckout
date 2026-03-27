@@ -113,6 +113,7 @@ const WhatsApp = () => {
     setQrDialog({ open: true, name, qr: "", base64: "", loading: true, error: "" });
     try {
       const fetchQr = async () => evoApi("get_qrcode", { instanceName: name });
+      const fetchCached = async () => evoApi("get_cached_qr", { instanceName: name });
       let data = await fetchQr();
 
       if (data?.connected) {
@@ -122,8 +123,14 @@ const WhatsApp = () => {
       }
 
       if (!data?.base64 && !data?.code && data?.waiting) {
-        for (let attempt = 0; attempt < 4; attempt += 1) {
-          await new Promise((resolve) => setTimeout(resolve, 1500));
+        for (let attempt = 0; attempt < 6; attempt += 1) {
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          // Try cached QR from webhook first, then fallback to connect endpoint
+          const cached = await fetchCached();
+          if (cached?.base64) {
+            data = { ...data, base64: cached.base64 };
+            break;
+          }
           data = await fetchQr();
           if (data?.connected || data?.base64 || data?.code || !data?.waiting) break;
         }
