@@ -112,15 +112,37 @@ const WhatsApp = () => {
   const handleGetQR = async (name: string) => {
     setQrDialog({ open: true, name, qr: "", base64: "", loading: true, error: "" });
     try {
-      const data = await evoApi("get_qrcode", { instanceName: name });
-      if (data?.base64) {
+      const fetchQr = async () => evoApi("get_qrcode", { instanceName: name });
+      let data = await fetchQr();
+
+      if (data?.connected) {
+        setQrDialog(q => ({ ...q, loading: false, error: "Esta instância já está conectada no WhatsApp." }));
+        loadInstances();
+        return;
+      }
+
+      if (!data?.base64 && !data?.code && data?.waiting) {
+        for (let attempt = 0; attempt < 4; attempt += 1) {
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+          data = await fetchQr();
+          if (data?.connected || data?.base64 || data?.code || !data?.waiting) break;
+        }
+      }
+
+      if (data?.connected) {
+        setQrDialog(q => ({ ...q, loading: false, error: "Esta instância já está conectada no WhatsApp." }));
+        loadInstances();
+      } else if (data?.base64) {
         setQrDialog(q => ({ ...q, base64: data.base64, qr: data.code || "", loading: false }));
       } else if (data?.code) {
         setQrDialog(q => ({ ...q, qr: data.code, loading: false }));
       } else {
         setQrDialog(q => ({
-          ...q, loading: false,
-          error: "QR Code indisponível. A instância pode já estar conectada ou o servidor precisa ser reiniciado.",
+          ...q,
+          loading: false,
+          error: data?.waiting
+            ? "O servidor ainda está preparando o QR Code. Aguarde alguns segundos e tente novamente."
+            : "QR Code indisponível no momento. Tente reiniciar a instância e gerar novamente.",
         }));
       }
     } catch (err: any) {
