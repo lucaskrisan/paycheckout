@@ -1,5 +1,23 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
+// In-memory QR code cache (per isolate). Entries auto-expire after 60s.
+const qrCache = new Map<string, { base64: string; ts: number }>();
+const QR_TTL = 60_000;
+
+function cacheQr(instanceName: string, base64: string) {
+  qrCache.set(instanceName, { base64, ts: Date.now() });
+}
+
+function getCachedQr(instanceName: string): string | null {
+  const entry = qrCache.get(instanceName);
+  if (!entry) return null;
+  if (Date.now() - entry.ts > QR_TTL) {
+    qrCache.delete(instanceName);
+    return null;
+  }
+  return entry.base64;
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -75,34 +93,65 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Auth: require valid JWT
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-  const authHeader = req.headers.get("authorization");
-  
-  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: authHeader || "" } },
-  });
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return json({ error: "Unauthorized" }, 401);
-  }
-
-  // Check admin role
-  const { data: hasAdmin } = await supabase.rpc("has_role", {
-    _user_id: user.id,
-    _role: "admin",
-  });
-  const { data: hasSuperAdmin } = await supabase.rpc("is_super_admin", {
-    _user_id: user.id,
-  });
-  if (!hasAdmin && !hasSuperAdmin) {
-    return json({ error: "Forbidden" }, 403);
-  }
 
   try {
+    const url = new URL(req.url);
+    const queryAction = url.searchParams.get("action");
+
+    // Webhook events from Evolution API — no auth required
+    if (queryAction === "webhook_event") {
+      const body = await req.json().catch(() => ({}));
+      const event = body?.event;
+      const instanceName = body?.instance;
+
+      if (event === "qrcode.updated" || event === "QRCODE_UPDATED") {
+        const qrBase64 = body?.data?.qrcode?.base64
+          ?? body?.data?.base64
+          ?? body?.qrcode?.base64
+          ?? body?.data?.qrcode
+          ?? null;
+        if (typeof qrBase64 === "string" && qrBase64.length > 100 && instanceName) {
+          cacheQr(instanceName, qrBase64);
+          console.log(`[webhook] QR cached for ${instanceName} (${qrBase64.length} chars)`);
+        }
+      }
+
+      if (event === "connection.update" || event === "CONNECTION_UPDATE") {
+        const newState = body?.data?.state ?? body?.data?.status;
+        if (newState === "open" && instanceName) {
+          qrCache.delete(instanceName);
+          console.log(`[webhook] ${instanceName} connected, QR cleared`);
+        }
+      }
+
+      return json({ ok: true }, 200);
+    }
+
+    // Auth: require valid JWT for all other actions
+    const authHeader = req.headers.get("authorization");
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader || "" } },
+    });
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return json({ error: "Unauthorized" }, 401);
+    }
+
+    const { data: hasAdmin } = await supabase.rpc("has_role", {
+      _user_id: user.id,
+      _role: "admin",
+    });
+    const { data: hasSuperAdmin } = await supabase.rpc("is_super_admin", {
+      _user_id: user.id,
+    });
+    if (!hasAdmin && !hasSuperAdmin) {
+      return json({ error: "Forbidden" }, 403);
+    }
+
     const body = req.method !== "GET" ? await req.json() : {};
-    const action = body.action || new URL(req.url).searchParams.get("action");
+    const action = body.action || queryAction;
 
     switch (action) {
       // ─── List instances ───
@@ -131,13 +180,29 @@ Deno.serve(async (req) => {
       case "create_instance": {
         const { instanceName, number } = body;
         if (!instanceName) return json({ error: "instanceName required" }, 400);
+        const webhookUrl = `${supabaseUrl}/functions/v1/evolution-api?action=webhook_event`;
         const result = await evoFetch("/instance/create", "POST", {
           instanceName,
           number: number || undefined,
           integration: "WHATSAPP-BAILEYS",
           qrcode: true,
+          webhook: {
+            url: webhookUrl,
+            webhookByEvents: true,
+            webhookBase64: true,
+            enabled: true,
+            events: ["QRCODE_UPDATED", "CONNECTION_UPDATE"],
+          },
         });
-        return json(result.data, result.status);
+        // The create response may include a qrcode field with base64
+        const createQr = result.data?.qrcode?.base64
+          ?? result.data?.qrcode?.qrcode
+          ?? result.data?.qrcode?.code
+          ?? null;
+        if (typeof createQr === "string" && createQr.length > 100) {
+          cacheQr(instanceName, createQr);
+        }
+        return json({ ...result.data, _webhookConfigured: true }, result.status);
       }
 
       // ─── Get QR Code ───
@@ -160,13 +225,33 @@ Deno.serve(async (req) => {
         const code = base64 ? null : qrValue;
         const waiting = !qrValue && (result.data?.count === 0 || state === "connecting" || state === "close" || state === "closed");
 
+        // If connect endpoint returned no QR, check webhook cache
+        const finalBase64 = base64 || normalizeBase64Image(getCachedQr(instanceName));
+
         return json({
           connected: false,
           state,
-          waiting,
-          base64,
+          waiting: waiting && !finalBase64,
+          base64: finalBase64,
           code,
         }, result.status);
+      }
+
+      // ─── Webhook event receiver (called by Evolution API) ───
+      case "webhook_event": {
+        // Handled above before auth — should not reach here
+        return json({ ok: true, note: "handled" }, 200);
+      }
+
+      // ─── Get cached QR from webhook ───
+      case "get_cached_qr": {
+        const { instanceName } = body;
+        if (!instanceName) return json({ error: "instanceName required" }, 400);
+        const cached = getCachedQr(instanceName);
+        return json({
+          base64: cached ? (cached.startsWith("data:") ? cached : `data:image/png;base64,${cached}`) : null,
+          cached: !!cached,
+        }, 200);
       }
 
       // ─── Connection state ───
