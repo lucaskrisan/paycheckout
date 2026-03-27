@@ -418,7 +418,7 @@ ROTAS ESPECIAIS
   • PixelEventsDashboard — Dashboard de eventos
   • UtmAttributionTable — Tabela de atribuição UTM
 
-5.10 COMUNICAÇÕES (/admin/communications)
+5.13 COMUNICAÇÕES (/admin/communications)
 ──────────────────────────────────────────
   • E-mails transacionais via Resend
   • Logs completos: email_logs (status, aberturas, cliques, bounces)
@@ -426,7 +426,15 @@ ROTAS ESPECIAIS
   • Webhooks customizados: fire-webhooks (HMAC-SHA256)
   • Push notifications: OneSignal
 
-5.11 SIDEBAR DO ADMIN — ORGANIZAÇÃO
+5.14 DOMÍNIOS CUSTOMIZADOS (/admin/domains)
+─────────────────────────────────────────────
+  Objetivo: Permitir que produtores conectem domínios próprios.
+  Tabela: custom_domains (hostname, status, ssl_status, cloudflare_hostname_id)
+  Edge Functions: cloudflare-add-hostname, cloudflare-check-status,
+    cloudflare-remove-hostname
+  Fluxo: Adicionar domínio → Cloudflare SaaS → Verificar DNS → SSL auto
+
+5.15 SIDEBAR DO ADMIN — ORGANIZAÇÃO
 ──────────────────────────────────────
   Seções (em ordem):
   1. PRINCIPAL: Dashboard, Vendas, Produtos, Clientes
