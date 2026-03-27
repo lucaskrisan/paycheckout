@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
       case "get_qrcode": {
         const { instanceName } = body;
         if (!instanceName) return json({ error: "instanceName required" }, 400);
-        const result = await evoFetch(`/instance/connect/${instanceName}`, "GET");
+        const result = await evoFetch(`/instance/connect/${encodeURIComponent(instanceName)}`, "GET");
         return json(result.data, result.status);
       }
 
@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
       case "logout": {
         const { instanceName } = body;
         if (!instanceName) return json({ error: "instanceName required" }, 400);
-        const result = await evoFetch(`/instance/logout/${instanceName}`, "DELETE");
+        const result = await evoFetch(`/instance/logout/${encodeURIComponent(instanceName)}`, "DELETE");
         return json(result.data, result.status);
       }
 
@@ -141,7 +141,7 @@ Deno.serve(async (req) => {
       case "delete_instance": {
         const { instanceName } = body;
         if (!instanceName) return json({ error: "instanceName required" }, 400);
-        const result = await evoFetch(`/instance/delete/${instanceName}`, "DELETE");
+        const result = await evoFetch(`/instance/delete/${encodeURIComponent(instanceName)}`, "DELETE");
         return json(result.data, result.status);
       }
 
@@ -150,7 +150,7 @@ Deno.serve(async (req) => {
         const { instanceName, number, text } = body;
         if (!instanceName || !number || !text)
           return json({ error: "instanceName, number, text required" }, 400);
-        const result = await evoFetch(`/message/sendText/${instanceName}`, "POST", {
+        const result = await evoFetch(`/message/sendText/${encodeURIComponent(instanceName)}`, "POST", {
           number,
           text,
         });
@@ -161,7 +161,7 @@ Deno.serve(async (req) => {
       case "restart": {
         const { instanceName } = body;
         if (!instanceName) return json({ error: "instanceName required" }, 400);
-        const result = await evoFetch(`/instance/restart/${instanceName}`, "PUT");
+        const result = await evoFetch(`/instance/restart/${encodeURIComponent(instanceName)}`, "PUT");
         return json(result.data, result.status);
       }
 
