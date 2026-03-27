@@ -225,42 +225,22 @@ Deno.serve(async (req) => {
         const code = base64 ? null : qrValue;
         const waiting = !qrValue && (result.data?.count === 0 || state === "connecting" || state === "close" || state === "closed");
 
+        // If connect endpoint returned no QR, check webhook cache
+        const finalBase64 = base64 || normalizeBase64Image(getCachedQr(instanceName));
+
         return json({
           connected: false,
           state,
-          waiting,
-          base64,
+          waiting: waiting && !finalBase64,
+          base64: finalBase64,
           code,
         }, result.status);
       }
 
       // ─── Webhook event receiver (called by Evolution API) ───
       case "webhook_event": {
-        // This is called without auth from Evolution API
-        const event = body?.event;
-        const instanceName = body?.instance;
-
-        if (event === "qrcode.updated" || event === "QRCODE_UPDATED") {
-          const qrBase64 = body?.data?.qrcode?.base64
-            ?? body?.data?.base64
-            ?? body?.qrcode?.base64
-            ?? body?.data?.qrcode
-            ?? null;
-          if (typeof qrBase64 === "string" && qrBase64.length > 100 && instanceName) {
-            cacheQr(instanceName, qrBase64);
-            console.log(`[webhook] QR cached for ${instanceName} (${qrBase64.length} chars)`);
-          }
-        }
-
-        if (event === "connection.update" || event === "CONNECTION_UPDATE") {
-          const newState = body?.data?.state ?? body?.data?.status;
-          if (newState === "open" && instanceName) {
-            qrCache.delete(instanceName);
-            console.log(`[webhook] ${instanceName} connected, QR cleared`);
-          }
-        }
-
-        return json({ ok: true }, 200);
+        // Handled above before auth — should not reach here
+        return json({ ok: true, note: "handled" }, 200);
       }
 
       // ─── Get cached QR from webhook ───
