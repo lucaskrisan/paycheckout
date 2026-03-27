@@ -93,34 +93,65 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Auth: require valid JWT
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-  const authHeader = req.headers.get("authorization");
-  
-  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: authHeader || "" } },
-  });
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return json({ error: "Unauthorized" }, 401);
-  }
-
-  // Check admin role
-  const { data: hasAdmin } = await supabase.rpc("has_role", {
-    _user_id: user.id,
-    _role: "admin",
-  });
-  const { data: hasSuperAdmin } = await supabase.rpc("is_super_admin", {
-    _user_id: user.id,
-  });
-  if (!hasAdmin && !hasSuperAdmin) {
-    return json({ error: "Forbidden" }, 403);
-  }
 
   try {
+    const url = new URL(req.url);
+    const queryAction = url.searchParams.get("action");
+
+    // Webhook events from Evolution API — no auth required
+    if (queryAction === "webhook_event") {
+      const body = await req.json().catch(() => ({}));
+      const event = body?.event;
+      const instanceName = body?.instance;
+
+      if (event === "qrcode.updated" || event === "QRCODE_UPDATED") {
+        const qrBase64 = body?.data?.qrcode?.base64
+          ?? body?.data?.base64
+          ?? body?.qrcode?.base64
+          ?? body?.data?.qrcode
+          ?? null;
+        if (typeof qrBase64 === "string" && qrBase64.length > 100 && instanceName) {
+          cacheQr(instanceName, qrBase64);
+          console.log(`[webhook] QR cached for ${instanceName} (${qrBase64.length} chars)`);
+        }
+      }
+
+      if (event === "connection.update" || event === "CONNECTION_UPDATE") {
+        const newState = body?.data?.state ?? body?.data?.status;
+        if (newState === "open" && instanceName) {
+          qrCache.delete(instanceName);
+          console.log(`[webhook] ${instanceName} connected, QR cleared`);
+        }
+      }
+
+      return json({ ok: true }, 200);
+    }
+
+    // Auth: require valid JWT for all other actions
+    const authHeader = req.headers.get("authorization");
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader || "" } },
+    });
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return json({ error: "Unauthorized" }, 401);
+    }
+
+    const { data: hasAdmin } = await supabase.rpc("has_role", {
+      _user_id: user.id,
+      _role: "admin",
+    });
+    const { data: hasSuperAdmin } = await supabase.rpc("is_super_admin", {
+      _user_id: user.id,
+    });
+    if (!hasAdmin && !hasSuperAdmin) {
+      return json({ error: "Forbidden" }, 403);
+    }
+
     const body = req.method !== "GET" ? await req.json() : {};
-    const action = body.action || new URL(req.url).searchParams.get("action");
+    const action = body.action || queryAction;
 
     switch (action) {
       // ─── List instances ───
