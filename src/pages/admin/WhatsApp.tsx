@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   MessageCircle, Plus, Smartphone, FileText, Loader2, RefreshCw,
-  Trash2, QrCode, Power, PowerOff, Wifi, WifiOff, Send,
+  Trash2, QrCode, PowerOff, Wifi, WifiOff, Send, AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -39,6 +39,10 @@ const evoApi = async (action: string, body?: Record<string, unknown>) => {
       body: JSON.stringify({ action, ...body }),
     }
   );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err?.error || err?.response?.message?.[0] || `Erro ${res.status}`);
+  }
   return res.json();
 };
 
@@ -48,9 +52,8 @@ const WhatsApp = () => {
   const [creating, setCreating] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newName, setNewName] = useState("");
-  const [newNumber, setNewNumber] = useState("");
-  const [qrDialog, setQrDialog] = useState<{ open: boolean; name: string; qr: string; base64?: string }>({
-    open: false, name: "", qr: "", base64: "",
+  const [qrDialog, setQrDialog] = useState<{ open: boolean; name: string; qr: string; base64?: string; loading?: boolean; error?: string }>({
+    open: false, name: "", qr: "", base64: "", loading: false, error: "",
   });
   const [sendDialog, setSendDialog] = useState<{ open: boolean; name: string }>({ open: false, name: "" });
   const [sendNumber, setSendNumber] = useState("");
@@ -62,122 +65,121 @@ const WhatsApp = () => {
     setLoading(true);
     try {
       const data = await evoApi("list_instances");
-      setInstances(Array.isArray(data) ? data : []);
-      // Load states
-      if (Array.isArray(data)) {
+      const list = Array.isArray(data) ? data : [];
+      setInstances(list);
+      if (list.length > 0) {
         const states: Record<string, string> = {};
         await Promise.all(
-          data.map(async (inst: Instance) => {
+          list.map(async (inst: Instance) => {
+            const name = inst.instance?.instanceName;
+            if (!name) return;
             try {
-              const state = await evoApi("connection_state", {
-                instanceName: inst.instance.instanceName,
-              });
-              states[inst.instance.instanceName] = state?.instance?.state || state?.state || "unknown";
+              const state = await evoApi("connection_state", { instanceName: name });
+              states[name] = state?.instance?.state || state?.state || "unknown";
             } catch {
-              states[inst.instance.instanceName] = "error";
+              states[name] = "error";
             }
           })
         );
         setConnectionStates(states);
       }
-    } catch {
-      toast.error("Erro ao carregar instâncias");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao carregar instâncias");
     }
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    loadInstances();
-  }, [loadInstances]);
+  useEffect(() => { loadInstances(); }, [loadInstances]);
 
   const handleCreate = async () => {
-    if (!newName.trim()) {
-      toast.error("Nome da instância é obrigatório");
-      return;
-    }
+    if (!newName.trim()) { toast.error("Nome da instância é obrigatório"); return; }
     setCreating(true);
     try {
-      const data = await evoApi("create_instance", {
-        instanceName: newName.trim().replace(/\s/g, "-").toLowerCase(),
-        number: newNumber.replace(/\D/g, "") || undefined,
-      });
-      if (data?.error) {
-        toast.error(typeof data.error === "string" ? data.error : "Erro ao criar instância");
-      } else {
-        toast.success("Instância criada! Escaneie o QR Code para conectar.");
-        // Show QR
-        if (data?.qrcode) {
-          setQrDialog({
-            open: true,
-            name: newName.trim(),
-            qr: data.qrcode?.code || "",
-            base64: data.qrcode?.base64 || "",
-          });
-        }
-        setDialogOpen(false);
-        setNewName("");
-        setNewNumber("");
-        loadInstances();
-      }
-    } catch {
-      toast.error("Erro ao criar instância");
+      const instanceName = newName.trim().replace(/\s/g, "-").toLowerCase();
+      await evoApi("create_instance", { instanceName });
+      toast.success("Instância criada!");
+      setDialogOpen(false);
+      setNewName("");
+      loadInstances();
+      // Auto-open QR dialog
+      setTimeout(() => handleGetQR(instanceName), 1500);
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao criar instância");
     }
     setCreating(false);
   };
 
   const handleGetQR = async (name: string) => {
-    const data = await evoApi("get_qrcode", { instanceName: name });
-    if (data?.code || data?.base64) {
-      setQrDialog({
-        open: true,
-        name,
-        qr: data.code || "",
-        base64: data.base64 || "",
-      });
-    } else {
-      toast.info("Instância já conectada ou QR indisponível");
+    setQrDialog({ open: true, name, qr: "", base64: "", loading: true, error: "" });
+    try {
+      const data = await evoApi("get_qrcode", { instanceName: name });
+      if (data?.base64) {
+        setQrDialog(q => ({ ...q, base64: data.base64, qr: data.code || "", loading: false }));
+      } else if (data?.code) {
+        setQrDialog(q => ({ ...q, qr: data.code, loading: false }));
+      } else {
+        setQrDialog(q => ({
+          ...q, loading: false,
+          error: "QR Code indisponível. A instância pode já estar conectada ou o servidor precisa ser reiniciado.",
+        }));
+      }
+    } catch (err: any) {
+      setQrDialog(q => ({ ...q, loading: false, error: err.message || "Erro ao buscar QR Code" }));
     }
   };
 
   const handleLogout = async (name: string) => {
-    await evoApi("logout", { instanceName: name });
-    toast.success(`${name} desconectado`);
-    loadInstances();
+    try {
+      await evoApi("logout", { instanceName: name });
+      toast.success(`${name} desconectado`);
+      loadInstances();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao desconectar");
+    }
   };
 
   const handleDelete = async (name: string) => {
-    if (!confirm(`Deletar instância "${name}"?`)) return;
-    await evoApi("delete_instance", { instanceName: name });
-    toast.success(`${name} deletada`);
-    loadInstances();
+    if (!confirm(`Deletar instância "${name}"? Esta ação não pode ser desfeita.`)) return;
+    try {
+      await evoApi("delete_instance", { instanceName: name });
+      toast.success(`${name} deletada`);
+      loadInstances();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao deletar instância");
+    }
   };
 
   const handleRestart = async (name: string) => {
-    await evoApi("restart", { instanceName: name });
-    toast.success(`${name} reiniciada`);
-    loadInstances();
+    try {
+      await evoApi("restart", { instanceName: name });
+      toast.success(`${name} reiniciada`);
+      setTimeout(loadInstances, 2000);
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao reiniciar");
+    }
   };
 
   const handleSend = async () => {
-    if (!sendNumber || !sendText) {
-      toast.error("Número e mensagem são obrigatórios");
-      return;
-    }
+    if (!sendNumber || !sendText) { toast.error("Número e mensagem são obrigatórios"); return; }
     setSending(true);
-    const data = await evoApi("send_text", {
-      instanceName: sendDialog.name,
-      number: sendNumber.replace(/\D/g, ""),
-      text: sendText,
-    });
-    setSending(false);
-    if (data?.key) {
-      toast.success("Mensagem enviada!");
-      setSendDialog({ open: false, name: "" });
-      setSendNumber("");
-      setSendText("");
-    } else {
-      toast.error("Erro ao enviar mensagem");
+    try {
+      const data = await evoApi("send_text", {
+        instanceName: sendDialog.name,
+        number: sendNumber.replace(/\D/g, ""),
+        text: sendText,
+      });
+      if (data?.key) {
+        toast.success("Mensagem enviada!");
+        setSendDialog({ open: false, name: "" });
+        setSendNumber("");
+        setSendText("");
+      } else {
+        toast.error("Erro ao enviar mensagem");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao enviar mensagem");
     }
+    setSending(false);
   };
 
   const getStatusBadge = (name: string) => {
@@ -195,9 +197,7 @@ const WhatsApp = () => {
           <MessageCircle className="w-8 h-8 text-green-500" />
           <div>
             <h1 className="font-display text-2xl font-bold text-foreground">WhatsApp</h1>
-            <p className="text-sm text-muted-foreground">
-              Gerencie instâncias e envie mensagens via Evolution API
-            </p>
+            <p className="text-sm text-muted-foreground">Gerencie instâncias e envie mensagens via Evolution API</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -212,12 +212,8 @@ const WhatsApp = () => {
 
       <Tabs defaultValue="sessions">
         <TabsList>
-          <TabsTrigger value="sessions" className="gap-1.5">
-            <Smartphone className="w-3.5 h-3.5" /> Instâncias
-          </TabsTrigger>
-          <TabsTrigger value="templates" className="gap-1.5">
-            <FileText className="w-3.5 h-3.5" /> Templates
-          </TabsTrigger>
+          <TabsTrigger value="sessions" className="gap-1.5"><Smartphone className="w-3.5 h-3.5" /> Instâncias</TabsTrigger>
+          <TabsTrigger value="templates" className="gap-1.5"><FileText className="w-3.5 h-3.5" /> Templates</TabsTrigger>
         </TabsList>
 
         <TabsContent value="sessions">
@@ -306,8 +302,8 @@ const WhatsApp = () => {
             <CardContent className="flex flex-col items-center justify-center py-16 text-center">
               <FileText className="w-12 h-12 text-muted-foreground mb-4" />
               <h3 className="text-base font-semibold text-foreground mb-1">Templates em breve</h3>
-              <p className="text-sm text-muted-foreground max-w-md mb-6">
-                Templates de mensagem para automações de carrinho abandonado, confirmação de compra, e entrega de acesso estarão disponíveis em breve.
+              <p className="text-sm text-muted-foreground max-w-md">
+                Templates de mensagem para automações estarão disponíveis em breve.
               </p>
             </CardContent>
           </Card>
@@ -327,17 +323,9 @@ const WhatsApp = () => {
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="ex: vendas-principal"
+                onKeyDown={(e) => e.key === "Enter" && handleCreate()}
               />
               <p className="text-xs text-muted-foreground mt-1">Identificador único (sem espaços)</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">Número (opcional)</label>
-              <Input
-                value={newNumber}
-                onChange={(e) => setNewNumber(e.target.value)}
-                placeholder="5511999999999"
-              />
-              <p className="text-xs text-muted-foreground mt-1">DDD + número, sem +</p>
             </div>
           </div>
           <DialogFooter>
@@ -359,20 +347,30 @@ const WhatsApp = () => {
             </DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center gap-4 py-4">
-            {qrDialog.base64 ? (
+            {qrDialog.loading ? (
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground">Gerando QR Code...</p>
+              </div>
+            ) : qrDialog.error ? (
+              <div className="flex flex-col items-center gap-3 text-center">
+                <AlertTriangle className="w-10 h-10 text-yellow-500" />
+                <p className="text-sm text-muted-foreground">{qrDialog.error}</p>
+              </div>
+            ) : qrDialog.base64 ? (
               <img src={qrDialog.base64} alt="QR Code" className="w-64 h-64 rounded-lg border border-border" />
             ) : qrDialog.qr ? (
               <div className="bg-muted p-4 rounded-lg text-xs font-mono break-all max-h-64 overflow-auto">
                 {qrDialog.qr}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">QR Code indisponível. Tente novamente.</p>
+              <p className="text-sm text-muted-foreground">QR Code indisponível.</p>
             )}
             <p className="text-xs text-muted-foreground text-center">
-              Abra o WhatsApp → Aparelhos conectados → Conectar um aparelho → Escaneie este QR Code
+              Abra o WhatsApp → Aparelhos conectados → Conectar um aparelho → Escaneie o QR Code
             </p>
-            <Button variant="outline" size="sm" onClick={() => handleGetQR(qrDialog.name)}>
-              <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Gerar novo QR
+            <Button variant="outline" size="sm" onClick={() => handleGetQR(qrDialog.name)} disabled={qrDialog.loading}>
+              <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${qrDialog.loading ? "animate-spin" : ""}`} /> Tentar novamente
             </Button>
           </div>
         </DialogContent>
@@ -393,7 +391,7 @@ const WhatsApp = () => {
             </div>
             <div>
               <label className="text-sm font-medium text-foreground mb-1.5 block">Mensagem</label>
-              <Input value={sendText} onChange={(e) => setSendText(e.target.value)} placeholder="Olá! Sua compra foi aprovada." />
+              <Input value={sendText} onChange={(e) => setSendText(e.target.value)} placeholder="Olá! Sua compra foi aprovada." onKeyDown={(e) => e.key === "Enter" && handleSend()} />
             </div>
           </div>
           <DialogFooter>
