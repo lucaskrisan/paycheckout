@@ -23,8 +23,9 @@ async function evoFetch(path: string, method = "GET", body?: unknown) {
     const res = await fetch(`${baseUrl}${path}`, {
       method,
       headers: {
-        "Content-Type": "application/json",
+      "Content-Type": "application/json",
         apikey: apiKey,
+        Authorization: `Bearer ${apiKey}`,
       },
       body: body ? JSON.stringify(body) : undefined,
       signal: controller.signal,
