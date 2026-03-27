@@ -66,7 +66,7 @@ const TechnicalManual = () => {
         <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-foreground">{`
 ═══════════════════════════════════════════════════════════════
   MANUAL TÉCNICO COMPLETO — PANTERAPAY
-  Versão: 2.0 | Data: ${new Date().toLocaleDateString("pt-BR")}
+  Versão: 3.0 | Data: ${new Date().toLocaleDateString("pt-BR")}
   Documento de uso interno — Documentação oficial do sistema
 ═══════════════════════════════════════════════════════════════
 
@@ -113,7 +113,8 @@ const TechnicalManual = () => {
     • Storage (arquivos)
     • Realtime (WebSocket)
   Integrações: Asaas, Pagar.me, Mercado Pago, Stripe, OneSignal,
-    Resend, Facebook CAPI, Lovable AI
+    Resend, Facebook CAPI, Lovable AI, Cloudflare (domínios custom),
+    Crisp (chat ao vivo)
 
 2.2 Fluxo Geral
   Cadastro → Completar Perfil (CPF/Telefone) → Auto-promoção Admin
@@ -141,7 +142,7 @@ const TechnicalManual = () => {
   └── lib/                → Utilitários
 
   supabase/
-  └── functions/          → 20+ Edge Functions
+  └── functions/          → 35+ Edge Functions
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 3. ARQUITETURA DE DOMÍNIOS E INFRAESTRUTURA
@@ -374,13 +375,33 @@ ROTAS ESPECIAIS
 ────────────────────────────────────
   Provedores suportados:
   • Asaas (PIX, cartão, boleto, assinatura)
-  • Pagar.me (PIX, cartão)
+  • Pagar.me (PIX, cartão com 3D Secure)
   • Mercado Pago (PIX, cartão)
-  • Stripe (cartão)
+  • Stripe (cartão, com webhook)
+
+  Modalidades:
+  • Split: taxa descontada na hora da venda (3%)
+  • Sob Demanda (Billing): R$ 0,49 fixo + 3% por venda
 
   Cada produtor configura suas próprias credenciais.
   Campos: provider, name, environment (sandbox|production), config (JSON), payment_methods (JSON)
   RLS: isolamento total por user_id
+
+5.9 CRISP CHAT (/admin/crisp)
+────────────────────────────────
+  Objetivo: Integração com Crisp para chat ao vivo no checkout.
+  Configuração: Website ID do Crisp armazenado em checkout_settings.
+
+5.10 API KEYS (/admin/api-keys) — super_admin
+────────────────────────────────────────────────
+  Objetivo: Gerenciamento de chaves de API da plataforma.
+  Acesso restrito a super_admin.
+
+5.11 REVISÃO DE PRODUTOS (/admin/product-review) — super_admin
+────────────────────────────────────────────────────────────────
+  Objetivo: Moderação de produtos cadastrados pelos produtores.
+  Campo: moderation_status (pending, approved, rejected)
+  Edge Function: product-moderation-email (notifica produtor)
 
 5.9 RASTREAMENTO (/admin/tracking)
 ────────────────────────────────────
