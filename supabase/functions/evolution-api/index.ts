@@ -1,5 +1,23 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
+// In-memory QR code cache (per isolate). Entries auto-expire after 60s.
+const qrCache = new Map<string, { base64: string; ts: number }>();
+const QR_TTL = 60_000;
+
+function cacheQr(instanceName: string, base64: string) {
+  qrCache.set(instanceName, { base64, ts: Date.now() });
+}
+
+function getCachedQr(instanceName: string): string | null {
+  const entry = qrCache.get(instanceName);
+  if (!entry) return null;
+  if (Date.now() - entry.ts > QR_TTL) {
+    qrCache.delete(instanceName);
+    return null;
+  }
+  return entry.base64;
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -131,13 +149,29 @@ Deno.serve(async (req) => {
       case "create_instance": {
         const { instanceName, number } = body;
         if (!instanceName) return json({ error: "instanceName required" }, 400);
+        const webhookUrl = `${supabaseUrl}/functions/v1/evolution-api?action=webhook_event`;
         const result = await evoFetch("/instance/create", "POST", {
           instanceName,
           number: number || undefined,
           integration: "WHATSAPP-BAILEYS",
           qrcode: true,
+          webhook: {
+            url: webhookUrl,
+            webhookByEvents: true,
+            webhookBase64: true,
+            enabled: true,
+            events: ["QRCODE_UPDATED", "CONNECTION_UPDATE"],
+          },
         });
-        return json(result.data, result.status);
+        // The create response may include a qrcode field with base64
+        const createQr = result.data?.qrcode?.base64
+          ?? result.data?.qrcode?.qrcode
+          ?? result.data?.qrcode?.code
+          ?? null;
+        if (typeof createQr === "string" && createQr.length > 100) {
+          cacheQr(instanceName, createQr);
+        }
+        return json({ ...result.data, _webhookConfigured: true }, result.status);
       }
 
       // ─── Get QR Code ───
@@ -167,6 +201,46 @@ Deno.serve(async (req) => {
           base64,
           code,
         }, result.status);
+      }
+
+      // ─── Webhook event receiver (called by Evolution API) ───
+      case "webhook_event": {
+        // This is called without auth from Evolution API
+        const event = body?.event;
+        const instanceName = body?.instance;
+
+        if (event === "qrcode.updated" || event === "QRCODE_UPDATED") {
+          const qrBase64 = body?.data?.qrcode?.base64
+            ?? body?.data?.base64
+            ?? body?.qrcode?.base64
+            ?? body?.data?.qrcode
+            ?? null;
+          if (typeof qrBase64 === "string" && qrBase64.length > 100 && instanceName) {
+            cacheQr(instanceName, qrBase64);
+            console.log(`[webhook] QR cached for ${instanceName} (${qrBase64.length} chars)`);
+          }
+        }
+
+        if (event === "connection.update" || event === "CONNECTION_UPDATE") {
+          const newState = body?.data?.state ?? body?.data?.status;
+          if (newState === "open" && instanceName) {
+            qrCache.delete(instanceName);
+            console.log(`[webhook] ${instanceName} connected, QR cleared`);
+          }
+        }
+
+        return json({ ok: true }, 200);
+      }
+
+      // ─── Get cached QR from webhook ───
+      case "get_cached_qr": {
+        const { instanceName } = body;
+        if (!instanceName) return json({ error: "instanceName required" }, 400);
+        const cached = getCachedQr(instanceName);
+        return json({
+          base64: cached ? (cached.startsWith("data:") ? cached : `data:image/png;base64,${cached}`) : null,
+          cached: !!cached,
+        }, 200);
       }
 
       // ─── Connection state ───
