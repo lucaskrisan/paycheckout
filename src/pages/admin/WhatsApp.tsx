@@ -91,6 +91,30 @@ const WhatsApp = () => {
 
   useEffect(() => { loadInstances(); }, [loadInstances]);
 
+  // Auto-poll connection states every 8s
+  useEffect(() => {
+    if (instances.length === 0) return;
+    let cancelled = false;
+    const poll = async () => {
+      const states: Record<string, string> = {};
+      await Promise.all(
+        instances.map(async (inst: Instance) => {
+          const name = inst.instance?.instanceName;
+          if (!name) return;
+          try {
+            const state = await evoApi("connection_state", { instanceName: name });
+            states[name] = state?.instance?.state || state?.state || "unknown";
+          } catch {
+            states[name] = "error";
+          }
+        })
+      );
+      if (!cancelled) setConnectionStates(states);
+    };
+    const id = setInterval(poll, 8000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [instances]);
+
   const handleCreate = async () => {
     if (!newName.trim()) { toast.error("Nome da instância é obrigatório"); return; }
     setCreating(true);
