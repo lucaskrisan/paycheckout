@@ -66,7 +66,7 @@ const TechnicalManual = () => {
         <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-foreground">{`
 ═══════════════════════════════════════════════════════════════
   MANUAL TÉCNICO COMPLETO — PANTERAPAY
-  Versão: 2.0 | Data: ${new Date().toLocaleDateString("pt-BR")}
+  Versão: 3.0 | Data: ${new Date().toLocaleDateString("pt-BR")}
   Documento de uso interno — Documentação oficial do sistema
 ═══════════════════════════════════════════════════════════════
 
@@ -113,7 +113,8 @@ const TechnicalManual = () => {
     • Storage (arquivos)
     • Realtime (WebSocket)
   Integrações: Asaas, Pagar.me, Mercado Pago, Stripe, OneSignal,
-    Resend, Facebook CAPI, Lovable AI
+    Resend, Facebook CAPI, Lovable AI, Cloudflare (domínios custom),
+    Crisp (chat ao vivo)
 
 2.2 Fluxo Geral
   Cadastro → Completar Perfil (CPF/Telefone) → Auto-promoção Admin
@@ -141,7 +142,7 @@ const TechnicalManual = () => {
   └── lib/                → Utilitários
 
   supabase/
-  └── functions/          → 20+ Edge Functions
+  └── functions/          → 35+ Edge Functions
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 3. ARQUITETURA DE DOMÍNIOS E INFRAESTRUTURA
@@ -221,7 +222,8 @@ ROTAS ADMIN (requer role admin ou super_admin)
 │ /admin/abandoned            │ Carrinhos Abandonados│ admin, super_admin           │
 │ /admin/metrics              │ Métricas             │ admin, super_admin           │
 │ /admin/financeiro           │ Financeiro Produtor  │ admin, super_admin           │
-│ /admin/integrations         │ Gateways             │ admin, super_admin           │
+│ /admin/integrations         │ Gateways/Integrações │ admin, super_admin           │
+│ /admin/crisp                │ Crisp Chat           │ admin, super_admin           │
 │ /admin/domains              │ Domínios             │ admin, super_admin           │
 │ /admin/communications       │ Comunicações/E-mails │ admin, super_admin           │
 │ /admin/webhooks             │ Webhooks             │ admin, super_admin           │
@@ -231,13 +233,15 @@ ROTAS ADMIN (requer role admin ou super_admin)
 │ /admin/my-account           │ Minha Conta          │ admin, super_admin           │
 │ /admin/tracking             │ Rastreamento/Pixel   │ admin, super_admin           │
 │ /admin/emails               │ Logs de E-mail       │ admin, super_admin           │
-│ /admin/manual               │ Manual Técnico       │ admin, super_admin           │
+│ /admin/manual               │ Manual Técnico       │ super_admin                  │
 │ /admin/billing              │ Billing              │ super_admin                  │
 │ /admin/platform             │ Painel Plataforma    │ super_admin                  │
 │ /admin/meta-ads             │ Meta Ads             │ super_admin                  │
 │ /admin/health               │ Fiscalizar           │ super_admin                  │
 │ /admin/roadmap              │ Roadmap              │ super_admin                  │
 │ /admin/blacklist            │ Blacklist Fraude     │ super_admin                  │
+│ /admin/api-keys             │ API Keys             │ super_admin                  │
+│ /admin/product-review       │ Revisão de Produtos  │ super_admin                  │
 └─────────────────────────────┴──────────────────────┴──────────────────────────────┘
 
 ROTAS ESPECIAIS
@@ -371,13 +375,33 @@ ROTAS ESPECIAIS
 ────────────────────────────────────
   Provedores suportados:
   • Asaas (PIX, cartão, boleto, assinatura)
-  • Pagar.me (PIX, cartão)
+  • Pagar.me (PIX, cartão com 3D Secure)
   • Mercado Pago (PIX, cartão)
-  • Stripe (cartão)
+  • Stripe (cartão, com webhook)
+
+  Modalidades:
+  • Split: taxa descontada na hora da venda (3%)
+  • Sob Demanda (Billing): R$ 0,49 fixo + 3% por venda
 
   Cada produtor configura suas próprias credenciais.
   Campos: provider, name, environment (sandbox|production), config (JSON), payment_methods (JSON)
   RLS: isolamento total por user_id
+
+5.9 CRISP CHAT (/admin/crisp)
+────────────────────────────────
+  Objetivo: Integração com Crisp para chat ao vivo no checkout.
+  Configuração: Website ID do Crisp armazenado em checkout_settings.
+
+5.10 API KEYS (/admin/api-keys) — super_admin
+────────────────────────────────────────────────
+  Objetivo: Gerenciamento de chaves de API da plataforma.
+  Acesso restrito a super_admin.
+
+5.11 REVISÃO DE PRODUTOS (/admin/product-review) — super_admin
+────────────────────────────────────────────────────────────────
+  Objetivo: Moderação de produtos cadastrados pelos produtores.
+  Campo: moderation_status (pending, approved, rejected)
+  Edge Function: product-moderation-email (notifica produtor)
 
 5.9 RASTREAMENTO (/admin/tracking)
 ────────────────────────────────────
@@ -394,7 +418,7 @@ ROTAS ESPECIAIS
   • PixelEventsDashboard — Dashboard de eventos
   • UtmAttributionTable — Tabela de atribuição UTM
 
-5.10 COMUNICAÇÕES (/admin/communications)
+5.13 COMUNICAÇÕES (/admin/communications)
 ──────────────────────────────────────────
   • E-mails transacionais via Resend
   • Logs completos: email_logs (status, aberturas, cliques, bounces)
@@ -402,17 +426,26 @@ ROTAS ESPECIAIS
   • Webhooks customizados: fire-webhooks (HMAC-SHA256)
   • Push notifications: OneSignal
 
-5.11 SIDEBAR DO ADMIN — ORGANIZAÇÃO
+5.14 DOMÍNIOS CUSTOMIZADOS (/admin/domains)
+─────────────────────────────────────────────
+  Objetivo: Permitir que produtores conectem domínios próprios.
+  Tabela: custom_domains (hostname, status, ssl_status, cloudflare_hostname_id)
+  Edge Functions: cloudflare-add-hostname, cloudflare-check-status,
+    cloudflare-remove-hostname
+  Fluxo: Adicionar domínio → Cloudflare SaaS → Verificar DNS → SSL auto
+
+5.15 SIDEBAR DO ADMIN — ORGANIZAÇÃO
 ──────────────────────────────────────
   Seções (em ordem):
   1. PRINCIPAL: Dashboard, Vendas, Produtos, Clientes
   2. VENDAS: Checkouts, Upsell, Cupons
   3. CONTEÚDO: Área de Membros, Avaliações
   4. ANÁLISE: Relatórios (carrinhos abandonados), Métricas, Financeiro
-  5. GERAL (collapsible): Gateways, Domínios, Comunicações, Webhook,
-     WhatsApp, Notificações, App Mobile, Minha Conta
-  6. PLATAFORMA (super_admin): Meta Ads, Painel Plataforma, Billing,
-     Blacklist, Roadmap, Fiscalizar
+  5. GERAL (collapsible): Gateways, Crisp Chat, Domínios, Comunicações,
+     Webhook, WhatsApp, Notificações, App Mobile, Minha Conta
+  6. PLATAFORMA (super_admin): Revisão Produtos, Meta Ads, Painel
+     Plataforma, Billing, API Keys, Blacklist, Roadmap, Fiscalizar,
+     Manual Técnico
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 6. SISTEMA DE AUTENTICAÇÃO
@@ -481,39 +514,51 @@ ROTAS ESPECIAIS
 8. EDGE FUNCTIONS (Backend)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-┌──────────────────────────┬────────────────────────────────────────┐
-│ Função                   │ Propósito                              │
-├──────────────────────────┼────────────────────────────────────────┤
-│ create-asaas-payment     │ Criar pagamento via Asaas              │
-│ create-pix-payment       │ Criar pagamento PIX via Pagar.me       │
-│ create-mercadopago-payment│ Criar pagamento via Mercado Pago      │
-│ create-stripe-payment    │ Criar pagamento via Stripe             │
-│ check-order-status       │ Polling status (sem auth, anon)        │
-│ asaas-webhook            │ Receber webhooks Asaas                 │
-│ mercadopago-webhook      │ Receber webhooks Mercado Pago          │
-│ pagarme-webhook          │ Receber webhooks Pagar.me              │
-│ resend-webhook           │ Receber webhooks Resend (email events) │
-│ facebook-capi            │ Enviar eventos CAPI ao Facebook        │
-│ fire-webhooks            │ Disparar webhooks customizados (HMAC)  │
-│ generate-email-copy      │ Gerar copy de email via Lovable AI     │
-│ process-upsell           │ Processar one-click upsell             │
-│ send-access-link         │ Enviar link de acesso via Resend       │
-│ send-pix-reminder        │ Lembrete de PIX pendente               │
-│ resolve-user-destination │ Determinar destino pós-login           │
-│ delete-account           │ Deletar conta do usuário               │
-│ pwa-manifest             │ Gerar manifest.json dinâmico           │
-│ test-push                │ Testar notificação push                │
-│ verify-turnstile         │ Validar Cloudflare Turnstile           │
-│ reconcile-orders         │ Reconciliar pedidos                    │
-│ webhook-test             │ Testar webhook com payload simulado    │
-│ webhook-retry            │ Reprocessar webhooks com falha (backoff│
-│                          │ exponencial: 5s, 30s, 2min)            │
-│ meta-ads                 │ Consultar dados Meta Ads               │
-│ meta-ads-alerts          │ Alertas de Meta Ads                    │
-│ meta-diagnostics         │ Diagnóstico de pixels                  │
-│ meta-emq                 │ Consultar EMQ score                    │
-│ meta-emq-monitor         │ Monitorar EMQ automaticamente          │
-└──────────────────────────┴────────────────────────────────────────┘
+┌──────────────────────────────┬────────────────────────────────────────┐
+│ Função                       │ Propósito                              │
+├──────────────────────────────┼────────────────────────────────────────┤
+│ create-asaas-payment         │ Criar pagamento via Asaas              │
+│ create-pix-payment           │ Criar pagamento PIX via Pagar.me       │
+│ create-pagarme-card-payment  │ Criar pagamento cartão via Pagar.me    │
+│ create-mercadopago-payment   │ Criar pagamento via Mercado Pago       │
+│ create-stripe-payment        │ Criar pagamento via Stripe             │
+│ generate-3ds-token           │ Gerar token 3D Secure (autenticação)   │
+│ check-order-status           │ Polling status (sem auth, anon)        │
+│ asaas-webhook                │ Receber webhooks Asaas                 │
+│ mercadopago-webhook          │ Receber webhooks Mercado Pago          │
+│ pagarme-webhook              │ Receber webhooks Pagar.me              │
+│ stripe-webhook               │ Receber webhooks Stripe                │
+│ resend-webhook               │ Receber webhooks Resend (email events) │
+│ facebook-capi                │ Enviar eventos CAPI ao Facebook        │
+│ fire-webhooks                │ Disparar webhooks customizados (HMAC)  │
+│ generate-email-copy          │ Gerar copy de email via Lovable AI     │
+│ process-upsell               │ Processar one-click upsell             │
+│ send-access-link             │ Enviar link de acesso via Resend       │
+│ send-pix-reminder            │ Lembrete de PIX pendente               │
+│ product-moderation-email     │ E-mail de moderação de produto         │
+│ resolve-user-destination     │ Determinar destino pós-login           │
+│ delete-account               │ Deletar conta do usuário               │
+│ pwa-manifest                 │ Gerar manifest.json dinâmico           │
+│ test-push                    │ Testar notificação push                │
+│ verify-turnstile             │ Validar Cloudflare Turnstile           │
+│ reconcile-orders             │ Reconciliar pedidos com gateway        │
+│ validate-gateway             │ Validar credenciais do gateway         │
+│ signed-material-url          │ Gerar URL assinada para materiais      │
+│ billing-notify               │ Notificar sobre billing                │
+│ billing-recharge             │ Processar recarga de créditos          │
+│ billing-validate-card        │ Validar cartão para billing            │
+│ cloudflare-add-hostname      │ Adicionar domínio custom (Cloudflare)  │
+│ cloudflare-check-status      │ Verificar status domínio (Cloudflare)  │
+│ cloudflare-remove-hostname   │ Remover domínio custom (Cloudflare)    │
+│ webhook-test                 │ Testar webhook com payload simulado    │
+│ webhook-retry                │ Reprocessar webhooks com falha (backoff│
+│                              │ exponencial: 5s, 30s, 2min)            │
+│ meta-ads                     │ Consultar dados Meta Ads               │
+│ meta-ads-alerts              │ Alertas de Meta Ads                    │
+│ meta-diagnostics             │ Diagnóstico de pixels                  │
+│ meta-emq                     │ Consultar EMQ score                    │
+│ meta-emq-monitor             │ Monitorar EMQ automaticamente          │
+└──────────────────────────────┴────────────────────────────────────────┘
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 9. SISTEMA DE IA
@@ -552,7 +597,7 @@ ROTAS ESPECIAIS
 11. BANCO DE DADOS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-TABELAS PRINCIPAIS (29 tabelas + 2 views)
+TABELAS PRINCIPAIS (31 tabelas + 2 views)
 
 Core:
   • profiles — Dados do usuário (CPF, telefone, avatar, profile_completed)
@@ -595,11 +640,14 @@ Infraestrutura:
   • notification_settings — Config de notificações push
   • pwa_settings — Config PWA por produtor
   • webhook_endpoints — Endpoints de webhook customizados
+  • webhook_deliveries — Log de entregas de webhooks (retry/backoff)
   • facebook_domains — Domínios verificados no Facebook
+  • custom_domains — Domínios customizados (Cloudflare SaaS)
   • platform_settings — Config global da plataforma
   • internal_tasks — Tarefas internas (super_admin)
   • fraud_blacklist — Blacklist de fraude (CPF, email, IP)
   • sales_pages — Páginas de venda (slug-based)
+  • billing_recharges — Recargas de crédito (billing)
 
 Views:
   • active_gateways — Gateways ativos (view)
@@ -632,9 +680,11 @@ Views:
 12.4 Secrets (nunca expostos no código)
   SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY,
   SUPABASE_DB_URL, ASAAS_API_KEY, PAGARME_API_KEY,
+  MERCADOPAGO_ACCESS_TOKEN, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET,
   RESEND_API_KEY, RESEND_WEBHOOK_SECRET, ONESIGNAL_APP_ID,
   ONESIGNAL_REST_API_KEY, META_ACCESS_TOKEN, LOVABLE_API_KEY,
-  SUPABASE_PUBLISHABLE_KEY
+  SUPABASE_PUBLISHABLE_KEY, CLOUDFLARE_API_TOKEN, CLOUDFLARE_ZONE_ID,
+  TURNSTILE_SECRET_KEY, CRISP_WEBSITE_ID
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 13. PWA E RECURSOS AVANÇADOS
