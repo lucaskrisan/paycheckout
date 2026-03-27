@@ -81,7 +81,23 @@ Deno.serve(async (req) => {
       // ─── List instances ───
       case "list_instances": {
         const result = await evoFetch("/instance/fetchInstances", "GET");
-        return json(result.data, result.status);
+        // Normalize to { instance: { instanceName, ... } } shape the frontend expects
+        const raw = Array.isArray(result.data) ? result.data : [];
+        const normalized = raw.map((item: Record<string, unknown>) => {
+          // v2 format has top-level "name", v1 has "instance.instanceName"
+          if (item.name && !item.instance) {
+            return {
+              instance: {
+                instanceName: item.name,
+                instanceId: item.id,
+                status: item.connectionStatus,
+                owner: item.ownerJid,
+              },
+            };
+          }
+          return item;
+        });
+        return json(normalized, result.status);
       }
 
       // ─── Create instance ───
@@ -101,7 +117,7 @@ Deno.serve(async (req) => {
       case "get_qrcode": {
         const { instanceName } = body;
         if (!instanceName) return json({ error: "instanceName required" }, 400);
-        const result = await evoFetch(`/instance/connect/${instanceName}`, "GET");
+        const result = await evoFetch(`/instance/connect/${encodeURIComponent(instanceName)}`, "GET");
         return json(result.data, result.status);
       }
 
@@ -109,7 +125,7 @@ Deno.serve(async (req) => {
       case "connection_state": {
         const { instanceName } = body;
         if (!instanceName) return json({ error: "instanceName required" }, 400);
-        const result = await evoFetch(`/instance/connectionState/${instanceName}`, "GET");
+        const result = await evoFetch(`/instance/connectionState/${encodeURIComponent(instanceName)}`, "GET");
         return json(result.data, result.status);
       }
 
@@ -117,7 +133,7 @@ Deno.serve(async (req) => {
       case "logout": {
         const { instanceName } = body;
         if (!instanceName) return json({ error: "instanceName required" }, 400);
-        const result = await evoFetch(`/instance/logout/${instanceName}`, "DELETE");
+        const result = await evoFetch(`/instance/logout/${encodeURIComponent(instanceName)}`, "DELETE");
         return json(result.data, result.status);
       }
 
@@ -125,7 +141,7 @@ Deno.serve(async (req) => {
       case "delete_instance": {
         const { instanceName } = body;
         if (!instanceName) return json({ error: "instanceName required" }, 400);
-        const result = await evoFetch(`/instance/delete/${instanceName}`, "DELETE");
+        const result = await evoFetch(`/instance/delete/${encodeURIComponent(instanceName)}`, "DELETE");
         return json(result.data, result.status);
       }
 
@@ -134,7 +150,7 @@ Deno.serve(async (req) => {
         const { instanceName, number, text } = body;
         if (!instanceName || !number || !text)
           return json({ error: "instanceName, number, text required" }, 400);
-        const result = await evoFetch(`/message/sendText/${instanceName}`, "POST", {
+        const result = await evoFetch(`/message/sendText/${encodeURIComponent(instanceName)}`, "POST", {
           number,
           text,
         });
@@ -145,7 +161,7 @@ Deno.serve(async (req) => {
       case "restart": {
         const { instanceName } = body;
         if (!instanceName) return json({ error: "instanceName required" }, 400);
-        const result = await evoFetch(`/instance/restart/${instanceName}`, "PUT");
+        const result = await evoFetch(`/instance/restart/${encodeURIComponent(instanceName)}`, "PUT");
         return json(result.data, result.status);
       }
 
