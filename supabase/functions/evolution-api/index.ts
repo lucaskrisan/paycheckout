@@ -13,6 +13,33 @@ function json(body: unknown, status = 200) {
   });
 }
 
+function getConnectionState(payload: any) {
+  return payload?.instance?.state ?? payload?.state ?? payload?.connectionStatus ?? null;
+}
+
+function getQrValue(payload: any) {
+  const value = payload?.base64
+    ?? payload?.qrcode
+    ?? payload?.qr?.base64
+    ?? payload?.qr?.qrcode
+    ?? payload?.data?.base64
+    ?? payload?.data?.qrcode
+    ?? payload?.code
+    ?? payload?.pairingCode
+    ?? null;
+
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function normalizeBase64Image(value: string | null) {
+  if (!value) return null;
+  if (value.startsWith("data:image")) return value;
+  if (/^[A-Za-z0-9+/=]+$/.test(value) && value.length > 300) {
+    return `data:image/png;base64,${value}`;
+  }
+  return null;
+}
+
 async function evoFetch(path: string, method = "GET", body?: unknown) {
   const baseUrl = Deno.env.get("EVOLUTION_API_URL")!;
   const apiKey = Deno.env.get("EVOLUTION_API_KEY")!;
@@ -117,8 +144,29 @@ Deno.serve(async (req) => {
       case "get_qrcode": {
         const { instanceName } = body;
         if (!instanceName) return json({ error: "instanceName required" }, 400);
+        const stateResult = await evoFetch(`/instance/connectionState/${encodeURIComponent(instanceName)}`, "GET");
+        if (stateResult.status >= 400) return json(stateResult.data, stateResult.status);
+
+        const state = getConnectionState(stateResult.data);
+        if (state === "open") {
+          return json({ connected: true, state }, 200);
+        }
+
         const result = await evoFetch(`/instance/connect/${encodeURIComponent(instanceName)}`, "GET");
-        return json(result.data, result.status);
+        if (result.status >= 400) return json(result.data, result.status);
+
+        const qrValue = getQrValue(result.data);
+        const base64 = normalizeBase64Image(qrValue);
+        const code = base64 ? null : qrValue;
+        const waiting = !qrValue && (result.data?.count === 0 || state === "connecting" || state === "close" || state === "closed");
+
+        return json({
+          connected: false,
+          state,
+          waiting,
+          base64,
+          code,
+        }, result.status);
       }
 
       // ─── Connection state ───
