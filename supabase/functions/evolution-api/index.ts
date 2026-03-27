@@ -161,7 +161,7 @@ Deno.serve(async (req) => {
       case "restart": {
         const { instanceName } = body;
         if (!instanceName) return json({ error: "instanceName required" }, 400);
-        const result = await evoFetch(`/instance/restart/${encodeURIComponent(instanceName)}`, "PUT");
+        const result = await evoFetch(`/instance/restart/${encodeURIComponent(instanceName)}`, "POST");
         return json(result.data, result.status);
       }
 
