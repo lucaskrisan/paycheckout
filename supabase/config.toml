@@ -107,3 +107,6 @@ verify_jwt = false
 
 [functions.product-moderation-email]
 verify_jwt = false
+
+[functions.evolution-api]
+verify_jwt = false
