@@ -39,7 +39,7 @@ const CouponField = ({ productId, productPrice, onApply }: CouponFieldProps) => 
       if (coupon.product_id && coupon.product_id !== productId) { setError("Cupom não válido para este produto"); return; }
       if (coupon.min_amount && productPrice < coupon.min_amount) { setError(`Valor mínimo: R$ ${Number(coupon.min_amount).toFixed(2).replace(".", ",")}`); return; }
 
-      const result: CouponResult = { id: data.id, code: data.code, discount_type: data.discount_type, discount_value: data.discount_value };
+      const result: CouponResult = { id: coupon.id, code: coupon.code, discount_type: coupon.discount_type, discount_value: coupon.discount_value };
       setApplied(result);
       onApply(result);
     } catch {
