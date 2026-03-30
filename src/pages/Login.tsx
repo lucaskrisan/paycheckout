@@ -9,7 +9,7 @@ import { lovable } from "@/integrations/lovable";
 import panteraMascot from "@/assets/pantera-mascot.png";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Eye, EyeOff, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, CheckCircle2, BarChart3, GraduationCap, ChevronLeft } from "lucide-react";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import { supabase } from "@/integrations/supabase/client";
 
