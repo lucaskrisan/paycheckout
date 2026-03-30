@@ -77,7 +77,7 @@ const FeaturesGrid = () => (
 function FeatureCard({ icon: Icon, title, desc, index }: { icon: any; title: string; desc: string; index: number }) {
   return (
     <motion.div
-      className="group relative bg-white/[0.02] border border-white/[0.05] rounded-2xl p-7 hover:border-primary/20 hover:bg-white/[0.04] transition-all duration-500 overflow-hidden"
+      className="group relative bg-white/[0.02] border border-white/[0.05] rounded-2xl p-7 hover:border-primary/20 hover:bg-white/[0.04] transition-all duration-500 overflow-hidden cursor-default"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}

@@ -26,7 +26,7 @@ const AllFeatures = () => (
       badge="Arsenal completo"
       title="Tudo que um "
       highlight="predador precisa."
-      subtitle="18+ funcionalidades que plataformas de R$ 497/mês nem sonham em oferecer. E aqui é grátis."
+      subtitle="18+ funcionalidades que plataformas de R$ 497/mês nem sonham em oferecer. E na Panttera é grátis."
     />
     <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mt-20">
       {allFeatures.map((f, i) => (

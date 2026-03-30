@@ -1,43 +1,128 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, ChevronDown } from "lucide-react";
+import { ArrowRight, Menu, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import panteraMascot from "@/assets/pantera-mascot.png";
+import { useState, useEffect } from "react";
 
-const LandingHeader = () => (
-  <header className="relative z-50 backdrop-blur-2xl bg-[#0B0B0D]/60 sticky top-0 border-b border-white/[0.04]">
-    <div className="container max-w-7xl mx-auto flex items-center justify-between px-6 h-[72px]">
-      <div className="flex items-center gap-3">
-        <img src={panteraMascot} alt="PanteraPay" className="w-10 h-10 drop-shadow-[0_0_15px_rgba(0,230,118,0.4)]" />
-        <span className="font-display font-extrabold text-xl tracking-tight">
-          Pantera<span className="text-primary">Pay</span>
-        </span>
+const LandingHeader = () => {
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  return (
+    <header
+      className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${
+        scrolled
+          ? "bg-[#0B0B0D]/80 backdrop-blur-2xl border-b border-white/[0.06] shadow-[0_4px_30px_rgba(0,0,0,0.4)]"
+          : "bg-transparent"
+      }`}
+    >
+      <div className="container max-w-7xl mx-auto flex items-center justify-between px-6 h-[72px]">
+        <motion.div
+          className="flex items-center gap-3"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <div className="relative">
+            <div className="absolute inset-0 bg-primary/30 rounded-full blur-xl animate-pulse" />
+            <img
+              src={panteraMascot}
+              alt="Panttera"
+              className="relative w-10 h-10 drop-shadow-[0_0_20px_rgba(0,230,118,0.5)]"
+            />
+          </div>
+          <span className="font-display font-extrabold text-xl tracking-tight">
+            Pant<span className="text-transparent bg-clip-text" style={{ backgroundImage: "linear-gradient(90deg, #00E676, #D4AF37)" }}>tera</span>
+          </span>
+        </motion.div>
+
+        <nav className="hidden md:flex items-center gap-8 text-[13px] font-medium text-[#7A7A85]">
+          {[
+            { href: "#features", label: "Recursos" },
+            { href: "#showcase", label: "Plataforma" },
+            { href: "#all-features", label: "Segurança" },
+            { href: "#cta", label: "Contato" },
+          ].map((link, i) => (
+            <motion.a
+              key={link.href}
+              href={link.href}
+              className="relative hover:text-white transition-colors duration-300 group"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 + i * 0.05 }}
+            >
+              {link.label}
+              <span className="absolute -bottom-1 left-0 w-0 h-[2px] bg-gradient-to-r from-primary to-gold group-hover:w-full transition-all duration-300" />
+            </motion.a>
+          ))}
+        </nav>
+
+        <motion.div
+          className="hidden md:flex items-center gap-3"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          <Link to="/login">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-[#9A9AA5] hover:text-white hover:bg-white/5 text-[13px] font-medium rounded-lg px-5"
+            >
+              Entrar
+            </Button>
+          </Link>
+          <Link to="/login?signup=true">
+            <Button
+              size="sm"
+              className="bg-gradient-to-r from-primary to-[#00C853] hover:from-[#00C853] hover:to-primary text-primary-foreground font-bold rounded-xl px-6 text-[13px] shadow-[0_0_30px_rgba(0,230,118,0.3)] hover:shadow-[0_0_50px_rgba(0,230,118,0.5)] transition-all duration-500 group"
+            >
+              Começar Grátis
+              <ArrowRight className="w-3.5 h-3.5 ml-1 group-hover:translate-x-1 transition-transform" />
+            </Button>
+          </Link>
+        </motion.div>
+
+        {/* Mobile menu button */}
+        <button className="md:hidden text-white" onClick={() => setMobileOpen(!mobileOpen)}>
+          {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
       </div>
 
-      <nav className="hidden md:flex items-center gap-7 text-[13px] font-medium text-[#9A9AA5]">
-        <a href="#features" className="hover:text-white transition-colors duration-300 flex items-center gap-1">
-          Recursos <ChevronDown className="w-3 h-3" />
-        </a>
-        <a href="#showcase" className="hover:text-white transition-colors duration-300 flex items-center gap-1">
-          Plataforma <ChevronDown className="w-3 h-3" />
-        </a>
-        <a href="#all-features" className="hover:text-white transition-colors duration-300">Segurança</a>
-        <a href="#cta" className="hover:text-white transition-colors duration-300">Contato</a>
-      </nav>
-
-      <div className="flex items-center gap-3">
-        <Link to="/login">
-          <Button variant="outline" size="sm" className="text-white border-white/20 hover:bg-white/5 text-[13px] font-medium rounded-lg px-5">
-            Entrar
-          </Button>
-        </Link>
-        <Link to="/login?signup=true">
-          <Button size="sm" className="bg-primary hover:bg-[#00C853] text-primary-foreground font-bold rounded-lg px-5 text-[13px] shadow-[0_0_25px_rgba(0,230,118,0.3)] hover:shadow-[0_0_40px_rgba(0,230,118,0.5)] transition-all duration-300">
-            Criar Conta Grátis
-          </Button>
-        </Link>
-      </div>
-    </div>
-  </header>
-);
+      {/* Mobile menu */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            className="md:hidden bg-[#0B0B0D]/95 backdrop-blur-2xl border-t border-white/[0.06] px-6 py-6 space-y-4"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+          >
+            {["Recursos", "Plataforma", "Segurança", "Contato"].map((l) => (
+              <a key={l} href={`#${l.toLowerCase()}`} className="block text-sm text-[#9A9AA5] hover:text-white py-2" onClick={() => setMobileOpen(false)}>
+                {l}
+              </a>
+            ))}
+            <div className="flex gap-3 pt-2">
+              <Link to="/login" className="flex-1">
+                <Button variant="outline" className="w-full border-white/10 text-white">Entrar</Button>
+              </Link>
+              <Link to="/login?signup=true" className="flex-1">
+                <Button className="w-full bg-primary text-primary-foreground font-bold">Criar Conta</Button>
+              </Link>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </header>
+  );
+};
 
 export default LandingHeader;

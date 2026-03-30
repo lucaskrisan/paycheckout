@@ -49,7 +49,7 @@ const ComparisonSection = () => (
         <div className="grid grid-cols-3 border-b border-white/[0.06] bg-white/[0.02]">
           <div className="p-4 pl-6 text-[11px] text-[#6A6A75] uppercase tracking-[0.15em] font-medium">Recurso</div>
           <div className="p-4 text-center">
-            <span className="text-[11px] font-bold text-primary uppercase tracking-[0.15em]">PanteraPay</span>
+            <span className="text-[11px] font-bold text-primary uppercase tracking-[0.15em]">Panttera</span>
           </div>
           <div className="p-4 text-center">
             <span className="text-[11px] font-bold text-[#3A3A40] uppercase tracking-[0.15em]">Outros</span>

@@ -2,14 +2,14 @@ import { Link } from "react-router-dom";
 import panteraMascot from "@/assets/pantera-mascot.png";
 
 const LandingFooter = () => (
-  <footer className="relative z-10 border-t border-white/[0.06] bg-[#09090b] py-16">
+  <footer className="relative z-10 border-t border-white/[0.06] bg-[#070709] py-16">
     <div className="container max-w-7xl mx-auto px-6">
       {/* Top row */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-10">
         <div className="flex items-center gap-3">
-          <img src={panteraMascot} alt="PanteraPay" className="w-8 h-8" />
+          <img src={panteraMascot} alt="Panttera" className="w-9 h-9 drop-shadow-[0_0_15px_rgba(0,230,118,0.3)]" />
           <span className="text-base font-bold text-foreground">
-            Pantera<span className="text-primary">Pay</span>
+            Pant<span className="text-transparent bg-clip-text" style={{ backgroundImage: "linear-gradient(90deg, #00E676, #D4AF37)" }}>tera</span>
           </span>
         </div>
 
@@ -32,13 +32,11 @@ const LandingFooter = () => (
         </div>
       </div>
 
-      {/* Divider */}
       <div className="border-t border-white/[0.06] mb-8" />
 
-      {/* Bottom row */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4">
         <p className="text-xs text-muted-foreground/60">
-          © {new Date().getFullYear()} PanteraPay · Move money like a predator.
+          © {new Date().getFullYear()} Panttera · Move money like a predator.
         </p>
         <div className="flex items-center gap-6 text-xs">
           <Link to="/login" className="text-muted-foreground hover:text-primary transition-colors duration-300">
