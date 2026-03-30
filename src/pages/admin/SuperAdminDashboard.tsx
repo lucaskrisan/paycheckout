@@ -358,8 +358,8 @@ const SuperAdminDashboard = () => {
     return <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
 
-  const filteredProducers = producers.filter((p) => (p.full_name || "").toLowerCase().includes(search.toLowerCase()));
-  const filteredUsers = allUsers.filter((u) => (u.full_name || "").toLowerCase().includes(userSearch.toLowerCase()));
+  const filteredProducers = producers.filter((p) => (p.full_name || "").toLowerCase().includes(search.toLowerCase()) || (p.email || "").toLowerCase().includes(search.toLowerCase()));
+  const filteredUsers = allUsers.filter((u) => (u.full_name || "").toLowerCase().includes(userSearch.toLowerCase()) || (u.email || "").toLowerCase().includes(userSearch.toLowerCase()));
 
   return (
     <div className="space-y-6">
