@@ -61,7 +61,7 @@ const IntegrationCard = ({
               variant={isConnected ? "default" : "secondary"}
               className={cn(
                 "text-[10px] px-2 py-0 h-5 font-semibold tracking-wide uppercase",
-                isConnected && "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20"
+                isConnected && "bg-primary/15 text-primary border border-primary/30 hover:bg-primary/20"
               )}
             >
               {isConnected ? "Conectado" : "Desconectado"}
