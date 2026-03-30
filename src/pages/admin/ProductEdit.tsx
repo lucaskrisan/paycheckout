@@ -425,6 +425,7 @@ const ProductEdit = () => {
       is_subscription: form.is_subscription,
       billing_cycle: form.billing_cycle,
       show_coupon: form.show_coupon,
+      delivery_method: form.delivery_method,
       payment_settings: form.payment_settings,
       updated_at: new Date().toISOString(),
     };
