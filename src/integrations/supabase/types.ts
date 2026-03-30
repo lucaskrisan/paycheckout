@@ -79,6 +79,33 @@ export type Database = {
           },
         ]
       }
+      appsell_integrations: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          token?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       billing_accounts: {
         Row: {
           balance: number

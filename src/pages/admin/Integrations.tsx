@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GatewayFormDialog from "@/components/admin/GatewayFormDialog";
 import IntegrationWebhookGuide from "@/components/admin/IntegrationWebhookGuide";
+import AppSellIntegration from "@/components/admin/AppSellIntegration";
 import type { GatewayConfig } from "@/pages/admin/Gateways";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -171,6 +172,16 @@ const Integrations = () => {
       </div>
 
       <IntegrationWebhookGuide installedProviders={installedProviders} />
+
+      {/* AppSell Integration */}
+      <div className="space-y-3">
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-violet-500" /> Plataformas de Entrega
+        </h2>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <AppSellIntegration />
+        </div>
+      </div>
 
       {/* Active gateways */}
       {!loading && activeGateways.length > 0 && (

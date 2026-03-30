@@ -110,3 +110,6 @@ verify_jwt = false
 
 [functions.evolution-api]
 verify_jwt = false
+
+[functions.appsell-notify]
+verify_jwt = false
