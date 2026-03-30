@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 import type { BuilderComponent } from "./types";
 
 interface ComponentEditorProps {
@@ -16,6 +17,7 @@ interface ComponentEditorProps {
 
 const ComponentEditor = ({ component, onUpdate, onRemove }: ComponentEditorProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
 
   const update = (key: string, value: any) => {
     onUpdate(component.id, { ...component.props, [key]: value });
@@ -25,7 +27,7 @@ const ComponentEditor = ({ component, onUpdate, onRemove }: ComponentEditorProps
     if (!file.type.startsWith("image/")) { toast.error("Apenas imagens"); return; }
     if (file.size > 10 * 1024 * 1024) { toast.error("Máximo 10MB"); return; }
     const ext = file.name.split(".").pop();
-    const path = `builder/${Date.now()}.${ext}`;
+    const path = `${user?.id}/${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from("product-images").upload(path, file);
     if (error) { toast.error("Erro no upload"); return; }
     const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(path);
