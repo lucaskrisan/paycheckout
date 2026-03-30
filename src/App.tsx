@@ -105,7 +105,7 @@ const App = () => (
               <Route path="webhooks" element={<Webhooks />} />
               <Route path="emails" element={<Emails />} />
               <Route path="pwa" element={<PwaSettings />} />
-              <Route path="meta-ads" element={<MetaAds />} />
+              
               <Route path="billing" element={<Billing />} />
               <Route path="platform" element={<SuperAdminDashboard />} />
               <Route path="domains" element={<Domains />} />
