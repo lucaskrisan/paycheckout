@@ -11,13 +11,14 @@ const Integrations = () => {
         </p>
       </div>
 
-      {/* Plataformas de Entrega */}
       <section className="space-y-4">
         <div className="flex items-center gap-2.5 pb-1">
           <Plug className="w-4 h-4 text-muted-foreground" />
-          <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-[0.15em]">Plataformas de Entrega</h2>
+          <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-[0.15em]">
+            Plataformas de Entrega
+          </h2>
         </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
           <AppSellIntegration />
         </div>
       </section>
