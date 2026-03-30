@@ -141,11 +141,19 @@ Deno.serve(async (req) => {
     const rawBody = await req.text();
 
     // --- Webhook signature verification ---
-    const ASAAS_WEBHOOK_TOKEN = Deno.env.get('ASAAS_WEBHOOK_TOKEN');
+    const ASAAS_WEBHOOK_TOKEN = Deno.env.get('ASAAS_WEBHOOK_TOKEN')?.trim();
     if (ASAAS_WEBHOOK_TOKEN) {
-      const receivedToken = req.headers.get('asaas-access-token');
-      if (receivedToken !== ASAAS_WEBHOOK_TOKEN) {
-        console.error('[asaas-webhook] Invalid webhook token');
+      const receivedToken = (
+        req.headers.get('asaas-access-token') ||
+        req.headers.get('access_token') ||
+        ''
+      ).trim();
+
+      if (!receivedToken || receivedToken !== ASAAS_WEBHOOK_TOKEN) {
+        console.error('[asaas-webhook] Invalid webhook token', {
+          has_token: Boolean(receivedToken),
+          token_length: receivedToken.length,
+        });
         return new Response(JSON.stringify({ error: 'Invalid webhook token' }), {
           status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
