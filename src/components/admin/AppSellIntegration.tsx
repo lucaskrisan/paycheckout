@@ -73,6 +73,25 @@ const AppSellIntegration = () => {
     setSaving(false);
   };
 
+  const handleTestConnection = async () => {
+    if (!user?.id || !token.trim()) return;
+    setTesting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("appsell-notify", {
+        body: { event: "test_connection", user_id: user.id },
+      });
+      if (error) throw error;
+      if (data?.success) {
+        toast.success("✅ Conexão com AppSell funcionando!");
+      } else {
+        toast.error("❌ AppSell retornou erro: " + (data?.error || `Status ${data?.status}`));
+      }
+    } catch (err: any) {
+      toast.error("Erro ao testar: " + err.message);
+    }
+    setTesting(false);
+  };
+
   if (loading) return null;
 
   return (
