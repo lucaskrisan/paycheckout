@@ -204,6 +204,38 @@ const SuperAdminDashboard = () => {
     setActionLoading(null);
   };
 
+  const handleCreateProducer = async () => {
+    const { full_name, email, password } = newProducer;
+    if (!full_name.trim() || !email.trim() || !password.trim()) {
+      toast.error("Preencha todos os campos");
+      return;
+    }
+    if (password.length < 6) {
+      toast.error("Senha deve ter no mínimo 6 caracteres");
+      return;
+    }
+    setActionLoading("new-producer");
+    const { data: sessionData } = await supabase.auth.getSession();
+    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-producer`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${sessionData.session?.access_token}`,
+      },
+      body: JSON.stringify({ email: email.trim(), full_name: full_name.trim(), password }),
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      toast.error(result.error || "Erro ao criar produtor");
+    } else {
+      toast.success(`Produtor "${full_name}" criado com sucesso!`);
+      setShowAddProducer(false);
+      setNewProducer({ full_name: "", email: "", password: "" });
+      await loadAll();
+    }
+    setActionLoading(null);
+  };
+
   /* ─── Computed ─── */
   const filterByPeriod = useCallback((items: any[]) => {
     const now = new Date();
