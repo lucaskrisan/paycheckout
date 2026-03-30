@@ -816,11 +816,16 @@ const SuperAdminDashboard = () => {
         <TabsContent value="users">
           <Card>
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <CardTitle className="text-lg">Todos os Usuários</CardTitle>
-                <div className="relative w-64">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input placeholder="Buscar..." value={userSearch} onChange={(e) => setUserSearch(e.target.value)} className="pl-9 h-9" />
+                <div className="flex items-center gap-2">
+                  <Button size="sm" className="h-9 gap-1.5 text-xs font-semibold" onClick={() => setShowAddProducer(true)}>
+                    <UserPlus className="w-4 h-4" /> Adicionar Produtor
+                  </Button>
+                  <div className="relative w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input placeholder="Buscar..." value={userSearch} onChange={(e) => setUserSearch(e.target.value)} className="pl-9 h-9" />
+                  </div>
                 </div>
               </div>
             </CardHeader>
