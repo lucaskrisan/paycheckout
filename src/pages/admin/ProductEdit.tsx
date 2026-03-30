@@ -301,6 +301,7 @@ const ProductEdit = () => {
             is_subscription: (data as any).is_subscription || false,
             billing_cycle: (data as any).billing_cycle || "monthly",
             show_coupon: (data as any).show_coupon !== false,
+            delivery_method: (data as any).delivery_method || "appsell",
             payment_settings: {
               payment_method: "all",
               max_installments: 12,
