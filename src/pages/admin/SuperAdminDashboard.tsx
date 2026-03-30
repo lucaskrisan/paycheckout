@@ -569,6 +569,9 @@ const SuperAdminDashboard = () => {
                               </Button>
                               {!isSelf && (
                                 <>
+                                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1" disabled={actionLoading === "resend-" + p.email} onClick={() => handleResendInvite(p.email)}>
+                                    {actionLoading === "resend-" + p.email ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />} Reenviar
+                                  </Button>
                                   <Button size="sm" variant="destructive" className="h-7 text-xs gap-1" disabled={actionLoading === p.id} onClick={() => demoteFromAdmin(p.id)}>
                                     {actionLoading === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldX className="w-3 h-3" />} Remover
                                   </Button>
