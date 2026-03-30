@@ -151,7 +151,16 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Create member access
+      // Create member access — only if product uses 'panttera' delivery
+      const { data: mainProd } = await supabase
+        .from('products')
+        .select('delivery_method')
+        .eq('id', orderData.product_id)
+        .maybeSingle();
+
+      if (mainProd?.delivery_method !== 'panttera') {
+        console.log('[stripe-webhook] Skipping member access — delivery_method is', mainProd?.delivery_method || 'appsell');
+      } else {
       const productIdsForAccess = [orderData.product_id];
       const bumpIds = (orderData.metadata as any)?.bump_product_ids;
       if (Array.isArray(bumpIds)) productIdsForAccess.push(...bumpIds);
