@@ -125,6 +125,20 @@ const IntegrationCard = ({
               </Button>
             </div>
 
+            {/* Test connection */}
+            {onTestConnection && (
+              <Button
+                onClick={onTestConnection}
+                disabled={testing || !token}
+                variant="outline"
+                size="sm"
+                className="w-full gap-1.5 h-8 text-xs font-medium"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                {testing ? "Testando conexão..." : "Testar conexão"}
+              </Button>
+            )}
+
             {/* Events */}
             {statusEvents && statusEvents.length > 0 && (
               <div className="border border-border/30 rounded-lg overflow-hidden">
