@@ -55,40 +55,39 @@ Deno.serve(async (req) => {
     ]);
 
     const profileCompleted = profile?.profile_completed === true;
-    let isAdmin = (roles || []).some((r: any) => r.role === "admin" || r.role === "super_admin");
+    const isAdmin = (roles || []).some((r: any) => r.role === "admin" || r.role === "super_admin");
 
-    let buyerToken: string | null = null;
+    let hasBuyerAccess = false;
     if (user.email) {
-      const { data: customer } = await supabaseAdmin
+      const { data: customers } = await supabaseAdmin
         .from("customers")
         .select("id")
-        .ilike("email", user.email)
-        .limit(1)
-        .maybeSingle();
+        .ilike("email", user.email);
 
-      if (customer?.id) {
-        const { data: access } = await supabaseAdmin
+      const customerIds = (customers || []).map((customer: any) => customer.id).filter(Boolean);
+
+      if (customerIds.length > 0) {
+        const { data: accesses } = await supabaseAdmin
           .from("member_access")
-          .select("access_token")
-          .eq("customer_id", customer.id)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
+          .select("expires_at")
+          .in("customer_id", customerIds)
+          .limit(100);
 
-        buyerToken = access?.access_token ?? null;
+        hasBuyerAccess = (accesses || []).some(
+          (access: any) => !access.expires_at || new Date(access.expires_at) > new Date()
+        );
       }
     }
 
     // No auto-promote — admin role is granted manually by super_admin only.
     // Priority: admin/super_admin always goes to /admin, even if they also bought courses.
-    // Only pure buyers (no admin role) go to /minha-conta.
-    // Users with no role and no buyer access go to pending-approval page.
+    // Buyers go to the authenticated portal, where accesses are resolved server-side without leaking cross-account tokens.
     const destination = !profileCompleted
       ? "/completar-perfil"
       : isAdmin
         ? "/admin"
-        : buyerToken
-          ? `/minha-conta?token=${buyerToken}`
+        : hasBuyerAccess
+          ? "/minha-conta"
           : "/aguardando-aprovacao";
 
     return new Response(
@@ -96,7 +95,7 @@ Deno.serve(async (req) => {
         destination,
         profileCompleted,
         isAdmin,
-        hasBuyerAccess: !!buyerToken,
+        hasBuyerAccess,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

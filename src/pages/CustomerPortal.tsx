@@ -133,99 +133,22 @@ const CustomerPortal = () => {
     setLoading(false);
   };
 
-  // Load data via authenticated user (producer preview mode)
+  // Load data via authenticated user (buyer/producer mode)
   const loadAuthData = async () => {
     try {
-      const userId = user!.id;
       const email = user!.email || "";
+      const { data, error } = await supabase.functions.invoke("member-portal-data", {
+        body: {},
+      });
 
-      // Get profile name
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("id", userId)
-        .single();
+      if (error) throw error;
 
-      setCustomerName(profile?.full_name || email.split("@")[0]);
-      setCustomerEmail(email);
-
-      const allCourses: PortalCourse[] = [];
-
-      // 1. All products created by this producer
-      const { data: ownProducts } = await supabase
-        .from("products")
-        .select("id, name, description, image_url")
-        .eq("user_id", userId);
-
-      // 2. Courses created by this producer (may be linked to products)
-      const { data: ownCourses } = await supabase
-        .from("courses")
-        .select("id, title, description, cover_image_url, product_id")
-        .eq("user_id", userId);
-
-      const courseByProductId = new Map<string, any>();
-      const addedIds = new Set<string>();
-
-      if (ownCourses) {
-        for (const c of ownCourses) {
-          if (c.product_id) courseByProductId.set(c.product_id, c);
-          allCourses.push({
-            id: c.id,
-            title: c.title,
-            description: c.description,
-            cover_image_url: c.cover_image_url,
-            source: "created",
-          });
-          addedIds.add(c.id);
-        }
-      }
-
-      // Add products that DON'T have a course yet (show as product cards)
-      if (ownProducts) {
-        for (const p of ownProducts) {
-          if (!courseByProductId.has(p.id)) {
-            allCourses.push({
-              id: `product-${p.id}`,
-              title: p.name,
-              description: p.description,
-              cover_image_url: p.image_url,
-              source: "created",
-            });
-          }
-        }
-      }
-
-      // 2. Courses purchased (via customers table matching email)
-      const { data: custData } = await supabase
-        .from("customers")
-        .select("id")
-        .eq("email", email)
-        .limit(1)
-        .maybeSingle();
-
-      if (custData) {
-        const { data: accessList } = await supabase
-          .from("member_access")
-          .select("access_token, courses(*)")
-          .eq("customer_id", custData.id);
-
-        if (accessList) {
-          for (const a of accessList as any[]) {
-            // Avoid duplicates if producer bought their own course
-            if (!allCourses.some((c) => c.id === a.courses?.id)) {
-              allCourses.push({
-                ...a.courses,
-                access_token: a.access_token,
-                source: "purchased",
-              });
-            }
-          }
-        }
-      }
-
-      setCourses(allCourses);
+      setCustomerName(data?.customerName || email.split("@")[0]);
+      setCustomerEmail(data?.customerEmail || email);
+      setCourses(Array.isArray(data?.courses) ? data.courses : []);
     } catch (err) {
       console.error("Auth portal error:", err);
+      toast.error("Erro ao carregar sua área de membros");
     }
     setLoading(false);
   };
@@ -246,11 +169,12 @@ const CustomerPortal = () => {
     const email = user?.email || "";
     let customerId: string | null = null;
 
-    // Find or create the producer's customer record
+    // Find or create ONLY the producer's own customer record
     const { data: custData } = await supabase
       .from("customers")
       .select("id")
       .eq("email", email)
+      .eq("user_id", user!.id)
       .limit(1)
       .maybeSingle();
 
