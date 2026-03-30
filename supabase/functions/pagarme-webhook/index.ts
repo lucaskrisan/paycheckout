@@ -86,7 +86,6 @@ Deno.serve(async (req) => {
     const payload = JSON.parse(rawBody);
     console.log('[pagarme-webhook] received event type:', payload.type);
 
-    // Pagar.me v5 webhook format: { id, type, data: { id, status, charges, ... } }
     const eventType = payload.type;
     const order = payload.data;
 
@@ -102,6 +101,21 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
+    // --- Idempotency: deduplicate webhook events ---
+    const dedupKey = `pagarme_${order.id}_${eventType}`;
+    const { data: inserted } = await supabase
+      .from('webhook_events')
+      .upsert({ id: dedupKey, gateway: 'pagarme' }, { onConflict: 'id', ignoreDuplicates: true })
+      .select('id')
+      .maybeSingle();
+
+    if (!inserted) {
+      console.log('[pagarme-webhook] Duplicate event, skipping:', dedupKey);
+      return new Response(JSON.stringify({ received: true, duplicate: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     let status = 'pending';
     if (eventType === 'order.paid') {
       status = 'paid';
@@ -115,12 +129,16 @@ Deno.serve(async (req) => {
       status = 'refunded';
     }
 
-    // Try to match by Pagar.me order id stored as external_id
+    // --- Status transition guard ---
     const externalId = order.id;
     const { data: orderData, error } = await supabase
       .from('orders')
       .update({ status, updated_at: new Date().toISOString() })
       .eq('external_id', externalId)
+      .not('status', 'in', `(${['paid', 'refunded'].filter(s => {
+        const p: Record<string, number> = { pending: 1, failed: 2, paid: 3, refunded: 4, cancelled: 4 };
+        return (p[s] || 0) >= (p[status] || 0);
+      }).join(',')})`)
       .select('id, amount, payment_method, product_id, customer_id, user_id, metadata')
       .maybeSingle();
 
