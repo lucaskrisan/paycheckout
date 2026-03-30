@@ -457,28 +457,10 @@ Deno.serve(async (req) => {
         );
       }
 
-      const status = subData.status === 'ACTIVE' ? 'approved' : 'pending';
-      const orderId = await saveOrder(subData.id, status, 'credit_card');
+      // Always start as 'pending' — the asaas-webhook will confirm payment and set 'paid'
+      const orderId = await saveOrder(subData.id, 'pending', 'credit_card');
 
-      if (subData.status === 'ACTIVE') {
-        try {
-          const { data: notifSettings } = await supabaseAdmin
-            .from('notification_settings')
-            .select('send_approved, show_product_name')
-            .eq('user_id', productOwnerId || '')
-            .eq('send_approved', true)
-            .maybeSingle();
-
-          if (notifSettings) {
-            const formattedAmount = Number(amount).toFixed(2).replace('.', ',');
-            const title = '🔄 Nova assinatura!';
-            const message = `${customer.name} • 💳 R$ ${formattedAmount}/mês${notifSettings.show_product_name ? ` • ${productName}` : ''}`;
-             await sendPushNotification(title, message, productOwnerId || undefined, 'https://app.panttera.com.br/admin/orders');
-          }
-        } catch (notifErr) {
-          console.error('[create-asaas-payment] Notification error:', notifErr);
-        }
-      }
+      console.log('[create-asaas-payment] Subscription created:', subData.id, 'status:', subData.status, '— waiting for payment webhook confirmation');
 
       return new Response(
         JSON.stringify({
