@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 
 interface IntegrationCardProps {
   logo: string;
+  cardLogo?: string;
   name: string;
   description: string;
   docsUrl?: string;
