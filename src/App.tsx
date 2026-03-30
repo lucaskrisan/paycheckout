@@ -23,6 +23,7 @@ import Courses from "./pages/admin/Courses";
 import Coupons from "./pages/admin/Coupons";
 import AbandonedCarts from "./pages/admin/AbandonedCarts";
 import Integrations from "./pages/admin/Integrations";
+import GatewayManagement from "./pages/admin/GatewayManagement";
 import CrispChat from "./pages/admin/CrispChat";
 import SuperAdminDashboard from "./pages/admin/SuperAdminDashboard";
 import CheckoutBuilder from "./pages/admin/CheckoutBuilder";
@@ -94,6 +95,7 @@ const App = () => (
               <Route path="coupons" element={<Coupons />} />
               <Route path="abandoned" element={<AbandonedCarts />} />
               <Route path="integrations" element={<Integrations />} />
+              <Route path="gateway-management" element={<GatewayManagement />} />
               <Route path="crisp" element={<CrispChat />} />
               <Route path="settings" element={<Settings />} />
               <Route path="notifications" element={<Notifications />} />

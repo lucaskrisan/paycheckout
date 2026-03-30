@@ -84,7 +84,8 @@ const analiseItems = [
 
 // 5. CONFIGURAÇÕES — collapsible, menos frequente
 const configItems = [
-  { title: "Integrações", url: "/admin/integrations", icon: CreditCard },
+  { title: "Gateways", url: "/admin/gateway-management", icon: CreditCard },
+  { title: "Integrações", url: "/admin/integrations", icon: Zap },
   { title: "Crisp Chat", url: "/admin/crisp", icon: MessageCircle },
   { title: "Domínios", url: "/admin/domains", icon: Globe },
   { title: "Comunicações", url: "/admin/communications", icon: Mail },
