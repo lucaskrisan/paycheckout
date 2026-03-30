@@ -520,7 +520,6 @@ Deno.serve(async (req) => {
             }
           }
         }
-        }
       } // end else (panttera delivery)
       } catch (memberErr) {
         console.error('[pagarme-webhook] Member access error (non-blocking):', memberErr);
