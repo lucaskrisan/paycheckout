@@ -381,7 +381,7 @@ const Checkout = () => {
         if (data?.qr_code_url || data?.qr_code) { setPixData({ qrCodeUrl: data.qr_code_url, pixCode: data.qr_code, orderId: data.order_id }); setPixModalOpen(true); }
         else throw new Error("Falha ao gerar o PIX. Tente novamente.");
       } else {
-        // Credit card via Pagar.me + 3DS
+        // Credit card via Asaas
         const bumpProductIds2 = orderBumps.filter((b) => selectedBumps.has(b.id)).map((b) => b.bump_product.id);
         const utmParams2 = new URLSearchParams(window.location.search);
         const utms2 = {
@@ -392,104 +392,11 @@ const Checkout = () => {
           utm_term: utmParams2.get("utm_term") || undefined,
         };
 
-        // Step 1: Try 3DS authentication
-        let dsTransactionId: string | null = null;
-        try {
-          const { data: tokenData, error: tokenErr } = await supabase.functions.invoke("generate-3ds-token", {
-            body: { product_id: product.id },
-          });
-
-          if (!tokenErr && tokenData?.token) {
-            // Load 3DS script if not loaded
-            const tdsEnv = tokenData.environment === 'production' ? 'live' : 'test';
-            if (!(window as any).TDS) {
-              await new Promise<void>((resolve, reject) => {
-                const s = document.createElement("script");
-                s.src = `https://3ds-nx-js.stone.com.br/${tdsEnv}/v2/3ds2.min.js`;
-                s.onload = () => resolve();
-                s.onerror = () => reject(new Error("3DS script failed"));
-                document.head.appendChild(s);
-              });
-            }
-
-            // Ensure 3DS containers exist
-            let methodContainer = document.getElementById('tdsMethodContainer');
-            let challengeContainer = document.getElementById('challengeContainer');
-            if (!methodContainer) {
-              methodContainer = document.createElement('div');
-              methodContainer.id = 'tdsMethodContainer';
-              methodContainer.style.display = 'none';
-              document.body.appendChild(methodContainer);
-            }
-            if (!challengeContainer) {
-              challengeContainer = document.createElement('div');
-              challengeContainer.id = 'challengeContainer';
-              document.body.appendChild(challengeContainer);
-            }
-
-            const cleanPhoneForTDS = customer.phone?.replace(/\D/g, '') || '';
-            const orderData3DS = {
-              payments: [{
-                payment_method: "credit_card",
-                credit_card: {
-                  card: {
-                    number: creditCard.number.replace(/\s/g, ""),
-                    holder_name: creditCard.name,
-                    exp_month: parseInt(expMonth),
-                    exp_year: 2000 + parseInt(expYear),
-                    billing_address: {
-                      country: "BR",
-                      state: "SP",
-                      city: "São Paulo",
-                      zip_code: creditCard.postalCode?.replace(/\D/g, "") || "00000000",
-                      line_1: "1, Rua Principal, Centro",
-                      line_2: "",
-                    },
-                  },
-                },
-                amount: Math.round(finalAmount * 100),
-              }],
-              customer: {
-                name: customer.name,
-                email: customer.email,
-                document: customer.cpf.replace(/\D/g, ""),
-                phones: cleanPhoneForTDS ? {
-                  mobile_phone: {
-                    country_code: "55",
-                    area_code: cleanPhoneForTDS.slice(0, 2),
-                    number: cleanPhoneForTDS.slice(2),
-                  },
-                } : undefined,
-              },
-              items: [{ description: product.name, code: product.id }],
-              shipping: { recipient_name: customer.name, electronic_delivery: true },
-            };
-
-            const tdsResponse = await (window as any).TDS.init({
-              token: tokenData.token,
-              tds_method_container_element: methodContainer,
-              challenge_container_element: challengeContainer,
-              use_default_challenge_iframe_style: true,
-              challenge_window_size: '03',
-            }, orderData3DS);
-
-            if (tdsResponse?.[0]?.trans_status === 'Y' || tdsResponse?.[0]?.trans_status === 'A') {
-              dsTransactionId = tdsResponse[0].tds_server_trans_id;
-            } else if (tdsResponse?.[0]?.trans_status === 'N' || tdsResponse?.[0]?.trans_status === 'R') {
-              throw new Error("Autenticação do cartão negada pelo emissor. Tente outro cartão.");
-            }
-          }
-        } catch (tdsErr: any) {
-          // If 3DS entirely fails, proceed without it (graceful degradation)
-          if (tdsErr?.message?.includes("negada")) throw tdsErr;
-          console.warn("[Checkout] 3DS fallback:", tdsErr?.message);
-        }
-
-        // Step 2: Create payment via Pagar.me
-        const { data, error } = await supabase.functions.invoke("create-pagarme-card-payment", {
+        const { data, error } = await supabase.functions.invoke("create-asaas-payment", {
           body: {
             amount: finalAmount,
             product_id: product.id,
+            payment_method: "credit_card",
             installments: creditCard.installments,
             is_subscription: product.is_subscription,
             billing_cycle: product.billing_cycle,
@@ -498,19 +405,19 @@ const Checkout = () => {
             bump_product_ids: bumpProductIds2,
             checkout_url: window.location.href,
             utms: utms2,
-            ds_transaction_id: dsTransactionId,
             customer: {
               name: customer.name,
               email: customer.email,
               cpf: customer.cpf,
               phone: customer.phone,
               postalCode: creditCard.postalCode,
+              addressNumber: "0",
               creditCard: {
-                number: creditCard.number.replace(/\s/g, ""),
                 holderName: creditCard.name,
-                expMonth: expMonth,
-                expYear: `20${expYear}`,
-                cvv: creditCard.cvv,
+                number: creditCard.number.replace(/\s/g, ""),
+                expiryMonth: expMonth,
+                expiryYear: `20${expYear}`,
+                ccv: creditCard.cvv,
               },
             },
           },
@@ -527,9 +434,10 @@ const Checkout = () => {
           throw new Error(msg);
         }
         if (data?.error) throw new Error(data.error);
-        if (data?.payment_id) {
+        const paymentId = data?.payment_id || data?.subscription_id || data?.id;
+        if (paymentId) {
           toast.success("Pagamento processado com sucesso!");
-          trackPurchase(finalAmount, "BRL", data.payment_id);
+          trackPurchase(finalAmount, "BRL", paymentId);
           await markPurchased();
           navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product.id}${data.order_id ? `&order_id=${data.order_id}` : ''}`);
         } else {
