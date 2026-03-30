@@ -19,8 +19,18 @@ import {
 import {
   Users, DollarSign, ShoppingCart, TrendingUp, Search, ShieldCheck, ShieldX, Loader2,
   Crown, Eye, ArrowLeft, CreditCard, AlertTriangle, Ban, CheckCircle, RefreshCcw,
-  Activity, Webhook, Mail, Package, BarChart3, Wallet, Server, UserPlus,
+  Activity, Webhook, Mail, Package, BarChart3, Wallet, Server, UserPlus, Trash2,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -97,6 +107,7 @@ const SuperAdminDashboard = () => {
   const [feePercent, setFeePercent] = useState(4.99);
   const [showAddProducer, setShowAddProducer] = useState(false);
   const [newProducer, setNewProducer] = useState({ full_name: "", email: "", password: "" });
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     if (isSuperAdmin) loadAll();
@@ -231,6 +242,29 @@ const SuperAdminDashboard = () => {
       toast.success(`Produtor "${full_name}" criado com sucesso!`);
       setShowAddProducer(false);
       setNewProducer({ full_name: "", email: "", password: "" });
+      await loadAll();
+    }
+    setActionLoading(null);
+  };
+
+  const handleDeleteProducer = async (producerId: string) => {
+    setActionLoading(producerId);
+    const { data: sessionData } = await supabase.auth.getSession();
+    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-producer`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${sessionData.session?.access_token}`,
+      },
+      body: JSON.stringify({ producer_id: producerId }),
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      toast.error(result.error || "Erro ao excluir produtor");
+    } else {
+      toast.success("Produtor excluído com sucesso!");
+      setDeleteTarget(null);
+      if (selectedProducerId === producerId) setSelectedProducerId(null);
       await loadAll();
     }
     setActionLoading(null);
@@ -498,9 +532,14 @@ const SuperAdminDashboard = () => {
                                 <Eye className="w-3 h-3" /> Ver
                               </Button>
                               {!isSelf && (
-                                <Button size="sm" variant="destructive" className="h-7 text-xs gap-1" disabled={actionLoading === p.id} onClick={() => demoteFromAdmin(p.id)}>
-                                  {actionLoading === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldX className="w-3 h-3" />} Remover
-                                </Button>
+                                <>
+                                  <Button size="sm" variant="destructive" className="h-7 text-xs gap-1" disabled={actionLoading === p.id} onClick={() => demoteFromAdmin(p.id)}>
+                                    {actionLoading === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldX className="w-3 h-3" />} Remover
+                                  </Button>
+                                  <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-destructive hover:text-destructive" onClick={() => setDeleteTarget({ id: p.id, name: p.full_name || "Sem nome" })}>
+                                    <Trash2 className="w-3 h-3" /> Excluir
+                                  </Button>
+                                </>
                               )}
                             </div>
                           </TableCell>
@@ -908,6 +947,29 @@ const SuperAdminDashboard = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Producer Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir produtor permanentemente?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Todos os dados de <strong>{deleteTarget?.name}</strong> serão excluídos permanentemente: produtos, pedidos, cursos, alunos, configurações e conta. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={actionLoading === deleteTarget?.id}
+              onClick={() => deleteTarget && handleDeleteProducer(deleteTarget.id)}
+            >
+              {actionLoading === deleteTarget?.id ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
+              Excluir permanentemente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
