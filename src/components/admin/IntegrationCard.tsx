@@ -29,6 +29,8 @@ interface IntegrationCardProps {
   tokenPlaceholder?: string;
   tokenHint?: React.ReactNode;
   statusEvents?: { key: string; label: string }[];
+  onTestConnection?: () => Promise<void>;
+  testing?: boolean;
 }
 
 const IntegrationCard = ({
