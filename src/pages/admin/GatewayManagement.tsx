@@ -58,12 +58,14 @@ const GatewayManagement = () => {
   useEffect(() => { loadGateways(); }, []);
 
   const loadGateways = async () => {
-    const { data, error } = await supabase.from("payment_gateways").select("*").order("created_at");
+    const { data, error } = await supabase.from("payment_gateways").select("*, profiles!payment_gateways_user_id_fkey(full_name)").order("created_at");
     if (data) {
       setGateways(data.map((g: any) => ({
         id: g.id, provider: g.provider, name: g.name, environment: g.environment,
         active: g.active, payment_methods: (g.payment_methods as string[]) || [],
         config: (g.config as Record<string, any>) || {},
+        user_id: g.user_id,
+        owner_name: (g.profiles as any)?.full_name || null,
       })));
     }
     if (error) toast.error("Erro ao carregar gateways");
