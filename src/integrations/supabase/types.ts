@@ -1822,6 +1822,24 @@ export type Database = {
           },
         ]
       }
+      webhook_events: {
+        Row: {
+          gateway: string
+          id: string
+          processed_at: string
+        }
+        Insert: {
+          gateway: string
+          id: string
+          processed_at?: string
+        }
+        Update: {
+          gateway?: string
+          id?: string
+          processed_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       active_gateways: {
