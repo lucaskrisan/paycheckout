@@ -40,6 +40,9 @@ import {
 interface Producer {
   id: string;
   full_name: string | null;
+  email: string;
+  phone: string | null;
+  cpf: string | null;
   created_at: string;
   product_count: number;
   order_count: number;
@@ -50,6 +53,9 @@ interface Producer {
 interface UserWithRoles {
   id: string;
   full_name: string | null;
+  email: string;
+  phone: string | null;
+  cpf: string | null;
   created_at: string;
   roles: string[];
 }
@@ -108,6 +114,7 @@ const SuperAdminDashboard = () => {
   const [showAddProducer, setShowAddProducer] = useState(false);
   const [newProducer, setNewProducer] = useState({ full_name: "", email: "", password: "" });
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [selectedUser, setSelectedUser] = useState<(UserWithRoles & { product_count?: number; order_count?: number; total_revenue?: number }) | null>(null);
 
   useEffect(() => {
     if (isSuperAdmin) loadAll();
@@ -137,6 +144,21 @@ const SuperAdminDashboard = () => {
       supabase.from("webhook_endpoints").select("*"),
     ]);
 
+    // Fetch emails from auth.users via edge function
+    let emailMap: Record<string, string> = {};
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/list-users`, {
+        headers: { Authorization: `Bearer ${sessionData.session?.access_token}` },
+      });
+      if (res.ok) {
+        const result = await res.json();
+        emailMap = result.emails || {};
+      }
+    } catch (e) {
+      console.warn("Failed to fetch user emails:", e);
+    }
+
     const fee = (settingsData as any)?.platform_fee_percent || 4.99;
     setFeePercent(fee);
 
@@ -147,9 +169,13 @@ const SuperAdminDashboard = () => {
       roleMap.get(r.user_id)!.push(r.role);
     });
 
+    // Profile detail map
+    const profileMap = new Map<string, any>();
+    (profilesData || []).forEach((p: any) => profileMap.set(p.id, p));
+
     // All users
     const users: UserWithRoles[] = (profilesData || []).map((p: any) => ({
-      id: p.id, full_name: p.full_name, created_at: p.created_at, roles: roleMap.get(p.id) || [],
+      id: p.id, full_name: p.full_name, email: emailMap[p.id] || "", phone: p.phone || null, cpf: p.cpf || null, created_at: p.created_at, roles: roleMap.get(p.id) || [],
     }));
     setAllUsers(users);
 
@@ -161,13 +187,11 @@ const SuperAdminDashboard = () => {
     const adminIds = new Set((rolesData || []).filter((r: any) => r.role === "admin" || r.role === "super_admin").map((r: any) => r.user_id));
     const producerMap = new Map<string, Producer>();
     adminIds.forEach((uid) => {
+      const profile = profileMap.get(uid);
       producerMap.set(uid, {
-        id: uid, full_name: nameMap.get(uid) || "Sem nome", created_at: "",
+        id: uid, full_name: nameMap.get(uid) || "Sem nome", email: emailMap[uid] || "", phone: profile?.phone || null, cpf: profile?.cpf || null, created_at: profile?.created_at || "",
         product_count: 0, order_count: 0, total_revenue: 0, pending_revenue: 0,
       });
-    });
-    (profilesData || []).forEach((p: any) => {
-      if (producerMap.has(p.id)) producerMap.get(p.id)!.created_at = p.created_at;
     });
     (productsData || []).forEach((p: any) => {
       if (p.user_id && producerMap.has(p.user_id)) producerMap.get(p.user_id)!.product_count++;
@@ -334,8 +358,8 @@ const SuperAdminDashboard = () => {
     return <div className="flex items-center justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
 
-  const filteredProducers = producers.filter((p) => (p.full_name || "").toLowerCase().includes(search.toLowerCase()));
-  const filteredUsers = allUsers.filter((u) => (u.full_name || "").toLowerCase().includes(userSearch.toLowerCase()));
+  const filteredProducers = producers.filter((p) => (p.full_name || "").toLowerCase().includes(search.toLowerCase()) || (p.email || "").toLowerCase().includes(search.toLowerCase()));
+  const filteredUsers = allUsers.filter((u) => (u.full_name || "").toLowerCase().includes(userSearch.toLowerCase()) || (u.email || "").toLowerCase().includes(userSearch.toLowerCase()));
 
   return (
     <div className="space-y-6">
@@ -507,6 +531,7 @@ const SuperAdminDashboard = () => {
                 <Table>
                   <TableHeader><TableRow>
                     <TableHead>Nome</TableHead>
+                    <TableHead>Email</TableHead>
                     <TableHead className="text-center">Produtos</TableHead>
                     <TableHead className="text-center">Pedidos</TableHead>
                     <TableHead className="text-right">Receita</TableHead>
@@ -517,11 +542,12 @@ const SuperAdminDashboard = () => {
                     {filteredProducers.map((p) => {
                       const isSelf = p.id === user?.id;
                       return (
-                        <TableRow key={p.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedProducerId(p.id)}>
+                        <TableRow key={p.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedUser({ ...p, roles: isSelf ? ["super_admin"] : ["admin"], product_count: p.product_count, order_count: p.order_count, total_revenue: p.total_revenue })}>
                           <TableCell className="font-medium">
                             {p.full_name || "Sem nome"}
                             {isSelf && <Badge variant="outline" className="ml-2 text-xs">Você</Badge>}
                           </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{p.email || "—"}</TableCell>
                           <TableCell className="text-center">{p.product_count}</TableCell>
                           <TableCell className="text-center">{p.order_count}</TableCell>
                           <TableCell className="text-right font-semibold">{fmt(p.total_revenue)}</TableCell>
@@ -546,7 +572,7 @@ const SuperAdminDashboard = () => {
                         </TableRow>
                       );
                     })}
-                    {filteredProducers.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhum produtor</TableCell></TableRow>}
+                    {filteredProducers.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Nenhum produtor</TableCell></TableRow>}
                   </TableBody>
                 </Table>
               </CardContent>
@@ -872,7 +898,9 @@ const SuperAdminDashboard = () => {
               <Table>
                 <TableHeader><TableRow>
                   <TableHead>Nome</TableHead>
+                  <TableHead>Email</TableHead>
                   <TableHead>Roles</TableHead>
+                  <TableHead className="text-center">Telefone</TableHead>
                   <TableHead className="text-center">Cadastro</TableHead>
                   <TableHead className="text-center">Ações</TableHead>
                 </TableRow></TableHeader>
@@ -882,11 +910,12 @@ const SuperAdminDashboard = () => {
                     const isAdmin = u.roles.includes("admin");
                     const isSA = u.roles.includes("super_admin");
                     return (
-                      <TableRow key={u.id}>
+                      <TableRow key={u.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedUser(u)}>
                         <TableCell className="font-medium">
                           {u.full_name || "Sem nome"}
                           {isSelf && <Badge variant="outline" className="ml-2 text-xs">Você</Badge>}
                         </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{u.email || "—"}</TableCell>
                         <TableCell>
                           <div className="flex gap-1 flex-wrap">
                             {u.roles.map((r) => (
@@ -897,8 +926,9 @@ const SuperAdminDashboard = () => {
                             {u.roles.length === 0 && <Badge variant="outline" className="text-xs">Sem role</Badge>}
                           </div>
                         </TableCell>
+                        <TableCell className="text-center text-xs text-muted-foreground">{u.phone || "—"}</TableCell>
                         <TableCell className="text-center text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString("pt-BR")}</TableCell>
-                        <TableCell className="text-center">
+                        <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
                           {isSelf || isSA ? null : isAdmin ? (
                             <Button size="sm" variant="destructive" className="h-7 text-xs gap-1" disabled={actionLoading === u.id} onClick={() => demoteFromAdmin(u.id)}>
                               {actionLoading === u.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldX className="w-3 h-3" />} Rebaixar
@@ -912,7 +942,7 @@ const SuperAdminDashboard = () => {
                       </TableRow>
                     );
                   })}
-                  {filteredUsers.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Nenhum usuário</TableCell></TableRow>}
+                  {filteredUsers.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhum usuário</TableCell></TableRow>}
                 </TableBody>
               </Table>
             </CardContent>
@@ -970,6 +1000,91 @@ const SuperAdminDashboard = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* User Detail Modal */}
+      <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5 text-primary" />
+              Detalhes do Usuário
+            </DialogTitle>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="space-y-4 pt-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground font-medium">Nome</p>
+                  <p className="text-sm font-semibold text-foreground">{selectedUser.full_name || "Sem nome"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground font-medium">Email</p>
+                  <p className="text-sm text-foreground">{selectedUser.email || "—"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground font-medium">Telefone</p>
+                  <p className="text-sm text-foreground">{selectedUser.phone || "—"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground font-medium">CPF</p>
+                  <p className="text-sm text-foreground">{selectedUser.cpf || "—"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground font-medium">Cadastro</p>
+                  <p className="text-sm text-foreground">{new Date(selectedUser.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground font-medium">Roles</p>
+                  <div className="flex gap-1 flex-wrap">
+                    {selectedUser.roles.map((r) => (
+                      <Badge key={r} variant={r === "super_admin" ? "default" : r === "admin" ? "secondary" : "outline"} className="text-xs">
+                        {r === "super_admin" ? "Super Admin" : r === "admin" ? "Produtor" : "Comprador"}
+                      </Badge>
+                    ))}
+                    {selectedUser.roles.length === 0 && <Badge variant="outline" className="text-xs">Sem role</Badge>}
+                  </div>
+                </div>
+              </div>
+
+              {/* Producer-specific stats */}
+              {(selectedUser.product_count != null || selectedUser.order_count != null || selectedUser.total_revenue != null) && (
+                <div className="border-t pt-3 mt-3">
+                  <p className="text-xs text-muted-foreground font-medium mb-2">Estatísticas do Produtor</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="p-2 rounded-lg bg-muted/50 text-center">
+                      <p className="text-lg font-bold text-foreground">{selectedUser.product_count ?? 0}</p>
+                      <p className="text-[10px] text-muted-foreground">Produtos</p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-muted/50 text-center">
+                      <p className="text-lg font-bold text-foreground">{selectedUser.order_count ?? 0}</p>
+                      <p className="text-[10px] text-muted-foreground">Pedidos</p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-muted/50 text-center">
+                      <p className="text-lg font-bold text-foreground">{fmt(selectedUser.total_revenue ?? 0)}</p>
+                      <p className="text-[10px] text-muted-foreground">Receita</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2 border-t">
+                {selectedUser.roles.includes("admin") && selectedUser.id !== user?.id && (
+                  <>
+                    <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => { setSelectedProducerId(selectedUser.id); setSelectedUser(null); }}>
+                      <Eye className="w-3 h-3" /> Ver Dashboard
+                    </Button>
+                    <Button size="sm" variant="destructive" className="gap-1 text-xs" onClick={() => { setDeleteTarget({ id: selectedUser.id, name: selectedUser.full_name || "Sem nome" }); setSelectedUser(null); }}>
+                      <Trash2 className="w-3 h-3" /> Excluir
+                    </Button>
+                  </>
+                )}
+              </div>
+
+              <p className="text-[10px] text-muted-foreground font-mono">ID: {selectedUser.id}</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
