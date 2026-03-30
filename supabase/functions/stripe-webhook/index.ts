@@ -163,25 +163,18 @@ Deno.serve(async (req) => {
 
       if (courses && courses.length > 0) {
         for (const course of courses) {
-          const { data: existing } = await supabase
+          // Atomic upsert with unique constraint (customer_id, course_id)
+          const { data: newAccess } = await supabase
             .from('member_access')
-            .select('id')
-            .eq('customer_id', orderData.customer_id)
-            .eq('course_id', course.id)
+            .upsert(
+              { customer_id: orderData.customer_id, course_id: course.id, order_id: orderData.id },
+              { onConflict: 'customer_id,course_id', ignoreDuplicates: true }
+            )
+            .select('access_token')
             .maybeSingle();
 
-          if (!existing) {
-            const { data: newAccess } = await supabase
-              .from('member_access')
-              .insert({
-                customer_id: orderData.customer_id,
-                course_id: course.id,
-                order_id: orderData.id,
-              })
-              .select('access_token')
-              .single();
-
-            console.log('[stripe-webhook] Created member access for course:', course.id);
+          if (newAccess) {
+            console.log('[stripe-webhook] Upserted member access for course:', course.id);
 
             // Send access email
             if (newAccess?.access_token) {
