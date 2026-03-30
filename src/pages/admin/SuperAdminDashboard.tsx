@@ -247,6 +247,29 @@ const SuperAdminDashboard = () => {
     setActionLoading(null);
   };
 
+  const handleDeleteProducer = async (producerId: string) => {
+    setActionLoading(producerId);
+    const { data: sessionData } = await supabase.auth.getSession();
+    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-producer`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${sessionData.session?.access_token}`,
+      },
+      body: JSON.stringify({ producer_id: producerId }),
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      toast.error(result.error || "Erro ao excluir produtor");
+    } else {
+      toast.success("Produtor excluído com sucesso!");
+      setDeleteTarget(null);
+      if (selectedProducerId === producerId) setSelectedProducerId(null);
+      await loadAll();
+    }
+    setActionLoading(null);
+  };
+
   /* ─── Computed ─── */
   const filterByPeriod = useCallback((items: any[]) => {
     const now = new Date();
