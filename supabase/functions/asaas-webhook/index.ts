@@ -322,76 +322,97 @@ Deno.serve(async (req) => {
       }
 
       // --- Member access (main product + bump products) ---
-      const productIdsForAccess = [orderData.product_id];
+      // Only create member access if product delivery_method is 'panttera'
+      const { data: mainProduct } = await supabase
+        .from('products')
+        .select('delivery_method')
+        .eq('id', orderData.product_id)
+        .maybeSingle();
+
+      const mainDelivery = mainProduct?.delivery_method || 'appsell';
+
+      const productIdsForAccess = mainDelivery === 'panttera' ? [orderData.product_id] : [];
       const bumpIds = (orderData.metadata as any)?.bump_product_ids;
       if (Array.isArray(bumpIds)) {
-        productIdsForAccess.push(...bumpIds);
+        // Check each bump product's delivery_method individually
+        for (const bumpId of bumpIds) {
+          const { data: bumpProd } = await supabase
+            .from('products')
+            .select('delivery_method')
+            .eq('id', bumpId)
+            .maybeSingle();
+          if (bumpProd?.delivery_method === 'panttera') {
+            productIdsForAccess.push(bumpId);
+          }
+        }
       }
 
-      // Find all courses linked to these products
-      const { data: courses } = await supabase
-        .from('courses')
-        .select('id, title, product_id')
-        .in('product_id', productIdsForAccess);
+      if (productIdsForAccess.length > 0) {
+        // Find all courses linked to these products
+        const { data: courses } = await supabase
+          .from('courses')
+          .select('id, title, product_id')
+          .in('product_id', productIdsForAccess);
 
-      if (courses && courses.length > 0) {
-        for (const course of courses) {
-          const { data: product } = await supabase
-            .from('products')
-            .select('is_subscription, billing_cycle')
-            .eq('id', course.product_id)
-            .maybeSingle();
+        if (courses && courses.length > 0) {
+          for (const course of courses) {
+            const { data: product } = await supabase
+              .from('products')
+              .select('is_subscription, billing_cycle')
+              .eq('id', course.product_id)
+              .maybeSingle();
 
-          const { data: existingAccess } = await supabase
-            .from('member_access')
-            .select('id')
-            .eq('customer_id', orderData.customer_id)
-            .eq('course_id', course.id)
-            .maybeSingle();
-
-          if (product?.is_subscription) {
-            const cycleDays: Record<string, number> = {
-              weekly: 7, biweekly: 14, monthly: 30, quarterly: 90, semiannually: 180, yearly: 365,
-            };
-            const days = cycleDays[product.billing_cycle] || 30;
-            const expiresAt = new Date();
-            expiresAt.setDate(expiresAt.getDate() + days + 3);
-
-            // Atomic upsert: uses unique constraint (customer_id, course_id)
-            const { data: upsertedAccess } = await supabase
+            const { data: existingAccess } = await supabase
               .from('member_access')
-              .upsert(
-                { customer_id: orderData.customer_id, course_id: course.id, expires_at: expiresAt.toISOString() },
-                { onConflict: 'customer_id,course_id' }
-              )
-              .select('access_token, id')
-              .single();
+              .select('id')
+              .eq('customer_id', orderData.customer_id)
+              .eq('course_id', course.id)
+              .maybeSingle();
 
-            console.log('[asaas-webhook] Upserted subscription member access for course:', course.id);
-            if (upsertedAccess && !existingAccess) {
-              await sendAccessEmail(supabase, orderData.customer_id, course, upsertedAccess.access_token);
-            }
-          } else if (!existingAccess) {
-            // Atomic upsert for one-time purchase
-            const { data: newAccess, error: accessErr } = await supabase
-              .from('member_access')
-              .upsert(
-                { customer_id: orderData.customer_id, course_id: course.id },
-                { onConflict: 'customer_id,course_id', ignoreDuplicates: true }
-              )
-              .select('access_token')
-              .single();
+            if (product?.is_subscription) {
+              const cycleDays: Record<string, number> = {
+                weekly: 7, biweekly: 14, monthly: 30, quarterly: 90, semiannually: 180, yearly: 365,
+              };
+              const days = cycleDays[product.billing_cycle] || 30;
+              const expiresAt = new Date();
+              expiresAt.setDate(expiresAt.getDate() + days + 3);
 
-            if (accessErr) {
-              console.error('[asaas-webhook] Error creating member access for course:', course.id, accessErr);
-            } else {
-              console.log('[asaas-webhook] Created member access for course:', course.id, course.title);
-              if (newAccess) {
-                await sendAccessEmail(supabase, orderData.customer_id, course, newAccess.access_token);
+              const { data: upsertedAccess } = await supabase
+                .from('member_access')
+                .upsert(
+                  { customer_id: orderData.customer_id, course_id: course.id, expires_at: expiresAt.toISOString() },
+                  { onConflict: 'customer_id,course_id' }
+                )
+                .select('access_token, id')
+                .single();
+
+              console.log('[asaas-webhook] Upserted subscription member access for course:', course.id);
+              if (upsertedAccess && !existingAccess) {
+                await sendAccessEmail(supabase, orderData.customer_id, course, upsertedAccess.access_token);
+              }
+            } else if (!existingAccess) {
+              const { data: newAccess, error: accessErr } = await supabase
+                .from('member_access')
+                .upsert(
+                  { customer_id: orderData.customer_id, course_id: course.id },
+                  { onConflict: 'customer_id,course_id', ignoreDuplicates: true }
+                )
+                .select('access_token')
+                .single();
+
+              if (accessErr) {
+                console.error('[asaas-webhook] Error creating member access for course:', course.id, accessErr);
+              } else {
+                console.log('[asaas-webhook] Created member access for course:', course.id, course.title);
+                if (newAccess) {
+                  await sendAccessEmail(supabase, orderData.customer_id, course, newAccess.access_token);
+                }
               }
             }
           }
         }
+      } else {
+        console.log('[asaas-webhook] Skipping member access — delivery_method is not panttera');
       }
     }
 
