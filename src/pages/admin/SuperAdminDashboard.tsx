@@ -961,15 +961,11 @@ const SuperAdminDashboard = () => {
               <Label className="text-xs font-medium">Email</Label>
               <Input type="email" value={newProducer.email} onChange={(e) => setNewProducer(p => ({ ...p, email: e.target.value }))} placeholder="produtor@email.com" className="h-9" />
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Senha</Label>
-              <Input type="password" value={newProducer.password} onChange={(e) => setNewProducer(p => ({ ...p, password: e.target.value }))} placeholder="Mínimo 6 caracteres" className="h-9" />
-            </div>
             <Button onClick={handleCreateProducer} disabled={actionLoading === "new-producer"} className="w-full gap-2">
               {actionLoading === "new-producer" ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
-              {actionLoading === "new-producer" ? "Criando..." : "Criar Produtor"}
+              {actionLoading === "new-producer" ? "Enviando convite..." : "Enviar Convite"}
             </Button>
-            <p className="text-[10px] text-muted-foreground text-center">O produtor será criado com email confirmado e role de admin (Produtor).</p>
+            <p className="text-[10px] text-muted-foreground text-center">O produtor receberá um email com link para definir a própria senha e acessar o painel.</p>
           </div>
         </DialogContent>
       </Dialog>
