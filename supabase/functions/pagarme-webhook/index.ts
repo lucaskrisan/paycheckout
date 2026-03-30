@@ -285,38 +285,33 @@ Deno.serve(async (req) => {
               .maybeSingle();
 
             if (product?.is_subscription) {
-              // Subscription: set/extend expires_at
               const cycleDays: Record<string, number> = {
                 weekly: 7, biweekly: 14, monthly: 30, quarterly: 90, semiannually: 180, yearly: 365,
               };
               const days = cycleDays[product.billing_cycle] || 30;
               const expiresAt = new Date();
-              expiresAt.setDate(expiresAt.getDate() + days + 3); // +3 grace period
+              expiresAt.setDate(expiresAt.getDate() + days + 3);
 
-              if (existingAccess) {
-                await supabase
-                  .from('member_access')
-                  .update({ expires_at: expiresAt.toISOString() })
-                  .eq('id', existingAccess.id);
-                console.log('[pagarme-webhook] Extended subscription access:', existingAccess.id);
-              } else {
-                const { data: newAccess, error: accessErr } = await supabase
-                  .from('member_access')
-                  .insert({
+              // Atomic upsert with unique constraint
+              const { data: upsertedAccess, error: accessErr } = await supabase
+                .from('member_access')
+                .upsert(
+                  {
                     customer_id: orderData.customer_id,
                     course_id: course.id,
                     order_id: orderData.id,
                     expires_at: expiresAt.toISOString(),
-                  })
-                  .select('access_token')
-                  .single();
+                  },
+                  { onConflict: 'customer_id,course_id' }
+                )
+                .select('access_token')
+                .single();
 
-                if (accessErr) {
-                  console.error('[pagarme-webhook] Error creating subscription access:', course.id, accessErr);
-                } else {
-                  console.log('[pagarme-webhook] Created subscription access for course:', course.id);
-                  // Send access email
-                  if (newAccess?.access_token) {
+              if (accessErr) {
+                console.error('[pagarme-webhook] Error upserting subscription access:', course.id, accessErr);
+              } else {
+                console.log('[pagarme-webhook] Upserted subscription access for course:', course.id);
+                if (upsertedAccess?.access_token && !existingAccess) {
                     try {
                       const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
                       if (RESEND_API_KEY) {
