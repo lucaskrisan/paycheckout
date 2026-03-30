@@ -3,9 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Settings2, Trash2, CreditCard, Wallet, ArrowRightLeft } from "lucide-react";
+import { Settings2, Trash2, ArrowRightLeft, CreditCard, Plug } from "lucide-react";
 import { toast } from "sonner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GatewayFormDialog from "@/components/admin/GatewayFormDialog";
 import IntegrationWebhookGuide from "@/components/admin/IntegrationWebhookGuide";
 import AppSellIntegration from "@/components/admin/AppSellIntegration";
@@ -27,17 +26,13 @@ interface CatalogItem {
   color: string;
   initials: string;
   badge?: string;
-  tab: "split" | "sob_demanda";
 }
 
 const catalog: CatalogItem[] = [
-  { id: "mp-s", provider: "mercadopago", name: "Mercado Pago", description: "O Mercado Pago é uma fintech da América Latina criada pelo Mercado Livre, focada em vendas e cobranças para empresas.", color: "#009EE3", initials: "MP", tab: "split" },
-  { id: "pg-s", provider: "pagarme", name: "Pagar.me", description: "A Pagar.me é uma plataforma completa de pagamentos com suporte a PIX, cartão de crédito e boleto. Integração robusta e painel de controle intuitivo.", color: "#55C157", initials: "Pg", badge: "Mais utilizado", tab: "split" },
-  { id: "st-s", provider: "stripe", name: "Stripe", description: "O método de pagamento perfeito para compras internacionais, aceita pagamentos de todo o mundo.", color: "#635BFF", initials: "S", tab: "split" },
-  { id: "as-d", provider: "asaas", name: "Asaas", description: "A Asaas oferece pagamentos via PIX e Cartão de Crédito com integração simplificada, suporte dedicado e alta taxa de aprovação.", color: "#0066FF", initials: "As", tab: "sob_demanda" },
-  { id: "pg-d", provider: "pagarme", name: "Pagar.me", description: "A Pagar.me é uma plataforma completa de pagamentos com suporte a PIX, cartão de crédito e boleto.", color: "#55C157", initials: "Pg", badge: "NOVO", tab: "sob_demanda" },
-  { id: "mp-d", provider: "mercadopago", name: "Mercado Pago", description: "O Mercado Pago é uma fintech da América Latina criada pelo Mercado Livre, focada em vendas e cobranças para empresas.", color: "#009EE3", initials: "MP", tab: "sob_demanda" },
-  { id: "st-d", provider: "stripe", name: "Stripe", description: "O método de pagamento perfeito para compras internacionais, aceita pagamentos de todo o mundo.", color: "#635BFF", initials: "S", tab: "sob_demanda" },
+  { id: "as", provider: "asaas", name: "Asaas", description: "Pagamentos via PIX e Cartão de Crédito com integração simplificada, suporte dedicado e alta taxa de aprovação.", color: "#0066FF", initials: "As" },
+  { id: "pg", provider: "pagarme", name: "Pagar.me", description: "Plataforma completa de pagamentos com suporte a PIX, cartão de crédito e boleto. Integração robusta e painel intuitivo.", color: "#55C157", initials: "Pg", badge: "Recomendado" },
+  { id: "mp", provider: "mercadopago", name: "Mercado Pago", description: "Fintech da América Latina criada pelo Mercado Livre, focada em vendas e cobranças para empresas.", color: "#009EE3", initials: "MP" },
+  { id: "st", provider: "stripe", name: "Stripe", description: "Perfeito para compras internacionais, aceita pagamentos de todo o mundo com segurança e confiabilidade.", color: "#635BFF", initials: "S" },
 ];
 
 const defaultConfigs: Record<string, Record<string, any>> = {
@@ -46,6 +41,14 @@ const defaultConfigs: Record<string, Record<string, any>> = {
   mercadopago: { pix_fee_percent: 0.99, pix_fee_fixed: 0, pix_timer_minutes: 30, credit_fee_1x: 4.98, credit_fee_2_6x: 4.98, credit_fee_7_12x: 4.98, credit_processing_fee: 0, max_installments: 12, min_installment_value: 5, free_installments: 1, interest_rate_initial: 6.58, interest_rate_incremental: 1.45 },
   stripe: { credit_fee_percent: 3.99, credit_fee_fixed: 0.39, pix_fee_percent: 1.5, pix_fee_fixed: 0, pix_timer_minutes: 30, max_installments: 12, min_installment_value: 5 },
 };
+
+const SectionHeader = ({ icon: Icon, title, dot }: { icon: any; title: string; dot?: string }) => (
+  <div className="flex items-center gap-2.5 pb-1">
+    {dot && <span className={`w-2 h-2 rounded-full ${dot}`} />}
+    <Icon className="w-4 h-4 text-muted-foreground" />
+    <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-[0.15em]">{title}</h2>
+  </div>
+);
 
 const Integrations = () => {
   const { user } = useAuth();
@@ -165,85 +168,60 @@ const Integrations = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Header */}
       <div>
         <h1 className="font-display text-2xl font-bold text-foreground">Integrações</h1>
-        <p className="text-sm text-muted-foreground mt-1">Configure seus gateways de pagamento e integrações</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          Gerencie seus gateways de pagamento e plataformas conectadas
+        </p>
       </div>
 
+      {/* Webhook guide */}
       <IntegrationWebhookGuide installedProviders={installedProviders} />
 
-      {/* AppSell Integration */}
-      <div className="space-y-3">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-violet-500" /> Plataformas de Entrega
-        </h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <AppSellIntegration />
-        </div>
-      </div>
-
-      {/* Active gateways */}
+      {/* ── SECTION 1: Gateways ativos ── */}
       {!loading && activeGateways.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-green-500" /> Gateways Ativos
-          </h2>
+        <section className="space-y-3">
+          <SectionHeader icon={CreditCard} title="Gateways Ativos" dot="bg-green-500" />
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {activeGateways.map(renderGatewayCard)}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* Inactive gateways */}
+      {/* ── SECTION 2: Gateways inativos ── */}
       {!loading && inactiveGateways.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Gateways Inativos</h2>
+        <section className="space-y-3">
+          <SectionHeader icon={CreditCard} title="Gateways Inativos" />
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {inactiveGateways.map(renderGatewayCard)}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* Catalog */}
-      <Tabs defaultValue="split">
-        <TabsList className="bg-muted/50">
-          <TabsTrigger value="split" className="gap-1.5">
-            <CreditCard className="w-3.5 h-3.5" /> Split
-          </TabsTrigger>
-          <TabsTrigger value="sob_demanda" className="gap-1.5">
-            <Wallet className="w-3.5 h-3.5" /> Sob Demanda
-          </TabsTrigger>
-        </TabsList>
+      {/* ── SECTION 3: Catálogo de gateways ── */}
+      <section className="space-y-4">
+        <SectionHeader icon={CreditCard} title="Gateways Disponíveis" />
+        <Card className="border-border/30 bg-muted/30">
+          <CardContent className="p-4">
+            <p className="text-xs text-muted-foreground">
+              Conecte seu gateway de pagamento para processar vendas via PIX e Cartão de Crédito. A taxa da plataforma é de <strong>R$ 0,49 fixo + 3%</strong> sobre o valor de cada venda.
+            </p>
+          </CardContent>
+        </Card>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {catalog.map(renderCatalogCard)}
+        </div>
+      </section>
 
-        <TabsContent value="split" className="mt-4 space-y-4">
-          <Card className="border-border/30 bg-card/50">
-            <CardContent className="p-4">
-              <h3 className="font-semibold text-foreground text-sm">Gateways com Split de Pagamento</h3>
-              <p className="text-xs text-muted-foreground mt-1">
-                Conecte sua conta de gateway diretamente. Os pagamentos são divididos automaticamente no momento da transação. Cobramos 3% sobre cada transação.
-              </p>
-            </CardContent>
-          </Card>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {catalog.filter(i => i.tab === "split").map(renderCatalogCard)}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="sob_demanda" className="mt-4 space-y-4">
-          <Card className="border-border/30 bg-card/50">
-            <CardContent className="p-4">
-              <h3 className="font-semibold text-foreground text-sm">Gateways Sob Demanda (Billing)</h3>
-              <p className="text-xs text-muted-foreground mt-1">
-                Gateways que não oferecem sistema de split, ou seja, a taxa não é descontada direto na hora da venda. Nessa modalidade, a taxa fica em R$ 0,49 fixo por venda + 3% sobre o valor total.
-              </p>
-            </CardContent>
-          </Card>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {catalog.filter(i => i.tab === "sob_demanda").map(renderCatalogCard)}
-          </div>
-        </TabsContent>
-      </Tabs>
+      {/* ── SECTION 4: Plataformas de entrega ── */}
+      <section className="space-y-4">
+        <SectionHeader icon={Plug} title="Plataformas de Entrega" />
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <AppSellIntegration />
+        </div>
+      </section>
 
       <GatewayFormDialog open={dialogOpen} onOpenChange={setDialogOpen} gateway={editingGateway} onSaved={loadGateways} />
     </div>
