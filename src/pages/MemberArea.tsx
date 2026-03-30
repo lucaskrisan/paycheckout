@@ -930,7 +930,16 @@ const MemberArea = () => {
                       {activeLesson.content_type === "html" && activeLesson.content && (
                         <div
                           className="prose prose-invert max-w-none [&_iframe]:w-full [&_iframe]:min-h-[500px] [&_iframe]:rounded-xl [&_iframe]:border-0"
-                          dangerouslySetInnerHTML={{ __html: activeLesson.content }}
+                          dangerouslySetInnerHTML={{ __html: (() => {
+                            try {
+                              const DOMPurify = (window as any).DOMPurify;
+                              if (DOMPurify) return DOMPurify.sanitize(activeLesson.content, { ADD_TAGS: ['iframe'], ADD_ATTR: ['allowfullscreen', 'frameborder', 'src'] });
+                            } catch {}
+                            // Fallback: basic tag stripping for script/event handlers
+                            return activeLesson.content!
+                              .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+                              .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '');
+                          })() }}
                         />
                       )}
                     </div>
