@@ -195,15 +195,32 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ============================================================
+    // CRITICAL: Only PAYMENT_CONFIRMED and PAYMENT_RECEIVED mean actual settlement.
+    // Events like PAYMENT_AUTHORIZED, PAYMENT_APPROVED_BY_RISK_ANALYSIS, PAYMENT_CREATED
+    // are pre-settlement and must NEVER trigger paid status or access liberation.
+    // Reference: Asaas official docs — status PAID = money settled.
+    // ============================================================
     let status = 'pending';
     if (event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED') {
-      status = 'paid';
+      // Double-check: only accept if payment.status from Asaas is actually RECEIVED or CONFIRMED
+      const gatewayStatus = payment.status?.toUpperCase?.() || '';
+      if (gatewayStatus && !['RECEIVED', 'CONFIRMED', 'RECEIVED_IN_CASH'].includes(gatewayStatus)) {
+        console.warn(`[asaas-webhook] ⚠️ Event ${event} received but payment.status is "${payment.status}" — NOT confirming as paid. Keeping pending.`);
+        status = 'pending';
+      } else {
+        status = 'paid';
+      }
     } else if (event === 'PAYMENT_OVERDUE') {
       status = 'overdue';
     } else if (event === 'PAYMENT_REFUNDED') {
       status = 'refunded';
     } else if (event === 'PAYMENT_DELETED' || event === 'PAYMENT_RESTORED') {
       status = event === 'PAYMENT_DELETED' ? 'cancelled' : 'pending';
+    } else if (event === 'PAYMENT_AUTHORIZED' || event === 'PAYMENT_APPROVED_BY_RISK_ANALYSIS' || event === 'PAYMENT_CREATED') {
+      // Explicitly log that these are pre-settlement events
+      console.log(`[asaas-webhook] ℹ️ Pre-settlement event "${event}" — order stays pending. No access will be granted.`);
+      status = 'pending';
     }
 
     // --- Status transition guard: prevent downgrading from terminal states ---
