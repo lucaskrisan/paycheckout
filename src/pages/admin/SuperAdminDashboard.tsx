@@ -947,6 +947,29 @@ const SuperAdminDashboard = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Producer Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir produtor permanentemente?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Todos os dados de <strong>{deleteTarget?.name}</strong> serão excluídos permanentemente: produtos, pedidos, cursos, alunos, configurações e conta. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={actionLoading === deleteTarget?.id}
+              onClick={() => deleteTarget && handleDeleteProducer(deleteTarget.id)}
+            >
+              {actionLoading === deleteTarget?.id ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Trash2 className="w-4 h-4 mr-2" />}
+              Excluir permanentemente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
