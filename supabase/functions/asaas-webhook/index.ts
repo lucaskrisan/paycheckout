@@ -172,6 +172,21 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
+    // --- Idempotency: deduplicate webhook events ---
+    const dedupKey = `asaas_${payment.id}_${event}`;
+    const { data: inserted, error: dedupErr } = await supabase
+      .from('webhook_events')
+      .upsert({ id: dedupKey, gateway: 'asaas' }, { onConflict: 'id', ignoreDuplicates: true })
+      .select('id')
+      .maybeSingle();
+
+    if (!inserted && !dedupErr) {
+      console.log('[asaas-webhook] Duplicate event, skipping:', dedupKey);
+      return new Response(JSON.stringify({ received: true, duplicate: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     let status = 'pending';
     if (event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED') {
       status = 'paid';
@@ -183,11 +198,17 @@ Deno.serve(async (req) => {
       status = event === 'PAYMENT_DELETED' ? 'cancelled' : 'pending';
     }
 
-    // Update order by external_id (works for both one-time and subscription payments)
+    // --- Status transition guard: prevent downgrading from terminal states ---
+    const statusPriority: Record<string, number> = {
+      pending: 1, overdue: 2, paid: 3, refunded: 4, cancelled: 4,
+    };
+
+    // Update order by external_id with status guard
     const { data: orderData, error } = await supabase
       .from('orders')
       .update({ status, updated_at: new Date().toISOString() })
       .eq('external_id', payment.id)
+      .not('status', 'in', `(${['paid', 'refunded'].filter(s => statusPriority[s] >= statusPriority[status]).join(',')})`)
       .select('id, amount, payment_method, product_id, customer_id, user_id, metadata')
       .maybeSingle();
 
