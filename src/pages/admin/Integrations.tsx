@@ -1,8 +1,18 @@
+import { useEffect } from "react";
 import AppSellIntegration from "@/components/admin/AppSellIntegration";
 import webhookLogo from "@/assets/webhook-logo.png";
+import appsellCardLogo from "@/assets/appsell-logo.png";
 import { useNavigate } from "react-router-dom";
 
+const PRELOAD_ICONS = [webhookLogo, appsellCardLogo];
+
 const Integrations = () => {
+  useEffect(() => {
+    PRELOAD_ICONS.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, []);
   const navigate = useNavigate();
 
   return (
