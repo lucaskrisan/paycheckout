@@ -290,6 +290,20 @@ const SuperAdminDashboard = () => {
     setActionLoading(null);
   };
 
+  const handleResendInvite = async (producerEmail: string) => {
+    if (!producerEmail) { toast.error("Email não encontrado"); return; }
+    setActionLoading("resend-" + producerEmail);
+    const { error } = await supabase.auth.resetPasswordForEmail(producerEmail, {
+      redirectTo: window.location.origin + "/login",
+    });
+    if (error) {
+      toast.error("Erro ao reenviar: " + error.message);
+    } else {
+      toast.success(`Link de acesso enviado para ${producerEmail}!`);
+    }
+    setActionLoading(null);
+  };
+
   /* ─── Computed ─── */
   const filterByPeriod = useCallback((items: any[]) => {
     const now = new Date();
