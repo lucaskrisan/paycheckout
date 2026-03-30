@@ -1000,6 +1000,91 @@ const SuperAdminDashboard = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* User Detail Modal */}
+      <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5 text-primary" />
+              Detalhes do Usuário
+            </DialogTitle>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="space-y-4 pt-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground font-medium">Nome</p>
+                  <p className="text-sm font-semibold text-foreground">{selectedUser.full_name || "Sem nome"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground font-medium">Email</p>
+                  <p className="text-sm text-foreground">{selectedUser.email || "—"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground font-medium">Telefone</p>
+                  <p className="text-sm text-foreground">{selectedUser.phone || "—"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground font-medium">CPF</p>
+                  <p className="text-sm text-foreground">{selectedUser.cpf || "—"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground font-medium">Cadastro</p>
+                  <p className="text-sm text-foreground">{new Date(selectedUser.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground font-medium">Roles</p>
+                  <div className="flex gap-1 flex-wrap">
+                    {selectedUser.roles.map((r) => (
+                      <Badge key={r} variant={r === "super_admin" ? "default" : r === "admin" ? "secondary" : "outline"} className="text-xs">
+                        {r === "super_admin" ? "Super Admin" : r === "admin" ? "Produtor" : "Comprador"}
+                      </Badge>
+                    ))}
+                    {selectedUser.roles.length === 0 && <Badge variant="outline" className="text-xs">Sem role</Badge>}
+                  </div>
+                </div>
+              </div>
+
+              {/* Producer-specific stats */}
+              {(selectedUser.product_count != null || selectedUser.order_count != null || selectedUser.total_revenue != null) && (
+                <div className="border-t pt-3 mt-3">
+                  <p className="text-xs text-muted-foreground font-medium mb-2">Estatísticas do Produtor</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="p-2 rounded-lg bg-muted/50 text-center">
+                      <p className="text-lg font-bold text-foreground">{selectedUser.product_count ?? 0}</p>
+                      <p className="text-[10px] text-muted-foreground">Produtos</p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-muted/50 text-center">
+                      <p className="text-lg font-bold text-foreground">{selectedUser.order_count ?? 0}</p>
+                      <p className="text-[10px] text-muted-foreground">Pedidos</p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-muted/50 text-center">
+                      <p className="text-lg font-bold text-foreground">{fmt(selectedUser.total_revenue ?? 0)}</p>
+                      <p className="text-[10px] text-muted-foreground">Receita</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2 border-t">
+                {selectedUser.roles.includes("admin") && selectedUser.id !== user?.id && (
+                  <>
+                    <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => { setSelectedProducerId(selectedUser.id); setSelectedUser(null); }}>
+                      <Eye className="w-3 h-3" /> Ver Dashboard
+                    </Button>
+                    <Button size="sm" variant="destructive" className="gap-1 text-xs" onClick={() => { setDeleteTarget({ id: selectedUser.id, name: selectedUser.full_name || "Sem nome" }); setSelectedUser(null); }}>
+                      <Trash2 className="w-3 h-3" /> Excluir
+                    </Button>
+                  </>
+                )}
+              </div>
+
+              <p className="text-[10px] text-muted-foreground font-mono">ID: {selectedUser.id}</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
