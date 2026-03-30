@@ -70,6 +70,21 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
+    // --- Idempotency: deduplicate webhook events ---
+    const dedupKey = `stripe_${event.id}`;
+    const { data: inserted } = await supabase
+      .from('webhook_events')
+      .upsert({ id: dedupKey, gateway: 'stripe' }, { onConflict: 'id', ignoreDuplicates: true })
+      .select('id')
+      .maybeSingle();
+
+    if (!inserted) {
+      console.log('[stripe-webhook] Duplicate event, skipping:', dedupKey);
+      return new Response(JSON.stringify({ received: true, duplicate: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Map Stripe event types to order statuses
     let status: string | null = null;
     const obj = event.data?.object;
@@ -101,12 +116,16 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Find order by external_id (Stripe payment_intent ID or checkout session ID)
+    // --- Status transition guard ---
     const externalId = obj.payment_intent || obj.id;
     const { data: orderData, error: updateErr } = await supabase
       .from('orders')
       .update({ status, updated_at: new Date().toISOString() })
       .eq('external_id', externalId)
+      .not('status', 'in', `(${['paid', 'refunded'].filter(s => {
+        const p: Record<string, number> = { pending: 1, failed: 2, paid: 3, refunded: 4, cancelled: 4 };
+        return (p[s] || 0) >= (p[status!] || 0);
+      }).join(',')})`)
       .select('id, amount, payment_method, product_id, customer_id, user_id, metadata')
       .maybeSingle();
 
