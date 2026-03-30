@@ -404,8 +404,8 @@ Deno.serve(async (req) => {
     // SUBSCRIPTION
     if (is_subscription) {
       const cycle = BILLING_CYCLE_MAP[billing_cycle || 'monthly'] || 'MONTHLY';
+      // Use TODAY so Asaas charges the card immediately instead of scheduling for tomorrow
       const nextDueDate = new Date();
-      nextDueDate.setDate(nextDueDate.getDate() + 1);
 
       const subscriptionPayload: any = {
         customer: customerData.id,
@@ -457,16 +457,41 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Always start as 'pending' — the asaas-webhook will confirm payment and set 'paid'
-      const orderId = await saveOrder(subData.id, 'pending', 'credit_card');
+      // After creating subscription, check if the first payment was immediately confirmed
+      // Asaas may charge the card right away when nextDueDate = today
+      let firstPaymentStatus = 'PENDING';
+      let firstPaymentId = subData.id;
+      try {
+        // Small delay to allow Asaas to process the first charge
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        const paymentsRes = await fetch(`${baseUrl}/subscriptions/${subData.id}/payments?limit=1`, {
+          headers: { 'access_token': ASAAS_API_KEY },
+        });
+        const paymentsData = await paymentsRes.json();
+        const firstPayment = paymentsData?.data?.[0];
+        if (firstPayment) {
+          firstPaymentId = firstPayment.id;
+          firstPaymentStatus = firstPayment.status;
+          console.log('[create-asaas-payment] First payment:', firstPayment.id, 'status:', firstPayment.status);
+        }
+      } catch (checkErr) {
+        console.error('[create-asaas-payment] Error checking first payment (non-blocking):', checkErr);
+      }
 
-      console.log('[create-asaas-payment] Subscription created:', subData.id, 'status:', subData.status, '— waiting for payment webhook confirmation');
+      // Map Asaas payment status to internal status
+      const subOrderStatus = (firstPaymentStatus === 'CONFIRMED' || firstPaymentStatus === 'RECEIVED')
+        ? 'approved'
+        : 'pending';
+
+      const orderId = await saveOrder(firstPaymentId, subOrderStatus, 'credit_card');
+
+      console.log('[create-asaas-payment] Subscription created:', subData.id, 'first payment:', firstPaymentId, 'status:', firstPaymentStatus, 'order:', subOrderStatus);
 
       return new Response(
         JSON.stringify({
           subscription_id: subData.id,
-          status: subData.status,
-          payment_id: subData.id,
+          status: firstPaymentStatus === 'CONFIRMED' || firstPaymentStatus === 'RECEIVED' ? 'CONFIRMED' : subData.status,
+          payment_id: firstPaymentId,
           order_id: orderId,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
