@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { ExternalLink } from "lucide-react";
 import IntegrationCard from "./IntegrationCard";
 import appsellLogo from "@/assets/appsell-logo.webp";
+import appsellCardLogo from "@/assets/appsell-logo.png";
 
 const APPSELL_EVENTS = [
   { key: "approved", label: "Pagamento confirmado" },
