@@ -49,6 +49,8 @@ const IntegrationCard = ({
   tokenPlaceholder = "Cole aqui o token da API",
   tokenHint,
   statusEvents,
+  onTestConnection,
+  testing,
 }: IntegrationCardProps) => {
   const [open, setOpen] = useState(false);
   const [showToken, setShowToken] = useState(false);
