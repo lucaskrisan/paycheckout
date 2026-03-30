@@ -172,6 +172,21 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
+    // --- Idempotency: deduplicate webhook events ---
+    const dedupKey = `asaas_${payment.id}_${event}`;
+    const { data: inserted, error: dedupErr } = await supabase
+      .from('webhook_events')
+      .upsert({ id: dedupKey, gateway: 'asaas' }, { onConflict: 'id', ignoreDuplicates: true })
+      .select('id')
+      .maybeSingle();
+
+    if (!inserted && !dedupErr) {
+      console.log('[asaas-webhook] Duplicate event, skipping:', dedupKey);
+      return new Response(JSON.stringify({ received: true, duplicate: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     let status = 'pending';
     if (event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED') {
       status = 'paid';
@@ -183,11 +198,17 @@ Deno.serve(async (req) => {
       status = event === 'PAYMENT_DELETED' ? 'cancelled' : 'pending';
     }
 
-    // Update order by external_id (works for both one-time and subscription payments)
+    // --- Status transition guard: prevent downgrading from terminal states ---
+    const statusPriority: Record<string, number> = {
+      pending: 1, overdue: 2, paid: 3, refunded: 4, cancelled: 4,
+    };
+
+    // Update order by external_id with status guard
     const { data: orderData, error } = await supabase
       .from('orders')
       .update({ status, updated_at: new Date().toISOString() })
       .eq('external_id', payment.id)
+      .not('status', 'in', `(${['paid', 'refunded'].filter(s => statusPriority[s] >= statusPriority[status]).join(',')})`)
       .select('id, amount, payment_method, product_id, customer_id, user_id, metadata')
       .maybeSingle();
 
@@ -336,27 +357,28 @@ Deno.serve(async (req) => {
             const expiresAt = new Date();
             expiresAt.setDate(expiresAt.getDate() + days + 3);
 
-            if (existingAccess) {
-              await supabase
-                .from('member_access')
-                .update({ expires_at: expiresAt.toISOString() })
-                .eq('id', existingAccess.id);
-              console.log('[asaas-webhook] Extended member access:', existingAccess.id);
-            } else {
-              const { data: newAccess } = await supabase
-                .from('member_access')
-                .insert({ customer_id: orderData.customer_id, course_id: course.id, expires_at: expiresAt.toISOString() })
-                .select('access_token')
-                .single();
-              console.log('[asaas-webhook] Created subscription member access for course:', course.id);
-              if (newAccess) {
-                await sendAccessEmail(supabase, orderData.customer_id, course, newAccess.access_token);
-              }
+            // Atomic upsert: uses unique constraint (customer_id, course_id)
+            const { data: upsertedAccess } = await supabase
+              .from('member_access')
+              .upsert(
+                { customer_id: orderData.customer_id, course_id: course.id, expires_at: expiresAt.toISOString() },
+                { onConflict: 'customer_id,course_id' }
+              )
+              .select('access_token, id')
+              .single();
+
+            console.log('[asaas-webhook] Upserted subscription member access for course:', course.id);
+            if (upsertedAccess && !existingAccess) {
+              await sendAccessEmail(supabase, orderData.customer_id, course, upsertedAccess.access_token);
             }
           } else if (!existingAccess) {
+            // Atomic upsert for one-time purchase
             const { data: newAccess, error: accessErr } = await supabase
               .from('member_access')
-              .insert({ customer_id: orderData.customer_id, course_id: course.id })
+              .upsert(
+                { customer_id: orderData.customer_id, course_id: course.id },
+                { onConflict: 'customer_id,course_id', ignoreDuplicates: true }
+              )
               .select('access_token')
               .single();
 

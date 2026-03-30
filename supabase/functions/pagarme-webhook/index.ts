@@ -86,7 +86,6 @@ Deno.serve(async (req) => {
     const payload = JSON.parse(rawBody);
     console.log('[pagarme-webhook] received event type:', payload.type);
 
-    // Pagar.me v5 webhook format: { id, type, data: { id, status, charges, ... } }
     const eventType = payload.type;
     const order = payload.data;
 
@@ -102,6 +101,21 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
+    // --- Idempotency: deduplicate webhook events ---
+    const dedupKey = `pagarme_${order.id}_${eventType}`;
+    const { data: inserted } = await supabase
+      .from('webhook_events')
+      .upsert({ id: dedupKey, gateway: 'pagarme' }, { onConflict: 'id', ignoreDuplicates: true })
+      .select('id')
+      .maybeSingle();
+
+    if (!inserted) {
+      console.log('[pagarme-webhook] Duplicate event, skipping:', dedupKey);
+      return new Response(JSON.stringify({ received: true, duplicate: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     let status = 'pending';
     if (eventType === 'order.paid') {
       status = 'paid';
@@ -115,12 +129,16 @@ Deno.serve(async (req) => {
       status = 'refunded';
     }
 
-    // Try to match by Pagar.me order id stored as external_id
+    // --- Status transition guard ---
     const externalId = order.id;
     const { data: orderData, error } = await supabase
       .from('orders')
       .update({ status, updated_at: new Date().toISOString() })
       .eq('external_id', externalId)
+      .not('status', 'in', `(${['paid', 'refunded'].filter(s => {
+        const p: Record<string, number> = { pending: 1, failed: 2, paid: 3, refunded: 4, cancelled: 4 };
+        return (p[s] || 0) >= (p[status] || 0);
+      }).join(',')})`)
       .select('id, amount, payment_method, product_id, customer_id, user_id, metadata')
       .maybeSingle();
 
@@ -267,38 +285,33 @@ Deno.serve(async (req) => {
               .maybeSingle();
 
             if (product?.is_subscription) {
-              // Subscription: set/extend expires_at
               const cycleDays: Record<string, number> = {
                 weekly: 7, biweekly: 14, monthly: 30, quarterly: 90, semiannually: 180, yearly: 365,
               };
               const days = cycleDays[product.billing_cycle] || 30;
               const expiresAt = new Date();
-              expiresAt.setDate(expiresAt.getDate() + days + 3); // +3 grace period
+              expiresAt.setDate(expiresAt.getDate() + days + 3);
 
-              if (existingAccess) {
-                await supabase
-                  .from('member_access')
-                  .update({ expires_at: expiresAt.toISOString() })
-                  .eq('id', existingAccess.id);
-                console.log('[pagarme-webhook] Extended subscription access:', existingAccess.id);
-              } else {
-                const { data: newAccess, error: accessErr } = await supabase
-                  .from('member_access')
-                  .insert({
+              // Atomic upsert with unique constraint
+              const { data: upsertedAccess, error: accessErr } = await supabase
+                .from('member_access')
+                .upsert(
+                  {
                     customer_id: orderData.customer_id,
                     course_id: course.id,
                     order_id: orderData.id,
                     expires_at: expiresAt.toISOString(),
-                  })
-                  .select('access_token')
-                  .single();
+                  },
+                  { onConflict: 'customer_id,course_id' }
+                )
+                .select('access_token')
+                .single();
 
-                if (accessErr) {
-                  console.error('[pagarme-webhook] Error creating subscription access:', course.id, accessErr);
-                } else {
-                  console.log('[pagarme-webhook] Created subscription access for course:', course.id);
-                  // Send access email
-                  if (newAccess?.access_token) {
+              if (accessErr) {
+                console.error('[pagarme-webhook] Error upserting subscription access:', course.id, accessErr);
+              } else {
+                console.log('[pagarme-webhook] Upserted subscription access for course:', course.id);
+                if (upsertedAccess?.access_token && !existingAccess) {
                     try {
                       const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
                       if (RESEND_API_KEY) {
@@ -388,14 +401,13 @@ Deno.serve(async (req) => {
                 }
               }
             } else if (!existingAccess) {
-              // One-time purchase: create permanent access
+              // Atomic upsert for one-time purchase
               const { data: newAccess, error: accessErr } = await supabase
                 .from('member_access')
-                .insert({
-                  customer_id: orderData.customer_id,
-                  course_id: course.id,
-                  order_id: orderData.id,
-                })
+                .upsert(
+                  { customer_id: orderData.customer_id, course_id: course.id, order_id: orderData.id },
+                  { onConflict: 'customer_id,course_id', ignoreDuplicates: true }
+                )
                 .select('access_token')
                 .single();
 
@@ -553,11 +565,16 @@ Deno.serve(async (req) => {
     // --- Billing recharge confirmation (Pagar.me PIX) ---
     if ((eventType === 'order.paid' || eventType === 'charge.paid') && status === 'paid') {
       try {
+        // Atomic: only credit if status transitions from pending to confirmed
         const { data: recharge } = await supabase
           .from('billing_recharges')
-          .select('id, user_id, amount, status')
+          .update({
+            status: 'confirmed',
+            confirmed_at: new Date().toISOString(),
+          })
           .eq('external_id', externalId)
           .eq('status', 'pending')
+          .select('id, user_id, amount')
           .maybeSingle();
         if (recharge) {
           await supabase.rpc('add_billing_credit', {
@@ -565,14 +582,9 @@ Deno.serve(async (req) => {
             p_amount: recharge.amount,
             p_description: `Recarga via PIX (Pagar.me) — R$${Number(recharge.amount).toFixed(2).replace('.', ',')}`,
           });
-          await supabase
-            .from('billing_recharges')
-            .update({
-              status: 'confirmed',
-              confirmed_at: new Date().toISOString(),
-            })
-            .eq('id', recharge.id);
           console.log(`[pagarme-webhook] Recharge confirmed: R$${recharge.amount} for user ${recharge.user_id}`);
+        } else {
+          console.log('[pagarme-webhook] Recharge already confirmed or not found, skipping credit');
         }
       } catch (rechargeErr) {
         console.error('[pagarme-webhook] Recharge error (non-blocking):', rechargeErr);
