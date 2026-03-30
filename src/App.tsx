@@ -34,7 +34,7 @@ import SystemHealth from "./pages/admin/SystemHealth";
 import Webhooks from "./pages/admin/Webhooks";
 import Emails from "./pages/admin/Emails";
 import PwaSettings from "./pages/admin/PwaSettings";
-import MetaAds from "./pages/admin/MetaAds";
+
 import Billing from "./pages/admin/Billing";
 import Upsell from "./pages/admin/Upsell";
 import Roadmap from "./pages/admin/Roadmap";
@@ -105,7 +105,7 @@ const App = () => (
               <Route path="webhooks" element={<Webhooks />} />
               <Route path="emails" element={<Emails />} />
               <Route path="pwa" element={<PwaSettings />} />
-              <Route path="meta-ads" element={<MetaAds />} />
+              
               <Route path="billing" element={<Billing />} />
               <Route path="platform" element={<SuperAdminDashboard />} />
               <Route path="domains" element={<Domains />} />
