@@ -100,10 +100,9 @@ const GatewayManagement = () => {
   const inactiveGateways = gateways.filter(g => !g.active);
   const installedProviders = gateways.map(g => g.provider);
 
-  const renderGatewayCard = (gw: GatewayConfig & { owner_name?: string; user_id?: string }) => {
-    const isOwnGateway = gw.user_id === user?.id;
+  const renderGatewayCard = (gw: GatewayConfig) => {
     return (
-      <Card key={gw.id} className={`border border-border/50 bg-card ${!isOwnGateway ? "opacity-60" : ""}`}>
+      <Card key={gw.id} className="border border-border/50 bg-card">
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -124,9 +123,6 @@ const GatewayManagement = () => {
               </Button>
             </div>
           </div>
-          {!isOwnGateway && gw.owner_name && (
-            <p className="text-[10px] text-muted-foreground mb-2">Produtor: {gw.owner_name}</p>
-          )}
           <div className="flex items-center gap-2 flex-wrap">
             <Badge variant="outline" className="text-[10px]">{providerLabels[gw.provider]}</Badge>
             <Badge variant="outline" className="text-[10px]">{gw.environment === "production" ? "Produção" : "Sandbox"}</Badge>
