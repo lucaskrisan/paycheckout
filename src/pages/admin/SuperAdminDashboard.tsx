@@ -112,7 +112,7 @@ const SuperAdminDashboard = () => {
   const [selectedProducerId, setSelectedProducerId] = useState<string | null>(null);
   const [feePercent, setFeePercent] = useState(4.99);
   const [showAddProducer, setShowAddProducer] = useState(false);
-  const [newProducer, setNewProducer] = useState({ full_name: "", email: "", password: "" });
+  const [newProducer, setNewProducer] = useState({ full_name: "", email: "" });
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [selectedUser, setSelectedUser] = useState<(UserWithRoles & { product_count?: number; order_count?: number; total_revenue?: number }) | null>(null);
 
