@@ -253,6 +253,7 @@ Deno.serve(async (req) => {
             }
           }
         }
+      }
       } // end else (panttera delivery)
 
       // CAPI fallback
