@@ -240,13 +240,9 @@ const SuperAdminDashboard = () => {
   };
 
   const handleCreateProducer = async () => {
-    const { full_name, email, password } = newProducer;
-    if (!full_name.trim() || !email.trim() || !password.trim()) {
+    const { full_name, email } = newProducer;
+    if (!full_name.trim() || !email.trim()) {
       toast.error("Preencha todos os campos");
-      return;
-    }
-    if (password.length < 6) {
-      toast.error("Senha deve ter no mínimo 6 caracteres");
       return;
     }
     setActionLoading("new-producer");
@@ -257,15 +253,15 @@ const SuperAdminDashboard = () => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${sessionData.session?.access_token}`,
       },
-      body: JSON.stringify({ email: email.trim(), full_name: full_name.trim(), password }),
+      body: JSON.stringify({ email: email.trim(), full_name: full_name.trim() }),
     });
     const result = await res.json();
     if (!res.ok) {
       toast.error(result.error || "Erro ao criar produtor");
     } else {
-      toast.success(`Produtor "${full_name}" criado com sucesso!`);
+      toast.success(`Convite enviado para "${email}"! O produtor receberá um email para definir a senha.`);
       setShowAddProducer(false);
-      setNewProducer({ full_name: "", email: "", password: "" });
+      setNewProducer({ full_name: "", email: "" });
       await loadAll();
     }
     setActionLoading(null);
