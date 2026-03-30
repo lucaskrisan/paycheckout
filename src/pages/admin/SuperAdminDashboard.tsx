@@ -94,7 +94,16 @@ const fmt = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
 /* ─── Component ────────────────────────────────── */
 const SuperAdminDashboard = () => {
   const { isSuperAdmin, user } = useAuth();
-  const liveVisitors = useCheckoutPresence("watch");
+
+  // Data state — declared early so useMemo can reference products
+  const [products, setProducts] = useState<any[]>([]);
+
+  // Super admin sees only visitors on THEIR OWN checkouts
+  const myProductIds = useMemo(
+    () => (user && products.length > 0 ? products.filter((p) => p.user_id === user.id).map((p) => p.id) : undefined),
+    [products, user],
+  );
+  const liveVisitors = useCheckoutPresence("watch", undefined, myProductIds);
 
   // Data state
   const [producers, setProducers] = useState<Producer[]>([]);
