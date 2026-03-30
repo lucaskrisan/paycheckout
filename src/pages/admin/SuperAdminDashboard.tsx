@@ -53,6 +53,9 @@ interface Producer {
 interface UserWithRoles {
   id: string;
   full_name: string | null;
+  email: string;
+  phone: string | null;
+  cpf: string | null;
   created_at: string;
   roles: string[];
 }
