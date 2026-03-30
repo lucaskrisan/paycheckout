@@ -58,23 +58,9 @@ const IntegrationCard = ({
       {/* Thumbnail card — just the logo */}
       <button
         onClick={() => setOpen(true)}
-        className="group relative flex flex-col items-center justify-center gap-2 rounded-xl border border-border/40 bg-card p-4 transition-all hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 cursor-pointer text-center"
+        className="group relative flex items-center justify-center rounded-xl border border-border/40 bg-white p-6 transition-all hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 cursor-pointer h-28"
       >
-        <div className="w-20 h-20 rounded-xl bg-white flex items-center justify-center overflow-hidden shadow-sm group-hover:shadow-md transition-shadow p-2">
-          <img src={logo} alt={name} className="w-full h-full object-contain" />
-        </div>
-        <div className="space-y-1">
-          <span className="font-display font-bold text-foreground text-sm">{name}</span>
-          <Badge
-            variant={isConnected ? "default" : "secondary"}
-            className={cn(
-              "text-[9px] px-2 py-0 h-[18px] font-semibold tracking-wide uppercase",
-              isConnected && "bg-primary/15 text-primary border border-primary/30"
-            )}
-          >
-            {isConnected ? "Conectado" : "Desconectado"}
-          </Badge>
-        </div>
+        <img src={logo} alt={name} className="max-h-12 max-w-[160px] object-contain" />
       </button>
 
       {/* Config modal */}
