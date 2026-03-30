@@ -779,18 +779,6 @@ const ProductEdit = () => {
                         </div>
                       </label>
 
-                      <label className={`flex items-start gap-4 p-4 rounded-lg border cursor-pointer transition-all ${form.delivery_method === "email" ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"}`}>
-                        <RadioGroupItem value="email" className="mt-0.5" />
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg">📩</span>
-                            <span className="font-semibold text-sm text-foreground">Apenas E-mail</span>
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            O comprador recebe apenas o e-mail de confirmação. Sem área de membros ou integração externa.
-                          </p>
-                        </div>
-                      </label>
                     </RadioGroup>
                   </div>
                 </div>
