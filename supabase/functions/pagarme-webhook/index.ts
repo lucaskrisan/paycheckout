@@ -323,7 +323,7 @@ Deno.serve(async (req) => {
 
                         if (customerData) {
                           const siteUrl = 'https://app.panttera.com.br';
-                          const accessUrl = `${siteUrl}/membros?token=${newAccess.access_token}`;
+                          const accessUrl = `${siteUrl}/membros?token=${upsertedAccess.access_token}`;
 
                           const emailHtml = `
                             <!DOCTYPE html>
@@ -397,7 +397,6 @@ Deno.serve(async (req) => {
                     } catch (emailErr) {
                       console.error('[pagarme-webhook] Email error (non-blocking):', emailErr);
                     }
-                  }
                 }
               }
             } else if (!existingAccess) {
