@@ -4,13 +4,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { MessageCircle, Save, Loader2, ExternalLink } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { MessageCircle, Save, Loader2, ExternalLink, ShoppingCart, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
 const CrispChat = () => {
   const { user } = useAuth();
   const [crispId, setCrispId] = useState("");
+  const [enabledCheckout, setEnabledCheckout] = useState(true);
+  const [enabledLanding, setEnabledLanding] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
@@ -22,20 +26,22 @@ const CrispChat = () => {
     if (!user?.id) return;
     const { data } = await supabase
       .from("checkout_settings")
-      .select("crisp_website_id")
+      .select("crisp_website_id, crisp_enabled_checkout, crisp_enabled_landing")
       .eq("user_id", user.id)
       .maybeSingle();
-    if ((data as any)?.crisp_website_id) setCrispId((data as any).crisp_website_id);
+    if (data) {
+      setCrispId((data as any).crisp_website_id || "");
+      setEnabledCheckout((data as any).crisp_enabled_checkout ?? true);
+      setEnabledLanding((data as any).crisp_enabled_landing ?? true);
+    }
     setLoaded(true);
   };
 
   const extractCrispId = (input: string): string | null => {
     if (!input) return null;
     const trimmed = input.trim();
-    // If user pasted the full script tag, extract the CRISP_WEBSITE_ID
     const match = trimmed.match(/CRISP_WEBSITE_ID\s*=\s*["']([a-f0-9-]+)["']/i);
     if (match) return match[1];
-    // If it's already a clean UUID-like ID
     if (/^[a-f0-9-]{30,50}$/i.test(trimmed)) return trimmed;
     return null;
   };
@@ -44,6 +50,12 @@ const CrispChat = () => {
     if (!user?.id) return;
     setSaving(true);
     const extracted = extractCrispId(crispId) || null;
+
+    const payload = {
+      crisp_website_id: extracted,
+      crisp_enabled_checkout: enabledCheckout,
+      crisp_enabled_landing: enabledLanding,
+    };
 
     const { data: existing } = await supabase
       .from("checkout_settings")
@@ -55,79 +67,116 @@ const CrispChat = () => {
     if (existing) {
       ({ error } = await supabase
         .from("checkout_settings")
-        .update({ crisp_website_id: extracted } as any)
+        .update(payload as any)
         .eq("user_id", user.id));
     } else {
       ({ error } = await supabase
         .from("checkout_settings")
-        .insert({ user_id: user.id, crisp_website_id: extracted } as any));
+        .insert({ user_id: user.id, ...payload } as any));
     }
 
     if (error) toast.error("Erro ao salvar Crisp");
-    else toast.success(extracted ? "Crisp ativado no checkout!" : "Crisp removido do checkout");
+    else toast.success("Configurações do Crisp salvas!");
     if (extracted) setCrispId(extracted);
     setSaving(false);
   };
+
+  const hasId = !!extractCrispId(crispId);
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl font-bold text-foreground">Crisp Chat</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Adicione um chat ao vivo no seu checkout para atender clientes em tempo real
+          Adicione um chat ao vivo para atender clientes em tempo real
         </p>
       </div>
 
-      <Card className="border-border/30 bg-card/50">
+      <Card className="border-border/30 bg-muted/30">
         <CardContent className="p-4">
           <h3 className="font-semibold text-foreground text-sm">Como funciona?</h3>
           <p className="text-xs text-muted-foreground mt-1">
-            O widget do Crisp aparecerá automaticamente em todos os seus checkouts, permitindo que seus clientes tirem dúvidas antes de finalizar a compra — aumentando suas conversões.
+            O widget do Crisp aparece automaticamente nas páginas selecionadas, permitindo que seus clientes tirem dúvidas — aumentando suas conversões.
           </p>
         </CardContent>
       </Card>
 
       {loaded && (
         <Card className="border border-border/50 bg-card">
-          <CardContent className="p-5 space-y-4">
+          <CardContent className="p-5 space-y-5">
+            {/* Header */}
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                 <MessageCircle className="w-5 h-5 text-primary" />
               </div>
-              <div>
+              <div className="flex-1">
                 <h3 className="font-semibold text-foreground text-sm">Configurar Crisp Chat</h3>
                 <p className="text-xs text-muted-foreground">
-                  Cole seu Website ID para ativar o chat nos checkouts
+                  Cole seu Website ID e escolha onde o chat aparece
                 </p>
               </div>
-              {crispId && <Badge className="ml-auto text-[10px]">Ativo</Badge>}
+              {hasId && <Badge className="text-[10px]">Configurado</Badge>}
             </div>
 
-            <div className="flex gap-2">
+            {/* Website ID */}
+            <div className="space-y-1.5">
+              <Label className="text-xs">Website ID</Label>
               <Input
                 placeholder="Cole seu CRISP_WEBSITE_ID aqui (ex: 1d36332d-054f-443b-...)"
                 value={crispId}
                 onChange={e => setCrispId(e.target.value)}
                 className="text-xs"
               />
-              <Button size="sm" onClick={saveCrisp} disabled={saving} className="gap-1.5 shrink-0">
-                {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                Salvar
-              </Button>
+              <p className="text-[10px] text-muted-foreground">
+                Acesse{" "}
+                <a
+                  href="https://app.crisp.chat"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary underline inline-flex items-center gap-0.5"
+                >
+                  app.crisp.chat <ExternalLink className="w-2.5 h-2.5" />
+                </a>{" "}
+                → Settings → Website Settings → copie o Website ID.
+              </p>
             </div>
 
-            <p className="text-[10px] text-muted-foreground">
-              Acesse{" "}
-              <a
-                href="https://app.crisp.chat"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary underline inline-flex items-center gap-0.5"
-              >
-                app.crisp.chat <ExternalLink className="w-2.5 h-2.5" />
-              </a>{" "}
-              → Settings → Website Settings → copie o Website ID. Deixe vazio para desativar.
-            </p>
+            {/* Toggles */}
+            <div className="rounded-lg border border-border/40 divide-y divide-border/40">
+              <div className="flex items-center justify-between px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <ShoppingCart className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Checkout</p>
+                    <p className="text-[10px] text-muted-foreground">Exibir chat na página de pagamento</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={enabledCheckout}
+                  onCheckedChange={setEnabledCheckout}
+                  disabled={!hasId}
+                />
+              </div>
+              <div className="flex items-center justify-between px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <Globe className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Página de Vendas</p>
+                    <p className="text-[10px] text-muted-foreground">Exibir chat na landing page</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={enabledLanding}
+                  onCheckedChange={setEnabledLanding}
+                  disabled={!hasId}
+                />
+              </div>
+            </div>
+
+            <Button size="sm" onClick={saveCrisp} disabled={saving} className="gap-1.5">
+              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              Salvar
+            </Button>
           </CardContent>
         </Card>
       )}
