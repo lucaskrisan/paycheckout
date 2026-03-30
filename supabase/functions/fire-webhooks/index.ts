@@ -190,6 +190,20 @@ Deno.serve(async (req) => {
       );
     }
 
+    // --- AppSell integration (non-blocking) ---
+    try {
+      fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/appsell-notify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${serviceRoleKey}`,
+        },
+        body: JSON.stringify({ event, order_id, user_id }),
+      }).catch(err => console.error('[fire-webhooks] appsell-notify error:', err));
+    } catch (e) {
+      console.error('[fire-webhooks] appsell-notify dispatch error:', e);
+    }
+
     // Filter by product_id if set on endpoint
     const filteredEndpoints = matching.filter((ep: any) =>
       !ep.product_id || ep.product_id === order.product_id
