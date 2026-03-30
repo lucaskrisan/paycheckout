@@ -26,8 +26,8 @@ interface PwaSettingsData {
 }
 
 const defaults: PwaSettingsData = {
-  app_name: "PanteraPay",
-  short_name: "PanteraPay",
+  app_name: "Panttera",
+  short_name: "Panttera",
   description: "Plataforma de vendas",
   theme_color: "#16a34a",
   background_color: "#ffffff",
