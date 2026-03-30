@@ -401,14 +401,13 @@ Deno.serve(async (req) => {
                 }
               }
             } else if (!existingAccess) {
-              // One-time purchase: create permanent access
+              // Atomic upsert for one-time purchase
               const { data: newAccess, error: accessErr } = await supabase
                 .from('member_access')
-                .insert({
-                  customer_id: orderData.customer_id,
-                  course_id: course.id,
-                  order_id: orderData.id,
-                })
+                .upsert(
+                  { customer_id: orderData.customer_id, course_id: course.id, order_id: orderData.id },
+                  { onConflict: 'customer_id,course_id', ignoreDuplicates: true }
+                )
                 .select('access_token')
                 .single();
 
