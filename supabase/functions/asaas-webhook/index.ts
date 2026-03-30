@@ -203,14 +203,29 @@ Deno.serve(async (req) => {
       pending: 1, overdue: 2, paid: 3, refunded: 4, cancelled: 4,
     };
 
-    // Update order by external_id with status guard
-    const { data: orderData, error } = await supabase
+    // Update order by external_id (payment.id or subscription ID)
+    let { data: orderData, error } = await supabase
       .from('orders')
       .update({ status, updated_at: new Date().toISOString() })
       .eq('external_id', payment.id)
       .not('status', 'in', `(${['paid', 'refunded'].filter(s => statusPriority[s] >= statusPriority[status]).join(',')})`)
       .select('id, amount, payment_method, product_id, customer_id, user_id, metadata')
       .maybeSingle();
+
+    // Fallback: if no order found by payment.id, try by subscription ID
+    // Asaas subscription payments have payment.subscription = "sub_xxx" which matches our external_id
+    if (!orderData && !error && payment.subscription) {
+      console.log('[asaas-webhook] No order found by payment.id, trying subscription:', payment.subscription);
+      const subResult = await supabase
+        .from('orders')
+        .update({ status, external_id: payment.id, updated_at: new Date().toISOString() })
+        .eq('external_id', payment.subscription)
+        .not('status', 'in', `(${['paid', 'refunded'].filter(s => statusPriority[s] >= statusPriority[status]).join(',')})`)
+        .select('id, amount, payment_method, product_id, customer_id, user_id, metadata')
+        .maybeSingle();
+      orderData = subResult.data;
+      error = subResult.error;
+    }
 
     if (error) {
       console.error('[asaas-webhook] Error updating order:', error);
@@ -248,6 +263,34 @@ Deno.serve(async (req) => {
             },
             body: JSON.stringify({ event: evt, order_id: orderData.id, user_id: orderData.user_id }),
           }).catch(err => console.error('[asaas-webhook] fire-webhooks error:', err));
+        }
+      }
+
+      // Send push notification for confirmed payments
+      if (status === 'paid') {
+        try {
+          const { data: notifSettings } = await supabase
+            .from('notification_settings')
+            .select('send_approved, show_product_name')
+            .eq('user_id', orderData.user_id)
+            .eq('send_approved', true)
+            .maybeSingle();
+
+          if (notifSettings) {
+            const { data: prod } = await supabase
+              .from('products')
+              .select('name, is_subscription')
+              .eq('id', orderData.product_id!)
+              .maybeSingle();
+
+            const formattedAmount = Number(orderData.amount).toFixed(2).replace('.', ',');
+            const isSubPayment = prod?.is_subscription || !!payment.subscription;
+            const title = isSubPayment ? '🔄 Assinatura confirmada!' : '💳 Venda no cartão!';
+            const message = `💳 R$ ${formattedAmount}${notifSettings.show_product_name && prod?.name ? ` • ${prod.name}` : ''}`;
+            await sendPushNotification(title, message, orderData.user_id, 'https://app.panttera.com.br/admin/orders');
+          }
+        } catch (notifErr) {
+          console.error('[asaas-webhook] Notification error:', notifErr);
         }
       }
     }
