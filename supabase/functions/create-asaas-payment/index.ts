@@ -351,8 +351,8 @@ Deno.serve(async (req) => {
     const feePercent = Number(platformSettings?.platform_fee_percent || 0);
     const feeAmount = Math.round(amount * feePercent) / 100;
 
-    // Helper to save order
-    const saveOrder = async (externalId: string, status: string, method: string) => {
+    // Helper to save order — returns the internal order ID
+    const saveOrder = async (externalId: string, status: string, method: string): Promise<string | null> => {
       const { data: orderRecord, error: orderError } = await supabaseAdmin
         .from('orders')
         .insert({
@@ -379,9 +379,9 @@ Deno.serve(async (req) => {
 
       if (orderError) {
         console.error('[create-asaas-payment] Order save error:', orderError);
-      } else {
-        console.log('[create-asaas-payment] Order saved:', orderRecord.id);
+        return null;
       }
+      console.log('[create-asaas-payment] Order saved:', orderRecord.id);
 
       // Increment coupon usage
       if (coupon_id) {
@@ -397,6 +397,8 @@ Deno.serve(async (req) => {
             .eq('id', coupon_id);
         }
       }
+
+      return orderRecord.id;
     };
 
     // SUBSCRIPTION
