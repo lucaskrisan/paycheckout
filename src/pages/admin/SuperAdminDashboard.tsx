@@ -880,6 +880,34 @@ const SuperAdminDashboard = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Add Producer Dialog */}
+      <Dialog open={showAddProducer} onOpenChange={setShowAddProducer}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><UserPlus className="w-5 h-5 text-primary" /> Adicionar Produtor</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Nome completo</Label>
+              <Input value={newProducer.full_name} onChange={(e) => setNewProducer(p => ({ ...p, full_name: e.target.value }))} placeholder="Ex: João Silva" className="h-9" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Email</Label>
+              <Input type="email" value={newProducer.email} onChange={(e) => setNewProducer(p => ({ ...p, email: e.target.value }))} placeholder="produtor@email.com" className="h-9" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Senha</Label>
+              <Input type="password" value={newProducer.password} onChange={(e) => setNewProducer(p => ({ ...p, password: e.target.value }))} placeholder="Mínimo 6 caracteres" className="h-9" />
+            </div>
+            <Button onClick={handleCreateProducer} disabled={actionLoading === "new-producer"} className="w-full gap-2">
+              {actionLoading === "new-producer" ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+              {actionLoading === "new-producer" ? "Criando..." : "Criar Produtor"}
+            </Button>
+            <p className="text-[10px] text-muted-foreground text-center">O produtor será criado com email confirmado e role de admin (Produtor).</p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
