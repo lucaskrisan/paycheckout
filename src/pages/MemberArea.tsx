@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { createClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import DOMPurify from "dompurify";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft,
@@ -930,7 +931,12 @@ const MemberArea = () => {
                       {activeLesson.content_type === "html" && activeLesson.content && (
                         <div
                           className="prose prose-invert max-w-none [&_iframe]:w-full [&_iframe]:min-h-[500px] [&_iframe]:rounded-xl [&_iframe]:border-0"
-                          dangerouslySetInnerHTML={{ __html: activeLesson.content }}
+                          dangerouslySetInnerHTML={{
+                            __html: DOMPurify.sanitize(activeLesson.content, {
+                              ADD_TAGS: ['iframe'],
+                              ADD_ATTR: ['allowfullscreen', 'frameborder', 'src', 'allow'],
+                            })
+                          }}
                         />
                       )}
                     </div>

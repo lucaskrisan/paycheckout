@@ -47,8 +47,15 @@ const inputClass =
 const CustomerForm = ({ data, onChange }: CustomerFormProps) => {
   const handleChange = (field: keyof CustomerData, value: string) => {
     let formatted = value;
+    // Length limits to prevent abuse
+    if (field === "name" && value.length > 100) return;
+    if (field === "email" && value.length > 255) return;
     if (field === "cpf") formatted = formatCPF(value);
     if (field === "phone") formatted = formatPhone(value);
+    // Strip any HTML tags from text fields
+    if (field === "name" || field === "email") {
+      formatted = formatted.replace(/<[^>]*>/g, '');
+    }
     onChange({ ...data, [field]: formatted });
   };
 

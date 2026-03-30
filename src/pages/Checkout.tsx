@@ -199,7 +199,18 @@ const Checkout = () => {
     if (!checkoutSettings) return;
     if (checkoutSettings.primary_color) document.documentElement.style.setProperty("--checkout-brand", checkoutSettings.primary_color);
     let styleEl: HTMLStyleElement | null = null;
-    if (checkoutSettings.custom_css) { styleEl = document.createElement("style"); styleEl.textContent = checkoutSettings.custom_css; document.head.appendChild(styleEl); }
+    if (checkoutSettings.custom_css) {
+      // Sanitize CSS: strip any HTML tags, script injections, url() with javascript:, and expression()
+      const sanitizedCss = checkoutSettings.custom_css
+        .replace(/<[^>]*>/g, '') // Remove HTML tags
+        .replace(/javascript\s*:/gi, '') // Remove javascript: protocol
+        .replace(/expression\s*\(/gi, '') // Remove CSS expressions (IE)
+        .replace(/@import/gi, '') // Remove @import (prevent external CSS injection)
+        .replace(/url\s*\(\s*['"]?\s*javascript/gi, 'url(blocked'); // Block javascript in url()
+      styleEl = document.createElement("style");
+      styleEl.textContent = sanitizedCss;
+      document.head.appendChild(styleEl);
+    }
     return () => { document.documentElement.style.removeProperty("--checkout-brand"); if (styleEl) styleEl.remove(); };
   }, [checkoutSettings]);
 
