@@ -6,13 +6,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Users, DollarSign, ShoppingCart, TrendingUp, Search, ShieldCheck, ShieldX, Loader2,
   Crown, Eye, ArrowLeft, CreditCard, AlertTriangle, Ban, CheckCircle, RefreshCcw,
-  Activity, Webhook, Mail, Package, BarChart3, Wallet, Server,
+  Activity, Webhook, Mail, Package, BarChart3, Wallet, Server, UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -88,6 +95,8 @@ const SuperAdminDashboard = () => {
   const [period, setPeriod] = useState<Period>("today");
   const [selectedProducerId, setSelectedProducerId] = useState<string | null>(null);
   const [feePercent, setFeePercent] = useState(4.99);
+  const [showAddProducer, setShowAddProducer] = useState(false);
+  const [newProducer, setNewProducer] = useState({ full_name: "", email: "", password: "" });
 
   useEffect(() => {
     if (isSuperAdmin) loadAll();
@@ -192,6 +201,38 @@ const SuperAdminDashboard = () => {
     const { error } = await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", "admin" as any);
     if (error) toast.error("Erro: " + error.message);
     else { toast.success("Acesso removido!"); await loadAll(); }
+    setActionLoading(null);
+  };
+
+  const handleCreateProducer = async () => {
+    const { full_name, email, password } = newProducer;
+    if (!full_name.trim() || !email.trim() || !password.trim()) {
+      toast.error("Preencha todos os campos");
+      return;
+    }
+    if (password.length < 6) {
+      toast.error("Senha deve ter no mínimo 6 caracteres");
+      return;
+    }
+    setActionLoading("new-producer");
+    const { data: sessionData } = await supabase.auth.getSession();
+    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-producer`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${sessionData.session?.access_token}`,
+      },
+      body: JSON.stringify({ email: email.trim(), full_name: full_name.trim(), password }),
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      toast.error(result.error || "Erro ao criar produtor");
+    } else {
+      toast.success(`Produtor "${full_name}" criado com sucesso!`);
+      setShowAddProducer(false);
+      setNewProducer({ full_name: "", email: "", password: "" });
+      await loadAll();
+    }
     setActionLoading(null);
   };
 
@@ -775,11 +816,16 @@ const SuperAdminDashboard = () => {
         <TabsContent value="users">
           <Card>
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <CardTitle className="text-lg">Todos os Usuários</CardTitle>
-                <div className="relative w-64">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input placeholder="Buscar..." value={userSearch} onChange={(e) => setUserSearch(e.target.value)} className="pl-9 h-9" />
+                <div className="flex items-center gap-2">
+                  <Button size="sm" className="h-9 gap-1.5 text-xs font-semibold" onClick={() => setShowAddProducer(true)}>
+                    <UserPlus className="w-4 h-4" /> Adicionar Produtor
+                  </Button>
+                  <div className="relative w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input placeholder="Buscar..." value={userSearch} onChange={(e) => setUserSearch(e.target.value)} className="pl-9 h-9" />
+                  </div>
                 </div>
               </div>
             </CardHeader>
@@ -834,6 +880,34 @@ const SuperAdminDashboard = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Add Producer Dialog */}
+      <Dialog open={showAddProducer} onOpenChange={setShowAddProducer}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><UserPlus className="w-5 h-5 text-primary" /> Adicionar Produtor</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Nome completo</Label>
+              <Input value={newProducer.full_name} onChange={(e) => setNewProducer(p => ({ ...p, full_name: e.target.value }))} placeholder="Ex: João Silva" className="h-9" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Email</Label>
+              <Input type="email" value={newProducer.email} onChange={(e) => setNewProducer(p => ({ ...p, email: e.target.value }))} placeholder="produtor@email.com" className="h-9" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Senha</Label>
+              <Input type="password" value={newProducer.password} onChange={(e) => setNewProducer(p => ({ ...p, password: e.target.value }))} placeholder="Mínimo 6 caracteres" className="h-9" />
+            </div>
+            <Button onClick={handleCreateProducer} disabled={actionLoading === "new-producer"} className="w-full gap-2">
+              {actionLoading === "new-producer" ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+              {actionLoading === "new-producer" ? "Criando..." : "Criar Produtor"}
+            </Button>
+            <p className="text-[10px] text-muted-foreground text-center">O produtor será criado com email confirmado e role de admin (Produtor).</p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
