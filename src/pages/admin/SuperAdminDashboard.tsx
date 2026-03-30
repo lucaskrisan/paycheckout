@@ -531,6 +531,7 @@ const SuperAdminDashboard = () => {
                 <Table>
                   <TableHeader><TableRow>
                     <TableHead>Nome</TableHead>
+                    <TableHead>Email</TableHead>
                     <TableHead className="text-center">Produtos</TableHead>
                     <TableHead className="text-center">Pedidos</TableHead>
                     <TableHead className="text-right">Receita</TableHead>
@@ -541,11 +542,12 @@ const SuperAdminDashboard = () => {
                     {filteredProducers.map((p) => {
                       const isSelf = p.id === user?.id;
                       return (
-                        <TableRow key={p.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedProducerId(p.id)}>
+                        <TableRow key={p.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedUser({ ...p, roles: isSelf ? ["super_admin"] : ["admin"], product_count: p.product_count, order_count: p.order_count, total_revenue: p.total_revenue })}>
                           <TableCell className="font-medium">
                             {p.full_name || "Sem nome"}
                             {isSelf && <Badge variant="outline" className="ml-2 text-xs">Você</Badge>}
                           </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{p.email || "—"}</TableCell>
                           <TableCell className="text-center">{p.product_count}</TableCell>
                           <TableCell className="text-center">{p.order_count}</TableCell>
                           <TableCell className="text-right font-semibold">{fmt(p.total_revenue)}</TableCell>
