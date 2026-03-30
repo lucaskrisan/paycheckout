@@ -11,6 +11,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Users, DollarSign, ShoppingCart, TrendingUp, Search, ShieldCheck, ShieldX, Loader2,
   Crown, Eye, ArrowLeft, CreditCard, AlertTriangle, Ban, CheckCircle, RefreshCcw,
   Activity, Webhook, Mail, Package, BarChart3, Wallet, Server,
