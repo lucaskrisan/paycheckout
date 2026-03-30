@@ -144,6 +144,21 @@ const SuperAdminDashboard = () => {
       supabase.from("webhook_endpoints").select("*"),
     ]);
 
+    // Fetch emails from auth.users via edge function
+    let emailMap: Record<string, string> = {};
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/list-users`, {
+        headers: { Authorization: `Bearer ${sessionData.session?.access_token}` },
+      });
+      if (res.ok) {
+        const result = await res.json();
+        emailMap = result.emails || {};
+      }
+    } catch (e) {
+      console.warn("Failed to fetch user emails:", e);
+    }
+
     const fee = (settingsData as any)?.platform_fee_percent || 4.99;
     setFeePercent(fee);
 
@@ -154,9 +169,13 @@ const SuperAdminDashboard = () => {
       roleMap.get(r.user_id)!.push(r.role);
     });
 
+    // Profile detail map
+    const profileMap = new Map<string, any>();
+    (profilesData || []).forEach((p: any) => profileMap.set(p.id, p));
+
     // All users
     const users: UserWithRoles[] = (profilesData || []).map((p: any) => ({
-      id: p.id, full_name: p.full_name, created_at: p.created_at, roles: roleMap.get(p.id) || [],
+      id: p.id, full_name: p.full_name, email: emailMap[p.id] || "", phone: p.phone || null, cpf: p.cpf || null, created_at: p.created_at, roles: roleMap.get(p.id) || [],
     }));
     setAllUsers(users);
 
@@ -168,13 +187,11 @@ const SuperAdminDashboard = () => {
     const adminIds = new Set((rolesData || []).filter((r: any) => r.role === "admin" || r.role === "super_admin").map((r: any) => r.user_id));
     const producerMap = new Map<string, Producer>();
     adminIds.forEach((uid) => {
+      const profile = profileMap.get(uid);
       producerMap.set(uid, {
-        id: uid, full_name: nameMap.get(uid) || "Sem nome", created_at: "",
+        id: uid, full_name: nameMap.get(uid) || "Sem nome", email: emailMap[uid] || "", phone: profile?.phone || null, cpf: profile?.cpf || null, created_at: profile?.created_at || "",
         product_count: 0, order_count: 0, total_revenue: 0, pending_revenue: 0,
       });
-    });
-    (profilesData || []).forEach((p: any) => {
-      if (producerMap.has(p.id)) producerMap.get(p.id)!.created_at = p.created_at;
     });
     (productsData || []).forEach((p: any) => {
       if (p.user_id && producerMap.has(p.user_id)) producerMap.get(p.user_id)!.product_count++;
