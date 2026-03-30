@@ -1958,6 +1958,20 @@ export type Database = {
           read_ct: number
         }[]
       }
+      validate_coupon: {
+        Args: { p_code: string }
+        Returns: {
+          code: string
+          discount_type: string
+          discount_value: number
+          expires_at: string
+          id: string
+          max_uses: number
+          min_amount: number
+          product_id: string
+          used_count: number
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "super_admin"
