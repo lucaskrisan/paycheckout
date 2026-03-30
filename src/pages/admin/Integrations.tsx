@@ -1,5 +1,5 @@
 import AppSellIntegration from "@/components/admin/AppSellIntegration";
-import { Webhook } from "lucide-react";
+import webhookLogo from "@/assets/webhook-logo.png";
 import { useNavigate } from "react-router-dom";
 
 const Integrations = () => {
@@ -15,13 +15,11 @@ const Integrations = () => {
       </div>
 
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
-        {/* Webhook card */}
         <button
           onClick={() => navigate("/admin/webhooks")}
-          className="group relative flex flex-col items-center justify-center gap-3 rounded-xl border border-border/40 bg-white p-8 transition-all hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 cursor-pointer h-36"
+          className="group relative flex items-center justify-center rounded-xl border border-border/40 bg-white p-8 transition-all hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 cursor-pointer h-36"
         >
-          <Webhook className="w-8 h-8 text-foreground/70 group-hover:text-primary transition-colors" />
-          <span className="font-display font-bold text-foreground text-sm">Webhooks</span>
+          <img src={webhookLogo} alt="Webhooks" className="max-h-14 max-w-[180px] object-contain" />
         </button>
 
         <AppSellIntegration />
