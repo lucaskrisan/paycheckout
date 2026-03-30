@@ -181,7 +181,12 @@ Deno.serve(async (req) => {
     );
 
     // --- Idempotency: deduplicate webhook events ---
-    const dedupKey = `asaas_${payment.id}_${event}`;
+    // Use status-based dedup for confirmation events so that both
+    // PAYMENT_CONFIRMED and PAYMENT_RECEIVED (same payment) are treated as one.
+    const isConfirmEvent = event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED';
+    const dedupKey = isConfirmEvent
+      ? `asaas_${payment.id}_paid`
+      : `asaas_${payment.id}_${event}`;
     const { data: inserted, error: dedupErr } = await supabase
       .from('webhook_events')
       .upsert({ id: dedupKey, gateway: 'asaas' }, { onConflict: 'id', ignoreDuplicates: true })
