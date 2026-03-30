@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { ExternalLink } from "lucide-react";
 import IntegrationCard from "./IntegrationCard";
 import appsellLogo from "@/assets/appsell-logo.webp";
+import appsellCardLogo from "@/assets/appsell-logo.png";
 
 const APPSELL_EVENTS = [
   { key: "approved", label: "Pagamento confirmado" },
@@ -97,6 +98,7 @@ const AppSellIntegration = () => {
   return (
     <IntegrationCard
       logo={appsellLogo}
+      cardLogo={appsellCardLogo}
       name="AppSell"
       description="Envie eventos de pagamento automaticamente para liberar e gerenciar acessos dos seus clientes."
       docsUrl="https://appsell-software.com/integracoes"
