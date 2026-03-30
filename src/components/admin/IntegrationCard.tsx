@@ -58,9 +58,9 @@ const IntegrationCard = ({
       {/* Thumbnail card — just the logo */}
       <button
         onClick={() => setOpen(true)}
-        className="group relative flex flex-col items-center justify-center gap-3 rounded-xl border border-border/40 bg-card p-6 transition-all hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 cursor-pointer text-center"
+        className="group relative flex flex-col items-center justify-center gap-2 rounded-xl border border-border/40 bg-card p-4 transition-all hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 cursor-pointer text-center"
       >
-        <div className="w-24 h-24 rounded-2xl bg-background border border-border/50 flex items-center justify-center overflow-hidden shadow-sm group-hover:shadow-md transition-shadow p-3">
+        <div className="w-20 h-20 rounded-xl bg-white flex items-center justify-center overflow-hidden shadow-sm group-hover:shadow-md transition-shadow p-2">
           <img src={logo} alt={name} className="w-full h-full object-contain" />
         </div>
         <div className="space-y-1">
