@@ -19,7 +19,7 @@ import {
 import {
   Users, DollarSign, ShoppingCart, TrendingUp, Search, ShieldCheck, ShieldX, Loader2,
   Crown, Eye, ArrowLeft, CreditCard, AlertTriangle, Ban, CheckCircle, RefreshCcw,
-  Activity, Webhook, Mail, Package, BarChart3, Wallet, Server,
+  Activity, Webhook, Mail, Package, BarChart3, Wallet, Server, UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
