@@ -112,7 +112,7 @@ const SuperAdminDashboard = () => {
   const [selectedProducerId, setSelectedProducerId] = useState<string | null>(null);
   const [feePercent, setFeePercent] = useState(4.99);
   const [showAddProducer, setShowAddProducer] = useState(false);
-  const [newProducer, setNewProducer] = useState({ full_name: "", email: "", password: "" });
+  const [newProducer, setNewProducer] = useState({ full_name: "", email: "" });
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [selectedUser, setSelectedUser] = useState<(UserWithRoles & { product_count?: number; order_count?: number; total_revenue?: number }) | null>(null);
 
@@ -240,13 +240,9 @@ const SuperAdminDashboard = () => {
   };
 
   const handleCreateProducer = async () => {
-    const { full_name, email, password } = newProducer;
-    if (!full_name.trim() || !email.trim() || !password.trim()) {
+    const { full_name, email } = newProducer;
+    if (!full_name.trim() || !email.trim()) {
       toast.error("Preencha todos os campos");
-      return;
-    }
-    if (password.length < 6) {
-      toast.error("Senha deve ter no mínimo 6 caracteres");
       return;
     }
     setActionLoading("new-producer");
@@ -257,15 +253,15 @@ const SuperAdminDashboard = () => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${sessionData.session?.access_token}`,
       },
-      body: JSON.stringify({ email: email.trim(), full_name: full_name.trim(), password }),
+      body: JSON.stringify({ email: email.trim(), full_name: full_name.trim() }),
     });
     const result = await res.json();
     if (!res.ok) {
       toast.error(result.error || "Erro ao criar produtor");
     } else {
-      toast.success(`Produtor "${full_name}" criado com sucesso!`);
+      toast.success(`Convite enviado para "${email}"! O produtor receberá um email para definir a senha.`);
       setShowAddProducer(false);
-      setNewProducer({ full_name: "", email: "", password: "" });
+      setNewProducer({ full_name: "", email: "" });
       await loadAll();
     }
     setActionLoading(null);
@@ -965,15 +961,11 @@ const SuperAdminDashboard = () => {
               <Label className="text-xs font-medium">Email</Label>
               <Input type="email" value={newProducer.email} onChange={(e) => setNewProducer(p => ({ ...p, email: e.target.value }))} placeholder="produtor@email.com" className="h-9" />
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Senha</Label>
-              <Input type="password" value={newProducer.password} onChange={(e) => setNewProducer(p => ({ ...p, password: e.target.value }))} placeholder="Mínimo 6 caracteres" className="h-9" />
-            </div>
             <Button onClick={handleCreateProducer} disabled={actionLoading === "new-producer"} className="w-full gap-2">
               {actionLoading === "new-producer" ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
-              {actionLoading === "new-producer" ? "Criando..." : "Criar Produtor"}
+              {actionLoading === "new-producer" ? "Enviando convite..." : "Enviar Convite"}
             </Button>
-            <p className="text-[10px] text-muted-foreground text-center">O produtor será criado com email confirmado e role de admin (Produtor).</p>
+            <p className="text-[10px] text-muted-foreground text-center">O produtor receberá um email com link para definir a própria senha e acessar o painel.</p>
           </div>
         </DialogContent>
       </Dialog>
