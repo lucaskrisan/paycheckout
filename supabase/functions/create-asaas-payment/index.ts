@@ -592,26 +592,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Push notification on confirmed card
-    if (payment_method === 'credit_card' && (paymentData.status === 'CONFIRMED' || paymentData.status === 'RECEIVED')) {
-      try {
-        const { data: notifSettings } = await supabaseAdmin
-          .from('notification_settings')
-          .select('send_approved, show_product_name')
-          .eq('user_id', productOwnerId || '')
-          .eq('send_approved', true)
-          .maybeSingle();
-
-        if (notifSettings) {
-          const formattedAmount = Number(amount).toFixed(2).replace('.', ',');
-          const title = '💰 Venda aprovada!';
-          const message = `${customer.name} • 💳 Cartão R$ ${formattedAmount}${notifSettings.show_product_name ? ` • ${productName}` : ''}`;
-          await sendPushNotification(title, message, productOwnerId || undefined, 'https://app.panttera.com.br/admin/orders');
-        }
-      } catch (notifErr) {
-        console.error('[create-asaas-payment] Notification error:', notifErr);
-      }
-    }
+    // Push notification is handled by the webhook (asaas-webhook) to avoid duplicates
 
     return new Response(
       JSON.stringify({
