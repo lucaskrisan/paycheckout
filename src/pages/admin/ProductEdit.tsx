@@ -738,51 +738,112 @@ const ProductEdit = () => {
           {/* Área de membros */}
           <TabsContent value="members" className="mt-8">
             <div className="space-y-10">
-              {/* Área de membros select */}
+              {/* Método de Entrega */}
               <div className="grid lg:grid-cols-12 gap-8">
                 <div className="lg:col-span-4">
-                  <h2 className="text-base font-semibold text-foreground">Área de Membros</h2>
+                  <h2 className="text-base font-semibold text-foreground">Método de Entrega</h2>
                   <p className="text-sm text-primary mt-1">
-                    Ao comprar esse produto, o aluno será automaticamente adicionado na área de membros selecionada.
+                    Escolha como o conteúdo será entregue ao comprador após a confirmação do pagamento.
                   </p>
                 </div>
                 <div className="lg:col-span-8">
                   <div className="border border-border rounded-lg p-6 bg-card space-y-4">
-                    <div className="space-y-1.5">
-                      <Label>Área de Membros</Label>
-                      <Select value={selectedCourseId} onValueChange={async (v) => {
-                        setSelectedCourseId(v);
-                        if (!isNew && productId) {
-                          // Unlink old
-                          if (selectedCourseId) {
-                            await supabase.from("courses").update({ product_id: null }).eq("id", selectedCourseId);
-                          }
-                          // Link new
-                          if (v) {
-                            await supabase.from("courses").update({ product_id: productId, user_id: user?.id }).eq("id", v);
-                            toast.success("Área de membros vinculada!");
-                          }
-                        }
-                      }}>
-                        <SelectTrigger><SelectValue placeholder="Selecione uma área de membros" /></SelectTrigger>
-                        <SelectContent>
-                          {courses.map((c) => (
-                            <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {selectedCourseId && (
-                      <button
-                        onClick={() => navigate("/admin/courses")}
-                        className="text-sm text-primary hover:underline flex items-center gap-1"
-                      >
-                        Abrir editor da área de membros <ExternalLink className="w-3.5 h-3.5" />
-                      </button>
-                    )}
+                    <RadioGroup
+                      value={form.delivery_method}
+                      onValueChange={(v: "panttera" | "appsell" | "email") => setForm({ ...form, delivery_method: v })}
+                      className="space-y-3"
+                    >
+                      <label className={`flex items-start gap-4 p-4 rounded-lg border cursor-pointer transition-all ${form.delivery_method === "panttera" ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"}`}>
+                        <RadioGroupItem value="panttera" className="mt-0.5" />
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">🏠</span>
+                            <span className="font-semibold text-sm text-foreground">Área de Membros Panttera</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            O comprador recebe acesso automático à área de membros interna. Ideal para cursos hospedados na Panttera.
+                          </p>
+                        </div>
+                      </label>
+
+                      <label className={`flex items-start gap-4 p-4 rounded-lg border cursor-pointer transition-all ${form.delivery_method === "appsell" ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"}`}>
+                        <RadioGroupItem value="appsell" className="mt-0.5" />
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">🔗</span>
+                            <span className="font-semibold text-sm text-foreground">Plataforma Externa (AppSell)</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            O evento de pagamento é enviado via API para a AppSell ou outra plataforma externa configurada em Integrações.
+                          </p>
+                        </div>
+                      </label>
+
+                      <label className={`flex items-start gap-4 p-4 rounded-lg border cursor-pointer transition-all ${form.delivery_method === "email" ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"}`}>
+                        <RadioGroupItem value="email" className="mt-0.5" />
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">📩</span>
+                            <span className="font-semibold text-sm text-foreground">Apenas E-mail</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            O comprador recebe apenas o e-mail de confirmação. Sem área de membros ou integração externa.
+                          </p>
+                        </div>
+                      </label>
+                    </RadioGroup>
                   </div>
                 </div>
               </div>
+
+              {/* Área de membros select — only visible if panttera */}
+              {form.delivery_method === "panttera" && (
+                <div className="grid lg:grid-cols-12 gap-8">
+                  <div className="lg:col-span-4">
+                    <h2 className="text-base font-semibold text-foreground">Área de Membros</h2>
+                    <p className="text-sm text-primary mt-1">
+                      Ao comprar esse produto, o aluno será automaticamente adicionado na área de membros selecionada.
+                    </p>
+                  </div>
+                  <div className="lg:col-span-8">
+                    <div className="border border-border rounded-lg p-6 bg-card space-y-4">
+                      <div className="space-y-1.5">
+                        <Label>Área de Membros</Label>
+                        <Select value={selectedCourseId} onValueChange={async (v) => {
+                          setSelectedCourseId(v);
+                          if (!isNew && productId) {
+                            if (selectedCourseId) {
+                              await supabase.from("courses").update({ product_id: null }).eq("id", selectedCourseId);
+                            }
+                            if (v) {
+                              await supabase.from("courses").update({ product_id: productId, user_id: user?.id }).eq("id", v);
+                              toast.success("Área de membros vinculada!");
+                            }
+                          }
+                        }}>
+                          <SelectTrigger><SelectValue placeholder="Selecione uma área de membros" /></SelectTrigger>
+                          <SelectContent>
+                            {courses.map((c) => (
+                              <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {!selectedCourseId && (
+                          <p className="text-xs text-destructive mt-1">⚠️ Vincule uma área de membros para que o acesso seja criado automaticamente.</p>
+                        )}
+                      </div>
+                      {selectedCourseId && (
+                        <button
+                          onClick={() => navigate("/admin/courses")}
+                          className="text-sm text-primary hover:underline flex items-center gap-1"
+                        >
+                          Abrir editor da área de membros <ExternalLink className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Controle de acesso */}
               <div className="grid lg:grid-cols-12 gap-8">
@@ -796,7 +857,7 @@ const ProductEdit = () => {
                         <TableRow className="hover:bg-transparent">
                           <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Oferta</TableHead>
                           <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Valor</TableHead>
-                          <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Grupo</TableHead>
+                          <TableHead className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Entrega</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -807,12 +868,15 @@ const ProductEdit = () => {
                               {form.price ? `R$ ${Number(form.price).toFixed(2).replace(".", ",")}` : "—"}
                             </TableCell>
                             <TableCell>
-                              <Select defaultValue="default">
-                                <SelectTrigger className="h-8 text-xs w-[180px]"><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="default">Grupo padrão (Grupo A)</SelectItem>
-                                </SelectContent>
-                              </Select>
+                              <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${
+                                form.delivery_method === "panttera" ? "bg-primary/10 text-primary" :
+                                form.delivery_method === "appsell" ? "bg-blue-500/10 text-blue-400" :
+                                "bg-muted text-muted-foreground"
+                              }`}>
+                                {form.delivery_method === "panttera" ? "🏠 Panttera" :
+                                 form.delivery_method === "appsell" ? "🔗 AppSell" :
+                                 "📩 E-mail"}
+                              </span>
                             </TableCell>
                           </TableRow>
                         ) : (
