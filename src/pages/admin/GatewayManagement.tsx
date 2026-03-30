@@ -58,23 +58,19 @@ const GatewayManagement = () => {
   useEffect(() => { loadGateways(); }, []);
 
   const loadGateways = async () => {
-    const { data, error } = await supabase.from("payment_gateways").select("*").order("created_at");
-    if (!data) { if (error) toast.error("Erro ao carregar gateways"); setLoading(false); return; }
-
-    // Fetch owner names for super admin view
-    const uniqueUserIds = [...new Set(data.map((g: any) => g.user_id).filter(Boolean))];
-    let ownerMap: Record<string, string> = {};
-    if (uniqueUserIds.length > 0) {
-      const { data: profiles } = await supabase.from("profiles").select("id, full_name").in("id", uniqueUserIds);
-      if (profiles) ownerMap = Object.fromEntries(profiles.map((p: any) => [p.id, p.full_name || ""]));
+    let query = supabase.from("payment_gateways").select("*").order("created_at");
+    // Producers only see their own gateways; super admin sees all in the platform section
+    if (user?.id) {
+      query = query.eq("user_id", user.id);
     }
+    const { data, error } = await query;
+    if (!data) { if (error) toast.error("Erro ao carregar gateways"); setLoading(false); return; }
 
     setGateways(data.map((g: any) => ({
       id: g.id, provider: g.provider, name: g.name, environment: g.environment,
       active: g.active, payment_methods: (g.payment_methods as string[]) || [],
       config: (g.config as Record<string, any>) || {},
       user_id: g.user_id,
-      owner_name: ownerMap[g.user_id] || null,
     })));
     setLoading(false);
   };
