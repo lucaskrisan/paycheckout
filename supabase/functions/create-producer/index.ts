@@ -48,7 +48,10 @@ Deno.serve(async (req) => {
     });
 
     if (createError) {
-      return new Response(JSON.stringify({ error: createError.message }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      const msg = createError.message?.includes("already been registered")
+        ? "Já existe um usuário com este e-mail."
+        : createError.message;
+      return new Response(JSON.stringify({ error: msg }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const userId = newUser.user.id;
