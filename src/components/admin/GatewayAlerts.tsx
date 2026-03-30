@@ -95,7 +95,7 @@ const GatewayAlerts = () => {
             icon: Wrench,
             message: `${recentAlerts.length} falha(s) de gateway detectada(s). Verifique sua configuração.`,
             action: "Corrigir configuração →",
-            path: "/admin/integrations",
+            path: "/admin/gateway-management",
             variant: "error",
           });
         }
