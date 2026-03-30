@@ -179,7 +179,7 @@ Deno.serve(async (req) => {
     // Get full order data
     const { data: order } = await supabase
       .from('orders')
-      .select('*, customers(id, name, email, phone, cpf), products(id, name, price)')
+      .select('*, customers(id, name, email, phone, cpf), products(id, name, price, delivery_method)')
       .eq('id', order_id)
       .single();
 
@@ -190,18 +190,23 @@ Deno.serve(async (req) => {
       );
     }
 
-    // --- AppSell integration (non-blocking) ---
-    try {
-      fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/appsell-notify`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${serviceRoleKey}`,
-        },
-        body: JSON.stringify({ event, order_id, user_id }),
-      }).catch(err => console.error('[fire-webhooks] appsell-notify error:', err));
-    } catch (e) {
-      console.error('[fire-webhooks] appsell-notify dispatch error:', e);
+    // --- AppSell integration (non-blocking) — only if product uses appsell delivery ---
+    const deliveryMethod = (order as any).products?.delivery_method || 'appsell';
+    if (deliveryMethod === 'appsell') {
+      try {
+        fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/appsell-notify`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${serviceRoleKey}`,
+          },
+          body: JSON.stringify({ event, order_id, user_id }),
+        }).catch(err => console.error('[fire-webhooks] appsell-notify error:', err));
+      } catch (e) {
+        console.error('[fire-webhooks] appsell-notify dispatch error:', e);
+      }
+    } else {
+      console.log(`[fire-webhooks] Skipping appsell-notify — delivery_method is "${deliveryMethod}"`);
     }
 
     // Filter by product_id if set on endpoint

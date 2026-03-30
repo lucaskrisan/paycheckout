@@ -1421,6 +1421,7 @@ export type Database = {
           active: boolean
           billing_cycle: string
           created_at: string
+          delivery_method: string
           description: string | null
           id: string
           image_url: string | null
@@ -1439,6 +1440,7 @@ export type Database = {
           active?: boolean
           billing_cycle?: string
           created_at?: string
+          delivery_method?: string
           description?: string | null
           id?: string
           image_url?: string | null
@@ -1457,6 +1459,7 @@ export type Database = {
           active?: boolean
           billing_cycle?: string
           created_at?: string
+          delivery_method?: string
           description?: string | null
           id?: string
           image_url?: string | null

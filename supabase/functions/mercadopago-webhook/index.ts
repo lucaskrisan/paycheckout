@@ -144,6 +144,18 @@ Deno.serve(async (req) => {
 
     // On confirmed payment, handle member access + notifications
     if (status === 'paid' && orderData?.product_id && orderData?.customer_id) {
+      // Check delivery_method before creating member access
+      const { data: mainProd } = await supabase
+        .from('products')
+        .select('delivery_method')
+        .eq('id', orderData.product_id)
+        .maybeSingle();
+
+      const deliveryMethod = mainProd?.delivery_method || 'appsell';
+
+      if (deliveryMethod !== 'panttera') {
+        console.log('[mp-webhook] Skipping member access — delivery_method is', deliveryMethod);
+      } else {
       try {
         const { data: course } = await supabase
           .from('courses')
@@ -257,8 +269,8 @@ Deno.serve(async (req) => {
       } catch (memberErr) {
         console.error('[mp-webhook] Member access error (non-blocking):', memberErr);
       }
+      } // end else (panttera delivery)
 
-      // Push notification
       try {
         const ownerId = orderData.user_id;
         const { data: notifSettings } = await supabase

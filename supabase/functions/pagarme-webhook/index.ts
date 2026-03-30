@@ -253,7 +253,19 @@ Deno.serve(async (req) => {
       }
 
       // --- Member access (main product + bump products) ---
+      // Only create member access if product delivery_method is 'panttera'
       try {
+        const { data: mainProd } = await supabase
+          .from('products')
+          .select('delivery_method')
+          .eq('id', orderData.product_id)
+          .maybeSingle();
+
+        const deliveryMethod = mainProd?.delivery_method || 'appsell';
+
+        if (deliveryMethod !== 'panttera') {
+          console.log('[pagarme-webhook] Skipping member access — delivery_method is', deliveryMethod);
+        } else {
         // Collect all product IDs that need access: main + bumps
         const productIdsForAccess = [orderData.product_id];
         const bumpIds = (orderData.metadata as any)?.bump_product_ids;
@@ -508,6 +520,8 @@ Deno.serve(async (req) => {
             }
           }
         }
+        }
+      } // end else (panttera delivery)
       } catch (memberErr) {
         console.error('[pagarme-webhook] Member access error (non-blocking):', memberErr);
       }
