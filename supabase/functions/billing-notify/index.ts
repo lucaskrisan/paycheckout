@@ -57,6 +57,21 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
     // Get producer email and name from auth.users
+    // Skip super_admin — they are exempt from billing
+    const { data: roleRows } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user_id)
+      .eq('role', 'super_admin')
+      .limit(1);
+
+    if (roleRows && roleRows.length > 0) {
+      console.log('[billing-notify] Skipping — user is super_admin');
+      return new Response(JSON.stringify({ skipped: true, reason: 'super_admin' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { data: { user }, error: userErr } = await supabase.auth.admin.getUserById(user_id);
     if (userErr || !user?.email) {
       console.error('[billing-notify] User not found:', userErr);
