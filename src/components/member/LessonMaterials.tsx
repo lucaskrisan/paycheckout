@@ -87,11 +87,13 @@ export default function LessonMaterials({
       const result = await res.json();
 
       if (res.ok && result.signedUrl) {
-        // Use anchor tag to avoid popup blockers (window.open after async is blocked)
         const a = document.createElement("a");
         a.href = result.signedUrl;
         a.target = "_blank";
         a.rel = "noopener noreferrer";
+        // Force download instead of opening in browser (especially for PDFs on mobile)
+        const fileName = storagePath.split("/").pop() || material.title;
+        a.setAttribute("download", fileName);
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
