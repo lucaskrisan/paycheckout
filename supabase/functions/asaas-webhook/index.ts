@@ -203,14 +203,29 @@ Deno.serve(async (req) => {
       pending: 1, overdue: 2, paid: 3, refunded: 4, cancelled: 4,
     };
 
-    // Update order by external_id with status guard
-    const { data: orderData, error } = await supabase
+    // Update order by external_id (payment.id or subscription ID)
+    let { data: orderData, error } = await supabase
       .from('orders')
       .update({ status, updated_at: new Date().toISOString() })
       .eq('external_id', payment.id)
       .not('status', 'in', `(${['paid', 'refunded'].filter(s => statusPriority[s] >= statusPriority[status]).join(',')})`)
       .select('id, amount, payment_method, product_id, customer_id, user_id, metadata')
       .maybeSingle();
+
+    // Fallback: if no order found by payment.id, try by subscription ID
+    // Asaas subscription payments have payment.subscription = "sub_xxx" which matches our external_id
+    if (!orderData && !error && payment.subscription) {
+      console.log('[asaas-webhook] No order found by payment.id, trying subscription:', payment.subscription);
+      const subResult = await supabase
+        .from('orders')
+        .update({ status, external_id: payment.id, updated_at: new Date().toISOString() })
+        .eq('external_id', payment.subscription)
+        .not('status', 'in', `(${['paid', 'refunded'].filter(s => statusPriority[s] >= statusPriority[status]).join(',')})`)
+        .select('id, amount, payment_method, product_id, customer_id, user_id, metadata')
+        .maybeSingle();
+      orderData = subResult.data;
+      error = subResult.error;
+    }
 
     if (error) {
       console.error('[asaas-webhook] Error updating order:', error);
