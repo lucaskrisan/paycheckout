@@ -898,7 +898,9 @@ const SuperAdminDashboard = () => {
               <Table>
                 <TableHeader><TableRow>
                   <TableHead>Nome</TableHead>
+                  <TableHead>Email</TableHead>
                   <TableHead>Roles</TableHead>
+                  <TableHead className="text-center">Telefone</TableHead>
                   <TableHead className="text-center">Cadastro</TableHead>
                   <TableHead className="text-center">Ações</TableHead>
                 </TableRow></TableHeader>
@@ -908,11 +910,12 @@ const SuperAdminDashboard = () => {
                     const isAdmin = u.roles.includes("admin");
                     const isSA = u.roles.includes("super_admin");
                     return (
-                      <TableRow key={u.id}>
+                      <TableRow key={u.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedUser(u)}>
                         <TableCell className="font-medium">
                           {u.full_name || "Sem nome"}
                           {isSelf && <Badge variant="outline" className="ml-2 text-xs">Você</Badge>}
                         </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{u.email || "—"}</TableCell>
                         <TableCell>
                           <div className="flex gap-1 flex-wrap">
                             {u.roles.map((r) => (
@@ -923,8 +926,9 @@ const SuperAdminDashboard = () => {
                             {u.roles.length === 0 && <Badge variant="outline" className="text-xs">Sem role</Badge>}
                           </div>
                         </TableCell>
+                        <TableCell className="text-center text-xs text-muted-foreground">{u.phone || "—"}</TableCell>
                         <TableCell className="text-center text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString("pt-BR")}</TableCell>
-                        <TableCell className="text-center">
+                        <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
                           {isSelf || isSA ? null : isAdmin ? (
                             <Button size="sm" variant="destructive" className="h-7 text-xs gap-1" disabled={actionLoading === u.id} onClick={() => demoteFromAdmin(u.id)}>
                               {actionLoading === u.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldX className="w-3 h-3" />} Rebaixar
@@ -938,7 +942,7 @@ const SuperAdminDashboard = () => {
                       </TableRow>
                     );
                   })}
-                  {filteredUsers.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Nenhum usuário</TableCell></TableRow>}
+                  {filteredUsers.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhum usuário</TableCell></TableRow>}
                 </TableBody>
               </Table>
             </CardContent>
