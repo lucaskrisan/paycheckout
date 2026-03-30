@@ -19,7 +19,7 @@ import {
 import {
   Users, DollarSign, ShoppingCart, TrendingUp, Search, ShieldCheck, ShieldX, Loader2,
   Crown, Eye, ArrowLeft, CreditCard, AlertTriangle, Ban, CheckCircle, RefreshCcw,
-  Activity, Webhook, Mail, Package, BarChart3, Wallet, Server, UserPlus, Trash2,
+  Activity, Webhook, Mail, Package, BarChart3, Wallet, Server, UserPlus, Trash2, Send,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -290,6 +290,20 @@ const SuperAdminDashboard = () => {
     setActionLoading(null);
   };
 
+  const handleResendInvite = async (producerEmail: string) => {
+    if (!producerEmail) { toast.error("Email não encontrado"); return; }
+    setActionLoading("resend-" + producerEmail);
+    const { error } = await supabase.auth.resetPasswordForEmail(producerEmail, {
+      redirectTo: window.location.origin + "/login",
+    });
+    if (error) {
+      toast.error("Erro ao reenviar: " + error.message);
+    } else {
+      toast.success(`Link de acesso enviado para ${producerEmail}!`);
+    }
+    setActionLoading(null);
+  };
+
   /* ─── Computed ─── */
   const filterByPeriod = useCallback((items: any[]) => {
     const now = new Date();
@@ -555,6 +569,9 @@ const SuperAdminDashboard = () => {
                               </Button>
                               {!isSelf && (
                                 <>
+                                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1" disabled={actionLoading === "resend-" + p.email} onClick={() => handleResendInvite(p.email)}>
+                                    {actionLoading === "resend-" + p.email ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />} Reenviar
+                                  </Button>
                                   <Button size="sm" variant="destructive" className="h-7 text-xs gap-1" disabled={actionLoading === p.id} onClick={() => demoteFromAdmin(p.id)}>
                                     {actionLoading === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldX className="w-3 h-3" />} Remover
                                   </Button>
