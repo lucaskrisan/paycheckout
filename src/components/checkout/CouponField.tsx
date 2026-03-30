@@ -33,7 +33,8 @@ const CouponField = ({ productId, productPrice, onApply }: CouponFieldProps) => 
         .rpc("validate_coupon", { p_code: code.trim() });
 
       if (fetchError) throw fetchError;
-      const coupon = Array.isArray(data) ? data[0] : data;
+      const rows = data as any[];
+      const coupon = rows?.[0];
       if (!coupon) { setError("Cupom não encontrado"); return; }
       if (coupon.product_id && coupon.product_id !== productId) { setError("Cupom não válido para este produto"); return; }
       if (coupon.min_amount && productPrice < coupon.min_amount) { setError(`Valor mínimo: R$ ${Number(coupon.min_amount).toFixed(2).replace(".", ",")}`); return; }
