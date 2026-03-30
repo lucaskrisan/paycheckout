@@ -95,6 +95,8 @@ const SuperAdminDashboard = () => {
   const [period, setPeriod] = useState<Period>("today");
   const [selectedProducerId, setSelectedProducerId] = useState<string | null>(null);
   const [feePercent, setFeePercent] = useState(4.99);
+  const [showAddProducer, setShowAddProducer] = useState(false);
+  const [newProducer, setNewProducer] = useState({ full_name: "", email: "", password: "" });
 
   useEffect(() => {
     if (isSuperAdmin) loadAll();
