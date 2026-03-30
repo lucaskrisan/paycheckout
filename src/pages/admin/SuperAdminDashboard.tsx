@@ -532,9 +532,14 @@ const SuperAdminDashboard = () => {
                                 <Eye className="w-3 h-3" /> Ver
                               </Button>
                               {!isSelf && (
-                                <Button size="sm" variant="destructive" className="h-7 text-xs gap-1" disabled={actionLoading === p.id} onClick={() => demoteFromAdmin(p.id)}>
-                                  {actionLoading === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldX className="w-3 h-3" />} Remover
-                                </Button>
+                                <>
+                                  <Button size="sm" variant="destructive" className="h-7 text-xs gap-1" disabled={actionLoading === p.id} onClick={() => demoteFromAdmin(p.id)}>
+                                    {actionLoading === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <ShieldX className="w-3 h-3" />} Remover
+                                  </Button>
+                                  <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-destructive hover:text-destructive" onClick={() => setDeleteTarget({ id: p.id, name: p.full_name || "Sem nome" })}>
+                                    <Trash2 className="w-3 h-3" /> Excluir
+                                  </Button>
+                                </>
                               )}
                             </div>
                           </TableCell>
