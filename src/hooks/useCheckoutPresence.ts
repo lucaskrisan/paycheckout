@@ -106,7 +106,7 @@ export function useCheckoutPresence(
         : `_watcher_${visitorIdRef.current}`;
 
       // Use a unique suffix to guarantee a fresh channel instance
-      const channelName = `checkout-presence-global-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      const channelName = `checkout-presence-global`;
       const channel = supabase.channel(channelName, {
         config: {
           presence: { key: presenceKey },
