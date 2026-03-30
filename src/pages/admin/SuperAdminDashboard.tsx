@@ -114,6 +114,7 @@ const SuperAdminDashboard = () => {
   const [showAddProducer, setShowAddProducer] = useState(false);
   const [newProducer, setNewProducer] = useState({ full_name: "", email: "", password: "" });
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [selectedUser, setSelectedUser] = useState<(UserWithRoles & { product_count?: number; order_count?: number; total_revenue?: number }) | null>(null);
 
   useEffect(() => {
     if (isSuperAdmin) loadAll();
