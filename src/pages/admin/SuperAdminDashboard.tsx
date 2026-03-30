@@ -20,7 +20,9 @@ import {
   Users, DollarSign, ShoppingCart, TrendingUp, Search, ShieldCheck, ShieldX, Loader2,
   Crown, Eye, ArrowLeft, CreditCard, AlertTriangle, Ban, CheckCircle, RefreshCcw,
   Activity, Webhook, Mail, Package, BarChart3, Wallet, Server, UserPlus, Trash2, Send,
+  Globe,
 } from "lucide-react";
+import { useCheckoutPresence } from "@/hooks/useCheckoutPresence";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -92,6 +94,7 @@ const fmt = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
 /* ─── Component ────────────────────────────────── */
 const SuperAdminDashboard = () => {
   const { isSuperAdmin, user } = useAuth();
+  const liveVisitors = useCheckoutPresence("watch");
 
   // Data state
   const [producers, setProducers] = useState<Producer[]>([]);
@@ -392,9 +395,10 @@ const SuperAdminDashboard = () => {
       </div>
 
       {/* Global KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
         {[
           { icon: Users, label: "Produtores", value: String(producers.length), color: "text-primary" },
+          { icon: Globe, label: "Ao Vivo", value: String(liveVisitors), color: "text-emerald-500" },
           { icon: ShoppingCart, label: "Pedidos", value: String(totalOrders), color: "text-primary" },
           { icon: CheckCircle, label: "Aprovados", value: String(approvedCount), color: "text-emerald-500" },
           { icon: DollarSign, label: "Receita Total", value: fmt(totalRevenue), color: "text-primary" },
