@@ -92,8 +92,12 @@ const configItems = [
   { title: "Webhook", url: "/admin/webhooks", icon: Webhook },
   { title: "WhatsApp", url: "/admin/whatsapp", icon: Smartphone },
   { title: "Notificações", url: "/admin/notifications", icon: Bell },
-  { title: "App Mobile", url: "/admin/pwa", icon: Smartphone },
   { title: "Minha conta", url: "/admin/my-account", icon: User },
+];
+
+// Item exclusivo super_admin dentro de config
+const configSuperAdminOnly = [
+  { title: "App Mobile", url: "/admin/pwa", icon: Smartphone },
 ];
 
 // 6. SUPER ADMIN — visível apenas para super_admin
