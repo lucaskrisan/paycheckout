@@ -20,6 +20,7 @@ const AppSellIntegration = () => {
   const [active, setActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
   const [exists, setExists] = useState(false);
 
   useEffect(() => {
