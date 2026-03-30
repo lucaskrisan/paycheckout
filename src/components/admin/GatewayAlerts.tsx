@@ -71,7 +71,7 @@ const GatewayAlerts = () => {
             icon: ShieldAlert,
             message: "Todos os seus gateways ativos estão em modo teste (sandbox). Clientes reais não conseguirão pagar.",
             action: "Mudar para produção →",
-            path: "/admin/integrations",
+            path: "/admin/gateway-management",
             variant: "warning",
           });
         }
