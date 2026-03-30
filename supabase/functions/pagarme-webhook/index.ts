@@ -397,7 +397,6 @@ Deno.serve(async (req) => {
                     } catch (emailErr) {
                       console.error('[pagarme-webhook] Email error (non-blocking):', emailErr);
                     }
-                  }
                 }
               }
             } else if (!existingAccess) {
