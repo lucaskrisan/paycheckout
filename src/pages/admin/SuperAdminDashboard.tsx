@@ -572,7 +572,7 @@ const SuperAdminDashboard = () => {
                         </TableRow>
                       );
                     })}
-                    {filteredProducers.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhum produtor</TableCell></TableRow>}
+                    {filteredProducers.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Nenhum produtor</TableCell></TableRow>}
                   </TableBody>
                 </Table>
               </CardContent>
