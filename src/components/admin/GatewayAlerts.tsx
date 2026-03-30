@@ -38,7 +38,7 @@ const GatewayAlerts = () => {
           icon: CreditCard,
           message: "Configure seu gateway de pagamento para começar a vender.",
           action: "Configurar agora →",
-          path: "/admin/integrations",
+          path: "/admin/gateway-management",
           variant: "error",
         });
       } else if (!hasActive) {
