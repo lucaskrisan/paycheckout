@@ -1,7 +1,10 @@
 import AppSellIntegration from "@/components/admin/AppSellIntegration";
-import { Plug } from "lucide-react";
+import { Webhook } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Integrations = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="space-y-8">
       <div>
@@ -11,17 +14,18 @@ const Integrations = () => {
         </p>
       </div>
 
-      <section className="space-y-4">
-        <div className="flex items-center gap-2.5 pb-1">
-          <Plug className="w-4 h-4 text-muted-foreground" />
-          <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-[0.15em]">
-            Plataformas de Entrega
-          </h2>
-        </div>
-        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
-          <AppSellIntegration />
-        </div>
-      </section>
+      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
+        {/* Webhook card */}
+        <button
+          onClick={() => navigate("/admin/webhooks")}
+          className="group relative flex flex-col items-center justify-center gap-3 rounded-xl border border-border/40 bg-white p-8 transition-all hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 cursor-pointer h-36"
+        >
+          <Webhook className="w-8 h-8 text-foreground/70 group-hover:text-primary transition-colors" />
+          <span className="font-display font-bold text-foreground text-sm">Webhooks</span>
+        </button>
+
+        <AppSellIntegration />
+      </div>
     </div>
   );
 };
