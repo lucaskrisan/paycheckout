@@ -1703,6 +1703,57 @@ export type Database = {
         }
         Relationships: []
       }
+      webhook_audit_log: {
+        Row: {
+          block_reason: string | null
+          blocked: boolean
+          caller_type: string
+          caller_user_id: string | null
+          created_at: string
+          deliveries_count: number | null
+          environment: string
+          event_type: string
+          id: string
+          ip_address: string | null
+          order_id: string | null
+          order_status_at_fire: string | null
+          payload: Json | null
+          user_agent: string | null
+        }
+        Insert: {
+          block_reason?: string | null
+          blocked?: boolean
+          caller_type?: string
+          caller_user_id?: string | null
+          created_at?: string
+          deliveries_count?: number | null
+          environment?: string
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          order_id?: string | null
+          order_status_at_fire?: string | null
+          payload?: Json | null
+          user_agent?: string | null
+        }
+        Update: {
+          block_reason?: string | null
+          blocked?: boolean
+          caller_type?: string
+          caller_user_id?: string | null
+          created_at?: string
+          deliveries_count?: number | null
+          environment?: string
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          order_id?: string | null
+          order_status_at_fire?: string | null
+          payload?: Json | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       webhook_deliveries: {
         Row: {
           attempt: number
