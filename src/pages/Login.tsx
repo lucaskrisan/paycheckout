@@ -43,6 +43,9 @@ const formatPhone = (value: string) => {
 const Login = () => {
   const [searchParams] = useSearchParams();
   const [isSignUp, setIsSignUp] = useState(searchParams.get("signup") === "true");
+  const [accountType, setAccountType] = useState<'producer' | 'customer' | null>(
+    searchParams.get("signup") === "true" ? 'producer' : null
+  );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
