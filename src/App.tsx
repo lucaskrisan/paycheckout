@@ -41,7 +41,7 @@ import Roadmap from "./pages/admin/Roadmap";
 import TechnicalManual from "./pages/admin/TechnicalManual";
 import Domains from "./pages/admin/Domains";
 import WhatsApp from "./pages/admin/WhatsApp";
-import Communications from "./pages/admin/Communications";
+
 import MyAccount from "./pages/admin/MyAccount";
 import Metrics from "./pages/admin/Metrics";
 import ProducerBilling from "./pages/admin/ProducerBilling";
@@ -110,7 +110,7 @@ const App = () => (
               <Route path="platform" element={<SuperAdminDashboard />} />
               <Route path="domains" element={<Domains />} />
               <Route path="whatsapp" element={<WhatsApp />} />
-              <Route path="communications" element={<Communications />} />
+              
               <Route path="my-account" element={<MyAccount />} />
               <Route path="metrics" element={<Metrics />} />
               <Route path="financeiro" element={<ProducerBilling />} />
