@@ -36,6 +36,7 @@ interface IntegrationCardProps {
 
 const IntegrationCard = ({
   logo,
+  cardLogo,
   name,
   description,
   docsUrl,
