@@ -47,7 +47,7 @@ const GatewayAlerts = () => {
           icon: CreditCard,
           message: "Nenhum gateway está ativo. Seus clientes não conseguirão pagar.",
           action: "Ativar gateway →",
-          path: "/admin/integrations",
+          path: "/admin/gateway-management",
           variant: "error",
         });
       }
