@@ -98,6 +98,7 @@ const AppSellIntegration = () => {
   return (
     <IntegrationCard
       logo={appsellLogo}
+      cardLogo={appsellCardLogo}
       name="AppSell"
       description="Envie eventos de pagamento automaticamente para liberar e gerenciar acessos dos seus clientes."
       docsUrl="https://appsell-software.com/integracoes"
