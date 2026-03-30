@@ -38,7 +38,7 @@ const GatewayAlerts = () => {
           icon: CreditCard,
           message: "Configure seu gateway de pagamento para começar a vender.",
           action: "Configurar agora →",
-          path: "/admin/integrations",
+          path: "/admin/gateway-management",
           variant: "error",
         });
       } else if (!hasActive) {
@@ -47,7 +47,7 @@ const GatewayAlerts = () => {
           icon: CreditCard,
           message: "Nenhum gateway está ativo. Seus clientes não conseguirão pagar.",
           action: "Ativar gateway →",
-          path: "/admin/integrations",
+          path: "/admin/gateway-management",
           variant: "error",
         });
       }
@@ -71,7 +71,7 @@ const GatewayAlerts = () => {
             icon: ShieldAlert,
             message: "Todos os seus gateways ativos estão em modo teste (sandbox). Clientes reais não conseguirão pagar.",
             action: "Mudar para produção →",
-            path: "/admin/integrations",
+            path: "/admin/gateway-management",
             variant: "warning",
           });
         }
@@ -95,7 +95,7 @@ const GatewayAlerts = () => {
             icon: Wrench,
             message: `${recentAlerts.length} falha(s) de gateway detectada(s). Verifique sua configuração.`,
             action: "Corrigir configuração →",
-            path: "/admin/integrations",
+            path: "/admin/gateway-management",
             variant: "error",
           });
         }
