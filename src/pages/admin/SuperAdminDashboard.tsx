@@ -107,6 +107,7 @@ const SuperAdminDashboard = () => {
   const [feePercent, setFeePercent] = useState(4.99);
   const [showAddProducer, setShowAddProducer] = useState(false);
   const [newProducer, setNewProducer] = useState({ full_name: "", email: "", password: "" });
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     if (isSuperAdmin) loadAll();
