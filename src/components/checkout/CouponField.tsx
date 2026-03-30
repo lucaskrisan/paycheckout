@@ -30,19 +30,13 @@ const CouponField = ({ productId, productPrice, onApply }: CouponFieldProps) => 
 
     try {
       const { data, error: fetchError } = await supabase
-        .from("coupons")
-        .select("id, code, discount_type, discount_value, max_uses, used_count, min_amount, product_id, expires_at")
-        .ilike("code", code.trim())
-        .eq("active", true)
-        .limit(1)
-        .maybeSingle();
+        .rpc("validate_coupon", { p_code: code.trim() });
 
       if (fetchError) throw fetchError;
-      if (!data) { setError("Cupom não encontrado"); return; }
-      if (data.product_id && data.product_id !== productId) { setError("Cupom não válido para este produto"); return; }
-      if (data.max_uses && data.used_count >= data.max_uses) { setError("Cupom esgotado"); return; }
-      if (data.expires_at && new Date(data.expires_at) < new Date()) { setError("Cupom expirado"); return; }
-      if (data.min_amount && productPrice < data.min_amount) { setError(`Valor mínimo: R$ ${data.min_amount.toFixed(2).replace(".", ",")}`); return; }
+      const coupon = Array.isArray(data) ? data[0] : data;
+      if (!coupon) { setError("Cupom não encontrado"); return; }
+      if (coupon.product_id && coupon.product_id !== productId) { setError("Cupom não válido para este produto"); return; }
+      if (coupon.min_amount && productPrice < coupon.min_amount) { setError(`Valor mínimo: R$ ${Number(coupon.min_amount).toFixed(2).replace(".", ",")}`); return; }
 
       const result: CouponResult = { id: data.id, code: data.code, discount_type: data.discount_type, discount_value: data.discount_value };
       setApplied(result);
