@@ -72,8 +72,8 @@ const IntegrationCard = ({
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-background border border-border/50 flex items-center justify-center overflow-hidden shrink-0">
-                <img src={logo} alt={name} className="w-7 h-7 object-contain" />
+              <div className="w-12 h-12 rounded-xl bg-background border border-border/50 flex items-center justify-center overflow-hidden shrink-0 p-1.5">
+                <img src={logo} alt={name} className="w-full h-full object-contain" />
               </div>
               <div>
                 <DialogTitle className="font-display text-base">{name}</DialogTitle>
