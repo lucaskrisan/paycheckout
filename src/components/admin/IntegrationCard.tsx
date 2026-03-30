@@ -58,11 +58,11 @@ const IntegrationCard = ({
       {/* Thumbnail card — just the logo */}
       <button
         onClick={() => setOpen(true)}
-        className="group relative flex items-center justify-center rounded-xl border border-border/40 bg-white p-6 transition-all hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 cursor-pointer h-28"
+        className="group relative flex items-center justify-center rounded-xl border border-border/40 bg-white p-8 transition-all hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 cursor-pointer h-36"
       >
-        <img src={logo} alt={name} className="max-h-12 max-w-[160px] object-contain" />
+        <img src={logo} alt={name} className="max-h-14 max-w-[180px] object-contain" />
         <span className={cn(
-          "absolute top-2.5 right-2.5 w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm",
+          "absolute top-3 right-3 w-3 h-3 rounded-full border-2 border-white shadow-sm",
           isConnected ? "bg-emerald-500" : "bg-muted-foreground/30"
         )} title={isConnected ? "Conectado" : "Desconectado"} />
       </button>
