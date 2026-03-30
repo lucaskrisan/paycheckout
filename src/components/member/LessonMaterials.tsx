@@ -74,9 +74,9 @@ export default function LessonMaterials({
         headers['Authorization'] = `Bearer ${session.access_token}`;
       }
 
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const res = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/signed-material-url`,
+        `${supabaseUrl}/functions/v1/signed-material-url`,
         {
           method: 'POST',
           headers,
@@ -87,7 +87,14 @@ export default function LessonMaterials({
       const result = await res.json();
 
       if (res.ok && result.signedUrl) {
-        window.open(result.signedUrl, "_blank");
+        // Use anchor tag to avoid popup blockers (window.open after async is blocked)
+        const a = document.createElement("a");
+        a.href = result.signedUrl;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
       } else {
         console.error("Signed URL error:", result.error);
         // Fallback: try client-side signed URL
@@ -95,7 +102,13 @@ export default function LessonMaterials({
           .from("course-materials")
           .createSignedUrl(storagePath, 3600);
         if (data?.signedUrl) {
-          window.open(data.signedUrl, "_blank");
+          const a = document.createElement("a");
+          a.href = data.signedUrl;
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
         } else {
           console.error("Fallback error:", error);
           alert("Não foi possível baixar o arquivo. Tente novamente em alguns instantes.");
