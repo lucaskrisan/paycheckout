@@ -29,7 +29,7 @@ const Integrations = () => {
           onClick={() => navigate("/admin/webhooks")}
           className="group relative flex items-center justify-center rounded-xl border border-border/40 bg-white p-10 transition-all hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 cursor-pointer h-40"
         >
-          <img src={webhookLogo} alt="Webhooks" className="max-h-20 max-w-[220px] object-contain" />
+          <img src={webhookLogo} alt="Webhooks" width={220} height={80} loading="eager" decoding="async" className="max-h-20 max-w-[220px] object-contain" />
         </button>
 
         <AppSellIntegration />
