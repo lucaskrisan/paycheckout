@@ -101,7 +101,7 @@ const Index = () => {
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
           <div className="space-y-1">
-            <p className="text-base font-semibold text-foreground">Carregando PanteraPay...</p>
+            <p className="text-base font-semibold text-foreground">Carregando Panttera...</p>
             <p className="text-sm text-muted-foreground">Se demorar mais de alguns segundos, atualize a preview.</p>
           </div>
         </div>

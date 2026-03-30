@@ -21,7 +21,7 @@ export default function HeroLaptopMockup() {
                 <div className="w-2 h-2 rounded-full bg-[#FFBD2E]" />
                 <div className="w-2 h-2 rounded-full bg-[#28C840]" />
                 <div className="ml-3 h-3.5 w-36 rounded bg-secondary flex items-center justify-center">
-                  <span className="text-[7px] text-muted-foreground font-mono">app.panterapay.com</span>
+                  <span className="text-[7px] text-muted-foreground font-mono">app.panttera.com.br</span>
                 </div>
               </div>
 
