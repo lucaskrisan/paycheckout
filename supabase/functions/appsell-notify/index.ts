@@ -30,8 +30,72 @@ Deno.serve(async (req) => {
   try {
     const { event, order_id, user_id } = await req.json();
 
-    if (!event || !order_id || !user_id) {
-      return new Response(JSON.stringify({ error: 'Missing event, order_id or user_id' }), {
+    if (!user_id) {
+      return new Response(JSON.stringify({ error: 'Missing user_id' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // --- Test connection mode ---
+    if (event === 'test_connection') {
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      );
+
+      const { data: integration } = await supabase
+        .from('appsell_integrations')
+        .select('token, active')
+        .eq('user_id', user_id)
+        .single();
+
+      if (!integration?.token) {
+        return new Response(JSON.stringify({ error: 'Token não configurado' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const testPayload = {
+        id: crypto.randomUUID(),
+        event: 'approved',
+        customer: { name: 'Teste PayCheckout', email: 'teste@paycheckout.com', phone: '11999999999', doc: '00000000000' },
+        products: [{ id: 'test-product', name: 'Produto Teste', price_in_cents: 100, type: 'one_time' }],
+        tracking: {},
+        currency: 'BRL',
+        test: true,
+      };
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+
+      try {
+        const res = await fetch(APPSELL_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'api-token': integration.token.trim() },
+          body: JSON.stringify(testPayload),
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+        const body = await res.text();
+
+        return new Response(JSON.stringify({ success: res.ok, status: res.status, body: body.substring(0, 500) }), {
+          status: res.ok ? 200 : 502,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      } catch (e) {
+        clearTimeout(timeout);
+        return new Response(JSON.stringify({ error: 'Timeout ou falha de conexão com AppSell' }), {
+          status: 502,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // --- Normal event mode ---
+    if (!event || !order_id) {
+      return new Response(JSON.stringify({ error: 'Missing event or order_id' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });

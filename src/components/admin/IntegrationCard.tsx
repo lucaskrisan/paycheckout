@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Eye, EyeOff, ExternalLink, Save, ChevronDown, ChevronUp } from "lucide-react";
+import { Eye, EyeOff, ExternalLink, Save, ChevronDown, ChevronUp, Zap } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +29,8 @@ interface IntegrationCardProps {
   tokenPlaceholder?: string;
   tokenHint?: React.ReactNode;
   statusEvents?: { key: string; label: string }[];
+  onTestConnection?: () => Promise<void>;
+  testing?: boolean;
 }
 
 const IntegrationCard = ({
@@ -47,6 +49,8 @@ const IntegrationCard = ({
   tokenPlaceholder = "Cole aqui o token da API",
   tokenHint,
   statusEvents,
+  onTestConnection,
+  testing,
 }: IntegrationCardProps) => {
   const [open, setOpen] = useState(false);
   const [showToken, setShowToken] = useState(false);
@@ -120,6 +124,20 @@ const IntegrationCard = ({
                 {saving ? "Salvando..." : "Salvar"}
               </Button>
             </div>
+
+            {/* Test connection */}
+            {onTestConnection && (
+              <Button
+                onClick={onTestConnection}
+                disabled={testing || !token}
+                variant="outline"
+                size="sm"
+                className="w-full gap-1.5 h-8 text-xs font-medium"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                {testing ? "Testando conexão..." : "Testar conexão"}
+              </Button>
+            )}
 
             {/* Events */}
             {statusEvents && statusEvents.length > 0 && (
