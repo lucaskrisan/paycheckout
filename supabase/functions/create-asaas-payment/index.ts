@@ -458,7 +458,7 @@ Deno.serve(async (req) => {
       }
 
       const status = subData.status === 'ACTIVE' ? 'approved' : 'pending';
-      await saveOrder(subData.id, status, 'credit_card');
+      const orderId = await saveOrder(subData.id, status, 'credit_card');
 
       if (subData.status === 'ACTIVE') {
         try {
@@ -485,6 +485,7 @@ Deno.serve(async (req) => {
           subscription_id: subData.id,
           status: subData.status,
           payment_id: subData.id,
+          order_id: orderId,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
