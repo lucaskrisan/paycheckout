@@ -265,6 +265,34 @@ Deno.serve(async (req) => {
           }).catch(err => console.error('[asaas-webhook] fire-webhooks error:', err));
         }
       }
+
+      // Send push notification for confirmed payments
+      if (status === 'paid') {
+        try {
+          const { data: notifSettings } = await supabase
+            .from('notification_settings')
+            .select('send_approved, show_product_name')
+            .eq('user_id', orderData.user_id)
+            .eq('send_approved', true)
+            .maybeSingle();
+
+          if (notifSettings) {
+            const { data: prod } = await supabase
+              .from('products')
+              .select('name, is_subscription')
+              .eq('id', orderData.product_id!)
+              .maybeSingle();
+
+            const formattedAmount = Number(orderData.amount).toFixed(2).replace('.', ',');
+            const isSubPayment = prod?.is_subscription || !!payment.subscription;
+            const title = isSubPayment ? '🔄 Assinatura confirmada!' : '💳 Venda no cartão!';
+            const message = `💳 R$ ${formattedAmount}${notifSettings.show_product_name && prod?.name ? ` • ${prod.name}` : ''}`;
+            await sendPushNotification(title, message, orderData.user_id, 'https://app.panttera.com.br/admin/orders');
+          }
+        } catch (notifErr) {
+          console.error('[asaas-webhook] Notification error:', notifErr);
+        }
+      }
     }
 
     // On confirmed payment, handle CAPI fallback + member access
