@@ -40,6 +40,9 @@ import {
 interface Producer {
   id: string;
   full_name: string | null;
+  email: string;
+  phone: string | null;
+  cpf: string | null;
   created_at: string;
   product_count: number;
   order_count: number;
