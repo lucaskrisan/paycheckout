@@ -109,7 +109,6 @@ const SuperAdminDashboard = () => {
   const [producers, setProducers] = useState<Producer[]>([]);
   const [allUsers, setAllUsers] = useState<UserWithRoles[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
   const [billingAccounts, setBillingAccounts] = useState<BillingAccount[]>([]);
   const [billingTxs, setBillingTxs] = useState<BillingTx[]>([]);
   const [emailLogs, setEmailLogs] = useState<any[]>([]);
