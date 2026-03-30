@@ -9,6 +9,19 @@ const corsHeaders = {
 const RETRY_DELAYS = [5, 30, 120];
 const TIMEOUT_MS = 5000;
 
+// Payment success events that REQUIRE confirmed order status
+const PAYMENT_SUCCESS_EVENTS = [
+  'payment.approved',
+  'payment.confirmed',
+  'order.paid',
+  'order.approved',
+  'subscription.activated',
+  'subscription.renewed',
+];
+
+// Order statuses that represent confirmed payment
+const CONFIRMED_STATUSES = ['paid', 'approved', 'confirmed', 'completed'];
+
 async function createHmacSignature(secret: string, body: string): Promise<string> {
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
@@ -98,8 +111,16 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+
+  // Collect audit metadata
+  const clientIp = req.headers.get('x-forwarded-for') || req.headers.get('cf-connecting-ip') || 'unknown';
+  const userAgent = req.headers.get('user-agent') || 'unknown';
+
   try {
-    const { event, order_id, user_id } = await req.json();
+    const body = await req.json();
+    const { event, order_id, user_id, environment: reqEnvironment } = body;
 
     if (!event || !order_id || !user_id) {
       return new Response(
@@ -110,11 +131,14 @@ Deno.serve(async (req) => {
 
     // --- AUTH: Only allow service_role or the actual order owner ---
     const authHeader = req.headers.get('Authorization');
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const isServiceRole = authHeader === `Bearer ${serviceRoleKey}`;
+    let callerUserId: string | null = null;
+    let callerType = 'unknown';
 
-    if (!isServiceRole) {
-      // Validate JWT and check ownership
+    if (isServiceRole) {
+      callerType = 'service_role';
+      callerUserId = user_id;
+    } else {
       if (!authHeader) {
         return new Response(
           JSON.stringify({ error: 'Unauthorized' }),
@@ -123,7 +147,7 @@ Deno.serve(async (req) => {
       }
 
       const userClient = createClient(
-        Deno.env.get('SUPABASE_URL')!,
+        supabaseUrl,
         Deno.env.get('SUPABASE_ANON_KEY') || Deno.env.get('SUPABASE_PUBLISHABLE_KEY')!,
         { global: { headers: { Authorization: authHeader } } }
       );
@@ -136,6 +160,9 @@ Deno.serve(async (req) => {
         );
       }
 
+      callerUserId = user.id;
+      callerType = 'user_jwt';
+
       // Caller must be the order owner
       if (user.id !== user_id) {
         return new Response(
@@ -145,10 +172,105 @@ Deno.serve(async (req) => {
       }
     }
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      serviceRoleKey
-    );
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    // ============================================================
+    // SECURITY: Determine environment — reject test calls with real order IDs
+    // ============================================================
+    const environment = reqEnvironment || 'production';
+
+    // Get full order data FIRST to validate status
+    const { data: order } = await supabase
+      .from('orders')
+      .select('*, customers(id, name, email, phone, cpf), products(id, name, price, delivery_method)')
+      .eq('id', order_id)
+      .single();
+
+    if (!order) {
+      // Log blocked attempt
+      await supabase.from('webhook_audit_log').insert({
+        caller_user_id: callerUserId,
+        caller_type: callerType,
+        event_type: event,
+        order_id,
+        order_status_at_fire: null,
+        environment,
+        blocked: true,
+        block_reason: 'Order not found',
+        payload: body,
+        ip_address: clientIp,
+        user_agent: userAgent,
+      });
+
+      return new Response(
+        JSON.stringify({ error: 'Order not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // ============================================================
+    // CRITICAL SECURITY: Block payment success events if order is NOT confirmed
+    // ============================================================
+    const isPaymentSuccessEvent = PAYMENT_SUCCESS_EVENTS.includes(event);
+    const orderStatusConfirmed = CONFIRMED_STATUSES.includes(order.status);
+
+    if (isPaymentSuccessEvent && !orderStatusConfirmed) {
+      const blockReason = `BLOCKED: Attempted to fire "${event}" but order status is "${order.status}". ` +
+        `Payment success events require order status to be one of: ${CONFIRMED_STATUSES.join(', ')}`;
+
+      console.error(`[fire-webhooks] 🚫 ${blockReason}`);
+
+      // Log the blocked attempt for audit
+      await supabase.from('webhook_audit_log').insert({
+        caller_user_id: callerUserId,
+        caller_type: callerType,
+        event_type: event,
+        order_id,
+        order_status_at_fire: order.status,
+        environment,
+        blocked: true,
+        block_reason: blockReason,
+        payload: body,
+        ip_address: clientIp,
+        user_agent: userAgent,
+      });
+
+      return new Response(
+        JSON.stringify({
+          error: 'Forbidden: cannot fire payment success event for unconfirmed order',
+          order_status: order.status,
+          required_statuses: CONFIRMED_STATUSES,
+        }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // ============================================================
+    // SECURITY: Block test environment from using real orders
+    // ============================================================
+    if (environment === 'test' || environment === 'sandbox') {
+      const blockReason = `BLOCKED: Test/sandbox environment attempted to use real order_id ${order_id}`;
+      console.error(`[fire-webhooks] 🚫 ${blockReason}`);
+
+      await supabase.from('webhook_audit_log').insert({
+        caller_user_id: callerUserId,
+        caller_type: callerType,
+        event_type: event,
+        order_id,
+        order_status_at_fire: order.status,
+        environment,
+        blocked: true,
+        block_reason: blockReason,
+        payload: body,
+        ip_address: clientIp,
+        user_agent: userAgent,
+      });
+
+      return new Response(
+        JSON.stringify({ error: 'Test/sandbox environment cannot use real order IDs' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Get active webhook endpoints for this user and event
     const { data: endpoints } = await supabase
@@ -158,6 +280,22 @@ Deno.serve(async (req) => {
       .eq('active', true);
 
     if (!endpoints || endpoints.length === 0) {
+      // Log successful (no-op) call
+      await supabase.from('webhook_audit_log').insert({
+        caller_user_id: callerUserId,
+        caller_type: callerType,
+        event_type: event,
+        order_id,
+        order_status_at_fire: order.status,
+        environment,
+        blocked: false,
+        block_reason: null,
+        payload: body,
+        ip_address: clientIp,
+        user_agent: userAgent,
+        deliveries_count: 0,
+      });
+
       return new Response(
         JSON.stringify({ success: true, message: 'No webhooks configured' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -170,23 +308,23 @@ Deno.serve(async (req) => {
     );
 
     if (matching.length === 0) {
+      await supabase.from('webhook_audit_log').insert({
+        caller_user_id: callerUserId,
+        caller_type: callerType,
+        event_type: event,
+        order_id,
+        order_status_at_fire: order.status,
+        environment,
+        blocked: false,
+        payload: body,
+        ip_address: clientIp,
+        user_agent: userAgent,
+        deliveries_count: 0,
+      });
+
       return new Response(
         JSON.stringify({ success: true, message: 'No endpoints for this event' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Get full order data
-    const { data: order } = await supabase
-      .from('orders')
-      .select('*, customers(id, name, email, phone, cpf), products(id, name, price, delivery_method)')
-      .eq('id', order_id)
-      .single();
-
-    if (!order) {
-      return new Response(
-        JSON.stringify({ error: 'Order not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -194,7 +332,7 @@ Deno.serve(async (req) => {
     const deliveryMethod = (order as any).products?.delivery_method || 'appsell';
     if (deliveryMethod === 'appsell') {
       try {
-        fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/appsell-notify`, {
+        fetch(`${supabaseUrl}/functions/v1/appsell-notify`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -278,6 +416,23 @@ Deno.serve(async (req) => {
         success: result.success,
       });
     }
+
+    // ============================================================
+    // AUDIT LOG: Record successful fire
+    // ============================================================
+    await supabase.from('webhook_audit_log').insert({
+      caller_user_id: callerUserId,
+      caller_type: callerType,
+      event_type: event,
+      order_id,
+      order_status_at_fire: order.status,
+      environment,
+      blocked: false,
+      payload: body,
+      ip_address: clientIp,
+      user_agent: userAgent,
+      deliveries_count: filteredEndpoints.length,
+    });
 
     return new Response(
       JSON.stringify({ success: true, results }),
