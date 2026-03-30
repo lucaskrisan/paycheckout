@@ -269,8 +269,8 @@ Deno.serve(async (req) => {
       } catch (memberErr) {
         console.error('[mp-webhook] Member access error (non-blocking):', memberErr);
       }
+      } // end else (panttera delivery)
 
-      // Push notification
       try {
         const ownerId = orderData.user_id;
         const { data: notifSettings } = await supabase
