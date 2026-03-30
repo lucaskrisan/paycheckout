@@ -209,7 +209,7 @@ export function AdminSidebar() {
           <SidebarGroupLabel>{renderSectionLabel("Geral")}</SidebarGroupLabel>
           <SidebarGroupContent>
             {collapsed ? (
-              renderItems(configItems)
+              renderItems([...configItems, ...(isSuperAdmin ? configSuperAdminOnly : [])])
             ) : (
               <Collapsible open={configOpen} onOpenChange={setConfigOpen}>
                 <CollapsibleTrigger className="flex items-center gap-2 w-full px-3 py-2 rounded-md hover:bg-sidebar-accent/60 transition-colors text-sm text-sidebar-foreground">
@@ -218,7 +218,7 @@ export function AdminSidebar() {
                   <ChevronDown className={`w-3.5 h-3.5 ml-auto transition-transform duration-200 ${configOpen ? "rotate-180" : ""}`} />
                 </CollapsibleTrigger>
                 <CollapsibleContent className="pl-2 mt-1">
-                  {renderItems(configItems)}
+                  {renderItems([...configItems, ...(isSuperAdmin ? configSuperAdminOnly : [])])}
                 </CollapsibleContent>
               </Collapsible>
             )}
