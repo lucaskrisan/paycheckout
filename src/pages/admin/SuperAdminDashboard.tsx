@@ -94,6 +94,7 @@ const fmt = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
 /* ─── Component ────────────────────────────────── */
 const SuperAdminDashboard = () => {
   const { isSuperAdmin, user } = useAuth();
+  const liveVisitors = useCheckoutPresence("watch");
 
   // Data state
   const [producers, setProducers] = useState<Producer[]>([]);
