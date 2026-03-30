@@ -1901,7 +1901,7 @@ export type Database = {
       }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
-        Returns: number
+        Returns: undefined
       }
       has_role: {
         Args: {
