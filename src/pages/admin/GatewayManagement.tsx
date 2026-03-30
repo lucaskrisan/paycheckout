@@ -97,40 +97,46 @@ const GatewayManagement = () => {
   const inactiveGateways = gateways.filter(g => !g.active);
   const installedProviders = gateways.map(g => g.provider);
 
-  const renderGatewayCard = (gw: GatewayConfig) => (
-    <Card key={gw.id} className="border border-border/50 bg-card">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-sm text-foreground">{gw.name}</span>
-            <Badge variant={gw.active ? "default" : "secondary"} className="text-[10px]">
-              {gw.active ? "Ativo" : "Inativo"}
-            </Badge>
+  const renderGatewayCard = (gw: GatewayConfig & { owner_name?: string; user_id?: string }) => {
+    const isOwnGateway = gw.user_id === user?.id;
+    return (
+      <Card key={gw.id} className={`border border-border/50 bg-card ${!isOwnGateway ? "opacity-60" : ""}`}>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-sm text-foreground">{gw.name}</span>
+              <Badge variant={gw.active ? "default" : "secondary"} className="text-[10px]">
+                {gw.active ? "Ativo" : "Inativo"}
+              </Badge>
+            </div>
+            <div className="flex gap-1">
+              <Button variant="ghost" size="icon" className="h-7 w-7" title="Migrar" onClick={() => handleMigrate(gw)}>
+                <ArrowRightLeft className="w-3.5 h-3.5 text-muted-foreground" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(gw)}>
+                <Settings2 className="w-3.5 h-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete(gw.id!)}>
+                <Trash2 className="w-3.5 h-3.5 text-destructive" />
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-1">
-            <Button variant="ghost" size="icon" className="h-7 w-7" title="Migrar" onClick={() => handleMigrate(gw)}>
-              <ArrowRightLeft className="w-3.5 h-3.5 text-muted-foreground" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(gw)}>
-              <Settings2 className="w-3.5 h-3.5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete(gw.id!)}>
-              <Trash2 className="w-3.5 h-3.5 text-destructive" />
-            </Button>
+          {!isOwnGateway && gw.owner_name && (
+            <p className="text-[10px] text-muted-foreground mb-2">Produtor: {gw.owner_name}</p>
+          )}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge variant="outline" className="text-[10px]">{providerLabels[gw.provider]}</Badge>
+            <Badge variant="outline" className="text-[10px]">{gw.environment === "production" ? "Produção" : "Sandbox"}</Badge>
+            {gw.payment_methods.map(m => (
+              <Badge key={m} variant="secondary" className="text-[10px]">
+                {m === "pix" ? "PIX" : m === "credit_card" ? "Cartão" : m}
+              </Badge>
+            ))}
           </div>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Badge variant="outline" className="text-[10px]">{providerLabels[gw.provider]}</Badge>
-          <Badge variant="outline" className="text-[10px]">{gw.environment === "production" ? "Produção" : "Sandbox"}</Badge>
-          {gw.payment_methods.map(m => (
-            <Badge key={m} variant="secondary" className="text-[10px]">
-              {m === "pix" ? "PIX" : m === "credit_card" ? "Cartão" : m}
-            </Badge>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
+        </CardContent>
+      </Card>
+    );
+  };
 
   const renderCatalogCard = (item: CatalogItem) => {
     const isInstalled = installedProviders.includes(item.provider);
