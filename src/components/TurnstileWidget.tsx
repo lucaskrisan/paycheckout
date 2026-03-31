@@ -38,8 +38,9 @@ const TurnstileWidget = forwardRef<HTMLDivElement, TurnstileWidgetProps>(({ onVe
       callback: onVerify,
       "expired-callback": onExpire,
       "error-callback": () => {
-        // On error, still allow login (graceful degradation)
-        onVerify("bypass");
+        // On error, retry widget render after a short delay
+        console.warn("[Turnstile] Widget error — retrying in 3s");
+        setTimeout(() => renderWidget(), 3000);
       },
     });
   }, [onVerify, onExpire]);
