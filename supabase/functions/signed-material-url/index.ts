@@ -2,7 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-access-token',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-access-token, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 Deno.serve(async (req) => {
@@ -25,12 +25,20 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Validate access: check JWT or x-access-token
+    // Sanitize file_path: prevent path traversal
+    if (file_path.includes('..') || file_path.startsWith('/')) {
+      return new Response(
+        JSON.stringify({ error: 'Caminho inválido.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
+
     const authHeader = req.headers.get('authorization');
     const accessToken = req.headers.get('x-access-token');
 
     let hasAccess = false;
 
+    // 1. Check JWT auth — admins get immediate access, regular users check member_access
     if (authHeader) {
       const supabaseUser = createClient(
         Deno.env.get('SUPABASE_URL')!,
@@ -39,7 +47,7 @@ Deno.serve(async (req) => {
       );
       const { data: { user } } = await supabaseUser.auth.getUser();
       if (user) {
-        // Check if admin/super_admin
+        // Check if admin/super_admin — instant access
         const { data: roles } = await supabaseAdmin
           .from('user_roles')
           .select('role')
@@ -47,9 +55,34 @@ Deno.serve(async (req) => {
         if (roles?.some((r: any) => r.role === 'admin' || r.role === 'super_admin')) {
           hasAccess = true;
         }
+
+        // If not admin, check if this authenticated user has member_access to any course
+        if (!hasAccess) {
+          // Find customer records linked to this user
+          const { data: customers } = await supabaseAdmin
+            .from('customers')
+            .select('id')
+            .eq('user_id', user.id);
+
+          if (customers && customers.length > 0) {
+            const customerIds = customers.map((c: any) => c.id);
+            const { data: accessRecords } = await supabaseAdmin
+              .from('member_access')
+              .select('id, expires_at')
+              .in('customer_id', customerIds)
+              .limit(1);
+
+            if (accessRecords && accessRecords.length > 0) {
+              const rec = accessRecords[0];
+              const notExpired = !rec.expires_at || new Date(rec.expires_at) > new Date();
+              if (notExpired) hasAccess = true;
+            }
+          }
+        }
       }
     }
 
+    // 2. Check x-access-token (token-based access for buyers via link)
     if (!hasAccess && accessToken) {
       const { data: access } = await supabaseAdmin
         .from('member_access')
