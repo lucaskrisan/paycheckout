@@ -31,8 +31,6 @@ project_id = "vipltojtcrqatwvzobro"
     verify_jwt = false
   [functions.delete-account]
     verify_jwt = false
-  [functions.evolution-api]
-    verify_jwt = false
   [functions.facebook-capi]
     verify_jwt = false
   [functions.fire-webhooks]

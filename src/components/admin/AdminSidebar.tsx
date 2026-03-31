@@ -90,7 +90,7 @@ const configItems = [
   { title: "Domínios", url: "/admin/domains", icon: Globe },
   
   { title: "Webhook", url: "/admin/webhooks", icon: Webhook },
-  { title: "WhatsApp", url: "/admin/whatsapp", icon: Smartphone },
+  
   { title: "Notificações", url: "/admin/notifications", icon: Bell },
   { title: "Minha conta", url: "/admin/my-account", icon: User },
 ];
