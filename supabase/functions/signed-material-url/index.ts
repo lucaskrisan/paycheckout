@@ -41,7 +41,7 @@ function extractStoragePath(input: string): string | null {
 }
 
 async function resolveCourseIdForMaterial(
-  supabaseAdmin: ReturnType<typeof createClient>,
+  supabaseAdmin: any,
   materialId: string | null,
   normalizedPath: string,
 ): Promise<{ courseId: string | null; lessonId: string | null; filePath: string | null }> {
