@@ -1,4 +1,5 @@
 import { useState } from "react";
+import DOMPurify from "dompurify";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -235,7 +236,7 @@ export function EmailPreviewModal({
                   <p className="text-xs text-muted-foreground mb-1">Preview do corpo gerado:</p>
                   <div
                     className="text-sm text-foreground prose prose-sm max-w-none"
-                    dangerouslySetInnerHTML={{ __html: body }}
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(body) }}
                   />
                 </div>
               )}
