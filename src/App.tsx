@@ -126,7 +126,7 @@ const App = () => (
                 <Route path="billing" element={<Billing />} />
                 <Route path="platform" element={<SuperAdminDashboard />} />
                 <Route path="domains" element={<Domains />} />
-                <Route path="whatsapp" element={<WhatsApp />} />
+                
                 
                 <Route path="my-account" element={<MyAccount />} />
                 <Route path="metrics" element={<Metrics />} />
