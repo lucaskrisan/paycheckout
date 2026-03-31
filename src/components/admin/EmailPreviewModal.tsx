@@ -236,7 +236,7 @@ export function EmailPreviewModal({
                   <p className="text-xs text-muted-foreground mb-1">Preview do corpo gerado:</p>
                   <div
                     className="text-sm text-foreground prose prose-sm max-w-none"
-                    dangerouslySetInnerHTML={{ __html: body }}
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(body) }}
                   />
                 </div>
               )}
