@@ -60,7 +60,7 @@ const Upsell = lazy(() => import("./pages/admin/Upsell"));
 const Roadmap = lazy(() => import("./pages/admin/Roadmap"));
 const TechnicalManual = lazy(() => import("./pages/admin/TechnicalManual"));
 const Domains = lazy(() => import("./pages/admin/Domains"));
-const WhatsApp = lazy(() => import("./pages/admin/WhatsApp"));
+
 const MyAccount = lazy(() => import("./pages/admin/MyAccount"));
 const Metrics = lazy(() => import("./pages/admin/Metrics"));
 const ProducerBilling = lazy(() => import("./pages/admin/ProducerBilling"));
