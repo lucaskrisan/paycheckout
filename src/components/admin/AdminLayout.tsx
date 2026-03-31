@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback, memo } from "react";
 import { Navigate, Outlet, useNavigate } from "react-router-dom";
 
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -57,7 +57,6 @@ function useOneSignalInit(userId: string | undefined) {
               },
             },
           });
-          // Tag this device with the producer's user_id for targeted push
           await OneSignal.User.addTag("user_id", userId);
           console.log("[OneSignal] initialized with user_id tag:", userId);
         } catch (err) {
@@ -127,13 +126,88 @@ function AdminAccessRedirect({
   );
 }
 
+// Memoized header to prevent re-renders when Outlet changes
+const AdminHeader = memo(function AdminHeader({
+  totalRevenue,
+  isDark,
+  toggleTheme,
+  user,
+  signOut,
+}: {
+  totalRevenue: number;
+  isDark: boolean;
+  toggleTheme: () => void;
+  user: any;
+  signOut: () => Promise<void>;
+}) {
+  const navigate = useNavigate();
+
+  const handleSignOut = useCallback(async () => {
+    await signOut();
+    navigate("/login");
+  }, [signOut, navigate]);
+
+  return (
+    <>
+      {/* Top bar — gamification + actions */}
+      <div className="h-11 bg-primary flex items-center justify-between px-4 gap-3">
+        <HeaderGamification totalRevenue={totalRevenue} />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleTheme}
+            className="w-7 h-7 rounded-full bg-primary-foreground/15 hover:bg-primary-foreground/25 flex items-center justify-center text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+            title={isDark ? "Modo claro" : "Modo escuro"}
+          >
+            {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-2 text-primary-foreground/90 hover:text-primary-foreground text-sm font-medium transition-colors">
+                <div className="w-7 h-7 rounded-full bg-primary-foreground/15 flex items-center justify-center">
+                  <User className="w-3.5 h-3.5" />
+                </div>
+                <span className="hidden md:inline max-w-[180px] truncate">{user?.email}</span>
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <div className="px-3 py-2">
+                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate("/admin/notifications")}>
+                <Bell className="w-4 h-4 mr-2" />
+                Notificações
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => window.open("/minha-conta", "_blank")}>
+                <Eye className="w-4 h-4 mr-2" />
+                Mudar para painel do aluno
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSignOut}>
+                <LogOut className="w-4 h-4 mr-2" />
+                Sair
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      {/* Header */}
+      <header className="h-12 flex items-center border-b border-border px-4 bg-card">
+        <SidebarTrigger className="mr-3" />
+        <span className="font-display font-bold text-foreground text-sm">Painel Admin</span>
+      </header>
+    </>
+  );
+});
+
 export default function AdminLayout() {
   const { user, isAdmin, loading, signOut, refreshRoles } = useAuth();
   const { isDark, toggle: toggleTheme } = useTheme();
-  const navigate = useNavigate();
   const [totalRevenue, setTotalRevenue] = useState(0);
-  const [notificationSound, setNotificationSound] = useState("kaching");
-  const [playApprovedSaleSound, setPlayApprovedSaleSound] = useState(true);
+  const notificationSoundRef = useRef("kaching");
+  const playApprovedSaleSoundRef = useRef(true);
 
   useOneSignalInit(user?.id ?? undefined);
 
@@ -157,8 +231,8 @@ export default function AdminLayout() {
         .reduce((s, o) => s + Number(o.amount), 0);
 
       setTotalRevenue(revenue);
-      setNotificationSound(settings?.notification_sound || "kaching");
-      setPlayApprovedSaleSound(settings?.send_approved ?? true);
+      notificationSoundRef.current = settings?.notification_sound || "kaching";
+      playApprovedSaleSoundRef.current = settings?.send_approved ?? true;
     };
 
     loadRevenueAndSound();
@@ -186,8 +260,8 @@ export default function AdminLayout() {
             (payload?.eventType === "INSERT" && PAID_STATUSES.has(newStatus)) ||
             (payload?.eventType === "UPDATE" && PAID_STATUSES.has(newStatus) && !PAID_STATUSES.has(oldStatus));
 
-          if (becamePaid && playApprovedSaleSound) {
-            playNotificationSound(notificationSound);
+          if (becamePaid && playApprovedSaleSoundRef.current) {
+            playNotificationSound(notificationSoundRef.current);
           }
 
           if (payload?.eventType === "INSERT" || payload?.eventType === "UPDATE") {
@@ -208,7 +282,7 @@ export default function AdminLayout() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id, notificationSound, playApprovedSaleSound]);
+  }, [user?.id]);
 
   // Visitor activity toasts
   const lastToastRef = useRef(0);
@@ -230,7 +304,6 @@ export default function AdminLayout() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "pixel_events" }, (payload: any) => {
         const evt = payload.new;
         if (!evt || evt.visitor_id?.startsWith("sim_")) return;
-        // Only show toasts for the current producer's own events
         if (user?.id && evt.user_id !== user.id) return;
         
         const now = Date.now();
@@ -261,7 +334,6 @@ export default function AdminLayout() {
 
   if (!user) return <Navigate to="/login" replace />;
   if (!isAdmin) {
-    // Re-check roles and redirect — never show "access denied" to users
     return <AdminAccessRedirect refreshRoles={refreshRoles} userId={user.id} />;
   }
 
@@ -270,56 +342,13 @@ export default function AdminLayout() {
       <div className="h-screen flex w-full overflow-hidden">
         <AdminSidebar />
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          {/* Top bar — gamification + actions */}
-          <div className="h-11 bg-primary flex items-center justify-between px-4 gap-3">
-            <HeaderGamification totalRevenue={totalRevenue} />
-            <div className="flex items-center gap-2">
-              <button
-                onClick={toggleTheme}
-                className="w-7 h-7 rounded-full bg-primary-foreground/15 hover:bg-primary-foreground/25 flex items-center justify-center text-primary-foreground/80 hover:text-primary-foreground transition-colors"
-                title={isDark ? "Modo claro" : "Modo escuro"}
-              >
-                {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-              </button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 text-primary-foreground/90 hover:text-primary-foreground text-sm font-medium transition-colors">
-                    <div className="w-7 h-7 rounded-full bg-primary-foreground/15 flex items-center justify-center">
-                      <User className="w-3.5 h-3.5" />
-                    </div>
-                    <span className="hidden md:inline max-w-[180px] truncate">{user?.email}</span>
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <div className="px-3 py-2">
-                    <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate("/admin/notifications")}>
-                    <Bell className="w-4 h-4 mr-2" />
-                    Notificações
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => window.open("/minha-conta", "_blank")}>
-                    <Eye className="w-4 h-4 mr-2" />
-                    Mudar para painel do aluno
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={async () => { await signOut(); navigate("/login"); }}>
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Sair
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-
-          {/* Header */}
-          <header className="h-12 flex items-center border-b border-border px-4 bg-card">
-            <SidebarTrigger className="mr-3" />
-            <span className="font-display font-bold text-foreground text-sm">Painel Admin</span>
-          </header>
-
+          <AdminHeader
+            totalRevenue={totalRevenue}
+            isDark={isDark}
+            toggleTheme={toggleTheme}
+            user={user}
+            signOut={signOut}
+          />
           <main className="flex-1 p-6 bg-background overflow-y-auto overflow-x-hidden">
             <Outlet />
           </main>
