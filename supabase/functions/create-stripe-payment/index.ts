@@ -31,18 +31,77 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get product info and validate
+    // Get product info and VALIDATE price server-side
     let productOwnerId: string | null = null;
     let productName = 'Produto';
     if (product_id) {
       const { data: prod } = await supabaseAdmin
         .from('products')
-        .select('name, user_id, price')
+        .select('name, user_id, price, show_coupon')
         .eq('id', product_id)
         .maybeSingle();
       if (prod) {
         productName = prod.name;
         productOwnerId = prod.user_id;
+        let serverPrice = prod.price;
+
+        // Check if a config with custom price was used
+        if (config_id) {
+          const { data: config } = await supabaseAdmin
+            .from('checkout_builder_configs')
+            .select('price')
+            .eq('id', config_id)
+            .eq('product_id', product_id)
+            .maybeSingle();
+          if (config?.price != null && config.price > 0) {
+            serverPrice = config.price;
+          }
+        }
+
+        // Apply coupon if provided and allowed
+        let couponDiscount = 0;
+        if (coupon_id && prod.show_coupon !== false) {
+          const { data: couponData } = await supabaseAdmin
+            .from('coupons')
+            .select('discount_type, discount_value, active, max_uses, used_count')
+            .eq('id', coupon_id)
+            .eq('active', true)
+            .maybeSingle();
+          if (couponData) {
+            if (couponData.max_uses != null && couponData.used_count >= couponData.max_uses) {
+              return new Response(
+                JSON.stringify({ error: 'Cupom atingiu o limite de usos.' }),
+                { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+              );
+            }
+            couponDiscount = couponData.discount_type === 'percent'
+              ? serverPrice * (couponData.discount_value / 100)
+              : couponData.discount_value;
+          }
+        }
+
+        // Calculate bump total server-side
+        let bumpTotal = 0;
+        if (bump_product_ids && Array.isArray(bump_product_ids) && bump_product_ids.length > 0) {
+          const { data: bumpProducts } = await supabaseAdmin
+            .from('products')
+            .select('price')
+            .in('id', bump_product_ids)
+            .eq('active', true);
+          if (bumpProducts) {
+            bumpTotal = bumpProducts.reduce((sum: number, bp: any) => sum + Number(bp.price), 0);
+          }
+        }
+
+        const validatedAmount = Math.round((Math.max(serverPrice - couponDiscount, 0) + bumpTotal) * 100) / 100;
+        // Allow small rounding tolerance (R$ 0.02)
+        if (Math.abs(amount - validatedAmount) > 0.02) {
+          console.warn(`[create-stripe-payment] Price mismatch: client=${amount}, server=${validatedAmount} (product=${serverPrice}, coupon=${couponDiscount}, bumps=${bumpTotal})`);
+          return new Response(
+            JSON.stringify({ error: 'Valor inválido. Recarregue a página e tente novamente.' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
       }
     }
 
