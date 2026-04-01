@@ -101,6 +101,7 @@ const App = () => (
               <Route path="/cookies" element={<Cookies />} />
               <Route path="/isencao-financeira" element={<Disclaimer />} />
               <Route path="/produtos-proibidos" element={<ProhibitedContent />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/admin/products/:productId/checkout-builder" element={<CheckoutBuilder />} />
               <Route path="/admin/products/:productId/checkout-builder/:configId" element={<CheckoutBuilder />} />
               <Route path="/admin" element={<><InstallPrompt /><AdminLayout /></>}>
