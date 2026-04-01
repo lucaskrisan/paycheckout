@@ -243,6 +243,10 @@ const WhatsApp = () => {
           )}
         </CardContent>
       </Card>
+
+      <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
+        <WhatsAppTemplates />
+      </Suspense>
     </div>
   );
 };
