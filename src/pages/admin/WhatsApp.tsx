@@ -1,5 +1,7 @@
 // @ts-nocheck
-import { useState, useEffect, useRef, useCallback } from "react";
+import { lazy, Suspense, useState, useEffect, useRef, useCallback } from "react";
+
+const WhatsAppTemplates = lazy(() => import("@/components/admin/WhatsAppTemplates"));
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -241,6 +243,10 @@ const WhatsApp = () => {
           )}
         </CardContent>
       </Card>
+
+      <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
+        <WhatsAppTemplates />
+      </Suspense>
     </div>
   );
 };
