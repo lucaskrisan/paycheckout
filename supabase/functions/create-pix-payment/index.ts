@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    const { data: rlData } = await supabaseRl.rpc('check_rate_limit', {
+    const { data: rlData } = await supabaseAdmin.rpc('check_rate_limit', {
       p_identifier: clientIp,
       p_action: 'create-pix-payment',
       p_max_hits: 5,
