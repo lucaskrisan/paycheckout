@@ -1,559 +1,427 @@
 // @ts-nocheck
-import { useState, useEffect, useMemo, lazy, Suspense } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Plus, Pencil, Trash2, Copy, FileText, Loader2, MessageSquare,
-  Zap, ArrowRight, ShoppingCart, UserPlus, CreditCard, QrCode, Send, Eye,
-  X, ChevronRight, ArrowLeft, Activity,
+  ArrowRight,
+  CheckCircle2,
+  CreditCard,
+  Loader2,
+  MessageSquare,
+  QrCode,
+  Send,
+  ShoppingCart,
+  Sparkles,
+  UserPlus,
+  Workflow,
+  Zap,
 } from "lucide-react";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
 
 const FlowCanvas = lazy(() => import("./whatsapp-flow/FlowCanvas"));
 
 interface Template {
-  id: string; name: string; category: string; body: string;
-  variables: string[]; active: boolean; created_at: string; updated_at: string;
+  id: string;
+  name: string;
+  category: string;
+  body: string;
+  variables: string[];
+  active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
-const VARIABLE_OPTIONS = [
-  { value: "{nome}", label: "Nome", icon: UserPlus },
-  { value: "{email}", label: "E-mail", icon: Send },
-  { value: "{telefone}", label: "Telefone", icon: MessageSquare },
-  { value: "{produto}", label: "Produto", icon: ShoppingCart },
-  { value: "{valor}", label: "Valor", icon: CreditCard },
-  { value: "{link}", label: "Link", icon: ArrowRight },
-  { value: "{cupom}", label: "Cupom", icon: Zap },
-  { value: "{pix_code}", label: "PIX", icon: QrCode },
-];
-
 const CATEGORIES = [
-  { value: "boas_vindas", label: "Boas-vindas", icon: UserPlus, color: "151 100% 45%" },
-  { value: "abandono", label: "Abandono", icon: ShoppingCart, color: "45 100% 51%" },
-  { value: "confirmacao", label: "Confirmação", icon: CreditCard, color: "210 100% 60%" },
-  { value: "lembrete_pix", label: "Lembrete PIX", icon: QrCode, color: "280 80% 60%" },
-  { value: "acesso", label: "Acesso", icon: Send, color: "340 80% 55%" },
-  { value: "geral", label: "Geral", icon: MessageSquare, color: "240 5% 63%" },
+  { value: "boas_vindas", label: "Boas-vindas", icon: UserPlus },
+  { value: "abandono", label: "Abandono", icon: ShoppingCart },
+  { value: "confirmacao", label: "Confirmação", icon: CreditCard },
+  { value: "lembrete_pix", label: "Lembrete PIX", icon: QrCode },
+  { value: "acesso", label: "Acesso", icon: Send },
+  { value: "geral", label: "Geral", icon: MessageSquare },
 ];
 
-const EMPTY_FORM = { name: "", category: "geral", body: "", active: true };
+const createEmptyTemplate = (): Template => ({
+  id: `__new__-${Date.now()}`,
+  name: "",
+  category: "geral",
+  body: "Olá {nome}, obrigado por adquirir o {produto}!",
+  variables: [],
+  active: true,
+  created_at: "",
+  updated_at: "",
+});
 
-const previewBody = (body: string) =>
-  body.replace(/\{nome\}/g, "João Silva").replace(/\{email\}/g, "joao@email.com")
-    .replace(/\{telefone\}/g, "(11) 99999-0000").replace(/\{produto\}/g, "Curso Premium")
-    .replace(/\{valor\}/g, "R$ 197,00").replace(/\{link\}/g, "https://app.com/acesso")
-    .replace(/\{cupom\}/g, "DESCONTO10").replace(/\{pix_code\}/g, "00020126...");
+const extractVariables = (text: string) => {
+  const matches = text.match(/\{[a-z_]+\}/g);
+  return matches ? [...new Set(matches)] : [];
+};
 
-/* ═══════════════════════════════════════════
-   FLOW NODE — visual node in the detail panel
-   ═══════════════════════════════════════════ */
-const FlowNode = ({ icon: Icon, title, subtitle, color, active, children, last }: {
-  icon: any; title: string; subtitle: string; color: string; active?: boolean;
-  children?: React.ReactNode; last?: boolean;
-}) => (
-  <div className="flex gap-4">
-    {/* Vertical line + dot */}
-    <div className="flex flex-col items-center">
-      <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border"
-        style={{
-          background: `linear-gradient(135deg, hsl(${color} / 0.15), hsl(${color} / 0.05))`,
-          borderColor: `hsl(${color} / 0.3)`,
-        }}
-      >
-        <Icon className="w-4 h-4" style={{ color: `hsl(${color})` }} />
+const TemplateFlowPreview = () => (
+  <div className="mt-5 rounded-[22px] border border-border/60 bg-background/60 p-4">
+    <div className="flex items-center gap-3">
+      <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-gold/20 bg-gold/10 text-gold">
+        <Zap className="h-4 w-4" />
       </div>
-      {!last && (
-        <div className="w-px flex-1 min-h-[24px]" style={{
-          background: `linear-gradient(to bottom, hsl(${color} / 0.3), hsl(var(--border) / 0.5))`,
-        }} />
-      )}
+      <div className="h-px flex-1 bg-gradient-to-r from-gold/70 to-gold/10" />
+      <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-gold/20 bg-gold/10 text-gold">
+        <MessageSquare className="h-4 w-4" />
+      </div>
+      <div className="h-px flex-1 bg-gradient-to-r from-gold/70 to-gold/10" />
+      <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-gold/20 bg-gold/10 text-gold">
+        <Workflow className="h-4 w-4" />
+      </div>
     </div>
-
-    {/* Content */}
-    <div className="pb-6 flex-1 min-w-0">
-      <div className="flex items-center gap-2 mb-1">
-        <p className="text-sm font-semibold text-foreground">{title}</p>
-        {active !== undefined && (
-          <div className={`w-2 h-2 rounded-full ${active ? "bg-primary shadow-[0_0_6px_hsl(151_100%_45%/0.5)]" : "bg-muted-foreground/30"}`} />
-        )}
-      </div>
-      <p className="text-xs text-muted-foreground">{subtitle}</p>
-      {children && <div className="mt-3">{children}</div>}
+    <div className="mt-3 grid grid-cols-3 gap-3 text-center text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
+      <span>Disparo</span>
+      <span>Mensagem</span>
+      <span>Fluxo</span>
     </div>
   </div>
 );
 
-/* ═══════════════════════════════════════════
-   TEMPLATE CARD — clean grid card
-   ═══════════════════════════════════════════ */
-const TemplateCard = ({ template, onClick }: { template: Template; onClick: () => void }) => {
-  const cat = CATEGORIES.find(c => c.value === template.category) || CATEGORIES[5];
-  const CatIcon = cat.icon;
+const TemplateCard = ({
+  onDelete,
+  onOpen,
+  template,
+}: {
+  onDelete: (template: Template) => void;
+  onOpen: (template: Template) => void;
+  template: Template;
+}) => {
+  const category = CATEGORIES.find((item) => item.value === template.category) || CATEGORIES[CATEGORIES.length - 1];
+  const Icon = category.icon;
 
   return (
     <motion.button
-      layout
-      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      onClick={onClick}
-      className="group text-left w-full rounded-2xl border border-border/60 bg-card hover:border-primary/30 hover:shadow-[0_0_40px_-12px_hsl(151_100%_45%/0.12)] transition-all duration-300 overflow-hidden"
+      className="group relative overflow-hidden rounded-[28px] border border-border/60 bg-card/95 p-5 text-left shadow-sm transition-all hover:-translate-y-1 hover:border-gold/35 hover:shadow-[0_24px_60px_hsl(var(--gold)/0.08)]"
+      initial={{ opacity: 0, y: 16 }}
+      onClick={() => onOpen(template)}
+      type="button"
     >
-      {/* Color accent */}
-      <div className="h-0.5" style={{ background: `linear-gradient(90deg, hsl(${cat.color}), hsl(${cat.color} / 0.2))` }} />
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/70 to-transparent" />
 
-      <div className="p-4 space-y-3">
-        {/* Top row */}
+      <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-            style={{
-              background: `linear-gradient(135deg, hsl(${cat.color} / 0.12), transparent)`,
-              border: `1px solid hsl(${cat.color} / 0.15)`,
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-gold/20 bg-gold/10 text-gold">
+            <Icon className="h-5 w-5" />
+          </div>
+          <div className="min-w-0">
+            <h3 className="truncate font-display text-lg font-semibold text-foreground">{template.name}</h3>
+            <p className="mt-1 text-sm text-muted-foreground">{category.label}</p>
+          </div>
+        </div>
+
+        <Badge variant={template.active ? "default" : "secondary"}>{template.active ? "Ativo" : "Inativo"}</Badge>
+      </div>
+
+      <div className="mt-5 rounded-[22px] border border-border/60 bg-background/60 p-4">
+        <p className="line-clamp-3 whitespace-pre-wrap text-sm leading-relaxed text-foreground/88">{template.body}</p>
+      </div>
+
+      <div className="mt-4 flex items-center gap-2 overflow-hidden">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-gold/20 bg-gold/10 text-gold">
+          <Zap className="h-3.5 w-3.5" />
+        </div>
+        <div className="h-px w-10 bg-gradient-to-r from-gold/80 to-gold/15" />
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-gold/20 bg-gold/10 text-gold">
+          <MessageSquare className="h-3.5 w-3.5" />
+        </div>
+        <div className="h-px w-10 bg-gradient-to-r from-gold/80 to-gold/15" />
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-gold/20 bg-gold/10 text-gold">
+          <ArrowRight className="h-3.5 w-3.5" />
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">{template.variables.length} variáveis</span>
+          <button
+            className="rounded-full border border-border/60 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-destructive/40 hover:text-destructive"
+            onClick={(event) => {
+              event.stopPropagation();
+              onDelete(template);
             }}
+            type="button"
           >
-            <CatIcon className="w-4 h-4" style={{ color: `hsl(${cat.color})` }} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-foreground truncate">{template.name}</p>
-            <p className="text-[10px] font-medium mt-0.5" style={{ color: `hsl(${cat.color} / 0.8)` }}>
-              {cat.label}
-            </p>
-          </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            <div className={`w-1.5 h-1.5 rounded-full ${template.active ? "bg-primary" : "bg-muted-foreground/30"}`} />
-            <span className="text-[10px] text-muted-foreground">{template.active ? "Ativo" : "Off"}</span>
-          </div>
+            Excluir
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-center justify-between">
+        <div className="flex flex-wrap gap-2">
+          {template.variables.slice(0, 3).map((variable) => (
+            <span key={variable} className="rounded-full border border-gold/20 bg-gold/10 px-2.5 py-1 text-[11px] font-mono text-gold">
+              {variable}
+            </span>
+          ))}
         </div>
 
-        {/* Preview */}
-        <p className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">{template.body}</p>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between pt-1">
-          <div className="flex gap-1">
-            {template.variables.slice(0, 3).map(v => (
-              <span key={v} className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-muted/60 text-muted-foreground border border-border/50">
-                {v}
-              </span>
-            ))}
-            {template.variables.length > 3 && (
-              <span className="px-1.5 py-0.5 rounded text-[9px] font-mono text-muted-foreground">
-                +{template.variables.length - 3}
-              </span>
-            )}
-          </div>
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40 group-hover:text-primary transition-colors" />
-        </div>
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-gold transition-transform group-hover:translate-x-0.5">
+          Abrir builder
+          <ArrowRight className="h-3.5 w-3.5" />
+        </span>
       </div>
     </motion.button>
   );
 };
 
-/* ═══════════════════════════════════════════
-   DETAIL PANEL — flow nodes view
-   ═══════════════════════════════════════════ */
-const TemplateDetail = ({ template, onBack, onEdit, onDelete, onCopy }: {
-  template: Template; onBack: () => void;
-  onEdit: () => void; onDelete: () => void; onCopy: () => void;
-}) => {
-  const cat = CATEGORIES.find(c => c.value === template.category) || CATEGORIES[5];
-  const CatIcon = cat.icon;
+const EmptyState = ({ onCreate }: { onCreate: () => void }) => (
+  <div className="overflow-hidden rounded-[32px] border border-border/60 bg-card/95">
+    <div className="grid gap-0 xl:grid-cols-[1.2fr_0.8fr]">
+      <div className="p-8 sm:p-10">
+        <Badge className="border-gold/25 bg-gold/10 text-gold" variant="outline">
+          <Sparkles className="mr-1.5 h-3 w-3" />
+          Experiência premium
+        </Badge>
+        <h3 className="mt-5 max-w-xl font-display text-3xl font-semibold leading-tight text-foreground">
+          Crie templates como fluxos visuais: cards claros, nós conectados e configuração prazerosa.
+        </h3>
+        <p className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground">
+          Nada de modal simples e cara de iniciante — aqui o template já nasce dentro do builder visual, com autoridade e clareza.
+        </p>
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      className="space-y-6"
-    >
-      {/* Back + Title */}
-      <div className="flex items-center justify-between">
-        <button onClick={onBack} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft className="w-4 h-4" />
-          Voltar
-        </button>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={onCopy}>
-            <Copy className="w-3 h-3" /> Copiar
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Button className="gap-2 border border-gold/20 bg-gold text-background hover:bg-gold/90" onClick={onCreate}>
+            <Workflow className="h-4 w-4" />
+            Criar no builder visual
           </Button>
-          <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={onEdit}>
-            <Pencil className="w-3 h-3" /> Editar
-          </Button>
-          <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-destructive hover:text-destructive" onClick={onDelete}>
-            <Trash2 className="w-3 h-3" /> Excluir
+          <Button className="gap-2" onClick={onCreate} variant="outline">
+            <CheckCircle2 className="h-4 w-4" />
+            Abrir canvas agora
           </Button>
         </div>
       </div>
 
-      {/* Template header card */}
-      <div className="rounded-2xl border border-border/60 bg-card overflow-hidden">
-        <div className="h-1" style={{ background: `linear-gradient(90deg, hsl(${cat.color}), hsl(${cat.color} / 0.2))` }} />
-        <div className="p-5 flex items-center gap-4">
-          <div
-            className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
-            style={{
-              background: `linear-gradient(135deg, hsl(${cat.color} / 0.15), transparent)`,
-              border: `1px solid hsl(${cat.color} / 0.2)`,
-            }}
-          >
-            <CatIcon className="w-5 h-5" style={{ color: `hsl(${cat.color})` }} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h3 className="text-lg font-bold text-foreground font-display">{template.name}</h3>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-xs font-medium" style={{ color: `hsl(${cat.color})` }}>{cat.label}</span>
-              <span className="text-border">·</span>
-              <span className="text-xs text-muted-foreground">{template.variables.length} variáveis</span>
-            </div>
-          </div>
-          <Badge variant={template.active ? "default" : "secondary"} className="shrink-0">
-            {template.active ? "Ativo" : "Inativo"}
-          </Badge>
-        </div>
-      </div>
-
-      {/* Flow nodes */}
-      <div className="rounded-2xl border border-border/60 bg-card p-6">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-5">Fluxo de automação</p>
-
-        <FlowNode
-          icon={Zap}
-          title="Gatilho"
-          subtitle={`Evento: ${cat.label}`}
-          color={cat.color}
-        >
-          <div className="rounded-xl border border-border/50 bg-muted/30 p-3">
-            <p className="text-[11px] text-muted-foreground">
-              Quando o evento <span className="font-semibold text-foreground">{cat.label.toLowerCase()}</span> ocorrer, iniciar o fluxo.
-            </p>
-          </div>
-        </FlowNode>
-
-        <FlowNode
-          icon={FileText}
-          title="Mensagem Template"
-          subtitle="Corpo da mensagem com variáveis"
-          color="151 100% 45%"
-          active={template.active}
-        >
-          {/* Message bubble */}
-          <div className="rounded-xl border border-border/50 bg-muted/20 overflow-hidden">
-            <div className="p-4">
-              <p className="text-xs text-foreground whitespace-pre-wrap leading-relaxed">{template.body}</p>
-            </div>
-            {template.variables.length > 0 && (
-              <div className="border-t border-border/40 px-4 py-2.5 flex flex-wrap gap-1.5 bg-muted/10">
-                {template.variables.map(v => {
-                  const opt = VARIABLE_OPTIONS.find(o => o.value === v);
-                  const VIcon = opt?.icon || Zap;
-                  return (
-                    <span key={v} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono bg-primary/8 text-primary/70 border border-primary/15">
-                      <VIcon className="w-2.5 h-2.5" />
-                      {v}
-                    </span>
-                  );
-                })}
+      <div className="border-t border-border/60 bg-background/50 p-8 xl:border-l xl:border-t-0">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-gold/80">Preview do fluxo</p>
+        <TemplateFlowPreview />
+        <div className="mt-5 space-y-3">
+          {[
+            "Cards organizados por categoria",
+            "Nós conectados visualmente",
+            "Configuração lateral instantânea",
+          ].map((item) => (
+            <div key={item} className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card/80 px-4 py-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-gold/20 bg-gold/10 text-gold">
+                <CheckCircle2 className="h-4 w-4" />
               </div>
-            )}
-          </div>
-
-          {/* Live preview */}
-          <div className="mt-3 rounded-xl border border-primary/15 bg-primary/[0.03] p-3">
-            <div className="flex items-center gap-1.5 mb-2">
-              <Eye className="w-3 h-3 text-primary/50" />
-              <span className="text-[10px] font-medium text-primary/50 uppercase tracking-wider">Preview</span>
+              <p className="text-sm text-foreground">{item}</p>
             </div>
-            <p className="text-xs text-foreground/80 whitespace-pre-wrap leading-relaxed">
-              {previewBody(template.body)}
-            </p>
-          </div>
-        </FlowNode>
-
-        <FlowNode
-          icon={Send}
-          title="Enviar via WhatsApp"
-          subtitle="API envia a mensagem ao cliente"
-          color="151 100% 45%"
-          last
-        >
-          <div className="rounded-xl border border-border/50 bg-muted/30 p-3 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <MessageSquare className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-              <p className="text-[11px] font-medium text-foreground">WhatsApp Business API</p>
-              <p className="text-[10px] text-muted-foreground">Envio automático instantâneo</p>
-            </div>
-          </div>
-        </FlowNode>
+          ))}
+        </div>
       </div>
-    </motion.div>
-  );
-};
+    </div>
+  </div>
+);
 
-/* ═══════════════════════════════════════════
-   MAIN COMPONENT
-   ═══════════════════════════════════════════ */
 const WhatsAppTemplates = () => {
   const { user } = useAuth();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [builderTemplate, setBuilderTemplate] = useState<Template | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Template | null>(null);
 
-  const fetchTemplates = async () => {
+  const fetchTemplates = useCallback(async () => {
     if (!user) return;
+
     setLoading(true);
     const { data, error } = await supabase
-      .from("whatsapp_templates").select("*").order("created_at", { ascending: false });
-    if (error) toast.error("Erro ao carregar templates");
-    else setTemplates((data || []).map((t: any) => ({ ...t, variables: t.variables || [] })));
-    setLoading(false);
-  };
+      .from("whatsapp_templates")
+      .select("*")
+      .order("updated_at", { ascending: false });
 
-  useEffect(() => { fetchTemplates(); }, [user]);
-
-  const extractVariables = (text: string): string[] => {
-    const matches = text.match(/\{[a-z_]+\}/g);
-    return matches ? [...new Set(matches)] : [];
-  };
-
-  const openNew = () => { setEditingId(null); setForm(EMPTY_FORM); setDialogOpen(true); };
-  const openEdit = (t: Template) => {
-    setEditingId(t.id);
-    setForm({ name: t.name, category: t.category, body: t.body, active: t.active });
-    setDialogOpen(true);
-  };
-
-  const handleSave = async () => {
-    if (!form.name.trim() || !form.body.trim()) { toast.error("Nome e corpo são obrigatórios"); return; }
-    if (form.name.length > 100) { toast.error("Nome: máx 100 caracteres"); return; }
-    if (form.body.length > 4096) { toast.error("Mensagem: máx 4096 caracteres"); return; }
-    setSaving(true);
-    const variables = extractVariables(form.body);
-    const payload = {
-      name: form.name.trim(), category: form.category, body: form.body.trim(),
-      variables, active: form.active, user_id: user!.id, updated_at: new Date().toISOString(),
-    };
-    let error;
-    if (editingId) ({ error } = await supabase.from("whatsapp_templates").update(payload).eq("id", editingId));
-    else ({ error } = await supabase.from("whatsapp_templates").insert(payload));
-    if (error) toast.error("Erro ao salvar");
-    else {
-      toast.success(editingId ? "Atualizado!" : "Criado!");
-      setDialogOpen(false);
-      await fetchTemplates();
-      // If editing, update the selected template view
-      if (editingId && selectedTemplate?.id === editingId) {
-        setSelectedTemplate({ ...selectedTemplate, ...payload, variables, id: editingId });
-      }
+    if (error) {
+      toast.error("Erro ao carregar templates");
+    } else {
+      setTemplates((data || []).map((item: any) => ({ ...item, variables: item.variables || [] })));
     }
+
+    setLoading(false);
+  }, [user]);
+
+  useEffect(() => {
+    fetchTemplates();
+  }, [fetchTemplates]);
+
+  const groupedTemplates = useMemo(
+    () =>
+      CATEGORIES.map((category) => ({
+        ...category,
+        items: templates.filter((template) => template.category === category.value),
+      })).filter((category) => category.items.length > 0),
+    [templates],
+  );
+
+  const openBuilderForNew = () => setBuilderTemplate(createEmptyTemplate());
+  const openBuilderForTemplate = (template: Template) => setBuilderTemplate(template);
+
+  const handleSave = async ({ template }: { template: Pick<Template, "id" | "name" | "category" | "body" | "active"> }) => {
+    if (!user) return;
+    if (!template.name.trim() || !template.body.trim()) {
+      toast.error("Preencha nome e mensagem principal");
+      return;
+    }
+
+    setSaving(true);
+    const payload = {
+      name: template.name.trim(),
+      category: template.category,
+      body: template.body.trim(),
+      active: template.active,
+      user_id: user.id,
+      variables: extractVariables(template.body),
+      updated_at: new Date().toISOString(),
+    };
+
+    const isNew = template.id.startsWith("__new__");
+    const query = isNew
+      ? supabase.from("whatsapp_templates").insert(payload).select().single()
+      : supabase.from("whatsapp_templates").update(payload).eq("id", template.id).select().single();
+
+    const { data, error } = await query;
+
+    if (error) {
+      toast.error("Não foi possível salvar o template");
+      setSaving(false);
+      return;
+    }
+
+    const normalized = { ...data, variables: data.variables || [] } as Template;
+    setBuilderTemplate(normalized);
+    toast.success(isNew ? "Template criado no builder" : "Template atualizado");
+    await fetchTemplates();
     setSaving(false);
   };
 
   const handleDelete = async () => {
-    if (!deleteId) return;
-    const { error } = await supabase.from("whatsapp_templates").delete().eq("id", deleteId);
-    if (error) toast.error("Erro ao excluir");
-    else {
-      toast.success("Excluído!");
-      if (selectedTemplate?.id === deleteId) setSelectedTemplate(null);
-      fetchTemplates();
+    if (!deleteTarget) return;
+
+    const { error } = await supabase.from("whatsapp_templates").delete().eq("id", deleteTarget.id);
+
+    if (error) {
+      toast.error("Erro ao excluir template");
+      return;
     }
-    setDeleteId(null);
+
+    if (builderTemplate?.id === deleteTarget.id) setBuilderTemplate(null);
+    setDeleteTarget(null);
+    toast.success("Template excluído");
+    await fetchTemplates();
   };
 
-  const insertVariable = (variable: string) => setForm(p => ({ ...p, body: p.body + variable }));
-  const copyBody = (body: string) => { navigator.clipboard.writeText(body); toast.success("Copiado!"); };
+  if (builderTemplate) {
+    return (
+      <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
+        <FlowCanvas
+          categories={CATEGORIES.map(({ value, label }) => ({ value, label }))}
+          isNew={builderTemplate.id.startsWith("__new__")}
+          onBack={() => setBuilderTemplate(null)}
+          onDelete={builderTemplate.id.startsWith("__new__") ? undefined : () => setDeleteTarget(builderTemplate)}
+          onSave={handleSave}
+          saving={saving}
+          template={builderTemplate}
+        />
+
+        <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir template?</AlertDialogTitle>
+              <AlertDialogDescription>Essa ação remove este fluxo visual permanentemente.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleDelete}>
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </Suspense>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <AnimatePresence mode="wait">
-        {selectedTemplate ? (
-          /* ─── Flow Builder Canvas ─── */
-          <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
-            <FlowCanvas
-              key="flow"
-              templateName={selectedTemplate.name}
-              templateBody={selectedTemplate.body}
-              templateActive={selectedTemplate.active}
-              onBack={() => setSelectedTemplate(null)}
-            />
-          </Suspense>
-        ) : (
-          /* ─── Grid View ─── */
-          <motion.div key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/15 flex items-center justify-center">
-                  <MessageSquare className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-foreground font-display">Templates</h2>
-                  <p className="text-xs text-muted-foreground">Clique em um card para ver o fluxo de automação</p>
-                </div>
-              </div>
-              <Button onClick={openNew} className="gap-2 rounded-xl">
-                <Plus className="w-4 h-4" />
-                Novo
-              </Button>
-            </div>
+    <div className="space-y-8">
+      <div className="flex flex-col gap-4 rounded-[32px] border border-border/60 bg-card/95 p-6 sm:flex-row sm:items-end sm:justify-between sm:p-8">
+        <div>
+          <Badge className="border-gold/25 bg-gold/10 text-gold" variant="outline">
+            <Workflow className="mr-1.5 h-3 w-3" />
+            Templates em cards + fluxo visual
+          </Badge>
+          <h2 className="mt-4 font-display text-3xl font-semibold text-foreground">Templates com autoridade visual</h2>
+          <p className="mt-2 max-w-2xl text-base leading-relaxed text-muted-foreground">
+            Organizados por cards, com abertura direta em um builder visual de nós conectados — sem aparência amadora.
+          </p>
+        </div>
 
-            {/* Grid */}
-            {loading ? (
-              <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
-            ) : templates.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-border bg-card/30 p-16 flex flex-col items-center text-center">
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/15 flex items-center justify-center mb-4">
-                  <FileText className="w-6 h-6 text-primary/40" />
-                </div>
-                <p className="font-bold text-foreground font-display">Nenhum template</p>
-                <p className="text-sm text-muted-foreground mt-1 max-w-xs">Crie seu primeiro modelo de mensagem.</p>
-                <Button onClick={openNew} className="mt-5 gap-2 rounded-xl"><Plus className="w-4 h-4" />Criar template</Button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                <AnimatePresence>
-                  {templates.map(t => (
-                    <TemplateCard key={t.id} template={t} onClick={() => setSelectedTemplate(t)} />
-                  ))}
-                </AnimatePresence>
+        <Button className="gap-2 border border-gold/20 bg-gold text-background hover:bg-gold/90" onClick={openBuilderForNew}>
+          <Workflow className="h-4 w-4" />
+          Novo template visual
+        </Button>
+      </div>
 
-                {/* Add card */}
-                <button
-                  onClick={openNew}
-                  className="rounded-2xl border-2 border-dashed border-border/40 hover:border-primary/30 flex flex-col items-center justify-center gap-2 min-h-[160px] transition-all group"
-                >
-                  <div className="w-10 h-10 rounded-xl border border-dashed border-muted-foreground/20 group-hover:border-primary/30 flex items-center justify-center transition-colors">
-                    <Plus className="w-4 h-4 text-muted-foreground/30 group-hover:text-primary transition-colors" />
+      {loading ? (
+        <div className="flex justify-center py-20">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      ) : templates.length === 0 ? (
+        <EmptyState onCreate={openBuilderForNew} />
+      ) : (
+        <div className="space-y-10">
+          {groupedTemplates.map((group) => {
+            const Icon = group.icon;
+            return (
+              <section key={group.value} className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-gold/20 bg-gold/10 text-gold">
+                    <Icon className="h-4 w-4" />
                   </div>
-                  <span className="text-[11px] text-muted-foreground/40 group-hover:text-primary/60 transition-colors">Adicionar</span>
-                </button>
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ─── Create / Edit Dialog ─── */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 font-display">
-              <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                {editingId ? <Pencil className="w-3.5 h-3.5 text-primary" /> : <Plus className="w-3.5 h-3.5 text-primary" />}
-              </div>
-              {editingId ? "Editar Template" : "Novo Template"}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 mt-1">
-            <div className="space-y-1.5">
-              <Label className="text-[11px] uppercase tracking-widest text-muted-foreground">Nome</Label>
-              <Input placeholder="Ex: Confirmação de compra" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} maxLength={100} />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[11px] uppercase tracking-widest text-muted-foreground">Categoria</Label>
-              <Select value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {CATEGORIES.map(c => {
-                    const Icon = c.icon;
-                    return (
-                      <SelectItem key={c.value} value={c.value}>
-                        <span className="flex items-center gap-2">
-                          <Icon className="w-3.5 h-3.5" style={{ color: `hsl(${c.color})` }} />
-                          {c.label}
-                        </span>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[11px] uppercase tracking-widest text-muted-foreground">Mensagem</Label>
-              <Textarea
-                placeholder="Olá {nome}, obrigado por adquirir o {produto}!"
-                value={form.body} onChange={e => setForm(f => ({ ...f, body: e.target.value }))}
-                rows={4} maxLength={4096} className="font-mono text-xs"
-              />
-              <p className="text-[10px] text-muted-foreground text-right tabular-nums">{form.body.length}/4096</p>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[11px] uppercase tracking-widest text-muted-foreground">Variáveis</Label>
-              <div className="grid grid-cols-4 gap-1.5">
-                {VARIABLE_OPTIONS.map(v => {
-                  const Icon = v.icon;
-                  return (
-                    <button
-                      key={v.value} type="button"
-                      className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg text-[10px] border border-border/50 bg-card hover:bg-primary/5 hover:border-primary/30 transition-all group"
-                      onClick={() => insertVariable(v.value)}
-                    >
-                      <Icon className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-                      <span className="text-muted-foreground group-hover:text-foreground font-medium">{v.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            {form.body.trim() && (
-              <div className="space-y-1.5">
-                <Label className="text-[11px] uppercase tracking-widest text-muted-foreground flex items-center gap-1"><Eye className="w-3 h-3" />Preview</Label>
-                <div className="rounded-xl border border-primary/15 bg-primary/[0.03] p-3">
-                  <p className="text-xs text-foreground/80 whitespace-pre-wrap leading-relaxed">{previewBody(form.body)}</p>
+                  <div>
+                    <h3 className="font-display text-xl font-semibold text-foreground">{group.label}</h3>
+                    <p className="text-sm text-muted-foreground">{group.items.length} template{group.items.length > 1 ? "s" : ""} nesta categoria</p>
+                  </div>
                 </div>
-              </div>
-            )}
-            <div className="flex items-center gap-3">
-              <Switch checked={form.active} onCheckedChange={v => setForm(f => ({ ...f, active: v }))} />
-              <Label className="text-sm">Ativo</Label>
-            </div>
-          </div>
-          <DialogFooter className="mt-2 gap-2">
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSave} disabled={saving} className="gap-2">
-              {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-              {editingId ? "Salvar" : "Criar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
-      {/* Delete */}
-      <AlertDialog open={!!deleteId} onOpenChange={open => !open && setDeleteId(null)}>
+                <div className="grid grid-cols-1 gap-5 xl:grid-cols-2 2xl:grid-cols-3">
+                  {group.items.map((template) => (
+                    <TemplateCard
+                      key={template.id}
+                      onDelete={setDeleteTarget}
+                      onOpen={openBuilderForTemplate}
+                      template={template}
+                    />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      )}
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir template?</AlertDialogTitle>
-            <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+            <AlertDialogDescription>Essa ação remove este fluxo visual permanentemente.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleDelete}>
+              Excluir
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
