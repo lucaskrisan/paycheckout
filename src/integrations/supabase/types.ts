@@ -1736,6 +1736,33 @@ export type Database = {
         }
         Relationships: []
       }
+      utmify_integrations: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          token?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       webhook_audit_log: {
         Row: {
           block_reason: string | null
