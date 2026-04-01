@@ -49,6 +49,30 @@ Deno.serve(async (req) => {
   try {
     console.log('[create-pix-payment] request received');
 
+    // --- Rate Limiting ---
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || req.headers.get('cf-connecting-ip') || 'unknown';
+
+    const supabaseRl = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+
+    const { data: rlData } = await supabaseRl.rpc('check_rate_limit', {
+      p_identifier: clientIp,
+      p_action: 'create-pix-payment',
+      p_max_hits: 5,
+      p_window_seconds: 300,
+    });
+
+    if (rlData === true) {
+      console.warn(`[create-pix-payment] Rate limited IP: ${clientIp}`);
+      return new Response(
+        JSON.stringify({ error: 'Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // API key will be resolved per-producer below
     let PAGARME_API_KEY: string | null = null;
 
