@@ -34,26 +34,37 @@ Deno.serve(async (req) => {
     }
 
     const userId = claimsData.claims.sub as string;
-    const instanceId = `pantera_${userId.substring(0, 8)}`;
+    const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
+    const instanceId = `pantera_${suffix}`;
 
     const EVOLUTION_API_URL = Deno.env.get("EVOLUTION_API_URL")!;
     const EVOLUTION_API_KEY = Deno.env.get("EVOLUTION_API_KEY")!;
 
-    // Delete stale instance before creating a new one
-    try {
-      const delRes = await fetch(`${EVOLUTION_API_URL}/instance/logout/${instanceId}`, {
-        method: "DELETE",
-        headers: { apikey: EVOLUTION_API_KEY },
-      });
-      await delRes.text();
-    } catch (_) { /* ignore */ }
-    try {
-      const delRes2 = await fetch(`${EVOLUTION_API_URL}/instance/delete/${instanceId}`, {
-        method: "DELETE",
-        headers: { apikey: EVOLUTION_API_KEY },
-      });
-      await delRes2.text();
-    } catch (_) { /* ignore */ }
+    // Try to clean up any existing instance for this tenant
+    const serviceClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+    const { data: existing } = await serviceClient
+      .from("whatsapp_sessions")
+      .select("instance_id")
+      .eq("tenant_id", userId)
+      .maybeSingle();
+
+    if (existing?.instance_id) {
+      try {
+        await fetch(`${EVOLUTION_API_URL}/instance/logout/${existing.instance_id}`, {
+          method: "DELETE",
+          headers: { apikey: EVOLUTION_API_KEY },
+        }).then(r => r.text());
+      } catch (_) {}
+      try {
+        await fetch(`${EVOLUTION_API_URL}/instance/delete/${existing.instance_id}`, {
+          method: "DELETE",
+          headers: { apikey: EVOLUTION_API_KEY },
+        }).then(r => r.text());
+      } catch (_) {}
+    }
 
     const evoRes = await fetch(`${EVOLUTION_API_URL}/instance/create`, {
       method: "POST",
@@ -79,11 +90,6 @@ Deno.serve(async (req) => {
     }
 
     const qrcode = evoData?.qrcode?.base64 || null;
-
-    const serviceClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
 
     await serviceClient.from("whatsapp_sessions").upsert(
       {
