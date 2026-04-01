@@ -19,11 +19,9 @@ const integrations = [
   { icon: Link2, label: "Zapier", color: "#FF4A00" },
 ];
 
-/* ── Central Hub Visual ── */
 function IntegrationHub() {
   return (
-    <div className="relative w-full max-w-[500px] mx-auto aspect-square hidden lg:flex items-center justify-center">
-      {/* Orbit rings */}
+    <div className="relative w-full max-w-[500px] mx-auto aspect-square hidden lg:flex items-center justify-center" aria-hidden="true">
       {[160, 220].map((r, ri) => (
         <motion.div
           key={ri}
@@ -34,7 +32,6 @@ function IntegrationHub() {
         />
       ))}
 
-      {/* Center Panttera hub */}
       <motion.div
         className="relative z-10 w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-[#0B0B0D] border border-primary/20 flex items-center justify-center shadow-[0_0_60px_rgba(0,230,118,0.2)]"
         animate={{ scale: [1, 1.05, 1] }}
@@ -43,7 +40,6 @@ function IntegrationHub() {
         <span className="text-3xl">🐆</span>
       </motion.div>
 
-      {/* Orbiting icons */}
       {integrations.slice(0, 8).map((item, i) => {
         const angle = (i / 8) * Math.PI * 2 - Math.PI / 2;
         const radius = 160;
@@ -73,11 +69,8 @@ function IntegrationHub() {
         );
       })}
 
-      {/* Connection lines pulsing */}
       {integrations.slice(0, 8).map((_, i) => {
         const angle = (i / 8) * Math.PI * 2 - Math.PI / 2;
-        const x2 = Math.cos(angle) * 140;
-        const y2 = Math.sin(angle) * 140;
         return (
           <motion.div
             key={`line-${i}`}
@@ -104,15 +97,13 @@ function IntegrationHub() {
 }
 
 const IntegrationsSection = () => (
-  <section className="relative z-10 py-28 lg:py-36 overflow-hidden">
-    {/* Center glow */}
-    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+  <section aria-label="Integrações com gateways e plataformas" className="relative z-10 py-28 lg:py-36 overflow-hidden">
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none" aria-hidden="true">
       <div className="w-[500px] h-[500px] bg-[radial-gradient(circle,_rgba(0,230,118,0.06)_0%,_transparent_60%)] blur-3xl" />
     </div>
 
     <div className="container max-w-7xl mx-auto px-6">
       <div className="grid lg:grid-cols-2 gap-12 items-center">
-        {/* Left — copy + grid */}
         <motion.div
           initial={{ opacity: 0, y: 25 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -135,7 +126,6 @@ const IntegrationsSection = () => (
             </p>
           </div>
 
-          {/* Mobile-only icon grid */}
           <div className="grid grid-cols-4 md:grid-cols-6 gap-4 lg:hidden">
             {integrations.map((item, i) => (
               <motion.div
@@ -147,7 +137,7 @@ const IntegrationsSection = () => (
                 transition={{ delay: i * 0.04, duration: 0.4 }}
               >
                 <div className="w-14 h-14 rounded-xl bg-[#141417] border border-white/[0.06] flex items-center justify-center">
-                  <item.icon className="w-5 h-5 opacity-60" style={{ color: item.color }} />
+                  <item.icon className="w-5 h-5 opacity-60" style={{ color: item.color }} aria-hidden="true" />
                 </div>
                 <span className="text-[8px] text-[#5A5A65] font-semibold uppercase tracking-wider">
                   {item.label}
@@ -168,7 +158,6 @@ const IntegrationsSection = () => (
           </motion.p>
         </motion.div>
 
-        {/* Right — Hub visual (desktop) */}
         <IntegrationHub />
       </div>
     </div>

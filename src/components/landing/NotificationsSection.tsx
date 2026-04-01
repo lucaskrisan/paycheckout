@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Bell, Volume2, Smartphone } from "lucide-react";
+import { Bell, Volume2 } from "lucide-react";
 
 const notifications = [
   { name: "Lucas M.", value: "R$ 497,00", time: "agora", method: "PIX", emoji: "🔥" },
@@ -8,10 +8,9 @@ const notifications = [
   { name: "Julia S.", value: "R$ 897,00", time: "8 min", method: "PIX", emoji: "🎯" },
 ];
 
-/* ── Phone with Push Notifications ── */
 function NotificationPhoneMockup() {
   return (
-    <div className="relative">
+    <div className="relative" aria-hidden="true">
       <motion.div
         className="max-w-[300px] mx-auto"
         initial={{ opacity: 0, y: 40 }}
@@ -19,16 +18,12 @@ function NotificationPhoneMockup() {
         viewport={{ once: true }}
         transition={{ duration: 0.9, delay: 0.2 }}
       >
-        {/* Phone frame */}
         <div className="bg-gradient-to-b from-[#1A1A1E] to-[#141417] rounded-[32px] border border-white/[0.08] p-2.5 shadow-[0_30px_80px_rgba(0,0,0,0.5)]">
-          {/* Notch */}
           <div className="h-7 flex items-center justify-center">
             <div className="w-24 h-5 bg-black rounded-full" />
           </div>
 
-          {/* Lock screen */}
           <div className="bg-[#0B0B0D] rounded-2xl overflow-hidden min-h-[420px] relative">
-            {/* Status bar */}
             <div className="flex items-center justify-between px-5 py-2">
               <span className="text-[9px] text-white/60 font-mono font-bold">14:32</span>
               <div className="flex items-center gap-1">
@@ -38,13 +33,11 @@ function NotificationPhoneMockup() {
               </div>
             </div>
 
-            {/* Time & date */}
             <div className="text-center pt-3 pb-5">
               <p className="text-[32px] font-black text-white font-mono tracking-tight">14:32</p>
               <p className="text-[9px] text-[#6A6A75] font-medium">Terça-feira, 31 de março</p>
             </div>
 
-            {/* Push notifications stack */}
             <div className="px-3 space-y-2">
               {notifications.map((n, i) => (
                 <motion.div
@@ -74,7 +67,6 @@ function NotificationPhoneMockup() {
               ))}
             </div>
 
-            {/* Bottom swipe indicator */}
             <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
               <div className="w-32 h-1 bg-white/20 rounded-full" />
             </div>
@@ -82,7 +74,6 @@ function NotificationPhoneMockup() {
         </div>
       </motion.div>
 
-      {/* Sound wave rings */}
       {[0, 1, 2].map((i) => (
         <motion.div
           key={i}
@@ -92,14 +83,13 @@ function NotificationPhoneMockup() {
         />
       ))}
 
-      {/* Glow */}
       <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[60%] h-[40px] bg-[radial-gradient(ellipse,_rgba(0,230,118,0.15)_0%,_transparent_70%)] blur-xl" />
     </div>
   );
 }
 
 const NotificationsSection = () => (
-  <section className="relative z-10 py-28 lg:py-36">
+  <section aria-label="Notificações de vendas em tempo real" className="relative z-10 py-28 lg:py-36">
     <div className="container max-w-7xl mx-auto px-6">
       <div className="grid lg:grid-cols-2 gap-16 items-center">
         <motion.div
@@ -110,7 +100,7 @@ const NotificationsSection = () => (
           transition={{ duration: 0.7 }}
         >
           <div className="inline-flex items-center gap-2 bg-primary/[0.06] border border-primary/15 rounded-full px-4 py-1.5">
-            <Bell className="w-3.5 h-3.5 text-primary" />
+            <Bell className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
             <span className="text-[11px] font-semibold text-primary uppercase tracking-[0.15em]">
               Tempo Real
             </span>
@@ -129,14 +119,13 @@ const NotificationsSection = () => (
           </p>
 
           <div className="flex items-center gap-3 bg-[#141417] border border-white/[0.06] rounded-xl px-5 py-3 w-fit">
-            <Volume2 className="w-5 h-5 text-primary animate-pulse" />
+            <Volume2 className="w-5 h-5 text-primary animate-pulse" aria-hidden="true" />
             <div>
               <p className="text-[12px] font-bold text-white">Ka-CHING! 🔔</p>
               <p className="text-[10px] text-[#6A6A75]">Dopamina de empreendedor em cada venda</p>
             </div>
           </div>
 
-          {/* Stats */}
           <div className="flex gap-6 pt-2">
             {[
               { value: "< 1s", label: "Latência" },
@@ -151,7 +140,6 @@ const NotificationsSection = () => (
           </div>
         </motion.div>
 
-        {/* Right — Phone Mockup */}
         <div className="relative hidden lg:block">
           <NotificationPhoneMockup />
         </div>

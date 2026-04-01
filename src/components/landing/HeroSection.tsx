@@ -11,11 +11,14 @@ const HeroSection = () => {
   const [email, setEmail] = useState("");
 
   return (
-    <section className="relative z-10 overflow-hidden min-h-[100vh] flex flex-col justify-center">
+    <section
+      aria-label="Seção principal — Checkout de Alta Conversão"
+      className="relative z-10 overflow-hidden min-h-[100vh] flex flex-col justify-center"
+    >
       <HeroSparkles />
 
       {/* Multi-layer aurora glow */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <motion.div
           className="absolute -top-40 left-1/2 -translate-x-1/2 w-[1600px] h-[900px] opacity-30"
           style={{
@@ -54,7 +57,7 @@ const HeroSection = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.3, duration: 0.5 }}
             >
-              <Sparkles className="w-3.5 h-3.5 text-primary" />
+              <Sparkles className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
               <span className="text-[11px] font-semibold text-primary uppercase tracking-[0.15em]">
                 Plataforma #1 de Checkout
               </span>
@@ -66,11 +69,14 @@ const HeroSection = () => {
                 className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/30 to-gold/20 blur-3xl"
                 animate={{ scale: [1, 1.4, 1], opacity: [0.3, 0.6, 0.3] }}
                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                aria-hidden="true"
               />
               <motion.img
                 src={panteraMascot}
-                alt="Panttera"
+                alt="Panttera — Plataforma de Checkout de Alta Conversão para Infoprodutores"
                 className="relative w-28 h-28 md:w-36 md:h-36 drop-shadow-[0_0_50px_rgba(0,230,118,0.4)]"
+                width={144}
+                height={144}
                 initial={{ opacity: 0, scale: 0.5, rotate: -15 }}
                 animate={{ opacity: 1, scale: 1, rotate: 0 }}
                 transition={{ duration: 1, delay: 0.2, type: "spring", stiffness: 100 }}
@@ -109,9 +115,15 @@ const HeroSection = () => {
             </p>
 
             {/* Email capture */}
-            <div className="flex flex-col sm:flex-row gap-3 max-w-md">
+            <form
+              className="flex flex-col sm:flex-row gap-3 max-w-md"
+              onSubmit={(e) => e.preventDefault()}
+              aria-label="Criar conta grátis"
+            >
               <div className="relative flex-1">
+                <label htmlFor="hero-email" className="sr-only">Seu melhor e-mail</label>
                 <input
+                  id="hero-email"
                   type="email"
                   placeholder="Seu melhor e-mail"
                   value={email}
@@ -122,10 +134,10 @@ const HeroSection = () => {
               <Link to={`/login?signup=true${email ? `&email=${encodeURIComponent(email)}` : ""}`}>
                 <Button className="h-[56px] px-8 bg-gradient-to-r from-primary to-[#00C853] hover:from-[#00C853] hover:to-primary text-primary-foreground font-extrabold rounded-xl text-[14px] shadow-[0_4px_40px_rgba(0,230,118,0.35)] hover:shadow-[0_8px_60px_rgba(0,230,118,0.55)] transition-all duration-500 w-full sm:w-auto whitespace-nowrap group">
                   Criar conta grátis
-                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1.5 transition-transform" />
+                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1.5 transition-transform" aria-hidden="true" />
                 </Button>
               </Link>
-            </div>
+            </form>
 
             {/* Trust signals */}
             <div className="flex items-center gap-6 pt-1">
@@ -135,7 +147,7 @@ const HeroSection = () => {
                 { icon: Sparkles, label: "100% grátis" },
               ].map((t) => (
                 <span key={t.label} className="flex items-center gap-2 text-[11px] text-[#6A6A75] font-medium">
-                  <t.icon className="w-3 h-3 text-primary/50" />
+                  <t.icon className="w-3 h-3 text-primary/50" aria-hidden="true" />
                   {t.label}
                 </span>
               ))}
@@ -143,7 +155,7 @@ const HeroSection = () => {
           </motion.div>
 
           {/* Right — Laptop mockup */}
-          <div className="relative hidden lg:block">
+          <div className="relative hidden lg:block" aria-hidden="true">
             <HeroLaptopMockup />
 
             {/* Floating sale notification */}
@@ -188,7 +200,7 @@ const HeroSection = () => {
       </div>
 
       {/* Partners bar */}
-      <div className="border-t border-white/[0.04] bg-white/[0.01] backdrop-blur-sm py-8">
+      <aside className="border-t border-white/[0.04] bg-white/[0.01] backdrop-blur-sm py-8" aria-label="Integrações parceiras">
         <div className="container max-w-7xl mx-auto px-6">
           <p className="text-center text-[10px] text-[#4A4A55] uppercase tracking-[0.3em] mb-5 font-semibold">
             Integrado com as maiores plataformas
@@ -207,7 +219,7 @@ const HeroSection = () => {
             ))}
           </div>
         </div>
-      </div>
+      </aside>
     </section>
   );
 };

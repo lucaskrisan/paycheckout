@@ -6,14 +6,21 @@ const LandingFooter = () => (
     <div className="container max-w-7xl mx-auto px-6">
       {/* Top row */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-10">
-        <div className="flex items-center gap-3">
-          <img src={panteraMascot} alt="Panttera" className="w-9 h-9 drop-shadow-[0_0_15px_rgba(0,230,118,0.3)]" />
+        <Link to="/" className="flex items-center gap-3" aria-label="Panttera — Voltar ao início">
+          <img
+            src={panteraMascot}
+            alt="Logo Panttera"
+            className="w-9 h-9 drop-shadow-[0_0_15px_rgba(0,230,118,0.3)]"
+            width={36}
+            height={36}
+            loading="lazy"
+          />
           <span className="text-base font-bold text-foreground">
             Pant<span className="text-transparent bg-clip-text" style={{ backgroundImage: "linear-gradient(90deg, #00E676, #D4AF37)" }}>tera</span>
           </span>
-        </div>
+        </Link>
 
-        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm">
+        <nav className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm" aria-label="Links legais">
           <Link to="/privacidade" className="text-muted-foreground hover:text-primary transition-colors duration-300">
             Política de Privacidade
           </Link>
@@ -29,7 +36,7 @@ const LandingFooter = () => (
           <Link to="/produtos-proibidos" className="text-muted-foreground hover:text-primary transition-colors duration-300">
             Produtos Proibidos
           </Link>
-        </div>
+        </nav>
       </div>
 
       <div className="border-t border-white/[0.06] mb-8" />
