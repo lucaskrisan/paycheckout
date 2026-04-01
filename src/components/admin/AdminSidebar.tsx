@@ -87,7 +87,6 @@ const analiseItems = [
 const configItems = [
   { title: "Gateways", url: "/admin/gateway-management", icon: CreditCard },
   { title: "Integrações", url: "/admin/integrations", icon: Zap },
-  { title: "WhatsApp", url: "/admin/whatsapp", icon: MessageSquare },
   
   { title: "Domínios", url: "/admin/domains", icon: Globe },
   
@@ -104,6 +103,7 @@ const configSuperAdminOnly = [
 
 // 6. SUPER ADMIN — visível apenas para super_admin
 const superAdminItems = [
+  { title: "WhatsApp", url: "/admin/whatsapp", icon: MessageSquare },
   { title: "Revisão Produtos", url: "/admin/product-review", icon: ShieldCheck },
   { title: "Painel Plataforma", url: "/admin/platform", icon: Crown },
   { title: "Billing", url: "/admin/billing", icon: Wallet },
