@@ -71,6 +71,12 @@ export function useCheckoutPresence(
       const ttlMs = 25000;
       const allowed = ownerIdsRef.current;
 
+      // SECURITY: In watch mode with no product IDs, show 0
+      if (!allowed && modeRef.current === "watch") {
+        setOnlineCount(0);
+        return;
+      }
+
       for (const [id, entry] of heartbeatMapRef.current.entries()) {
         if (now - entry.ts > ttlMs) heartbeatMapRef.current.delete(id);
       }
