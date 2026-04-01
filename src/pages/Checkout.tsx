@@ -51,8 +51,6 @@ interface CheckoutSettings {
   primary_color: string | null;
   custom_css: string | null;
   company_name: string | null;
-  crisp_website_id: string | null;
-  crisp_enabled_checkout: boolean;
 }
 
 interface CouponData {
