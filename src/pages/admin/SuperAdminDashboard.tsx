@@ -20,7 +20,7 @@ import {
   Users, DollarSign, ShoppingCart, TrendingUp, Search, ShieldCheck, ShieldX, Loader2,
   Crown, Eye, ArrowLeft, CreditCard, AlertTriangle, Ban, CheckCircle, RefreshCcw,
   Activity, Webhook, Mail, Package, BarChart3, Wallet, Server, UserPlus, Trash2, Send,
-  Globe,
+  Globe, Shield, Clock,
 } from "lucide-react";
 import { useCheckoutPresence } from "@/hooks/useCheckoutPresence";
 import {
