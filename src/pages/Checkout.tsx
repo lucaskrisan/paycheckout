@@ -146,7 +146,7 @@ const Checkout = () => {
         if (p.user_id) {
           // Check if producer is blocked
           const [{ data: settings }, { data: billingAcc }, { data: ownerRoles }] = await Promise.all([
-            supabase.from("checkout_settings").select("logo_url, primary_color, custom_css, company_name, crisp_website_id, crisp_enabled_checkout").eq("user_id", p.user_id).maybeSingle(),
+            supabase.from("checkout_settings").select("logo_url, primary_color, custom_css, company_name").eq("user_id", p.user_id).maybeSingle(),
             supabase.from("billing_accounts").select("blocked").eq("user_id", p.user_id).maybeSingle(),
             supabase.from("user_roles").select("role").eq("user_id", p.user_id).eq("role", "super_admin"),
           ]);
