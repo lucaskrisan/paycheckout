@@ -342,8 +342,6 @@ const Login = () => {
                         Esqueceu?
                       </button>
                     )}
-                      </button>
-                    )}
                   </div>
                   <div className="relative">
                     <Input
