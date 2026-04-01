@@ -1,5 +1,7 @@
 // @ts-nocheck
-import { useState, useEffect, useRef, useCallback } from "react";
+import { lazy, Suspense, useState, useEffect, useRef, useCallback } from "react";
+
+const WhatsAppTemplates = lazy(() => import("@/components/admin/WhatsAppTemplates"));
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
