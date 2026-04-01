@@ -39,6 +39,14 @@ Deno.serve(async (req) => {
     const EVOLUTION_API_URL = Deno.env.get("EVOLUTION_API_URL")!;
     const EVOLUTION_API_KEY = Deno.env.get("EVOLUTION_API_KEY")!;
 
+    // Delete stale instance before creating a new one
+    try {
+      await fetch(`${EVOLUTION_API_URL}/instance/delete/${instanceId}`, {
+        method: "DELETE",
+        headers: { apikey: EVOLUTION_API_KEY },
+      });
+    } catch (_) { /* ignore if instance doesn't exist */ }
+
     const evoRes = await fetch(`${EVOLUTION_API_URL}/instance/create`, {
       method: "POST",
       headers: {
