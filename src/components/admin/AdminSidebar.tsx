@@ -13,6 +13,7 @@ import {
   Wallet,
   Bell,
   MessageCircle,
+  MessageSquare,
   ShieldCheck,
   ShieldBan,
   Webhook,
