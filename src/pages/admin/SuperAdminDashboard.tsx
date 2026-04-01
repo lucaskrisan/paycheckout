@@ -20,7 +20,7 @@ import {
   Users, DollarSign, ShoppingCart, TrendingUp, Search, ShieldCheck, ShieldX, Loader2,
   Crown, Eye, ArrowLeft, CreditCard, AlertTriangle, Ban, CheckCircle, RefreshCcw,
   Activity, Webhook, Mail, Package, BarChart3, Wallet, Server, UserPlus, Trash2, Send,
-  Globe,
+  Globe, Shield, Clock,
 } from "lucide-react";
 import { useCheckoutPresence } from "@/hooks/useCheckoutPresence";
 import {
@@ -113,6 +113,8 @@ const SuperAdminDashboard = () => {
   const [billingTxs, setBillingTxs] = useState<BillingTx[]>([]);
   const [emailLogs, setEmailLogs] = useState<any[]>([]);
   const [webhookEndpoints, setWebhookEndpoints] = useState<any[]>([]);
+  const [rateLimitHits, setRateLimitHits] = useState<any[]>([]);
+  const [webhookEndpoints, setWebhookEndpoints] = useState<any[]>([]);
 
   // UI state
   const [loading, setLoading] = useState(true);
@@ -143,6 +145,7 @@ const SuperAdminDashboard = () => {
       { data: txData },
       { data: emailData },
       { data: webhooksData },
+      { data: rateLimitData },
     ] = await Promise.all([
       supabase.from("user_roles").select("user_id, role"),
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
@@ -153,6 +156,7 @@ const SuperAdminDashboard = () => {
       supabase.from("billing_transactions").select("*").order("created_at", { ascending: false }).limit(200),
       supabase.from("email_logs").select("id, email_type, status, to_email, to_name, subject, created_at, user_id, cost_estimate").order("created_at", { ascending: false }).limit(100),
       supabase.from("webhook_endpoints").select("*"),
+      supabase.from("rate_limit_hits").select("*").order("created_at", { ascending: false }).limit(500),
     ]);
 
     // Fetch emails from auth.users via edge function
@@ -227,6 +231,7 @@ const SuperAdminDashboard = () => {
     // Logs
     setEmailLogs((emailData || []).map((e: any) => ({ ...e, producer_name: nameMap.get(e.user_id) || "—" })));
     setWebhookEndpoints(webhooksData || []);
+    setRateLimitHits(rateLimitData || []);
 
     setLoading(false);
   }, []);
@@ -458,6 +463,7 @@ const SuperAdminDashboard = () => {
         <TabsList className="flex-wrap">
           <TabsTrigger value="producers"><Users className="w-4 h-4 mr-1.5" />Produtores</TabsTrigger>
           <TabsTrigger value="financial"><Wallet className="w-4 h-4 mr-1.5" />Financeiro</TabsTrigger>
+          <TabsTrigger value="security"><Shield className="w-4 h-4 mr-1.5" />Segurança</TabsTrigger>
           <TabsTrigger value="logs"><Activity className="w-4 h-4 mr-1.5" />Logs & Auditoria</TabsTrigger>
           <TabsTrigger value="api-costs"><Server className="w-4 h-4 mr-1.5" />Custos APIs</TabsTrigger>
           <TabsTrigger value="users"><ShieldCheck className="w-4 h-4 mr-1.5" />Gerenciar Usuários</TabsTrigger>
@@ -670,6 +676,145 @@ const SuperAdminDashboard = () => {
                 </Table>
               </CardContent>
             </Card>
+          </div>
+        </TabsContent>
+
+        {/* ═══ SECURITY TAB ═══ */}
+        <TabsContent value="security">
+          <div className="space-y-4">
+            {/* Security KPIs */}
+            {(() => {
+              const now = new Date();
+              const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+              const last24h = rateLimitHits.filter(h => new Date(h.created_at) >= todayStart);
+              const blockedToday = last24h.filter(h => h.blocked);
+              const totalAttemptsToday = last24h.length;
+
+              // Top blocked IPs
+              const ipCounts: Record<string, number> = {};
+              blockedToday.forEach(h => { ipCounts[h.identifier] = (ipCounts[h.identifier] || 0) + 1; });
+              const topIps = Object.entries(ipCounts).sort((a, b) => b[1] - a[1]).slice(0, 10);
+
+              // By action
+              const actionCounts: Record<string, { total: number; blocked: number }> = {};
+              last24h.forEach(h => {
+                if (!actionCounts[h.action]) actionCounts[h.action] = { total: 0, blocked: 0 };
+                actionCounts[h.action].total++;
+                if (h.blocked) actionCounts[h.action].blocked++;
+              });
+
+              // Recent blocked
+              const recentBlocked = rateLimitHits.filter(h => h.blocked).slice(0, 50);
+
+              return (
+                <>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[
+                      { icon: Shield, label: "Requisições Hoje", value: String(totalAttemptsToday), color: "text-primary" },
+                      { icon: Ban, label: "Bloqueios Hoje", value: String(blockedToday.length), color: blockedToday.length > 0 ? "text-destructive" : "text-emerald-500" },
+                      { icon: AlertTriangle, label: "IPs Suspeitos", value: String(topIps.length), color: topIps.length > 0 ? "text-amber-500" : "text-emerald-500" },
+                      { icon: CheckCircle, label: "Taxa de Bloqueio", value: totalAttemptsToday > 0 ? `${((blockedToday.length / totalAttemptsToday) * 100).toFixed(1)}%` : "0%", color: "text-muted-foreground" },
+                    ].map((kpi, i) => (
+                      <Card key={i}>
+                        <CardContent className="p-4 flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-muted"><kpi.icon className={`w-5 h-5 ${kpi.color}`} /></div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">{kpi.label}</p>
+                            <p className="text-lg font-bold text-foreground">{kpi.value}</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+
+                  {/* By endpoint */}
+                  <Card>
+                    <CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><Activity className="w-4 h-4" /> Requisições por Endpoint (Hoje)</CardTitle></CardHeader>
+                    <CardContent>
+                      {Object.keys(actionCounts).length === 0 ? (
+                        <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma requisição registrada hoje</p>
+                      ) : (
+                        <Table>
+                          <TableHeader><TableRow>
+                            <TableHead>Endpoint</TableHead>
+                            <TableHead className="text-right">Total</TableHead>
+                            <TableHead className="text-right">Bloqueados</TableHead>
+                            <TableHead className="text-right">Taxa</TableHead>
+                          </TableRow></TableHeader>
+                          <TableBody>
+                            {Object.entries(actionCounts).sort((a, b) => b[1].blocked - a[1].blocked).map(([action, counts]) => (
+                              <TableRow key={action}>
+                                <TableCell className="font-mono text-xs">{action}</TableCell>
+                                <TableCell className="text-right">{counts.total}</TableCell>
+                                <TableCell className="text-right">
+                                  <Badge variant={counts.blocked > 0 ? "destructive" : "secondary"} className="text-xs">{counts.blocked}</Badge>
+                                </TableCell>
+                                <TableCell className="text-right text-xs text-muted-foreground">
+                                  {counts.total > 0 ? `${((counts.blocked / counts.total) * 100).toFixed(1)}%` : "0%"}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Top blocked IPs */}
+                  {topIps.length > 0 && (
+                    <Card>
+                      <CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><Ban className="w-4 h-4 text-destructive" /> IPs Mais Bloqueados (Hoje)</CardTitle></CardHeader>
+                      <CardContent>
+                        <Table>
+                          <TableHeader><TableRow>
+                            <TableHead>IP</TableHead>
+                            <TableHead className="text-right">Bloqueios</TableHead>
+                          </TableRow></TableHeader>
+                          <TableBody>
+                            {topIps.map(([ip, count]) => (
+                              <TableRow key={ip}>
+                                <TableCell className="font-mono text-xs">{ip}</TableCell>
+                                <TableCell className="text-right"><Badge variant="destructive" className="text-xs">{count}</Badge></TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Recent blocked attempts */}
+                  <Card>
+                    <CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><Clock className="w-4 h-4" /> Últimos Bloqueios</CardTitle></CardHeader>
+                    <CardContent>
+                      {recentBlocked.length === 0 ? (
+                        <div className="text-center py-8">
+                          <CheckCircle className="w-10 h-10 mx-auto mb-2 text-emerald-500" />
+                          <p className="text-sm text-muted-foreground">Nenhum bloqueio registrado — sistema seguro ✅</p>
+                        </div>
+                      ) : (
+                        <Table>
+                          <TableHeader><TableRow>
+                            <TableHead>Quando</TableHead>
+                            <TableHead>IP / Identificador</TableHead>
+                            <TableHead>Endpoint</TableHead>
+                          </TableRow></TableHeader>
+                          <TableBody>
+                            {recentBlocked.map((h: any) => (
+                              <TableRow key={h.id}>
+                                <TableCell className="text-xs text-muted-foreground">{new Date(h.created_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" })}</TableCell>
+                                <TableCell className="font-mono text-xs">{h.identifier}</TableCell>
+                                <TableCell className="text-xs"><Badge variant="outline">{h.action}</Badge></TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </CardContent>
+                  </Card>
+                </>
+              );
+            })()}
           </div>
         </TabsContent>
 
