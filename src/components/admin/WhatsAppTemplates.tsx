@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+
+const FlowCanvas = lazy(() => import("./whatsapp-flow/FlowCanvas"));
 
 interface Template {
   id: string; name: string; category: string; body: string;
