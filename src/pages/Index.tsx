@@ -54,44 +54,6 @@ const Index = () => {
     };
   }, [user, loading, navigate, resolved]);
 
-  // Load Crisp chat on landing page — check if enabled
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadCrisp = async () => {
-      // Check super admin's crisp_enabled_landing setting
-      // The landing page uses the hardcoded super admin Crisp ID
-      const { data } = await supabase
-        .from("checkout_settings")
-        .select("crisp_enabled_landing")
-        .limit(1)
-        .maybeSingle();
-
-      const enabled = (data as any)?.crisp_enabled_landing ?? true;
-      if (cancelled || !enabled) return;
-
-      const crispId = "1d36332d-054f-443b-9a5d-1980537839eb";
-      if ((window as any).CRISP_WEBSITE_ID) return;
-
-      (window as any).$crisp = [];
-      (window as any).CRISP_WEBSITE_ID = crispId;
-      const s = document.createElement("script");
-      s.src = "https://client.crisp.chat/l.js";
-      s.async = true;
-      document.head.appendChild(s);
-    };
-
-    loadCrisp();
-
-    return () => {
-      cancelled = true;
-      delete (window as any).$crisp;
-      delete (window as any).CRISP_WEBSITE_ID;
-      document.querySelectorAll('script[src*="crisp.chat"]').forEach(el => el.remove());
-      document.querySelectorAll('[id^="crisp"]').forEach(el => el.remove());
-      document.querySelectorAll('.crisp-client').forEach(el => el.remove());
-    };
-  }, []);
 
   if (loading || (user && resolving && !resolved)) {
     return (

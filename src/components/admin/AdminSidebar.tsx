@@ -88,7 +88,7 @@ const configItems = [
   { title: "Gateways", url: "/admin/gateway-management", icon: CreditCard },
   { title: "Integrações", url: "/admin/integrations", icon: Zap },
   { title: "WhatsApp", url: "/admin/whatsapp", icon: MessageSquare },
-  { title: "Crisp Chat", url: "/admin/crisp", icon: MessageCircle },
+  
   { title: "Domínios", url: "/admin/domains", icon: Globe },
   
   { title: "Webhook", url: "/admin/webhooks", icon: Webhook },

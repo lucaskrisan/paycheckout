@@ -114,7 +114,7 @@ const App = () => (
                 <Route path="abandoned" element={<AbandonedCarts />} />
                 <Route path="integrations" element={<Integrations />} />
                 <Route path="gateway-management" element={<GatewayManagement />} />
-                <Route path="crisp" element={<CrispChat />} />
+                
                 <Route path="settings" element={<Settings />} />
                 <Route path="notifications" element={<Notifications />} />
                 <Route path="tracking" element={<Tracking />} />
