@@ -1,22 +1,31 @@
 // @ts-nocheck
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useMemo, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
-interface AuthContextType {
+/* ── Types ── */
+interface AuthState {
   user: User | null;
   session: Session | null;
   isAdmin: boolean;
   isSuperAdmin: boolean;
   profileCompleted: boolean | null;
   loading: boolean;
+}
+
+interface AuthActions {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, fullName: string, extra?: { phone?: string; cpf?: string }) => Promise<void>;
   signOut: () => Promise<void>;
   refreshRoles: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+type AuthContextType = AuthState & AuthActions;
+
+/* ── Contexts (split to avoid re-renders) ── */
+const AuthStateContext = createContext<AuthState | undefined>(undefined);
+const AuthActionsContext = createContext<AuthActions | undefined>(undefined);
+
 const AUTH_BOOT_TIMEOUT_MS = 5000;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -27,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profileCompleted, setProfileCompleted] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const checkRoles = async (userId: string) => {
+  const checkRoles = useCallback(async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from("user_roles")
@@ -48,9 +57,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAdmin(false);
       setIsSuperAdmin(false);
     }
-  };
+  }, []);
 
-  const checkProfileCompleted = async (userId: string) => {
+  const checkProfileCompleted = useCallback(async (userId: string) => {
     try {
       const { data } = await supabase
         .from("profiles")
@@ -61,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       setProfileCompleted(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -74,8 +83,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     }, AUTH_BOOT_TIMEOUT_MS);
 
-    // Set up listener FIRST but only allow it to set loading=false
-    // after getSession has resolved (prevents race condition on OAuth redirect)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, newSession) => {
         if (!mounted) return;
@@ -100,7 +107,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // getSession is the source of truth for the initial load
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!mounted) return;
       initialSessionResolved = true;
@@ -121,14 +127,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.clearTimeout(forceFinishLoading);
       subscription.unsubscribe();
     };
-  }, []);
+  }, [checkRoles, checkProfileCompleted]);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
-  };
+  }, []);
 
-  const signUp = async (email: string, password: string, fullName: string, extra?: { phone?: string; cpf?: string }) => {
+  const signUp = useCallback(async (email: string, password: string, fullName: string, extra?: { phone?: string; cpf?: string }) => {
     const { error, data } = await supabase.auth.signUp({
       email,
       password,
@@ -146,30 +152,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       updates.profile_completed = true;
       await supabase.from("profiles").update(updates).eq("id", data.user.id);
     }
-  };
+  }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     await supabase.auth.signOut();
-  };
+  }, []);
 
-  const refreshRoles = async () => {
+  const refreshRoles = useCallback(async () => {
     if (user?.id) {
       await Promise.all([
         checkRoles(user.id),
         checkProfileCompleted(user.id),
       ]);
     }
-  };
+  }, [user?.id, checkRoles, checkProfileCompleted]);
+
+  const stateValue = useMemo<AuthState>(() => ({
+    user, session, isAdmin, isSuperAdmin, profileCompleted, loading,
+  }), [user, session, isAdmin, isSuperAdmin, profileCompleted, loading]);
+
+  const actionsValue = useMemo<AuthActions>(() => ({
+    signIn, signUp, signOut, refreshRoles,
+  }), [signIn, signUp, signOut, refreshRoles]);
 
   return (
-    <AuthContext.Provider value={{ user, session, isAdmin, isSuperAdmin, profileCompleted, loading, signIn, signUp, signOut, refreshRoles }}>
-      {children}
-    </AuthContext.Provider>
+    <AuthStateContext.Provider value={stateValue}>
+      <AuthActionsContext.Provider value={actionsValue}>
+        {children}
+      </AuthActionsContext.Provider>
+    </AuthStateContext.Provider>
   );
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used within AuthProvider");
+/** Full context — backwards compatible */
+export function useAuth(): AuthContextType {
+  const state = useContext(AuthStateContext);
+  const actions = useContext(AuthActionsContext);
+  if (!state || !actions) throw new Error("useAuth must be used within AuthProvider");
+  return { ...state, ...actions };
+}
+
+/** Use only auth state (user, loading, roles) — won't re-render on action reference changes */
+export function useAuthState(): AuthState {
+  const context = useContext(AuthStateContext);
+  if (!context) throw new Error("useAuthState must be used within AuthProvider");
+  return context;
+}
+
+/** Use only auth actions (signIn, signOut, etc.) — stable references, never triggers re-render */
+export function useAuthActions(): AuthActions {
+  const context = useContext(AuthActionsContext);
+  if (!context) throw new Error("useAuthActions must be used within AuthProvider");
   return context;
 }
