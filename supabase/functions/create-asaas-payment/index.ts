@@ -57,12 +57,12 @@ Deno.serve(async (req) => {
     const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
       || req.headers.get('cf-connecting-ip') || 'unknown';
 
-    const supabaseRl = createClient(
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    const { data: rlData } = await supabaseRl.rpc('check_rate_limit', {
+    const { data: rlData } = await supabaseAdmin.rpc('check_rate_limit', {
       p_identifier: clientIp,
       p_action: 'create-asaas-payment',
       p_max_hits: 5,
@@ -80,10 +80,7 @@ Deno.serve(async (req) => {
     // API key will be resolved per-producer below
     let ASAAS_API_KEY: string | null = null;
 
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    );
+    // supabaseAdmin already created above for rate limiting
 
     const body = await req.json();
     const { amount, customer, payment_method, installments, product_id, is_subscription, billing_cycle, coupon_id, config_id, bump_product_ids, checkout_url, utms } = body;

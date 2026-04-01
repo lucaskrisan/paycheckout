@@ -335,7 +335,7 @@ const SuperAdminDashboard = () => {
     });
   }, [period]);
 
-  const paidStatuses = new Set(["paid", "approved"]);
+  const paidStatuses = useMemo(() => new Set(["paid", "approved"]), []);
   const periodOrders = useMemo(() => filterByPeriod(orders), [orders, filterByPeriod]);
   const periodApproved = useMemo(() => periodOrders.filter((o) => paidStatuses.has(String(o.status).toLowerCase())), [periodOrders]);
 
