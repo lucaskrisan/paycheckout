@@ -175,8 +175,17 @@ Deno.serve(async (req) => {
         MERCADOPAGO_ACCESS_TOKEN = (gw.config as any).api_key;
       }
     }
-    if (!MERCADOPAGO_ACCESS_TOKEN) {
-      MERCADOPAGO_ACCESS_TOKEN = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN') || null;
+    // Fallback to global env key ONLY for super_admin producers
+    if (!MERCADOPAGO_ACCESS_TOKEN && productOwnerId) {
+      const { data: ownerRoles } = await supabaseAdmin
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', productOwnerId)
+        .eq('role', 'super_admin')
+        .maybeSingle();
+      if (ownerRoles) {
+        MERCADOPAGO_ACCESS_TOKEN = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN') || null;
+      }
     }
     if (!MERCADOPAGO_ACCESS_TOKEN) {
       return new Response(
