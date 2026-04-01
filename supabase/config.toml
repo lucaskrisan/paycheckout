@@ -79,3 +79,13 @@ project_id = "vipltojtcrqatwvzobro"
     verify_jwt = false
   [functions.webhook-test]
     verify_jwt = false
+  [functions.connect-whatsapp]
+    verify_jwt = false
+  [functions.check-whatsapp-status]
+    verify_jwt = false
+  [functions.disconnect-whatsapp]
+    verify_jwt = false
+  [functions.send-whatsapp-message]
+    verify_jwt = false
+  [functions.whatsapp-webhook]
+    verify_jwt = false

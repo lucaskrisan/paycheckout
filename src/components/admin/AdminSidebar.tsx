@@ -13,6 +13,7 @@ import {
   Wallet,
   Bell,
   MessageCircle,
+  MessageSquare,
   ShieldCheck,
   ShieldBan,
   Webhook,
@@ -86,6 +87,7 @@ const analiseItems = [
 const configItems = [
   { title: "Gateways", url: "/admin/gateway-management", icon: CreditCard },
   { title: "Integrações", url: "/admin/integrations", icon: Zap },
+  { title: "WhatsApp", url: "/admin/whatsapp", icon: MessageSquare },
   { title: "Crisp Chat", url: "/admin/crisp", icon: MessageCircle },
   { title: "Domínios", url: "/admin/domains", icon: Globe },
   
