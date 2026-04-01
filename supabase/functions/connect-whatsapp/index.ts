@@ -41,11 +41,19 @@ Deno.serve(async (req) => {
 
     // Delete stale instance before creating a new one
     try {
-      await fetch(`${EVOLUTION_API_URL}/instance/delete/${instanceId}`, {
+      const delRes = await fetch(`${EVOLUTION_API_URL}/instance/logout/${instanceId}`, {
         method: "DELETE",
         headers: { apikey: EVOLUTION_API_KEY },
       });
-    } catch (_) { /* ignore if instance doesn't exist */ }
+      await delRes.text();
+    } catch (_) { /* ignore */ }
+    try {
+      const delRes2 = await fetch(`${EVOLUTION_API_URL}/instance/delete/${instanceId}`, {
+        method: "DELETE",
+        headers: { apikey: EVOLUTION_API_KEY },
+      });
+      await delRes2.text();
+    } catch (_) { /* ignore */ }
 
     const evoRes = await fetch(`${EVOLUTION_API_URL}/instance/create`, {
       method: "POST",
