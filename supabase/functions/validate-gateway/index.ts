@@ -11,6 +11,30 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // --- Authentication: require JWT ---
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ valid: false, error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseAuth = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ valid: false, error: 'Invalid token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    // --- End Authentication ---
+
     const { provider, api_key, environment } = await req.json();
 
     if (!provider || !api_key) {
@@ -30,7 +54,6 @@ Deno.serve(async (req) => {
         envWarning = 'Chave de PRODUÇÃO detectada, mas o ambiente está configurado como Sandbox.';
       }
 
-      // Test Pagar.me key
       const res = await fetch('https://api.pagar.me/core/v5/customers?size=1', {
         headers: {
           'Authorization': `Basic ${btoa(api_key + ':')}`,
