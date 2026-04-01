@@ -1312,6 +1312,39 @@ export type Database = {
         }
         Relationships: []
       }
+      pending_sends: {
+        Row: {
+          created_at: string
+          id: string
+          instance_id: string
+          message: string
+          sent_at: string | null
+          status: string
+          tenant_id: string
+          to_number: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          instance_id: string
+          message: string
+          sent_at?: string | null
+          status?: string
+          tenant_id: string
+          to_number: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          instance_id?: string
+          message?: string
+          sent_at?: string | null
+          status?: string
+          tenant_id?: string
+          to_number?: string
+        }
+        Relationships: []
+      }
       pixel_events: {
         Row: {
           created_at: string
@@ -1891,6 +1924,42 @@ export type Database = {
           gateway?: string
           id?: string
           processed_at?: string
+        }
+        Relationships: []
+      }
+      whatsapp_sessions: {
+        Row: {
+          connected_at: string | null
+          created_at: string
+          id: string
+          instance_id: string
+          node_url: string
+          phone_number: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          connected_at?: string | null
+          created_at?: string
+          id?: string
+          instance_id: string
+          node_url?: string
+          phone_number?: string | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          connected_at?: string | null
+          created_at?: string
+          id?: string
+          instance_id?: string
+          node_url?: string
+          phone_number?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
         }
         Relationships: []
       }
