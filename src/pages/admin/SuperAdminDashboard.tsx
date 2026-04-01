@@ -98,9 +98,9 @@ const SuperAdminDashboard = () => {
   // Data state — declared early so useMemo can reference products
   const [products, setProducts] = useState<any[]>([]);
 
-  // Super admin sees only visitors on THEIR OWN checkouts
+  // Super admin sees only visitors on THEIR OWN checkouts (empty array while loading = 0)
   const myProductIds = useMemo(
-    () => (user && products.length > 0 ? products.filter((p) => p.user_id === user.id).map((p) => p.id) : undefined),
+    () => (user ? products.filter((p) => p.user_id === user.id).map((p) => p.id) : []),
     [products, user],
   );
   const liveVisitors = useCheckoutPresence("watch", undefined, myProductIds);

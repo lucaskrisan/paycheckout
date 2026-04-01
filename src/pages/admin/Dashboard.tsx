@@ -59,9 +59,9 @@ const Dashboard = () => {
   const [selectedProductId, setSelectedProductId] = useState("all");
 
   // Pass producer's product IDs so presence is filtered to their checkouts only.
-  // undefined = super admin → sees all visitors.
+  // Empty array while loading = show 0 visitors (secure default).
   const ownerProductIds = useMemo(
-    () => (products.length > 0 ? products.map((p) => p.id) : undefined),
+    () => products.map((p) => p.id),
     [products],
   );
   const liveVisitors = useCheckoutPresence("watch", undefined, ownerProductIds);

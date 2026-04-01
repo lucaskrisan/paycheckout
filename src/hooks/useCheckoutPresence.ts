@@ -52,6 +52,9 @@ export function useCheckoutPresence(
 
     const countPresenceForOwner = (state: Record<string, any[]>) => {
       const allowed = ownerIdsRef.current;
+      // SECURITY: In watch mode, if no product IDs are provided, return 0
+      // to prevent cross-tenant data leakage while products are loading.
+      if (!allowed && modeRef.current === "watch") return 0;
       let count = 0;
       for (const [key, presences] of Object.entries(state)) {
         if (key.startsWith("_watcher")) continue;
@@ -67,6 +70,12 @@ export function useCheckoutPresence(
       const now = Date.now();
       const ttlMs = 25000;
       const allowed = ownerIdsRef.current;
+
+      // SECURITY: In watch mode with no product IDs, show 0
+      if (!allowed && modeRef.current === "watch") {
+        setOnlineCount(0);
+        return;
+      }
 
       for (const [id, entry] of heartbeatMapRef.current.entries()) {
         if (now - entry.ts > ttlMs) heartbeatMapRef.current.delete(id);
