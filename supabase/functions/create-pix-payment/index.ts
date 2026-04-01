@@ -76,10 +76,7 @@ Deno.serve(async (req) => {
     // API key will be resolved per-producer below
     let PAGARME_API_KEY: string | null = null;
 
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    );
+    // supabaseAdmin already created above for rate limiting
 
     const body = await req.json();
     const { customer, product_id, coupon_id, config_id, bump_product_ids, checkout_url, utms } = body;
