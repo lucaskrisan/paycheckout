@@ -45,7 +45,7 @@ const Coupons = lazy(() => import("./pages/admin/Coupons"));
 const AbandonedCarts = lazy(() => import("./pages/admin/AbandonedCarts"));
 const Integrations = lazy(() => import("./pages/admin/Integrations"));
 const GatewayManagement = lazy(() => import("./pages/admin/GatewayManagement"));
-const CrispChat = lazy(() => import("./pages/admin/CrispChat"));
+
 const SuperAdminDashboard = lazy(() => import("./pages/admin/SuperAdminDashboard"));
 const CheckoutBuilder = lazy(() => import("./pages/admin/CheckoutBuilder"));
 const Notifications = lazy(() => import("./pages/admin/Notifications"));
@@ -114,7 +114,7 @@ const App = () => (
                 <Route path="abandoned" element={<AbandonedCarts />} />
                 <Route path="integrations" element={<Integrations />} />
                 <Route path="gateway-management" element={<GatewayManagement />} />
-                <Route path="crisp" element={<CrispChat />} />
+                
                 <Route path="settings" element={<Settings />} />
                 <Route path="notifications" element={<Notifications />} />
                 <Route path="tracking" element={<Tracking />} />
