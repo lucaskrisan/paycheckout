@@ -29,6 +29,7 @@ const Privacy = lazy(() => import("./pages/Privacy"));
 const Cookies = lazy(() => import("./pages/Cookies"));
 const Disclaimer = lazy(() => import("./pages/Disclaimer"));
 const ProhibitedContent = lazy(() => import("./pages/ProhibitedContent"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 // Lazy-loaded — admin shell & pages
 const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
