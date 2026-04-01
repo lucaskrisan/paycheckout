@@ -52,7 +52,7 @@ export function MetaAdsFunnel({ userId }: { userId?: string }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     fetchFunnelData();
