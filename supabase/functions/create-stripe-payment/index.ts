@@ -198,8 +198,17 @@ Deno.serve(async (req) => {
         STRIPE_SECRET_KEY = (gw.config as any).api_key;
       }
     }
-    if (!STRIPE_SECRET_KEY) {
-      STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY') || null;
+    // Fallback to global env key ONLY for super_admin producers
+    if (!STRIPE_SECRET_KEY && productOwnerId) {
+      const { data: ownerRoles } = await supabaseAdmin
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', productOwnerId)
+        .eq('role', 'super_admin')
+        .maybeSingle();
+      if (ownerRoles) {
+        STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY') || null;
+      }
     }
     if (!STRIPE_SECRET_KEY) {
       return new Response(

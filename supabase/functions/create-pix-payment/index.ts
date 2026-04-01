@@ -257,9 +257,17 @@ Deno.serve(async (req) => {
         PAGARME_API_KEY = (gw.config as any).api_key;
       }
     }
-    // Fallback to global env key (super admin / legacy)
-    if (!PAGARME_API_KEY) {
-      PAGARME_API_KEY = Deno.env.get('PAGARME_API_KEY') || null;
+    // Fallback to global env key ONLY for super_admin producers
+    if (!PAGARME_API_KEY && productOwnerId) {
+      const { data: ownerRoles } = await supabaseAdmin
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', productOwnerId)
+        .eq('role', 'super_admin')
+        .maybeSingle();
+      if (ownerRoles) {
+        PAGARME_API_KEY = Deno.env.get('PAGARME_API_KEY') || null;
+      }
     }
     if (!PAGARME_API_KEY) {
       return new Response(
