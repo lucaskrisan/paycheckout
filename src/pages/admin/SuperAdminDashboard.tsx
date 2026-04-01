@@ -112,9 +112,8 @@ const SuperAdminDashboard = () => {
   const [billingAccounts, setBillingAccounts] = useState<BillingAccount[]>([]);
   const [billingTxs, setBillingTxs] = useState<BillingTx[]>([]);
   const [emailLogs, setEmailLogs] = useState<any[]>([]);
-  const [webhookEndpoints, setWebhookEndpoints] = useState<any[]>([]);
-  const [rateLimitHits, setRateLimitHits] = useState<any[]>([]);
-  const [webhookEndpoints, setWebhookEndpoints] = useState<any[]>([]);
+   const [webhookEndpoints, setWebhookEndpoints] = useState<any[]>([]);
+   const [rateLimitHits, setRateLimitHits] = useState<any[]>([]);
 
   // UI state
   const [loading, setLoading] = useState(true);
