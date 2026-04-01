@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, MessageSquare, Phone, Power, PowerOff, RefreshCw, CheckCircle2, XCircle } from "lucide-react";
+import { Loader2, MessageSquare, Phone, Power, PowerOff, RefreshCw, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 const formatPhone = (raw: string) => {
@@ -17,16 +17,15 @@ const formatPhone = (raw: string) => {
 };
 
 const WhatsApp = () => {
-  const { user, session } = useAuth();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [qrcode, setQrcode] = useState<string | null>(null);
-  const [instanceId, setInstanceId] = useState<string | null>(null);
   const [status, setStatus] = useState<string>("disconnected");
   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Load existing session on mount
   useEffect(() => {
     if (!user) return;
     const load = async () => {
@@ -36,7 +35,6 @@ const WhatsApp = () => {
         .eq("tenant_id", user.id)
         .maybeSingle();
       if (data) {
-        setInstanceId(data.instance_id);
         setStatus(data.status);
         setPhoneNumber(data.phone_number);
       }
@@ -53,60 +51,88 @@ const WhatsApp = () => {
 
   useEffect(() => () => stopPolling(), [stopPolling]);
 
-  const startPolling = useCallback(
-    (instId: string) => {
-      stopPolling();
-      pollingRef.current = setInterval(async () => {
-        try {
-          const { data, error } = await supabase.functions.invoke("check-whatsapp-status", {
-            body: { instance_id: instId },
-          });
-          if (error) throw error;
-          if (data?.state === "open") {
-            setStatus("connected");
-            setPhoneNumber(data.phone_number);
-            setQrcode(null);
-            stopPolling();
-            toast.success("WhatsApp conectado com sucesso!");
-          }
-        } catch (err) {
-          console.error("Polling error:", err);
+  const startPolling = useCallback(() => {
+    stopPolling();
+    let attempts = 0;
+    const maxAttempts = 60; // 3 min max
+
+    pollingRef.current = setInterval(async () => {
+      attempts++;
+      if (attempts > maxAttempts) {
+        stopPolling();
+        setStatus("disconnected");
+        setQrcode(null);
+        toast.error("Tempo esgotado. Tente conectar novamente.");
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase.functions.invoke("check-whatsapp-status");
+        if (error) throw error;
+
+        if (data?.state === "open") {
+          setStatus("connected");
+          setPhoneNumber(data.phone_number);
+          setQrcode(null);
+          stopPolling();
+          toast.success("WhatsApp conectado com sucesso!");
+        } else if (data?.error) {
+          stopPolling();
+          setErrorMsg(data.details || data.error);
+          setQrcode(null);
+          setStatus("disconnected");
         }
-      }, 3000);
-    },
-    [stopPolling]
-  );
+      } catch (err: any) {
+        console.error("Polling error:", err);
+      }
+    }, 3000);
+  }, [stopPolling]);
 
   const handleConnect = async () => {
     setLoading(true);
+    setErrorMsg(null);
     try {
       const { data, error } = await supabase.functions.invoke("connect-whatsapp");
+
       if (error) throw error;
+
+      if (data?.error) {
+        setErrorMsg(data.details || data.error);
+        toast.error(data.error);
+        return;
+      }
+
       if (data?.qrcode) {
         setQrcode(data.qrcode);
-        setInstanceId(data.instance_id);
         setStatus("connecting");
-        startPolling(data.instance_id);
+        startPolling();
       } else {
         toast.error("QR Code não retornado. Tente novamente.");
       }
     } catch (err: any) {
       console.error(err);
-      toast.error(err?.message || "Não foi possível conectar. Tente novamente.");
+      const msg = err?.message || "Não foi possível conectar. Tente novamente.";
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
 
   const handleDisconnect = async () => {
-    if (!instanceId) return;
     setDisconnecting(true);
     stopPolling();
+    setErrorMsg(null);
     try {
-      const { error } = await supabase.functions.invoke("disconnect-whatsapp", {
-        body: { instance_id: instanceId },
-      });
+      const { data, error } = await supabase.functions.invoke("disconnect-whatsapp");
       if (error) throw error;
+
+      if (data?.error) {
+        setErrorMsg(data.details || data.error);
+        toast.error(data.error);
+        return;
+      }
+
       setStatus("disconnected");
       setPhoneNumber(null);
       setQrcode(null);
@@ -119,6 +145,12 @@ const WhatsApp = () => {
     }
   };
 
+  const qrSrc = qrcode
+    ? qrcode.startsWith("data:image")
+      ? qrcode
+      : `data:image/png;base64,${qrcode.replace(/\s/g, "")}`
+    : null;
+
   return (
     <div className="space-y-6">
       <div>
@@ -128,7 +160,16 @@ const WhatsApp = () => {
         </p>
       </div>
 
-      {/* Status Card */}
+      {errorMsg && (
+        <div className="flex items-start gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm">
+          <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium">Erro de conexão</p>
+            <p className="mt-0.5 opacity-90">{errorMsg}</p>
+          </div>
+        </div>
+      )}
+
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
@@ -164,7 +205,7 @@ const WhatsApp = () => {
                 {disconnecting ? "Desconectando..." : "Desconectar WhatsApp"}
               </Button>
             </div>
-          ) : status === "connecting" && qrcode ? (
+          ) : status === "connecting" && qrSrc ? (
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <RefreshCw className="w-4 h-4 animate-spin" />
@@ -172,7 +213,7 @@ const WhatsApp = () => {
               </div>
               <div className="flex justify-center p-4 bg-white rounded-xl border max-w-xs mx-auto">
                 <img
-                  src={qrcode.startsWith('data:image') ? qrcode : `data:image/png;base64,${qrcode.replace(/\s/g, '')}`}
+                  src={qrSrc}
                   alt="QR Code WhatsApp"
                   className="w-64 h-64 object-contain"
                 />
