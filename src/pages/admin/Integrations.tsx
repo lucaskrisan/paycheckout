@@ -4,6 +4,7 @@ import UtmifyIntegration from "@/components/admin/UtmifyIntegration";
 import webhookLogo from "@/assets/webhook-logo.png";
 import appsellCardLogo from "@/assets/appsell-logo.png";
 import utmifyLogo from "@/assets/utmify-logo.png";
+import { useNavigate } from "react-router-dom";
 
 const PRELOAD_ICONS = [webhookLogo, appsellCardLogo, utmifyLogo];
 
