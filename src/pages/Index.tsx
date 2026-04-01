@@ -1,8 +1,7 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { resolveUserDestination } from "@/lib/resolveUserDestination";
-import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import HeroSection from "@/components/landing/HeroSection";
 import FeaturesGrid from "@/components/landing/FeaturesGrid";
