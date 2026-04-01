@@ -137,19 +137,53 @@ Deno.serve(async (req) => {
     const originalPrice = upsellProduct.price;
     const finalPrice = Math.round(originalPrice * (1 - discountPercent / 100) * 100) / 100;
 
-    // Get Asaas API key & environment
-    const ASAAS_API_KEY = Deno.env.get('ASAAS_API_KEY');
-    if (!ASAAS_API_KEY) throw new Error('ASAAS_API_KEY not configured');
+    // Resolve Asaas API key from the PRODUCER's gateway config
+    let ASAAS_API_KEY: string | null = null;
+    let environment = 'sandbox';
 
-    const { data: gatewayData } = await supabaseAdmin
-      .from('payment_gateways')
-      .select('environment')
-      .eq('provider', 'asaas')
-      .eq('active', true)
-      .limit(1)
-      .maybeSingle();
+    if (originalOrder.user_id) {
+      const { data: gw } = await supabaseAdmin
+        .from('payment_gateways')
+        .select('config, environment')
+        .eq('user_id', originalOrder.user_id)
+        .eq('provider', 'asaas')
+        .eq('active', true)
+        .maybeSingle();
+      if (gw?.config && typeof gw.config === 'object' && (gw.config as any).api_key) {
+        ASAAS_API_KEY = (gw.config as any).api_key;
+        environment = gw.environment || 'sandbox';
+      }
+    }
 
-    const environment = gatewayData?.environment || 'sandbox';
+    // Fallback to global env key ONLY for super_admin producers
+    if (!ASAAS_API_KEY && originalOrder.user_id) {
+      const { data: ownerRoles } = await supabaseAdmin
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', originalOrder.user_id)
+        .eq('role', 'super_admin')
+        .maybeSingle();
+      if (ownerRoles) {
+        ASAAS_API_KEY = Deno.env.get('ASAAS_API_KEY') || null;
+        // Resolve environment from any active asaas gateway
+        const { data: gwEnv } = await supabaseAdmin
+          .from('payment_gateways')
+          .select('environment')
+          .eq('provider', 'asaas')
+          .eq('active', true)
+          .limit(1)
+          .maybeSingle();
+        environment = gwEnv?.environment || 'sandbox';
+      }
+    }
+
+    if (!ASAAS_API_KEY) {
+      return new Response(
+        JSON.stringify({ error: 'Gateway de pagamento não configurado para este produtor.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const baseUrl = environment === 'production'
       ? 'https://api.asaas.com/v3'
       : 'https://sandbox.asaas.com/api/v3';
