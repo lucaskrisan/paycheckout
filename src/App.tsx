@@ -45,7 +45,7 @@ const Coupons = lazy(() => import("./pages/admin/Coupons"));
 const AbandonedCarts = lazy(() => import("./pages/admin/AbandonedCarts"));
 const Integrations = lazy(() => import("./pages/admin/Integrations"));
 const GatewayManagement = lazy(() => import("./pages/admin/GatewayManagement"));
-const CrispChat = lazy(() => import("./pages/admin/CrispChat"));
+
 const SuperAdminDashboard = lazy(() => import("./pages/admin/SuperAdminDashboard"));
 const CheckoutBuilder = lazy(() => import("./pages/admin/CheckoutBuilder"));
 const Notifications = lazy(() => import("./pages/admin/Notifications"));
