@@ -29,6 +29,7 @@ const Privacy = lazy(() => import("./pages/Privacy"));
 const Cookies = lazy(() => import("./pages/Cookies"));
 const Disclaimer = lazy(() => import("./pages/Disclaimer"));
 const ProhibitedContent = lazy(() => import("./pages/ProhibitedContent"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 // Lazy-loaded — admin shell & pages
 const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
@@ -100,6 +101,7 @@ const App = () => (
               <Route path="/cookies" element={<Cookies />} />
               <Route path="/isencao-financeira" element={<Disclaimer />} />
               <Route path="/produtos-proibidos" element={<ProhibitedContent />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/admin/products/:productId/checkout-builder" element={<CheckoutBuilder />} />
               <Route path="/admin/products/:productId/checkout-builder/:configId" element={<CheckoutBuilder />} />
               <Route path="/admin" element={<><InstallPrompt /><AdminLayout /></>}>

@@ -320,7 +320,25 @@ const Login = () => {
                   <div className="flex items-center justify-between">
                     <Label htmlFor="password" className="text-[13px] font-medium text-muted-foreground">Senha</Label>
                     {!isSignUp && (
-                      <button type="button" className="text-[12px] text-primary/70 hover:text-primary font-medium transition-colors">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!email) {
+                            toast.error("Digite seu e-mail primeiro");
+                            return;
+                          }
+                          try {
+                            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                              redirectTo: `${window.location.origin}/reset-password`,
+                            });
+                            if (error) throw error;
+                            toast.success("Link de redefinição enviado! Verifique seu e-mail.", { duration: 6000 });
+                          } catch (err: any) {
+                            toast.error(err.message || "Erro ao enviar link de redefinição");
+                          }
+                        }}
+                        className="text-[12px] text-primary/70 hover:text-primary font-medium transition-colors"
+                      >
                         Esqueceu?
                       </button>
                     )}

@@ -26,7 +26,7 @@ const PendingApproval = () => {
           <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
             <Zap className="w-5 h-5 text-primary" />
           </div>
-          <span className="text-xl font-bold text-foreground tracking-tight">PayCheckout</span>
+          <span className="text-xl font-bold text-foreground tracking-tight">PanteraPay</span>
         </div>
 
         {/* Card */}

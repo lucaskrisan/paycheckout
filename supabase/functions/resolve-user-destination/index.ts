@@ -79,11 +79,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // No auto-promote — admin role is granted manually by super_admin only.
-    // Priority: admin/super_admin always goes to /admin, even if they also bought courses.
-    // Buyers go to the authenticated portal, where accesses are resolved server-side without leaking cross-account tokens.
     // Everyone is auto-promoted to admin (producer) on signup.
-    // Priority: incomplete profile → admin panel (producer) → buyer portal
+    // Priority: incomplete profile → admin panel (producer) → buyer portal → admin fallback
     const destination = !profileCompleted
       ? "/completar-perfil"
       : isAdmin
