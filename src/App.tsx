@@ -138,6 +138,7 @@ const App = () => (
                 <Route path="blacklist" element={<Blacklist />} />
                 <Route path="api-keys" element={<ApiKeys />} />
                 <Route path="product-review" element={<ProductReview />} />
+                <Route path="whatsapp" element={<WhatsApp />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
