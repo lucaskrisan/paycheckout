@@ -1593,6 +1593,30 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_hits: {
+        Row: {
+          action: string
+          blocked: boolean
+          created_at: string
+          id: string
+          identifier: string
+        }
+        Insert: {
+          action: string
+          blocked?: boolean
+          created_at?: string
+          id?: string
+          identifier: string
+        }
+        Update: {
+          action?: string
+          blocked?: boolean
+          created_at?: string
+          id?: string
+          identifier?: string
+        }
+        Relationships: []
+      }
       sales_pages: {
         Row: {
           created_at: string
@@ -2098,6 +2122,15 @@ export type Database = {
       add_billing_credit: {
         Args: { p_amount: number; p_description: string; p_user_id: string }
         Returns: undefined
+      }
+      check_rate_limit: {
+        Args: {
+          p_action: string
+          p_identifier: string
+          p_max_hits: number
+          p_window_seconds: number
+        }
+        Returns: boolean
       }
       delete_email: {
         Args: { message_id: number; queue_name: string }
