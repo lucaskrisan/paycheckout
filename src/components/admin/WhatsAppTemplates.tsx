@@ -393,15 +393,16 @@ const WhatsAppTemplates = () => {
     <div className="space-y-6">
       <AnimatePresence mode="wait">
         {selectedTemplate ? (
-          /* ─── Detail View with Flow Nodes ─── */
-          <TemplateDetail
-            key="detail"
-            template={selectedTemplate}
-            onBack={() => setSelectedTemplate(null)}
-            onEdit={() => openEdit(selectedTemplate)}
-            onDelete={() => setDeleteId(selectedTemplate.id)}
-            onCopy={() => copyBody(selectedTemplate.body)}
-          />
+          /* ─── Flow Builder Canvas ─── */
+          <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
+            <FlowCanvas
+              key="flow"
+              templateName={selectedTemplate.name}
+              templateBody={selectedTemplate.body}
+              templateActive={selectedTemplate.active}
+              onBack={() => setSelectedTemplate(null)}
+            />
+          </Suspense>
         ) : (
           /* ─── Grid View ─── */
           <motion.div key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
