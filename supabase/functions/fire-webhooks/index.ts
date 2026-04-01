@@ -347,6 +347,20 @@ Deno.serve(async (req) => {
       console.log(`[fire-webhooks] Skipping appsell-notify — delivery_method is "${deliveryMethod}"`);
     }
 
+    // --- UTMify integration (non-blocking) — always attempt, function checks if active ---
+    try {
+      fetch(`${supabaseUrl}/functions/v1/utmify-notify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${serviceRoleKey}`,
+        },
+        body: JSON.stringify({ event, order_id, user_id }),
+      }).catch(err => console.error('[fire-webhooks] utmify-notify error:', err));
+    } catch (e) {
+      console.error('[fire-webhooks] utmify-notify dispatch error:', e);
+    }
+
     // Filter by product_id if set on endpoint
     const filteredEndpoints = matching.filter((ep: any) =>
       !ep.product_id || ep.product_id === order.product_id
