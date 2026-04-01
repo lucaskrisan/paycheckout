@@ -11,7 +11,7 @@ const badges = [
 ];
 
 const AchievementsSection = () => (
-  <section className="relative z-10 py-28 lg:py-36 overflow-hidden">
+  <section aria-label="Premiações e reconhecimento por vendas" className="relative z-10 py-28 lg:py-36 overflow-hidden">
     <div className="container max-w-6xl mx-auto px-6 text-center">
       <motion.div
         initial={{ opacity: 0, y: 25 }}
@@ -21,7 +21,7 @@ const AchievementsSection = () => (
         className="space-y-5 mb-16"
       >
         <div className="inline-flex items-center gap-2 bg-gold/10 border border-gold/20 rounded-full px-4 py-1.5 mx-auto">
-          <Trophy className="w-3.5 h-3.5 text-gold" />
+          <Trophy className="w-3.5 h-3.5 text-gold" aria-hidden="true" />
           <span className="text-[11px] font-semibold text-gold uppercase tracking-[0.15em]">
             Premiações
           </span>
@@ -37,11 +37,11 @@ const AchievementsSection = () => (
         </p>
       </motion.div>
 
-      {/* Badges grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4" role="list">
         {badges.map((b, i) => (
-          <motion.div
+          <motion.article
             key={b.milestone}
+            role="listitem"
             className="group relative"
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             whileInView={{ opacity: 1, y: 0, scale: 1 }}
@@ -52,14 +52,13 @@ const AchievementsSection = () => (
               className="relative bg-[#141417] border border-white/[0.06] rounded-2xl p-5 hover:border-gold/20 transition-all duration-500 overflow-hidden"
               style={{ boxShadow: `0 10px 40px ${b.shadow}` }}
             >
-              {/* Badge icon */}
               <div className={`w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-br ${b.color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-500`}>
-                <Trophy className="w-7 h-7 text-white/90" />
+                <Trophy className="w-7 h-7 text-white/90" aria-hidden="true" />
               </div>
               <p className="text-[14px] font-black text-white font-mono tracking-tight">{b.milestone}</p>
               <p className="text-[9px] text-[#6A6A75] uppercase tracking-[0.15em] mt-1 font-medium">{b.label}</p>
             </div>
-          </motion.div>
+          </motion.article>
         ))}
       </div>
     </div>

@@ -4,7 +4,7 @@ import { QrCode, Receipt, Users } from "lucide-react";
 /* ── Laptop Mockup (showcase) ── */
 function ShowcaseLaptop() {
   return (
-    <div className="relative">
+    <div className="relative" aria-hidden="true">
       <motion.div
         initial={{ opacity: 0, rotateY: 5, rotateX: 3 }}
         whileInView={{ opacity: 1, rotateY: 2, rotateX: 1 }}
@@ -22,7 +22,6 @@ function ShowcaseLaptop() {
             </div>
 
             <div className="p-4 space-y-2.5">
-              {/* Revenue big */}
               <div className="bg-[#141417] rounded-lg p-3 border border-white/[0.04]">
                 <div className="flex items-end justify-between">
                   <div>
@@ -36,9 +35,8 @@ function ShowcaseLaptop() {
                 </div>
               </div>
 
-              {/* Chart area */}
               <div className="bg-[#141417] rounded-lg p-3 border border-white/[0.04] h-20">
-                <svg viewBox="0 0 200 50" className="w-full h-full" preserveAspectRatio="none">
+                <svg viewBox="0 0 200 50" className="w-full h-full" preserveAspectRatio="none" role="img" aria-label="Gráfico de receita crescente">
                   <defs>
                     <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#00E676" stopOpacity="0.3" />
@@ -50,7 +48,6 @@ function ShowcaseLaptop() {
                 </svg>
               </div>
 
-              {/* Table rows */}
               <div className="space-y-1">
                 {[
                   { name: "Curso Expert", v: "R$ 745.000", s: "paid", pct: "94%" },
@@ -73,7 +70,6 @@ function ShowcaseLaptop() {
         <div className="h-1 bg-[#1E1E22] rounded-b-2xl mx-16 border-x border-b border-white/[0.04]" />
       </motion.div>
 
-      {/* Sparkle particles around laptop */}
       {[...Array(12)].map((_, i) => (
         <motion.div
           key={i}
@@ -88,15 +84,13 @@ function ShowcaseLaptop() {
 }
 
 const ShowcaseSection = () => (
-  <section id="showcase" className="relative z-10 py-28 lg:py-36 overflow-hidden">
-    {/* Background glow */}
-    <div className="absolute inset-0 pointer-events-none">
+  <section id="showcase" aria-label="Dashboard e controle total da plataforma" className="relative z-10 py-28 lg:py-36 overflow-hidden">
+    <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
       <div className="absolute top-1/2 left-0 w-[500px] h-[500px] bg-[radial-gradient(circle,_rgba(0,230,118,0.04)_0%,_transparent_60%)] blur-3xl" />
     </div>
 
     <div className="container max-w-7xl mx-auto px-6">
       <div className="grid lg:grid-cols-2 gap-16 items-center">
-        {/* Left — copy */}
         <motion.div
           className="space-y-7"
           initial={{ opacity: 0, x: -30 }}
@@ -117,7 +111,6 @@ const ShowcaseSection = () => (
             <span className="text-white font-medium">Tudo em um único dashboard</span> com rastreamento perfeito de cada conversão.
           </p>
 
-          {/* Feature pills */}
           <div className="flex flex-wrap gap-3">
             {[
               { icon: QrCode, label: "PIX" },
@@ -128,14 +121,13 @@ const ShowcaseSection = () => (
                 key={pill.label}
                 className="flex items-center gap-2.5 bg-[#1E1E22] border border-white/[0.06] rounded-lg px-4 py-2.5 hover:border-primary/20 transition-all duration-300"
               >
-                <pill.icon className="w-4 h-4 text-primary/70" />
+                <pill.icon className="w-4 h-4 text-primary/70" aria-hidden="true" />
                 <span className="text-[13px] font-medium text-white">{pill.label}</span>
               </div>
             ))}
           </div>
         </motion.div>
 
-        {/* Right — Laptop */}
         <ShowcaseLaptop />
       </div>
     </div>

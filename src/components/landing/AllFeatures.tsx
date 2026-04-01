@@ -21,27 +21,28 @@ const allFeatures = [
 ];
 
 const AllFeatures = () => (
-  <section id="all-features" className="relative z-10 container max-w-7xl mx-auto px-6 py-32">
+  <section id="all-features" aria-label="Todas as funcionalidades da plataforma" className="relative z-10 container max-w-7xl mx-auto px-6 py-32">
     <SectionHeader
       badge="Arsenal completo"
       title="Tudo que um "
       highlight="predador precisa."
       subtitle="18+ funcionalidades que plataformas de R$ 497/mês nem sonham em oferecer. E na Panttera é grátis."
     />
-    <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mt-20">
+    <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mt-20" role="list">
       {allFeatures.map((f, i) => (
-        <motion.div
+        <motion.article
           key={f.title}
+          role="listitem"
           className="group bg-white/[0.015] border border-white/[0.04] rounded-xl p-5 hover:border-primary/15 hover:bg-white/[0.03] transition-all duration-500"
           initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-30px" }}
           transition={{ duration: 0.4, delay: i * 0.03 }}
         >
-          <f.icon className="w-[18px] h-[18px] text-primary/40 mb-3 group-hover:text-primary transition-colors duration-300" />
+          <f.icon className="w-[18px] h-[18px] text-primary/40 mb-3 group-hover:text-primary transition-colors duration-300" aria-hidden="true" />
           <h3 className="text-[13px] font-bold text-white mb-1 tracking-tight">{f.title}</h3>
           <p className="text-[12px] text-[#6A6A75] leading-relaxed font-light">{f.desc}</p>
-        </motion.div>
+        </motion.article>
       ))}
     </div>
   </section>

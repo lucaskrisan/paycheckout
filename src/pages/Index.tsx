@@ -56,10 +56,10 @@ const Index = () => {
 
   if (loading || (user && resolving && !resolved)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-6">
+      <div className="min-h-screen flex items-center justify-center bg-background px-6" role="status" aria-label="Carregando">
         <div className="flex flex-col items-center gap-4 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-full border border-primary/20 bg-card shadow-[0_0_40px_hsl(var(--primary)/0.18)]">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
           </div>
           <div className="space-y-1">
             <p className="text-base font-semibold text-foreground">Carregando Panttera...</p>
@@ -72,21 +72,27 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/20">
-      <div className="fixed inset-0 z-0 pointer-events-none">
+      <div className="fixed inset-0 z-0 pointer-events-none" aria-hidden="true">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[700px] bg-[radial-gradient(ellipse,_rgba(0,230,118,0.04)_0%,_transparent_70%)]" />
       </div>
 
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:bg-primary focus:text-primary-foreground focus:px-4 focus:py-2 focus:rounded-lg focus:font-bold">
+        Pular para o conteúdo principal
+      </a>
+
       <LandingHeader />
-      <HeroSection />
-      <ShowcaseSection />
-      <WhatsAppSection />
-      <FeaturesGrid />
-      <CheckoutCustomSection />
-      <IntegrationsSection />
-      <NotificationsSection />
-      <AllFeatures />
-      <AchievementsSection />
-      <CTASection />
+      <main id="main-content">
+        <HeroSection />
+        <ShowcaseSection />
+        <WhatsAppSection />
+        <FeaturesGrid />
+        <CheckoutCustomSection />
+        <IntegrationsSection />
+        <NotificationsSection />
+        <AllFeatures />
+        <AchievementsSection />
+        <CTASection />
+      </main>
       <LandingFooter />
     </div>
   );
