@@ -50,7 +50,8 @@ const Customers = () => {
     const { data } = await supabase
       .from("customers")
       .select("*, orders(id, amount, status, payment_method, created_at, metadata, product_id, products(name))")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(1000);
     setCustomers((data as any) || []);
   };
 

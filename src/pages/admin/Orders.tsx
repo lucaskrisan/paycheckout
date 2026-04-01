@@ -167,21 +167,23 @@ const Orders = () => {
   };
 
   useEffect(() => {
+    if (!user?.id) return;
     const load = async () => {
       setLoading(true);
       const [ordersRes, productsRes] = await Promise.all([
         supabase
           .from("orders")
           .select("*, customers(name, email, phone, cpf), products(name)")
-          .order("created_at", { ascending: false }),
-        supabase.from("products").select("id, name").eq("user_id", user?.id),
+          .order("created_at", { ascending: false })
+          .limit(1000),
+        supabase.from("products").select("id, name").eq("user_id", user.id),
       ]);
       setOrders((ordersRes.data as any) || []);
       setProducts(productsRes.data || []);
       setLoading(false);
     };
     load();
-  }, []);
+  }, [user?.id]);
 
   const toggleFilter = (set: Set<string>, value: string) => {
     const next = new Set(set);
