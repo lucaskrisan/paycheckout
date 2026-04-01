@@ -172,7 +172,7 @@ const WhatsApp = () => {
               </div>
               <div className="flex justify-center p-4 bg-white rounded-xl border max-w-xs mx-auto">
                 <img
-                  src={`data:image/png;base64,${qrcode}`}
+                  src={qrcode.startsWith('data:image') ? qrcode : `data:image/png;base64,${qrcode.replace(/\s/g, '')}`}
                   alt="QR Code WhatsApp"
                   className="w-64 h-64 object-contain"
                 />
