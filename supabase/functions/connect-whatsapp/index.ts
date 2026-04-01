@@ -91,11 +91,6 @@ Deno.serve(async (req) => {
 
     const qrcode = evoData?.qrcode?.base64 || null;
 
-    const serviceClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
     await serviceClient.from("whatsapp_sessions").upsert(
       {
         tenant_id: userId,
