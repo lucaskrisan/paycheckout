@@ -1,7 +1,72 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+const json = (payload: unknown, status = 200) =>
+  new Response(JSON.stringify(payload), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
+const readResponseBody = async (res: Response) => {
+  const text = await res.text();
+  if (!text) return null;
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+};
+
+const extractErrorMessage = (payload: any) => {
+  const message = payload?.response?.message ?? payload?.message ?? payload?.error ?? payload;
+
+  if (Array.isArray(message)) return message.join(" ");
+  if (typeof message === "string" && message.trim()) return message;
+
+  return "Erro desconhecido";
+};
+
+const cleanupInstance = async (baseUrl: string, apikey: string, instanceId: string) => {
+  const requests: Array<{ url: string; init: RequestInit }> = [
+    {
+      url: `${baseUrl}/instance/logout/${instanceId}`,
+      init: { method: "DELETE", headers: { apikey } },
+    },
+    {
+      url: `${baseUrl}/instance/delete/${instanceId}`,
+      init: { method: "DELETE", headers: { apikey } },
+    },
+    {
+      url: `${baseUrl}/instance/delete`,
+      init: {
+        method: "DELETE",
+        headers: { apikey, "Content-Type": "application/json" },
+        body: JSON.stringify({ instanceName: instanceId }),
+      },
+    },
+  ];
+
+  let cleaned = false;
+
+  for (const request of requests) {
+    try {
+      const response = await fetch(request.url, request.init);
+      await readResponseBody(response);
+
+      if (response.ok || response.status === 404) {
+        cleaned = true;
+      }
+    } catch (error) {
+      console.warn("cleanup instance failed:", error);
+    }
+  }
+
+  return cleaned;
 };
 
 Deno.serve(async (req) => {
@@ -12,10 +77,7 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Não autorizado" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Não autorizado" }, 401);
     }
 
     const supabase = createClient(
@@ -26,45 +88,32 @@ Deno.serve(async (req) => {
 
     const token = authHeader.replace("Bearer ", "");
     const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
-      return new Response(JSON.stringify({ error: "Token inválido" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (claimsError || !claimsData?.claims?.sub) {
+      return json({ error: "Token inválido" }, 401);
     }
 
     const userId = claimsData.claims.sub as string;
-    const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
-    const instanceId = `pantera_${suffix}`;
-
     const EVOLUTION_API_URL = Deno.env.get("EVOLUTION_API_URL")!;
     const EVOLUTION_API_KEY = Deno.env.get("EVOLUTION_API_KEY")!;
 
-    // Try to clean up any existing instance for this tenant
     const serviceClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
-    const { data: existing } = await serviceClient
+
+    const { data: existingSession, error: sessionError } = await serviceClient
       .from("whatsapp_sessions")
       .select("instance_id")
       .eq("tenant_id", userId)
       .maybeSingle();
 
-    if (existing?.instance_id) {
-      try {
-        await fetch(`${EVOLUTION_API_URL}/instance/logout/${existing.instance_id}`, {
-          method: "DELETE",
-          headers: { apikey: EVOLUTION_API_KEY },
-        }).then(r => r.text());
-      } catch (_) {}
-      try {
-        await fetch(`${EVOLUTION_API_URL}/instance/delete/${existing.instance_id}`, {
-          method: "DELETE",
-          headers: { apikey: EVOLUTION_API_KEY },
-        }).then(r => r.text());
-      } catch (_) {}
+    if (sessionError) throw sessionError;
+
+    if (existingSession?.instance_id) {
+      await cleanupInstance(EVOLUTION_API_URL, EVOLUTION_API_KEY, existingSession.instance_id);
     }
+
+    const instanceId = `pantera_${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`;
 
     const evoRes = await fetch(`${EVOLUTION_API_URL}/instance/create`, {
       method: "POST",
@@ -79,37 +128,61 @@ Deno.serve(async (req) => {
       }),
     });
 
-    const evoData = await evoRes.json();
+    const evoData = await readResponseBody(evoRes);
 
     if (!evoRes.ok) {
       console.error("Evolution API error:", evoData);
-      return new Response(
-        JSON.stringify({ error: "Falha ao criar instância", details: evoData?.response?.message || "Erro desconhecido" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+
+      if (evoRes.status === 401 || evoRes.status === 403) {
+        return json(
+          {
+            error: "Falha na autenticação com a Evolution API",
+            details:
+              "A chave configurada no backend não coincide com AUTHENTICATION_API_KEY da sua Evolution API.",
+          },
+          502
+        );
+      }
+
+      return json(
+        { error: "Falha ao criar instância", details: extractErrorMessage(evoData) },
+        500
       );
     }
 
-    const qrcode = evoData?.qrcode?.base64 || null;
+    const rawQr =
+      evoData?.qrcode?.base64 ??
+      evoData?.qrcode ??
+      evoData?.base64 ??
+      evoData?.data?.qrcode?.base64 ??
+      evoData?.data?.qrcode ??
+      null;
 
-    await serviceClient.from("whatsapp_sessions").upsert(
+    const qrcode = typeof rawQr === "string" ? rawQr.replace(/\s/g, "") : null;
+
+    if (!qrcode) {
+      console.error("Evolution API returned no QR code:", evoData);
+      return json({ error: "QR Code não retornado pela Evolution API" }, 502);
+    }
+
+    const { error: upsertError } = await serviceClient.from("whatsapp_sessions").upsert(
       {
         tenant_id: userId,
         instance_id: instanceId,
         node_url: EVOLUTION_API_URL,
         status: "connecting",
+        phone_number: null,
+        connected_at: null,
+        updated_at: new Date().toISOString(),
       },
       { onConflict: "tenant_id" }
     );
 
-    return new Response(
-      JSON.stringify({ qrcode, instance_id: instanceId }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    if (upsertError) throw upsertError;
+
+    return json({ qrcode, instance_id: instanceId });
   } catch (err) {
     console.error("connect-whatsapp error:", err);
-    return new Response(
-      JSON.stringify({ error: "Erro interno do servidor" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return json({ error: "Erro interno do servidor" }, 500);
   }
 });
