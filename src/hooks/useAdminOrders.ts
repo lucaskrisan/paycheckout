@@ -1,23 +1,30 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { playNotificationSound } from "@/lib/notificationSounds";
 
 const PAID_STATUSES = new Set(["paid", "approved"]);
-const SUPER_ADMIN_EMAIL = "trafegocomkrisan@gmail.com";
-const SUPER_ADMIN_EMAILS = new Set([SUPER_ADMIN_EMAIL]);
+const SUPER_ADMIN_EMAILS = new Set(["trafegocomkrisan@gmail.com"]);
 
 export function useAdminOrders(userId: string | undefined, userEmail: string | undefined) {
   const [totalRevenue, setTotalRevenue] = useState(0);
   const notificationSoundRef = useRef("kaching");
   const playApprovedSaleSoundRef = useRef(true);
 
+  const fetchRevenue = useCallback(async () => {
+    if (!userId) return;
+    const { data, error } = await supabase.rpc("get_revenue_summary", { p_user_id: userId });
+    if (!error && data && data.length > 0) {
+      setTotalRevenue(Number(data[0].total_revenue));
+    }
+  }, [userId]);
+
   // Load initial revenue + notification settings
   useEffect(() => {
     if (!userId) return;
 
-    const loadRevenueAndSound = async () => {
-      const [{ data: orders }, { data: settings }] = await Promise.all([
-        supabase.from("orders").select("amount, status"),
+    const load = async () => {
+      const [, settingsRes] = await Promise.all([
+        fetchRevenue(),
         supabase
           .from("notification_settings")
           .select("notification_sound, send_approved")
@@ -25,19 +32,14 @@ export function useAdminOrders(userId: string | undefined, userEmail: string | u
           .maybeSingle(),
       ]);
 
-      const revenue = (orders || [])
-        .filter((o) => PAID_STATUSES.has(String(o.status).toLowerCase()))
-        .reduce((s, o) => s + Number(o.amount), 0);
-
-      setTotalRevenue(revenue);
-      notificationSoundRef.current = settings?.notification_sound || "kaching";
-      playApprovedSaleSoundRef.current = settings?.send_approved ?? true;
+      notificationSoundRef.current = settingsRes.data?.notification_sound || "kaching";
+      playApprovedSaleSoundRef.current = settingsRes.data?.send_approved ?? true;
     };
 
-    loadRevenueAndSound();
-  }, [userId]);
+    load();
+  }, [userId, fetchRevenue]);
 
-  // Realtime order updates
+  // Realtime order updates — only play sound + refresh aggregated total
   useEffect(() => {
     if (!userId) return;
     if (SUPER_ADMIN_EMAILS.has(userEmail ?? "")) return;
@@ -46,7 +48,7 @@ export function useAdminOrders(userId: string | undefined, userEmail: string | u
       .channel(`admin-orders-sound-${userId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "orders", filter: undefined },
+        { event: "*", schema: "public", table: "orders" },
         (payload: any) => {
           const newStatus = String(payload?.new?.status || "").toLowerCase();
           const oldStatus = String(payload?.old?.status || "").toLowerCase();
@@ -59,16 +61,9 @@ export function useAdminOrders(userId: string | undefined, userEmail: string | u
             playNotificationSound(notificationSoundRef.current);
           }
 
+          // Refresh aggregated revenue via server-side RPC instead of fetching all rows
           if (payload?.eventType === "INSERT" || payload?.eventType === "UPDATE") {
-            supabase
-              .from("orders")
-              .select("amount, status")
-              .then(({ data }) => {
-                const revenue = (data || [])
-                  .filter((o) => PAID_STATUSES.has(String(o.status).toLowerCase()))
-                  .reduce((s, o) => s + Number(o.amount), 0);
-                setTotalRevenue(revenue);
-              });
+            fetchRevenue();
           }
         }
       )
@@ -77,7 +72,7 @@ export function useAdminOrders(userId: string | undefined, userEmail: string | u
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId, userEmail]);
+  }, [userId, userEmail, fetchRevenue]);
 
   return { totalRevenue };
 }

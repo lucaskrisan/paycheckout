@@ -2140,6 +2140,16 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: undefined
       }
+      get_revenue_summary: {
+        Args: { p_user_id: string }
+        Returns: {
+          paid_count: number
+          pending_count: number
+          total_fees: number
+          total_pending: number
+          total_revenue: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
