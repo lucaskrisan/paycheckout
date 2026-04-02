@@ -9,8 +9,8 @@ import {
 import {
   Wallet, TrendingUp, DollarSign, CreditCard, ArrowDownLeft, BarChart3,
 } from "lucide-react";
-
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 export interface GatewayConfig {
   id?: string;
@@ -29,47 +29,55 @@ const providerLabels: Record<string, string> = {
   stripe: "Stripe",
 };
 
+interface RevenueSummary {
+  totalRevenue: number;
+  totalFees: number;
+  totalPending: number;
+  paidCount: number;
+  pendingCount: number;
+}
+
 const Gateways = () => {
-  
   const navigate = useNavigate();
-  const [orders, setOrders] = useState<any[]>([]);
+  const { user } = useAuth();
+  const [revenue, setRevenue] = useState<RevenueSummary>({
+    totalRevenue: 0, totalFees: 0, totalPending: 0, paidCount: 0, pendingCount: 0,
+  });
+  const [recentPaid, setRecentPaid] = useState<any[]>([]);
   const [gateways, setGateways] = useState<GatewayConfig[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchAllOrders = useCallback(async () => {
-    const pageSize = 1000;
-    let from = 0;
-    const allOrders: any[] = [];
-
-    while (true) {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .range(from, from + pageSize - 1);
-
-      if (error) throw error;
-
-      const chunk = data || [];
-      allOrders.push(...chunk);
-
-      if (chunk.length < pageSize) break;
-      from += pageSize;
-    }
-
-    return allOrders;
-  }, []);
-
   const loadData = useCallback(async () => {
+    if (!user?.id) return;
     setLoading(true);
 
     try {
-      const [allOrders, gwRes] = await Promise.all([
-        fetchAllOrders(),
+      const [revenueRes, recentRes, gwRes] = await Promise.all([
+        // Server-side aggregation instead of fetching ALL orders
+        supabase.rpc("get_revenue_summary", { p_user_id: user.id }),
+        // Only fetch 10 recent paid orders for the table
+        supabase
+          .from("orders")
+          .select("id, created_at, amount, platform_fee_amount, payment_method")
+          .in("status", ["paid", "approved"])
+          .order("created_at", { ascending: false })
+          .limit(10),
         supabase.from("payment_gateways").select("*").order("created_at"),
       ]);
 
-      setOrders(allOrders);
+      if (revenueRes.data && revenueRes.data.length > 0) {
+        const r = revenueRes.data[0];
+        setRevenue({
+          totalRevenue: Number(r.total_revenue),
+          totalFees: Number(r.total_fees),
+          totalPending: Number(r.total_pending),
+          paidCount: Number(r.paid_count),
+          pendingCount: Number(r.pending_count),
+        });
+      }
+
+      setRecentPaid(recentRes.data || []);
+
       if (gwRes.data) {
         setGateways(gwRes.data.map((g: any) => ({
           id: g.id, provider: g.provider, name: g.name, environment: g.environment,
@@ -82,22 +90,14 @@ const Gateways = () => {
     } finally {
       setLoading(false);
     }
-  }, [fetchAllOrders]);
+  }, [user?.id]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  const paidOrders = orders.filter(o => o.status === "paid" || o.status === "approved");
-  const pendingOrders = orders.filter(o => o.status === "pending");
-  const totalRevenue = paidOrders.reduce((s, o) => s + Number(o.amount || 0), 0);
-  const totalPending = pendingOrders.reduce((s, o) => s + Number(o.amount || 0), 0);
-  const totalFees = paidOrders.reduce((s, o) => s + Number(o.platform_fee_amount || 0), 0);
-  const netRevenue = totalRevenue - totalFees;
-
+  const netRevenue = revenue.totalRevenue - revenue.totalFees;
   const activeGateways = gateways.filter(g => g.active);
-
-  const recentPaid = paidOrders.slice(0, 10);
 
   return (
     <div className="space-y-6">
@@ -122,9 +122,9 @@ const Gateways = () => {
               <span className="text-xs text-muted-foreground">Receita Total</span>
             </div>
             <p className="text-xl font-bold text-foreground">
-              R$ {totalRevenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              R$ {revenue.totalRevenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
             </p>
-            <p className="text-[10px] text-muted-foreground mt-1">{paidOrders.length} vendas aprovadas</p>
+            <p className="text-[10px] text-muted-foreground mt-1">{revenue.paidCount} vendas aprovadas</p>
           </CardContent>
         </Card>
 
@@ -152,9 +152,9 @@ const Gateways = () => {
               <span className="text-xs text-muted-foreground">Pendente</span>
             </div>
             <p className="text-xl font-bold text-foreground">
-              R$ {totalPending.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              R$ {revenue.totalPending.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
             </p>
-            <p className="text-[10px] text-muted-foreground mt-1">{pendingOrders.length} aguardando pagamento</p>
+            <p className="text-[10px] text-muted-foreground mt-1">{revenue.pendingCount} aguardando pagamento</p>
           </CardContent>
         </Card>
 
@@ -167,7 +167,7 @@ const Gateways = () => {
               <span className="text-xs text-muted-foreground">Taxas Plataforma</span>
             </div>
             <p className="text-xl font-bold text-foreground">
-              R$ {totalFees.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              R$ {revenue.totalFees.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
             </p>
             <p className="text-[10px] text-muted-foreground mt-1">Acumuladas no período</p>
           </CardContent>
