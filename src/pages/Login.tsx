@@ -99,6 +99,31 @@ const Login = () => {
           setLoading(false);
           return;
         }
+
+        // Validate CPF/CNPJ
+        const cpfResult = validateCpfCnpj(cpf);
+        if (!cpfResult.valid) {
+          setCpfError(cpfResult.error);
+          setLoading(false);
+          return;
+        }
+
+        // Validate phone
+        const phoneResult = validatePhone(phone);
+        if (!phoneResult.valid) {
+          setPhoneError(phoneResult.error);
+          setLoading(false);
+          return;
+        }
+
+        // Validate full name (at least 2 words)
+        const nameParts = fullName.trim().split(/\s+/);
+        if (nameParts.length < 2 || nameParts.some(p => p.length < 2)) {
+          toast.error("Informe seu nome completo (nome e sobrenome)");
+          setLoading(false);
+          return;
+        }
+
         await signUp(email, password, fullName, { phone, cpf });
         // Don't auto-login — email confirmation may be required
         toast.success("Conta criada! Verifique seu e-mail para confirmar o cadastro.", { duration: 8000 });
