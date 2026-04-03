@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Eye, EyeOff, ArrowRight, CheckCircle2, BarChart3, GraduationCap, ChevronLeft } from "lucide-react";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import { supabase } from "@/integrations/supabase/client";
+import { validateCpfCnpj, validatePhone } from "@/lib/validators";
 
 const formatCpfCnpj = (value: string) => {
   const digits = value.replace(/\D/g, "");
