@@ -90,19 +90,17 @@ const CompleteProfile = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const cpfDigits = cpf.replace(/\D/g, "");
-    if (cpfDigits.length !== 11 && cpfDigits.length !== 14) {
-      setCpfError("Informe um CPF ou CNPJ válido");
-      return;
-    }
-    if (cpfDigits.length === 11 && !validateCpf(cpf)) {
-      setCpfError("CPF inválido");
+    // Validate CPF/CNPJ using shared validator
+    const cpfResult = validateCpfCnpj(cpf);
+    if (!cpfResult.valid) {
+      setCpfError(cpfResult.error);
       return;
     }
 
-    const phoneDigits = phone.replace(/\D/g, "");
-    if (phoneDigits.length < 10) {
-      toast.error("Informe um telefone válido");
+    // Validate phone
+    const phoneResult = validatePhone(phone);
+    if (!phoneResult.valid) {
+      toast.error(phoneResult.error);
       return;
     }
 
