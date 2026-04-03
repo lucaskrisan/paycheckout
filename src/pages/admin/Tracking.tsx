@@ -369,7 +369,7 @@ const Tracking = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    <Button onClick={runDiagnostics} disabled={diagLoading} size="sm" className="gap-1.5 text-xs">
+                    <Button onClick={() => runDiagnostics()} disabled={diagLoading} size="sm" className="gap-1.5 text-xs">
                       {diagLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : diagResults ? <RefreshCw className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
                       {diagLoading ? "Analisando..." : diagResults ? "Rodar novamente" : "Executar"}
                     </Button>
