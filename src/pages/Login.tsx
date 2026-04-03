@@ -52,6 +52,8 @@ const Login = () => {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [cpf, setCpf] = useState("");
+  const [cpfError, setCpfError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
