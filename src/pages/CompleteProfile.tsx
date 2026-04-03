@@ -110,11 +110,13 @@ const CompleteProfile = () => {
     }
 
     setSaving(true);
+    const cleanCpf = cpf.replace(/\D/g, "");
+    const cleanPhone = phone.replace(/\D/g, "");
     const { error } = await supabase
       .from("profiles")
       .update({
-        cpf: cpfDigits,
-        phone: phoneDigits,
+        cpf: cleanCpf,
+        phone: cleanPhone,
         profile_completed: true,
       })
       .eq("id", user!.id);
