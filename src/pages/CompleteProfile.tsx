@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { UserPlus, FileText, Phone, ShieldCheck, Loader2 } from "lucide-react";
+import { validateCpfCnpj, validatePhone } from "@/lib/validators";
 
 const formatCpfCnpj = (value: string) => {
   const digits = value.replace(/\D/g, "");
