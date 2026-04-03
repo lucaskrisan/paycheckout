@@ -210,7 +210,7 @@ export default function MetaEmqPanel({ products }: Props) {
                 </Select>
               </div>
               <div className="flex gap-2">
-                <Button onClick={fetchEmq} disabled={loading} size="sm" className="gap-1.5 text-xs">
+                <Button onClick={() => fetchEmq()} disabled={loading} size="sm" className="gap-1.5 text-xs">
                   {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : data ? <RefreshCw className="w-3.5 h-3.5" /> : <TrendingUp className="w-3.5 h-3.5" />}
                   {loading ? "Carregando..." : data ? "Atualizar" : "Consultar EMQ"}
                 </Button>
