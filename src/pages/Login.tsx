@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Eye, EyeOff, ArrowRight, CheckCircle2, BarChart3, GraduationCap, ChevronLeft } from "lucide-react";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import { supabase } from "@/integrations/supabase/client";
+import { validateCpfCnpj, validatePhone } from "@/lib/validators";
 
 const formatCpfCnpj = (value: string) => {
   const digits = value.replace(/\D/g, "");
@@ -51,6 +52,8 @@ const Login = () => {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [cpf, setCpf] = useState("");
+  const [cpfError, setCpfError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -96,6 +99,31 @@ const Login = () => {
           setLoading(false);
           return;
         }
+
+        // Validate CPF/CNPJ
+        const cpfResult = validateCpfCnpj(cpf);
+        if (!cpfResult.valid) {
+          setCpfError(cpfResult.error);
+          setLoading(false);
+          return;
+        }
+
+        // Validate phone
+        const phoneResult = validatePhone(phone);
+        if (!phoneResult.valid) {
+          setPhoneError(phoneResult.error);
+          setLoading(false);
+          return;
+        }
+
+        // Validate full name (at least 2 words)
+        const nameParts = fullName.trim().split(/\s+/);
+        if (nameParts.length < 2 || nameParts.some(p => p.length < 2)) {
+          toast.error("Informe seu nome completo (nome e sobrenome)");
+          setLoading(false);
+          return;
+        }
+
         await signUp(email, password, fullName, { phone, cpf });
         // Don't auto-login — email confirmation may be required
         toast.success("Conta criada! Verifique seu e-mail para confirmar o cadastro.", { duration: 8000 });
@@ -306,13 +334,14 @@ const Login = () => {
                       <Input
                         id="phone"
                         value={phone}
-                        onChange={(e) => setPhone(formatPhone(e.target.value))}
+                        onChange={(e) => { setPhone(formatPhone(e.target.value)); setPhoneError(""); }}
                         placeholder="(11) 96123-4567"
                         maxLength={15}
-                        className="h-[52px] bg-card/40 border-border/50 rounded-xl text-[14px] placeholder:text-muted-foreground/40 focus:border-primary/50 focus:bg-card/60 transition-all duration-200 flex-1"
+                        className={`h-[52px] bg-card/40 border-border/50 rounded-xl text-[14px] placeholder:text-muted-foreground/40 focus:border-primary/50 focus:bg-card/60 transition-all duration-200 flex-1 ${phoneError ? "border-red-500 focus:border-red-500" : ""}`}
                         required
                       />
                     </div>
+                    {phoneError && <p className="text-xs text-red-400">{phoneError}</p>}
                   </div>
                 )}
 
@@ -371,12 +400,13 @@ const Login = () => {
                       <Input
                         id="cpf"
                         value={cpf}
-                        onChange={(e) => setCpf(formatCpfCnpj(e.target.value))}
+                        onChange={(e) => { setCpf(formatCpfCnpj(e.target.value)); setCpfError(""); }}
                         placeholder="000.000.000-00"
                         maxLength={18}
-                        className="h-[52px] bg-card/40 border-border/50 rounded-xl text-[14px] placeholder:text-muted-foreground/40 focus:border-primary/50 focus:bg-card/60 transition-all duration-200"
+                        className={`h-[52px] bg-card/40 border-border/50 rounded-xl text-[14px] placeholder:text-muted-foreground/40 focus:border-primary/50 focus:bg-card/60 transition-all duration-200 ${cpfError ? "border-red-500 focus:border-red-500" : ""}`}
                         required
                       />
+                      {cpfError && <p className="text-xs text-red-400">{cpfError}</p>}
                     </div>
 
                     <div className="flex items-start gap-3 pt-1">

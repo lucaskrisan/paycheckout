@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { UserPlus, FileText, Phone, ShieldCheck, Loader2 } from "lucide-react";
+import { validateCpfCnpj, validatePhone } from "@/lib/validators";
 
 const formatCpfCnpj = (value: string) => {
   const digits = value.replace(/\D/g, "");
@@ -37,22 +38,7 @@ const formatPhone = (value: string) => {
     .replace(/(\d{5})(\d{1,4})$/, "$1-$2");
 };
 
-const validateCpf = (cpf: string) => {
-  const digits = cpf.replace(/\D/g, "");
-  if (digits.length === 14) return true; // CNPJ - basic length check
-  if (digits.length !== 11) return false;
-  if (/^(\d)\1{10}$/.test(digits)) return false;
-  let sum = 0;
-  for (let i = 0; i < 9; i++) sum += parseInt(digits[i]) * (10 - i);
-  let rem = (sum * 10) % 11;
-  if (rem === 10) rem = 0;
-  if (rem !== parseInt(digits[9])) return false;
-  sum = 0;
-  for (let i = 0; i < 10; i++) sum += parseInt(digits[i]) * (11 - i);
-  rem = (sum * 10) % 11;
-  if (rem === 10) rem = 0;
-  return rem === parseInt(digits[10]);
-};
+// Validation now uses shared validators from @/lib/validators
 
 const CompleteProfile = () => {
   const { user, loading: authLoading, refreshRoles, signOut } = useAuth();
@@ -104,19 +90,17 @@ const CompleteProfile = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const cpfDigits = cpf.replace(/\D/g, "");
-    if (cpfDigits.length !== 11 && cpfDigits.length !== 14) {
-      setCpfError("Informe um CPF ou CNPJ válido");
-      return;
-    }
-    if (cpfDigits.length === 11 && !validateCpf(cpf)) {
-      setCpfError("CPF inválido");
+    // Validate CPF/CNPJ using shared validator
+    const cpfResult = validateCpfCnpj(cpf);
+    if (!cpfResult.valid) {
+      setCpfError(cpfResult.error);
       return;
     }
 
-    const phoneDigits = phone.replace(/\D/g, "");
-    if (phoneDigits.length < 10) {
-      toast.error("Informe um telefone válido");
+    // Validate phone
+    const phoneResult = validatePhone(phone);
+    if (!phoneResult.valid) {
+      toast.error(phoneResult.error);
       return;
     }
 
@@ -126,11 +110,13 @@ const CompleteProfile = () => {
     }
 
     setSaving(true);
+    const cleanCpf = cpf.replace(/\D/g, "");
+    const cleanPhone = phone.replace(/\D/g, "");
     const { error } = await supabase
       .from("profiles")
       .update({
-        cpf: cpfDigits,
-        phone: phoneDigits,
+        cpf: cleanCpf,
+        phone: cleanPhone,
         profile_completed: true,
       })
       .eq("id", user!.id);
