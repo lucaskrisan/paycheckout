@@ -211,7 +211,20 @@ const Orders = () => {
   const filtered = useMemo(() => {
     let result = orders;
 
-    if (activeTab === "approved") {
+    // Status filter logic: if specific statuses are selected, they take priority over the tab.
+    // Otherwise, the tab determines the default view.
+    if (filterStatuses.size > 0) {
+      // Expand "paid" filter to include all paid-equivalent statuses
+      const expandedStatuses = new Set(filterStatuses);
+      if (expandedStatuses.has("paid")) {
+        expandedStatuses.add("approved");
+        expandedStatuses.add("confirmed");
+      }
+      if (expandedStatuses.has("refused")) {
+        expandedStatuses.add("failed");
+      }
+      result = result.filter(o => expandedStatuses.has(o.status));
+    } else if (activeTab === "approved") {
       result = result.filter(o => ["paid", "approved", "confirmed"].includes(o.status));
     }
 
@@ -244,10 +257,6 @@ const Orders = () => {
 
     if (filterMethods.size > 0) {
       result = result.filter(o => filterMethods.has(o.payment_method));
-    }
-
-    if (filterStatuses.size > 0) {
-      result = result.filter(o => filterStatuses.has(o.status));
     }
 
     return result;
