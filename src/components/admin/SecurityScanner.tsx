@@ -173,25 +173,64 @@ export default function SecurityScanner({ userId, rateLimitHits, allUsers, order
 
       // ═══ 4. SENSITIVE DATA EXPOSURE ═══
       tick();
-      // Check if payment gateway configs are exposed
-      const { data: gwData } = await supabase.from("payment_gateways").select("id, config");
-      if (gwData && gwData.length > 0) {
-        const hasConfig = gwData.some((g: any) => g.config && Object.keys(g.config).length > 0);
-        if (hasConfig) {
-          results.push({
-            id: "gw-config-exposed", category: "Dados Sensíveis", name: "Configurações de Gateway Acessíveis",
-            severity: "medium",
-            detail: "Configurações de gateway de pagamento retornaram dados via query. Verificar se RLS restringe ao owner.",
-            recommendation: "Garantir que apenas o proprietário veja a coluna config."
-          });
-        }
+      const isCurrentUserSuperAdmin = (rolesData || []).some(
+        (role: any) => role.user_id === userId && role.role === "super_admin",
+      );
+
+      const { data: gatewayAccessData, error: gatewayAccessError } = await supabase
+        .from("payment_gateways")
+        .select("id, user_id")
+        .limit(1000);
+
+      const { data: activeGatewayRows, error: activeGatewaysError } = await supabase
+        .from("active_gateways")
+        .select("*")
+        .limit(1);
+
+      const hasCrossTenantGatewayAccess = !isCurrentUserSuperAdmin && (gatewayAccessData || []).some(
+        (gateway: any) => gateway.user_id && gateway.user_id !== userId,
+      );
+
+      const activeGatewaysExposeConfig = (activeGatewayRows || []).some((row: any) =>
+        Object.prototype.hasOwnProperty.call(row, "config"),
+      );
+
+      if (gatewayAccessError || activeGatewaysError) {
+        results.push({
+          id: "gw-config-check-unavailable",
+          category: "Dados Sensíveis",
+          name: "Verificação de Gateways Inconclusiva",
+          severity: "low",
+          detail: "Não foi possível validar automaticamente o isolamento dos gateways nesta sessão.",
+          recommendation: "Revisar as regras de acesso do banco e rodar a varredura novamente.",
+        });
+      } else if (hasCrossTenantGatewayAccess || activeGatewaysExposeConfig) {
+        results.push({
+          id: "gw-config-exposed",
+          category: "Dados Sensíveis",
+          name: "Possível Exposição de Configurações de Gateway",
+          severity: activeGatewaysExposeConfig ? "high" : "medium",
+          detail: activeGatewaysExposeConfig
+            ? "A visão pública de gateways expôs o campo config, que deveria ficar oculto."
+            : "A sessão atual conseguiu ler gateways de outro produtor sem privilégio esperado.",
+          recommendation: "Restringir leitura ao dono e manter o campo config fora de views públicas.",
+        });
+      } else {
+        results.push({
+          id: "gw-config-protected",
+          category: "Dados Sensíveis",
+          name: "Configurações de Gateway Protegidas",
+          severity: "pass",
+          detail: isCurrentUserSuperAdmin
+            ? "Acesso direto aos gateways está restrito a perfis privilegiados; a visão pública não expõe config."
+            : "A sessão atual só lê gateways autorizados; a visão pública não expõe config.",
+        });
       }
-      
-      // Check anon access to sensitive tables
+
       results.push({
         id: "data-isolation", category: "Dados Sensíveis", name: "Isolamento Multi-tenant",
         severity: "pass",
-        detail: "Dados de pagamento, clientes e configurações protegidos por RLS owner-scoped.",
+        detail: "Dados de pagamento, clientes e configurações protegidos por regras de acesso por proprietário.",
       });
 
       // ═══ 5. USER ANOMALY DETECTION ═══
