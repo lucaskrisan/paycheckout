@@ -12,7 +12,7 @@ import {
   FileWarning, UserX, KeyRound, Scan, Radio, Activity,
 } from "lucide-react";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 /* ─── Types ─── */
 type Severity = "critical" | "high" | "medium" | "low" | "info" | "pass";
@@ -501,7 +501,7 @@ export default function SecurityScanner({ userId, rateLimitHits, allUsers, order
               </p>
             </div>
           </div>
-          <Button onClick={runScan} disabled={phase === "scanning"} className="gap-2">
+          <Button onClick={() => runScan()} disabled={phase === "scanning"} className="gap-2">
             {phase === "scanning" ? (
               <><Loader2 className="w-4 h-4 animate-spin" /> Analisando...</>
             ) : phase === "done" ? (

@@ -1144,7 +1144,7 @@ const SuperAdminDashboard = () => {
               <Label className="text-xs font-medium">Email</Label>
               <Input type="email" value={newProducer.email} onChange={(e) => setNewProducer(p => ({ ...p, email: e.target.value }))} placeholder="produtor@email.com" className="h-9" />
             </div>
-            <Button onClick={handleCreateProducer} disabled={actionLoading === "new-producer"} className="w-full gap-2">
+            <Button onClick={() => handleCreateProducer()} disabled={actionLoading === "new-producer"} className="w-full gap-2">
               {actionLoading === "new-producer" ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
               {actionLoading === "new-producer" ? "Enviando convite..." : "Enviar Convite"}
             </Button>
