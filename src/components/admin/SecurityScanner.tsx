@@ -501,7 +501,7 @@ export default function SecurityScanner({ userId, rateLimitHits, allUsers, order
               </p>
             </div>
           </div>
-          <Button onClick={runScan} disabled={phase === "scanning"} className="gap-2">
+          <Button onClick={() => runScan()} disabled={phase === "scanning"} className="gap-2">
             {phase === "scanning" ? (
               <><Loader2 className="w-4 h-4 animate-spin" /> Analisando...</>
             ) : phase === "done" ? (
