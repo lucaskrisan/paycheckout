@@ -279,7 +279,7 @@ export default function TrackingFullAudit({ userId }: Props) {
             <p className="text-[10px] text-slate-500">Audita pixels, CAPI, deduplicação, funil e Meta API</p>
           </div>
         </div>
-        <Button onClick={runAudit} disabled={running} size="sm" className="gap-1.5 text-xs">
+        <Button onClick={() => runAudit()} disabled={running} size="sm" className="gap-1.5 text-xs">
           {running ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : checks ? <RefreshCw className="w-3.5 h-3.5" /> : <Shield className="w-3.5 h-3.5" />}
           {running ? "Auditando..." : checks ? "Rodar novamente" : "Iniciar varredura"}
         </Button>
