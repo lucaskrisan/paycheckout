@@ -12,7 +12,7 @@ import {
   FileWarning, UserX, KeyRound, Scan, Radio, Activity,
 } from "lucide-react";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 /* ─── Types ─── */
 type Severity = "critical" | "high" | "medium" | "low" | "info" | "pass";
