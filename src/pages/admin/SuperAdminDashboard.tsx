@@ -682,6 +682,15 @@ const SuperAdminDashboard = () => {
         {/* ═══ SECURITY TAB ═══ */}
         <TabsContent value="security">
           <div className="space-y-4">
+            {/* Security Scanner */}
+            <SecurityScanner
+              userId={user?.id || ""}
+              rateLimitHits={rateLimitHits}
+              allUsers={allUsers}
+              orders={orders}
+              products={products}
+            />
+
             {/* Security KPIs */}
             {(() => {
               const now = new Date();
