@@ -37,6 +37,7 @@ import { toast } from "sonner";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
+import SecurityScanner from "@/components/admin/SecurityScanner";
 
 /* ─── Types ────────────────────────────────────── */
 interface Producer {
