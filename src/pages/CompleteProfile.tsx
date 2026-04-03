@@ -38,22 +38,7 @@ const formatPhone = (value: string) => {
     .replace(/(\d{5})(\d{1,4})$/, "$1-$2");
 };
 
-const validateCpf = (cpf: string) => {
-  const digits = cpf.replace(/\D/g, "");
-  if (digits.length === 14) return true; // CNPJ - basic length check
-  if (digits.length !== 11) return false;
-  if (/^(\d)\1{10}$/.test(digits)) return false;
-  let sum = 0;
-  for (let i = 0; i < 9; i++) sum += parseInt(digits[i]) * (10 - i);
-  let rem = (sum * 10) % 11;
-  if (rem === 10) rem = 0;
-  if (rem !== parseInt(digits[9])) return false;
-  sum = 0;
-  for (let i = 0; i < 10; i++) sum += parseInt(digits[i]) * (11 - i);
-  rem = (sum * 10) % 11;
-  if (rem === 10) rem = 0;
-  return rem === parseInt(digits[10]);
-};
+// Validation now uses shared validators from @/lib/validators
 
 const CompleteProfile = () => {
   const { user, loading: authLoading, refreshRoles, signOut } = useAuth();
