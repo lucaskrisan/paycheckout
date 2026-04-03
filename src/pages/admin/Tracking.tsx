@@ -448,7 +448,7 @@ const Tracking = () => {
                     />
                   </div>
                 </div>
-                <Button onClick={verifyPage} disabled={pageChecking} size="sm" className="gap-1.5 text-xs">
+                <Button onClick={() => verifyPage()} disabled={pageChecking} size="sm" className="gap-1.5 text-xs">
                   {pageChecking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
                   {pageChecking ? "Verificando..." : "Verificar"}
                 </Button>

@@ -215,7 +215,7 @@ export default function MetaEmqPanel({ products }: Props) {
                   {loading ? "Carregando..." : data ? "Atualizar" : "Consultar EMQ"}
                 </Button>
                 {data && (
-                  <Button onClick={takeSnapshot} disabled={snapshotLoading} size="sm" variant="outline" className="gap-1.5 text-xs border-slate-700/50 text-slate-400 hover:text-slate-200">
+                  <Button onClick={() => takeSnapshot()} disabled={snapshotLoading} size="sm" variant="outline" className="gap-1.5 text-xs border-slate-700/50 text-slate-400 hover:text-slate-200">
                     {snapshotLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
                     Snapshot
                   </Button>
