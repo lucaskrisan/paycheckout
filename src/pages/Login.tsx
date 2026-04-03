@@ -399,12 +399,13 @@ const Login = () => {
                       <Input
                         id="cpf"
                         value={cpf}
-                        onChange={(e) => setCpf(formatCpfCnpj(e.target.value))}
+                        onChange={(e) => { setCpf(formatCpfCnpj(e.target.value)); setCpfError(""); }}
                         placeholder="000.000.000-00"
                         maxLength={18}
-                        className="h-[52px] bg-card/40 border-border/50 rounded-xl text-[14px] placeholder:text-muted-foreground/40 focus:border-primary/50 focus:bg-card/60 transition-all duration-200"
+                        className={`h-[52px] bg-card/40 border-border/50 rounded-xl text-[14px] placeholder:text-muted-foreground/40 focus:border-primary/50 focus:bg-card/60 transition-all duration-200 ${cpfError ? "border-red-500 focus:border-red-500" : ""}`}
                         required
                       />
+                      {cpfError && <p className="text-xs text-red-400">{cpfError}</p>}
                     </div>
 
                     <div className="flex items-start gap-3 pt-1">
