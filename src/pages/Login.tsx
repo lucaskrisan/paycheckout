@@ -334,13 +334,14 @@ const Login = () => {
                       <Input
                         id="phone"
                         value={phone}
-                        onChange={(e) => setPhone(formatPhone(e.target.value))}
+                        onChange={(e) => { setPhone(formatPhone(e.target.value)); setPhoneError(""); }}
                         placeholder="(11) 96123-4567"
                         maxLength={15}
-                        className="h-[52px] bg-card/40 border-border/50 rounded-xl text-[14px] placeholder:text-muted-foreground/40 focus:border-primary/50 focus:bg-card/60 transition-all duration-200 flex-1"
+                        className={`h-[52px] bg-card/40 border-border/50 rounded-xl text-[14px] placeholder:text-muted-foreground/40 focus:border-primary/50 focus:bg-card/60 transition-all duration-200 flex-1 ${phoneError ? "border-red-500 focus:border-red-500" : ""}`}
                         required
                       />
                     </div>
+                    {phoneError && <p className="text-xs text-red-400">{phoneError}</p>}
                   </div>
                 )}
 
