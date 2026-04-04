@@ -1,5 +1,9 @@
 import { Component, type ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";
+import {
+  isDynamicImportFailure,
+  recoverFromDynamicImportFailure,
+} from "@/lib/dynamicImportRecovery";
 
 interface Props {
   children: ReactNode;
@@ -20,7 +24,20 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error("[ErrorBoundary]", error, info.componentStack);
+
+    if (isDynamicImportFailure(error)) {
+      recoverFromDynamicImportFailure();
+    }
   }
+
+  handleReload = () => {
+    if (isDynamicImportFailure(this.state.error)) {
+      const recovered = recoverFromDynamicImportFailure();
+      if (recovered) return;
+    }
+
+    window.location.reload();
+  };
 
   render() {
     if (this.state.hasError) {
@@ -34,7 +51,7 @@ export default class ErrorBoundary extends Component<Props, State> {
             Ocorreu um erro inesperado. Tente recarregar a página.
           </p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={this.handleReload}
             className="px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
           >
             Recarregar
