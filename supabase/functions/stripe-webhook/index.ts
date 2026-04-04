@@ -292,6 +292,31 @@ Deno.serve(async (req) => {
       }
     }
 
+    // --- WhatsApp dispatch (non-blocking) ---
+    if (status === 'paid' && orderData?.user_id && orderData?.customer_id) {
+      try {
+        const { data: custWa } = await supabase.from('customers').select('name, phone').eq('id', orderData.customer_id).maybeSingle();
+        const { data: prodWa } = await supabase.from('products').select('name, price').eq('id', orderData.product_id || '').maybeSingle();
+        if (custWa?.phone) {
+          fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/whatsapp-dispatch`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
+            body: JSON.stringify({
+              tenant_id: orderData.user_id,
+              order_id: orderData.id,
+              customer_phone: custWa.phone,
+              customer_name: custWa.name,
+              product_name: prodWa?.name || '',
+              product_price: String(orderData.amount),
+              category: 'confirmacao',
+            }),
+          }).catch(e => console.error('[stripe-webhook] whatsapp-dispatch error:', e));
+        }
+      } catch (waErr) {
+        console.error('[stripe-webhook] WhatsApp dispatch error (non-blocking):', waErr);
+      }
+    }
+
     // Fire webhooks for other statuses
     if (orderData?.user_id && status !== 'paid') {
       const evtMap: Record<string, string[]> = {
