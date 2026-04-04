@@ -15,19 +15,13 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
-      "react/jsx-runtime": fileURLToPath(new URL("./node_modules/react/jsx-runtime.js", import.meta.url)),
-      "react/jsx-dev-runtime": fileURLToPath(new URL("./node_modules/react/jsx-dev-runtime.js", import.meta.url)),
-      "react-dom/client": fileURLToPath(new URL("./node_modules/react-dom/client.js", import.meta.url)),
     },
-    dedupe: ["react", "react-dom", "react-dom/client", "@tanstack/react-query"],
+    dedupe: ["react", "react-dom", "@tanstack/react-query"],
   },
   optimizeDeps: {
     include: [
       "react",
-      "react/jsx-runtime",
-      "react/jsx-dev-runtime",
       "react-dom",
-      "react-dom/client",
       "@tanstack/react-query",
     ],
   },
