@@ -845,6 +845,32 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
                       </div>
                     )}
 
+                    {/* Media URL field for image/audio/video/document nodes */}
+                    {["image", "music", "audio", "video", "document"].includes(selectedNode.type) && (
+                      <div className="space-y-2">
+                        <Label>
+                          URL da mídia
+                          <span className="ml-1 text-xs text-muted-foreground font-normal">
+                            ({selectedNode.type === "image" ? "JPG, PNG, WEBP" :
+                              selectedNode.type === "video" ? "MP4" :
+                              selectedNode.type === "audio" || selectedNode.type === "music" ? "MP3, OGG, M4A" :
+                              "PDF, DOCX, etc."})
+                          </span>
+                        </Label>
+                        <Input
+                          placeholder="https://exemplo.com/arquivo.jpg"
+                          value={selectedNode.config.media_url || ""}
+                          onChange={(event) => updateSelectedNode((node) => ({
+                            ...node,
+                            config: { ...node.config, media_url: event.target.value },
+                          }))}
+                        />
+                        <p className="text-[11px] text-muted-foreground">
+                          Cole a URL pública do arquivo. Será enviado como {selectedNode.type === "music" ? "áudio" : selectedNode.type} no WhatsApp.
+                        </p>
+                      </div>
+                    )}
+
                     {selectedNode.type === "wait" && (
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-2">
