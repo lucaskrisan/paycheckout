@@ -18,7 +18,12 @@ export default defineConfig({
     dedupe: ["react", "react-dom", "@tanstack/react-query"],
   },
   optimizeDeps: {
-    include: ["react", "react-dom", "@tanstack/react-query"],
-    exclude: ["recharts"],
+    include: [
+      "react",
+      "react-dom",
+      "@tanstack/react-query",
+      "recharts",
+    ],
+    force: true,
   },
 });
