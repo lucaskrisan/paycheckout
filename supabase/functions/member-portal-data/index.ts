@@ -53,12 +53,12 @@ Deno.serve(async (req) => {
 
     const email = user.email || "";
 
-    const [{ data: profile }, { data: ownProducts }, { data: ownCourses }, { data: ownCustomers }] = await Promise.all([
+    const [{ data: profile }, { data: ownProducts }, { data: ownCourses }, { data: customers }] = await Promise.all([
       supabaseAdmin.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
       supabaseAdmin.from("products").select("id, name, description, image_url").eq("user_id", user.id),
       supabaseAdmin.from("courses").select("id, title, description, cover_image_url, product_id").eq("user_id", user.id),
       email
-        ? supabaseAdmin.from("customers").select("id").ilike("email", email).eq("user_id", user.id)
+        ? supabaseAdmin.from("customers").select("id").ilike("email", email)
         : Promise.resolve({ data: [] as { id: string }[] }),
     ]);
 
