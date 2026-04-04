@@ -17,7 +17,7 @@ const json = (payload: unknown, status = 200) =>
  *
  * Called internally (service_role) by payment webhooks.
  * 1. Checks if the feature flag for the category is enabled for the tenant.
- * 2. Finds the first active template matching the category.
+ * 2. Finds active templates matching the category (supports multiple).
  * 3. Resolves variables ({nome}, {produto}, {valor}, {link}, {telefone}).
  * 4. Calls send-whatsapp-message.
  * 5. Logs the result in whatsapp_send_log.
@@ -80,16 +80,23 @@ Deno.serve(async (req) => {
       return json({ skipped: true, reason: "whatsapp_not_connected" });
     }
 
-    // 3. Find active template for this category
-    const { data: template } = await supabase
+    // 3. Find active templates for this category (supports multiple — pick random)
+    const { data: templates } = await supabase
       .from("whatsapp_templates")
       .select("body")
       .eq("user_id", tenant_id)
       .eq("category", category)
       .eq("active", true)
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .order("updated_at", { ascending: false });
+
+    if (!templates || templates.length === 0) {
+      return json({ skipped: true, reason: "no_template" });
+    }
+
+    // Pick a random template if multiple exist
+    const template = templates.length === 1
+      ? templates[0]
+      : templates[Math.floor(Math.random() * templates.length)];
 
     if (!template?.body) {
       return json({ skipped: true, reason: "no_template" });
@@ -107,7 +114,7 @@ Deno.serve(async (req) => {
       .replace(/\{link\}/gi, access_link || "")
       .replace(/\{telefone\}/gi, customer_phone || "");
 
-    // 5. Send via Evolution API (reuse send-whatsapp-message logic inline)
+    // 5. Send via Evolution API
     const EVOLUTION_API_URL = Deno.env.get("EVOLUTION_API_URL")!;
     const EVOLUTION_API_KEY = Deno.env.get("EVOLUTION_API_KEY")!;
 
