@@ -40,6 +40,7 @@ interface Template {
   body: string;
   variables: string[];
   active: boolean;
+  flow_nodes: any[];
   created_at: string;
   updated_at: string;
 }
@@ -60,6 +61,7 @@ const createEmptyTemplate = (): Template => ({
   body: "Olá {nome}, obrigado por adquirir o {produto}!",
   variables: [],
   active: true,
+  flow_nodes: [],
   created_at: "",
   updated_at: "",
 });
@@ -246,7 +248,11 @@ const WhatsAppTemplates = () => {
     if (error) {
       toast.error("Erro ao carregar templates");
     } else {
-      setTemplates((data || []).map((item: any) => ({ ...item, variables: item.variables || [] })));
+      setTemplates((data || []).map((item: any) => ({
+        ...item,
+        variables: item.variables || [],
+        flow_nodes: item.flow_nodes || [],
+      })));
     }
 
     setLoading(false);
@@ -268,7 +274,7 @@ const WhatsAppTemplates = () => {
   const openBuilderForNew = () => setBuilderTemplate(createEmptyTemplate());
   const openBuilderForTemplate = (template: Template) => setBuilderTemplate(template);
 
-  const handleSave = async ({ template }: { template: Pick<Template, "id" | "name" | "category" | "body" | "active"> }) => {
+  const handleSave = async ({ template, nodes }: { template: Pick<Template, "id" | "name" | "category" | "body" | "active">; nodes?: any[] }) => {
     if (!user) return;
     if (!template.name.trim() || !template.body.trim()) {
       toast.error("Preencha nome e mensagem principal");
@@ -283,6 +289,7 @@ const WhatsAppTemplates = () => {
       active: template.active,
       user_id: user.id,
       variables: extractVariables(template.body),
+      flow_nodes: nodes || [],
       updated_at: new Date().toISOString(),
     };
 
@@ -299,7 +306,7 @@ const WhatsAppTemplates = () => {
       return;
     }
 
-    const normalized = { ...data, variables: data.variables || [] } as Template;
+    const normalized = { ...data, variables: data.variables || [], flow_nodes: data.flow_nodes || [] } as Template;
     setBuilderTemplate(normalized);
     toast.success(isNew ? "Template criado no builder" : "Template atualizado");
     await fetchTemplates();
@@ -333,6 +340,7 @@ const WhatsAppTemplates = () => {
           onSave={handleSave}
           saving={saving}
           template={builderTemplate}
+          initialNodes={builderTemplate.flow_nodes}
         />
 
         <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>

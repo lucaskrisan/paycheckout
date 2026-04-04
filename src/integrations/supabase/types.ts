@@ -2071,6 +2071,7 @@ export type Database = {
           body: string
           category: string
           created_at: string
+          flow_nodes: Json
           id: string
           name: string
           updated_at: string
@@ -2082,6 +2083,7 @@ export type Database = {
           body: string
           category?: string
           created_at?: string
+          flow_nodes?: Json
           id?: string
           name: string
           updated_at?: string
@@ -2093,6 +2095,7 @@ export type Database = {
           body?: string
           category?: string
           created_at?: string
+          flow_nodes?: Json
           id?: string
           name?: string
           updated_at?: string

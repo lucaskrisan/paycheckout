@@ -17,6 +17,7 @@ import {
   Plus,
   Save,
   Send,
+  Smartphone,
   Tag,
   Trash2,
   Variable,
@@ -38,7 +39,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 import FlowSidebar, { NODE_TYPES, type NodeType } from "./FlowSidebar";
+import WhatsAppPreview from "./WhatsAppPreview";
+import VariableButtons from "./VariableButtons";
 
 interface TemplateDraft {
   id: string;
@@ -66,6 +72,7 @@ interface FlowCanvasProps {
   onSave: (payload: { template: TemplateDraft; nodes: FlowNodeData[] }) => void;
   saving?: boolean;
   template: TemplateDraft;
+  initialNodes?: FlowNodeData[];
 }
 
 const INTERNAL_NODE_META = {
@@ -76,7 +83,7 @@ const INTERNAL_NODE_META = {
 const MESSAGE_TYPES = ["text", "image", "music", "audio", "video", "document"];
 const OPTION_TYPES = ["question", "paths"];
 
-const createStarterNodes = (body: string) => [
+const createStarterNodes = (body: string): FlowNodeData[] => [
   {
     id: "trigger-node",
     type: "trigger",
@@ -305,18 +312,118 @@ const CanvasNode = ({
   );
 };
 
-const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, template }: FlowCanvasProps) => {
+// Mobile simplified editor fallback (#10)
+const MobileEditor = ({
+  categories,
+  draft,
+  onBack,
+  onSave,
+  saving,
+  setDraft,
+}: {
+  categories: Array<{ value: string; label: string }>;
+  draft: TemplateDraft;
+  onBack: () => void;
+  onSave: () => void;
+  saving?: boolean;
+  setDraft: React.Dispatch<React.SetStateAction<TemplateDraft>>;
+}) => {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleInsertVariable = (variable: string) => {
+    const el = textareaRef.current;
+    if (el) {
+      const start = el.selectionStart;
+      const end = el.selectionEnd;
+      const newBody = draft.body.slice(0, start) + variable + draft.body.slice(end);
+      setDraft((d) => ({ ...d, body: newBody }));
+      setTimeout(() => {
+        el.focus();
+        el.setSelectionRange(start + variable.length, start + variable.length);
+      }, 50);
+    } else {
+      setDraft((d) => ({ ...d, body: d.body + variable }));
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-background overflow-y-auto">
+      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border/60 bg-card/95 px-4 py-3">
+        <button onClick={onBack} className="text-muted-foreground" type="button">
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <h2 className="font-display text-sm font-semibold text-foreground truncate mx-2">
+          {draft.name || "Novo template"}
+        </h2>
+        <Button size="sm" className="gap-1.5 bg-gold text-background" disabled={saving} onClick={onSave}>
+          <Save className="h-3.5 w-3.5" />
+          {saving ? "..." : "Salvar"}
+        </Button>
+      </div>
+
+      <div className="p-4 space-y-5">
+        <div className="space-y-2">
+          <Label>Nome</Label>
+          <Input value={draft.name} onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))} placeholder="Ex: Confirmação de compra" />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Categoria</Label>
+          <Select value={draft.category} onValueChange={(v) => setDraft((d) => ({ ...d, category: v }))}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {categories.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Mensagem</Label>
+          <Textarea
+            ref={textareaRef}
+            className="min-h-[140px]"
+            value={draft.body}
+            onChange={(e) => setDraft((d) => ({ ...d, body: e.target.value }))}
+          />
+        </div>
+
+        <VariableButtons onInsert={handleInsertVariable} />
+
+        <div className="flex items-center justify-between rounded-xl border border-border/60 px-4 py-3">
+          <span className="text-sm text-foreground">Ativo</span>
+          <Switch checked={draft.active} onCheckedChange={(v) => setDraft((d) => ({ ...d, active: v }))} />
+        </div>
+
+        <WhatsAppPreview body={draft.body} />
+      </div>
+    </div>
+  );
+};
+
+const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, template, initialNodes }: FlowCanvasProps) => {
+  const isMobile = useIsMobile();
   const [draft, setDraft] = useState<TemplateDraft>(template);
-  const [nodes, setNodes] = useState<FlowNodeData[]>(() => createStarterNodes(template.body));
+  const [nodes, setNodes] = useState<FlowNodeData[]>(() => {
+    // Use saved nodes if available (#9), otherwise create starter
+    if (initialNodes && initialNodes.length > 0) return initialNodes;
+    return createStarterNodes(template.body);
+  });
   const [selectedNodeId, setSelectedNodeId] = useState<string>("message-node");
   const [pendingConnection, setPendingConnection] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [sendingTest, setSendingTest] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     setDraft(template);
-    setNodes(createStarterNodes(template.body));
+    if (initialNodes && initialNodes.length > 0) {
+      setNodes(initialNodes);
+    } else {
+      setNodes(createStarterNodes(template.body));
+    }
     setSelectedNodeId("message-node");
     setPendingConnection(null);
-  }, [template]);
+  }, [template, initialNodes]);
 
   const selectedNode = useMemo(
     () => nodes.find((node) => node.id === selectedNodeId) || null,
@@ -338,7 +445,6 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
         .filter((node) => node.id !== id)
         .map((node) => ({ ...node, outputs: node.outputs.filter((output) => output !== id) })),
     );
-
     if (selectedNodeId === id) setSelectedNodeId("message-node");
     if (pendingConnection === id) setPendingConnection(null);
   };
@@ -354,7 +460,6 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
       );
       setPendingConnection(null);
     }
-
     setSelectedNodeId(id);
   };
 
@@ -394,7 +499,6 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
         outputs: [],
       },
     ]);
-
     setSelectedNodeId(nextId);
   };
 
@@ -447,6 +551,84 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
     }));
   };
 
+  // Insert variable at cursor position in the content textarea (#6)
+  const handleInsertVariable = (variable: string) => {
+    if (!selectedNode) return;
+    const el = textareaRef.current;
+    if (el) {
+      const start = el.selectionStart;
+      const end = el.selectionEnd;
+      const currentBody = selectedNode.config.body || "";
+      const newBody = currentBody.slice(0, start) + variable + currentBody.slice(end);
+      updateSelectedNode((node) => ({ ...node, config: { ...node.config, body: newBody } }));
+      setTimeout(() => {
+        el.focus();
+        el.setSelectionRange(start + variable.length, start + variable.length);
+      }, 50);
+    } else {
+      updateSelectedNode((node) => ({
+        ...node,
+        config: { ...node.config, body: (node.config.body || "") + variable },
+      }));
+    }
+  };
+
+  // Test send (#4)
+  const handleTestSend = async () => {
+    if (!primaryBody.trim()) {
+      toast.error("Adicione uma mensagem antes de testar");
+      return;
+    }
+
+    setSendingTest(true);
+    try {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("phone")
+        .eq("id", (await supabase.auth.getUser()).data.user?.id || "")
+        .maybeSingle();
+
+      if (!profile?.phone) {
+        toast.error("Configure seu telefone em Minha Conta antes de enviar um teste.");
+        setSendingTest(false);
+        return;
+      }
+
+      const { error } = await supabase.functions.invoke("send-whatsapp-message", {
+        body: {
+          to_number: profile.phone,
+          message: primaryBody
+            .replace(/\{nome\}/gi, "Teste")
+            .replace(/\{produto\}/gi, "Produto Teste")
+            .replace(/\{valor\}/gi, "R$ 99,90")
+            .replace(/\{link\}/gi, "https://exemplo.com")
+            .replace(/\{telefone\}/gi, profile.phone),
+        },
+      });
+
+      if (error) throw error;
+      toast.success("Mensagem de teste enviada para seu WhatsApp!");
+    } catch (err: any) {
+      toast.error(err?.message || "Erro ao enviar teste");
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
+  // Mobile fallback (#10)
+  if (isMobile) {
+    return (
+      <MobileEditor
+        categories={categories}
+        draft={draft}
+        onBack={onBack}
+        onSave={() => onSave({ template: { ...draft, body: primaryBody }, nodes })}
+        saving={saving}
+        setDraft={setDraft}
+      />
+    );
+  }
+
   return (
     <motion.div
       animate={{ opacity: 1 }}
@@ -481,6 +663,27 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
           </div>
 
           <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setShowPreview(!showPreview)}
+            >
+              <Smartphone className="h-3.5 w-3.5" />
+              {showPreview ? "Ocultar preview" : "Preview"}
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={handleTestSend}
+              disabled={sendingTest}
+            >
+              <Send className="h-3.5 w-3.5" />
+              {sendingTest ? "Enviando..." : "Testar envio"}
+            </Button>
+
             <Badge variant={draft.active ? "default" : "secondary"}>{draft.active ? "Ativo" : "Inativo"}</Badge>
 
             {onDelete && !isNew && (
@@ -587,6 +790,13 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
                 </div>
               </section>
 
+              {/* Preview section (#3) */}
+              {showPreview && (
+                <section className="space-y-2">
+                  <WhatsAppPreview body={primaryBody} />
+                </section>
+              )}
+
               <section className="space-y-4 rounded-2xl border border-border/60 bg-background/60 p-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -622,11 +832,16 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
                       <div className="space-y-2">
                         <Label>Conteúdo</Label>
                         <Textarea
+                          ref={textareaRef}
                           className="min-h-[120px]"
                           onChange={(event) => updateSelectedNode((node) => ({ ...node, config: { ...node.config, body: event.target.value } }))}
                           placeholder="Descreva ou escreva o conteúdo deste bloco"
                           value={selectedNode.config.body || ""}
                         />
+                        {/* Variable insertion buttons (#6) */}
+                        {MESSAGE_TYPES.includes(selectedNode.type) && (
+                          <VariableButtons onInsert={handleInsertVariable} />
+                        )}
                       </div>
                     )}
 

@@ -3,6 +3,7 @@ import { lazy, Suspense, useState, useEffect, useRef, useCallback } from "react"
 
 const WhatsAppTemplates = lazy(() => import("@/components/admin/WhatsAppTemplates"));
 const WhatsAppFeatureFlags = lazy(() => import("@/components/admin/WhatsAppFeatureFlags"));
+const WhatsAppSendLog = lazy(() => import("@/components/admin/WhatsAppSendLog"));
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,7 +29,9 @@ const WhatsApp = () => {
   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const statusPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Initial load + periodic status check (#7)
   useEffect(() => {
     if (!user) return;
     const load = async () => {
@@ -43,6 +46,23 @@ const WhatsApp = () => {
       }
     };
     load();
+
+    // Poll status every 60s to catch unexpected disconnections
+    statusPollRef.current = setInterval(async () => {
+      const { data } = await supabase
+        .from("whatsapp_sessions")
+        .select("status, phone_number")
+        .eq("tenant_id", user.id)
+        .maybeSingle();
+      if (data) {
+        setStatus(data.status);
+        setPhoneNumber(data.phone_number);
+      }
+    }, 60_000);
+
+    return () => {
+      if (statusPollRef.current) clearInterval(statusPollRef.current);
+    };
   }, [user]);
 
   const stopPolling = useCallback(() => {
@@ -57,7 +77,7 @@ const WhatsApp = () => {
   const startPolling = useCallback(() => {
     stopPolling();
     let attempts = 0;
-    const maxAttempts = 60; // 3 min max
+    const maxAttempts = 60;
 
     pollingRef.current = setInterval(async () => {
       attempts++;
@@ -96,7 +116,6 @@ const WhatsApp = () => {
     setErrorMsg(null);
     try {
       const { data, error } = await supabase.functions.invoke("connect-whatsapp");
-
       if (error) throw error;
 
       if (data?.error) {
@@ -178,6 +197,12 @@ const WhatsApp = () => {
           <CardTitle className="text-base flex items-center gap-2">
             <MessageSquare className="w-5 h-5" />
             Conexão WhatsApp
+            {status === "connected" && (
+              <span className="ml-2 flex items-center gap-1.5 text-xs font-normal text-muted-foreground">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                Monitorando
+              </span>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -245,14 +270,18 @@ const WhatsApp = () => {
         </CardContent>
       </Card>
 
-      {isSuperAdmin && user && (
+      {isSuperAdmin && (
         <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
-          <WhatsAppFeatureFlags tenantId={user.id} />
+          <WhatsAppFeatureFlags />
         </Suspense>
       )}
 
       <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
         <WhatsAppTemplates />
+      </Suspense>
+
+      <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
+        <WhatsAppSendLog />
       </Suspense>
     </div>
   );
