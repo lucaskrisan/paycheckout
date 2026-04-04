@@ -2108,6 +2108,54 @@ export type Database = {
           },
         ]
       }
+      public_pwa_settings: {
+        Row: {
+          app_name: string | null
+          background_color: string | null
+          description: string | null
+          icon_192_url: string | null
+          icon_512_url: string | null
+          id: string | null
+          notification_body: string | null
+          notification_icon_url: string | null
+          notification_title: string | null
+          short_name: string | null
+          splash_image_url: string | null
+          theme_color: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          app_name?: string | null
+          background_color?: string | null
+          description?: string | null
+          icon_192_url?: string | null
+          icon_512_url?: string | null
+          id?: string | null
+          notification_body?: string | null
+          notification_icon_url?: string | null
+          notification_title?: string | null
+          short_name?: string | null
+          splash_image_url?: string | null
+          theme_color?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          app_name?: string | null
+          background_color?: string | null
+          description?: string | null
+          icon_192_url?: string | null
+          icon_512_url?: string | null
+          id?: string | null
+          notification_body?: string | null
+          notification_icon_url?: string | null
+          notification_title?: string | null
+          short_name?: string | null
+          splash_image_url?: string | null
+          theme_color?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       add_billing_credit: {
