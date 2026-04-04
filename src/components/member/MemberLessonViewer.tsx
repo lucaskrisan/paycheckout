@@ -174,7 +174,7 @@ const MemberLessonViewer = memo(function MemberLessonViewer({
 
       {/* Materials */}
       <div className="mt-4">
-        <LessonMaterials lessonId={lesson.id} supabaseClient={tokenClient} />
+        <LessonMaterials lessonId={lesson.id} client={tokenClient} />
       </div>
 
       {/* Reviews */}
@@ -183,7 +183,7 @@ const MemberLessonViewer = memo(function MemberLessonViewer({
           lessonId={lesson.id}
           memberAccessId={accessId}
           customerName={customerName}
-          supabaseClient={tokenClient}
+          client={tokenClient}
         />
       </div>
     </motion.div>
