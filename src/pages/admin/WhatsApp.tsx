@@ -20,7 +20,7 @@ const formatPhone = (raw: string) => {
 };
 
 const WhatsApp = () => {
-  const { user } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
   const [loading, setLoading] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [qrcode, setQrcode] = useState<string | null>(null);
