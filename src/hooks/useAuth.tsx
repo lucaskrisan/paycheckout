@@ -96,13 +96,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               checkRoles(newSession.user.id),
               checkProfileCompleted(newSession.user.id),
             ]);
-            if (initialSessionResolved) setLoading(false);
+            if (mounted && initialSessionResolved) setLoading(false);
           }, 0);
         } else {
           setIsAdmin(false);
           setIsSuperAdmin(false);
           setProfileCompleted(null);
-          if (initialSessionResolved) setLoading(false);
+          if (mounted && initialSessionResolved) setLoading(false);
         }
       }
     );

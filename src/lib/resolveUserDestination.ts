@@ -59,6 +59,6 @@ export async function resolveUserDestination() {
 
   if (!profileCompleted) return "/completar-perfil";
   if (isAdmin) return "/admin";
-  return "/admin";
+  return "/minha-conta";
 }
 
