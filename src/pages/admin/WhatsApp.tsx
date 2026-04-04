@@ -2,6 +2,7 @@
 import { lazy, Suspense, useState, useEffect, useRef, useCallback } from "react";
 
 const WhatsAppTemplates = lazy(() => import("@/components/admin/WhatsAppTemplates"));
+const WhatsAppFeatureFlags = lazy(() => import("@/components/admin/WhatsAppFeatureFlags"));
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
