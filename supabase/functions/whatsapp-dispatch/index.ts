@@ -12,6 +12,13 @@ const json = (payload: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
+/** Media types supported by Evolution API v2 */
+const MEDIA_TYPES = ["image", "audio", "video", "document"] as const;
+
+function isMediaType(t: string): boolean {
+  return (MEDIA_TYPES as readonly string[]).includes(t);
+}
+
 /**
  * whatsapp-dispatch
  *
@@ -19,7 +26,7 @@ const json = (payload: unknown, status = 200) =>
  * 1. Checks if the feature flag for the category is enabled for the tenant.
  * 2. Finds active templates matching the category (supports multiple).
  * 3. Resolves variables ({nome}, {produto}, {valor}, {link}, {telefone}).
- * 4. Calls send-whatsapp-message.
+ * 4. Processes flow_nodes to send text AND media messages in order.
  * 5. Logs the result in whatsapp_send_log.
  */
 Deno.serve(async (req) => {
@@ -80,10 +87,10 @@ Deno.serve(async (req) => {
       return json({ skipped: true, reason: "whatsapp_not_connected" });
     }
 
-    // 3. Find active templates for this category (supports multiple — pick random)
+    // 3. Find active templates for this category
     const { data: templates } = await supabase
       .from("whatsapp_templates")
-      .select("body")
+      .select("body, flow_nodes")
       .eq("user_id", tenant_id)
       .eq("category", category)
       .eq("active", true)
@@ -102,19 +109,19 @@ Deno.serve(async (req) => {
       return json({ skipped: true, reason: "no_template" });
     }
 
-    // 4. Resolve variables
+    // 4. Resolve variables helper
     const priceFormatted = product_price
       ? `R$ ${Number(product_price).toFixed(2).replace(".", ",")}`
       : "";
 
-    const message = template.body
-      .replace(/\{nome\}/gi, customer_name || "Cliente")
-      .replace(/\{produto\}/gi, product_name || "")
-      .replace(/\{valor\}/gi, priceFormatted)
-      .replace(/\{link\}/gi, access_link || "")
-      .replace(/\{telefone\}/gi, customer_phone || "");
+    const resolveVars = (text: string): string =>
+      text
+        .replace(/\{nome\}/gi, customer_name || "Cliente")
+        .replace(/\{produto\}/gi, product_name || "")
+        .replace(/\{valor\}/gi, priceFormatted)
+        .replace(/\{link\}/gi, access_link || "")
+        .replace(/\{telefone\}/gi, customer_phone || "");
 
-    // 5. Send via Evolution API
     const EVOLUTION_API_URL = Deno.env.get("EVOLUTION_API_URL")!;
     const EVOLUTION_API_KEY = Deno.env.get("EVOLUTION_API_KEY")!;
 
@@ -123,29 +130,125 @@ Deno.serve(async (req) => {
       cleanNumber = `55${cleanNumber}`;
     }
 
+    const whatsappNumber = `${cleanNumber}@s.whatsapp.net`;
     let sendStatus = "sent";
     let errorMessage: string | null = null;
 
-    try {
-      const sendRes = await fetch(
-        `${EVOLUTION_API_URL}/message/sendText/${session.instance_id}`,
-        {
-          method: "POST",
-          headers: {
-            apikey: EVOLUTION_API_KEY,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            number: `${cleanNumber}@s.whatsapp.net`,
-            text: message,
-          }),
-        }
-      );
+    // Build ordered message list from flow_nodes or fallback to body
+    interface MessageToSend {
+      type: string; // "text" | "image" | "audio" | "video" | "document"
+      text: string;
+      mediaUrl?: string;
+    }
 
-      if (!sendRes.ok) {
-        const errBody = await sendRes.text().catch(() => "");
-        sendStatus = "failed";
-        errorMessage = `HTTP ${sendRes.status}: ${errBody.slice(0, 200)}`;
+    const messagesToSend: MessageToSend[] = [];
+
+    const flowNodes = Array.isArray(template.flow_nodes) ? template.flow_nodes : [];
+    const messageNodeTypes = ["text", "image", "audio", "video", "document", "music"];
+
+    if (flowNodes.length > 0) {
+      // Walk the flow in connection order starting from trigger
+      const nodeMap = new Map<string, any>();
+      flowNodes.forEach((n: any) => nodeMap.set(n.id, n));
+
+      const visited = new Set<string>();
+      const queue: string[] = [];
+
+      // Find trigger node
+      const triggerNode = flowNodes.find((n: any) => n.type === "trigger");
+      if (triggerNode) {
+        queue.push(...(triggerNode.outputs || []));
+      } else {
+        // Fallback: process all message nodes in order
+        flowNodes
+          .filter((n: any) => messageNodeTypes.includes(n.type))
+          .forEach((n: any) => queue.push(n.id));
+      }
+
+      while (queue.length > 0) {
+        const nodeId = queue.shift()!;
+        if (visited.has(nodeId)) continue;
+        visited.add(nodeId);
+
+        const node = nodeMap.get(nodeId);
+        if (!node) continue;
+
+        if (messageNodeTypes.includes(node.type)) {
+          const nodeType = node.type === "music" ? "audio" : node.type;
+          const text = resolveVars(node.config?.body || "");
+          const mediaUrl = node.config?.media_url?.trim() || "";
+
+          if (isMediaType(nodeType) && mediaUrl) {
+            messagesToSend.push({ type: nodeType, text, mediaUrl });
+          } else if (text) {
+            messagesToSend.push({ type: "text", text, mediaUrl: undefined });
+          }
+        }
+
+        // Follow outputs
+        if (Array.isArray(node.outputs)) {
+          node.outputs.forEach((out: string) => {
+            if (!visited.has(out)) queue.push(out);
+          });
+        }
+      }
+    }
+
+    // Fallback: if no nodes produced messages, send the template body as text
+    if (messagesToSend.length === 0) {
+      messagesToSend.push({ type: "text", text: resolveVars(template.body), mediaUrl: undefined });
+    }
+
+    // 5. Send all messages sequentially
+    try {
+      for (const msg of messagesToSend) {
+        let sendRes: Response;
+
+        if (msg.type !== "text" && msg.mediaUrl) {
+          sendRes = await fetch(
+            `${EVOLUTION_API_URL}/message/sendMedia/${session.instance_id}`,
+            {
+              method: "POST",
+              headers: {
+                apikey: EVOLUTION_API_KEY,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                number: whatsappNumber,
+                mediatype: msg.type,
+                media: msg.mediaUrl,
+                caption: msg.text || undefined,
+              }),
+            }
+          );
+        } else {
+          sendRes = await fetch(
+            `${EVOLUTION_API_URL}/message/sendText/${session.instance_id}`,
+            {
+              method: "POST",
+              headers: {
+                apikey: EVOLUTION_API_KEY,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                number: whatsappNumber,
+                text: msg.text,
+              }),
+            }
+          );
+        }
+
+        if (!sendRes.ok) {
+          const errBody = await sendRes.text().catch(() => "");
+          sendStatus = "failed";
+          errorMessage = `HTTP ${sendRes.status} on ${msg.type}: ${errBody.slice(0, 200)}`;
+          break; // Stop on first failure
+        }
+
+        // Small delay between messages to avoid rate limiting
+        if (messagesToSend.length > 1) {
+          await new Promise((r) => setTimeout(r, 800));
+        }
       }
     } catch (err) {
       sendStatus = "failed";
@@ -153,12 +256,16 @@ Deno.serve(async (req) => {
     }
 
     // 6. Log
+    const mainMessage = messagesToSend.map((m) =>
+      m.type === "text" ? m.text : `[${m.type}] ${m.mediaUrl} ${m.text ? "— " + m.text : ""}`
+    ).join("\n---\n");
+
     await supabase.from("whatsapp_send_log").insert({
       tenant_id,
       order_id: order_id || null,
       customer_phone,
       template_category: category,
-      message_body: message,
+      message_body: mainMessage.slice(0, 4000),
       status: sendStatus,
       error_message: errorMessage,
     });

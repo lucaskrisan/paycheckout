@@ -31,6 +31,14 @@ const extractErrorMessage = (payload: any) => {
   return "Erro desconhecido";
 };
 
+/** Supported media types for Evolution API v2 */
+const MEDIA_TYPES = ["image", "audio", "video", "document"] as const;
+type MediaType = typeof MEDIA_TYPES[number];
+
+function isMediaType(t: string): t is MediaType {
+  return MEDIA_TYPES.includes(t as MediaType);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -63,10 +71,34 @@ Deno.serve(async (req) => {
 
     const toNumberInput = typeof body.to_number === "string" ? body.to_number : String(body.to_number ?? "");
     const message = typeof body.message === "string" ? body.message.trim() : "";
+    const mediaType = typeof body.media_type === "string" ? body.media_type : null;
+    const mediaUrl = typeof body.media_url === "string" ? body.media_url.trim() : "";
     const pendingSendId = typeof body.pending_send_id === "string" ? body.pending_send_id : null;
 
-    if (!toNumberInput || !message) {
-      return json({ error: "to_number e message são obrigatórios" }, 400);
+    if (!toNumberInput) {
+      return json({ error: "to_number é obrigatório" }, 400);
+    }
+
+    // For text messages, message is required. For media, media_url is required.
+    if (!mediaType && !message) {
+      return json({ error: "message é obrigatório para mensagens de texto" }, 400);
+    }
+
+    if (mediaType && !isMediaType(mediaType)) {
+      return json({ error: `media_type inválido. Use: ${MEDIA_TYPES.join(", ")}` }, 400);
+    }
+
+    if (mediaType && !mediaUrl) {
+      return json({ error: "media_url é obrigatório para mensagens de mídia" }, 400);
+    }
+
+    // Validate media_url is a valid URL if provided
+    if (mediaUrl) {
+      try {
+        new URL(mediaUrl);
+      } catch {
+        return json({ error: "media_url não é uma URL válida" }, 400);
+      }
     }
 
     let cleanNumber = toNumberInput.replace(/\D/g, "");
@@ -106,17 +138,38 @@ Deno.serve(async (req) => {
       return json({ error: "WhatsApp ainda não está conectado" }, 409);
     }
 
-    const sendRes = await fetch(`${EVOLUTION_API_URL}/message/sendText/${sessionRow.instance_id}`, {
-      method: "POST",
-      headers: {
-        apikey: EVOLUTION_API_KEY,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        number: `${cleanNumber}@s.whatsapp.net`,
-        text: message,
-      }),
-    });
+    const whatsappNumber = `${cleanNumber}@s.whatsapp.net`;
+    let sendRes: Response;
+
+    if (mediaType && mediaUrl) {
+      // Send media via Evolution API v2
+      sendRes = await fetch(`${EVOLUTION_API_URL}/message/sendMedia/${sessionRow.instance_id}`, {
+        method: "POST",
+        headers: {
+          apikey: EVOLUTION_API_KEY,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          number: whatsappNumber,
+          mediatype: mediaType,
+          media: mediaUrl,
+          caption: message || undefined,
+        }),
+      });
+    } else {
+      // Send text via Evolution API v2
+      sendRes = await fetch(`${EVOLUTION_API_URL}/message/sendText/${sessionRow.instance_id}`, {
+        method: "POST",
+        headers: {
+          apikey: EVOLUTION_API_KEY,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          number: whatsappNumber,
+          text: message,
+        }),
+      });
+    }
 
     const sendData = await readResponseBody(sendRes);
 
