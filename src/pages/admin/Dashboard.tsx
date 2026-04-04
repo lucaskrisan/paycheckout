@@ -2,7 +2,6 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
 import {
   DollarSign,
   TrendingUp,
@@ -14,38 +13,12 @@ import {
   Megaphone,
   Leaf,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
 import { useAuth } from "@/hooks/useAuth";
 import { useCheckoutPresence } from "@/hooks/useCheckoutPresence";
 import GatewayAlerts from "@/components/admin/GatewayAlerts";
-
-type Period = "today" | "yesterday" | "7days" | "month" | "lastMonth" | "total";
-
-const periodLabels: Record<Period, string> = {
-  today: "Hoje",
-  yesterday: "Ontem",
-  "7days": "Últimos 7 dias",
-  month: "Mês atual",
-  lastMonth: "Mês passado",
-  total: "Total",
-};
+import DashboardHeaderBar, { type Period } from "@/components/admin/dashboard/DashboardHeader";
+import DashboardChart from "@/components/admin/dashboard/DashboardChart";
+import DashboardMetricCard from "@/components/admin/dashboard/DashboardMetricCard";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -57,43 +30,20 @@ const Dashboard = () => {
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("all");
 
-  // Pass producer's product IDs so presence is filtered to their checkouts only.
-  // Empty array while loading = show 0 visitors (secure default).
-  const ownerProductIds = useMemo(
-    () => products.map((p) => p.id),
-    [products],
-  );
+  const ownerProductIds = useMemo(() => products.map((p) => p.id), [products]);
   const liveVisitors = useCheckoutPresence("watch", undefined, ownerProductIds);
 
-  /** Build a server-side date filter based on the current period */
   const getDateFilter = useCallback((p: Period): string | null => {
     const now = new Date();
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     switch (p) {
-      case "today":
-        return startOfDay.toISOString();
-      case "yesterday": {
-        const y = new Date(startOfDay);
-        y.setDate(y.getDate() - 1);
-        return y.toISOString();
-      }
-      case "7days": {
-        const w = new Date(startOfDay);
-        w.setDate(w.getDate() - 7);
-        return w.toISOString();
-      }
-      case "month": {
-        const m = new Date(now.getFullYear(), now.getMonth(), 1);
-        return m.toISOString();
-      }
-      case "lastMonth": {
-        const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        return lm.toISOString();
-      }
-      case "total":
-        return null;
-      default:
-        return null;
+      case "today": return startOfDay.toISOString();
+      case "yesterday": { const y = new Date(startOfDay); y.setDate(y.getDate() - 1); return y.toISOString(); }
+      case "7days": { const w = new Date(startOfDay); w.setDate(w.getDate() - 7); return w.toISOString(); }
+      case "month": return new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      case "lastMonth": return new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
+      case "total": return null;
+      default: return null;
     }
   }, []);
 
@@ -106,22 +56,16 @@ const Dashboard = () => {
     const dateFrom = getDateFilter(p);
     if (dateFrom) {
       query = query.gte("created_at", dateFrom);
-      // For "yesterday" we also need an upper bound
       if (p === "yesterday") {
         const now = new Date();
-        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        query = query.lt("created_at", startOfToday.toISOString());
+        query = query.lt("created_at", new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString());
       }
       if (p === "lastMonth") {
         const now = new Date();
-        const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
-        query = query.lte("created_at", endOfLastMonth.toISOString());
+        query = query.lte("created_at", new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59).toISOString());
       }
     }
-
-    // Limit to 1000 rows max — should be enough for a single period
     query = query.limit(1000);
-
     const { data, error } = await query;
     if (error) throw error;
     return data || [];
@@ -129,17 +73,11 @@ const Dashboard = () => {
 
   const fetchAndSetData = useCallback(async () => {
     if (!user) return;
-
     const [periodOrders, cartsRes, productsRes] = await Promise.all([
       fetchOrders(period),
-      supabase
-        .from("abandoned_carts")
-        .select("id, created_at, recovered")
-        .order("created_at", { ascending: false })
-        .limit(500),
+      supabase.from("abandoned_carts").select("id, created_at, recovered").order("created_at", { ascending: false }).limit(500),
       supabase.from("products").select("id, name").eq("user_id", user.id),
     ]);
-
     setOrders(periodOrders);
     setAbandonedCarts(cartsRes.data || []);
     setProducts(productsRes.data || []);
@@ -148,70 +86,43 @@ const Dashboard = () => {
   const loadData = useCallback(async (isRefresh = false) => {
     if (!user) return;
     if (isRefresh) setRefreshing(true);
-
-    try {
-      await fetchAndSetData();
-    } catch (error) {
-      console.error("[dashboard] loadData error:", error);
-    } finally {
-      if (isRefresh) setRefreshing(false);
-    }
+    try { await fetchAndSetData(); }
+    catch (error) { console.error("[dashboard] loadData error:", error); }
+    finally { if (isRefresh) setRefreshing(false); }
   }, [fetchAndSetData, user]);
 
-  // Background sync — runs once on mount, then every 15 min
+  // Background sync
   useEffect(() => {
     if (!user) return;
     const doSync = async () => {
       try {
-        const { error } = await supabase.functions.invoke("reconcile-orders", {
-          body: { hours_back: 24 * 30 },
-        });
-        if (!error) {
-          await fetchAndSetData();
-        }
+        const { error } = await supabase.functions.invoke("reconcile-orders", { body: { hours_back: 24 * 30 } });
+        if (!error) await fetchAndSetData();
       } catch {}
     };
-
     const timeout = setTimeout(doSync, 3000);
     const interval = setInterval(doSync, 15 * 60 * 1000);
-
-    return () => {
-      clearTimeout(timeout);
-      clearInterval(interval);
-    };
+    return () => { clearTimeout(timeout); clearInterval(interval); };
   }, [user, fetchAndSetData]);
 
-  // Initial load — fires when period changes too
-  useEffect(() => {
-    loadData(false);
-  }, [loadData]);
+  useEffect(() => { loadData(false); }, [loadData]);
 
-  // Realtime: debounced refresh on order changes (sound handled by useAdminOrders)
+  // Realtime debounced refresh
   useEffect(() => {
     if (!user) return;
-
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
     const debouncedRefresh = () => {
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => loadData(false), 2000);
     };
-
     const channel = supabase
       .channel("dashboard-orders-refresh")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "orders" },
-        debouncedRefresh,
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, debouncedRefresh)
       .subscribe();
-
-    return () => {
-      if (debounceTimer) clearTimeout(debounceTimer);
-      supabase.removeChannel(channel);
-    };
+    return () => { if (debounceTimer) clearTimeout(debounceTimer); supabase.removeChannel(channel); };
   }, [user, loadData]);
 
-  // Orders are already filtered server-side, just filter by product
+  // Computed metrics
   const productFiltered = useMemo(() => {
     if (selectedProductId === "all") return orders;
     return orders.filter((o) => o.product_id === selectedProductId);
@@ -228,7 +139,6 @@ const Dashboard = () => {
   const totalVendas = approved.length;
   const totalPendente = pending.reduce((s, o) => s + Number(o.amount || 0), 0);
 
-
   const cardAttempts = filtered.filter((o) => o.payment_method === "credit_card");
   const cardApproved = cardAttempts.filter((o) => o.status === "paid" || o.status === "approved");
   const cardApprovalRate = cardAttempts.length > 0 ? ((cardApproved.length / cardAttempts.length) * 100).toFixed(0) : "0";
@@ -239,26 +149,15 @@ const Dashboard = () => {
 
   const refundRate = filtered.length > 0 ? ((refunded.length / filtered.length) * 100).toFixed(0) : "0";
 
-
-  // Organic vs Paid breakdown
-  const paidSales = approved.filter((o) => {
-    const meta = o.metadata as any;
-    return meta?.utm_source;
-  });
-  const organicSales = approved.filter((o) => {
-    const meta = o.metadata as any;
-    return !meta?.utm_source;
-  });
+  const paidSales = approved.filter((o) => (o.metadata as any)?.utm_source);
+  const organicSales = approved.filter((o) => !(o.metadata as any)?.utm_source);
   const organicRevenue = organicSales.reduce((s, o) => s + Number(o.amount || 0), 0);
   const paidRevenue = paidSales.reduce((s, o) => s + Number(o.amount || 0), 0);
 
-  // Abandoned carts metrics
-  const filteredCarts = abandonedCarts; // already limited on fetch
-  const totalAbandoned = filteredCarts.length;
-  const recoveredCarts = filteredCarts.filter((c) => c.recovered);
+  const totalAbandoned = abandonedCarts.length;
+  const recoveredCarts = abandonedCarts.filter((c) => c.recovered);
   const recoveryRate = totalAbandoned > 0 ? ((recoveredCarts.length / totalAbandoned) * 100).toFixed(0) : "0";
 
-  // Chart data
   const chartData = useMemo(() => {
     const days: Record<string, number> = {};
     const now = new Date();
@@ -276,213 +175,61 @@ const Dashboard = () => {
     return Object.entries(days).map(([name, total]) => ({ name, total }));
   }, [approved, period]);
 
-
   const fmt = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
 
-  // Kiwify-style metric cards — 2-column grid on right
   const metricCards = [
-    {
-      icon: DollarSign,
-      label: totalTaxas > 0 ? "Valor líquido" : "Faturamento",
-      value: totalTaxas > 0 ? fmt(totalLiquido) : fmt(totalBruto),
-      sub: totalTaxas > 0 ? `Bruto: ${fmt(totalBruto)} (taxa: ${fmt(totalTaxas)})` : undefined,
-    },
-    {
-      icon: TrendingUp,
-      label: "Vendas",
-      value: String(totalVendas),
-    },
-    {
-      icon: CreditCard,
-      label: "Aprovação cartão",
-      value: `${cardApprovalRate} %`,
-    },
-    {
-      icon: Globe,
-      label: "Vendas PIX",
-      value: fmt(pixApproved.reduce((s, o) => s + Number(o.amount), 0)),
-      sub: `${pixConversionRate} %`,
-    },
-    {
-      icon: RefreshCcw,
-      label: "Reembolso",
-      value: `${refundRate} %`,
-    },
-    {
-      icon: Megaphone,
-      label: "Vendas Pagas (Ads)",
-      value: `${paidSales.length}`,
-      sub: fmt(paidRevenue),
-    },
-    {
-      icon: Leaf,
-      label: "Vendas Orgânicas",
-      value: `${organicSales.length}`,
-      sub: fmt(organicRevenue),
-    },
+    { icon: DollarSign, label: totalTaxas > 0 ? "Valor líquido" : "Faturamento", value: totalTaxas > 0 ? fmt(totalLiquido) : fmt(totalBruto), sub: totalTaxas > 0 ? `Bruto: ${fmt(totalBruto)} (taxa: ${fmt(totalTaxas)})` : undefined },
+    { icon: TrendingUp, label: "Vendas", value: String(totalVendas) },
+    { icon: CreditCard, label: "Aprovação cartão", value: `${cardApprovalRate} %` },
+    { icon: Globe, label: "Vendas PIX", value: fmt(pixApproved.reduce((s, o) => s + Number(o.amount), 0)), sub: `${pixConversionRate} %` },
+    { icon: RefreshCcw, label: "Reembolso", value: `${refundRate} %` },
+    { icon: Megaphone, label: "Vendas Pagas (Ads)", value: `${paidSales.length}`, sub: fmt(paidRevenue) },
+    { icon: Leaf, label: "Vendas Orgânicas", value: `${organicSales.length}`, sub: fmt(organicRevenue) },
   ];
 
   return (
     <div className="space-y-6">
-      {/* Header — matches Kiwify */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-foreground">Dashboard</h1>
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5 px-3 h-9 rounded-md border border-border bg-background text-sm">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-            </span>
-            <span className="text-foreground font-medium">{liveVisitors}</span>
-            <span className="text-muted-foreground">visitantes ao vivo</span>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9"
-            onClick={() => loadData(true)}
-            disabled={refreshing}
-          >
-            <RefreshCcw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
-          </Button>
-          <Select value={period} onValueChange={(v) => setPeriod(v as Period)}>
-            <SelectTrigger className="w-[150px] h-9 text-sm bg-background border-border">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {(Object.keys(periodLabels) as Period[]).map((p) => (
-                <SelectItem key={p} value={p}>
-                  {periodLabels[p]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={selectedProductId} onValueChange={setSelectedProductId}>
-            <SelectTrigger className="w-[170px] h-9 text-sm bg-background border-border">
-              <SelectValue placeholder="Todos os produtos" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os produtos</SelectItem>
-              {products.map((p) => (
-                <SelectItem key={p.id} value={p.id}>
-                  {p.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+      <DashboardHeaderBar
+        period={period}
+        onPeriodChange={setPeriod}
+        selectedProductId={selectedProductId}
+        onProductChange={setSelectedProductId}
+        products={products}
+        liveVisitors={liveVisitors}
+        refreshing={refreshing}
+        onRefresh={() => loadData(true)}
+      />
 
-
-      {/* Gateway configuration alerts */}
       <GatewayAlerts />
 
-      {/* Kiwify layout: chart left + 2 tall metric cards right on first row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Chart */}
-        <Card className="border border-border bg-card shadow-none">
-          <CardContent className="p-5">
-            <div className="h-[220px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData}>
-                  <defs>
-                    <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.12} />
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 11 }} className="text-xs" />
-                  <YAxis tick={{ fontSize: 11 }} className="text-xs" tickFormatter={(v) => `R$ ${v}`} />
-                  <Tooltip formatter={(v: number) => fmt(v)} />
-                  <Area
-                    type="monotone"
-                    dataKey="total"
-                    stroke="hsl(var(--primary))"
-                    fill="url(#colorRev)"
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex justify-between text-[11px] text-muted-foreground mt-2 px-1">
-              <span>Hoje, 0:00</span>
-              <span>Hoje, 23:59</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* First 2 metric cards stacked — Valor líquido + Vendas */}
+        <DashboardChart data={chartData} fmt={fmt} />
         <div className="flex flex-col gap-4">
           {metricCards.slice(0, 2).map((card, i) => (
-            <Card key={i} className="border border-border bg-card shadow-none flex-1">
-              <CardContent className="p-5 flex items-center gap-4 h-full">
-                <div className="p-2.5 rounded-full bg-muted">
-                  <card.icon className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">{card.label}</p>
-                  <p className="text-xl font-bold text-foreground">{card.value}</p>
-                  {card.sub && <p className="text-xs text-muted-foreground">{card.sub}</p>}
-                </div>
-              </CardContent>
-            </Card>
+            <DashboardMetricCard key={i} {...card} />
           ))}
         </div>
       </div>
 
-      {/* Remaining cards — 2 columns like Kiwify */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {metricCards.slice(2).map((card, i) => (
-          <Card key={i} className="border border-border bg-card shadow-none">
-            <CardContent className="p-5 flex items-center gap-4">
-              <div className="p-2.5 rounded-full bg-muted">
-                <card.icon className="w-5 h-5 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">{card.label}</p>
-                <p className="text-xl font-bold text-foreground">{card.value}</p>
-                {card.sub && <p className="text-xs text-muted-foreground">{card.sub}</p>}
-              </div>
-            </CardContent>
-          </Card>
+          <DashboardMetricCard key={i} {...card} />
         ))}
-
-        {/* Pending sales card */}
-        <Card
-          className="border border-border bg-card shadow-none cursor-pointer hover:bg-muted/40 transition-colors"
+        <DashboardMetricCard
+          icon={Clock}
+          label="Vendas pendentes"
+          value={String(pending.length)}
+          sub={`${fmt(totalPendente)} aguardando`}
           onClick={() => navigate("/admin/orders")}
-        >
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="p-2.5 rounded-full bg-muted">
-              <Clock className="w-5 h-5 text-muted-foreground" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Vendas pendentes</p>
-              <p className="text-xl font-bold text-foreground">{pending.length}</p>
-              <p className="text-xs text-muted-foreground">{fmt(totalPendente)} aguardando</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Abandoned carts card */}
-        <Card
-          className="border border-border bg-card shadow-none cursor-pointer hover:bg-muted/40 transition-colors"
+        />
+        <DashboardMetricCard
+          icon={ShoppingCart}
+          label="Carrinhos abandonados"
+          value={String(totalAbandoned)}
+          sub={`${recoveryRate}% recuperados`}
           onClick={() => navigate("/admin/abandoned")}
-        >
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="p-2.5 rounded-full bg-muted">
-              <ShoppingCart className="w-5 h-5 text-muted-foreground" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Carrinhos abandonados</p>
-              <p className="text-xl font-bold text-foreground">{totalAbandoned}</p>
-              <p className="text-xs text-muted-foreground">{recoveryRate}% recuperados</p>
-            </div>
-          </CardContent>
-        </Card>
+        />
       </div>
-
     </div>
   );
 };
