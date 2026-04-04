@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    const customerIds = (ownCustomers || []).map((customer: any) => customer.id).filter(Boolean);
+    const customerIds = (customers || []).map((customer: any) => customer.id).filter(Boolean);
 
     if (customerIds.length > 0) {
       const { data: accesses } = await supabaseAdmin
