@@ -245,6 +245,12 @@ const WhatsApp = () => {
         </CardContent>
       </Card>
 
+      {isSuperAdmin && user && (
+        <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
+          <WhatsAppFeatureFlags tenantId={user.id} />
+        </Suspense>
+      )}
+
       <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
         <WhatsAppTemplates />
       </Suspense>
