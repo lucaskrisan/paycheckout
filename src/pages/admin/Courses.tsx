@@ -81,7 +81,8 @@ const Courses = () => {
   };
 
   const loadCourses = async () => {
-    const { data } = await supabase.from("courses").select("*").order("created_at", { ascending: false });
+    if (!user) return;
+    const { data } = await supabase.from("courses").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
     setCourses(data || []);
     setLoading(false);
   };
