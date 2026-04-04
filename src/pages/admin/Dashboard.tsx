@@ -158,25 +158,22 @@ const Dashboard = () => {
     }
   }, [fetchAndSetData, user]);
 
-  // Background sync — runs once on mount, then every 5 min
+  // Background sync — runs once on mount, then every 15 min
   useEffect(() => {
     if (!user) return;
-    // Fire and forget — don't block UI
     const doSync = async () => {
       try {
         const { error } = await supabase.functions.invoke("reconcile-orders", {
           body: { hours_back: 24 * 30 },
         });
         if (!error) {
-          // Silently refresh data after sync
           await fetchAndSetData();
         }
       } catch {}
     };
 
-    // Delay the first sync by 3 seconds so the UI loads first
     const timeout = setTimeout(doSync, 3000);
-    const interval = setInterval(doSync, 5 * 60 * 1000);
+    const interval = setInterval(doSync, 15 * 60 * 1000);
 
     return () => {
       clearTimeout(timeout);
@@ -189,49 +186,27 @@ const Dashboard = () => {
     loadData(false);
   }, [loadData]);
 
-  // Realtime: listen for new approved sales and play Ka-CHING
+  // Realtime: debounced refresh on order changes (sound handled by useAdminOrders)
   useEffect(() => {
     if (!user) return;
 
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    const debouncedRefresh = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => loadData(false), 2000);
+    };
+
     const channel = supabase
-      .channel("dashboard-sales-sound")
+      .channel("dashboard-orders-refresh")
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "orders" },
-        (payload) => {
-          const newRow = payload.new as any;
-          const oldRow = payload.old as any;
-          if (
-            (newRow.status === "paid" || newRow.status === "approved") &&
-            oldRow.status !== "paid" && oldRow.status !== "approved"
-          ) {
-            playNotificationSound("kaching");
-            const amount = Number(newRow.amount || 0).toFixed(2).replace(".", ",");
-            toast.success(`💰 Nova venda aprovada! R$ ${amount}`, {
-              duration: 5000,
-            });
-            loadData(false);
-          }
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "orders" },
-        (payload) => {
-          const newRow = payload.new as any;
-          if (newRow.status === "paid" || newRow.status === "approved") {
-            playNotificationSound("kaching");
-            const amount = Number(newRow.amount || 0).toFixed(2).replace(".", ",");
-            toast.success(`💰 Nova venda aprovada! R$ ${amount}`, {
-              duration: 5000,
-            });
-            loadData(false);
-          }
-        }
+        { event: "*", schema: "public", table: "orders" },
+        debouncedRefresh,
       )
       .subscribe();
 
     return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
   }, [user, loadData]);
