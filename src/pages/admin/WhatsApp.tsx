@@ -2,6 +2,7 @@
 import { lazy, Suspense, useState, useEffect, useRef, useCallback } from "react";
 
 const WhatsAppTemplates = lazy(() => import("@/components/admin/WhatsAppTemplates"));
+const WhatsAppFeatureFlags = lazy(() => import("@/components/admin/WhatsAppFeatureFlags"));
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,7 +20,7 @@ const formatPhone = (raw: string) => {
 };
 
 const WhatsApp = () => {
-  const { user } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
   const [loading, setLoading] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [qrcode, setQrcode] = useState<string | null>(null);
@@ -243,6 +244,12 @@ const WhatsApp = () => {
           )}
         </CardContent>
       </Card>
+
+      {isSuperAdmin && user && (
+        <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
+          <WhatsAppFeatureFlags tenantId={user.id} />
+        </Suspense>
+      )}
 
       <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
         <WhatsAppTemplates />

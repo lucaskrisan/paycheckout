@@ -1969,6 +1969,66 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_feature_flags: {
+        Row: {
+          enabled: boolean
+          feature: string
+          id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          feature: string
+          id?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          feature?: string
+          id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      whatsapp_send_log: {
+        Row: {
+          created_at: string
+          customer_phone: string | null
+          error_message: string | null
+          id: string
+          message_body: string
+          order_id: string | null
+          status: string
+          template_category: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_phone?: string | null
+          error_message?: string | null
+          id?: string
+          message_body: string
+          order_id?: string | null
+          status?: string
+          template_category: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_phone?: string | null
+          error_message?: string | null
+          id?: string
+          message_body?: string
+          order_id?: string | null
+          status?: string
+          template_category?: string
+          tenant_id?: string
+        }
+        Relationships: []
+      }
       whatsapp_sessions: {
         Row: {
           connected_at: string | null
