@@ -2070,6 +2070,57 @@ export type Database = {
         }
         Relationships: []
       }
+      public_order_bumps: {
+        Row: {
+          active: boolean | null
+          bump_product_id: string | null
+          call_to_action: string | null
+          description: string | null
+          id: string | null
+          product_id: string | null
+          sort_order: number | null
+          title: string | null
+          use_product_image: boolean | null
+        }
+        Insert: {
+          active?: boolean | null
+          bump_product_id?: string | null
+          call_to_action?: string | null
+          description?: string | null
+          id?: string | null
+          product_id?: string | null
+          sort_order?: number | null
+          title?: string | null
+          use_product_image?: boolean | null
+        }
+        Update: {
+          active?: boolean | null
+          bump_product_id?: string | null
+          call_to_action?: string | null
+          description?: string | null
+          id?: string | null
+          product_id?: string | null
+          sort_order?: number | null
+          title?: string | null
+          use_product_image?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_bumps_bump_product_id_fkey"
+            columns: ["bump_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_bumps_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       public_product_pixels: {
         Row: {
           domain: string | null
