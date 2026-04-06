@@ -480,7 +480,7 @@ Deno.serve(async (req) => {
               } else {
                 console.log('[asaas-webhook] Created member access for course:', course.id, course.title);
                 if (newAccess) {
-                  await sendAccessEmail(supabase, orderData.customer_id, course, newAccess.access_token);
+                  await sendAccessEmail(supabase, orderData.customer_id, course, newAccess.access_token, orderData.id, orderData.user_id);
                 }
               }
             }
