@@ -44,7 +44,7 @@ async function sendPushNotification(title: string, message: string, targetUserId
   }
 }
 
-async function sendAccessEmail(supabase: any, customerId: string, course: { id: string; title: string }, accessToken: string) {
+async function sendAccessEmail(supabase: any, customerId: string, course: { id: string; title: string }, accessToken: string, orderId?: string, userId?: string) {
   try {
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
     if (!RESEND_API_KEY) return;
@@ -120,6 +120,8 @@ async function sendAccessEmail(supabase: any, customerId: string, course: { id: 
         status: emailRes.ok ? 'sent' : 'failed',
         resend_id: emailData?.id || null,
         customer_id: customerId,
+        order_id: orderId || null,
+        user_id: userId || null,
         source: 'asaas-webhook',
       });
     } catch (logErr) {
@@ -453,7 +455,7 @@ Deno.serve(async (req) => {
               const { data: upsertedAccess } = await supabase
                 .from('member_access')
                 .upsert(
-                  { customer_id: orderData.customer_id, course_id: course.id, expires_at: expiresAt.toISOString() },
+                  { customer_id: orderData.customer_id, course_id: course.id, order_id: orderData.id, expires_at: expiresAt.toISOString() },
                   { onConflict: 'customer_id,course_id' }
                 )
                 .select('access_token, id')
@@ -461,13 +463,13 @@ Deno.serve(async (req) => {
 
               console.log('[asaas-webhook] Upserted subscription member access for course:', course.id);
               if (upsertedAccess && !existingAccess) {
-                await sendAccessEmail(supabase, orderData.customer_id, course, upsertedAccess.access_token);
+                await sendAccessEmail(supabase, orderData.customer_id, course, upsertedAccess.access_token, orderData.id, orderData.user_id);
               }
             } else if (!existingAccess) {
               const { data: newAccess, error: accessErr } = await supabase
                 .from('member_access')
                 .upsert(
-                  { customer_id: orderData.customer_id, course_id: course.id },
+                  { customer_id: orderData.customer_id, course_id: course.id, order_id: orderData.id },
                   { onConflict: 'customer_id,course_id', ignoreDuplicates: true }
                 )
                 .select('access_token')
@@ -478,7 +480,7 @@ Deno.serve(async (req) => {
               } else {
                 console.log('[asaas-webhook] Created member access for course:', course.id, course.title);
                 if (newAccess) {
-                  await sendAccessEmail(supabase, orderData.customer_id, course, newAccess.access_token);
+                  await sendAccessEmail(supabase, orderData.customer_id, course, newAccess.access_token, orderData.id, orderData.user_id);
                 }
               }
             }
