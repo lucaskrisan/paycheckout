@@ -463,7 +463,7 @@ Deno.serve(async (req) => {
 
               console.log('[asaas-webhook] Upserted subscription member access for course:', course.id);
               if (upsertedAccess && !existingAccess) {
-                await sendAccessEmail(supabase, orderData.customer_id, course, upsertedAccess.access_token);
+                await sendAccessEmail(supabase, orderData.customer_id, course, upsertedAccess.access_token, orderData.id, orderData.user_id);
               }
             } else if (!existingAccess) {
               const { data: newAccess, error: accessErr } = await supabase
