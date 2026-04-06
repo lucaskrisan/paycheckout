@@ -467,7 +467,7 @@ Deno.serve(async (req) => {
               const { data: newAccess, error: accessErr } = await supabase
                 .from('member_access')
                 .upsert(
-                  { customer_id: orderData.customer_id, course_id: course.id },
+                  { customer_id: orderData.customer_id, course_id: course.id, order_id: orderData.id },
                   { onConflict: 'customer_id,course_id', ignoreDuplicates: true }
                 )
                 .select('access_token')
