@@ -120,8 +120,8 @@ async function sendAccessEmail(supabase: any, customerId: string, course: { id: 
         status: emailRes.ok ? 'sent' : 'failed',
         resend_id: emailData?.id || null,
         customer_id: customerId,
-        order_id: (globalThis as any).__currentOrderId || null,
-        user_id: (globalThis as any).__currentUserId || null,
+        order_id: orderId || null,
+        user_id: userId || null,
         source: 'asaas-webhook',
       });
     } catch (logErr) {
