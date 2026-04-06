@@ -44,7 +44,7 @@ async function sendPushNotification(title: string, message: string, targetUserId
   }
 }
 
-async function sendAccessEmail(supabase: any, customerId: string, course: { id: string; title: string }, accessToken: string) {
+async function sendAccessEmail(supabase: any, customerId: string, course: { id: string; title: string }, accessToken: string, orderId?: string, userId?: string) {
   try {
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
     if (!RESEND_API_KEY) return;
