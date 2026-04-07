@@ -18,6 +18,7 @@ import CourseStudents from "@/components/admin/CourseStudents";
 interface Product {
   id: string;
   name: string;
+  image_url: string | null;
 }
 
 interface Lesson {
