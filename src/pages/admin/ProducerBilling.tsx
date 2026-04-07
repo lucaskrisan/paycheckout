@@ -45,6 +45,9 @@ interface BillingAccount {
   blocked: boolean;
   card_last4: string | null;
   card_brand: string | null;
+  auto_recharge_enabled: boolean;
+  auto_recharge_amount: number;
+  auto_recharge_threshold: number;
 }
 
 interface BillingTransaction {
