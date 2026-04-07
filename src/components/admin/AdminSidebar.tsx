@@ -105,7 +105,7 @@ const configSuperAdminOnly = [
 const superAdminItems = [
   { title: "WhatsApp", url: "/admin/whatsapp", icon: MessageSquare },
   { title: "Revisão Produtos", url: "/admin/product-review", icon: ShieldCheck },
-  { title: "Verificação Produtores", url: "/admin/verification-review", icon: ShieldBan },
+  { title: "Verificação Produtores", url: "/admin/verification-review", icon: User },
   { title: "Painel Plataforma", url: "/admin/platform", icon: Crown },
   { title: "Billing", url: "/admin/billing", icon: Wallet },
   { title: "API Keys", url: "/admin/api-keys", icon: Key },
