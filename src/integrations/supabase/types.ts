@@ -2366,6 +2366,7 @@ export type Database = {
           total_revenue: number
         }[]
       }
+      get_webhook_secret: { Args: { p_webhook_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
