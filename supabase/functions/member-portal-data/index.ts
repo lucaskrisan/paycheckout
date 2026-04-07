@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
         id: course.id,
         title: course.title,
         description: course.description,
-        cover_image_url: course.cover_image_url,
+        cover_image_url: course.cover_image_url || (course.product_id ? productImageMap.get(course.product_id) : null) || null,
         source: "created",
       });
       addedIds.add(course.id);
