@@ -27,6 +27,7 @@ interface BillingTransaction { id: string; type: string; amount: number; descrip
 
 // ── Helpers ────────────────────────────────────────
 const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const toSales = (reais: number) => Math.floor(reais / 0.99);
 const formatCardNumber = (v: string) => v.replace(/\D/g, "").slice(0, 16).replace(/(\d{4})(?=\d)/g, "$1 ");
 const formatCpf = (v: string) => {
   const d = v.replace(/\D/g, "").slice(0, 11);
