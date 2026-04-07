@@ -260,8 +260,8 @@ const ProducerBilling = () => {
             <Sparkles className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-foreground">Seus primeiros R$ 1.000 em vendas são grátis</h3>
-            <p className="text-sm text-muted-foreground mt-1">Você só começa a pagar a taxa depois de atingir R$ 1.000 em faturamento aprovado.</p>
+            <h3 className="text-lg font-bold text-foreground">Seus primeiros R$ 1.000 são 100% livres de taxa</h3>
+            <p className="text-sm text-muted-foreground mt-1">Você só começa a pagar depois de atingir R$ 1.000 em faturamento aprovado.</p>
           </div>
         </div>
       </div>
