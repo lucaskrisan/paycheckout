@@ -92,6 +92,7 @@ const Index = () => {
         <NotificationsSection />
         <AllFeatures />
         <AchievementsSection />
+        <PricingSection />
         <CTASection />
       </main>
       <LandingFooter />
