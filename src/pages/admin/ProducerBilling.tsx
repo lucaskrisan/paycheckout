@@ -52,6 +52,11 @@ const TIER_ICONS: Record<string, React.ReactNode> = {
   platinum: <Crown className="w-3.5 h-3.5" />, diamond: <Crown className="w-3.5 h-3.5" />,
 };
 
+const TIER_SUBTITLES: Record<string, string> = {
+  iron: "Filhote", bronze: "Caçador", silver: "Predador",
+  gold: "Alpha", platinum: "Apex", diamond: "Lenda",
+};
+
 const COLOR_MAP: Record<string, { text: string; bg: string; border: string }> = {
   gray:   { text: "text-muted-foreground", bg: "bg-muted-foreground/10", border: "border-muted-foreground/20" },
   amber:  { text: "text-amber-500",        bg: "bg-amber-500/10",       border: "border-amber-500/20" },
