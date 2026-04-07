@@ -541,7 +541,7 @@ const ProducerBilling = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Adicionar Saldo via PIX</CardTitle>
-                  <CardDescription>O saldo é creditado automaticamente após a confirmação e a taxa de 3% só incide acima de R$ 1.000,00 no mês</CardDescription>
+                  <CardDescription>O saldo é creditado automaticamente após a confirmação. Taxa fixa de R$ 0,99 por venda aprovada.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {!pixResult ? (
