@@ -474,12 +474,12 @@ const ProducerBilling = () => {
                           <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Valor</label>
                           <AmountSelector amounts={[20, 50, 100, 200]} selected={account.auto_recharge_amount} onSelect={(v) => handleUpdateAutoRecharge('auto_recharge_amount', v)} showSales />
                         </div>
-                        <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/10">
-                          <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                          <p className="text-[11px] text-muted-foreground">
-                            Saldo ≤ {fmt(account.auto_recharge_threshold)} → +{fmt(account.auto_recharge_amount)} no •••• {account.card_last4}
-                          </p>
-                        </div>
+                         <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/10">
+                           <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                           <p className="text-[11px] text-muted-foreground">
+                             Saldo ≤ {toSales(account.auto_recharge_threshold)} vendas → +{toSales(account.auto_recharge_amount)} vendas no •••• {account.card_last4}
+                           </p>
+                         </div>
                       </div>
                     )}
                   </div>
