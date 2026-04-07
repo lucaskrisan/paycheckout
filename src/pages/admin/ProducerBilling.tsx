@@ -266,17 +266,20 @@ const ProducerBilling = () => {
             </div>
           </div>
 
-          {/* The Number */}
+          {/* The Number — in SALES */}
           <div className="space-y-1">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Créditos disponíveis</span>
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Vendas disponíveis</span>
             <motion.p 
-              key={balance}
+              key={salesCovered}
               initial={{ opacity: 0.5, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               className="text-5xl md:text-6xl font-bold text-foreground tracking-tighter leading-none tabular-nums"
             >
-              {fmt(balance)}
+              {salesCovered}
             </motion.p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {salesCovered > 0 ? `equivalente a ${fmt(balance)} em créditos` : "nenhum crédito disponível"}
+            </p>
           </div>
 
           {/* Usage bar */}
