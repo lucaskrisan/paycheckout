@@ -141,10 +141,10 @@ const HeroSection = () => {
 
             {/* Trust signals */}
             <div className="flex items-center gap-6 pt-1">
-              {[
+            {[
                 { icon: Shield, label: "Criptografado" },
-                { icon: Zap, label: "Setup em 5 min" },
-                { icon: Sparkles, label: "100% grátis" },
+                { icon: Zap, label: "R$ 0,99/venda" },
+                { icon: Sparkles, label: "Sem mensalidade" },
               ].map((t) => (
                 <span key={t.label} className="flex items-center gap-2 text-[11px] text-[#6A6A75] font-medium">
                   <t.icon className="w-3 h-3 text-primary/50" aria-hidden="true" />
