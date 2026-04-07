@@ -90,7 +90,6 @@ export default function ProducerVerification() {
       const frontPath = await uploadFile(uploads.front!, "doc_front");
       const backPath = uploads.back ? await uploadFile(uploads.back, "doc_back") : null;
       const selfiePath = await uploadFile(uploads.selfie!, "selfie");
-      const addressPath = await uploadFile(uploads.address!, "address");
 
       const { error } = await supabase.from("producer_verifications").insert({
         user_id: user!.id,
