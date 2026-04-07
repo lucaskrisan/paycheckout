@@ -102,7 +102,7 @@ export default function ProducerVerification() {
 
       if (error) throw error;
       toast.success("Documentos enviados para análise!");
-      setUploads({ front: null, back: null, selfie: null, address: null });
+      setUploads({ front: null, back: null, selfie: null });
       setPreviews({});
       await loadVerification();
     } catch (err: any) {
