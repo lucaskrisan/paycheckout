@@ -237,6 +237,14 @@ const ProducerBilling = () => {
             <Wallet className="w-4 h-4" />
             {isBlocked ? "Reativar checkout — adicionar créditos" : "Adicionar créditos"}
           </Button>
+          <p className="text-xs text-muted-foreground mt-2">
+            {isBlocked || balance <= 0
+              ? "Recarregue agora e volte a vender sem interrupções"
+              : balance < 10
+                ? "Evite que seu checkout pause durante suas vendas"
+                : "Recarregue para continuar vendendo sem interrupções"
+            }
+          </p>
         </div>
       </div>
 
