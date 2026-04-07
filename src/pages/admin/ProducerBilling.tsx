@@ -78,6 +78,7 @@ const ProducerBilling = () => {
   const [cardLoading, setCardLoading] = useState(false);
   const [showCardModal, setShowCardModal] = useState(false);
   const [showPixModal, setShowPixModal] = useState(false);
+  const [showTierPanel, setShowTierPanel] = useState(false);
   const [cardValidating, setCardValidating] = useState(false);
   const [cardForm, setCardForm] = useState({ number: "", name: "", expiryMonth: "", expiryYear: "", cvv: "", cpf: "" });
 
