@@ -215,7 +215,7 @@ const ProducerBilling = () => {
 
           {/* Sales covered — always visible */}
           <p className="text-lg font-semibold text-muted-foreground mt-2">
-            {salesCovered === 0 ? "0 vendas disponíveis" : `≈ ${salesCovered} ${salesCovered === 1 ? 'venda disponível' : 'vendas disponíveis'}`}
+            {salesCovered === 0 ? "Você não pode vender no momento" : `≈ ${salesCovered} ${salesCovered === 1 ? 'venda disponível' : 'vendas disponíveis'}`}
           </p>
 
           {/* Urgency line */}
@@ -244,10 +244,10 @@ const ProducerBilling = () => {
           </Button>
           <p className="text-xs text-muted-foreground mt-2">
             {isBlocked || balance <= 0
-              ? "Recarregue agora e volte a vender sem interrupções"
+              ? "Recarregue agora e não perca suas próximas vendas"
               : balance < 10
-                ? "Evite que seu checkout pause durante suas vendas"
-                : "Recarregue para continuar vendendo sem interrupções"
+                ? "Adicione créditos e continue vendendo agora"
+                : "Adicione créditos e continue vendendo sem interrupções"
             }
           </p>
         </div>
@@ -260,8 +260,8 @@ const ProducerBilling = () => {
             <Sparkles className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-foreground">Seus primeiros R$ 1.000 em vendas são grátis</h3>
-            <p className="text-sm text-muted-foreground mt-1">Você só começa a pagar a taxa depois de atingir R$ 1.000 em faturamento aprovado.</p>
+            <h3 className="text-lg font-bold text-foreground">Seus primeiros R$ 1.000 são 100% livres de taxa</h3>
+            <p className="text-sm text-muted-foreground mt-1">Você só começa a pagar depois de atingir R$ 1.000 em faturamento aprovado.</p>
           </div>
         </div>
       </div>
@@ -270,7 +270,7 @@ const ProducerBilling = () => {
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-xl border border-border bg-card p-4 text-center">
           <p className="text-2xl font-bold text-foreground">R$ 0,99</p>
-          <p className="text-xs text-muted-foreground mt-1 font-medium">por venda (fixo)</p>
+          <p className="text-[11px] text-muted-foreground mt-1 font-medium">menos de R$1 por venda</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4 text-center">
           <p className="text-2xl font-bold text-foreground">R$ 0</p>
