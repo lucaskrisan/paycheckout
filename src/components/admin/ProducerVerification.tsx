@@ -37,6 +37,7 @@ const STATUS_MAP: Record<string, { label: string; color: string; icon: typeof Ch
 export default function ProducerVerification() {
   const { user } = useAuth();
   const [verification, setVerification] = useState<Verification | null>(null);
+  const [profileVerified, setProfileVerified] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [docType, setDocType] = useState("rg");
@@ -51,14 +52,22 @@ export default function ProducerVerification() {
   }, [user]);
 
   const loadVerification = async () => {
-    const { data } = await supabase
-      .from("producer_verifications")
-      .select("*")
-      .eq("user_id", user!.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    setVerification(data);
+    const [{ data: verData }, { data: profileData }] = await Promise.all([
+      supabase
+        .from("producer_verifications")
+        .select("*")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("profiles")
+        .select("verified")
+        .eq("id", user!.id)
+        .single(),
+    ]);
+    setVerification(verData);
+    setProfileVerified(profileData?.verified === true);
     setLoading(false);
   };
 
@@ -116,17 +125,16 @@ export default function ProducerVerification() {
 
   const status = verification ? STATUS_MAP[verification.status] || STATUS_MAP.pending : null;
 
-  // Already verified
-  if (verification?.status === "approved") {
+  // Already verified — check both verification record AND profile flag
+  if (verification?.status === "approved" || profileVerified) {
     return (
-      <Card className="border-green-500/30 bg-green-500/5">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-display flex items-center gap-2 text-green-500">
-            <ShieldCheck className="w-4 h-4" /> Conta Verificada
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">Sua identidade foi verificada com sucesso. Você possui o selo de produtor verificado ✅</p>
+      <Card className="border-border/50">
+        <CardContent className="py-10 flex flex-col items-center justify-center text-center">
+          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+            <ShieldCheck className="w-8 h-8 text-primary" />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground">Identidade verificada</h3>
+          <p className="text-sm text-muted-foreground mt-1">Você já pode vender!</p>
         </CardContent>
       </Card>
     );
