@@ -87,7 +87,7 @@ const ProducerBilling = () => {
   const loadData = async () => {
     setLoading(true);
     const [{ data: accs }, { data: txs }, { data: tierData }, { data: revenueData }] = await Promise.all([
-      supabase.from("billing_accounts").select("*").eq("user_id", user!.id).limit(1),
+      supabase.from("billing_accounts").select("id, balance, credit_tier, credit_limit, blocked, card_last4, card_brand, auto_recharge_enabled, auto_recharge_amount, auto_recharge_threshold, user_id").eq("user_id", user!.id).limit(1),
       supabase.from("billing_transactions").select("*").eq("user_id", user!.id).order("created_at", { ascending: false }).limit(50),
       supabase.from("billing_tiers").select("*").order("level", { ascending: true }),
       supabase.rpc("get_revenue_summary", { p_user_id: user!.id }),
