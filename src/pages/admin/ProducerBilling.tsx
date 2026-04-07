@@ -394,7 +394,7 @@ const ProducerBilling = () => {
                 <>
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Valor</label>
-                    <AmountSelector amounts={[20, 50, 100, 200, 500]} selected={pixAmount} onSelect={setPixAmount} />
+                    <AmountSelector amounts={[20, 50, 100, 200, 500]} selected={pixAmount} onSelect={setPixAmount} showSales />
                   </div>
                   <Button className="w-full gap-2 h-12 rounded-xl font-semibold" onClick={handleGeneratePix} disabled={pixLoading}>
                     {pixLoading
