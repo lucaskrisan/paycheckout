@@ -281,7 +281,7 @@ const ProducerBilling = () => {
       {showRecharge && (
         <Card className="rounded-2xl border-border overflow-hidden">
           <CardContent className="p-0">
-            <Tabs defaultValue="card">
+            <Tabs defaultValue="pix">
               <div className="border-b border-border p-4 pb-0">
                 <TabsList className="bg-transparent p-0 h-auto gap-4">
                   <TabsTrigger value="card" className="bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1 pb-3 gap-2 text-sm font-semibold">
