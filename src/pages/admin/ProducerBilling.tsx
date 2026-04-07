@@ -78,6 +78,7 @@ const ProducerBilling = () => {
   const [cardLoading, setCardLoading] = useState(false);
   const [showCardModal, setShowCardModal] = useState(false);
   const [showPixModal, setShowPixModal] = useState(false);
+  const [showTierPanel, setShowTierPanel] = useState(false);
   const [cardValidating, setCardValidating] = useState(false);
   const [cardForm, setCardForm] = useState({ number: "", name: "", expiryMonth: "", expiryYear: "", cvv: "", cpf: "" });
 
@@ -244,7 +245,7 @@ const ProducerBilling = () => {
         </Card>
 
         {/* Nível de Crédito */}
-        <Card>
+        <Card className="cursor-pointer hover:border-primary/30 transition-colors" onClick={() => setShowTierPanel(!showTierPanel)}>
           <CardContent className="pt-5 pb-5">
             <div className="flex items-start justify-between">
               <div>
@@ -258,24 +259,98 @@ const ProducerBilling = () => {
         </Card>
       </div>
 
-      {/* ── Credit Usage Bar ── */}
-      <Card>
-        <CardContent className="pt-5 pb-5">
-          <div className="flex items-start justify-between mb-3">
-            <div>
-              <p className="text-sm font-semibold text-foreground">Uso do Limite de Crédito</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {fmt(usedCredit)} de {fmt(toleranceLimit)} (com 15% de tolerância)
+      {/* ── Credit Usage + Tier Panel ── */}
+      <div className={`grid gap-4 ${showTierPanel ? "grid-cols-1 lg:grid-cols-[1fr_320px]" : "grid-cols-1"}`}>
+        {/* Credit Usage Bar */}
+        <Card>
+          <CardContent className="pt-5 pb-5">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Uso do Limite de Crédito</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {fmt(usedCredit)} de {fmt(toleranceLimit)} (com 15% de tolerância)
+                </p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Atualizado em {new Date().toLocaleDateString("pt-BR")} às {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
               </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Atualizado em {new Date().toLocaleDateString("pt-BR")} às {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-            </p>
-          </div>
-          <Progress value={usagePercent} className="h-2" />
-          <p className="text-xs text-muted-foreground mt-2">{usagePercent.toFixed(1)}% utilizado</p>
-        </CardContent>
-      </Card>
+            <Progress value={usagePercent} className="h-2" />
+            <p className="text-xs text-muted-foreground mt-2">{usagePercent.toFixed(1)}% utilizado</p>
+          </CardContent>
+        </Card>
+
+        {/* Tier Panel */}
+        {showTierPanel && tiers.length > 0 && (
+          <Card>
+            <CardContent className="pt-5 pb-5">
+              <div className="flex items-start justify-between mb-1">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Níveis de Crédito</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Seu limite aumenta conforme você mantém os pagamentos em dia</p>
+                </div>
+                <p className="text-xs text-muted-foreground shrink-0">
+                  Atualizado em<br />{new Date().toLocaleDateString("pt-BR")} às {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                </p>
+              </div>
+              <div className="space-y-2 mt-4">
+                {tiers.map((t) => {
+                  const isCurrent = t.key === currentTierKey;
+                  const currentIdx = tiers.findIndex((x) => x.key === currentTierKey);
+                  const tIdx = tiers.findIndex((x) => x.key === t.key);
+                  const isPast = tIdx < currentIdx;
+                  const isNext = tIdx === currentIdx + 1;
+
+                  // Calculate what's needed to reach next tier
+                  const paidCount = transactions.filter(tx => tx.type === "credit").length;
+                  const thresholds = [0, 2, 5, 10, 15, 20];
+                  const neededRecharges = thresholds[tIdx] ?? 0;
+                  const remaining = Math.max(0, neededRecharges - paidCount);
+
+                  return (
+                    <div
+                      key={t.key}
+                      className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
+                        isCurrent
+                          ? "border-primary/30 bg-primary/5"
+                          : "border-border/50 bg-transparent"
+                      }`}
+                    >
+                      <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                        isCurrent ? "bg-primary text-primary-foreground" :
+                        isPast ? "bg-primary/20 text-primary" :
+                        "bg-muted text-muted-foreground"
+                      }`}>
+                        {t.level}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-sm font-semibold ${isCurrent ? "text-foreground" : isPast ? "text-muted-foreground" : "text-muted-foreground/60"}`}>
+                            {tierMeta.title === t.label ? TIER_META[t.key]?.title ?? t.label : t.label}
+                          </span>
+                          {isCurrent && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary/30 text-primary">Atual</Badge>
+                          )}
+                        </div>
+                        {!isCurrent && !isPast && (
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            {remaining > 0 ? `Faltam ${fmt(remaining * 50)} em taxas` : `Nível ${t.level}`}
+                          </p>
+                        )}
+                      </div>
+                      <span className={`text-sm font-semibold tabular-nums shrink-0 ${
+                        isCurrent ? "text-foreground" : "text-muted-foreground"
+                      }`}>
+                        {fmt(t.credit_limit)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       {/* ── Cartão / PIX Tabs ── */}
       <Tabs defaultValue="card" className="w-full">
