@@ -51,7 +51,7 @@ const LandingHeader = () => {
           {[
             { href: "#features", label: "Recursos" },
             { href: "#showcase", label: "Plataforma" },
-            { href: "#all-features", label: "Segurança" },
+            { href: "#pricing", label: "Preços" },
             { href: "#cta", label: "Contato" },
           ].map((link, i) => (
             <motion.a
