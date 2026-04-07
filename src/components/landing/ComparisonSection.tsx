@@ -14,6 +14,7 @@ const rows = [
   { feature: "Notificações push de venda", us: true, them: false },
   { feature: "Webhooks com HMAC", us: true, them: "parcial" },
   { feature: "Mensalidade", us: "GRÁTIS", them: "R$ 497+/mês" },
+  { feature: "Taxa por venda", us: "R$ 0,99 fixo", them: "até 10%" },
 ];
 
 const ComparisonSection = () => (

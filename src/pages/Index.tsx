@@ -15,6 +15,7 @@ import IntegrationsSection from "@/components/landing/IntegrationsSection";
 import NotificationsSection from "@/components/landing/NotificationsSection";
 import AchievementsSection from "@/components/landing/AchievementsSection";
 import CheckoutCustomSection from "@/components/landing/CheckoutCustomSection";
+import PricingSection from "@/components/landing/PricingSection";
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -91,6 +92,7 @@ const Index = () => {
         <NotificationsSection />
         <AllFeatures />
         <AchievementsSection />
+        <PricingSection />
         <CTASection />
       </main>
       <LandingFooter />
