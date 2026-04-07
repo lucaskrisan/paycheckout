@@ -453,7 +453,7 @@ const ProducerBilling = () => {
         <div className="space-y-3">
           <div className="px-1">
             <h3 className="text-sm font-semibold text-foreground">Seu nível</h3>
-            <p className="text-xs text-muted-foreground">Mais recargas = mais limite de crédito = mais vendas sem pausar</p>
+            <p className="text-xs text-muted-foreground">Quanto maior seu nível, mais você vende sem risco de parar</p>
           </div>
           <div className="flex gap-1.5 overflow-x-auto pb-1">
             {tiers.map((t) => {
