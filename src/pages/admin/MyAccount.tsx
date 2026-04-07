@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { User, Mail, Phone, KeyRound, Trash2, Loader2 } from "lucide-react";
+import ProducerVerification from "@/components/admin/ProducerVerification";
 
 const MyAccount = () => {
   const { user, signOut } = useAuth();
