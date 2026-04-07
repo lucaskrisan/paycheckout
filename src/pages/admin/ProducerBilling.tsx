@@ -259,6 +259,26 @@ const ProducerBilling = () => {
         </Card>
       </div>
 
+      {/* ── Free Trial Banner ── */}
+      {isInFreeTrial && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="pt-5 pb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <Zap className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-foreground">🎉 Você está no período gratuito!</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Suas primeiras R$ 500,00 em vendas são <span className="font-semibold text-primary">100% isentas de taxas</span>.
+                  Você ainda tem ~{freeSalesRemaining} vendas grátis restantes.
+                  Após atingir R$ 500 em faturamento, a taxa de R$ 0,99 por venda começa a ser cobrada.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       {/* ── Main Content + Tier Panel side by side ── */}
       <div className={`grid gap-4 ${showTierPanel ? "grid-cols-1 lg:grid-cols-[1fr_320px]" : "grid-cols-1"}`}>
         {/* Left: Credit Usage + Tabs + History */}
