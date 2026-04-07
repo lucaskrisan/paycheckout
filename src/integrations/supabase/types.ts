@@ -108,6 +108,9 @@ export type Database = {
       }
       billing_accounts: {
         Row: {
+          auto_recharge_amount: number
+          auto_recharge_enabled: boolean
+          auto_recharge_threshold: number
           balance: number
           blocked: boolean
           card_brand: string | null
@@ -117,10 +120,14 @@ export type Database = {
           credit_limit: number
           credit_tier: string
           id: string
+          last_auto_recharge_at: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          auto_recharge_amount?: number
+          auto_recharge_enabled?: boolean
+          auto_recharge_threshold?: number
           balance?: number
           blocked?: boolean
           card_brand?: string | null
@@ -130,10 +137,14 @@ export type Database = {
           credit_limit?: number
           credit_tier?: string
           id?: string
+          last_auto_recharge_at?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          auto_recharge_amount?: number
+          auto_recharge_enabled?: boolean
+          auto_recharge_threshold?: number
           balance?: number
           blocked?: boolean
           card_brand?: string | null
@@ -143,6 +154,7 @@ export type Database = {
           credit_limit?: number
           credit_tier?: string
           id?: string
+          last_auto_recharge_at?: string | null
           updated_at?: string
           user_id?: string
         }
