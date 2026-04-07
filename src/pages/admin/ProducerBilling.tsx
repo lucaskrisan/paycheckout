@@ -365,8 +365,8 @@ const ProducerBilling = () => {
 
       {/* ━━━ ISENÇÃO ━━━ */}
       <div className="rounded-xl border border-primary/15 bg-primary/[0.03] p-5">
-        <p className="text-sm font-semibold text-foreground">Primeiros R$ 1.000 em vendas — 100% grátis</p>
-        <p className="text-xs text-muted-foreground mt-1">Você só paga depois de atingir R$ 1.000 em faturamento aprovado. Sem truques.</p>
+        <p className="text-sm font-semibold text-foreground">Suas primeiras 500 vendas são 100% grátis</p>
+        <p className="text-xs text-muted-foreground mt-1">Você só começa a pagar R$ 0,99 por venda depois de atingir 500 vendas aprovadas. Sem truques.</p>
       </div>
 
       {/* ━━━ RECHARGE PANEL ━━━ */}
