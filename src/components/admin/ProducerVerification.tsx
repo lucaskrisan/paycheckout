@@ -97,7 +97,7 @@ export default function ProducerVerification() {
         document_front_url: frontPath,
         document_back_url: backPath,
         selfie_url: selfiePath,
-        address_proof_url: addressPath,
+        address_proof_url: null,
       });
 
       if (error) throw error;
