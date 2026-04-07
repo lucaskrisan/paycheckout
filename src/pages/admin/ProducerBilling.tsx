@@ -714,7 +714,7 @@ const ProducerBilling = () => {
             </div>
 
             {/* Generate button */}
-            <Button className="w-full font-semibold gap-2" onClick={() => { handleGeneratePix(); setShowPixModal(false); }} disabled={pixLoading}>
+            <Button className="w-full font-semibold gap-2" onClick={() => { setShowPixModal(false); handleGeneratePix(); }} disabled={pixLoading}>
               {pixLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <DollarSign className="w-4 h-4" />}
               Gerar PIX de {fmt(pixAmount)}
             </Button>
