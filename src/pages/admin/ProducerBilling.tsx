@@ -4,8 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
@@ -13,11 +14,12 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  CreditCard, Loader2, ClipboardCopy, CheckCircle2, Zap, AlertTriangle,
-  ChevronDown, ChevronUp, ArrowUpRight, ArrowDownLeft, Gift,
+  CreditCard, Loader2, ClipboardCopy, CheckCircle2, Zap, TrendingUp,
+  Wallet, DollarSign, Plus, Receipt,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
+import { Progress } from "@/components/ui/progress";
 
 // ── Types ──────────────────────────────────────────
 interface TierRow { key: string; label: string; credit_limit: number; level: number; color: string; }
@@ -49,8 +51,8 @@ const getErrorMessage = (error: unknown, fallback: string): string => {
 };
 
 const TIER_META: Record<string, { title: string }> = {
-  iron: { title: "Filhote" }, bronze: { title: "Caçador" }, silver: { title: "Predador" },
-  gold: { title: "Alpha" }, platinum: { title: "Apex" }, diamond: { title: "Lenda" },
+  iron: { title: "Iron" }, bronze: { title: "Bronze" }, silver: { title: "Silver" },
+  gold: { title: "Gold" }, platinum: { title: "Platinum" }, diamond: { title: "Diamond" },
 };
 
 const RECHARGE_AMOUNTS = [
@@ -75,8 +77,7 @@ const ProducerBilling = () => {
   const [cardAmount, setCardAmount] = useState(50);
   const [cardLoading, setCardLoading] = useState(false);
   const [showCardModal, setShowCardModal] = useState(false);
-  const [showManualRecharge, setShowManualRecharge] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
+  const [showPixModal, setShowPixModal] = useState(false);
   const [cardValidating, setCardValidating] = useState(false);
   const [cardForm, setCardForm] = useState({ number: "", name: "", expiryMonth: "", expiryYear: "", cvv: "", cpf: "" });
 
@@ -140,7 +141,7 @@ const ProducerBilling = () => {
     try {
       const { error } = await supabase.from("billing_accounts").update({ auto_recharge_enabled: enabled }).eq("user_id", user!.id);
       if (error) throw error;
-      toast.success(enabled ? "Recarga automática ativada" : "Recarga automática desativada");
+      toast.success(enabled ? "Cobrança automática ativada" : "Cobrança automática desativada");
       loadData();
     } catch { toast.error("Erro ao salvar"); }
   };
@@ -179,375 +180,349 @@ const ProducerBilling = () => {
 
   // ── Derived state ──
   const balance = account?.balance ?? 0;
+  const creditLimit = account?.credit_limit ?? 5;
   const FREE_THRESHOLD = 500;
   const freeSalesRemaining = totalRevenue < FREE_THRESHOLD ? Math.floor((FREE_THRESHOLD - totalRevenue) / 0.99) : 0;
-  const paidSales = toSales(balance);
-  const salesCovered = freeSalesRemaining + paidSales;
   const isInFreeTrial = freeSalesRemaining > 0;
   const hasCard = !!account?.card_last4;
-  const hasAutoRecharge = account?.auto_recharge_enabled && hasCard;
-  const isBlocked = !!account?.blocked;
-  const isDead = isBlocked || (salesCovered <= 0 && !isInFreeTrial);
-  const isCritical = !isDead && salesCovered > 0 && salesCovered < 10;
   const currentTierKey = account?.credit_tier ?? "iron";
   const tierMeta = TIER_META[currentTierKey] ?? TIER_META.iron;
+
+  // Credit usage (how much of the limit is consumed)
+  const usedCredit = Math.max(0, -balance); // negative balance = debt
+  const toleranceLimit = creditLimit * 1.15; // 15% tolerance
+  const usagePercent = toleranceLimit > 0 ? Math.min(100, (usedCredit / toleranceLimit) * 100) : 0;
+
+  // Fees accumulated (total fees this period)
+  const totalFees = transactions.filter(t => t.type === "fee").reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
   const inputClass = "h-11 bg-background border-border text-foreground placeholder:text-muted-foreground rounded-lg focus:border-primary focus:ring-primary";
 
-  const statusColor = isDead ? "text-destructive" : isCritical ? "text-amber-500" : "text-primary";
-  const statusBg = isDead ? "bg-destructive/10 border-destructive/20" : isCritical ? "bg-amber-500/10 border-amber-500/20" : "bg-primary/10 border-primary/20";
-
   return (
-    <div className="max-w-3xl mx-auto space-y-6 pb-12">
+    <div className="space-y-6">
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-foreground">Billing</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Gerencie seus créditos e pagamentos</p>
+          <h1 className="text-2xl font-bold text-foreground">Billing</h1>
+          <p className="text-sm text-muted-foreground">Gerencie suas taxas e pagamentos</p>
         </div>
-        <Badge variant="outline" className="text-xs font-semibold gap-1.5 px-3 py-1.5">
-          {tierMeta.title}
-        </Badge>
+        <Button variant="outline" className="gap-2" onClick={() => setShowPixModal(true)}>
+          <Plus className="w-4 h-4" /> Adicionar Crédito
+        </Button>
       </div>
-
-      {/* ── Alert Banner (only when critical/dead) ── */}
-      {(isDead || isCritical) && (
-        <div className={`flex items-start gap-3 p-4 rounded-lg border ${statusBg}`}>
-          <AlertTriangle className={`w-5 h-5 mt-0.5 shrink-0 ${statusColor}`} />
-          <div className="flex-1 min-w-0">
-            <p className={`text-sm font-semibold ${statusColor}`}>
-              {isDead ? "Checkout pausado — suas vendas estão paradas" : "Créditos acabando"}
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {isDead && !hasCard
-                ? "Adicione um cartão para reativar suas vendas automaticamente."
-                : isDead && hasCard
-                  ? "Recarregue agora para continuar vendendo."
-                  : `Restam apenas ${salesCovered} vendas. Recarregue para não parar.`
-              }
-            </p>
-          </div>
-          <Button
-            size="sm"
-            variant={isDead ? "destructive" : "default"}
-            className="shrink-0 text-xs font-semibold"
-            onClick={() => isDead && !hasCard ? setShowCardModal(true) : handleChargeCard()}
-            disabled={cardLoading}
-          >
-            {cardLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : isDead && !hasCard ? "Adicionar cartão" : "Recarregar"}
-          </Button>
-        </div>
-      )}
 
       {/* ── Summary Cards ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* Sales available */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Taxas a Pagar */}
         <Card>
-          <CardContent className="pt-5 pb-4">
-            <p className="text-xs font-medium text-muted-foreground mb-1">Vendas disponíveis</p>
-            <p className={`text-3xl font-bold tabular-nums ${isDead ? "text-destructive" : "text-foreground"}`}>
-              {salesCovered.toLocaleString("pt-BR")}
-            </p>
-            {isInFreeTrial && (
-              <div className="flex items-center gap-1.5 mt-2">
-                <Gift className="w-3.5 h-3.5 text-primary" />
-                <span className="text-xs text-primary font-medium">{freeSalesRemaining} vendas grátis</span>
+          <CardContent className="pt-5 pb-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-2">Taxas a Pagar</p>
+                <p className="text-2xl font-bold tabular-nums text-foreground">{fmt(Math.max(0, -balance))}</p>
+                <p className="text-xs text-muted-foreground mt-1">Taxas acumuladas no período</p>
               </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Balance */}
-        <Card>
-          <CardContent className="pt-5 pb-4">
-            <p className="text-xs font-medium text-muted-foreground mb-1">Saldo</p>
-            <p className="text-3xl font-bold tabular-nums text-foreground">{fmt(balance)}</p>
-            <p className="text-xs text-muted-foreground mt-2">R$ 0,99 por venda</p>
-          </CardContent>
-        </Card>
-
-        {/* Status */}
-        <Card>
-          <CardContent className="pt-5 pb-4">
-            <p className="text-xs font-medium text-muted-foreground mb-1">Status</p>
-            <div className="flex items-center gap-2 mt-1">
-              <span className={`w-2 h-2 rounded-full ${isDead ? "bg-destructive" : isCritical ? "bg-amber-500" : "bg-emerald-500"}`} />
-              <span className={`text-sm font-semibold ${isDead ? "text-destructive" : isCritical ? "text-amber-500" : "text-foreground"}`}>
-                {isDead ? "Pausado" : isCritical ? "Baixo" : "Ativo"}
-              </span>
+              <Receipt className="w-4 h-4 text-muted-foreground" />
             </div>
-            {hasAutoRecharge && (
-              <div className="flex items-center gap-1.5 mt-2">
-                <Zap className="w-3.5 h-3.5 text-primary" />
-                <span className="text-xs text-primary font-medium">Recarga automática</span>
+          </CardContent>
+        </Card>
+
+        {/* Crédito Disponível */}
+        <Card>
+          <CardContent className="pt-5 pb-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-2">Crédito Disponível</p>
+                <p className={`text-2xl font-bold tabular-nums ${balance >= 0 ? "text-primary" : "text-destructive"}`}>
+                  {fmt(Math.max(0, balance))}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">Saldo pré-pago via PIX</p>
               </div>
-            )}
+              <Wallet className="w-4 h-4 text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Nível de Crédito */}
+        <Card>
+          <CardContent className="pt-5 pb-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-2">Nível de Crédito</p>
+                <p className="text-2xl font-bold text-foreground">{tierMeta.title}</p>
+                <p className="text-xs text-muted-foreground mt-1">Limite: {fmt(creditLimit)}</p>
+              </div>
+              <TrendingUp className="w-4 h-4 text-muted-foreground" />
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* ── Auto Recharge Card ── */}
+      {/* ── Credit Usage Bar ── */}
       <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Zap className="w-4 h-4 text-primary" />
-              </div>
-              <div>
-                <CardTitle className="text-sm font-semibold">Recarga automática</CardTitle>
-                <p className="text-xs text-muted-foreground">Nunca pare de vender</p>
-              </div>
-            </div>
-            {hasCard && (
-              <Switch
-                checked={!!account?.auto_recharge_enabled}
-                onCheckedChange={handleToggleAutoRecharge}
-              />
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {hasCard ? (
-            <>
-              {/* Card info */}
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border">
-                <CreditCard className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm font-medium text-foreground">
-                  {account?.card_brand?.toUpperCase()} •••• {account?.card_last4}
-                </span>
-                <button
-                  onClick={() => setShowCardModal(true)}
-                  className="text-xs text-primary font-medium hover:underline ml-auto"
-                >
-                  Trocar
-                </button>
-              </div>
-
-              {/* Auto recharge settings */}
-              {account?.auto_recharge_enabled && (
-                <div className="space-y-4 pt-1">
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-2">Recarregar quando restar</p>
-                    <div className="flex gap-2">
-                      {[3, 5, 10, 20].map((v) => (
-                        <button
-                          key={v}
-                          onClick={() => handleUpdateAutoRecharge('auto_recharge_threshold', v)}
-                          className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
-                            account?.auto_recharge_threshold === v
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted/50 border border-border text-foreground hover:bg-muted"
-                          }`}
-                        >
-                          {toSales(v)} vendas
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-2">Valor da recarga</p>
-                    <div className="flex gap-2 flex-wrap">
-                      {[20, 50, 100, 200].map((v) => (
-                        <button
-                          key={v}
-                          onClick={() => handleUpdateAutoRecharge('auto_recharge_amount', v)}
-                          className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
-                            account?.auto_recharge_amount === v
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted/50 border border-border text-foreground hover:bg-muted"
-                          }`}
-                        >
-                          {fmt(v)} (~{toSales(v)} vendas)
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Quando restar ≤ {toSales(account?.auto_recharge_threshold ?? 5)} vendas, será cobrado {fmt(account?.auto_recharge_amount ?? 50)} no cartão •••• {account?.card_last4}.
-                  </p>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="text-center py-4">
-              <p className="text-sm text-muted-foreground mb-4">
-                Adicione um cartão de crédito para ativar a recarga automática e nunca parar de vender.
+        <CardContent className="pt-5 pb-5">
+          <div className="flex items-start justify-between mb-3">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Uso do Limite de Crédito</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {fmt(usedCredit)} de {fmt(toleranceLimit)} (com 15% de tolerância)
               </p>
-              <Button onClick={() => setShowCardModal(true)} className="gap-2 font-semibold">
-                <CreditCard className="w-4 h-4" /> Adicionar cartão
-              </Button>
             </div>
-          )}
+            <p className="text-xs text-muted-foreground">
+              Atualizado em {new Date().toLocaleDateString("pt-BR")} às {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+            </p>
+          </div>
+          <Progress value={usagePercent} className="h-2" />
+          <p className="text-xs text-muted-foreground mt-2">{usagePercent.toFixed(1)}% utilizado</p>
         </CardContent>
       </Card>
 
-      {/* ── Manual Recharge ── */}
-      <Card>
-        <button
-          onClick={() => setShowManualRecharge(!showManualRecharge)}
-          className="flex items-center justify-between w-full px-6 py-4 text-left"
-        >
-          <div>
-            <p className="text-sm font-semibold text-foreground">Recarga via PIX</p>
-            <p className="text-xs text-muted-foreground">Adicione créditos manualmente</p>
-          </div>
-          {showManualRecharge ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-        </button>
+      {/* ── Cartão / PIX Tabs ── */}
+      <Tabs defaultValue="card" className="w-full">
+        <TabsList className="w-auto">
+          <TabsTrigger value="card" className="gap-2">
+            <CreditCard className="w-4 h-4" /> Cartão
+          </TabsTrigger>
+          <TabsTrigger value="pix" className="gap-2">
+            <DollarSign className="w-4 h-4" /> PIX
+          </TabsTrigger>
+        </TabsList>
 
-        {showManualRecharge && (
-          <CardContent className="pt-0 space-y-4">
-            {!pixResult ? (
-              <>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {RECHARGE_AMOUNTS.map(({ value, sales }) => (
-                    <button
-                      key={value}
-                      onClick={() => setPixAmount(value)}
-                      className={`p-3 rounded-lg text-center transition-colors ${
-                        pixAmount === value
-                          ? "bg-primary/10 border-2 border-primary"
-                          : "bg-muted/30 border border-border hover:border-primary/30"
-                      }`}
-                    >
-                      <p className={`text-lg font-bold ${pixAmount === value ? "text-primary" : "text-foreground"}`}>
-                        ~{sales}
+        {/* ── Card Tab ── */}
+        <TabsContent value="card">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Cartão de Crédito</CardTitle>
+              <CardDescription>Cartão para cobrança automática de taxas</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {hasCard ? (
+                <div className="space-y-5">
+                  {/* Card info */}
+                  <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/50 border border-border">
+                    <CreditCard className="w-8 h-8 text-muted-foreground" />
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-foreground">
+                        {account?.card_brand?.toUpperCase()} •••• {account?.card_last4}
                       </p>
-                      <p className="text-[11px] text-muted-foreground">{fmt(value)}</p>
-                    </button>
-                  ))}
-                </div>
-                <Button className="w-full font-semibold" onClick={handleGeneratePix} disabled={pixLoading}>
-                  {pixLoading
-                    ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Gerando...</>
-                    : <>Gerar PIX · {fmt(pixAmount)}</>
-                  }
-                </Button>
-              </>
-            ) : (
-              <div className="flex flex-col items-center gap-4 py-4">
-                {pixResult.qr_code_url && (
-                  <div className="p-3 bg-white rounded-xl">
-                    <img src={pixResult.qr_code_url} alt="QR Code PIX" className="w-44 h-44 rounded" />
+                      <p className="text-xs text-muted-foreground">Cartão cadastrado</p>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => setShowCardModal(true)}>Trocar</Button>
                   </div>
-                )}
-                <div className="text-center">
-                  <p className="text-xl font-bold text-foreground">{fmt(pixResult.amount)}</p>
-                  <p className="text-xs text-muted-foreground mt-1">~{toSales(pixResult.amount)} vendas · creditado em até 1 min</p>
+
+                  {/* Auto recharge */}
+                  <div className="flex items-center justify-between p-4 rounded-lg border border-border">
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Cobrança automática</p>
+                      <p className="text-xs text-muted-foreground">
+                        {account?.auto_recharge_enabled
+                          ? `Cobra ${fmt(account?.auto_recharge_amount ?? 50)} quando saldo ≤ ${fmt(account?.auto_recharge_threshold ?? 5)}`
+                          : "Ative para nunca parar de vender"
+                        }
+                      </p>
+                    </div>
+                    <Switch
+                      checked={!!account?.auto_recharge_enabled}
+                      onCheckedChange={handleToggleAutoRecharge}
+                    />
+                  </div>
+
+                  {account?.auto_recharge_enabled && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-2">Cobrar quando saldo atingir</p>
+                        <div className="flex gap-2 flex-wrap">
+                          {[3, 5, 10, 20].map((v) => (
+                            <button
+                              key={v}
+                              onClick={() => handleUpdateAutoRecharge('auto_recharge_threshold', v)}
+                              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                                account?.auto_recharge_threshold === v
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-muted/50 border border-border text-foreground hover:bg-muted"
+                              }`}
+                            >
+                              {fmt(v)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-2">Valor da recarga</p>
+                        <div className="flex gap-2 flex-wrap">
+                          {[20, 50, 100, 200].map((v) => (
+                            <button
+                              key={v}
+                              onClick={() => handleUpdateAutoRecharge('auto_recharge_amount', v)}
+                              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                                account?.auto_recharge_amount === v
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-muted/50 border border-border text-foreground hover:bg-muted"
+                              }`}
+                            >
+                              {fmt(v)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Quick charge */}
+                  <div className="pt-2 border-t border-border">
+                    <p className="text-xs font-medium text-muted-foreground mb-3">Recarga rápida no cartão</p>
+                    <div className="flex gap-2 items-center">
+                      {[20, 50, 100, 200].map((v) => (
+                        <button
+                          key={v}
+                          onClick={() => setCardAmount(v)}
+                          className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                            cardAmount === v
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted/50 border border-border text-foreground hover:bg-muted"
+                          }`}
+                        >
+                          {fmt(v)}
+                        </button>
+                      ))}
+                      <Button size="sm" className="ml-auto gap-1.5" onClick={handleChargeCard} disabled={cardLoading}>
+                        {cardLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                        Recarregar
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-                {pixResult.pix_code && (
-                  <Button variant="outline" className="w-full gap-2 font-semibold" onClick={handleCopyPix}>
-                    {copying
-                      ? <><CheckCircle2 className="w-4 h-4 text-primary" /> Copiado!</>
-                      : <><ClipboardCopy className="w-4 h-4" /> Copiar código PIX</>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <CreditCard className="w-10 h-10 text-muted-foreground/40 mb-4" />
+                  <p className="text-sm text-muted-foreground mb-4">Nenhum cartão cadastrado</p>
+                  <Button variant="outline" onClick={() => setShowCardModal(true)}>Adicionar Cartão</Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ── PIX Tab ── */}
+        <TabsContent value="pix">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Recarga via PIX</CardTitle>
+              <CardDescription>Adicione créditos pré-pagos instantaneamente</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {!pixResult ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {RECHARGE_AMOUNTS.map(({ value, sales }) => (
+                      <button
+                        key={value}
+                        onClick={() => setPixAmount(value)}
+                        className={`p-4 rounded-lg text-center transition-colors ${
+                          pixAmount === value
+                            ? "bg-primary/10 border-2 border-primary"
+                            : "bg-muted/30 border border-border hover:border-primary/30"
+                        }`}
+                      >
+                        <p className={`text-xl font-bold ${pixAmount === value ? "text-primary" : "text-foreground"}`}>
+                          {fmt(value)}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-1">~{sales} vendas</p>
+                      </button>
+                    ))}
+                  </div>
+                  <Button className="w-full font-semibold" onClick={handleGeneratePix} disabled={pixLoading}>
+                    {pixLoading
+                      ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Gerando...</>
+                      : <>Gerar PIX · {fmt(pixAmount)}</>
                     }
                   </Button>
-                )}
-                <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => setPixResult(null)}>
-                  Gerar novo código
-                </button>
-              </div>
-            )}
-          </CardContent>
-        )}
-      </Card>
-
-      {/* ── Transactions ── */}
-      {transactions.length > 0 && (
-        <Card>
-          <button
-            onClick={() => setShowHistory(!showHistory)}
-            className="flex items-center justify-between w-full px-6 py-4 text-left"
-          >
-            <div className="flex items-center gap-2">
-              <p className="text-sm font-semibold text-foreground">Histórico</p>
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{transactions.length}</Badge>
-            </div>
-            {showHistory ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-          </button>
-
-          {showHistory && (
-            <CardContent className="pt-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs">Tipo</TableHead>
-                    <TableHead className="text-xs">Descrição</TableHead>
-                    <TableHead className="text-xs text-right">Valor</TableHead>
-                    <TableHead className="text-xs text-right">Data</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {transactions.map((tx) => (
-                    <TableRow key={tx.id}>
-                      <TableCell className="py-2.5">
-                        <div className="flex items-center gap-2">
-                          {tx.type === "fee" ? (
-                            <ArrowUpRight className="w-3.5 h-3.5 text-destructive" />
-                          ) : (
-                            <ArrowDownLeft className="w-3.5 h-3.5 text-primary" />
-                          )}
-                          <span className="text-xs font-medium">{tx.type === "fee" ? "Taxa" : "Recarga"}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-2.5">
-                        <span className="text-xs text-muted-foreground truncate block max-w-[200px]">
-                          {tx.description || "—"}
-                        </span>
-                      </TableCell>
-                      <TableCell className={`py-2.5 text-right text-xs font-semibold tabular-nums ${
-                        tx.type === "fee" ? "text-destructive" : "text-primary"
-                      }`}>
-                        {tx.type === "fee" ? "-" : "+"}{fmt(Math.abs(tx.amount))}
-                      </TableCell>
-                      <TableCell className="py-2.5 text-right text-xs text-muted-foreground">
-                        {new Date(tx.created_at).toLocaleDateString("pt-BR")}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-4 py-4">
+                  {pixResult.qr_code_url && (
+                    <div className="p-3 bg-white rounded-xl">
+                      <img src={pixResult.qr_code_url} alt="QR Code PIX" className="w-44 h-44 rounded" />
+                    </div>
+                  )}
+                  <div className="text-center">
+                    <p className="text-xl font-bold text-foreground">{fmt(pixResult.amount)}</p>
+                    <p className="text-xs text-muted-foreground mt-1">~{toSales(pixResult.amount)} vendas · Creditado em até 1 min</p>
+                  </div>
+                  {pixResult.pix_code && (
+                    <Button variant="outline" className="w-full gap-2 font-semibold" onClick={handleCopyPix}>
+                      {copying
+                        ? <><CheckCircle2 className="w-4 h-4 text-primary" /> Copiado!</>
+                        : <><ClipboardCopy className="w-4 h-4" /> Copiar código PIX</>
+                      }
+                    </Button>
+                  )}
+                  <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => setPixResult(null)}>
+                    Gerar novo código
+                  </button>
+                </div>
+              )}
             </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* ── Histórico de Faturas ── */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Histórico de Faturas</CardTitle>
+          <CardDescription>Suas faturas de cobrança de taxas</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {transactions.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <DollarSign className="w-10 h-10 text-muted-foreground/40 mb-4" />
+              <p className="text-sm text-muted-foreground">Nenhuma fatura encontrada</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-xs">Tipo</TableHead>
+                  <TableHead className="text-xs">Descrição</TableHead>
+                  <TableHead className="text-xs text-right">Valor</TableHead>
+                  <TableHead className="text-xs text-right">Data</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {transactions.map((tx) => (
+                  <TableRow key={tx.id}>
+                    <TableCell className="py-3">
+                      <Badge variant={tx.type === "fee" ? "secondary" : "default"} className="text-[10px]">
+                        {tx.type === "fee" ? "Taxa" : "Crédito"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <span className="text-xs text-muted-foreground truncate block max-w-[300px]">
+                        {tx.description || "—"}
+                      </span>
+                    </TableCell>
+                    <TableCell className={`py-3 text-right text-xs font-semibold tabular-nums ${
+                      tx.type === "fee" ? "text-destructive" : "text-primary"
+                    }`}>
+                      {tx.type === "fee" ? "-" : "+"}{fmt(Math.abs(tx.amount))}
+                    </TableCell>
+                    <TableCell className="py-3 text-right text-xs text-muted-foreground">
+                      {new Date(tx.created_at).toLocaleDateString("pt-BR")}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
-        </Card>
-      )}
-
-      {/* ── Tier Progression ── */}
-      {tiers.length > 0 && (
-        <div className="flex items-center gap-2 overflow-x-auto py-2 px-1">
-          {tiers.map((t) => {
-            const isCurrent = t.key === currentTierKey;
-            const currentIdx = tiers.findIndex((x) => x.key === currentTierKey);
-            const tIdx = tiers.findIndex((x) => x.key === t.key);
-            const isPast = tIdx < currentIdx;
-
-            return (
-              <div key={t.key} className="flex items-center gap-1.5 shrink-0">
-                <span className={`w-2 h-2 rounded-full ${
-                  isCurrent ? "bg-primary ring-2 ring-primary/20" : isPast ? "bg-primary/40" : "bg-border"
-                }`} />
-                <span className={`text-[11px] font-medium whitespace-nowrap ${
-                  isCurrent ? "text-foreground font-semibold" : isPast ? "text-muted-foreground" : "text-muted-foreground/40"
-                }`}>
-                  {TIER_META[t.key]?.title ?? t.label}
-                </span>
-                {tIdx < tiers.length - 1 && <span className={`w-5 h-px ${isPast ? "bg-primary/30" : "bg-border"}`} />}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* ── Footer ── */}
-      <p className="text-xs text-muted-foreground text-center">
-        R$ 0,99 por venda aprovada · Sem mensalidade · Sem taxa escondida
-        {isInFreeTrial && " · Primeiras 500 vendas grátis"}
-      </p>
+        </CardContent>
+      </Card>
 
       {/* ── MODAL: CARD ── */}
       <Dialog open={showCardModal} onOpenChange={setShowCardModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold">Adicionar cartão</DialogTitle>
+            <DialogTitle className="text-lg font-bold">Adicionar Cartão</DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
               Validação de R$ 5,00 estornada imediatamente
             </DialogDescription>
@@ -586,7 +561,42 @@ const ProducerBilling = () => {
                 placeholder="000.000.000-00" className={inputClass} maxLength={14} />
             </div>
             <Button className="w-full gap-2 font-semibold" onClick={handleValidateCard} disabled={cardValidating}>
-              {cardValidating ? <><Loader2 className="w-4 h-4 animate-spin" /> Validando...</> : <><CreditCard className="w-4 h-4" /> Validar cartão</>}
+              {cardValidating ? <><Loader2 className="w-4 h-4 animate-spin" /> Validando...</> : <><CreditCard className="w-4 h-4" /> Adicionar Cartão</>}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── MODAL: PIX ── */}
+      <Dialog open={showPixModal} onOpenChange={setShowPixModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold">Adicionar Crédito</DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Escolha o valor e pague via PIX
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div className="grid grid-cols-2 gap-3">
+              {RECHARGE_AMOUNTS.map(({ value, sales }) => (
+                <button
+                  key={value}
+                  onClick={() => setPixAmount(value)}
+                  className={`p-4 rounded-lg text-center transition-colors ${
+                    pixAmount === value
+                      ? "bg-primary/10 border-2 border-primary"
+                      : "bg-muted/30 border border-border hover:border-primary/30"
+                  }`}
+                >
+                  <p className={`text-lg font-bold ${pixAmount === value ? "text-primary" : "text-foreground"}`}>
+                    {fmt(value)}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-1">~{sales} vendas</p>
+                </button>
+              ))}
+            </div>
+            <Button className="w-full font-semibold" onClick={() => { handleGeneratePix(); setShowPixModal(false); }} disabled={pixLoading}>
+              Gerar PIX · {fmt(pixAmount)}
             </Button>
           </div>
         </DialogContent>
