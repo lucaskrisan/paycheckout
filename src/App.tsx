@@ -70,6 +70,7 @@ const Blacklist = lazy(() => import("./pages/admin/Blacklist"));
 const ApiKeys = lazy(() => import("./pages/admin/ApiKeys"));
 const ProductReview = lazy(() => import("./pages/admin/ProductReview"));
 const WhatsApp = lazy(() => import("./pages/admin/WhatsApp"));
+const VerificationReview = lazy(() => import("./pages/admin/VerificationReview"));
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
