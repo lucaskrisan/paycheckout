@@ -265,15 +265,15 @@ const ProducerBilling = () => {
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-xl border border-border bg-card p-4 text-center">
           <p className="text-2xl font-bold text-foreground">R$ 0,99</p>
-          <p className="text-xs text-muted-foreground mt-1">por venda</p>
+          <p className="text-xs text-muted-foreground mt-1 font-medium">por venda (fixo)</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4 text-center">
           <p className="text-2xl font-bold text-foreground">R$ 0</p>
-          <p className="text-xs text-muted-foreground mt-1">mensalidade</p>
+          <p className="text-xs text-muted-foreground mt-1 font-medium">sem mensalidade</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4 text-center">
           <p className="text-2xl font-bold text-foreground">0%</p>
-          <p className="text-xs text-muted-foreground mt-1">taxa de gateway</p>
+          <p className="text-xs text-muted-foreground mt-1 font-medium">sem taxa escondida</p>
         </div>
       </div>
 
