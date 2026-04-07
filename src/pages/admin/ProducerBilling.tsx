@@ -679,7 +679,7 @@ const ProducerBilling = () => {
               <p className="text-xs text-muted-foreground mb-2">Valor personalizado</p>
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setPixAmount(Math.max(5, pixAmount - 5))}
+                  onClick={() => setPixAmount(Math.max(10, pixAmount - 5))}
                   className="w-10 h-10 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/50 transition-colors"
                 >
                   −
