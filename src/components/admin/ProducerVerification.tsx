@@ -41,7 +41,7 @@ export default function ProducerVerification() {
   const [submitting, setSubmitting] = useState(false);
   const [docType, setDocType] = useState("rg");
   const [uploads, setUploads] = useState<Record<string, File | null>>({
-    front: null, back: null, selfie: null, address: null,
+    front: null, back: null, selfie: null,
   });
   const [previews, setPreviews] = useState<Record<string, string>>({});
 
