@@ -47,6 +47,7 @@ const AdminHeader = memo(function AdminHeader({ totalRevenue, isDark, toggleThem
                   <User className="w-3.5 h-3.5" />
                 </div>
                 <span className="hidden md:inline max-w-[180px] truncate">{user?.email}</span>
+                {isVerified && <ShieldCheck className="w-3.5 h-3.5 text-green-400" title="Conta verificada" />}
                 <ChevronDown className="w-3.5 h-3.5" />
               </button>
             </DropdownMenuTrigger>
