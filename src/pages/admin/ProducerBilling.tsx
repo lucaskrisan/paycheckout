@@ -56,10 +56,10 @@ const TIER_META: Record<string, { title: string }> = {
 };
 
 const RECHARGE_AMOUNTS = [
+  { value: 10, sales: "10" },
   { value: 20, sales: "20" },
   { value: 50, sales: "50" },
   { value: 100, sales: "101" },
-  { value: 200, sales: "202" },
 ];
 
 // ── Component ──────────────────────────────────────
@@ -259,6 +259,26 @@ const ProducerBilling = () => {
         </Card>
       </div>
 
+      {/* ── Free Trial Banner ── */}
+      {isInFreeTrial && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="pt-5 pb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <Zap className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-foreground">🎉 Você está no período gratuito!</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Suas primeiras R$ 500,00 em vendas são <span className="font-semibold text-primary">100% isentas de taxas</span>.
+                  Você ainda tem ~{freeSalesRemaining} vendas grátis restantes.
+                  Após atingir R$ 500 em faturamento, a taxa de R$ 0,99 por venda começa a ser cobrada.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       {/* ── Main Content + Tier Panel side by side ── */}
       <div className={`grid gap-4 ${showTierPanel ? "grid-cols-1 lg:grid-cols-[1fr_320px]" : "grid-cols-1"}`}>
         {/* Left: Credit Usage + Tabs + History */}
@@ -659,7 +679,7 @@ const ProducerBilling = () => {
           <div className="space-y-5 mt-4">
             {/* Quick amount chips */}
             <div className="flex flex-wrap gap-2 justify-center">
-              {[5, 10, 20, 50, 100].map((v) => (
+              {[10, 20, 50, 100].map((v) => (
                 <button
                   key={v}
                   onClick={() => setPixAmount(v)}
@@ -679,7 +699,7 @@ const ProducerBilling = () => {
               <p className="text-xs text-muted-foreground mb-2">Valor personalizado</p>
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setPixAmount(Math.max(5, pixAmount - 5))}
+                  onClick={() => setPixAmount(Math.max(10, pixAmount - 5))}
                   className="w-10 h-10 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/50 transition-colors"
                 >
                   −
@@ -689,7 +709,7 @@ const ProducerBilling = () => {
                   <Input
                     type="number"
                     value={pixAmount}
-                    onChange={(e) => setPixAmount(Math.max(5, Number(e.target.value) || 5))}
+                    onChange={(e) => setPixAmount(Math.max(10, Number(e.target.value) || 10))}
                     className="border-0 bg-transparent text-center text-lg font-bold text-foreground p-0 h-auto focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                 </div>
@@ -714,7 +734,7 @@ const ProducerBilling = () => {
             </div>
 
             {/* Generate button */}
-            <Button className="w-full font-semibold gap-2" onClick={() => { handleGeneratePix(); setShowPixModal(false); }} disabled={pixLoading}>
+            <Button className="w-full font-semibold gap-2" onClick={() => { setShowPixModal(false); handleGeneratePix(); }} disabled={pixLoading}>
               {pixLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <DollarSign className="w-4 h-4" />}
               Gerar PIX de {fmt(pixAmount)}
             </Button>
