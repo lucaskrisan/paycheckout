@@ -81,8 +81,8 @@ export default function ProducerVerification() {
   };
 
   const handleSubmit = async () => {
-    if (!uploads.front || !uploads.selfie || !uploads.address) {
-      toast.error("Envie pelo menos: frente do documento, selfie e comprovante de endereço");
+    if (!uploads.front || !uploads.selfie) {
+      toast.error("Envie pelo menos: frente do documento e selfie");
       return;
     }
     setSubmitting(true);
