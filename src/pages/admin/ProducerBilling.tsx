@@ -462,8 +462,8 @@ const ProducerBilling = () => {
       {tiers.length > 0 && (
         <div className="space-y-3">
           <div className="px-1">
-            <h3 className="text-sm font-semibold text-foreground">Seu nível</h3>
-            <p className="text-xs text-muted-foreground">Quanto maior seu nível, mais você vende sem risco de parar</p>
+            <h3 className="text-sm font-semibold text-foreground">Nível da Pantera</h3>
+            <p className="text-xs text-muted-foreground">Quanto mais evolui, mais caça sem risco de parar</p>
           </div>
           <div className="flex gap-1.5 overflow-x-auto pb-1">
             {tiers.map((t) => {
