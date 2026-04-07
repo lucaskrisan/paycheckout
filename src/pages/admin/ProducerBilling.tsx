@@ -299,6 +299,14 @@ const ProducerBilling = () => {
         </Button>
       </div>
 
+      {/* Free first R$1 gamification */}
+      {account && !account.blocked && (
+        (() => {
+          // Show banner when producer hasn't reached R$1 in revenue yet (free period)
+          return null; // We'll show this contextually in the fee description
+        })()
+      )}
+
       {/* Low balance / blocked banner */}
       {account?.blocked && (
         <Alert className="border-destructive/50 bg-destructive/10">
