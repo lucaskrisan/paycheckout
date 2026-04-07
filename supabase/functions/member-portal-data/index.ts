@@ -62,6 +62,12 @@ Deno.serve(async (req) => {
         : Promise.resolve({ data: [] as { id: string }[] }),
     ]);
 
+    // Build a map of product images for fallback
+    const productImageMap = new Map<string, string>();
+    for (const p of ownProducts || []) {
+      if (p.image_url) productImageMap.set(p.id, p.image_url);
+    }
+
     const allCourses: PortalCourse[] = [];
     const addedIds = new Set<string>();
     const courseByProductId = new Map<string, { id: string }>();
@@ -75,7 +81,7 @@ Deno.serve(async (req) => {
         id: course.id,
         title: course.title,
         description: course.description,
-        cover_image_url: course.cover_image_url,
+        cover_image_url: course.cover_image_url || (course.product_id ? productImageMap.get(course.product_id) : null) || null,
         source: "created",
       });
       addedIds.add(course.id);
@@ -112,8 +118,24 @@ Deno.serve(async (req) => {
       if (purchasedCourseIds.length > 0) {
         const { data: purchasedCourses } = await supabaseAdmin
           .from("courses")
-          .select("id, title, description, cover_image_url")
+          .select("id, title, description, cover_image_url, product_id")
           .in("id", purchasedCourseIds);
+
+        // Collect product_ids that need image fallback
+        const needImageIds = (purchasedCourses || [])
+          .filter((c: any) => !c.cover_image_url && c.product_id)
+          .map((c: any) => c.product_id);
+
+        let purchasedProductImages = new Map<string, string>();
+        if (needImageIds.length > 0) {
+          const { data: prods } = await supabaseAdmin
+            .from("products")
+            .select("id, image_url")
+            .in("id", needImageIds);
+          for (const p of prods || []) {
+            if (p.image_url) purchasedProductImages.set(p.id, p.image_url);
+          }
+        }
 
         const purchasedCourseMap = new Map((purchasedCourses || []).map((course: any) => [course.id, course]));
 
@@ -125,7 +147,7 @@ Deno.serve(async (req) => {
             id: purchasedCourse.id,
             title: purchasedCourse.title,
             description: purchasedCourse.description,
-            cover_image_url: purchasedCourse.cover_image_url,
+            cover_image_url: purchasedCourse.cover_image_url || (purchasedCourse.product_id ? purchasedProductImages.get(purchasedCourse.product_id) : null) || null,
             access_token: access.access_token,
             source: "purchased",
           });
