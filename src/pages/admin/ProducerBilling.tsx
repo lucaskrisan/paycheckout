@@ -245,14 +245,14 @@ const ProducerBilling = () => {
             variant={isBlocked || balance < 10 ? "default" : "outline"}
           >
             <Wallet className="w-4 h-4" />
-            {isBlocked ? "Reativar checkout — adicionar créditos" : "Adicionar créditos"}
+            {isBlocked ? "Reativar a Pantera — adicionar créditos" : "Recarregar energia"}
           </Button>
           <p className="text-xs text-muted-foreground mt-2">
             {isBlocked || balance <= 0
-              ? "Recarregue agora e não perca suas próximas vendas"
+              ? "Recarregue agora e volte a caçar vendas"
               : balance < 10
-                ? "Adicione créditos e continue vendendo agora"
-                : "Adicione créditos e continue vendendo sem interrupções"
+                ? "Recarregue e continue caçando sem parar"
+                : "Mantenha sua Pantera sempre pronta para atacar"
             }
           </p>
         </div>
