@@ -215,7 +215,7 @@ const ProducerBilling = () => {
 
           {/* Sales covered — always visible */}
           <p className="text-lg font-semibold text-muted-foreground mt-2">
-            {salesCovered === 0 ? "0 vendas disponíveis" : `≈ ${salesCovered} ${salesCovered === 1 ? 'venda disponível' : 'vendas disponíveis'}`}
+            {salesCovered === 0 ? "Você não pode vender no momento" : `≈ ${salesCovered} ${salesCovered === 1 ? 'venda disponível' : 'vendas disponíveis'}`}
           </p>
 
           {/* Urgency line */}
