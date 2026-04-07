@@ -283,22 +283,36 @@ const ProducerBilling = () => {
       <div className={`grid gap-4 ${showTierPanel ? "grid-cols-1 lg:grid-cols-[1fr_320px]" : "grid-cols-1"}`}>
         {/* Left: Credit Usage + Tabs + History */}
         <div className="space-y-6">
-          {/* Credit Usage Bar */}
+          {/* Sales Available Bar */}
           <Card>
             <CardContent className="pt-5 pb-5">
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <p className="text-sm font-semibold text-foreground">Uso do Limite de Crédito</p>
+                  <p className="text-sm font-semibold text-foreground">Vendas Disponíveis</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {fmt(usedCredit)} de {fmt(toleranceLimit)} (com 15% de tolerância)
+                    {isInFreeTrial
+                      ? `~${freeSalesRemaining} vendas grátis restantes (período gratuito)`
+                      : balance > 0
+                        ? `~${toSales(balance)} vendas com saldo pré-pago`
+                        : usedCredit < toleranceLimit
+                          ? `~${toSales(toleranceLimit - usedCredit)} vendas restantes no limite`
+                          : "Limite atingido — adicione crédito para continuar vendendo"
+                    }
                   </p>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Atualizado em {new Date().toLocaleDateString("pt-BR")} às {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                  Limite: {fmt(creditLimit)} ({tierMeta.title})
                 </p>
               </div>
-              <Progress value={usagePercent} className="h-2" />
-              <p className="text-xs text-muted-foreground mt-2">{usagePercent.toFixed(1)}% utilizado</p>
+              {!isInFreeTrial && (
+                <>
+                  <Progress value={usagePercent} className="h-2" />
+                  <div className="flex justify-between mt-2">
+                    <p className="text-xs text-muted-foreground">{fmt(usedCredit)} usado de {fmt(creditLimit)}</p>
+                    <p className="text-xs text-muted-foreground">{usagePercent.toFixed(0)}%</p>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
 
