@@ -56,6 +56,7 @@ const ProducerBilling = () => {
   const [account, setAccount] = useState<BillingAccount | null>(null);
   const [transactions, setTransactions] = useState<BillingTransaction[]>([]);
   const [tiers, setTiers] = useState<TierRow[]>([]);
+  const [totalRevenue, setTotalRevenue] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [pixAmount, setPixAmount] = useState(50);
   const [pixLoading, setPixLoading] = useState(false);
@@ -73,14 +74,17 @@ const ProducerBilling = () => {
 
   const loadData = async () => {
     setLoading(true);
-    const [{ data: accs }, { data: txs }, { data: tierData }] = await Promise.all([
+    const [{ data: accs }, { data: txs }, { data: tierData }, { data: revenueData }] = await Promise.all([
       supabase.from("billing_accounts").select("*").eq("user_id", user!.id).limit(1),
       supabase.from("billing_transactions").select("*").eq("user_id", user!.id).order("created_at", { ascending: false }).limit(50),
       supabase.from("billing_tiers").select("*").order("level", { ascending: true }),
+      supabase.rpc("get_revenue_summary", { p_user_id: user!.id }),
     ]);
     setAccount((accs?.[0] as unknown as BillingAccount) ?? null);
     setTransactions((txs as unknown as BillingTransaction[]) ?? []);
     setTiers((tierData as unknown as TierRow[]) ?? []);
+    const rev = Array.isArray(revenueData) ? revenueData[0] : revenueData;
+    setTotalRevenue(Number(rev?.total_revenue ?? 0));
     setLoading(false);
   };
 
