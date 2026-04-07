@@ -18,6 +18,7 @@ import CourseStudents from "@/components/admin/CourseStudents";
 interface Product {
   id: string;
   name: string;
+  image_url: string | null;
 }
 
 interface Lesson {
@@ -76,7 +77,7 @@ const Courses = () => {
 
   const loadProducts = async () => {
     if (!user) return;
-    const { data } = await supabase.from("products").select("id, name").eq("user_id", user.id).order("name");
+    const { data } = await supabase.from("products").select("id, name, image_url").eq("user_id", user.id).order("name");
     setProducts(data || []);
   };
 
@@ -333,25 +334,48 @@ const Courses = () => {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {courses.map((c) => {
               const linkedProduct = products.find((p) => p.id === c.product_id);
+              const coverImage = c.cover_image_url || linkedProduct?.image_url;
               return (
-                <Card key={c.id} className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => selectCourse(c)}>
-                  <CardContent className="p-4 space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <h3 className="font-display font-bold text-foreground">{c.title}</h3>
-                        {c.description && <p className="text-xs text-muted-foreground line-clamp-2">{c.description}</p>}
+                <Card
+                  key={c.id}
+                  className="group cursor-pointer overflow-hidden border-border/60 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5"
+                  onClick={() => selectCourse(c)}
+                >
+                  {/* Image area - padronizada */}
+                  <div className="relative h-40 overflow-hidden bg-muted">
+                    {coverImage ? (
+                      <img
+                        src={coverImage}
+                        alt={c.title}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-secondary">
+                        <GraduationCap className="w-12 h-12 text-muted-foreground/40" />
                       </div>
+                    )}
+                    {/* Overlay gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-card/80 via-transparent to-transparent" />
+                  </div>
+
+                  <CardContent className="p-4 space-y-3">
+                    <div className="space-y-1.5">
+                      <h3 className="font-display font-bold text-foreground text-sm leading-tight line-clamp-1">{c.title}</h3>
+                      {c.description && (
+                        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{c.description}</p>
+                      )}
                     </div>
                     {linkedProduct && (
-                      <span className="inline-block text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                        Produto: {linkedProduct.name}
+                      <span className="inline-flex items-center gap-1 text-[11px] bg-primary/10 text-primary px-2.5 py-1 rounded-full font-medium">
+                        <BookOpen className="w-3 h-3" />
+                        {linkedProduct.name}
                       </span>
                     )}
-                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                      <Button variant="outline" size="sm" onClick={() => openEditCourse(c)} className="gap-1">
+                    <div className="flex gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
+                      <Button variant="outline" size="sm" onClick={() => openEditCourse(c)} className="gap-1.5 text-xs h-8 flex-1">
                         <Pencil className="w-3 h-3" /> Editar
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => deleteCourse(c.id)} className="gap-1 text-destructive hover:text-destructive">
+                      <Button variant="outline" size="sm" onClick={() => deleteCourse(c.id)} className="gap-1.5 text-xs h-8 flex-1 text-destructive hover:text-destructive hover:border-destructive/50">
                         <Trash2 className="w-3 h-3" /> Excluir
                       </Button>
                     </div>
