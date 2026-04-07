@@ -252,9 +252,20 @@ const ProducerBilling = () => {
             <p className={`text-lg font-medium tracking-tight ${
               isDead ? "text-destructive/70" : "text-muted-foreground"
             }`}>
-              {salesCovered === 1 ? "venda disponível" : "vendas disponíveis"}
+              {isInFreeTrial
+                ? `vendas gratuitas disponíveis`
+                : salesCovered === 1 ? "venda disponível" : "vendas disponíveis"
+              }
             </p>
           </div>
+
+          {/* Free trial badge */}
+          {isInFreeTrial && (
+            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
+              <CheckCircle2 className="w-4 h-4 text-primary" />
+              <span className="text-sm font-bold text-primary">Primeiras 500 vendas grátis</span>
+            </div>
+          )}
 
           {/* One-line impact message */}
           <p className={`mt-6 text-base md:text-lg font-medium leading-snug max-w-md ${
@@ -266,9 +277,11 @@ const ProducerBilling = () => {
                 ? "Seu checkout pode parar a qualquer momento."
                 : isLow
                   ? `Seus créditos estão acabando. ${salesCovered} vendas restantes.`
-                  : hasAutoRecharge
-                    ? "Recarga automática ativa. Sua pantera nunca para."
-                    : "Sua pantera está pronta. Vendas sendo capturadas."
+                  : isInFreeTrial
+                    ? "Você só começa a pagar depois de usar todas as vendas gratuitas."
+                    : hasAutoRecharge
+                      ? "Recarga automática ativa. Sua pantera nunca para."
+                      : "Sua pantera está pronta. Vendas sendo capturadas."
             }
           </p>
 
