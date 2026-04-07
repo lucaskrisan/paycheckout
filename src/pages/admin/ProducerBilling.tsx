@@ -56,10 +56,10 @@ const TIER_META: Record<string, { title: string }> = {
 };
 
 const RECHARGE_AMOUNTS = [
+  { value: 10, sales: "10" },
   { value: 20, sales: "20" },
   { value: 50, sales: "50" },
   { value: 100, sales: "101" },
-  { value: 200, sales: "202" },
 ];
 
 // ── Component ──────────────────────────────────────
