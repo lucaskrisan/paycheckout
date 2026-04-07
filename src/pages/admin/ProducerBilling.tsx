@@ -487,6 +487,7 @@ const ProducerBilling = () => {
                     {TIER_ICONS[t.key] || <Shield className="w-3.5 h-3.5" />}
                   </div>
                   <span className={`text-[11px] font-bold ${isCurrent ? c.text : "text-muted-foreground"}`}>{t.label}</span>
+                  <span className={`text-[9px] ${isCurrent ? `${c.text} opacity-80` : "text-muted-foreground"}`}>{TIER_SUBTITLES[t.key] || ""}</span>
                   <span className={`text-[10px] ${isCurrent ? c.text : "text-muted-foreground"}`}>{fmt(t.credit_limit)}</span>
                 </div>
               );
