@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, Download, Mail, Loader2 } from "lucide-react";
+import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, Download, Mail, Loader2, Package, ShoppingBag, Zap } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { EmailPreviewModal } from "@/components/admin/EmailPreviewModal";
@@ -22,6 +22,8 @@ interface Order {
   created_at: string;
   updated_at: string;
   product_id: string | null;
+  metadata: any;
+  platform_fee_amount?: number;
   customers: { name: string; email: string; phone?: string; cpf?: string } | null;
   products: { name: string } | null;
 }
@@ -76,6 +78,13 @@ const TYPE_OPTIONS = [
   { value: "subscription", label: "Assinatura" },
 ];
 
+const SALE_TYPE_OPTIONS = [
+  { value: "all", label: "Todos os tipos" },
+  { value: "front", label: "Produto principal" },
+  { value: "with_bumps", label: "Com order bumps" },
+  { value: "upsell", label: "Upsell" },
+];
+
 const CURRENCY_OPTIONS = [
   { value: "all", label: "Todas" },
   { value: "BRL", label: "BRL" },
@@ -96,6 +105,18 @@ const DetailRow = ({ label, value, children }: { label: string; value?: string; 
   </div>
 );
 
+/** Extract bump product IDs from order metadata */
+const getBumpIds = (order: Order): string[] => {
+  const ids = order.metadata?.bump_product_ids;
+  if (!ids || !Array.isArray(ids)) return [];
+  return ids.filter(Boolean);
+};
+
+/** Check if order is an upsell */
+const isUpsellOrder = (order: Order): boolean => {
+  return !!order.metadata?.is_upsell || !!order.metadata?.upsell_from_order_id;
+};
+
 const Orders = () => {
   const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -106,7 +127,7 @@ const Orders = () => {
   const [activeTab, setActiveTab] = useState<"approved" | "all">("approved");
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [detailTab, setDetailTab] = useState<"sale" | "customer" | "values">("sale");
+  const [detailTab, setDetailTab] = useState<"sale" | "customer" | "values" | "products">("sale");
   const [emailPreview, setEmailPreview] = useState<{
     open: boolean;
     orderId: string;
@@ -122,6 +143,7 @@ const Orders = () => {
   const [filterPeriod, setFilterPeriod] = useState("all");
   const [filterCurrency, setFilterCurrency] = useState("all");
   const [filterType, setFilterType] = useState("all");
+  const [filterSaleType, setFilterSaleType] = useState("all");
   const [filterProduct, setFilterProduct] = useState("all");
   const [filterOffer, setFilterOffer] = useState("all");
   const [filterAffiliate, setFilterAffiliate] = useState("");
@@ -130,6 +152,13 @@ const Orders = () => {
   const [filterStatuses, setFilterStatuses] = useState<Set<string>>(new Set());
   const [filterSubscriptions, setFilterSubscriptions] = useState<Set<string>>(new Set());
   const [filtersOpen, setFiltersOpen] = useState(false);
+
+  // Map product IDs to names for bump display
+  const productMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    products.forEach(p => { map[p.id] = p.name; });
+    return map;
+  }, [products]);
 
   const handlePreviewReminder = async (orderId: string) => {
     setSendingReminder(orderId);
@@ -196,6 +225,7 @@ const Orders = () => {
     setFilterPeriod("all");
     setFilterCurrency("all");
     setFilterType("all");
+    setFilterSaleType("all");
     setFilterProduct("all");
     setFilterOffer("all");
     setFilterAffiliate("");
@@ -206,15 +236,12 @@ const Orders = () => {
     setSearch("");
   };
 
-  const hasActiveFilters = filterPeriod !== "all" || filterCurrency !== "all" || filterType !== "all" || filterProduct !== "all" || filterOffer !== "all" || filterAffiliate !== "" || filterUtmParams !== "" || filterMethods.size > 0 || filterStatuses.size > 0 || filterSubscriptions.size > 0;
+  const hasActiveFilters = filterPeriod !== "all" || filterCurrency !== "all" || filterType !== "all" || filterSaleType !== "all" || filterProduct !== "all" || filterOffer !== "all" || filterAffiliate !== "" || filterUtmParams !== "" || filterMethods.size > 0 || filterStatuses.size > 0 || filterSubscriptions.size > 0;
 
   const filtered = useMemo(() => {
     let result = orders;
 
-    // Status filter logic: if specific statuses are selected, they take priority over the tab.
-    // Otherwise, the tab determines the default view.
     if (filterStatuses.size > 0) {
-      // Expand "paid" filter to include all paid-equivalent statuses
       const expandedStatuses = new Set(filterStatuses);
       if (expandedStatuses.has("paid")) {
         expandedStatuses.add("approved");
@@ -259,24 +286,64 @@ const Orders = () => {
       result = result.filter(o => filterMethods.has(o.payment_method));
     }
 
+    // Sale type filter
+    if (filterSaleType !== "all") {
+      result = result.filter(o => {
+        const hasBumps = getBumpIds(o).length > 0;
+        const isUpsell = isUpsellOrder(o);
+        switch (filterSaleType) {
+          case "front": return !hasBumps && !isUpsell;
+          case "with_bumps": return hasBumps;
+          case "upsell": return isUpsell;
+          default: return true;
+        }
+      });
+    }
+
     return result;
-  }, [orders, search, activeTab, filterPeriod, filterProduct, filterMethods, filterStatuses, filterType, filterSubscriptions]);
+  }, [orders, search, activeTab, filterPeriod, filterProduct, filterMethods, filterStatuses, filterType, filterSubscriptions, filterSaleType]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   const totalAmount = filtered.reduce((sum, o) => sum + Number(o.amount), 0);
 
-  useEffect(() => { setPage(1); }, [search, activeTab, filterPeriod, filterProduct, filterMethods, filterStatuses, filterType, filterSubscriptions, filterCurrency]);
+  useEffect(() => { setPage(1); }, [search, activeTab, filterPeriod, filterProduct, filterMethods, filterStatuses, filterType, filterSubscriptions, filterCurrency, filterSaleType]);
 
   const getStatus = (status: string) => STATUS_MAP[status] || { label: status, variant: "default" as const };
 
+  /** Get sale type badge for an order */
+  const getSaleTypeBadge = (order: Order) => {
+    const bumpIds = getBumpIds(order);
+    const isUpsell = isUpsellOrder(order);
+    const badges: React.ReactNode[] = [];
+
+    if (isUpsell) {
+      badges.push(
+        <Badge key="upsell" variant="outline" className="text-[10px] bg-purple-50 text-purple-700 border-purple-200 gap-1">
+          <Zap className="w-2.5 h-2.5" />
+          Upsell
+        </Badge>
+      );
+    }
+    if (bumpIds.length > 0) {
+      badges.push(
+        <Badge key="bump" variant="outline" className="text-[10px] bg-blue-50 text-blue-700 border-blue-200 gap-1">
+          <ShoppingBag className="w-2.5 h-2.5" />
+          +{bumpIds.length} bump{bumpIds.length > 1 ? "s" : ""}
+        </Badge>
+      );
+    }
+    return badges;
+  };
+
   const handleExport = () => {
     if (filtered.length === 0) { toast.error("Nenhuma venda para exportar"); return; }
-    const header = "Data,Produto,Cliente,Email,Status,Método,Valor\n";
-    const csv = filtered.map(o =>
-      `"${format(new Date(o.created_at), "dd/MM/yyyy HH:mm")}","${o.products?.name || ""}","${o.customers?.name || ""}","${o.customers?.email || ""}","${getStatus(o.status).label}","${PAYMENT_LABEL[o.payment_method] || o.payment_method}","${Number(o.amount).toFixed(2)}"`
-    ).join("\n");
+    const header = "Data,Produto,Cliente,Email,Status,Método,Valor,Order Bumps,UTM Source\n";
+    const csv = filtered.map(o => {
+      const bumpNames = getBumpIds(o).map(id => productMap[id] || id.slice(0, 8)).join("; ");
+      return `"${format(new Date(o.created_at), "dd/MM/yyyy HH:mm")}","${o.products?.name || ""}","${o.customers?.name || ""}","${o.customers?.email || ""}","${getStatus(o.status).label}","${PAYMENT_LABEL[o.payment_method] || o.payment_method}","${Number(o.amount).toFixed(2)}","${bumpNames}","${o.metadata?.utm_source || ""}"`;
+    }).join("\n");
     const blob = new Blob([header + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -391,6 +458,7 @@ const Orders = () => {
                 paginated.map((order) => {
                   const st = getStatus(order.status);
                   const isPendingPix = order.status === "pending" && order.payment_method === "pix" && order.customers?.email;
+                  const typeBadges = getSaleTypeBadge(order);
                   return (
                     <tr key={order.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => { setSelectedOrder(order); setDetailTab("sale"); }}>
                       <td className="py-3.5 px-4 text-muted-foreground whitespace-nowrap text-sm">
@@ -400,6 +468,11 @@ const Orders = () => {
                         <span className="text-sm text-foreground truncate block">
                           {order.products?.name || "—"}
                         </span>
+                        {typeBadges.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {typeBadges}
+                          </div>
+                        )}
                       </td>
                       <td className="py-3.5 px-4">
                         <div>
@@ -422,7 +495,7 @@ const Orders = () => {
                             size="sm"
                             className="gap-1 text-xs h-6 px-2 mt-1 text-primary hover:text-primary"
                             disabled={sendingReminder === order.id}
-                            onClick={() => handlePreviewReminder(order.id)}
+                            onClick={(e) => { e.stopPropagation(); handlePreviewReminder(order.id); }}
                           >
                             {sendingReminder === order.id ? (
                               <Loader2 className="w-3 h-3 animate-spin" />
@@ -499,6 +572,19 @@ const Orders = () => {
                   <SelectItem value="7d">Últimos 7 dias</SelectItem>
                   <SelectItem value="30d">Últimos 30 dias</SelectItem>
                   <SelectItem value="90d">Últimos 90 dias</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Sale Type - NEW */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Tipo de venda</Label>
+              <Select value={filterSaleType} onValueChange={setFilterSaleType}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {SALE_TYPE_OPTIONS.map(t => (
+                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -641,7 +727,7 @@ const Orders = () => {
 
       {/* Order Detail Drawer */}
       <Sheet open={!!selectedOrder} onOpenChange={(open) => { if (!open) setSelectedOrder(null); }}>
-        <SheetContent className="w-[400px] overflow-y-auto">
+        <SheetContent className="w-[420px] overflow-y-auto">
           <SheetHeader>
             <div className="flex items-center justify-between">
               <SheetTitle className="text-base font-semibold">Ver detalhes</SheetTitle>
@@ -649,51 +735,147 @@ const Orders = () => {
           </SheetHeader>
           {selectedOrder && (() => {
             const st = getStatus(selectedOrder.status);
+            const bumpIds = getBumpIds(selectedOrder);
+            const isUpsell = isUpsellOrder(selectedOrder);
+            const meta = selectedOrder.metadata || {};
+            const installments = meta.installments;
+            const gateway = meta.gateway;
+            const utmSource = meta.utm_source;
+            const utmMedium = meta.utm_medium;
+            const utmCampaign = meta.utm_campaign;
+            const utmContent = meta.utm_content;
+            const utmTerm = meta.utm_term;
+
             return (
               <div className="mt-4">
                 {/* Tabs */}
-                <div className="flex items-center gap-1 border-b border-border mb-5">
+                <div className="flex items-center gap-1 border-b border-border mb-5 overflow-x-auto">
                   {([
                     { key: "sale" as const, label: "Venda" },
+                    { key: "products" as const, label: "Produtos" },
                     { key: "customer" as const, label: "Cliente" },
                     { key: "values" as const, label: "Valores" },
                   ]).map(tab => (
                     <button
                       key={tab.key}
                       onClick={() => setDetailTab(tab.key)}
-                      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${
+                      className={`px-3 py-2 text-sm font-medium border-b-2 transition-colors -mb-px whitespace-nowrap ${
                         detailTab === tab.key
                           ? "border-primary text-primary"
                           : "border-transparent text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       {tab.label}
+                      {tab.key === "products" && bumpIds.length > 0 && (
+                        <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">
+                          {1 + bumpIds.length}
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>
 
                 {detailTab === "sale" && (
-                  <div className="space-y-4">
+                  <div className="space-y-1">
                     <DetailRow label="ID da venda" value={selectedOrder.id.slice(0, 8).toUpperCase()} />
                     <DetailRow label="Status">
                       <Badge variant="outline" className={`text-xs font-medium ${VARIANT_CLASSES[st.variant]}`}>
                         {st.label}
                       </Badge>
                     </DetailRow>
-                    <DetailRow label="Tipo" value="Sou produtor" />
-                    <DetailRow label="Valor líquido" value={`R$ ${Number(selectedOrder.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
-                    <DetailRow label="Produto" value={selectedOrder.products?.name || "—"} />
+                    <DetailRow label="Tipo">
+                      <div className="flex flex-wrap gap-1 justify-end">
+                        {isUpsell ? (
+                          <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">Upsell</Badge>
+                        ) : (
+                          <span className="text-sm">Sou produtor</span>
+                        )}
+                      </div>
+                    </DetailRow>
                     <DetailRow label="Método de pagamento" value={PAYMENT_LABEL[selectedOrder.payment_method] || selectedOrder.payment_method} />
-                    <DetailRow label="Parcelas" value="1" />
+                    {installments && Number(installments) > 1 && (
+                      <DetailRow label="Parcelas" value={`${installments}x`} />
+                    )}
+                    {gateway && <DetailRow label="Gateway" value={String(gateway).charAt(0).toUpperCase() + String(gateway).slice(1)} />}
                     <DetailRow label="Data da criação" value={format(new Date(selectedOrder.created_at), "dd/MM/yyyy HH:mm")} />
                     {selectedOrder.updated_at && ["paid", "approved", "confirmed"].includes(selectedOrder.status) && (
                       <DetailRow label="Data da aprovação" value={format(new Date(selectedOrder.updated_at), "dd/MM/yyyy HH:mm")} />
+                    )}
+                    {/* UTM info */}
+                    {(utmSource || utmCampaign) && (
+                      <>
+                        <div className="pt-3 pb-1">
+                          <span className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Rastreamento</span>
+                        </div>
+                        {utmSource && <DetailRow label="UTM Source" value={utmSource} />}
+                        {utmMedium && <DetailRow label="UTM Medium" value={String(utmMedium).slice(0, 40)} />}
+                        {utmCampaign && <DetailRow label="UTM Campaign" value={String(utmCampaign).slice(0, 50)} />}
+                        {utmContent && <DetailRow label="UTM Content" value={String(utmContent).slice(0, 40)} />}
+                        {utmTerm && <DetailRow label="UTM Term" value={utmTerm} />}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {detailTab === "products" && (
+                  <div className="space-y-4">
+                    {/* Front product */}
+                    <div className="rounded-lg border border-border p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Package className="w-4 h-4 text-foreground" />
+                        <span className="text-sm font-semibold text-foreground">Produto principal</span>
+                      </div>
+                      <p className="text-sm text-foreground">{selectedOrder.products?.name || "—"}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        R$ {Number(selectedOrder.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+
+                    {/* Order Bumps */}
+                    {bumpIds.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <ShoppingBag className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm font-semibold text-foreground">Order Bumps ({bumpIds.length})</span>
+                        </div>
+                        <div className="space-y-2">
+                          {bumpIds.map((bumpId, idx) => (
+                            <div key={bumpId} className="rounded-lg border border-blue-200 bg-blue-50/50 p-3">
+                              <p className="text-sm font-medium text-foreground">
+                                {productMap[bumpId] || `Produto ${bumpId.slice(0, 8)}...`}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                Bump #{idx + 1} • ID: {bumpId.slice(0, 8)}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Upsell info */}
+                    {isUpsell && (
+                      <div className="rounded-lg border border-purple-200 bg-purple-50/50 p-4">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Zap className="w-4 h-4 text-purple-600" />
+                          <span className="text-sm font-semibold text-foreground">Venda de Upsell</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Essa venda foi gerada a partir de uma oferta de upsell pós-compra.
+                        </p>
+                      </div>
+                    )}
+
+                    {bumpIds.length === 0 && !isUpsell && (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        Apenas o produto principal nessa venda.
+                      </p>
                     )}
                   </div>
                 )}
 
                 {detailTab === "customer" && (
-                  <div className="space-y-4">
+                  <div className="space-y-1">
                     <DetailRow label="Nome" value={selectedOrder.customers?.name || "—"} />
                     <DetailRow label="E-mail" value={selectedOrder.customers?.email || "—"} />
                     <DetailRow label="Telefone" value={selectedOrder.customers?.phone || "—"} />
@@ -702,10 +884,13 @@ const Orders = () => {
                 )}
 
                 {detailTab === "values" && (
-                  <div className="space-y-4">
+                  <div className="space-y-1">
                     <DetailRow label="Valor bruto" value={`R$ ${Number(selectedOrder.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
-                    <DetailRow label="Taxa da plataforma" value={`R$ ${Number((selectedOrder as any).platform_fee_amount || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
-                    <DetailRow label="Valor líquido" value={`R$ ${(Number(selectedOrder.amount) - Number((selectedOrder as any).platform_fee_amount || 0)).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
+                    <DetailRow label="Taxa da plataforma" value={`R$ ${Number(selectedOrder.platform_fee_amount || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
+                    <DetailRow label="Valor líquido" value={`R$ ${(Number(selectedOrder.amount) - Number(selectedOrder.platform_fee_amount || 0)).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
+                    {meta.coupon_id && meta.coupon_id !== "<nil>" && (
+                      <DetailRow label="Cupom aplicado" value="Sim ✅" />
+                    )}
                   </div>
                 )}
               </div>
