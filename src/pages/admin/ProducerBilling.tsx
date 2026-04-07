@@ -358,14 +358,13 @@ const ProducerBilling = () => {
                     </div>
                   </>
                 ) : (
-                  <div className="flex flex-col items-center py-10 text-center">
-                    <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center mb-4">
-                      <CreditCard className="w-6 h-6 text-muted-foreground/40" />
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-muted/20 border border-border">
+                    <div className="flex items-center gap-3">
+                      <CreditCard className="w-4 h-4 text-muted-foreground/50" />
+                      <p className="text-sm text-muted-foreground">Nenhum cartão cadastrado</p>
                     </div>
-                    <p className="text-sm font-medium text-foreground mb-1">Nenhum cartão</p>
-                    <p className="text-xs text-muted-foreground mb-4">Adicione para recargas rápidas e piloto automático</p>
-                    <Button variant="outline" className="gap-2 rounded-xl" onClick={() => setShowCardModal(true)}>
-                      <CreditCard className="w-4 h-4" /> Adicionar Cartão
+                    <Button variant="ghost" size="sm" className="text-xs" onClick={() => setShowCardModal(true)}>
+                      Adicionar
                     </Button>
                   </div>
                 )}
