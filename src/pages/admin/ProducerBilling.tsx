@@ -213,18 +213,23 @@ const ProducerBilling = () => {
             {fmt(balance)}
           </p>
 
-          {/* Context line */}
-          <p className="text-sm text-muted-foreground mt-3">
+          {/* Sales covered — always visible */}
+          <p className="text-lg font-semibold text-muted-foreground mt-2">
+            {salesCovered === 0 ? "0 vendas disponíveis" : `≈ ${salesCovered} ${salesCovered === 1 ? 'venda disponível' : 'vendas disponíveis'}`}
+          </p>
+
+          {/* Urgency line */}
+          <p className="text-sm mt-1.5">
             {isBlocked ? (
-              <span className="text-destructive font-semibold">⚠ Seu checkout está parado. Adicione créditos agora.</span>
+              <span className="text-destructive font-semibold">⚠ Seu checkout está parado — você está perdendo vendas agora</span>
             ) : balance <= 0 ? (
-              <span className="text-destructive font-medium">Seu checkout pode parar a qualquer momento</span>
+              <span className="text-destructive font-medium">Sem créditos, você deixa de vender</span>
             ) : balance < 10 ? (
-              <span className="text-amber-400 font-medium">≈ {salesCovered} {salesCovered === 1 ? 'venda restante' : 'vendas restantes'} — recarregue antes que pare</span>
+              <span className="text-amber-400 font-medium">Créditos acabando — recarregue antes que seu checkout pause</span>
             ) : hasAutoRecharge ? (
-              <span className="text-primary">≈ {salesCovered} vendas restantes · recarga automática ativa ✓</span>
+              <span className="text-primary">Recarga automática ativa ✓</span>
             ) : (
-              <span>≈ {salesCovered} vendas restantes</span>
+              <span className="text-muted-foreground">Seu checkout está ativo</span>
             )}
           </p>
 
@@ -237,6 +242,14 @@ const ProducerBilling = () => {
             <Wallet className="w-4 h-4" />
             {isBlocked ? "Reativar checkout — adicionar créditos" : "Adicionar créditos"}
           </Button>
+          <p className="text-xs text-muted-foreground mt-2">
+            {isBlocked || balance <= 0
+              ? "Recarregue agora e volte a vender sem interrupções"
+              : balance < 10
+                ? "Evite que seu checkout pause durante suas vendas"
+                : "Recarregue para continuar vendendo sem interrupções"
+            }
+          </p>
         </div>
       </div>
 
@@ -257,15 +270,15 @@ const ProducerBilling = () => {
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-xl border border-border bg-card p-4 text-center">
           <p className="text-2xl font-bold text-foreground">R$ 0,99</p>
-          <p className="text-xs text-muted-foreground mt-1">por venda</p>
+          <p className="text-xs text-muted-foreground mt-1 font-medium">por venda (fixo)</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4 text-center">
           <p className="text-2xl font-bold text-foreground">R$ 0</p>
-          <p className="text-xs text-muted-foreground mt-1">mensalidade</p>
+          <p className="text-xs text-muted-foreground mt-1 font-medium">sem mensalidade</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4 text-center">
           <p className="text-2xl font-bold text-foreground">0%</p>
-          <p className="text-xs text-muted-foreground mt-1">taxa de gateway</p>
+          <p className="text-xs text-muted-foreground mt-1 font-medium">sem taxa escondida</p>
         </div>
       </div>
 
@@ -273,7 +286,7 @@ const ProducerBilling = () => {
       {showRecharge && (
         <Card className="rounded-2xl border-border overflow-hidden">
           <CardContent className="p-0">
-            <Tabs defaultValue="card">
+            <Tabs defaultValue="pix">
               <div className="border-b border-border p-4 pb-0">
                 <TabsList className="bg-transparent p-0 h-auto gap-4">
                   <TabsTrigger value="card" className="bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1 pb-3 gap-2 text-sm font-semibold">
@@ -350,14 +363,13 @@ const ProducerBilling = () => {
                     </div>
                   </>
                 ) : (
-                  <div className="flex flex-col items-center py-10 text-center">
-                    <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center mb-4">
-                      <CreditCard className="w-6 h-6 text-muted-foreground/40" />
+                  <div className="flex items-center justify-between p-4 rounded-xl bg-muted/20 border border-border">
+                    <div className="flex items-center gap-3">
+                      <CreditCard className="w-4 h-4 text-muted-foreground/50" />
+                      <p className="text-sm text-muted-foreground">Nenhum cartão cadastrado</p>
                     </div>
-                    <p className="text-sm font-medium text-foreground mb-1">Nenhum cartão</p>
-                    <p className="text-xs text-muted-foreground mb-4">Adicione para recargas rápidas e piloto automático</p>
-                    <Button variant="outline" className="gap-2 rounded-xl" onClick={() => setShowCardModal(true)}>
-                      <CreditCard className="w-4 h-4" /> Adicionar Cartão
+                    <Button variant="ghost" size="sm" className="text-xs" onClick={() => setShowCardModal(true)}>
+                      Adicionar
                     </Button>
                   </div>
                 )}
@@ -446,7 +458,7 @@ const ProducerBilling = () => {
         <div className="space-y-3">
           <div className="px-1">
             <h3 className="text-sm font-semibold text-foreground">Seu nível</h3>
-            <p className="text-xs text-muted-foreground">Mais recargas = mais limite de crédito = mais vendas sem pausar</p>
+            <p className="text-xs text-muted-foreground">Quanto maior seu nível, mais você vende sem risco de parar</p>
           </div>
           <div className="flex gap-1.5 overflow-x-auto pb-1">
             {tiers.map((t) => {
