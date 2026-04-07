@@ -303,7 +303,7 @@ const ProducerBilling = () => {
       <Alert className="border-primary/50 bg-primary/10">
         <Info className="h-4 w-4 text-primary" />
         <AlertDescription className="text-foreground">
-          🎉 <strong>Primeiro R$ 1,00 faturado é grátis!</strong> Suas primeiras vendas até R$ 1,00 em faturamento total não cobram a taxa de R$ 0,99. Comece a vender sem custo!
+          🎉 <strong>Primeiros R$ 1.000 faturados são grátis!</strong> Até atingir R$ 1.000,00 em faturamento total aprovado, você não paga a taxa de R$ 0,99 por venda. Comece a vender sem custo!
         </AlertDescription>
       </Alert>
 
