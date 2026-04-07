@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ShieldCheck, Upload, Loader2, CheckCircle2, XCircle, Clock, Camera, FileText, MapPin } from "lucide-react";
+import { ShieldCheck, Upload, Loader2, CheckCircle2, XCircle, Clock, Camera, FileText } from "lucide-react";
 
 interface Verification {
   id: string;
@@ -41,7 +41,7 @@ export default function ProducerVerification() {
   const [submitting, setSubmitting] = useState(false);
   const [docType, setDocType] = useState("rg");
   const [uploads, setUploads] = useState<Record<string, File | null>>({
-    front: null, back: null, selfie: null, address: null,
+    front: null, back: null, selfie: null,
   });
   const [previews, setPreviews] = useState<Record<string, string>>({});
 
@@ -81,8 +81,8 @@ export default function ProducerVerification() {
   };
 
   const handleSubmit = async () => {
-    if (!uploads.front || !uploads.selfie || !uploads.address) {
-      toast.error("Envie pelo menos: frente do documento, selfie e comprovante de endereço");
+    if (!uploads.front || !uploads.selfie) {
+      toast.error("Envie pelo menos: frente do documento e selfie");
       return;
     }
     setSubmitting(true);
@@ -90,7 +90,6 @@ export default function ProducerVerification() {
       const frontPath = await uploadFile(uploads.front!, "doc_front");
       const backPath = uploads.back ? await uploadFile(uploads.back, "doc_back") : null;
       const selfiePath = await uploadFile(uploads.selfie!, "selfie");
-      const addressPath = await uploadFile(uploads.address!, "address");
 
       const { error } = await supabase.from("producer_verifications").insert({
         user_id: user!.id,
@@ -98,12 +97,12 @@ export default function ProducerVerification() {
         document_front_url: frontPath,
         document_back_url: backPath,
         selfie_url: selfiePath,
-        address_proof_url: addressPath,
+        address_proof_url: null,
       });
 
       if (error) throw error;
       toast.success("Documentos enviados para análise!");
-      setUploads({ front: null, back: null, selfie: null, address: null });
+      setUploads({ front: null, back: null, selfie: null });
       setPreviews({});
       await loadVerification();
     } catch (err: any) {
@@ -182,7 +181,6 @@ export default function ProducerVerification() {
           <FileUploadBox label="Frente do documento *" icon={FileText} file={uploads.front} preview={previews.front} onChange={(f) => handleFileChange("front", f)} />
           <FileUploadBox label="Verso do documento" icon={FileText} file={uploads.back} preview={previews.back} onChange={(f) => handleFileChange("back", f)} />
           <FileUploadBox label="Selfie com documento *" icon={Camera} file={uploads.selfie} preview={previews.selfie} onChange={(f) => handleFileChange("selfie", f)} />
-          <FileUploadBox label="Comprovante de endereço *" icon={MapPin} file={uploads.address} preview={previews.address} onChange={(f) => handleFileChange("address", f)} />
         </div>
 
         <p className="text-[11px] text-muted-foreground">* Campos obrigatórios. Aceitamos JPG, PNG ou PDF. Máximo 5MB por arquivo.</p>
