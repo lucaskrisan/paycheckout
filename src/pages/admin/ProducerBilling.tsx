@@ -27,6 +27,7 @@ interface BillingTransaction { id: string; type: string; amount: number; descrip
 
 // ── Helpers ────────────────────────────────────────
 const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const toSales = (reais: number) => Math.floor(reais / 0.99);
 const formatCardNumber = (v: string) => v.replace(/\D/g, "").slice(0, 16).replace(/(\d{4})(?=\d)/g, "$1 ");
 const formatCpf = (v: string) => {
   const d = v.replace(/\D/g, "").slice(0, 11);
@@ -62,18 +63,32 @@ const TIER_COLORS: Record<string, { ring: string; text: string; dot: string }> =
   violet: { ring: "ring-violet-400/40",        text: "text-violet-400",       dot: "bg-violet-400" },
 };
 
-// ── Amount Selector ────────────────────────────────
-const AmountSelector = ({ amounts, selected, onSelect }: { amounts: number[]; selected: number; onSelect: (v: number) => void }) => (
+// ── Amount Selector (shows sales equivalent) ──────
+const RECHARGE_OPTIONS = [
+  { value: 20, sales: toSales(20) },
+  { value: 50, sales: toSales(50) },
+  { value: 100, sales: toSales(100) },
+  { value: 200, sales: toSales(200) },
+  { value: 500, sales: toSales(500) },
+];
+
+const AmountSelector = ({ amounts, selected, onSelect, showSales = false }: { amounts: number[]; selected: number; onSelect: (v: number) => void; showSales?: boolean }) => (
   <div className="flex gap-2 flex-wrap">
-    {amounts.map((v) => (
-      <button key={v} onClick={() => onSelect(v)}
-        className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
-          selected === v
-            ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
-            : 'bg-card border border-border hover:border-primary/50 text-foreground'
-        }`}
-      >{fmt(v)}</button>
-    ))}
+    {amounts.map((v) => {
+      const sales = toSales(v);
+      return (
+        <button key={v} onClick={() => onSelect(v)}
+          className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+            selected === v
+              ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
+              : 'bg-card border border-border hover:border-primary/50 text-foreground'
+          }`}
+        >
+          <span>{fmt(v)}</span>
+          {showSales && <span className="block text-[10px] opacity-70 font-normal">≈ {sales} vendas</span>}
+        </button>
+      );
+    })}
   </div>
 );
 
@@ -212,14 +227,14 @@ const ProducerBilling = () => {
   );
 
   const balance = account?.balance ?? 0;
-  const salesCovered = balance > 0 ? Math.floor(balance / 0.99) : 0;
+  const salesCovered = balance > 0 ? toSales(balance) : 0;
   const hasAutoRecharge = account?.auto_recharge_enabled && !!account?.card_last4;
   const isBlocked = !!account?.blocked;
   const currentTierKey = account?.credit_tier ?? "iron";
   const currentTier = tiers.find((t) => t.key === currentTierKey) ?? tiers[0];
   const tierColors = TIER_COLORS[currentTier?.color ?? "gray"] ?? TIER_COLORS.gray;
   const tierMeta = TIER_META[currentTierKey] ?? TIER_META.iron;
-  const pantherStatus = isBlocked ? "dead" : balance <= 0 ? "dead" : balance < 10 ? "paused" : hasAutoRecharge ? "hunting" : "idle";
+  const pantherStatus = isBlocked ? "dead" : salesCovered <= 0 ? "dead" : salesCovered < 10 ? "paused" : hasAutoRecharge ? "hunting" : "idle";
   const inputClass = "h-11 bg-background border-border text-foreground placeholder:text-muted-foreground rounded-lg focus:border-primary focus:ring-primary";
 
   // Usage bar
@@ -251,17 +266,20 @@ const ProducerBilling = () => {
             </div>
           </div>
 
-          {/* The Number */}
+          {/* The Number — in SALES */}
           <div className="space-y-1">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Créditos disponíveis</span>
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Vendas disponíveis</span>
             <motion.p 
-              key={balance}
+              key={salesCovered}
               initial={{ opacity: 0.5, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               className="text-5xl md:text-6xl font-bold text-foreground tracking-tighter leading-none tabular-nums"
             >
-              {fmt(balance)}
+              {salesCovered}
             </motion.p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {salesCovered > 0 ? `equivalente a ${fmt(balance)} em créditos` : "nenhum crédito disponível"}
+            </p>
           </div>
 
           {/* Usage bar */}
@@ -269,15 +287,19 @@ const ProducerBilling = () => {
             <div className="flex items-center justify-between text-[11px]">
               <span className="text-muted-foreground font-medium">
                 {salesCovered === 0 
-                  ? "Nenhuma venda disponível" 
-                  : `≈ ${salesCovered} ${salesCovered === 1 ? 'venda' : 'vendas'} disponíveis`}
+                  ? "Você não pode vender no momento" 
+                  : salesCovered < 10
+                    ? `Últimas ${salesCovered} vendas disponíveis`
+                    : salesCovered < 50
+                      ? `Seus créditos estão acabando — ${salesCovered} vendas restantes`
+                      : `${salesCovered} vendas disponíveis`}
               </span>
-              <span className="text-muted-foreground">Limite: {fmt(account?.credit_limit ?? 0)}</span>
+              <span className="text-muted-foreground">Limite: {toSales(account?.credit_limit ?? 0)} vendas</span>
             </div>
             <div className="w-full h-1 bg-border rounded-full overflow-hidden">
               <motion.div
                 className={`h-full rounded-full ${
-                  isBlocked || balance <= 0 ? "bg-destructive" : balance < 10 ? "bg-amber-500" : "bg-primary"
+                  isBlocked || salesCovered <= 0 ? "bg-destructive" : salesCovered < 10 ? "bg-amber-500" : "bg-primary"
                 }`}
                 initial={{ width: 0 }}
                 animate={{ width: `${usagePercent}%` }}
@@ -290,14 +312,16 @@ const ProducerBilling = () => {
           <p className="text-sm mt-4 leading-relaxed">
             {isBlocked ? (
               <span className="text-destructive font-medium">Sua pantera está parada. Você está perdendo vendas agora.</span>
-            ) : balance <= 0 ? (
-              <span className="text-destructive font-medium">Sem créditos, nenhuma venda é capturada.</span>
-            ) : balance < 10 ? (
-              <span className="text-amber-500 font-medium">Energia baixa — recarregue antes que suas vendas parem.</span>
+            ) : salesCovered <= 0 ? (
+              <span className="text-destructive font-medium">Seus créditos gratuitos acabaram. Seu checkout está pausado.</span>
+            ) : salesCovered < 10 ? (
+              <span className="text-amber-500 font-medium">Últimas vendas disponíveis — seu checkout pode pausar a qualquer momento.</span>
+            ) : salesCovered < 50 ? (
+              <span className="text-amber-500 font-medium">Seus créditos estão acabando. Você ainda pode fazer {salesCovered} vendas.</span>
             ) : hasAutoRecharge ? (
               <span className="text-muted-foreground">Recarga automática ativa — pantera caça sem parar.</span>
             ) : (
-              <span className="text-muted-foreground">Pantera pronta. Suas vendas estão sendo capturadas.</span>
+              <span className="text-muted-foreground">Você tem {salesCovered} vendas disponíveis. Você só começa a pagar depois de usar todas.</span>
             )}
           </p>
 
@@ -306,9 +330,9 @@ const ProducerBilling = () => {
             <Button
               className="gap-2 h-12 rounded-xl text-sm font-semibold px-8 flex-1 sm:flex-none"
               onClick={() => setShowRecharge(true)}
-              variant={isBlocked || balance < 10 ? "default" : "outline"}
+              variant={isBlocked || salesCovered < 10 ? "default" : "outline"}
             >
-              {isBlocked ? "Reativar pantera" : balance < 10 ? "Recarregar agora" : "Adicionar créditos"}
+              {isBlocked || salesCovered <= 0 ? "Adicionar créditos e continuar vendendo" : salesCovered < 10 ? "Recarregar agora" : "Adicionar créditos"}
             </Button>
             {!showRecharge && account?.card_last4 && (
               <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-12" onClick={() => setShowCardModal(true)}>
@@ -317,9 +341,9 @@ const ProducerBilling = () => {
             )}
           </div>
           <p className="text-[11px] text-muted-foreground/60 mt-2">
-            {isBlocked || balance <= 0
-              ? "Recarregue e volte a capturar vendas"
-              : "Mantenha sua pantera sempre caçando"
+            {isBlocked || salesCovered <= 0
+              ? "Sem créditos, você não está vendendo"
+              : `Cada venda custa R$ 0,99 · Recarregue a qualquer momento`
             }
           </p>
         </div>
@@ -341,8 +365,8 @@ const ProducerBilling = () => {
 
       {/* ━━━ ISENÇÃO ━━━ */}
       <div className="rounded-xl border border-primary/15 bg-primary/[0.03] p-5">
-        <p className="text-sm font-semibold text-foreground">Primeiros R$ 1.000 em vendas — 100% grátis</p>
-        <p className="text-xs text-muted-foreground mt-1">Você só paga depois de atingir R$ 1.000 em faturamento aprovado. Sem truques.</p>
+        <p className="text-sm font-semibold text-foreground">Suas primeiras 500 vendas são 100% grátis</p>
+        <p className="text-xs text-muted-foreground mt-1">Você só começa a pagar R$ 0,99 por venda depois de atingir 500 vendas aprovadas. Sem truques.</p>
       </div>
 
       {/* ━━━ RECHARGE PANEL ━━━ */}
@@ -370,7 +394,7 @@ const ProducerBilling = () => {
                 <>
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Valor</label>
-                    <AmountSelector amounts={[20, 50, 100, 200, 500]} selected={pixAmount} onSelect={setPixAmount} />
+                    <AmountSelector amounts={[20, 50, 100, 200, 500]} selected={pixAmount} onSelect={setPixAmount} showSales />
                   </div>
                   <Button className="w-full gap-2 h-12 rounded-xl font-semibold" onClick={handleGeneratePix} disabled={pixLoading}>
                     {pixLoading
@@ -420,7 +444,7 @@ const ProducerBilling = () => {
 
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Valor</label>
-                    <AmountSelector amounts={[20, 50, 100, 200, 500]} selected={cardAmount} onSelect={setCardAmount} />
+                    <AmountSelector amounts={[20, 50, 100, 200, 500]} selected={cardAmount} onSelect={setCardAmount} showSales />
                   </div>
 
                   <Button className="w-full gap-2 h-12 rounded-xl font-semibold" onClick={handleChargeCard} disabled={cardLoading}>
@@ -448,14 +472,14 @@ const ProducerBilling = () => {
                         </div>
                         <div className="space-y-2">
                           <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Valor</label>
-                          <AmountSelector amounts={[20, 50, 100, 200]} selected={account.auto_recharge_amount} onSelect={(v) => handleUpdateAutoRecharge('auto_recharge_amount', v)} />
+                          <AmountSelector amounts={[20, 50, 100, 200]} selected={account.auto_recharge_amount} onSelect={(v) => handleUpdateAutoRecharge('auto_recharge_amount', v)} showSales />
                         </div>
-                        <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/10">
-                          <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                          <p className="text-[11px] text-muted-foreground">
-                            Saldo ≤ {fmt(account.auto_recharge_threshold)} → +{fmt(account.auto_recharge_amount)} no •••• {account.card_last4}
-                          </p>
-                        </div>
+                         <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/10">
+                           <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                           <p className="text-[11px] text-muted-foreground">
+                             Saldo ≤ {toSales(account.auto_recharge_threshold)} vendas → +{toSales(account.auto_recharge_amount)} vendas no •••• {account.card_last4}
+                           </p>
+                         </div>
                       </div>
                     )}
                   </div>
