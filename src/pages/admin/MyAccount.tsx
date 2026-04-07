@@ -133,6 +133,9 @@ const MyAccount = () => {
         </CardContent>
       </Card>
 
+      {/* KYC Verification */}
+      <ProducerVerification />
+
       {/* Password */}
       <Card className="border-border/50">
         <CardHeader className="pb-3">
