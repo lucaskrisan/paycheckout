@@ -299,6 +299,14 @@ const ProducerBilling = () => {
         </Button>
       </div>
 
+      {/* Free first R$1 gamification banner */}
+      <Alert className="border-primary/50 bg-primary/10">
+        <Info className="h-4 w-4 text-primary" />
+        <AlertDescription className="text-foreground">
+          🎉 <strong>Primeiro R$ 1,00 faturado é grátis!</strong> Suas primeiras vendas até R$ 1,00 em faturamento total não cobram a taxa de R$ 0,99. Comece a vender sem custo!
+        </AlertDescription>
+      </Alert>
+
       {/* Low balance / blocked banner */}
       {account?.blocked && (
         <Alert className="border-destructive/50 bg-destructive/10">

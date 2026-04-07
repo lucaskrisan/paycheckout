@@ -1,7 +1,7 @@
 import { memo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { User, Eye, Bell, LogOut, ChevronDown, Moon, Sun } from "lucide-react";
+import { User, Eye, Bell, LogOut, ChevronDown, Moon, Sun, ShieldCheck } from "lucide-react";
 import HeaderGamification from "./HeaderGamification";
 import {
   DropdownMenu,
@@ -17,9 +17,10 @@ interface Props {
   toggleTheme: () => void;
   user: any;
   signOut: () => Promise<void>;
+  isVerified?: boolean;
 }
 
-const AdminHeader = memo(function AdminHeader({ totalRevenue, isDark, toggleTheme, user, signOut }: Props) {
+const AdminHeader = memo(function AdminHeader({ totalRevenue, isDark, toggleTheme, user, signOut, isVerified }: Props) {
   const navigate = useNavigate();
 
   const handleSignOut = useCallback(async () => {
@@ -46,6 +47,7 @@ const AdminHeader = memo(function AdminHeader({ totalRevenue, isDark, toggleThem
                   <User className="w-3.5 h-3.5" />
                 </div>
                 <span className="hidden md:inline max-w-[180px] truncate">{user?.email}</span>
+                {isVerified && <ShieldCheck className="w-3.5 h-3.5 text-green-400" />}
                 <ChevronDown className="w-3.5 h-3.5" />
               </button>
             </DropdownMenuTrigger>

@@ -1405,6 +1405,54 @@ export type Database = {
         }
         Relationships: []
       }
+      producer_verifications: {
+        Row: {
+          address_proof_url: string | null
+          created_at: string
+          document_back_url: string | null
+          document_front_url: string | null
+          document_type: string
+          id: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          selfie_url: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address_proof_url?: string | null
+          created_at?: string
+          document_back_url?: string | null
+          document_front_url?: string | null
+          document_type?: string
+          id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          selfie_url?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address_proof_url?: string | null
+          created_at?: string
+          document_back_url?: string | null
+          document_front_url?: string | null
+          document_type?: string
+          id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          selfie_url?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       product_pixels: {
         Row: {
           capi_token: string | null
@@ -1522,6 +1570,7 @@ export type Database = {
           phone: string | null
           profile_completed: boolean
           updated_at: string
+          verified: boolean
         }
         Insert: {
           avatar_url?: string | null
@@ -1532,6 +1581,7 @@ export type Database = {
           phone?: string | null
           profile_completed?: boolean
           updated_at?: string
+          verified?: boolean
         }
         Update: {
           avatar_url?: string | null
@@ -1542,6 +1592,7 @@ export type Database = {
           phone?: string | null
           profile_completed?: boolean
           updated_at?: string
+          verified?: boolean
         }
         Relationships: []
       }
