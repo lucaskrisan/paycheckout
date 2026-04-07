@@ -56,6 +56,7 @@ const ProducerBilling = () => {
   const [account, setAccount] = useState<BillingAccount | null>(null);
   const [transactions, setTransactions] = useState<BillingTransaction[]>([]);
   const [tiers, setTiers] = useState<TierRow[]>([]);
+  const [totalRevenue, setTotalRevenue] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [pixAmount, setPixAmount] = useState(50);
   const [pixLoading, setPixLoading] = useState(false);
@@ -73,14 +74,17 @@ const ProducerBilling = () => {
 
   const loadData = async () => {
     setLoading(true);
-    const [{ data: accs }, { data: txs }, { data: tierData }] = await Promise.all([
+    const [{ data: accs }, { data: txs }, { data: tierData }, { data: revenueData }] = await Promise.all([
       supabase.from("billing_accounts").select("*").eq("user_id", user!.id).limit(1),
       supabase.from("billing_transactions").select("*").eq("user_id", user!.id).order("created_at", { ascending: false }).limit(50),
       supabase.from("billing_tiers").select("*").order("level", { ascending: true }),
+      supabase.rpc("get_revenue_summary", { p_user_id: user!.id }),
     ]);
     setAccount((accs?.[0] as unknown as BillingAccount) ?? null);
     setTransactions((txs as unknown as BillingTransaction[]) ?? []);
     setTiers((tierData as unknown as TierRow[]) ?? []);
+    const rev = Array.isArray(revenueData) ? revenueData[0] : revenueData;
+    setTotalRevenue(Number(rev?.total_revenue ?? 0));
     setLoading(false);
   };
 
@@ -166,11 +170,17 @@ const ProducerBilling = () => {
   );
 
   const balance = account?.balance ?? 0;
-  const salesCovered = toSales(balance);
+  const FREE_THRESHOLD = 500; // R$500 = ~500 vendas grátis
+  const freeSalesRemaining = totalRevenue < FREE_THRESHOLD
+    ? Math.floor((FREE_THRESHOLD - totalRevenue) / 0.99)
+    : 0;
+  const paidSales = toSales(balance);
+  const salesCovered = freeSalesRemaining + paidSales;
+  const isInFreeTrial = freeSalesRemaining > 0;
   const hasAutoRecharge = account?.auto_recharge_enabled && !!account?.card_last4;
   const isBlocked = !!account?.blocked;
-  const isDead = isBlocked || salesCovered <= 0;
-  const isCritical = salesCovered > 0 && salesCovered < 10;
+  const isDead = isBlocked || (salesCovered <= 0 && !isInFreeTrial);
+  const isCritical = !isDead && salesCovered > 0 && salesCovered < 10;
   const isLow = salesCovered >= 10 && salesCovered < 50;
   const currentTierKey = account?.credit_tier ?? "iron";
   const tierMeta = TIER_META[currentTierKey] ?? TIER_META.iron;
@@ -242,9 +252,20 @@ const ProducerBilling = () => {
             <p className={`text-lg font-medium tracking-tight ${
               isDead ? "text-destructive/70" : "text-muted-foreground"
             }`}>
-              {salesCovered === 1 ? "venda disponível" : "vendas disponíveis"}
+              {isInFreeTrial
+                ? `vendas gratuitas disponíveis`
+                : salesCovered === 1 ? "venda disponível" : "vendas disponíveis"
+              }
             </p>
           </div>
+
+          {/* Free trial badge */}
+          {isInFreeTrial && (
+            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
+              <CheckCircle2 className="w-4 h-4 text-primary" />
+              <span className="text-sm font-bold text-primary">Primeiras 500 vendas grátis</span>
+            </div>
+          )}
 
           {/* One-line impact message */}
           <p className={`mt-6 text-base md:text-lg font-medium leading-snug max-w-md ${
@@ -256,9 +277,11 @@ const ProducerBilling = () => {
                 ? "Seu checkout pode parar a qualquer momento."
                 : isLow
                   ? `Seus créditos estão acabando. ${salesCovered} vendas restantes.`
-                  : hasAutoRecharge
-                    ? "Recarga automática ativa. Sua pantera nunca para."
-                    : "Sua pantera está pronta. Vendas sendo capturadas."
+                  : isInFreeTrial
+                    ? "Você só começa a pagar depois de usar todas as vendas gratuitas."
+                    : hasAutoRecharge
+                      ? "Recarga automática ativa. Sua pantera nunca para."
+                      : "Sua pantera está pronta. Vendas sendo capturadas."
             }
           </p>
 
