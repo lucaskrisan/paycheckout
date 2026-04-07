@@ -20,7 +20,7 @@ interface Props {
   isVerified?: boolean;
 }
 
-const AdminHeader = memo(function AdminHeader({ totalRevenue, isDark, toggleTheme, user, signOut }: Props) {
+const AdminHeader = memo(function AdminHeader({ totalRevenue, isDark, toggleTheme, user, signOut, isVerified }: Props) {
   const navigate = useNavigate();
 
   const handleSignOut = useCallback(async () => {
