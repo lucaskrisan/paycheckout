@@ -181,7 +181,6 @@ export default function ProducerVerification() {
           <FileUploadBox label="Frente do documento *" icon={FileText} file={uploads.front} preview={previews.front} onChange={(f) => handleFileChange("front", f)} />
           <FileUploadBox label="Verso do documento" icon={FileText} file={uploads.back} preview={previews.back} onChange={(f) => handleFileChange("back", f)} />
           <FileUploadBox label="Selfie com documento *" icon={Camera} file={uploads.selfie} preview={previews.selfie} onChange={(f) => handleFileChange("selfie", f)} />
-          <FileUploadBox label="Comprovante de endereço *" icon={MapPin} file={uploads.address} preview={previews.address} onChange={(f) => handleFileChange("address", f)} />
         </div>
 
         <p className="text-[11px] text-muted-foreground">* Campos obrigatórios. Aceitamos JPG, PNG ou PDF. Máximo 5MB por arquivo.</p>
