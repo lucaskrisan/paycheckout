@@ -62,7 +62,7 @@ const Gateways = () => {
           .in("status", ["paid", "approved"])
           .order("created_at", { ascending: false })
           .limit(10),
-        supabase.from("payment_gateways").select("*").order("created_at"),
+        supabase.from("payment_gateways").select("id, name, provider, active, environment, payment_methods, created_at, updated_at, user_id").order("created_at"),
       ]);
 
       if (revenueRes.data && revenueRes.data.length > 0) {
