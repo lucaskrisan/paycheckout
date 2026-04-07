@@ -644,33 +644,79 @@ const ProducerBilling = () => {
       {/* ── MODAL: PIX ── */}
       <Dialog open={showPixModal} onOpenChange={setShowPixModal}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-bold">Adicionar Crédito</DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Escolha o valor e pague via PIX
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 mt-2">
-            <div className="grid grid-cols-2 gap-3">
-              {RECHARGE_AMOUNTS.map(({ value, sales }) => (
+          <div className="flex flex-col items-center text-center">
+            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
+              <Wallet className="w-6 h-6 text-primary" />
+            </div>
+            <DialogHeader className="text-center">
+              <DialogTitle className="text-lg font-bold text-center">Adicionar Crédito</DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground text-center">
+                Adicione saldo pré-pago via PIX para abater das suas taxas
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+
+          <div className="space-y-5 mt-4">
+            {/* Quick amount chips */}
+            <div className="flex flex-wrap gap-2 justify-center">
+              {[5, 10, 20, 50, 100].map((v) => (
                 <button
-                  key={value}
-                  onClick={() => setPixAmount(value)}
-                  className={`p-4 rounded-lg text-center transition-colors ${
-                    pixAmount === value
-                      ? "bg-primary/10 border-2 border-primary"
-                      : "bg-muted/30 border border-border hover:border-primary/30"
+                  key={v}
+                  onClick={() => setPixAmount(v)}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors border ${
+                    pixAmount === v
+                      ? "bg-foreground text-background border-foreground"
+                      : "bg-transparent border-border text-muted-foreground hover:border-foreground/50"
                   }`}
                 >
-                  <p className={`text-lg font-bold ${pixAmount === value ? "text-primary" : "text-foreground"}`}>
-                    {fmt(value)}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground mt-1">~{sales} vendas</p>
+                  {fmt(v)}
                 </button>
               ))}
             </div>
-            <Button className="w-full font-semibold" onClick={() => { handleGeneratePix(); setShowPixModal(false); }} disabled={pixLoading}>
-              Gerar PIX · {fmt(pixAmount)}
+
+            {/* Custom value stepper */}
+            <div>
+              <p className="text-xs text-muted-foreground mb-2">Valor personalizado</p>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setPixAmount(Math.max(5, pixAmount - 5))}
+                  className="w-10 h-10 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/50 transition-colors"
+                >
+                  −
+                </button>
+                <div className="flex-1 flex items-center gap-2 bg-muted/30 rounded-lg border border-border px-4 h-10">
+                  <span className="text-xs text-muted-foreground">R$</span>
+                  <Input
+                    type="number"
+                    value={pixAmount}
+                    onChange={(e) => setPixAmount(Math.max(5, Number(e.target.value) || 5))}
+                    className="border-0 bg-transparent text-center text-lg font-bold text-foreground p-0 h-auto focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                </div>
+                <button
+                  onClick={() => setPixAmount(pixAmount + 5)}
+                  className="w-10 h-10 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/50 transition-colors"
+                >
+                  +
+                </button>
+              </div>
+              <p className="text-[11px] text-muted-foreground text-center mt-1.5">Mínimo: {fmt(creditLimit * 0.65)}</p>
+            </div>
+
+            {/* Benefits box */}
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3.5">
+              <p className="text-xs font-semibold text-primary mb-2">Benefícios do crédito pré-pago:</p>
+              <ul className="space-y-1">
+                <li className="text-xs text-muted-foreground">• Taxas são debitadas automaticamente</li>
+                <li className="text-xs text-muted-foreground">• Evite bloqueios por pendências</li>
+                <li className="text-xs text-muted-foreground">• Sem preocupação com cobranças</li>
+              </ul>
+            </div>
+
+            {/* Generate button */}
+            <Button className="w-full font-semibold gap-2" onClick={() => { handleGeneratePix(); setShowPixModal(false); }} disabled={pixLoading}>
+              {pixLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <DollarSign className="w-4 h-4" />}
+              Gerar PIX de {fmt(pixAmount)}
             </Button>
           </div>
         </DialogContent>
