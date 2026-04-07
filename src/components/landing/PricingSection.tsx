@@ -95,6 +95,10 @@ const PricingSection = () => (
             <p className="text-[13px] text-[#6A6A75] font-light mt-3">
               por venda aprovada · pré-pago
             </p>
+            <div className="mt-4 inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-4 py-1.5">
+              <Zap className="w-3.5 h-3.5 text-primary" />
+              <span className="text-[12px] font-bold text-primary">Primeiras 500 vendas grátis</span>
+            </div>
           </div>
 
           {/* Features list */}
