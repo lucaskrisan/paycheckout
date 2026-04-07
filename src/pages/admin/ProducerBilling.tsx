@@ -244,10 +244,10 @@ const ProducerBilling = () => {
           </Button>
           <p className="text-xs text-muted-foreground mt-2">
             {isBlocked || balance <= 0
-              ? "Recarregue agora e volte a vender sem interrupções"
+              ? "Recarregue agora e não perca suas próximas vendas"
               : balance < 10
-                ? "Evite que seu checkout pause durante suas vendas"
-                : "Recarregue para continuar vendendo sem interrupções"
+                ? "Adicione créditos e continue vendendo agora"
+                : "Adicione créditos e continue vendendo sem interrupções"
             }
           </p>
         </div>
