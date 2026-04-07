@@ -118,13 +118,27 @@ const CustomerPortal = () => {
         .eq("customer_id", accessData.customer_id);
 
       if (accessList) {
-        setCourses(
-          accessList.map((a: any) => ({
-            ...a.courses,
-            access_token: a.access_token,
-            source: "purchased" as const,
-          }))
+        // For courses without cover_image_url, try to get the product image
+        const coursesWithImages = await Promise.all(
+          accessList.map(async (a: any) => {
+            let coverImage = a.courses?.cover_image_url;
+            if (!coverImage && a.courses?.product_id) {
+              const { data: prod } = await tokenClient
+                .from("products")
+                .select("image_url")
+                .eq("id", a.courses.product_id)
+                .maybeSingle();
+              coverImage = prod?.image_url || null;
+            }
+            return {
+              ...a.courses,
+              cover_image_url: coverImage,
+              access_token: a.access_token,
+              source: "purchased" as const,
+            };
+          })
         );
+        setCourses(coursesWithImages);
       }
     } catch (err) {
       console.error("Portal error:", err);
