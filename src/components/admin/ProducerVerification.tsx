@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ShieldCheck, Upload, Loader2, CheckCircle2, XCircle, Clock, Camera, FileText, MapPin } from "lucide-react";
+import { ShieldCheck, Upload, Loader2, CheckCircle2, XCircle, Clock, Camera, FileText } from "lucide-react";
 
 interface Verification {
   id: string;
