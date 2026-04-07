@@ -443,7 +443,7 @@ const ProducerBilling = () => {
                   }
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground">{tx.type === "fee" ? "Taxa de venda" : "Recarga"}</p>
+                  <p className="text-sm font-medium text-foreground">{tx.type === "fee" ? "Captura realizada" : "Recarga de energia"}</p>
                   <p className="text-[11px] text-muted-foreground truncate">{tx.description || "—"}</p>
                 </div>
                 <div className="text-right shrink-0">
