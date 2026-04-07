@@ -454,6 +454,74 @@ const ProducerBilling = () => {
                           <><CreditCard className="w-4 h-4" /> Recarregar {fmt(cardAmount)} no cartão •••• {account.card_last4}</>
                         )}
                       </Button>
+
+                      {/* Auto-Recharge Section */}
+                      <div className="mt-6 pt-6 border-t border-border space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <RefreshCw className="w-5 h-5 text-muted-foreground" />
+                            <div>
+                              <Label className="text-sm font-medium">Recarga Automática</Label>
+                              <p className="text-xs text-muted-foreground">
+                                Cobra no cartão automaticamente quando o saldo ficar baixo
+                              </p>
+                            </div>
+                          </div>
+                          <Switch
+                            checked={account.auto_recharge_enabled}
+                            onCheckedChange={handleToggleAutoRecharge}
+                          />
+                        </div>
+
+                        {account.auto_recharge_enabled && (
+                          <div className="space-y-4 p-4 rounded-lg bg-muted/30 border border-border">
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium">Recarregar quando saldo ficar abaixo de:</label>
+                              <div className="flex gap-2 flex-wrap">
+                                {[3, 5, 10, 20].map((v) => (
+                                  <button
+                                    key={v}
+                                    onClick={() => handleUpdateAutoRechargeSettings('auto_recharge_threshold', v)}
+                                    className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                                      account.auto_recharge_threshold === v
+                                        ? 'border-primary bg-primary text-primary-foreground'
+                                        : 'border-border bg-muted/30 hover:bg-muted'
+                                    }`}
+                                  >
+                                    {fmt(v)}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium">Valor da recarga automática:</label>
+                              <div className="flex gap-2 flex-wrap">
+                                {[20, 50, 100, 200].map((v) => (
+                                  <button
+                                    key={v}
+                                    onClick={() => handleUpdateAutoRechargeSettings('auto_recharge_amount', v)}
+                                    className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                                      account.auto_recharge_amount === v
+                                        ? 'border-primary bg-primary text-primary-foreground'
+                                        : 'border-border bg-muted/30 hover:bg-muted'
+                                    }`}
+                                  >
+                                    {fmt(v)}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            <Alert className="border-primary/30 bg-primary/5">
+                              <CheckCircle2 className="h-4 w-4 text-primary" />
+                              <AlertDescription className="text-sm">
+                                Quando seu saldo ficar abaixo de <strong>{fmt(account.auto_recharge_threshold)}</strong>, cobraremos <strong>{fmt(account.auto_recharge_amount)}</strong> automaticamente no cartão •••• {account.card_last4}.
+                              </AlertDescription>
+                            </Alert>
+                          </div>
+                        )}
+                      </div>
                     </>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-8 text-center">
