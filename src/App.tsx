@@ -152,6 +152,7 @@ const App = () => (
                 <Route path="api-keys" element={<ApiKeys />} />
                 <Route path="product-review" element={<ProductReview />} />
                 <Route path="whatsapp" element={<WhatsApp />} />
+                <Route path="verification-review" element={<VerificationReview />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
