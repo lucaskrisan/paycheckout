@@ -689,7 +689,7 @@ const ProducerBilling = () => {
                   <Input
                     type="number"
                     value={pixAmount}
-                    onChange={(e) => setPixAmount(Math.max(5, Number(e.target.value) || 5))}
+                    onChange={(e) => setPixAmount(Math.max(10, Number(e.target.value) || 10))}
                     className="border-0 bg-transparent text-center text-lg font-bold text-foreground p-0 h-auto focus-visible:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                 </div>
