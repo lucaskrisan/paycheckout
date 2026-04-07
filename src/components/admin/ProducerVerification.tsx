@@ -37,6 +37,7 @@ const STATUS_MAP: Record<string, { label: string; color: string; icon: typeof Ch
 export default function ProducerVerification() {
   const { user } = useAuth();
   const [verification, setVerification] = useState<Verification | null>(null);
+  const [profileVerified, setProfileVerified] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [docType, setDocType] = useState("rg");
