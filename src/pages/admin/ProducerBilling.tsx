@@ -659,7 +659,7 @@ const ProducerBilling = () => {
           <div className="space-y-5 mt-4">
             {/* Quick amount chips */}
             <div className="flex flex-wrap gap-2 justify-center">
-              {[5, 10, 20, 50, 100].map((v) => (
+              {[10, 20, 50, 100].map((v) => (
                 <button
                   key={v}
                   onClick={() => setPixAmount(v)}
