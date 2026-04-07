@@ -52,6 +52,11 @@ const TIER_ICONS: Record<string, React.ReactNode> = {
   platinum: <Crown className="w-3.5 h-3.5" />, diamond: <Crown className="w-3.5 h-3.5" />,
 };
 
+const TIER_SUBTITLES: Record<string, string> = {
+  iron: "Filhote", bronze: "Caçador", silver: "Predador",
+  gold: "Alpha", platinum: "Apex", diamond: "Lenda",
+};
+
 const COLOR_MAP: Record<string, { text: string; bg: string; border: string }> = {
   gray:   { text: "text-muted-foreground", bg: "bg-muted-foreground/10", border: "border-muted-foreground/20" },
   amber:  { text: "text-amber-500",        bg: "bg-amber-500/10",       border: "border-amber-500/20" },
@@ -215,21 +220,21 @@ const ProducerBilling = () => {
 
           {/* Sales covered — always visible */}
           <p className="text-lg font-semibold text-muted-foreground mt-2">
-            {salesCovered === 0 ? "Você não pode vender no momento" : `≈ ${salesCovered} ${salesCovered === 1 ? 'venda disponível' : 'vendas disponíveis'}`}
+            {salesCovered === 0 ? "Você não pode vender no momento" : `≈ ${salesCovered} ${salesCovered === 1 ? 'captura disponível' : 'capturas disponíveis'} 🐆`}
           </p>
 
           {/* Urgency line */}
           <p className="text-sm mt-1.5">
             {isBlocked ? (
-              <span className="text-destructive font-semibold">⚠ Seu checkout está parado — você está perdendo vendas agora</span>
+              <span className="text-destructive font-semibold">🐾 Pantera parada — você está perdendo vendas agora</span>
             ) : balance <= 0 ? (
-              <span className="text-destructive font-medium">Sem créditos, você deixa de vender</span>
+              <span className="text-destructive font-medium">Sua Pantera está parada. Nenhuma venda está sendo capturada.</span>
             ) : balance < 10 ? (
-              <span className="text-amber-400 font-medium">Créditos acabando — recarregue antes que seu checkout pause</span>
+              <span className="text-amber-400 font-medium">Energia acabando — recarregue antes que a Pantera pause</span>
             ) : hasAutoRecharge ? (
-              <span className="text-primary">Recarga automática ativa ✓</span>
+              <span className="text-primary">🐆 Pantera em modo automático ✓</span>
             ) : (
-              <span className="text-muted-foreground">Seu checkout está ativo</span>
+              <span className="text-muted-foreground">🐆 Pantera pronta para atacar</span>
             )}
           </p>
 
@@ -240,14 +245,14 @@ const ProducerBilling = () => {
             variant={isBlocked || balance < 10 ? "default" : "outline"}
           >
             <Wallet className="w-4 h-4" />
-            {isBlocked ? "Reativar checkout — adicionar créditos" : "Adicionar créditos"}
+            {isBlocked ? "Reativar a Pantera — adicionar créditos" : "Recarregar energia"}
           </Button>
           <p className="text-xs text-muted-foreground mt-2">
             {isBlocked || balance <= 0
-              ? "Recarregue agora e não perca suas próximas vendas"
+              ? "Recarregue agora e volte a caçar vendas"
               : balance < 10
-                ? "Adicione créditos e continue vendendo agora"
-                : "Adicione créditos e continue vendendo sem interrupções"
+                ? "Recarregue e continue caçando sem parar"
+                : "Mantenha sua Pantera sempre pronta para atacar"
             }
           </p>
         </div>
@@ -335,8 +340,8 @@ const ProducerBilling = () => {
                             <RefreshCw className="w-4 h-4 text-primary" />
                           </div>
                           <div>
-                            <Label className="text-sm font-semibold">Piloto automático</Label>
-                            <p className="text-[11px] text-muted-foreground">Nunca mais pense em créditos</p>
+                           <Label className="text-sm font-semibold">Caça automática</Label>
+                            <p className="text-[11px] text-muted-foreground">Pantera nunca para de caçar</p>
                           </div>
                         </div>
                         <Switch checked={account.auto_recharge_enabled} onCheckedChange={handleToggleAutoRecharge} />
@@ -438,7 +443,7 @@ const ProducerBilling = () => {
                   }
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground">{tx.type === "fee" ? "Taxa de venda" : "Recarga"}</p>
+                  <p className="text-sm font-medium text-foreground">{tx.type === "fee" ? "Captura realizada" : "Recarga de energia"}</p>
                   <p className="text-[11px] text-muted-foreground truncate">{tx.description || "—"}</p>
                 </div>
                 <div className="text-right shrink-0">
@@ -457,8 +462,8 @@ const ProducerBilling = () => {
       {tiers.length > 0 && (
         <div className="space-y-3">
           <div className="px-1">
-            <h3 className="text-sm font-semibold text-foreground">Seu nível</h3>
-            <p className="text-xs text-muted-foreground">Quanto maior seu nível, mais você vende sem risco de parar</p>
+            <h3 className="text-sm font-semibold text-foreground">Nível da Pantera</h3>
+            <p className="text-xs text-muted-foreground">Quanto mais evolui, mais caça sem risco de parar</p>
           </div>
           <div className="flex gap-1.5 overflow-x-auto pb-1">
             {tiers.map((t) => {
@@ -482,6 +487,7 @@ const ProducerBilling = () => {
                     {TIER_ICONS[t.key] || <Shield className="w-3.5 h-3.5" />}
                   </div>
                   <span className={`text-[11px] font-bold ${isCurrent ? c.text : "text-muted-foreground"}`}>{t.label}</span>
+                  <span className={`text-[9px] ${isCurrent ? `${c.text} opacity-80` : "text-muted-foreground"}`}>{TIER_SUBTITLES[t.key] || ""}</span>
                   <span className={`text-[10px] ${isCurrent ? c.text : "text-muted-foreground"}`}>{fmt(t.credit_limit)}</span>
                 </div>
               );
