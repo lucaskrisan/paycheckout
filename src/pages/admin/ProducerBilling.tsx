@@ -63,18 +63,32 @@ const TIER_COLORS: Record<string, { ring: string; text: string; dot: string }> =
   violet: { ring: "ring-violet-400/40",        text: "text-violet-400",       dot: "bg-violet-400" },
 };
 
-// ── Amount Selector ────────────────────────────────
-const AmountSelector = ({ amounts, selected, onSelect }: { amounts: number[]; selected: number; onSelect: (v: number) => void }) => (
+// ── Amount Selector (shows sales equivalent) ──────
+const RECHARGE_OPTIONS = [
+  { value: 20, sales: toSales(20) },
+  { value: 50, sales: toSales(50) },
+  { value: 100, sales: toSales(100) },
+  { value: 200, sales: toSales(200) },
+  { value: 500, sales: toSales(500) },
+];
+
+const AmountSelector = ({ amounts, selected, onSelect, showSales = false }: { amounts: number[]; selected: number; onSelect: (v: number) => void; showSales?: boolean }) => (
   <div className="flex gap-2 flex-wrap">
-    {amounts.map((v) => (
-      <button key={v} onClick={() => onSelect(v)}
-        className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
-          selected === v
-            ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
-            : 'bg-card border border-border hover:border-primary/50 text-foreground'
-        }`}
-      >{fmt(v)}</button>
-    ))}
+    {amounts.map((v) => {
+      const sales = toSales(v);
+      return (
+        <button key={v} onClick={() => onSelect(v)}
+          className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+            selected === v
+              ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
+              : 'bg-card border border-border hover:border-primary/50 text-foreground'
+          }`}
+        >
+          <span>{fmt(v)}</span>
+          {showSales && <span className="block text-[10px] opacity-70 font-normal">≈ {sales} vendas</span>}
+        </button>
+      );
+    })}
   </div>
 );
 
