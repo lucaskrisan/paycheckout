@@ -472,7 +472,7 @@ const ProducerBilling = () => {
                         </div>
                         <div className="space-y-2">
                           <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Valor</label>
-                          <AmountSelector amounts={[20, 50, 100, 200]} selected={account.auto_recharge_amount} onSelect={(v) => handleUpdateAutoRecharge('auto_recharge_amount', v)} />
+                          <AmountSelector amounts={[20, 50, 100, 200]} selected={account.auto_recharge_amount} onSelect={(v) => handleUpdateAutoRecharge('auto_recharge_amount', v)} showSales />
                         </div>
                         <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/10">
                           <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
