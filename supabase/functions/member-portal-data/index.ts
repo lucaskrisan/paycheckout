@@ -62,6 +62,12 @@ Deno.serve(async (req) => {
         : Promise.resolve({ data: [] as { id: string }[] }),
     ]);
 
+    // Build a map of product images for fallback
+    const productImageMap = new Map<string, string>();
+    for (const p of ownProducts || []) {
+      if (p.image_url) productImageMap.set(p.id, p.image_url);
+    }
+
     const allCourses: PortalCourse[] = [];
     const addedIds = new Set<string>();
     const courseByProductId = new Map<string, { id: string }>();
