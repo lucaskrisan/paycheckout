@@ -340,8 +340,8 @@ const ProducerBilling = () => {
                             <RefreshCw className="w-4 h-4 text-primary" />
                           </div>
                           <div>
-                            <Label className="text-sm font-semibold">Piloto automático</Label>
-                            <p className="text-[11px] text-muted-foreground">Nunca mais pense em créditos</p>
+                           <Label className="text-sm font-semibold">Caça automática</Label>
+                            <p className="text-[11px] text-muted-foreground">Pantera nunca para de caçar</p>
                           </div>
                         </div>
                         <Switch checked={account.auto_recharge_enabled} onCheckedChange={handleToggleAutoRecharge} />
