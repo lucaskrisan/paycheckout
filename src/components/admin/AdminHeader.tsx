@@ -1,7 +1,7 @@
 import { memo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { User, Eye, Bell, LogOut, ChevronDown, Moon, Sun } from "lucide-react";
+import { User, Eye, Bell, LogOut, ChevronDown, Moon, Sun, ShieldCheck } from "lucide-react";
 import HeaderGamification from "./HeaderGamification";
 import {
   DropdownMenu,
