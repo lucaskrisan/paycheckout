@@ -287,15 +287,19 @@ const ProducerBilling = () => {
             <div className="flex items-center justify-between text-[11px]">
               <span className="text-muted-foreground font-medium">
                 {salesCovered === 0 
-                  ? "Nenhuma venda disponível" 
-                  : `≈ ${salesCovered} ${salesCovered === 1 ? 'venda' : 'vendas'} disponíveis`}
+                  ? "Você não pode vender no momento" 
+                  : salesCovered < 10
+                    ? `Últimas ${salesCovered} vendas disponíveis`
+                    : salesCovered < 50
+                      ? `Seus créditos estão acabando — ${salesCovered} vendas restantes`
+                      : `${salesCovered} vendas disponíveis`}
               </span>
-              <span className="text-muted-foreground">Limite: {fmt(account?.credit_limit ?? 0)}</span>
+              <span className="text-muted-foreground">Limite: {toSales(account?.credit_limit ?? 0)} vendas</span>
             </div>
             <div className="w-full h-1 bg-border rounded-full overflow-hidden">
               <motion.div
                 className={`h-full rounded-full ${
-                  isBlocked || balance <= 0 ? "bg-destructive" : balance < 10 ? "bg-amber-500" : "bg-primary"
+                  isBlocked || salesCovered <= 0 ? "bg-destructive" : salesCovered < 10 ? "bg-amber-500" : "bg-primary"
                 }`}
                 initial={{ width: 0 }}
                 animate={{ width: `${usagePercent}%` }}
@@ -308,14 +312,16 @@ const ProducerBilling = () => {
           <p className="text-sm mt-4 leading-relaxed">
             {isBlocked ? (
               <span className="text-destructive font-medium">Sua pantera está parada. Você está perdendo vendas agora.</span>
-            ) : balance <= 0 ? (
-              <span className="text-destructive font-medium">Sem créditos, nenhuma venda é capturada.</span>
-            ) : balance < 10 ? (
-              <span className="text-amber-500 font-medium">Energia baixa — recarregue antes que suas vendas parem.</span>
+            ) : salesCovered <= 0 ? (
+              <span className="text-destructive font-medium">Seus créditos gratuitos acabaram. Seu checkout está pausado.</span>
+            ) : salesCovered < 10 ? (
+              <span className="text-amber-500 font-medium">Últimas vendas disponíveis — seu checkout pode pausar a qualquer momento.</span>
+            ) : salesCovered < 50 ? (
+              <span className="text-amber-500 font-medium">Seus créditos estão acabando. Você ainda pode fazer {salesCovered} vendas.</span>
             ) : hasAutoRecharge ? (
               <span className="text-muted-foreground">Recarga automática ativa — pantera caça sem parar.</span>
             ) : (
-              <span className="text-muted-foreground">Pantera pronta. Suas vendas estão sendo capturadas.</span>
+              <span className="text-muted-foreground">Você tem {salesCovered} vendas disponíveis. Você só começa a pagar depois de usar todas.</span>
             )}
           </p>
 
