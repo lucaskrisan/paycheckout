@@ -220,21 +220,21 @@ const ProducerBilling = () => {
 
           {/* Sales covered — always visible */}
           <p className="text-lg font-semibold text-muted-foreground mt-2">
-            {salesCovered === 0 ? "Você não pode vender no momento" : `≈ ${salesCovered} ${salesCovered === 1 ? 'venda disponível' : 'vendas disponíveis'}`}
+            {salesCovered === 0 ? "Você não pode vender no momento" : `≈ ${salesCovered} ${salesCovered === 1 ? 'captura disponível' : 'capturas disponíveis'} 🐆`}
           </p>
 
           {/* Urgency line */}
           <p className="text-sm mt-1.5">
             {isBlocked ? (
-              <span className="text-destructive font-semibold">⚠ Seu checkout está parado — você está perdendo vendas agora</span>
+              <span className="text-destructive font-semibold">🐾 Pantera parada — você está perdendo vendas agora</span>
             ) : balance <= 0 ? (
-              <span className="text-destructive font-medium">Sem créditos, você deixa de vender</span>
+              <span className="text-destructive font-medium">Sua Pantera está parada. Nenhuma venda está sendo capturada.</span>
             ) : balance < 10 ? (
-              <span className="text-amber-400 font-medium">Créditos acabando — recarregue antes que seu checkout pause</span>
+              <span className="text-amber-400 font-medium">Energia acabando — recarregue antes que a Pantera pause</span>
             ) : hasAutoRecharge ? (
-              <span className="text-primary">Recarga automática ativa ✓</span>
+              <span className="text-primary">🐆 Pantera em modo automático ✓</span>
             ) : (
-              <span className="text-muted-foreground">Seu checkout está ativo</span>
+              <span className="text-muted-foreground">🐆 Pantera pronta para atacar</span>
             )}
           </p>
 
