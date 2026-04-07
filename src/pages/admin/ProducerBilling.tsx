@@ -15,10 +15,12 @@ import {
 } from "@/components/ui/dialog";
 import {
   CreditCard, TrendingUp, QrCode, Plus, Receipt, DollarSign, ArrowUpRight, ArrowDownLeft,
-  Loader2, ClipboardCopy, CheckCircle2, AlertTriangle, XCircle, Info,
+  Loader2, ClipboardCopy, CheckCircle2, AlertTriangle, XCircle, Info, RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface TierRow {
   key: string;
