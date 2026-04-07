@@ -17,6 +17,7 @@ interface Props {
   toggleTheme: () => void;
   user: any;
   signOut: () => Promise<void>;
+  isVerified?: boolean;
 }
 
 const AdminHeader = memo(function AdminHeader({ totalRevenue, isDark, toggleTheme, user, signOut }: Props) {
