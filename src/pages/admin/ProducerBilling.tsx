@@ -522,6 +522,75 @@ const ProducerBilling = () => {
           )}
         </CardContent>
       </Card>
+        </div>{/* end left column */}
+
+        {/* Tier Panel — right column */}
+        {showTierPanel && tiers.length > 0 && (
+          <Card className="h-fit">
+            <CardContent className="pt-5 pb-5">
+              <div className="flex items-start justify-between mb-1">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Níveis de Crédito</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Seu limite aumenta conforme você mantém os pagamentos em dia</p>
+                </div>
+                <p className="text-xs text-muted-foreground shrink-0 text-right">
+                  Atualizado em<br />{new Date().toLocaleDateString("pt-BR")} às {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                </p>
+              </div>
+              <div className="space-y-2 mt-4">
+                {tiers.map((t) => {
+                  const isCurrent = t.key === currentTierKey;
+                  const currentIdx = tiers.findIndex((x) => x.key === currentTierKey);
+                  const tIdx = tiers.findIndex((x) => x.key === t.key);
+                  const isPast = tIdx < currentIdx;
+
+                  const paidCount = transactions.filter(tx => tx.type === "credit").length;
+                  const thresholds = [0, 2, 5, 10, 15, 20];
+                  const neededRecharges = thresholds[tIdx] ?? 0;
+                  const remaining = Math.max(0, neededRecharges - paidCount);
+
+                  return (
+                    <div
+                      key={t.key}
+                      className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
+                        isCurrent ? "border-primary/30 bg-primary/5" : "border-border/50 bg-transparent"
+                      }`}
+                    >
+                      <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                        isCurrent ? "bg-primary text-primary-foreground" :
+                        isPast ? "bg-primary/20 text-primary" :
+                        "bg-muted text-muted-foreground"
+                      }`}>
+                        {t.level}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-sm font-semibold ${isCurrent ? "text-foreground" : isPast ? "text-muted-foreground" : "text-muted-foreground/60"}`}>
+                            {TIER_META[t.key]?.title ?? t.label}
+                          </span>
+                          {isCurrent && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary/30 text-primary">Atual</Badge>
+                          )}
+                        </div>
+                        {!isCurrent && !isPast && (
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            {remaining > 0 ? `Faltam ${fmt(remaining * 50)} em taxas` : `Nível ${t.level}`}
+                          </p>
+                        )}
+                      </div>
+                      <span className={`text-sm font-semibold tabular-nums shrink-0 ${
+                        isCurrent ? "text-foreground" : "text-muted-foreground"
+                      }`}>
+                        {fmt(t.credit_limit)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>{/* end grid */}
 
       {/* ── MODAL: CARD ── */}
       <Dialog open={showCardModal} onOpenChange={setShowCardModal}>
