@@ -58,15 +58,28 @@ const VerificationReview = () => {
     setLoading(true);
     let query = supabase
       .from("producer_verifications")
-      .select("*, profiles!producer_verifications_user_id_fkey(full_name)")
+      .select("*")
       .order("created_at", { ascending: false });
 
     if (filter !== "all") {
       query = query.eq("status", filter);
     }
 
-    const { data } = await query;
-    setVerifications((data as unknown as Verification[]) ?? []);
+    const { data: verData } = await query;
+    const items = (verData ?? []) as unknown as Verification[];
+
+    // Fetch profile names for all user_ids
+    const userIds = [...new Set(items.map(v => v.user_id))];
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", userIds);
+      const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p.full_name]));
+      items.forEach(v => { v.profiles = { full_name: profileMap.get(v.user_id) || null }; });
+    }
+
+    setVerifications(items);
     setLoading(false);
   };
 
