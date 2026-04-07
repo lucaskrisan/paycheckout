@@ -227,14 +227,14 @@ const ProducerBilling = () => {
   );
 
   const balance = account?.balance ?? 0;
-  const salesCovered = balance > 0 ? Math.floor(balance / 0.99) : 0;
+  const salesCovered = balance > 0 ? toSales(balance) : 0;
   const hasAutoRecharge = account?.auto_recharge_enabled && !!account?.card_last4;
   const isBlocked = !!account?.blocked;
   const currentTierKey = account?.credit_tier ?? "iron";
   const currentTier = tiers.find((t) => t.key === currentTierKey) ?? tiers[0];
   const tierColors = TIER_COLORS[currentTier?.color ?? "gray"] ?? TIER_COLORS.gray;
   const tierMeta = TIER_META[currentTierKey] ?? TIER_META.iron;
-  const pantherStatus = isBlocked ? "dead" : balance <= 0 ? "dead" : balance < 10 ? "paused" : hasAutoRecharge ? "hunting" : "idle";
+  const pantherStatus = isBlocked ? "dead" : salesCovered <= 0 ? "dead" : salesCovered < 10 ? "paused" : hasAutoRecharge ? "hunting" : "idle";
   const inputClass = "h-11 bg-background border-border text-foreground placeholder:text-muted-foreground rounded-lg focus:border-primary focus:ring-primary";
 
   // Usage bar
