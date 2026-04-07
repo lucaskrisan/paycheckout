@@ -330,9 +330,9 @@ const ProducerBilling = () => {
             <Button
               className="gap-2 h-12 rounded-xl text-sm font-semibold px-8 flex-1 sm:flex-none"
               onClick={() => setShowRecharge(true)}
-              variant={isBlocked || balance < 10 ? "default" : "outline"}
+              variant={isBlocked || salesCovered < 10 ? "default" : "outline"}
             >
-              {isBlocked ? "Reativar pantera" : balance < 10 ? "Recarregar agora" : "Adicionar créditos"}
+              {isBlocked || salesCovered <= 0 ? "Adicionar créditos e continuar vendendo" : salesCovered < 10 ? "Recarregar agora" : "Adicionar créditos"}
             </Button>
             {!showRecharge && account?.card_last4 && (
               <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-12" onClick={() => setShowCardModal(true)}>
@@ -341,9 +341,9 @@ const ProducerBilling = () => {
             )}
           </div>
           <p className="text-[11px] text-muted-foreground/60 mt-2">
-            {isBlocked || balance <= 0
-              ? "Recarregue e volte a capturar vendas"
-              : "Mantenha sua pantera sempre caçando"
+            {isBlocked || salesCovered <= 0
+              ? "Sem créditos, você não está vendendo"
+              : `Cada venda custa R$ 0,99 · Recarregue a qualquer momento`
             }
           </p>
         </div>
