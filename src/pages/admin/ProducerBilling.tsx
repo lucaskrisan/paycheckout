@@ -1,127 +1,96 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import {
-  CreditCard, TrendingUp, QrCode, Receipt, ArrowUpRight, ArrowDownLeft,
-  Loader2, ClipboardCopy, CheckCircle2, AlertTriangle, XCircle, Info, RefreshCw,
-  Sparkles, Shield, Zap, Crown, ChevronRight, Wallet,
+  CreditCard, QrCode, ArrowUpRight, ArrowDownLeft,
+  Loader2, ClipboardCopy, CheckCircle2, Info, RefreshCw,
+  Sparkles, Shield, Zap, Crown, Wallet, AlertOctagon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
-interface TierRow {
-  key: string;
-  label: string;
-  credit_limit: number;
-  level: number;
-  color: string;
-}
-
-const TIER_ICONS: Record<string, React.ReactNode> = {
-  iron: <Shield className="w-4 h-4" />,
-  bronze: <Zap className="w-4 h-4" />,
-  silver: <Sparkles className="w-4 h-4" />,
-  gold: <Crown className="w-4 h-4" />,
-  platinum: <Crown className="w-4 h-4" />,
-  diamond: <Crown className="w-4 h-4" />,
-};
-
-const TIER_GRADIENTS: Record<string, string> = {
-  gray: "from-muted-foreground/20 to-muted-foreground/5",
-  amber: "from-amber-500/20 to-amber-600/5",
-  slate: "from-slate-300/20 to-slate-400/5",
-  yellow: "from-yellow-400/20 to-yellow-500/5",
-  cyan: "from-cyan-400/20 to-cyan-500/5",
-  violet: "from-violet-400/20 to-violet-500/5",
-};
-
-const COLOR_MAP: Record<string, { text: string; border: string; bg: string; glow: string }> = {
-  gray:   { text: "text-muted-foreground", border: "border-muted-foreground/30", bg: "bg-muted-foreground/10", glow: "" },
-  amber:  { text: "text-amber-500",        border: "border-amber-500/30",        bg: "bg-amber-500/10",       glow: "shadow-amber-500/10" },
-  slate:  { text: "text-slate-300",         border: "border-slate-300/30",        bg: "bg-slate-300/10",       glow: "shadow-slate-300/10" },
-  yellow: { text: "text-yellow-400",        border: "border-yellow-400/30",       bg: "bg-yellow-400/10",      glow: "shadow-yellow-400/10" },
-  cyan:   { text: "text-cyan-400",          border: "border-cyan-400/30",         bg: "bg-cyan-400/10",        glow: "shadow-cyan-400/10" },
-  violet: { text: "text-violet-400",        border: "border-violet-400/30",       bg: "bg-violet-400/10",      glow: "shadow-violet-400/10" },
-};
-
+// ── Types ──────────────────────────────────────────
+interface TierRow { key: string; label: string; credit_limit: number; level: number; color: string; }
 interface BillingAccount {
-  id: string;
-  balance: number;
-  credit_tier: string;
-  credit_limit: number;
-  blocked: boolean;
-  card_last4: string | null;
-  card_brand: string | null;
-  auto_recharge_enabled: boolean;
-  auto_recharge_amount: number;
-  auto_recharge_threshold: number;
+  id: string; balance: number; credit_tier: string; credit_limit: number; blocked: boolean;
+  card_last4: string | null; card_brand: string | null;
+  auto_recharge_enabled: boolean; auto_recharge_amount: number; auto_recharge_threshold: number;
 }
+interface BillingTransaction { id: string; type: string; amount: number; description: string | null; created_at: string; }
 
-interface BillingTransaction {
-  id: string;
-  type: string;
-  amount: number;
-  description: string | null;
-  created_at: string;
-}
-
-const fmt = (v: number) =>
-  v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-
-const formatCardNumber = (value: string) => {
-  const digits = value.replace(/\D/g, "").slice(0, 16);
-  return digits.replace(/(\d{4})(?=\d)/g, "$1 ");
+// ── Helpers ────────────────────────────────────────
+const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const formatCardNumber = (v: string) => v.replace(/\D/g, "").slice(0, 16).replace(/(\d{4})(?=\d)/g, "$1 ");
+const formatCpf = (v: string) => {
+  const d = v.replace(/\D/g, "").slice(0, 11);
+  return d.replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2");
 };
-
-const formatCpf = (value: string) => {
-  const digits = value.replace(/\D/g, "").slice(0, 11);
-  return digits
-    .replace(/(\d{3})(\d)/, "$1.$2")
-    .replace(/(\d{3})(\d)/, "$1.$2")
-    .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-};
-
 const getErrorMessage = (error: unknown, fallback: string): string => {
   if (!error) return fallback;
   if (typeof error === "string") return error;
   if (error instanceof Error) return error.message || fallback;
-  if (Array.isArray(error)) {
-    const message = error.map((item) => getErrorMessage(item, "")).filter(Boolean).join(" ");
-    return message || fallback;
-  }
+  if (Array.isArray(error)) return error.map((i) => getErrorMessage(i, "")).filter(Boolean).join(" ") || fallback;
   if (typeof error === "object") {
-    const record = error as Record<string, unknown>;
-    const preferred = getErrorMessage(record.description ?? record.message ?? record.error, "");
-    if (preferred) return preferred;
-    const nested = Object.values(record).map((value) => getErrorMessage(value, "")).filter(Boolean).join(" ");
-    return nested || fallback;
+    const r = error as Record<string, unknown>;
+    return getErrorMessage(r.description ?? r.message ?? r.error, "") || Object.values(r).map((v) => getErrorMessage(v, "")).filter(Boolean).join(" ") || fallback;
   }
   return fallback;
 };
 
+const TIER_ICONS: Record<string, React.ReactNode> = {
+  iron: <Shield className="w-3.5 h-3.5" />, bronze: <Zap className="w-3.5 h-3.5" />,
+  silver: <Sparkles className="w-3.5 h-3.5" />, gold: <Crown className="w-3.5 h-3.5" />,
+  platinum: <Crown className="w-3.5 h-3.5" />, diamond: <Crown className="w-3.5 h-3.5" />,
+};
+
+const COLOR_MAP: Record<string, { text: string; bg: string; border: string }> = {
+  gray:   { text: "text-muted-foreground", bg: "bg-muted-foreground/10", border: "border-muted-foreground/20" },
+  amber:  { text: "text-amber-500",        bg: "bg-amber-500/10",       border: "border-amber-500/20" },
+  slate:  { text: "text-slate-300",         bg: "bg-slate-300/10",       border: "border-slate-300/20" },
+  yellow: { text: "text-yellow-400",        bg: "bg-yellow-400/10",      border: "border-yellow-400/20" },
+  cyan:   { text: "text-cyan-400",          bg: "bg-cyan-400/10",        border: "border-cyan-400/20" },
+  violet: { text: "text-violet-400",        bg: "bg-violet-400/10",      border: "border-violet-400/20" },
+};
+
+// ── Amount Selector ────────────────────────────────
+const AmountSelector = ({ amounts, selected, onSelect }: { amounts: number[]; selected: number; onSelect: (v: number) => void }) => (
+  <div className="flex gap-2 flex-wrap">
+    {amounts.map((v) => (
+      <button key={v} onClick={() => onSelect(v)}
+        className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+          selected === v
+            ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
+            : 'bg-card border border-border hover:border-primary/50 text-foreground'
+        }`}
+      >{fmt(v)}</button>
+    ))}
+  </div>
+);
+
+// ── Component ──────────────────────────────────────
 const ProducerBilling = () => {
   const { user } = useAuth();
   const [account, setAccount] = useState<BillingAccount | null>(null);
   const [transactions, setTransactions] = useState<BillingTransaction[]>([]);
   const [tiers, setTiers] = useState<TierRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [pixAmount, setPixAmount] = useState<number>(50);
+  const [pixAmount, setPixAmount] = useState(50);
   const [pixLoading, setPixLoading] = useState(false);
   const [pixResult, setPixResult] = useState<{ pix_code: string | null; qr_code_url: string | null; amount: number } | null>(null);
   const [copying, setCopying] = useState(false);
-  const [cardAmount, setCardAmount] = useState<number>(50);
+  const [cardAmount, setCardAmount] = useState(50);
   const [cardLoading, setCardLoading] = useState(false);
   const [showCardModal, setShowCardModal] = useState(false);
+  const [showRecharge, setShowRecharge] = useState(false);
   const [cardValidating, setCardValidating] = useState(false);
   const [cardForm, setCardForm] = useState({ number: "", name: "", expiryMonth: "", expiryYear: "", cvv: "", cpf: "" });
 
@@ -140,22 +109,23 @@ const ProducerBilling = () => {
     setLoading(false);
   };
 
+  // ── Handlers ──
   const handleValidateCard = async () => {
     if (!cardForm.number || !cardForm.name || !cardForm.expiryMonth || !cardForm.expiryYear || !cardForm.cvv || !cardForm.cpf) {
-      toast.error("Preencha todos os campos do cartão"); return;
+      toast.error("Preencha todos os campos"); return;
     }
     setCardValidating(true);
     try {
       const { data, error } = await supabase.functions.invoke('billing-validate-card', {
         body: { card_number: cardForm.number.replace(/\s/g, ''), card_name: cardForm.name, card_expiry_month: cardForm.expiryMonth, card_expiry_year: cardForm.expiryYear, card_cvv: cardForm.cvv, card_cpf: cardForm.cpf.replace(/\D/g, '') },
       });
-      const functionError = (data as { error?: unknown; success?: boolean } | null)?.error;
-      if (error || functionError || !data?.success) throw new Error(getErrorMessage(functionError ?? error, 'Erro ao validar cartão'));
-      toast.success(`Cartão •••• ${data.card_last4} validado com sucesso!`);
+      const fe = (data as any)?.error;
+      if (error || fe || !data?.success) throw new Error(getErrorMessage(fe ?? error, 'Erro ao validar'));
+      toast.success(`Cartão •••• ${data.card_last4} validado!`);
       setShowCardModal(false);
       setCardForm({ number: "", name: "", expiryMonth: "", expiryYear: "", cvv: "", cpf: "" });
       loadData();
-    } catch (err: unknown) { toast.error(getErrorMessage(err, 'Erro ao validar cartão')); }
+    } catch (err: unknown) { toast.error(getErrorMessage(err, 'Erro ao validar')); }
     finally { setCardValidating(false); }
   };
 
@@ -163,14 +133,14 @@ const ProducerBilling = () => {
     setCardLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('billing-recharge', { body: { amount: cardAmount, method: 'card' } });
-      const functionError = (data as { error?: unknown; success?: boolean } | null)?.error;
-      if (error || functionError || !data?.success) {
+      const fe = (data as any)?.error;
+      if (error || fe || !data?.success) {
         if ((data as any)?.needs_card) { setShowCardModal(true); return; }
-        throw new Error(getErrorMessage(functionError ?? error, 'Erro ao cobrar no cartão'));
+        throw new Error(getErrorMessage(fe ?? error, 'Erro'));
       }
-      toast.success(`Recarga de ${fmt(cardAmount)} processada!`);
+      toast.success(`${fmt(cardAmount)} adicionados!`);
       loadData();
-    } catch (err: unknown) { toast.error(getErrorMessage(err, 'Erro ao cobrar no cartão')); }
+    } catch (err: unknown) { toast.error(getErrorMessage(err, 'Erro')); }
     finally { setCardLoading(false); }
   };
 
@@ -180,16 +150,15 @@ const ProducerBilling = () => {
     try {
       const { error } = await supabase.from("billing_accounts").update({ auto_recharge_enabled: enabled }).eq("user_id", user!.id);
       if (error) throw error;
-      toast.success(enabled ? "Recarga automática ativada!" : "Recarga automática desativada");
+      toast.success(enabled ? "Recarga automática ativada!" : "Desativada");
       loadData();
-    } catch { toast.error("Erro ao salvar configuração"); }
+    } catch { toast.error("Erro ao salvar"); }
   };
 
-  const handleUpdateAutoRechargeSettings = async (field: string, value: number) => {
+  const handleUpdateAutoRecharge = async (field: string, value: number) => {
     try {
       const { error } = await supabase.from("billing_accounts").update({ [field]: value }).eq("user_id", user!.id);
-      if (error) throw error;
-      loadData();
+      if (error) throw error; loadData();
     } catch { toast.error("Erro ao salvar"); }
   };
 
@@ -197,451 +166,333 @@ const ProducerBilling = () => {
     setPixLoading(true); setPixResult(null);
     try {
       const { data, error } = await supabase.functions.invoke('billing-recharge', { body: { amount: pixAmount, method: 'pix' } });
-      const functionError = (data as { error?: unknown; success?: boolean } | null)?.error;
-      if (error || functionError || !data?.success) throw new Error(getErrorMessage(functionError ?? error, 'Erro ao gerar PIX'));
-      setPixResult(data);
-      toast.success('QR Code gerado!');
-    } catch (err: unknown) { toast.error(getErrorMessage(err, 'Erro ao gerar PIX')); }
+      const fe = (data as any)?.error;
+      if (error || fe || !data?.success) throw new Error(getErrorMessage(fe ?? error, 'Erro'));
+      setPixResult(data); toast.success('QR Code gerado!');
+    } catch (err: unknown) { toast.error(getErrorMessage(err, 'Erro')); }
     finally { setPixLoading(false); }
   };
 
   const handleCopyPix = async () => {
     if (!pixResult?.pix_code) return;
     setCopying(true);
-    try { await navigator.clipboard.writeText(pixResult.pix_code); toast.success('Código PIX copiado!'); }
+    try { await navigator.clipboard.writeText(pixResult.pix_code); toast.success('Copiado!'); }
     catch { toast.error('Erro ao copiar'); }
     finally { setTimeout(() => setCopying(false), 2000); }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-6 h-6 animate-spin text-primary" />
-      </div>
-    );
-  }
+  if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
 
-  const currentTierKey = account?.credit_tier ?? "iron";
-  const currentTier = tiers.find((t) => t.key === currentTierKey) ?? tiers[0];
   const balance = account?.balance ?? 0;
-  const limit = account?.credit_limit ?? (currentTier?.credit_limit ?? 5);
-  const usagePercent = limit > 0 ? Math.min(100, (balance / limit) * 100) : 0;
-  const colors = COLOR_MAP[currentTier?.color ?? "gray"] ?? COLOR_MAP.gray;
-  const tierGradient = TIER_GRADIENTS[currentTier?.color ?? "gray"] ?? TIER_GRADIENTS.gray;
   const salesCovered = balance > 0 ? Math.floor(balance / 0.99) : 0;
   const hasAutoRecharge = account?.auto_recharge_enabled && !!account?.card_last4;
-
+  const isBlocked = !!account?.blocked;
+  const currentTierKey = account?.credit_tier ?? "iron";
+  const currentTier = tiers.find((t) => t.key === currentTierKey) ?? tiers[0];
+  const colors = COLOR_MAP[currentTier?.color ?? "gray"] ?? COLOR_MAP.gray;
   const inputClass = "h-11 bg-background border-border text-foreground placeholder:text-muted-foreground rounded-lg focus:border-primary focus:ring-primary";
 
-  const AmountSelector = ({ amounts, selected, onSelect }: { amounts: number[]; selected: number; onSelect: (v: number) => void }) => (
-    <div className="flex gap-2 flex-wrap">
-      {amounts.map((v) => (
-        <button key={v} onClick={() => onSelect(v)}
-          className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
-            selected === v
-              ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25 scale-[1.02]'
-              : 'bg-card border border-border hover:border-primary/50 hover:bg-muted/50 text-foreground'
-          }`}
-        >
-          {fmt(v)}
-        </button>
-      ))}
-    </div>
-  );
-
   return (
-    <div className="space-y-8 max-w-5xl">
-      {/* Hero Section — Créditos Pré-Pagos */}
-      <div className={`relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br ${tierGradient} p-6 md:p-8`}>
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="relative z-10">
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
-            {/* Left: Balance Info */}
-            <div className="space-y-4">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <Wallet className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Créditos pré-pagos</span>
-                </div>
-                <p className="text-4xl md:text-5xl font-bold text-foreground tracking-tight">{fmt(balance)}</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {balance > 0 ? (
-                    <>Cobre aproximadamente <strong className="text-foreground">{salesCovered} vendas</strong> (R$ 0,99 cada)</>
-                  ) : (
-                    <>Cada venda aprovada desconta R$ 0,99 dos seus créditos</>
-                  )}
-                </p>
+    <div className="space-y-6 max-w-3xl mx-auto">
+
+      {/* ━━━ BLOCO 1: O NÚMERO ━━━ */}
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-6 md:p-8">
+        <div className="absolute -top-20 -right-20 w-60 h-60 bg-primary/5 rounded-full blur-3xl" />
+        <div className="relative">
+          {/* Label + Tier */}
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-muted-foreground">Seus créditos</span>
+            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${colors.bg} ${colors.text} border ${colors.border}`}>
+              {TIER_ICONS[currentTierKey] || <Shield className="w-3 h-3" />}
+              {currentTier?.label ?? "Iron"}
+            </div>
+          </div>
+
+          {/* Big Number */}
+          <p className="text-5xl md:text-6xl font-bold text-foreground tracking-tight leading-none">
+            {fmt(balance)}
+          </p>
+
+          {/* Context line */}
+          <p className="text-sm text-muted-foreground mt-3">
+            {isBlocked ? (
+              <span className="text-destructive font-semibold">⚠ Seu checkout está parado. Adicione créditos agora.</span>
+            ) : balance <= 0 ? (
+              <span className="text-destructive font-medium">Seu checkout pode parar a qualquer momento</span>
+            ) : balance < 10 ? (
+              <span className="text-amber-400 font-medium">≈ {salesCovered} {salesCovered === 1 ? 'venda restante' : 'vendas restantes'} — recarregue antes que pare</span>
+            ) : hasAutoRecharge ? (
+              <span className="text-primary">≈ {salesCovered} vendas restantes · recarga automática ativa ✓</span>
+            ) : (
+              <span>≈ {salesCovered} vendas restantes</span>
+            )}
+          </p>
+
+          {/* Single CTA */}
+          <Button
+            className="mt-5 gap-2 h-12 rounded-xl text-sm font-semibold w-full md:w-auto px-8"
+            onClick={() => setShowRecharge(true)}
+            variant={isBlocked || balance < 10 ? "default" : "outline"}
+          >
+            <Wallet className="w-4 h-4" />
+            {isBlocked ? "Reativar checkout — adicionar créditos" : "Adicionar créditos"}
+          </Button>
+        </div>
+      </div>
+
+      {/* ━━━ BLOCO 2: ISENÇÃO — HEADLINE ━━━ */}
+      <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 md:p-6">
+        <div className="flex items-start gap-4">
+          <div className="w-11 h-11 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+            <Sparkles className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-foreground">Seus primeiros R$ 1.000 em vendas são grátis</h3>
+            <p className="text-sm text-muted-foreground mt-1">Você só começa a pagar a taxa depois de atingir R$ 1.000 em faturamento aprovado.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ━━━ BLOCO 3: RESUMO — SIMPLES ━━━ */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="rounded-xl border border-border bg-card p-4 text-center">
+          <p className="text-2xl font-bold text-foreground">R$ 0,99</p>
+          <p className="text-xs text-muted-foreground mt-1">por venda</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4 text-center">
+          <p className="text-2xl font-bold text-foreground">R$ 0</p>
+          <p className="text-xs text-muted-foreground mt-1">mensalidade</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4 text-center">
+          <p className="text-2xl font-bold text-foreground">0%</p>
+          <p className="text-xs text-muted-foreground mt-1">taxa de gateway</p>
+        </div>
+      </div>
+
+      {/* ━━━ BLOCO 4: RECARGA (expandível) ━━━ */}
+      {showRecharge && (
+        <Card className="rounded-2xl border-border overflow-hidden">
+          <CardContent className="p-0">
+            <Tabs defaultValue="card">
+              <div className="border-b border-border p-4 pb-0">
+                <TabsList className="bg-transparent p-0 h-auto gap-4">
+                  <TabsTrigger value="card" className="bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1 pb-3 gap-2 text-sm font-semibold">
+                    <CreditCard className="w-4 h-4" /> Cartão
+                  </TabsTrigger>
+                  <TabsTrigger value="pix" className="bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-1 pb-3 gap-2 text-sm font-semibold">
+                    <QrCode className="w-4 h-4" /> PIX
+                  </TabsTrigger>
+                </TabsList>
               </div>
 
-              {/* Status Badges */}
-              <div className="flex items-center gap-2 flex-wrap">
-                {account?.blocked ? (
-                  <Badge variant="destructive" className="gap-1.5 py-1 px-3">
-                    <XCircle className="w-3.5 h-3.5" /> Checkouts pausados
-                  </Badge>
-                ) : hasAutoRecharge ? (
-                  <Badge className="gap-1.5 py-1 px-3 bg-primary/15 text-primary border border-primary/25 hover:bg-primary/15">
-                    <RefreshCw className="w-3.5 h-3.5" /> Recarga automática ativa
-                  </Badge>
-                ) : balance < 20 && balance >= 0 ? (
-                  <Badge className="gap-1.5 py-1 px-3 bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/15">
-                    <AlertTriangle className="w-3.5 h-3.5" /> Créditos acabando
-                  </Badge>
+              {/* CARD TAB */}
+              <TabsContent value="card" className="p-5 space-y-5 mt-0">
+                {account?.card_last4 ? (
+                  <>
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-7 rounded-lg bg-muted flex items-center justify-center">
+                          <CreditCard className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">{account.card_brand?.toUpperCase()} •••• {account.card_last4}</p>
+                          <p className="text-[11px] text-muted-foreground">Validado</p>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm" className="text-xs" onClick={() => setShowCardModal(true)}>Trocar</Button>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-foreground">Quanto adicionar?</label>
+                      <AmountSelector amounts={[20, 50, 100, 200, 500]} selected={cardAmount} onSelect={setCardAmount} />
+                    </div>
+
+                    <Button className="w-full gap-2 h-12 rounded-xl font-semibold" onClick={handleChargeCard} disabled={cardLoading}>
+                      {cardLoading
+                        ? <><Loader2 className="w-4 h-4 animate-spin" /> Processando...</>
+                        : <><CreditCard className="w-4 h-4" /> Adicionar {fmt(cardAmount)}</>
+                      }
+                    </Button>
+
+                    {/* Auto-Recharge */}
+                    <div className="pt-4 border-t border-border space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <RefreshCw className="w-4 h-4 text-primary" />
+                          </div>
+                          <div>
+                            <Label className="text-sm font-semibold">Piloto automático</Label>
+                            <p className="text-[11px] text-muted-foreground">Nunca mais pense em créditos</p>
+                          </div>
+                        </div>
+                        <Switch checked={account.auto_recharge_enabled} onCheckedChange={handleToggleAutoRecharge} />
+                      </div>
+
+                      {account.auto_recharge_enabled && (
+                        <div className="space-y-3 p-4 rounded-xl bg-muted/20 border border-border">
+                          <div className="space-y-2">
+                            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Recarregar quando créditos ≤</label>
+                            <AmountSelector amounts={[3, 5, 10, 20]} selected={account.auto_recharge_threshold} onSelect={(v) => handleUpdateAutoRecharge('auto_recharge_threshold', v)} />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Valor adicionado</label>
+                            <AmountSelector amounts={[20, 50, 100, 200]} selected={account.auto_recharge_amount} onSelect={(v) => handleUpdateAutoRecharge('auto_recharge_amount', v)} />
+                          </div>
+                          <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/15">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
+                            <p className="text-xs text-muted-foreground">
+                              Créditos ≤ {fmt(account.auto_recharge_threshold)} → adiciona {fmt(account.auto_recharge_amount)} no •••• {account.card_last4}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </>
                 ) : (
-                  <Badge className="gap-1.5 py-1 px-3 bg-primary/15 text-primary border border-primary/25 hover:bg-primary/15">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Operacional
-                  </Badge>
+                  <div className="flex flex-col items-center py-10 text-center">
+                    <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center mb-4">
+                      <CreditCard className="w-6 h-6 text-muted-foreground/40" />
+                    </div>
+                    <p className="text-sm font-medium text-foreground mb-1">Nenhum cartão</p>
+                    <p className="text-xs text-muted-foreground mb-4">Adicione para recargas rápidas e piloto automático</p>
+                    <Button variant="outline" className="gap-2 rounded-xl" onClick={() => setShowCardModal(true)}>
+                      <CreditCard className="w-4 h-4" /> Adicionar Cartão
+                    </Button>
+                  </div>
                 )}
-                <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full ${colors.bg} border ${colors.border}`}>
-                  {TIER_ICONS[currentTierKey] || <Shield className="w-3.5 h-3.5" />}
-                  <span className={`text-xs font-bold uppercase tracking-wider ${colors.text}`}>{currentTier?.label ?? "Iron"}</span>
-                </div>
-              </div>
-            </div>
+              </TabsContent>
 
-            {/* Right: Quick Actions */}
-            <div className="flex flex-col gap-2 md:items-end">
-              <Button size="sm" className="gap-2 rounded-xl h-10 w-full md:w-auto" onClick={() => document.getElementById('card-tab')?.click()}>
-                <CreditCard className="w-4 h-4" /> Adicionar créditos
-              </Button>
-              <Button size="sm" variant="outline" className="gap-2 rounded-xl h-10 w-full md:w-auto" onClick={() => document.getElementById('pix-tab')?.click()}>
-                <QrCode className="w-4 h-4" /> Pagar via PIX
-              </Button>
-            </div>
-          </div>
-
-          {/* Credit usage bar */}
-          <div className="mt-6 space-y-2">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>Créditos utilizados do limite</span>
-              <span>{fmt(balance)} / {fmt(limit)}</span>
-            </div>
-            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ${
-                  usagePercent > 80 ? 'bg-destructive' : usagePercent > 50 ? 'bg-amber-500' : 'bg-primary'
-                }`}
-                style={{ width: `${usagePercent}%` }}
-              />
-            </div>
-            <p className="text-[11px] text-muted-foreground">
-              {hasAutoRecharge
-                ? `Recarga automática de ${fmt(account!.auto_recharge_amount)} quando créditos ≤ ${fmt(account!.auto_recharge_threshold)}`
-                : "Ative a recarga automática no cartão para nunca ter os checkouts pausados"
-              }
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Gamification Banner */}
-      <div className="flex items-center gap-4 p-4 rounded-xl border border-primary/20 bg-primary/5">
-        <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
-          <Sparkles className="w-5 h-5 text-primary" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-foreground">Primeiros R$ 1.000 faturados sem taxa!</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Até R$ 1.000 em vendas aprovadas, a taxa de R$ 0,99 não é descontada dos seus créditos.</p>
-        </div>
-      </div>
-
-      {/* Blocked Alert */}
-      {account?.blocked && (
-        <Alert className="border-destructive/40 bg-destructive/10 rounded-xl">
-          <XCircle className="h-4 w-4 text-destructive" />
-          <AlertDescription className="text-destructive font-medium">
-            Conta bloqueada — adicione saldo para reativar seus checkouts.
-            <Button size="sm" className="ml-3 h-7 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-lg"
-              onClick={() => document.getElementById('pix-tab')?.click()}>
-              Recarregar agora
-            </Button>
-          </AlertDescription>
-        </Alert>
+              {/* PIX TAB */}
+              <TabsContent value="pix" className="p-5 space-y-5 mt-0">
+                {!pixResult ? (
+                  <>
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-foreground">Quanto adicionar?</label>
+                      <AmountSelector amounts={[20, 50, 100, 200, 500]} selected={pixAmount} onSelect={setPixAmount} />
+                    </div>
+                    <Button className="w-full gap-2 h-12 rounded-xl font-semibold" onClick={handleGeneratePix} disabled={pixLoading}>
+                      {pixLoading
+                        ? <><Loader2 className="w-4 h-4 animate-spin" /> Gerando...</>
+                        : <><QrCode className="w-4 h-4" /> Gerar PIX — {fmt(pixAmount)}</>
+                      }
+                    </Button>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center gap-5 py-2">
+                    {pixResult.qr_code_url && (
+                      <div className="p-3 bg-white rounded-2xl">
+                        <img src={pixResult.qr_code_url} alt="QR Code PIX" className="w-44 h-44 rounded-lg" />
+                      </div>
+                    )}
+                    <div className="text-center">
+                      <p className="text-xl font-bold text-foreground">{fmt(pixResult.amount)}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Escaneie ou copie o código</p>
+                    </div>
+                    {pixResult.pix_code && (
+                      <Button variant="outline" className="w-full gap-2 rounded-xl h-11" onClick={handleCopyPix}>
+                        {copying
+                          ? <><CheckCircle2 className="w-4 h-4 text-primary" /> Copiado!</>
+                          : <><ClipboardCopy className="w-4 h-4" /> Copiar código PIX</>
+                        }
+                      </Button>
+                    )}
+                    <p className="text-xs text-muted-foreground">Creditado em até 1 minuto</p>
+                    <Button variant="ghost" size="sm" className="text-xs" onClick={() => setPixResult(null)}>Gerar novo</Button>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recharge Section */}
-        <div className="lg:col-span-2 space-y-6">
-          <Tabs defaultValue="card">
-            <TabsList className="bg-card border border-border rounded-xl p-1 h-auto">
-              <TabsTrigger id="card-tab" value="card" className="gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2.5 px-4">
-                <CreditCard className="w-4 h-4" /> Cartão
-              </TabsTrigger>
-              <TabsTrigger id="pix-tab" value="pix" className="gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2.5 px-4">
-                <QrCode className="w-4 h-4" /> PIX
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="card" className="mt-4">
-              <Card className="border-border/60 rounded-xl overflow-hidden">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-semibold">Cartão de Crédito</CardTitle>
-                  <CardDescription>Método de pagamento para recargas e cobranças automáticas</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-5">
-                  {account?.card_last4 ? (
-                    <>
-                      {/* Card Display */}
-                      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-card to-muted/50 border border-border p-5">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl" />
-                        <div className="relative flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-8 rounded-lg bg-muted flex items-center justify-center border border-border">
-                              <CreditCard className="w-5 h-5 text-muted-foreground" />
-                            </div>
-                            <div>
-                              <p className="font-semibold text-foreground">{account.card_brand?.toUpperCase()} •••• {account.card_last4}</p>
-                              <p className="text-xs text-muted-foreground mt-0.5">Cartão validado e ativo</p>
-                            </div>
-                          </div>
-                          <Button variant="ghost" size="sm" className="text-xs rounded-lg" onClick={() => setShowCardModal(true)}>
-                            Trocar
-                          </Button>
-                        </div>
-                      </div>
-
-                      {/* Recharge Amount */}
-                      <div className="space-y-3">
-                        <label className="text-sm font-semibold text-foreground">Valor da recarga</label>
-                        <AmountSelector amounts={[20, 50, 100, 200, 500]} selected={cardAmount} onSelect={setCardAmount} />
-                      </div>
-
-                      <Button className="w-full gap-2 h-12 rounded-xl text-sm font-semibold" onClick={handleChargeCard} disabled={cardLoading}>
-                        {cardLoading ? (
-                          <><Loader2 className="w-4 h-4 animate-spin" /> Processando...</>
-                        ) : (
-                          <><CreditCard className="w-4 h-4" /> Recarregar {fmt(cardAmount)}</>
-                        )}
-                      </Button>
-
-                      {/* Auto-Recharge */}
-                      <div className="pt-5 border-t border-border space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                              <RefreshCw className="w-4 h-4 text-primary" />
-                            </div>
-                            <div>
-                              <Label className="text-sm font-semibold">Recarga Automática</Label>
-                              <p className="text-xs text-muted-foreground">Cobra automaticamente quando o saldo ficar baixo</p>
-                            </div>
-                          </div>
-                          <Switch checked={account.auto_recharge_enabled} onCheckedChange={handleToggleAutoRecharge} />
-                        </div>
-
-                        {account.auto_recharge_enabled && (
-                          <div className="space-y-4 p-4 rounded-xl bg-muted/30 border border-border">
-                            <div className="space-y-2.5">
-                              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Recarregar quando saldo ≤</label>
-                              <AmountSelector amounts={[3, 5, 10, 20]} selected={account.auto_recharge_threshold} onSelect={(v) => handleUpdateAutoRechargeSettings('auto_recharge_threshold', v)} />
-                            </div>
-                            <div className="space-y-2.5">
-                              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Valor da recarga</label>
-                              <AmountSelector amounts={[20, 50, 100, 200]} selected={account.auto_recharge_amount} onSelect={(v) => handleUpdateAutoRechargeSettings('auto_recharge_amount', v)} />
-                            </div>
-                            <div className="flex items-center gap-2.5 p-3 rounded-lg bg-primary/5 border border-primary/20">
-                              <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-                              <p className="text-xs text-muted-foreground">
-                                Saldo ≤ <strong className="text-foreground">{fmt(account.auto_recharge_threshold)}</strong> → cobrança de <strong className="text-foreground">{fmt(account.auto_recharge_amount)}</strong> no •••• {account.card_last4}
-                              </p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                      <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mb-4">
-                        <CreditCard className="w-7 h-7 text-muted-foreground/50" />
-                      </div>
-                      <p className="text-sm font-medium text-foreground mb-1">Nenhum cartão cadastrado</p>
-                      <p className="text-xs text-muted-foreground mb-5">Adicione um cartão para recargas rápidas e cobrança automática</p>
-                      <Button variant="outline" className="gap-2 rounded-xl" onClick={() => setShowCardModal(true)}>
-                        <CreditCard className="w-4 h-4" /> Adicionar Cartão
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="pix" className="mt-4">
-              <Card className="border-border/60 rounded-xl overflow-hidden">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-semibold">Recarga via PIX</CardTitle>
-                  <CardDescription>Saldo creditado automaticamente após confirmação — taxa fixa de R$ 0,99 por venda</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-5">
-                  {!pixResult ? (
-                    <>
-                      <div className="space-y-3">
-                        <label className="text-sm font-semibold text-foreground">Valor da recarga</label>
-                        <AmountSelector amounts={[20, 50, 100, 200, 500]} selected={pixAmount} onSelect={setPixAmount} />
-                      </div>
-                      <Button className="w-full gap-2 h-12 rounded-xl text-sm font-semibold" onClick={handleGeneratePix} disabled={pixLoading}>
-                        {pixLoading ? (
-                          <><Loader2 className="w-4 h-4 animate-spin" /> Gerando PIX...</>
-                        ) : (
-                          <><QrCode className="w-4 h-4" /> Gerar QR Code — {fmt(pixAmount)}</>
-                        )}
-                      </Button>
-                    </>
-                  ) : (
-                    <div className="flex flex-col items-center gap-5 py-4">
-                      {pixResult.qr_code_url && (
-                        <div className="p-3 bg-white rounded-2xl">
-                          <img src={pixResult.qr_code_url} alt="QR Code PIX" className="w-44 h-44 rounded-lg" />
-                        </div>
-                      )}
-                      <div className="text-center">
-                        <p className="text-lg font-bold text-foreground">{fmt(pixResult.amount)}</p>
-                        <p className="text-xs text-muted-foreground mt-1">Escaneie ou copie o código abaixo</p>
-                      </div>
-                      {pixResult.pix_code && (
-                        <Button variant="outline" className="w-full gap-2 rounded-xl h-11" onClick={handleCopyPix}>
-                          {copying ? (
-                            <><CheckCircle2 className="w-4 h-4 text-primary" /> Copiado!</>
-                          ) : (
-                            <><ClipboardCopy className="w-4 h-4" /> Copiar código PIX</>
-                          )}
-                        </Button>
-                      )}
-                      <p className="text-xs text-muted-foreground">Saldo creditado em até 1 minuto</p>
-                      <Button variant="ghost" size="sm" className="text-xs" onClick={() => setPixResult(null)}>Gerar novo PIX</Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
-
-        {/* Tiers Column */}
-        <div>
-          <Card className="border-border/60 rounded-xl overflow-hidden sticky top-4">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-primary" />
-                <CardTitle className="text-base font-semibold">Níveis de Crédito</CardTitle>
-              </div>
-              <CardDescription className="text-xs">Limite aumenta com recargas frequentes</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-1.5">
-              {tiers.map((t) => {
-                const isCurrent = t.key === currentTierKey;
-                const c = COLOR_MAP[t.color] ?? COLOR_MAP.gray;
-                const currentIdx = tiers.findIndex((x) => x.key === currentTierKey);
-                const tIdx = tiers.findIndex((x) => x.key === t.key);
-                const isUnlocked = tIdx <= currentIdx;
-
-                return (
-                  <div key={t.key}
-                    className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-200 ${
-                      isCurrent
-                        ? `${c.bg} border ${c.border} shadow-lg ${c.glow}`
-                        : isUnlocked
-                          ? "border border-border/30 bg-card/50"
-                          : "border border-border/10 opacity-40"
-                    }`}
-                  >
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                      isCurrent ? `${c.bg} ${c.text}` : "bg-muted text-muted-foreground"
-                    }`}>
-                      {TIER_ICONS[t.key] || <Shield className="w-4 h-4" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className={`font-semibold text-sm ${isCurrent ? c.text : "text-foreground"}`}>{t.label}</span>
-                        {isCurrent && (
-                          <span className={`text-[10px] font-bold uppercase tracking-wider ${c.text}`}>Atual</span>
-                        )}
-                      </div>
-                    </div>
-                    <span className={`text-xs font-bold shrink-0 ${isCurrent ? c.text : "text-muted-foreground"}`}>{fmt(t.credit_limit)}</span>
-                    {!isUnlocked && <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />}
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Transaction History */}
-      <Card className="border-border/60 rounded-xl overflow-hidden">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Receipt className="w-4 h-4 text-muted-foreground" />
-              <CardTitle className="text-base font-semibold">Extrato</CardTitle>
-            </div>
+      {/* ━━━ BLOCO 5: EXTRATO ━━━ */}
+      {transactions.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <h3 className="text-sm font-semibold text-foreground">Extrato</h3>
             <span className="text-xs text-muted-foreground">{transactions.length} registros</span>
           </div>
-        </CardHeader>
-        <CardContent>
-          {transactions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center mb-4">
-                <Receipt className="w-6 h-6 text-muted-foreground/40" />
-              </div>
-              <p className="text-sm font-medium text-foreground">Nenhuma transação</p>
-              <p className="text-xs text-muted-foreground mt-1">Suas taxas e recargas aparecerão aqui</p>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              {transactions.map((tx) => (
-                <div key={tx.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/30 transition-colors">
-                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                    tx.type === "fee" ? "bg-destructive/10" : "bg-primary/10"
-                  }`}>
-                    {tx.type === "fee"
-                      ? <ArrowUpRight className="w-4 h-4 text-destructive" />
-                      : <ArrowDownLeft className="w-4 h-4 text-primary" />
-                    }
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground">{tx.type === "fee" ? "Taxa" : "Recarga"}</p>
-                    <p className="text-xs text-muted-foreground truncate">{tx.description || "—"}</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className={`text-sm font-semibold ${tx.type === "fee" ? "text-destructive" : "text-primary"}`}>
-                      {tx.type === "fee" ? "-" : "+"}{fmt(Math.abs(tx.amount))}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {new Date(tx.created_at).toLocaleDateString("pt-BR")}
-                    </p>
-                  </div>
+          <div className="rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border">
+            {transactions.map((tx) => (
+              <div key={tx.id} className="flex items-center gap-3 px-4 py-3.5">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                  tx.type === "fee" ? "bg-destructive/10" : "bg-primary/10"
+                }`}>
+                  {tx.type === "fee"
+                    ? <ArrowUpRight className="w-4 h-4 text-destructive" />
+                    : <ArrowDownLeft className="w-4 h-4 text-primary" />
+                  }
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">{tx.type === "fee" ? "Taxa de venda" : "Recarga"}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{tx.description || "—"}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className={`text-sm font-semibold ${tx.type === "fee" ? "text-destructive" : "text-primary"}`}>
+                    {tx.type === "fee" ? "-" : "+"}{fmt(Math.abs(tx.amount))}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">{new Date(tx.created_at).toLocaleDateString("pt-BR")}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
-      {/* Card Validation Modal */}
+      {/* ━━━ BLOCO 6: TIER PROGRESSION (compacto) ━━━ */}
+      {tiers.length > 0 && (
+        <div className="space-y-3">
+          <div className="px-1">
+            <h3 className="text-sm font-semibold text-foreground">Seu nível</h3>
+            <p className="text-xs text-muted-foreground">Mais recargas = mais limite de crédito = mais vendas sem pausar</p>
+          </div>
+          <div className="flex gap-1.5 overflow-x-auto pb-1">
+            {tiers.map((t) => {
+              const isCurrent = t.key === currentTierKey;
+              const c = COLOR_MAP[t.color] ?? COLOR_MAP.gray;
+              const currentIdx = tiers.findIndex((x) => x.key === currentTierKey);
+              const tIdx = tiers.findIndex((x) => x.key === t.key);
+              const isUnlocked = tIdx <= currentIdx;
+
+              return (
+                <div key={t.key}
+                  className={`flex flex-col items-center gap-1.5 px-3 py-3 rounded-xl border min-w-[80px] transition-all ${
+                    isCurrent
+                      ? `${c.bg} ${c.border} shadow-lg`
+                      : isUnlocked
+                        ? "border-border/40 bg-card/50"
+                        : "border-border/10 opacity-30"
+                  }`}
+                >
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${isCurrent ? `${c.bg} ${c.text}` : "bg-muted text-muted-foreground"}`}>
+                    {TIER_ICONS[t.key] || <Shield className="w-3.5 h-3.5" />}
+                  </div>
+                  <span className={`text-[11px] font-bold ${isCurrent ? c.text : "text-muted-foreground"}`}>{t.label}</span>
+                  <span className={`text-[10px] ${isCurrent ? c.text : "text-muted-foreground"}`}>{fmt(t.credit_limit)}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ━━━ MODAL: CARTÃO ━━━ */}
       <Dialog open={showCardModal} onOpenChange={setShowCardModal}>
         <DialogContent className="sm:max-w-md rounded-2xl">
           <DialogHeader>
             <div className="flex justify-center mb-3">
-              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <CreditCard className="w-7 h-7 text-primary" />
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <CreditCard className="w-6 h-6 text-primary" />
               </div>
             </div>
-            <DialogTitle className="text-center text-lg">Validar Cartão</DialogTitle>
-            <DialogDescription className="text-center">
-              Adicione um cartão para recargas e cobranças automáticas
-            </DialogDescription>
+            <DialogTitle className="text-center">Validar Cartão</DialogTitle>
+            <DialogDescription className="text-center text-xs">Validação de R$ 5,00 — estornada imediatamente</DialogDescription>
           </DialogHeader>
-
-          <div className="flex items-center gap-2.5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-            <Info className="h-4 w-4 text-amber-500 shrink-0" />
-            <p className="text-xs text-amber-400">Validação de R$ 5,00 — estornada imediatamente.</p>
-          </div>
-
           <div className="space-y-4 mt-2">
             <div>
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Número do Cartão</label>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Número</label>
               <Input value={cardForm.number} onChange={(e) => setCardForm({ ...cardForm, number: formatCardNumber(e.target.value) })}
                 placeholder="0000 0000 0000 0000" className={`${inputClass} font-mono tracking-wider`} maxLength={19} />
             </div>
