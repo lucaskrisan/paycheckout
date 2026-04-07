@@ -52,14 +52,22 @@ export default function ProducerVerification() {
   }, [user]);
 
   const loadVerification = async () => {
-    const { data } = await supabase
-      .from("producer_verifications")
-      .select("*")
-      .eq("user_id", user!.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    setVerification(data);
+    const [{ data: verData }, { data: profileData }] = await Promise.all([
+      supabase
+        .from("producer_verifications")
+        .select("*")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("profiles")
+        .select("verified")
+        .eq("id", user!.id)
+        .single(),
+    ]);
+    setVerification(verData);
+    setProfileVerified(profileData?.verified === true);
     setLoading(false);
   };
 
