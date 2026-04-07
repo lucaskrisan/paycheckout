@@ -270,7 +270,7 @@ const ProducerBilling = () => {
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-xl border border-border bg-card p-4 text-center">
           <p className="text-2xl font-bold text-foreground">R$ 0,99</p>
-          <p className="text-xs text-muted-foreground mt-1 font-medium">por venda (fixo)</p>
+          <p className="text-[11px] text-muted-foreground mt-1 font-medium">menos de R$1 por venda</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4 text-center">
           <p className="text-2xl font-bold text-foreground">R$ 0</p>
