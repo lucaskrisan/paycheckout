@@ -228,6 +228,8 @@ const ProducerBilling = () => {
   const usagePercent = limit > 0 ? Math.min(100, (balance / limit) * 100) : 0;
   const colors = COLOR_MAP[currentTier?.color ?? "gray"] ?? COLOR_MAP.gray;
   const tierGradient = TIER_GRADIENTS[currentTier?.color ?? "gray"] ?? TIER_GRADIENTS.gray;
+  const salesCovered = balance > 0 ? Math.floor(balance / 0.99) : 0;
+  const hasAutoRecharge = account?.auto_recharge_enabled && !!account?.card_last4;
 
   const inputClass = "h-11 bg-background border-border text-foreground placeholder:text-muted-foreground rounded-lg focus:border-primary focus:ring-primary";
 
@@ -249,25 +251,41 @@ const ProducerBilling = () => {
 
   return (
     <div className="space-y-8 max-w-5xl">
-      {/* Hero Balance Section */}
+      {/* Hero Section — Créditos Pré-Pagos */}
       <div className={`relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br ${tierGradient} p-6 md:p-8`}>
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         <div className="relative z-10">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <Wallet className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Saldo disponível</span>
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+            {/* Left: Balance Info */}
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <Wallet className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Créditos pré-pagos</span>
+                </div>
+                <p className="text-4xl md:text-5xl font-bold text-foreground tracking-tight">{fmt(balance)}</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {balance > 0 ? (
+                    <>Cobre aproximadamente <strong className="text-foreground">{salesCovered} vendas</strong> (R$ 0,99 cada)</>
+                  ) : (
+                    <>Cada venda aprovada desconta R$ 0,99 dos seus créditos</>
+                  )}
+                </p>
               </div>
-              <p className="text-4xl md:text-5xl font-bold text-foreground tracking-tight">{fmt(balance)}</p>
-              <div className="flex items-center gap-3 mt-3">
+
+              {/* Status Badges */}
+              <div className="flex items-center gap-2 flex-wrap">
                 {account?.blocked ? (
                   <Badge variant="destructive" className="gap-1.5 py-1 px-3">
-                    <XCircle className="w-3.5 h-3.5" /> Bloqueada
+                    <XCircle className="w-3.5 h-3.5" /> Checkouts pausados
                   </Badge>
-                ) : balance < 20 ? (
+                ) : hasAutoRecharge ? (
+                  <Badge className="gap-1.5 py-1 px-3 bg-primary/15 text-primary border border-primary/25 hover:bg-primary/15">
+                    <RefreshCw className="w-3.5 h-3.5" /> Recarga automática ativa
+                  </Badge>
+                ) : balance < 20 && balance >= 0 ? (
                   <Badge className="gap-1.5 py-1 px-3 bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/15">
-                    <AlertTriangle className="w-3.5 h-3.5" /> Saldo baixo
+                    <AlertTriangle className="w-3.5 h-3.5" /> Créditos acabando
                   </Badge>
                 ) : (
                   <Badge className="gap-1.5 py-1 px-3 bg-primary/15 text-primary border border-primary/25 hover:bg-primary/15">
@@ -280,20 +298,22 @@ const ProducerBilling = () => {
                 </div>
               </div>
             </div>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="gap-2 rounded-xl h-10" onClick={() => document.getElementById('pix-tab')?.click()}>
-                <QrCode className="w-4 h-4" /> Recarga PIX
+
+            {/* Right: Quick Actions */}
+            <div className="flex flex-col gap-2 md:items-end">
+              <Button size="sm" className="gap-2 rounded-xl h-10 w-full md:w-auto" onClick={() => document.getElementById('card-tab')?.click()}>
+                <CreditCard className="w-4 h-4" /> Adicionar créditos
               </Button>
-              <Button size="sm" className="gap-2 rounded-xl h-10" onClick={() => document.getElementById('card-tab')?.click()}>
-                <CreditCard className="w-4 h-4" /> Recarga Cartão
+              <Button size="sm" variant="outline" className="gap-2 rounded-xl h-10 w-full md:w-auto" onClick={() => document.getElementById('pix-tab')?.click()}>
+                <QrCode className="w-4 h-4" /> Pagar via PIX
               </Button>
             </div>
           </div>
 
-          {/* Usage bar */}
+          {/* Credit usage bar */}
           <div className="mt-6 space-y-2">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>Uso do crédito</span>
+              <span>Créditos utilizados do limite</span>
               <span>{fmt(balance)} / {fmt(limit)}</span>
             </div>
             <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
@@ -304,6 +324,12 @@ const ProducerBilling = () => {
                 style={{ width: `${usagePercent}%` }}
               />
             </div>
+            <p className="text-[11px] text-muted-foreground">
+              {hasAutoRecharge
+                ? `Recarga automática de ${fmt(account!.auto_recharge_amount)} quando créditos ≤ ${fmt(account!.auto_recharge_threshold)}`
+                : "Ative a recarga automática no cartão para nunca ter os checkouts pausados"
+              }
+            </p>
           </div>
         </div>
       </div>
@@ -314,8 +340,8 @@ const ProducerBilling = () => {
           <Sparkles className="w-5 h-5 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-foreground">Primeiros R$ 1.000 faturados são grátis!</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Até atingir R$ 1.000 em vendas aprovadas, a taxa de R$ 0,99 não é cobrada.</p>
+          <p className="text-sm font-semibold text-foreground">Primeiros R$ 1.000 faturados sem taxa!</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Até R$ 1.000 em vendas aprovadas, a taxa de R$ 0,99 não é descontada dos seus créditos.</p>
         </div>
       </div>
 
