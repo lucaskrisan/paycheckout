@@ -170,11 +170,17 @@ const ProducerBilling = () => {
   );
 
   const balance = account?.balance ?? 0;
-  const salesCovered = toSales(balance);
+  const FREE_THRESHOLD = 500; // R$500 = ~500 vendas grátis
+  const freeSalesRemaining = totalRevenue < FREE_THRESHOLD
+    ? Math.floor((FREE_THRESHOLD - totalRevenue) / 0.99)
+    : 0;
+  const paidSales = toSales(balance);
+  const salesCovered = freeSalesRemaining + paidSales;
+  const isInFreeTrial = freeSalesRemaining > 0;
   const hasAutoRecharge = account?.auto_recharge_enabled && !!account?.card_last4;
   const isBlocked = !!account?.blocked;
-  const isDead = isBlocked || salesCovered <= 0;
-  const isCritical = salesCovered > 0 && salesCovered < 10;
+  const isDead = isBlocked || (salesCovered <= 0 && !isInFreeTrial);
+  const isCritical = !isDead && salesCovered > 0 && salesCovered < 10;
   const isLow = salesCovered >= 10 && salesCovered < 50;
   const currentTierKey = account?.credit_tier ?? "iron";
   const tierMeta = TIER_META[currentTierKey] ?? TIER_META.iron;
