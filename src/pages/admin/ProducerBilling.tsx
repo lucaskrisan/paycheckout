@@ -188,6 +188,40 @@ const ProducerBilling = () => {
     }
   };
 
+  const handleToggleAutoRecharge = async (enabled: boolean) => {
+    if (!account) return;
+    // Require card to enable
+    if (enabled && !account.card_last4) {
+      toast.error("Cadastre um cartão primeiro para ativar a recarga automática");
+      setShowCardModal(true);
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from("billing_accounts")
+        .update({ auto_recharge_enabled: enabled })
+        .eq("user_id", user!.id);
+      if (error) throw error;
+      toast.success(enabled ? "Recarga automática ativada!" : "Recarga automática desativada");
+      loadData();
+    } catch {
+      toast.error("Erro ao salvar configuração");
+    }
+  };
+
+  const handleUpdateAutoRechargeSettings = async (field: string, value: number) => {
+    try {
+      const { error } = await supabase
+        .from("billing_accounts")
+        .update({ [field]: value })
+        .eq("user_id", user!.id);
+      if (error) throw error;
+      loadData();
+    } catch {
+      toast.error("Erro ao salvar");
+    }
+  };
+
   const handleGeneratePix = async () => {
     setPixLoading(true);
     setPixResult(null);
