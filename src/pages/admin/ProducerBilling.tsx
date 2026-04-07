@@ -259,30 +259,31 @@ const ProducerBilling = () => {
         </Card>
       </div>
 
-      {/* ── Credit Usage + Tier Panel ── */}
+      {/* ── Credit Usage Bar ── */}
       <div className={`grid gap-4 ${showTierPanel ? "grid-cols-1 lg:grid-cols-[1fr_320px]" : "grid-cols-1"}`}>
-        {/* Credit Usage Bar */}
-        <Card>
-          <CardContent className="pt-5 pb-5">
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <p className="text-sm font-semibold text-foreground">Uso do Limite de Crédito</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {fmt(usedCredit)} de {fmt(toleranceLimit)} (com 15% de tolerância)
+        <div className="space-y-4">
+          <Card>
+            <CardContent className="pt-5 pb-5">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Uso do Limite de Crédito</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {fmt(usedCredit)} de {fmt(toleranceLimit)} (com 15% de tolerância)
+                  </p>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Atualizado em {new Date().toLocaleDateString("pt-BR")} às {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                 </p>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Atualizado em {new Date().toLocaleDateString("pt-BR")} às {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-              </p>
-            </div>
-            <Progress value={usagePercent} className="h-2" />
-            <p className="text-xs text-muted-foreground mt-2">{usagePercent.toFixed(1)}% utilizado</p>
-          </CardContent>
-        </Card>
+              <Progress value={usagePercent} className="h-2" />
+              <p className="text-xs text-muted-foreground mt-2">{usagePercent.toFixed(1)}% utilizado</p>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Tier Panel */}
         {showTierPanel && tiers.length > 0 && (
-          <Card>
+          <Card className="row-span-2">
             <CardContent className="pt-5 pb-5">
               <div className="flex items-start justify-between mb-1">
                 <div>
@@ -299,9 +300,7 @@ const ProducerBilling = () => {
                   const currentIdx = tiers.findIndex((x) => x.key === currentTierKey);
                   const tIdx = tiers.findIndex((x) => x.key === t.key);
                   const isPast = tIdx < currentIdx;
-                  const isNext = tIdx === currentIdx + 1;
 
-                  // Calculate what's needed to reach next tier
                   const paidCount = transactions.filter(tx => tx.type === "credit").length;
                   const thresholds = [0, 2, 5, 10, 15, 20];
                   const neededRecharges = thresholds[tIdx] ?? 0;
@@ -326,7 +325,7 @@ const ProducerBilling = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className={`text-sm font-semibold ${isCurrent ? "text-foreground" : isPast ? "text-muted-foreground" : "text-muted-foreground/60"}`}>
-                            {tierMeta.title === t.label ? TIER_META[t.key]?.title ?? t.label : t.label}
+                            {TIER_META[t.key]?.title ?? t.label}
                           </span>
                           {isCurrent && (
                             <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary/30 text-primary">Atual</Badge>
