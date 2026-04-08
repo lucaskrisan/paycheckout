@@ -224,7 +224,7 @@ const Products = () => {
                     )}
                   </div>
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">{fmt(p.price)}</TableCell>
+                <TableCell className="text-sm text-muted-foreground">{fmt(p.price, p.currency)}</TableCell>
                 <TableCell>
                   {(p as any).moderation_status === "pending_review" ? (
                     <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
