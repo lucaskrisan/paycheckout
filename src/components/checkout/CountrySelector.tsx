@@ -334,4 +334,4 @@ const CountrySelector = ({ selected, onChange }: CountrySelectorProps) => {
 };
 
 export default CountrySelector;
-export { countries, getFlagEmoji };
+export { countries, getFlagUrl, FlagImg };
