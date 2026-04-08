@@ -222,13 +222,6 @@ const Dashboard = () => {
           fmt={fmt}
           tooltip="Valor médio por venda aprovada"
         />
-        <DashboardHeroCard
-          label="Lucro"
-          value={totalLiquido}
-          fmt={fmt}
-          variant="accent"
-          tooltip="Receita líquida após taxas"
-        />
       </div>
 
       {/* ROW 2 — Chart grande à esquerda + 6 metric cards à direita (2x3 grid) */}
