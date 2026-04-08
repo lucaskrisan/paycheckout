@@ -64,12 +64,10 @@ const DashboardHeaderBar = memo(function DashboardHeaderBar({
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
       <h1 className="text-xl font-bold text-foreground">Dashboard</h1>
       <div className="flex items-center gap-2 flex-wrap">
-        </div>
-
         {/* Currency Selector */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-9 w-9 border border-border bg-background">
+            <Button variant="ghost" size="icon" className="h-9 w-9 border border-white/[0.06] bg-card/70 backdrop-blur-sm">
               <DollarSign className="w-4 h-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -90,7 +88,7 @@ const DashboardHeaderBar = memo(function DashboardHeaderBar({
         <Button
           variant="ghost"
           size="icon"
-          className="h-9 w-9"
+          className="h-9 w-9 border border-white/[0.06] bg-card/70 backdrop-blur-sm"
           onClick={onRefresh}
           disabled={refreshing}
         >
@@ -98,7 +96,7 @@ const DashboardHeaderBar = memo(function DashboardHeaderBar({
         </Button>
         
         <Select value={period} onValueChange={(v) => onPeriodChange(v as Period)}>
-          <SelectTrigger className="w-[150px] h-9 text-sm bg-background border-border">
+          <SelectTrigger className="w-[150px] h-9 text-sm bg-card/70 backdrop-blur-sm border-white/[0.06]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -110,7 +108,7 @@ const DashboardHeaderBar = memo(function DashboardHeaderBar({
           </SelectContent>
         </Select>
         <Select value={selectedProductId} onValueChange={onProductChange}>
-          <SelectTrigger className="w-[170px] h-9 text-sm bg-background border-border">
+          <SelectTrigger className="w-[170px] h-9 text-sm bg-card/70 backdrop-blur-sm border-white/[0.06]">
             <SelectValue placeholder="Todos os produtos" />
           </SelectTrigger>
           <SelectContent>
