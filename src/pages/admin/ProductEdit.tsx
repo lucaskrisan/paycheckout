@@ -1049,8 +1049,7 @@ const ProductEdit = () => {
                     )}
                   </div>
                 </div>
-              </div>
-              </div>
+               </div>
 
               {/* Upsell One-Click pós-compra */}
               <div className="grid lg:grid-cols-12 gap-8">
