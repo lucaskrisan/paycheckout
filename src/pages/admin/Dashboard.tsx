@@ -1,10 +1,8 @@
 // @ts-nocheck
-import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import {
-  DollarSign,
-  TrendingUp,
   CreditCard,
   RefreshCcw,
   ShoppingCart,
@@ -12,6 +10,7 @@ import {
   Clock,
   Megaphone,
   Leaf,
+  TrendingUp,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCheckoutPresence } from "@/hooks/useCheckoutPresence";
@@ -19,6 +18,8 @@ import GatewayAlerts from "@/components/admin/GatewayAlerts";
 import DashboardHeaderBar, { type Period } from "@/components/admin/dashboard/DashboardHeader";
 import DashboardChart from "@/components/admin/dashboard/DashboardChart";
 import DashboardMetricCard from "@/components/admin/dashboard/DashboardMetricCard";
+import DashboardHeroCard from "@/components/admin/dashboard/DashboardHeroCard";
+import DashboardStateMap from "@/components/admin/dashboard/DashboardStateMap";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -50,7 +51,7 @@ const Dashboard = () => {
   const fetchOrders = useCallback(async (p: Period) => {
     let query = supabase
       .from("orders")
-      .select("id, created_at, status, amount, platform_fee_amount, payment_method, product_id, metadata")
+      .select("id, created_at, status, amount, platform_fee_amount, payment_method, product_id, metadata, customer_state")
       .order("created_at", { ascending: false });
 
     const dateFrom = getDateFilter(p);
@@ -91,7 +92,6 @@ const Dashboard = () => {
     finally { if (isRefresh) setRefreshing(false); }
   }, [fetchAndSetData, user]);
 
-  // Background sync
   useEffect(() => {
     if (!user) return;
     const doSync = async () => {
@@ -107,7 +107,6 @@ const Dashboard = () => {
 
   useEffect(() => { loadData(false); }, [loadData]);
 
-  // Realtime debounced refresh
   useEffect(() => {
     if (!user) return;
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -158,6 +157,20 @@ const Dashboard = () => {
   const recoveredCarts = abandonedCarts.filter((c) => c.recovered);
   const recoveryRate = totalAbandoned > 0 ? ((recoveredCarts.length / totalAbandoned) * 100).toFixed(0) : "0";
 
+  // Sales by state
+  const salesByState = useMemo(() => {
+    const map: Record<string, { count: number; revenue: number }> = {};
+    approved.forEach((o) => {
+      const st = o.customer_state?.toUpperCase()?.trim();
+      if (st && st.length === 2) {
+        if (!map[st]) map[st] = { count: 0, revenue: 0 };
+        map[st].count++;
+        map[st].revenue += Number(o.amount || 0);
+      }
+    });
+    return map;
+  }, [approved]);
+
   const chartData = useMemo(() => {
     const days: Record<string, number> = {};
     const now = new Date();
@@ -177,18 +190,12 @@ const Dashboard = () => {
 
   const fmt = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
 
-  const metricCards = [
-    { icon: DollarSign, label: totalTaxas > 0 ? "Valor líquido" : "Faturamento", value: totalTaxas > 0 ? fmt(totalLiquido) : fmt(totalBruto), sub: totalTaxas > 0 ? `Bruto: ${fmt(totalBruto)} (taxa: ${fmt(totalTaxas)})` : undefined },
-    { icon: TrendingUp, label: "Vendas", value: String(totalVendas) },
-    { icon: CreditCard, label: "Aprovação cartão", value: `${cardApprovalRate} %` },
-    { icon: Globe, label: "Vendas PIX", value: fmt(pixApproved.reduce((s, o) => s + Number(o.amount), 0)), sub: `${pixConversionRate} %` },
-    { icon: RefreshCcw, label: "Reembolso", value: `${refundRate} %` },
-    { icon: Megaphone, label: "Vendas Pagas (Ads)", value: `${paidSales.length}`, sub: fmt(paidRevenue) },
-    { icon: Leaf, label: "Vendas Orgânicas", value: `${organicSales.length}`, sub: fmt(organicRevenue) },
-  ];
+  const heroLabel = totalTaxas > 0 ? "Valor líquido" : "Faturamento";
+  const heroValue = totalTaxas > 0 ? totalLiquido : totalBruto;
+  const heroSub = totalTaxas > 0 ? `Bruto: ${fmt(totalBruto)} · Taxa: ${fmt(totalTaxas)}` : undefined;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <DashboardHeaderBar
         period={period}
         onPeriodChange={setPeriod}
@@ -202,19 +209,53 @@ const Dashboard = () => {
 
       <GatewayAlerts />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <DashboardChart data={chartData} fmt={fmt} />
-        <div className="flex flex-col gap-4">
-          {metricCards.slice(0, 2).map((card, i) => (
-            <DashboardMetricCard key={i} {...card} />
-          ))}
-        </div>
+      {/* Hero Row: Revenue + Sales count */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <DashboardHeroCard
+          label={heroLabel}
+          value={heroValue}
+          fmt={fmt}
+          sublabel={heroSub}
+        />
+        <DashboardHeroCard
+          label="Vendas aprovadas"
+          value={totalVendas}
+          fmt={(v) => String(Math.round(v))}
+          sublabel={`${approved.length} de ${filtered.length} pedidos`}
+        />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {metricCards.slice(2).map((card, i) => (
-          <DashboardMetricCard key={i} {...card} />
-        ))}
+      {/* Chart + State Map */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2">
+          <DashboardChart data={chartData} fmt={fmt} />
+        </div>
+        <DashboardStateMap salesByState={salesByState} fmt={fmt} />
+      </div>
+
+      {/* Metric cards grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <DashboardMetricCard icon={CreditCard} label="Aprovação cartão" value={`${cardApprovalRate}%`} accent />
+        <DashboardMetricCard
+          icon={Globe}
+          label="Vendas PIX"
+          value={fmt(pixApproved.reduce((s, o) => s + Number(o.amount), 0))}
+          sub={`${pixConversionRate}% conversão`}
+          accent
+        />
+        <DashboardMetricCard icon={RefreshCcw} label="Reembolso" value={`${refundRate}%`} />
+        <DashboardMetricCard
+          icon={Megaphone}
+          label="Vendas Pagas (Ads)"
+          value={String(paidSales.length)}
+          sub={fmt(paidRevenue)}
+        />
+        <DashboardMetricCard
+          icon={Leaf}
+          label="Vendas Orgânicas"
+          value={String(organicSales.length)}
+          sub={fmt(organicRevenue)}
+        />
         <DashboardMetricCard
           icon={Clock}
           label="Vendas pendentes"
@@ -228,6 +269,11 @@ const Dashboard = () => {
           value={String(totalAbandoned)}
           sub={`${recoveryRate}% recuperados`}
           onClick={() => navigate("/admin/abandoned")}
+        />
+        <DashboardMetricCard
+          icon={TrendingUp}
+          label="Ticket médio"
+          value={totalVendas > 0 ? fmt(totalBruto / totalVendas) : fmt(0)}
         />
       </div>
     </div>
