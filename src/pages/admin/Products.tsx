@@ -32,6 +32,7 @@ interface Product {
   is_subscription: boolean;
   moderation_status?: string;
   rejection_reason?: string;
+  currency?: string;
 }
 
 const Products = () => {
