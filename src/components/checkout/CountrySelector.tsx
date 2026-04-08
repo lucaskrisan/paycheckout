@@ -233,14 +233,22 @@ const countries: Country[] = [
   { code: "ZW", name: "Zimbabwe" },
 ];
 
-const getFlagEmoji = (code: string) => {
-  if (code === "AC" || code === "XK") return "🏳️";
-  return code
-    .toUpperCase()
-    .split("")
-    .map((c) => String.fromCodePoint(0x1f1e6 + c.charCodeAt(0) - 65))
-    .join("");
+const getFlagUrl = (code: string) => {
+  const c = code.toLowerCase();
+  return `https://flagcdn.com/w40/${c}.png`;
 };
+
+const FlagImg = ({ code, size = "w-5 h-4" }: { code: string; size?: string }) => (
+  <img
+    src={getFlagUrl(code)}
+    alt={code}
+    className={`${size} object-cover rounded-sm inline-block`}
+    loading="lazy"
+    onError={(e) => {
+      (e.target as HTMLImageElement).style.display = "none";
+    }}
+  />
+);
 
 interface CountrySelectorProps {
   selected: string;
@@ -278,7 +286,7 @@ const CountrySelector = ({ selected, onChange }: CountrySelectorProps) => {
         onClick={() => setOpen(!open)}
         className="flex items-center gap-2 h-11 px-3 bg-white border border-[#D5D9D9] rounded-xl hover:border-[#007185] transition-colors w-full"
       >
-        <span className="text-xl leading-none">{getFlagEmoji(selected)}</span>
+        <FlagImg code={selected} />
         <span className="text-sm text-[#0F1111] truncate flex-1 text-left">
           {selectedCountry?.name || selected}
         </span>
@@ -310,7 +318,7 @@ const CountrySelector = ({ selected, onChange }: CountrySelectorProps) => {
                   c.code === selected ? "bg-[#EDFDFF]" : ""
                 }`}
               >
-                <span className="text-lg leading-none">{getFlagEmoji(c.code)}</span>
+                <FlagImg code={c.code} />
                 <span className="text-sm text-[#0F1111] flex-1 truncate">{c.name}</span>
                 <span className="text-xs text-[#565959] font-mono">{c.code}</span>
               </button>
@@ -326,4 +334,4 @@ const CountrySelector = ({ selected, onChange }: CountrySelectorProps) => {
 };
 
 export default CountrySelector;
-export { countries, getFlagEmoji };
+export { countries, getFlagUrl, FlagImg };
