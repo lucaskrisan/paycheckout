@@ -210,7 +210,7 @@ const Dashboard = () => {
       <GatewayAlerts />
 
       {/* Hero Row: Revenue + Sales count */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <DashboardHeroCard
           label={heroLabel}
           value={heroValue}
