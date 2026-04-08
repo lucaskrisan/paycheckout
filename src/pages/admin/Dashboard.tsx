@@ -192,7 +192,14 @@ const Dashboard = () => {
     return Object.entries(days).map(([name, total]) => ({ name, total }));
   }, [approved, period]);
 
-  const fmt = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
+  const exchangeRates: Record<Currency, number> = { BRL: 1, USD: 0.18, EUR: 0.16 };
+  const currencySymbols: Record<Currency, string> = { BRL: "R$", USD: "$", EUR: "€" };
+
+  const fmt = (v: number) => {
+    const converted = v * exchangeRates[currency];
+    if (currency === "BRL") return `R$ ${converted.toFixed(2).replace(".", ",")}`;
+    return `${currencySymbols[currency]} ${converted.toFixed(2)}`;
+  };
 
   return (
     <div className="space-y-3">
@@ -205,6 +212,8 @@ const Dashboard = () => {
         liveVisitors={liveVisitors}
         refreshing={refreshing}
         onRefresh={() => loadData(true)}
+        currency={currency}
+        onCurrencyChange={setCurrency}
       />
 
       <GatewayAlerts />
