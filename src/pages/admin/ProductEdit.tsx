@@ -115,6 +115,7 @@ const ProductEdit = () => {
     billing_cycle: "monthly",
     show_coupon: true,
     delivery_method: "appsell" as "panttera" | "appsell" | "email",
+    currency: "BRL" as "BRL" | "USD",
     payment_settings: {
       payment_method: "all",
       max_installments: 12,
