@@ -1265,7 +1265,7 @@ const ProductEdit = () => {
                             <TableRow key={ob.id}>
                               <TableCell className="text-sm text-muted-foreground">{idx + 1}</TableCell>
                               <TableCell className="text-sm text-foreground">
-                                {ob.bump_product?.name || ob.title} — R$ {Number(ob.bump_product?.price || 0).toFixed(2).replace(".", ",")}
+                                {ob.bump_product?.name || ob.title} — {form.currency === "USD" ? "$" : "R$"} {Number(ob.bump_product?.price || 0).toFixed(2).replace(".", form.currency === "USD" ? "." : ",")}
                               </TableCell>
                               <TableCell>
                                 <button
