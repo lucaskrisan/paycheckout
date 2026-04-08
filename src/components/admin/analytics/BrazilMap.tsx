@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useMemo, useState, useCallback } from "react";
-import { Globe } from "@/components/ui/cobe-globe";
+import { GlobePulse } from "@/components/ui/cobe-globe-pulse";
 
 const STATE_NAMES: Record<string, string> = {
   AC: "Acre", AL: "Alagoas", AM: "Amazonas", AP: "Amapá",
@@ -34,38 +34,23 @@ const BrazilMap = ({ salesByState }: BrazilMapProps) => {
   const [selected, setSelected] = useState<string | null>(null);
 
   const markers = useMemo(() => {
-    const maxCount = Math.max(...Object.values(salesByState).map((s) => s.count), 1);
     return Object.entries(salesByState)
       .filter(([uf]) => STATE_COORDS[uf])
-      .map(([uf, data]) => ({
+      .map(([uf, data], i) => ({
         id: uf.toLowerCase(),
         location: STATE_COORDS[uf],
         label: `${uf}: ${data.count} vendas`,
+        delay: (i * 0.3) % 2,
       }));
-  }, [salesByState]);
-
-  const arcs = useMemo(() => {
-    const sorted = Object.entries(salesByState)
-      .filter(([uf]) => STATE_COORDS[uf] && uf !== "DF")
-      .sort((a, b) => b[1].revenue - a[1].revenue)
-      .slice(0, 3);
-    return sorted.map(([uf]) => ({
-      id: `${uf.toLowerCase()}-df`,
-      from: STATE_COORDS[uf],
-      to: STATE_COORDS["DF"],
-    }));
   }, [salesByState]);
 
   const handleMarkerClick = useCallback((markerId: string) => {
     setSelected((prev) => (prev === markerId ? null : markerId));
   }, []);
 
-  const selectedData = selected
-    ? salesByState[selected.toUpperCase()]
-    : null;
+  const selectedData = selected ? salesByState[selected.toUpperCase()] : null;
   const selectedUF = selected?.toUpperCase() || "";
 
-  // sorted list for the legend below
   const sortedStates = useMemo(() => {
     return Object.entries(salesByState)
       .filter(([uf]) => STATE_COORDS[uf])
@@ -75,25 +60,21 @@ const BrazilMap = ({ salesByState }: BrazilMapProps) => {
   return (
     <div className="flex flex-col items-center gap-3">
       <div className="relative w-full max-w-[360px]">
-        <Globe
+        <GlobePulse
           markers={markers}
-          arcs={arcs}
           className="w-full"
-          markerColor={[0.2, 0.8, 0.4]}
-          baseColor={[0.15, 0.15, 0.2]}
-          arcColor={[0.2, 0.9, 0.5]}
-          glowColor={[0.1, 0.3, 0.15]}
+          baseColor={[0.12, 0.14, 0.18]}
+          markerColor={[0.2, 0.85, 0.45]}
+          glowColor={[0.05, 0.15, 0.08]}
           dark={1}
           mapBrightness={6}
-          markerSize={0.06}
-          markerElevation={0.03}
-          speed={0.002}
           theta={0.3}
+          speed={0.002}
+          pulseColor="#22c55e"
           onMarkerClick={handleMarkerClick}
         />
       </div>
 
-      {/* Selected state tooltip */}
       {selectedData && (
         <div className="bg-card border border-primary/30 rounded-lg px-4 py-3 text-center shadow-lg shadow-primary/10 animate-in fade-in slide-in-from-bottom-2 duration-200">
           <p className="text-xs text-muted-foreground">{STATE_NAMES[selectedUF] || selectedUF}</p>
@@ -102,7 +83,6 @@ const BrazilMap = ({ salesByState }: BrazilMapProps) => {
         </div>
       )}
 
-      {/* State pills */}
       <div className="flex flex-wrap gap-1.5 justify-center max-w-[360px]">
         {sortedStates.map(([uf, data]) => (
           <button
