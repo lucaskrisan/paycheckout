@@ -26,8 +26,7 @@ const PixPayment = ({ totalAmount, qrCodeData, pixCode }: PixPaymentProps) => {
       {/* PIX info banner */}
       <div className="flex items-center gap-3 bg-gradient-to-r from-[#F0FAF8] to-[#F7FAFA] border border-[#B8E0D8] border-l-4 border-l-[#067D62] rounded-xl p-4">
         <div className="p-2 rounded-lg bg-[#067D62]/10">
-          <Zap className="w-5 h-5 text-[#067D62]" />
-        </div>
+          <img src={pixIcon} alt="PIX" className="w-5 h-5" />
         <div>
           <p className="text-sm font-bold text-[#0F1111]">Pagamento instantâneo via PIX</p>
           <p className="text-xs text-[#565959] mt-0.5">
