@@ -301,6 +301,22 @@ const Products = () => {
                 </Select>
               </div>
 
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Moeda</Label>
+                <Select value={currency} onValueChange={(v) => setCurrency(v as "BRL" | "USD")}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BRL">🇧🇷 BRL — Real Brasileiro</SelectItem>
+                    <SelectItem value="USD">🇺🇸 USD — Dólar Americano</SelectItem>
+                  </SelectContent>
+                </Select>
+                {currency === "USD" && (
+                  <p className="text-xs text-muted-foreground">Checkout será em inglês, pagamento via Stripe (cartão internacional).</p>
+                )}
+              </div>
+
               <Button onClick={() => setStep(2)} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium">
                 Continuar →
               </Button>
