@@ -286,7 +286,7 @@ const CountrySelector = ({ selected, onChange }: CountrySelectorProps) => {
         onClick={() => setOpen(!open)}
         className="flex items-center gap-2 h-11 px-3 bg-white border border-[#D5D9D9] rounded-xl hover:border-[#007185] transition-colors w-full"
       >
-        <span className="text-xl leading-none">{getFlagEmoji(selected)}</span>
+        <FlagImg code={selected} />
         <span className="text-sm text-[#0F1111] truncate flex-1 text-left">
           {selectedCountry?.name || selected}
         </span>
