@@ -8,7 +8,6 @@ export interface CreditCardData {
   expiry: string;
   cvv: string;
   installments: string;
-  postalCode: string;
 }
 
 interface CreditCardFormProps {
