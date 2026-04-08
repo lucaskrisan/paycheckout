@@ -44,6 +44,7 @@ const Products = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
   const [paymentType, setPaymentType] = useState<"one_time" | "subscription">("one_time");
+  const [currency, setCurrency] = useState<"BRL" | "USD">("BRL");
   const [newName, setNewName] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [newSalesPage, setNewSalesPage] = useState("");
