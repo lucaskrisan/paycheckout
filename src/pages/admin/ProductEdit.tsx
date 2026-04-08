@@ -725,8 +725,8 @@ const ProductEdit = () => {
                           {parseFloat(form.price) > 0 ? (
                             <TableRow>
                               <TableCell className="text-sm">{form.name || "Plano padrão"}</TableCell>
-                              <TableCell className="text-sm">R$ {parseFloat(form.price).toFixed(2).replace(".", ",")}</TableCell>
-                              <TableCell className="text-sm">R$ {parseFloat(form.price).toFixed(2).replace(".", ",")}</TableCell>
+                              <TableCell className="text-sm">{form.currency === "USD" ? "$" : "R$"} {parseFloat(form.price).toFixed(2).replace(".", form.currency === "USD" ? "." : ",")}</TableCell>
+                              <TableCell className="text-sm">{form.currency === "USD" ? "$" : "R$"} {parseFloat(form.price).toFixed(2).replace(".", form.currency === "USD" ? "." : ",")}</TableCell>
                               <TableCell className="text-sm capitalize">
                                 {{
                                   weekly: "Semanal",
@@ -892,7 +892,7 @@ const ProductEdit = () => {
                           <TableRow>
                             <TableCell className="text-sm text-foreground truncate max-w-[200px]">{form.name}</TableCell>
                             <TableCell className="text-sm text-muted-foreground">
-                              {form.price ? `R$ ${Number(form.price).toFixed(2).replace(".", ",")}` : "—"}
+                              {form.price ? `${form.currency === "USD" ? "$" : "R$"} ${Number(form.price).toFixed(2).replace(".", form.currency === "USD" ? "." : ",")}` : "—"}
                             </TableCell>
                             <TableCell>
                               <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${
@@ -1265,7 +1265,7 @@ const ProductEdit = () => {
                             <TableRow key={ob.id}>
                               <TableCell className="text-sm text-muted-foreground">{idx + 1}</TableCell>
                               <TableCell className="text-sm text-foreground">
-                                {ob.bump_product?.name || ob.title} — R$ {Number(ob.bump_product?.price || 0).toFixed(2).replace(".", ",")}
+                                {ob.bump_product?.name || ob.title} — {form.currency === "USD" ? "$" : "R$"} {Number(ob.bump_product?.price || 0).toFixed(2).replace(".", form.currency === "USD" ? "." : ",")}
                               </TableCell>
                               <TableCell>
                                 <button
@@ -1346,7 +1346,7 @@ const ProductEdit = () => {
                           )}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {co.price != null ? `R$ ${Number(co.price).toFixed(2).replace(".", ",")}` : `R$ ${Number(form.price).toFixed(2).replace(".", ",")} (padrão)`}
+                          {co.price != null ? `${form.currency === "USD" ? "$" : "R$"} ${Number(co.price).toFixed(2).replace(".", form.currency === "USD" ? "." : ",")}` : `${form.currency === "USD" ? "$" : "R$"} ${Number(form.price).toFixed(2).replace(".", form.currency === "USD" ? "." : ",")} (padrão)`}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1.5">
@@ -1521,7 +1521,7 @@ const ProductEdit = () => {
                             <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-500">Checkout</span>
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
-                            {form.price ? `R$ ${Number(form.price).toFixed(2).replace(".", ",")}` : "—"}
+                            {form.price ? `${form.currency === "USD" ? "$" : "R$"} ${Number(form.price).toFixed(2).replace(".", form.currency === "USD" ? "." : ",")}` : "—"}
                           </TableCell>
                           <TableCell>
                             <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${form.active ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"}`}>
@@ -1611,7 +1611,7 @@ const ProductEdit = () => {
             <div className="space-y-1.5">
               <Label>Preço</Label>
               <div className="flex">
-                <span className="inline-flex items-center px-3 text-sm text-muted-foreground bg-muted border border-r-0 border-input rounded-l-md">R$</span>
+                <span className="inline-flex items-center px-3 text-sm text-muted-foreground bg-muted border border-r-0 border-input rounded-l-md">{form.currency === "USD" ? "$" : "R$"}</span>
                 <Input type="number" step="0.01" value={planPrice} onChange={(e) => setPlanPrice(e.target.value)} className="rounded-l-none rounded-r-none" />
                 <Select defaultValue="BRL">
                   <SelectTrigger className="w-24 rounded-l-none border-l-0">
