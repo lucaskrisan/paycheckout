@@ -1,6 +1,71 @@
 // @ts-nocheck
-import { memo, useMemo } from "react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useMemo } from "react";
+import { Globe } from "@/components/ui/cobe-globe";
+
+const STATE_COORDS: Record<string, [number, number]> = {
+  AC: [-9.9747, -67.8100], AL: [-9.6658, -35.7353], AM: [-3.1190, -60.0217],
+  AP: [0.0349, -51.0694], BA: [-12.9714, -38.5124], CE: [-3.7172, -38.5433],
+  DF: [-15.7975, -47.8919], ES: [-20.3155, -40.3128], GO: [-16.6869, -49.2648],
+  MA: [-2.5297, -44.2825], MG: [-19.9167, -43.9345], MS: [-20.4697, -54.6201],
+  MT: [-15.5960, -56.0969], PA: [-1.4558, -48.5024], PB: [-7.1195, -34.8450],
+  PE: [-8.0476, -34.8770], PI: [-5.0892, -42.8019], PR: [-25.4284, -49.2733],
+  RJ: [-22.9068, -43.1729], RN: [-5.7945, -35.2110], RO: [-8.7612, -63.9004],
+  RR: [2.8195, -60.6714], RS: [-30.0346, -51.2177], SC: [-27.5954, -48.5480],
+  SE: [-10.9091, -37.0677], SP: [-23.5505, -46.6333], TO: [-10.1689, -48.3317],
+};
+
+interface BrazilMapProps {
+  salesByState: Record<string, { count: number; revenue: number }>;
+}
+
+const BrazilMap = ({ salesByState }: BrazilMapProps) => {
+  const markers = useMemo(() => {
+    return Object.entries(salesByState)
+      .filter(([uf]) => STATE_COORDS[uf])
+      .map(([uf, data]) => ({
+        id: uf.toLowerCase(),
+        location: STATE_COORDS[uf],
+        label: `${uf}: ${data.count} vendas`,
+      }));
+  }, [salesByState]);
+
+  const arcs = useMemo(() => {
+    const sorted = Object.entries(salesByState)
+      .filter(([uf]) => STATE_COORDS[uf] && uf !== "DF")
+      .sort((a, b) => b[1].revenue - a[1].revenue)
+      .slice(0, 3);
+    return sorted.map(([uf]) => ({
+      id: `${uf.toLowerCase()}-df`,
+      from: STATE_COORDS[uf],
+      to: STATE_COORDS["DF"],
+    }));
+  }, [salesByState]);
+
+  return (
+    <div className="flex flex-col items-center">
+      <Globe
+        markers={markers}
+        arcs={arcs}
+        className="w-full max-w-[360px]"
+        markerColor={[0.2, 0.8, 0.4]}
+        baseColor={[0.15, 0.15, 0.2]}
+        arcColor={[0.2, 0.9, 0.5]}
+        glowColor={[0.1, 0.3, 0.15]}
+        dark={1}
+        mapBrightness={6}
+        markerSize={0.03}
+        markerElevation={0.02}
+        speed={0.002}
+        theta={0.3}
+      />
+      <p className="text-xs text-muted-foreground mt-2">
+        Arraste para girar • {markers.length} estados com vendas
+      </p>
+    </div>
+  );
+};
+
+export default BrazilMap;
 
 const STATES: Record<string, { name: string; path: string; cx: number; cy: number }> = {
   AC: { name: "Acre", path: "M15.3,195.4L112.7,235.4L112.0,236.4L110.8,237.1L109.5,238.2L108.7,238.8L107.8,239.9L106.9,240.9L105.5,241.8L103.7,241.9L102.9,242.6L101.6,242.9L100.2,244.2L98.6,245.6L96.9,247.3L95.7,246.7L94.5,246.7L92.9,246.9L92.1,248.0L91.2,249.4L90.3,251.0L88.7,251.9L87.0,252.6L83.0,253.1L82.6,251.9L81.5,252.1L80.2,251.7L79.0,251.5L77.7,251.4L76.3,251.0L75.0,251.1L74.0,250.9L72.8,251.1L71.0,251.1L69.2,251.4L67.5,250.8L66.0,251.0L65.0,251.5L63.8,252.1L62.3,252.5L60.3,252.7L58.8,251.3L57.3,234.0L58.3,232.8L57.4,230.8L57.8,230.0L58.3,229.1L58.2,228.6L57.0,229.2L55.9,230.1L54.8,231.2L53.4,232.1L51.8,233.9L49.3,235.3L47.0,236.6L35.6,235.4L34.6,233.5L34.1,231.6L32.9,229.6L31.3,229.1L29.7,228.9L28.4,228.6L20.8,228.2L22.6,225.7L24.1,224.4L24.3,221.8L22.7,219.6L20.6,217.1L19.9,214.7L17.9,213.3L16.4,211.8L15.5,209.4L13.8,206.7L13.2,205.1L13.7,203.5L11.5,201.9L10.1,200.3L10.6,197.7L12.7,197.5L13.9,195.9L15.3,195.4Z", cx: 60.6, cy: 234.6 },
