@@ -91,7 +91,7 @@ const Checkout = () => {
         const configPrice = (builderRes.data as any)?.price;
         if (configPrice != null && configPrice > 0) p.price = Number(configPrice);
         setProduct(p);
-        if (p.is_subscription) setPaymentMethod("credit_card");
+        if (p.is_subscription || p.currency === 'USD') setPaymentMethod("credit_card");
         if (p.user_id) {
           const [{ data: settings }, { data: billingAcc }, { data: ownerRoles }] = await Promise.all([
             supabase.from("checkout_settings").select("logo_url, primary_color, custom_css, company_name").eq("user_id", p.user_id).maybeSingle(),
