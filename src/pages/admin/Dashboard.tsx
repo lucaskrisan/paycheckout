@@ -133,25 +133,33 @@ const Dashboard = () => {
   const totalRefunded = refunded.reduce((s, o) => s + Number(o.amount || 0), 0);
   const totalChargeback = chargedback.reduce((s, o) => s + Number(o.amount || 0), 0);
 
-  const cardAttempts = filtered.filter((o) => o.payment_method === "credit_card");
-  const cardApproved = cardAttempts.filter((o) => o.status === "paid" || o.status === "approved");
-  const cardApprovalRate = cardAttempts.length > 0 ? (cardApproved.length / cardAttempts.length) * 100 : 0;
+  // Taxa de aprovação: exclui pedidos pendentes (ainda sem resposta do gateway)
+  const cardDecided = filtered.filter((o) => o.payment_method === "credit_card" && o.status !== "pending");
+  const cardApproved = cardDecided.filter((o) => o.status === "paid" || o.status === "approved");
+  const cardApprovalRate = cardDecided.length > 0 ? (cardApproved.length / cardDecided.length) * 100 : 0;
 
-  const pixAttempts = filtered.filter((o) => o.payment_method === "pix");
-  const pixApproved = pixAttempts.filter((o) => o.status === "paid" || o.status === "approved");
-  const pixApprovalRate = pixAttempts.length > 0 ? (pixApproved.length / pixAttempts.length) * 100 : 0;
+  const pixDecided = filtered.filter((o) => o.payment_method === "pix" && o.status !== "pending");
+  const pixApproved = pixDecided.filter((o) => o.status === "paid" || o.status === "approved");
+  const pixApprovalRate = pixDecided.length > 0 ? (pixApproved.length / pixDecided.length) * 100 : 0;
 
   const paidSales = approved.filter((o) => (o.metadata as any)?.utm_source);
   const organicSales = approved.filter((o) => !(o.metadata as any)?.utm_source);
   const organicRevenue = organicSales.reduce((s, o) => s + Number(o.amount || 0), 0);
   const paidRevenue = paidSales.reduce((s, o) => s + Number(o.amount || 0), 0);
 
-  const totalAbandoned = abandonedCarts.length;
-  const recoveredCarts = abandonedCarts.filter((c) => c.recovered);
+  // Carrinhos abandonados filtrados pelo mesmo período
+  const abandonedFiltered = useMemo(() => {
+    const dateFrom = getDateFilter(period);
+    if (!dateFrom) return abandonedCarts;
+    return abandonedCarts.filter((c) => c.created_at >= dateFrom);
+  }, [abandonedCarts, period, getDateFilter]);
+  const totalAbandoned = abandonedFiltered.length;
+  const recoveredCarts = abandonedFiltered.filter((c) => c.recovered);
   const recoveryRate = totalAbandoned > 0 ? ((recoveredCarts.length / totalAbandoned) * 100).toFixed(0) : "0";
 
   const avgTicket = totalVendas > 0 ? totalBruto / totalVendas : 0;
-  const margin = totalBruto > 0 ? ((totalLiquido / totalBruto) * 100) : 0;
+  // Retenção: % do faturamento que sobra após taxas da plataforma
+  const retentionRate = totalBruto > 0 ? ((totalLiquido / totalBruto) * 100) : 0;
 
   const salesByState = useMemo(() => {
     const map: Record<string, { count: number; revenue: number }> = {};
