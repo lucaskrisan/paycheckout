@@ -180,8 +180,7 @@ const Checkout = () => {
   );
 
   const isUSD = product.currency === "USD";
-  const currencySymbol = isUSD ? "$" : "R$";
-  const formatPrice = (v: number) => isUSD ? `$ ${v.toFixed(2)}` : `R$ ${v.toFixed(2).replace(".", ",")}`;
+  const fmtPrice = (v: number) => isUSD ? `$ ${v.toFixed(2)}` : `R$ ${v.toFixed(2).replace(".", ",")}`;
 
   const couponDiscount = coupon ? (coupon.discount_type === "percent" ? Math.round(product.price * (coupon.discount_value / 100) * 100) / 100 : coupon.discount_value) : 0;
   const bumpTotal = orderBumps.filter((b) => selectedBumps.has(b.id)).reduce((sum, b) => sum + (b.bump_product?.price || 0), 0);
