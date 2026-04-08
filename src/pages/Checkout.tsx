@@ -288,7 +288,7 @@ const Checkout = () => {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#F2F4F8", fontFamily: "Arial, sans-serif" }}>
-      <CountdownTimer minutes={countdownMinutes} />
+      <CountdownTimer minutes={countdownMinutes} isUSD={isUSD} />
       <div className="max-w-[620px] mx-auto px-4 pt-16 pb-8">
         <div className="bg-white rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.05)] overflow-hidden">
           <div className="p-5 sm:p-6 space-y-5">
