@@ -318,7 +318,7 @@ const CountrySelector = ({ selected, onChange }: CountrySelectorProps) => {
                   c.code === selected ? "bg-[#EDFDFF]" : ""
                 }`}
               >
-                <span className="text-lg leading-none">{getFlagEmoji(c.code)}</span>
+                <FlagImg code={c.code} />
                 <span className="text-sm text-[#0F1111] flex-1 truncate">{c.name}</span>
                 <span className="text-xs text-[#565959] font-mono">{c.code}</span>
               </button>
