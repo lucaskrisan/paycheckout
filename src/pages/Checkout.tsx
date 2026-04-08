@@ -179,9 +179,13 @@ const Checkout = () => {
     </div>
   );
 
+  const isUSD = product.currency === "USD";
+  const currencySymbol = isUSD ? "$" : "R$";
+  const formatPrice = (v: number) => isUSD ? `$ ${v.toFixed(2)}` : `R$ ${v.toFixed(2).replace(".", ",")}`;
+
   const couponDiscount = coupon ? (coupon.discount_type === "percent" ? Math.round(product.price * (coupon.discount_value / 100) * 100) / 100 : coupon.discount_value) : 0;
   const bumpTotal = orderBumps.filter((b) => selectedBumps.has(b.id)).reduce((sum, b) => sum + (b.bump_product?.price || 0), 0);
-  const pixDiscount = paymentMethod === "pix" ? Math.round(product.price * 0.05 * 100) / 100 : 0;
+  const pixDiscount = (!isUSD && paymentMethod === "pix") ? Math.round(product.price * 0.05 * 100) / 100 : 0;
   const frontEndAmount = Math.round((product.price - pixDiscount - couponDiscount) * 100) / 100;
   const finalAmount = Math.round((Math.max(frontEndAmount, 0) + bumpTotal) * 100) / 100;
 
