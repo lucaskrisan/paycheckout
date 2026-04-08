@@ -20,7 +20,7 @@ import DashboardChart from "@/components/admin/dashboard/DashboardChart";
 import DashboardMetricCard from "@/components/admin/dashboard/DashboardMetricCard";
 import DashboardHeroCard from "@/components/admin/dashboard/DashboardHeroCard";
 import DashboardStateMap from "@/components/admin/dashboard/DashboardStateMap";
-import DashboardCustomizer, { type MetricConfig } from "@/components/admin/dashboard/DashboardCustomizer";
+import type { MetricConfig } from "@/components/admin/dashboard/DashboardCustomizer";
 import { toast } from "sonner";
 
 const ALL_METRICS: MetricConfig[] = [
