@@ -353,7 +353,9 @@ const Checkout = () => {
               {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : (
                 <span className="flex items-center justify-center gap-2">
                   <Lock className="w-4 h-4" />
-                  {product.is_subscription ? "Assinar agora" : paymentMethod === "pix" ? `Pagar ${finalAmount.toFixed(2).replace(".", ",")} com PIX` : submitLabel || "Finalizar compra"}
+                  {isUSD
+                    ? `Pay $${finalAmount.toFixed(2)}`
+                    : product.is_subscription ? "Assinar agora" : paymentMethod === "pix" ? `Pagar ${finalAmount.toFixed(2).replace(".", ",")} com PIX` : submitLabel || "Finalizar compra"}
                   <ArrowRight className="w-5 h-5" />
                 </span>
               )}
