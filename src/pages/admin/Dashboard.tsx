@@ -200,13 +200,14 @@ const Dashboard = () => {
 
       <GatewayAlerts />
 
-      {/* ROW 1 — 4 hero cards igual UTMify */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* ROW 1 — 3 hero cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <DashboardHeroCard
           label="Faturamento Líquido"
           value={totalLiquido}
           fmt={fmt}
-          tooltip="Receita total menos taxas da plataforma"
+          sublabel={totalTaxas > 0 ? `Bruto: ${fmt(totalBruto)} · Taxa: ${fmt(totalTaxas)}` : undefined}
+          tooltip="Receita aprovada menos taxas da plataforma"
         />
         <DashboardHeroCard
           label="Vendas Aprovadas"
@@ -220,13 +221,6 @@ const Dashboard = () => {
           value={avgTicket}
           fmt={fmt}
           tooltip="Valor médio por venda aprovada"
-        />
-        <DashboardHeroCard
-          label="Lucro"
-          value={totalLiquido}
-          fmt={fmt}
-          variant="accent"
-          tooltip="Receita líquida após taxas"
         />
       </div>
 
