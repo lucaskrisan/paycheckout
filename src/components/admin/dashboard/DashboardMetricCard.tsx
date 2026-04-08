@@ -14,21 +14,25 @@ interface Props {
 const DashboardMetricCard = memo(function DashboardMetricCard({ icon: Icon, label, value, sub, onClick, accent }: Props) {
   return (
     <Card
-      className={`border shadow-none transition-all duration-200 ${
+      className={`border transition-all duration-200 group ${
         accent
-          ? "border-primary/20 bg-primary/5 hover:bg-primary/10"
-          : "border-border bg-card hover:bg-muted/30"
-      }${onClick ? " cursor-pointer" : ""}`}
+          ? "border-primary/25 bg-gradient-to-br from-primary/8 to-primary/3 hover:from-primary/12 hover:to-primary/5 shadow-sm shadow-primary/5"
+          : "border-border bg-card hover:bg-muted/40 shadow-none"
+      }${onClick ? " cursor-pointer hover:scale-[1.02]" : ""}`}
       onClick={onClick}
     >
-      <CardContent className="p-3 flex items-center gap-2.5">
-        <div className={`p-1.5 rounded-md ${accent ? "bg-primary/15" : "bg-muted"}`}>
-          <Icon className={`w-3.5 h-3.5 ${accent ? "text-primary" : "text-muted-foreground"}`} />
+      <CardContent className="p-3.5 flex items-center gap-3">
+        <div className={`p-2 rounded-lg transition-colors ${
+          accent 
+            ? "bg-primary/20 group-hover:bg-primary/25" 
+            : "bg-muted group-hover:bg-muted/80"
+        }`}>
+          <Icon className={`w-4 h-4 ${accent ? "text-primary" : "text-muted-foreground"}`} />
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="text-[11px] text-muted-foreground truncate">{label}</p>
-          <p className="text-base font-bold text-foreground leading-tight">{value}</p>
-          {sub && <p className="text-[10px] text-muted-foreground truncate">{sub}</p>}
+          <p className={`text-lg font-bold leading-tight ${accent ? "text-foreground" : "text-foreground"}`}>{value}</p>
+          {sub && <p className="text-[11px] text-muted-foreground truncate mt-0.5">{sub}</p>}
         </div>
       </CardContent>
     </Card>
