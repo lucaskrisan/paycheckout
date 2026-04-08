@@ -681,7 +681,7 @@ const ProductEdit = () => {
                     <div className="space-y-1.5">
                       <Label>Preço original (riscado)</Label>
                       <div className="flex">
-                        <span className="inline-flex items-center px-3 text-sm text-muted-foreground bg-muted border border-r-0 border-input rounded-l-md">R$</span>
+                        <span className="inline-flex items-center px-3 text-sm text-muted-foreground bg-muted border border-r-0 border-input rounded-l-md">{form.currency === "USD" ? "$" : "R$"}</span>
                         <Input type="number" step="0.01" value={form.original_price} onChange={(e) => setForm({ ...form, original_price: e.target.value })} className="rounded-l-none" placeholder="0,00" />
                       </div>
                     </div>
