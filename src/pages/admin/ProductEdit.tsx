@@ -892,7 +892,7 @@ const ProductEdit = () => {
                           <TableRow>
                             <TableCell className="text-sm text-foreground truncate max-w-[200px]">{form.name}</TableCell>
                             <TableCell className="text-sm text-muted-foreground">
-                              {form.price ? `R$ ${Number(form.price).toFixed(2).replace(".", ",")}` : "—"}
+                              {form.price ? `${form.currency === "USD" ? "$" : "R$"} ${Number(form.price).toFixed(2).replace(".", form.currency === "USD" ? "." : ",")}` : "—"}
                             </TableCell>
                             <TableCell>
                               <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${
