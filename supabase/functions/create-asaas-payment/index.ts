@@ -385,7 +385,7 @@ Deno.serve(async (req) => {
     const saveOrder = async (externalId: string, status: string, method: string): Promise<string | null> => {
       const { data: orderRecord, error: orderError } = await supabaseAdmin
         .from('orders')
-        .insert({
+      .insert({
           amount,
           payment_method: method,
           status,
@@ -393,6 +393,7 @@ Deno.serve(async (req) => {
           customer_id: customerId,
           user_id: productOwnerId,
           external_id: externalId,
+          customer_state: body.customer_state || null,
           platform_fee_percent: feePercent,
           platform_fee_amount: feeAmount,
           metadata: {

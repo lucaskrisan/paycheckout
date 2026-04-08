@@ -411,6 +411,7 @@ Deno.serve(async (req) => {
         customer_id: customerId,
         user_id: productOwnerId,
         external_id: data.id,
+        customer_state: body.customer_state || null,
         platform_fee_percent: feePercent,
         platform_fee_amount: feeAmount,
         metadata: {
