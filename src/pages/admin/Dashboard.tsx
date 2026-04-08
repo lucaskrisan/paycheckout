@@ -225,8 +225,8 @@ const Dashboard = () => {
 
       <GatewayAlerts />
 
-      {/* ROW 1 — 4 hero cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* ROW 1 — 3 hero cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <DashboardHeroCard
           label="Receita Líquida"
           value={totalLiquido}
@@ -249,14 +249,6 @@ const Dashboard = () => {
           fmt={fmt}
           variant="ticket"
           tooltip="Valor médio por venda aprovada"
-        />
-        <DashboardHeroCard
-          label="Visitantes ao Vivo"
-          value={liveVisitors}
-          fmt={(v) => String(Math.round(v))}
-          variant="visitors"
-          sparklineData={visitorSparkline}
-          tooltip="Visitantes ativos agora nos seus checkouts"
         />
       </div>
 
