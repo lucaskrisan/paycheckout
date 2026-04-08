@@ -274,65 +274,85 @@ const Dashboard = () => {
     .filter(Boolean);
 
   return (
-    <div className="space-y-3">
-      <DashboardHeaderBar
-        period={period}
-        onPeriodChange={setPeriod}
-        selectedProductId={selectedProductId}
-        onProductChange={setSelectedProductId}
-        products={products}
-        liveVisitors={liveVisitors}
-        refreshing={refreshing}
-        onRefresh={() => loadData(true)}
-        extraActions={
-          <DashboardCustomizer
-            allMetrics={ALL_METRICS}
-            visibleMetrics={visibleMetrics}
-            metricsOrder={metricsOrder}
-            onSave={savePreferences}
-            saving={savingPrefs}
-          />
-        }
-      />
-
-      <GatewayAlerts />
-
-      {/* Hero Row: Revenue + Sales count */}
-      <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-        <div className="sm:col-span-3">
-          <DashboardHeroCard
-            label={heroLabel}
-            value={heroValue}
-            fmt={fmt}
-            sublabel={heroSub}
-            variant="revenue"
-          />
-        </div>
-        <div className="sm:col-span-2">
-          <DashboardHeroCard
-            label="Vendas aprovadas"
-            value={totalVendas}
-            fmt={(v) => String(Math.round(v))}
-            sublabel={`${approved.length} de ${filtered.length} pedidos`}
-            variant="sales"
-          />
-        </div>
-      </div>
-
-      {/* Chart + State Map */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <div className="lg:col-span-2">
-          <DashboardChart data={chartData} fmt={fmt} />
-        </div>
-        <DashboardStateMap salesByState={salesByState} fmt={fmt} />
-      </div>
-
-      {/* Metric cards grid — customizable */}
-      {renderedMetrics.length > 0 && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-          {renderedMetrics}
-        </div>
+    <div className="flex gap-4">
+      {/* Sidebar de edição — estilo UTMify */}
+      {editingLayout && (
+        <DashboardCustomizer
+          allMetrics={ALL_METRICS}
+          visibleMetrics={visibleMetrics}
+          metricsOrder={metricsOrder}
+          onSave={savePreferences}
+          saving={savingPrefs}
+          editing={editingLayout}
+          onEditingChange={setEditingLayout}
+        />
       )}
+
+      {/* Main dashboard content */}
+      <div className="flex-1 min-w-0 space-y-3">
+        <DashboardHeaderBar
+          period={period}
+          onPeriodChange={setPeriod}
+          selectedProductId={selectedProductId}
+          onProductChange={setSelectedProductId}
+          products={products}
+          liveVisitors={liveVisitors}
+          refreshing={refreshing}
+          onRefresh={() => loadData(true)}
+          extraActions={
+            !editingLayout ? (
+              <DashboardCustomizer
+                allMetrics={ALL_METRICS}
+                visibleMetrics={visibleMetrics}
+                metricsOrder={metricsOrder}
+                onSave={savePreferences}
+                saving={savingPrefs}
+                editing={editingLayout}
+                onEditingChange={setEditingLayout}
+              />
+            ) : null
+          }
+        />
+
+        <GatewayAlerts />
+
+        {/* Hero Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+          <div className="sm:col-span-3">
+            <DashboardHeroCard
+              label={heroLabel}
+              value={heroValue}
+              fmt={fmt}
+              sublabel={heroSub}
+              variant="revenue"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <DashboardHeroCard
+              label="Vendas aprovadas"
+              value={totalVendas}
+              fmt={(v) => String(Math.round(v))}
+              sublabel={`${approved.length} de ${filtered.length} pedidos`}
+              variant="sales"
+            />
+          </div>
+        </div>
+
+        {/* Chart + State Map */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          <div className="lg:col-span-2">
+            <DashboardChart data={chartData} fmt={fmt} />
+          </div>
+          <DashboardStateMap salesByState={salesByState} fmt={fmt} />
+        </div>
+
+        {/* Metric cards grid */}
+        {renderedMetrics.length > 0 && (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+            {renderedMetrics}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
