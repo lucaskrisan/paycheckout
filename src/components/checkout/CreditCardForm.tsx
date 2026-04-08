@@ -23,11 +23,6 @@ const formatCardNumber = (value: string) => {
   return digits.replace(/(\d{4})(?=\d)/g, "$1 ");
 };
 
-const formatCEP = (value: string) => {
-  const digits = value.replace(/\D/g, "").slice(0, 8);
-  if (digits.length > 5) return `${digits.slice(0, 5)}-${digits.slice(5)}`;
-  return digits;
-};
 
 const CreditCardForm = ({ data, onChange, totalAmount, isUSD = false }: CreditCardFormProps) => {
   const handleChange = (field: keyof CreditCardData, value: string) => {
