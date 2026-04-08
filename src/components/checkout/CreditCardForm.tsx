@@ -23,18 +23,12 @@ const formatCardNumber = (value: string) => {
   return digits.replace(/(\d{4})(?=\d)/g, "$1 ");
 };
 
-const formatCEP = (value: string) => {
-  const digits = value.replace(/\D/g, "").slice(0, 8);
-  if (digits.length > 5) return `${digits.slice(0, 5)}-${digits.slice(5)}`;
-  return digits;
-};
 
 const CreditCardForm = ({ data, onChange, totalAmount, isUSD = false }: CreditCardFormProps) => {
   const handleChange = (field: keyof CreditCardData, value: string) => {
     let formatted = value;
     if (field === "number") formatted = formatCardNumber(value);
     if (field === "cvv") formatted = value.replace(/\D/g, "").slice(0, 4);
-    if (field === "postalCode") formatted = isUSD ? value.slice(0, 10) : formatCEP(value);
     onChange({ ...data, [field]: formatted });
   };
 
@@ -131,14 +125,6 @@ const CreditCardForm = ({ data, onChange, totalAmount, isUSD = false }: CreditCa
         </div>
       </div>
 
-      <Input
-        value={data.postalCode}
-        onChange={(e) => handleChange("postalCode", e.target.value)}
-        placeholder="CEP do titular"
-        inputMode="numeric"
-        autoComplete="postal-code"
-        className={inputClass}
-      />
 
       <Select value={data.installments} onValueChange={(v) => handleChange("installments", v)}>
         <SelectTrigger className={inputClass}>
