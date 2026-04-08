@@ -617,6 +617,30 @@ export type Database = {
         }
         Relationships: []
       }
+      dashboard_preferences: {
+        Row: {
+          id: string
+          metrics_order: Json
+          updated_at: string
+          user_id: string
+          visible_metrics: Json
+        }
+        Insert: {
+          id?: string
+          metrics_order?: Json
+          updated_at?: string
+          user_id: string
+          visible_metrics?: Json
+        }
+        Update: {
+          id?: string
+          metrics_order?: Json
+          updated_at?: string
+          user_id?: string
+          visible_metrics?: Json
+        }
+        Relationships: []
+      }
       email_logs: {
         Row: {
           bounce_reason: string | null
