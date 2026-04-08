@@ -5,6 +5,37 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+async function verifyStripeSignature(body: string, sigHeader: string, secret: string): Promise<boolean> {
+  const parts = sigHeader.split(',').reduce((acc: Record<string, string>, part: string) => {
+    const [key, val] = part.split('=');
+    acc[key] = val;
+    return acc;
+  }, {} as Record<string, string>);
+
+  const timestamp = parts['t'];
+  const expectedSig = parts['v1'];
+
+  if (!timestamp || !expectedSig) return false;
+
+  // Reject if older than 5 minutes
+  const ts = parseInt(timestamp, 10);
+  if (Math.abs(Date.now() / 1000 - ts) > 300) return false;
+
+  const signedPayload = `${timestamp}.${body}`;
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(signedPayload));
+  const computed = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+  return computed === expectedSig;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -12,55 +43,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.text();
-
-    // Stripe sends signature in stripe-signature header
     const sigHeader = req.headers.get('stripe-signature');
-    const STRIPE_WEBHOOK_SECRET = Deno.env.get('STRIPE_WEBHOOK_SECRET');
-
-    // If webhook secret is configured, verify signature
-    if (STRIPE_WEBHOOK_SECRET && sigHeader) {
-      const parts = sigHeader.split(',').reduce((acc: Record<string, string>, part: string) => {
-        const [key, val] = part.split('=');
-        acc[key] = val;
-        return acc;
-      }, {} as Record<string, string>);
-
-      const timestamp = parts['t'];
-      const expectedSig = parts['v1'];
-
-      if (!timestamp || !expectedSig) {
-        console.error('[stripe-webhook] Missing signature components');
-        return new Response('Invalid signature', { status: 400, headers: corsHeaders });
-      }
-
-      // Verify timestamp (reject if older than 5 minutes)
-      const ts = parseInt(timestamp, 10);
-      if (Math.abs(Date.now() / 1000 - ts) > 300) {
-        console.error('[stripe-webhook] Timestamp too old');
-        return new Response('Timestamp expired', { status: 400, headers: corsHeaders });
-      }
-
-      // Compute expected signature
-      const signedPayload = `${timestamp}.${body}`;
-      const encoder = new TextEncoder();
-      const key = await crypto.subtle.importKey(
-        'raw',
-        encoder.encode(STRIPE_WEBHOOK_SECRET),
-        { name: 'HMAC', hash: 'SHA-256' },
-        false,
-        ['sign']
-      );
-      const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(signedPayload));
-      const computed = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
-
-      if (computed !== expectedSig) {
-        console.error('[stripe-webhook] Signature mismatch');
-        return new Response('Invalid signature', { status: 400, headers: corsHeaders });
-      }
-    } else if (STRIPE_WEBHOOK_SECRET) {
-      console.warn('[stripe-webhook] No stripe-signature header present');
-      return new Response('Missing signature', { status: 400, headers: corsHeaders });
-    }
 
     const event = JSON.parse(body);
     console.log('[stripe-webhook] Event type:', event.type, 'ID:', event.id);
@@ -69,6 +52,79 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
+
+    // --- Resolve the webhook secret from the producer's gateway config ---
+    // First, find the product owner from the event metadata or order
+    const obj = event.data?.object;
+    let resolvedWebhookSecret: string | null = null;
+    let producerUserId: string | null = null;
+
+    // Try to get product_id from session metadata
+    const metaProductId = obj?.metadata?.product_id;
+    if (metaProductId) {
+      const { data: prod } = await supabase
+        .from('products')
+        .select('user_id')
+        .eq('id', metaProductId)
+        .maybeSingle();
+      if (prod?.user_id) producerUserId = prod.user_id;
+    }
+
+    // Fallback: try to find order by external_id
+    if (!producerUserId) {
+      const exId = event.type === 'checkout.session.completed' ? obj?.id : (obj?.payment_intent || obj?.id);
+      if (exId) {
+        const { data: order } = await supabase
+          .from('orders')
+          .select('user_id')
+          .eq('external_id', exId)
+          .maybeSingle();
+        if (order?.user_id) producerUserId = order.user_id;
+      }
+    }
+
+    // Resolve webhook_secret from producer's Stripe gateway
+    if (producerUserId) {
+      const { data: gw } = await supabase
+        .from('payment_gateways')
+        .select('config')
+        .eq('user_id', producerUserId)
+        .eq('provider', 'stripe')
+        .eq('active', true)
+        .maybeSingle();
+      if (gw?.config && typeof gw.config === 'object' && (gw.config as any).webhook_secret) {
+        resolvedWebhookSecret = (gw.config as any).webhook_secret;
+      }
+    }
+
+    // Fallback: global secret (super_admin only)
+    if (!resolvedWebhookSecret && producerUserId) {
+      const { data: ownerRole } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', producerUserId)
+        .eq('role', 'super_admin')
+        .maybeSingle();
+      if (ownerRole) {
+        resolvedWebhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET') || null;
+      }
+    }
+
+    // Verify signature if we have a secret
+    if (resolvedWebhookSecret) {
+      if (!sigHeader) {
+        console.warn('[stripe-webhook] No stripe-signature header present');
+        return new Response('Missing signature', { status: 400, headers: corsHeaders });
+      }
+      const valid = await verifyStripeSignature(body, sigHeader, resolvedWebhookSecret);
+      if (!valid) {
+        console.error('[stripe-webhook] Signature mismatch');
+        return new Response('Invalid signature', { status: 400, headers: corsHeaders });
+      }
+      console.log('[stripe-webhook] Signature verified ✅');
+    } else {
+      console.warn('[stripe-webhook] No webhook secret found — skipping signature verification');
+    }
 
     // --- Idempotency: deduplicate webhook events ---
     const dedupKey = `stripe_${event.id}`;
@@ -87,14 +143,10 @@ Deno.serve(async (req) => {
 
     // Map Stripe event types to order statuses
     let status: string | null = null;
-    const obj = event.data?.object;
 
     switch (event.type) {
       case 'checkout.session.completed':
-        // Only mark as paid if payment was collected successfully
-        if (obj?.payment_status === 'paid') {
-          status = 'paid';
-        }
+        if (obj?.payment_status === 'paid') status = 'paid';
         break;
       case 'payment_intent.succeeded':
         status = 'paid';
@@ -122,11 +174,9 @@ Deno.serve(async (req) => {
     }
 
     // --- Resolve external_id ---
-    // For checkout.session.completed, the external_id stored is the session ID
-    // For payment_intent events, try payment_intent ID then obj.id
     let externalId: string;
     if (event.type === 'checkout.session.completed') {
-      externalId = obj.id; // cs_... (session ID, which is what we stored)
+      externalId = obj.id;
     } else {
       externalId = obj.payment_intent || obj.id;
     }
@@ -147,7 +197,7 @@ Deno.serve(async (req) => {
       console.error('[stripe-webhook] Error updating order:', updateErr);
     }
 
-    // If checkout.session.completed didn't find by session ID, try payment_intent
+    // Fallback: checkout.session.completed → try payment_intent
     if (!orderData && event.type === 'checkout.session.completed' && obj.payment_intent) {
       const { data: fallbackOrder } = await supabase
         .from('orders')
@@ -158,7 +208,6 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (fallbackOrder) {
         console.log('[stripe-webhook] Found order via payment_intent fallback');
-        // Use fallbackOrder below
         return await processOrder(supabase, fallbackOrder, status, externalId, event, corsHeaders);
       }
     }
@@ -169,7 +218,6 @@ Deno.serve(async (req) => {
       return await processOrder(supabase, orderData, status, externalId, event, corsHeaders);
     }
 
-    // Fire webhooks for other statuses even without full order processing
     return new Response(JSON.stringify({ received: true, status }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -201,7 +249,7 @@ async function processOrder(
     if (prodInfo?.currency) productCurrency = prodInfo.currency;
   }
 
-  // On payment success, create member access + fire webhooks
+  // On payment success
   if (status === 'paid' && orderData?.product_id && orderData?.customer_id) {
     // Fire user webhooks
     if (orderData.user_id) {
@@ -319,7 +367,7 @@ async function processOrder(
       }
     }
 
-    // CAPI fallback — use correct currency
+    // CAPI fallback
     try {
       const { data: custData } = await supabase
         .from('customers')
@@ -355,7 +403,7 @@ async function processOrder(
     }
   }
 
-  // --- WhatsApp dispatch (non-blocking) ---
+  // WhatsApp dispatch (non-blocking)
   if (status === 'paid' && orderData?.user_id && orderData?.customer_id) {
     try {
       const { data: custWa } = await supabase.from('customers').select('name, phone').eq('id', orderData.customer_id).maybeSingle();
@@ -380,7 +428,7 @@ async function processOrder(
     }
   }
 
-  // Fire webhooks for other statuses
+  // Fire webhooks for non-paid statuses
   if (orderData?.user_id && status !== 'paid') {
     const evtMap: Record<string, string[]> = {
       refunded: ['payment.refunded', 'order.refunded'],
