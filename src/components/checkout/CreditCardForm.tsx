@@ -29,7 +29,6 @@ const CreditCardForm = ({ data, onChange, totalAmount, isUSD = false }: CreditCa
     let formatted = value;
     if (field === "number") formatted = formatCardNumber(value);
     if (field === "cvv") formatted = value.replace(/\D/g, "").slice(0, 4);
-    if (field === "postalCode") formatted = isUSD ? value.slice(0, 10) : formatCEP(value);
     onChange({ ...data, [field]: formatted });
   };
 
