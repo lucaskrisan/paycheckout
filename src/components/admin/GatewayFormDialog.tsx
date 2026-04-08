@@ -524,6 +524,37 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
 
             {(form.provider === "mercadopago" || form.provider === "stripe") && (
               <>
+                {form.provider === "stripe" && (
+                  <>
+                    <Separator />
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-semibold text-foreground">🔗 Configuração do Webhook</h3>
+                      <div className="bg-accent/50 border border-border rounded-lg p-4 space-y-3">
+                        <p className="text-xs text-muted-foreground">
+                          Para receber confirmações de pagamento automáticas, configure um webhook no painel do Stripe:
+                        </p>
+                        <ol className="text-xs text-muted-foreground space-y-1.5 list-decimal list-inside">
+                          <li>Acesse <strong>Stripe Dashboard → Developers → Webhooks</strong></li>
+                          <li>Clique em <strong>"Add endpoint"</strong></li>
+                          <li>Cole a URL: <code className="bg-muted px-1.5 py-0.5 rounded text-[10px] select-all">https://vipltojtcrqatwvzobro.supabase.co/functions/v1/stripe-webhook</code></li>
+                          <li>Selecione os eventos: <strong>checkout.session.completed, charge.refunded</strong></li>
+                          <li>Copie o <strong>Signing Secret</strong> (começa com <code className="bg-muted px-1 rounded">whsec_</code>) e cole abaixo</li>
+                        </ol>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label>Webhook Signing Secret</Label>
+                        <Input
+                          type="password"
+                          value={form.config.webhook_secret ?? ""}
+                          onChange={(e) => updateConfig("webhook_secret", e.target.value)}
+                          placeholder="whsec_..."
+                        />
+                        <p className="text-xs text-muted-foreground">Encontre em: Stripe Dashboard → Developers → Webhooks → Signing secret</p>
+                      </div>
+                    </div>
+                  </>
+                )}
+
                 <Separator />
                 <div className="space-y-4">
                   <h3 className="text-sm font-semibold text-foreground">
