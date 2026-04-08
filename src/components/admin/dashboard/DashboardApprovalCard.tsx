@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Info } from "lucide-react";
+import { Info, CheckCircle } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -11,19 +11,23 @@ import {
 interface RateItem {
   label: string;
   rate: number;
-  color?: string;
 }
 
 interface Props {
   items: RateItem[];
+  chargebackValue?: string;
+  chargebackCount?: number;
 }
 
-const DashboardApprovalCard = memo(function DashboardApprovalCard({ items }: Props) {
+const DashboardApprovalCard = memo(function DashboardApprovalCard({ items, chargebackValue, chargebackCount }: Props) {
   return (
-    <Card className="border border-border/60 bg-card shadow-none h-full">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Taxa de Aprovação</h3>
+    <Card className="border border-white/[0.06] bg-card/70 backdrop-blur-md shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),0_2px_12px_-4px_rgba(0,0,0,0.4)] h-full">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+      <CardContent className="p-4 relative">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-xs font-semibold text-foreground">
+            {chargebackValue !== undefined ? "Chargeback / Aprovação" : "Taxa de Aprovação"}
+          </h3>
           <TooltipProvider delayDuration={200}>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -35,37 +39,28 @@ const DashboardApprovalCard = memo(function DashboardApprovalCard({ items }: Pro
             </Tooltip>
           </TooltipProvider>
         </div>
-        <div className="space-y-5">
-          {items.map((item, i) => {
-            const strokeColor = i === 0 ? "hsl(270 85% 60%)" : "hsl(185 90% 48%)";
-            const bgColor = i === 0 ? "text-purple-300" : "text-cyan-300";
-            return (
-              <div key={item.label} className="flex items-center justify-between">
-                <span className={`text-sm ${bgColor} font-medium`}>{item.label}</span>
-                <div className="flex items-center gap-3">
-                  <svg width="32" height="32" viewBox="0 0 36 36">
-                    <circle
-                      cx="18" cy="18" r="14"
-                      fill="none"
-                      stroke="hsl(260 10% 14%)"
-                      strokeWidth="3"
-                    />
-                    <circle
-                      cx="18" cy="18" r="14"
-                      fill="none"
-                      stroke={strokeColor}
-                      strokeWidth="3"
-                      strokeDasharray={`${item.rate * 0.88} ${88 - item.rate * 0.88}`}
-                      strokeDashoffset="22"
-                      strokeLinecap="round"
-                      className="drop-shadow-[0_0_4px_rgba(168,85,247,0.4)]"
-                    />
-                  </svg>
-                  <span className="text-sm font-bold text-foreground font-display">{item.rate.toFixed(1)}%</span>
-                </div>
+
+        {/* Chargeback value */}
+        {chargebackValue !== undefined && (
+          <div className="mb-4">
+            <p className="text-2xl font-bold text-foreground">{chargebackValue}</p>
+            {chargebackCount !== undefined && (
+              <p className="text-[11px] text-muted-foreground/60">{chargebackCount} pedidos</p>
+            )}
+          </div>
+        )}
+
+        {/* Approval rates */}
+        <div className="space-y-3">
+          {items.map((item) => (
+            <div key={item.label} className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">{item.label}</span>
+              <div className="flex items-center gap-2">
+                <CheckCircle className={`w-5 h-5 ${item.rate >= 80 ? "text-primary" : item.rate >= 50 ? "text-yellow-500" : "text-destructive"}`} />
+                <span className="text-sm font-bold text-foreground">{item.rate.toFixed(1)}%</span>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       </CardContent>
     </Card>

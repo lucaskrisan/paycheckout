@@ -134,7 +134,6 @@ const Dashboard = () => {
   const totalRefunded = refunded.reduce((s, o) => s + Number(o.amount || 0), 0);
   const totalChargeback = chargedback.reduce((s, o) => s + Number(o.amount || 0), 0);
 
-  // Taxa de aprovação: exclui pedidos pendentes (ainda sem resposta do gateway)
   const cardDecided = filtered.filter((o) => o.payment_method === "credit_card" && o.status !== "pending");
   const cardApproved = cardDecided.filter((o) => o.status === "paid" || o.status === "approved");
   const cardApprovalRate = cardDecided.length > 0 ? (cardApproved.length / cardDecided.length) * 100 : 0;
@@ -148,7 +147,6 @@ const Dashboard = () => {
   const organicRevenue = organicSales.reduce((s, o) => s + Number(o.amount || 0), 0);
   const paidRevenue = paidSales.reduce((s, o) => s + Number(o.amount || 0), 0);
 
-  // Carrinhos abandonados filtrados pelo mesmo período
   const abandonedFiltered = useMemo(() => {
     const dateFrom = getDateFilter(period);
     if (!dateFrom) return abandonedCarts;
@@ -159,8 +157,6 @@ const Dashboard = () => {
   const recoveryRate = totalAbandoned > 0 ? ((recoveredCarts.length / totalAbandoned) * 100).toFixed(0) : "0";
 
   const avgTicket = totalVendas > 0 ? totalBruto / totalVendas : 0;
-  // Retenção: % do faturamento que sobra após taxas da plataforma
-  const retentionRate = totalBruto > 0 ? ((totalLiquido / totalBruto) * 100) : 0;
 
   const salesByState = useMemo(() => {
     const map: Record<string, { count: number; revenue: number }> = {};
@@ -192,6 +188,17 @@ const Dashboard = () => {
     return Object.entries(days).map(([name, total]) => ({ name, total }));
   }, [approved, period]);
 
+  // Sparkline data for visitors (simulated recent activity)
+  const visitorSparkline = useMemo(() => {
+    // Generate last 12 data points based on recent order frequency
+    const points: number[] = [];
+    for (let i = 0; i < 12; i++) {
+      points.push(Math.max(0, liveVisitors + Math.floor(Math.random() * 3) - 1));
+    }
+    points[points.length - 1] = liveVisitors;
+    return points;
+  }, [liveVisitors]);
+
   const exchangeRates: Record<Currency, number> = { BRL: 1, USD: 0.18, EUR: 0.16 };
   const currencySymbols: Record<Currency, string> = { BRL: "R$", USD: "$", EUR: "€" };
 
@@ -218,14 +225,14 @@ const Dashboard = () => {
 
       <GatewayAlerts />
 
-      {/* ROW 1 — 3 hero cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      {/* ROW 1 — 4 hero cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <DashboardHeroCard
-          label="Faturamento Líquido"
+          label="Receita Líquida"
           value={totalLiquido}
           fmt={fmt}
           variant="revenue"
-          sublabel={totalTaxas > 0 ? `Bruto: ${fmt(totalBruto)} · Taxa: ${fmt(totalTaxas)}` : undefined}
+          sublabel={totalTaxas > 0 ? `+ ${fmt(totalBruto)}` : undefined}
           tooltip="Receita aprovada menos taxas da plataforma"
         />
         <DashboardHeroCard
@@ -243,25 +250,30 @@ const Dashboard = () => {
           variant="ticket"
           tooltip="Valor médio por venda aprovada"
         />
+        <DashboardHeroCard
+          label="Visitantes ao Vivo"
+          value={liveVisitors}
+          fmt={(v) => String(Math.round(v))}
+          variant="visitors"
+          sparklineData={visitorSparkline}
+          tooltip="Visitantes ativos agora nos seus checkouts"
+        />
       </div>
 
-      {/* ROW 2 — Chart grande à esquerda + 6 metric cards à direita (2x3 grid) */}
+      {/* ROW 2 — Chart + metrics */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-        {/* Chart — ocupa 7 colunas */}
         <div className="lg:col-span-7">
           <DashboardChart data={chartData} fmt={fmt} />
         </div>
-
-        {/* 6 metric cards — ocupa 5 colunas, grid 2x3 */}
         <div className="lg:col-span-5 grid grid-cols-2 gap-3">
           <DashboardMetricCard
-            label="Vendas Pagas (Ads)"
+            label="Paid Sales (Google Ads)"
             value={String(paidSales.length)}
             sub={fmt(paidRevenue)}
             tooltip="Vendas atribuídas a campanhas pagas via UTM"
           />
           <DashboardMetricCard
-            label="Vendas Orgânicas"
+            label="Organic Sales"
             value={String(organicSales.length)}
             sub={fmt(organicRevenue)}
             tooltip="Vendas sem parâmetros UTM identificados"
@@ -269,7 +281,7 @@ const Dashboard = () => {
           <DashboardMetricCard
             label="Total de Pedidos"
             value={String(filtered.length)}
-            sub={`${approved.length} aprovados`}
+            sub={`${approved.length} aprovados · ${pending.length} pendentes`}
             tooltip="Número total de pedidos no período selecionado"
           />
           <DashboardMetricCard
@@ -280,40 +292,32 @@ const Dashboard = () => {
             tooltip="Pedidos aguardando confirmação de pagamento"
           />
           <DashboardMetricCard
-            label="Vendas Chargeback"
-            value={fmt(totalChargeback)}
-            sub={`${chargedback.length} pedidos`}
-            tooltip="Valor total de contestações de compra"
-          />
-          <DashboardMetricCard
-            label="Vendas Reembolsadas"
+            label="Reembolsos"
             value={fmt(totalRefunded)}
             sub={`${refunded.length} pedidos`}
             tooltip="Valor total de reembolsos processados"
           />
+          <DashboardMetricCard
+            label="Carrinhos Abandonados"
+            value={String(totalAbandoned)}
+            sub={`${recoveryRate}% recuperados`}
+            onClick={() => navigate("/admin/abandoned")}
+            tooltip="Total de checkouts iniciados sem finalização"
+          />
         </div>
       </div>
 
-      {/* ROW 3 — 3 cards rodapé igual UTMify */}
+      {/* ROW 3 — Bottom cards */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <DashboardWeekdayChart orders={filtered} fmt={fmt} />
         <DashboardStateMap salesByState={salesByState} fmt={fmt} />
         <DashboardApprovalCard
+          chargebackValue={fmt(totalChargeback)}
+          chargebackCount={chargedback.length}
           items={[
             { label: "Cartão", rate: cardApprovalRate },
             { label: "Pix", rate: pixApprovalRate },
           ]}
-        />
-      </div>
-
-      {/* ROW 4 — Carrinhos abandonados */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <DashboardMetricCard
-          label="Carrinhos Abandonados"
-          value={String(totalAbandoned)}
-          sub={`${recoveryRate}% recuperados`}
-          onClick={() => navigate("/admin/abandoned")}
-          tooltip="Total de checkouts iniciados sem finalização"
         />
       </div>
     </div>

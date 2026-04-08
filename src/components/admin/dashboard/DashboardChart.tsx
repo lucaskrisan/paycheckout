@@ -20,46 +20,45 @@ interface Props {
 const CustomTooltip = ({ active, payload, label, fmt }: any) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-popover/95 backdrop-blur-xl border border-border/60 rounded-lg px-4 py-2.5 shadow-2xl shadow-black/40">
-      <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">{label}</p>
-      <p className="text-base font-bold text-foreground font-display">{fmt(payload[0].value)}</p>
+    <div className="bg-card/95 backdrop-blur-xl border border-white/[0.08] rounded-lg px-4 py-2.5 shadow-2xl shadow-black/50">
+      <p className="text-[11px] text-muted-foreground font-medium">{label}</p>
+      <p className="text-base font-bold text-primary">{fmt(payload[0].value)}</p>
     </div>
   );
 };
 
 const DashboardChart = memo(function DashboardChart({ data, fmt, currencyPrefix = "R$" }: Props) {
   const hasData = data.some(d => d.total > 0);
+  const totalRevenue = data.reduce((s, d) => s + d.total, 0);
+  const avgPerDay = data.length > 0 ? totalRevenue / data.length : 0;
 
   return (
-    <Card className="border border-border/60 bg-card shadow-none h-full overflow-hidden">
-      <CardContent className="p-4">
+    <Card className="border border-white/[0.06] bg-card/70 backdrop-blur-md shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),0_2px_20px_-4px_rgba(0,0,0,0.5)] h-full overflow-hidden">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+      <CardContent className="p-4 relative">
         <div className="flex items-center gap-2 mb-3">
           <BarChart3 className="w-4 h-4 text-primary" />
-          <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Receita diária</h3>
+          <h3 className="text-xs font-semibold text-foreground">Receita Diária</h3>
         </div>
         <div className="h-[210px]">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorRevGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="hsl(270 85% 60%)" stopOpacity={0.4} />
-                  <stop offset="50%" stopColor="hsl(270 85% 60%)" stopOpacity={0.1} />
-                  <stop offset="100%" stopColor="hsl(270 85% 60%)" stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id="strokeGrad" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="hsl(270 85% 60%)" />
-                  <stop offset="100%" stopColor="hsl(185 90% 48%)" />
+                  <stop offset="0%" stopColor="hsl(160 84% 39%)" stopOpacity={0.3} />
+                  <stop offset="60%" stopColor="hsl(160 84% 39%)" stopOpacity={0.08} />
+                  <stop offset="100%" stopColor="hsl(160 84% 39%)" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(260 8% 14%)" vertical={false} opacity={0.5} />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(215 12% 14%)" vertical={false} opacity={0.6} />
               <XAxis
                 dataKey="name"
-                tick={{ fontSize: 11, fill: "hsl(250 8% 55%)" }}
+                tick={{ fontSize: 11, fill: "hsl(215 10% 48%)" }}
                 axisLine={false}
                 tickLine={false}
               />
               <YAxis
-                tick={{ fontSize: 11, fill: "hsl(250 8% 55%)" }}
+                tick={{ fontSize: 11, fill: "hsl(215 10% 48%)" }}
                 axisLine={false}
                 tickLine={false}
                 tickFormatter={(v) => `${currencyPrefix} ${v}`}
@@ -69,19 +68,26 @@ const DashboardChart = memo(function DashboardChart({ data, fmt, currencyPrefix 
               <Area
                 type="monotone"
                 dataKey="total"
-                stroke="url(#strokeGrad)"
+                stroke="hsl(160 84% 39%)"
                 fill="url(#colorRevGrad)"
                 strokeWidth={2}
-                dot={hasData ? { r: 3, fill: "hsl(270 85% 60%)", stroke: "hsl(260 15% 3%)", strokeWidth: 2 } : false}
+                dot={hasData ? { r: 3, fill: "hsl(160 84% 39%)", stroke: "hsl(220 20% 4%)", strokeWidth: 2 } : false}
                 activeDot={{
                   r: 5,
-                  fill: "hsl(185 90% 48%)",
-                  stroke: "hsl(260 15% 3%)",
+                  fill: "hsl(160 84% 39%)",
+                  stroke: "hsl(220 20% 4%)",
                   strokeWidth: 2,
                 }}
               />
             </AreaChart>
           </ResponsiveContainer>
+        </div>
+        {/* Summary bar */}
+        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/[0.04]">
+          <span className="text-[11px] text-muted-foreground">Receita diária</span>
+          <span className="text-sm font-bold text-primary">{fmt(totalRevenue)}</span>
+          <span className="text-[11px] text-muted-foreground">Média</span>
+          <span className="text-sm font-bold text-foreground">{fmt(avgPerDay)}</span>
         </div>
       </CardContent>
     </Card>

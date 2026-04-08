@@ -31,7 +31,7 @@ const DashboardStateMap = memo(function DashboardStateMap({ salesByState, fmt }:
 
   if (sorted.length === 0) {
     return (
-      <Card className="border border-border/60 bg-card shadow-none h-full">
+      <Card className="border border-white/[0.06] bg-card/70 backdrop-blur-md shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)] h-full">
         <CardContent className="p-4 flex flex-col items-center justify-center h-full">
           <MapPin className="w-8 h-8 text-muted-foreground/20 mb-2" />
           <p className="text-xs text-muted-foreground text-center">Sem dados de<br/>localização ainda</p>
@@ -41,12 +41,13 @@ const DashboardStateMap = memo(function DashboardStateMap({ salesByState, fmt }:
   }
 
   return (
-    <Card className="border border-border/60 bg-card shadow-none h-full">
-      <CardContent className="p-4">
+    <Card className="border border-white/[0.06] bg-card/70 backdrop-blur-md shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),0_2px_12px_-4px_rgba(0,0,0,0.4)] h-full">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+      <CardContent className="p-4 relative">
         <div className="flex items-center gap-2 mb-3">
-          <MapPin className="w-4 h-4 text-primary" />
-          <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Top Estados</h3>
-          <span className="text-[11px] text-muted-foreground ml-auto font-mono">{Object.keys(salesByState).length} UFs</span>
+          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+          <h3 className="text-xs font-semibold text-foreground">Top Estados</h3>
+          <span className="text-[11px] text-muted-foreground ml-auto">{Object.keys(salesByState).length} UFs</span>
         </div>
         <div className="space-y-2.5 max-h-[210px] overflow-y-auto scrollbar-thin pr-1">
           {sorted.map(([uf, data], i) => {
@@ -61,26 +62,26 @@ const DashboardStateMap = memo(function DashboardStateMap({ salesByState, fmt }:
               >
                 <div className="flex items-center justify-between mb-0.5">
                   <div className="flex items-center gap-2">
-                    <span className={`text-xs font-bold w-6 font-display ${isTop3 ? "text-primary" : "text-foreground"}`}>{uf}</span>
+                    <span className={`text-xs font-bold w-6 ${isTop3 ? "text-primary" : "text-foreground"}`}>{uf}</span>
                     <span className="text-[11px] text-muted-foreground hidden sm:inline truncate max-w-[90px]">
                       {STATE_NAMES[uf]}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     {isSelected && (
-                      <span className="text-[11px] text-vibranium font-medium font-mono animate-in fade-in slide-in-from-right-2 duration-200">
+                      <span className="text-[11px] text-primary font-medium animate-in fade-in slide-in-from-right-2 duration-200">
                         {fmt(data.revenue)}
                       </span>
                     )}
                     <span className={`text-xs font-bold ${isTop3 ? "text-primary" : "text-foreground"}`}>{data.count}</span>
                   </div>
                 </div>
-                <div className="h-1.5 rounded-full bg-muted/40 overflow-hidden">
+                <div className="h-1.5 rounded-full bg-white/[0.04] overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${
                       isTop3 
-                        ? "bg-gradient-to-r from-primary/70 to-primary group-hover:from-primary group-hover:to-vibranium/80" 
-                        : "bg-gradient-to-r from-primary/30 to-primary/50 group-hover:from-primary/50 group-hover:to-primary/70"
+                        ? "bg-gradient-to-r from-primary/60 to-primary group-hover:from-primary group-hover:to-primary shadow-sm shadow-primary/20" 
+                        : "bg-gradient-to-r from-primary/25 to-primary/45 group-hover:from-primary/45 group-hover:to-primary/65"
                     }`}
                     style={{ width: `${pct}%` }}
                   />

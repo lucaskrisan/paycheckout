@@ -21,12 +21,13 @@ interface Props {
 const DashboardMetricCard = memo(function DashboardMetricCard({ label, value, sub, onClick, accent, tooltip }: Props) {
   return (
     <Card
-      className={`border border-border/50 bg-card/80 backdrop-blur-sm shadow-none h-full transition-all duration-200 ${onClick ? "cursor-pointer hover:bg-accent/40 hover:border-primary/20" : ""}`}
+      className={`border border-white/[0.06] bg-card/70 backdrop-blur-md shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),0_2px_12px_-4px_rgba(0,0,0,0.4)] h-full transition-all duration-200 ${onClick ? "cursor-pointer hover:bg-accent/50 hover:border-white/[0.1]" : ""}`}
       onClick={onClick}
     >
-      <CardContent className="p-4 flex flex-col justify-between h-full">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent rounded-t-xl" />
+      <CardContent className="p-4 flex flex-col justify-between h-full relative">
         <div className="flex items-center justify-between mb-1">
-          <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">{label}</p>
+          <p className="text-[11px] text-muted-foreground font-medium">{label}</p>
           {tooltip && (
             <TooltipProvider delayDuration={200}>
               <Tooltip>
@@ -40,10 +41,10 @@ const DashboardMetricCard = memo(function DashboardMetricCard({ label, value, su
             </TooltipProvider>
           )}
         </div>
-        <p className={`text-xl font-bold tracking-tight font-display ${accent ? "text-primary" : "text-foreground"}`}>
+        <p className={`text-xl font-bold tracking-tight ${accent ? "text-primary" : "text-foreground"}`}>
           {value}
         </p>
-        {sub && <p className="text-[11px] text-muted-foreground/70 mt-1 font-mono">{sub}</p>}
+        {sub && <p className="text-[11px] text-muted-foreground/60 mt-1">{sub}</p>}
       </CardContent>
     </Card>
   );
