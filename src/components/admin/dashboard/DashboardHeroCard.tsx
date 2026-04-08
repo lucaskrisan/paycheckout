@@ -1,6 +1,12 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { DollarSign, ShoppingBag, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Info } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Props {
   label: string;
@@ -8,7 +14,8 @@ interface Props {
   previousValue?: number;
   fmt: (v: number) => string;
   sublabel?: string;
-  variant?: "revenue" | "sales";
+  variant?: "revenue" | "sales" | "neutral" | "accent";
+  tooltip?: string;
 }
 
 function useAnimatedNumber(target: number, duration = 900) {
@@ -34,62 +41,35 @@ function useAnimatedNumber(target: number, duration = 900) {
   return display;
 }
 
-const DashboardHeroCard = memo(function DashboardHeroCard({ label, value, previousValue, fmt, sublabel, variant = "revenue" }: Props) {
+const DashboardHeroCard = memo(function DashboardHeroCard({ label, value, fmt, sublabel, variant = "neutral", tooltip }: Props) {
   const animatedValue = useAnimatedNumber(value);
 
-  const changePercent = previousValue && previousValue > 0
-    ? ((value - previousValue) / previousValue) * 100
-    : null;
-  const isPositive = changePercent !== null && changePercent > 0;
-  const isNegative = changePercent !== null && changePercent < 0;
-
-  const Icon = variant === "revenue" ? DollarSign : ShoppingBag;
+  const valueColor = variant === "accent" ? "text-primary" : "text-foreground";
 
   return (
-    <Card className="relative overflow-hidden border-0 shadow-lg group">
-      {/* Animated gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/8 to-primary/3" />
-      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-transparent to-primary/10" />
-      
-      {/* Glow orbs */}
-      <div className="absolute -top-8 -right-8 w-32 h-32 bg-primary/15 rounded-full blur-2xl group-hover:bg-primary/20 transition-all duration-700" />
-      <div className="absolute -bottom-6 -left-6 w-20 h-20 bg-primary/10 rounded-full blur-xl" />
-      
-      {/* Subtle grid pattern */}
-      <div className="absolute inset-0 opacity-[0.03]" style={{
-        backgroundImage: "radial-gradient(circle, hsl(var(--primary)) 1px, transparent 1px)",
-        backgroundSize: "20px 20px",
-      }} />
-
-      <CardContent className="p-5 relative z-10">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-primary/25 backdrop-blur-sm border border-primary/20 shadow-sm shadow-primary/10">
-                <Icon className="w-4 h-4 text-primary" />
-              </div>
-              <p className="text-sm font-medium text-foreground/70">{label}</p>
-            </div>
-            <p className="text-3xl font-extrabold text-foreground tracking-tight drop-shadow-sm">
-              {fmt(animatedValue)}
-            </p>
-            {sublabel && (
-              <p className="text-xs text-foreground/50">{sublabel}</p>
-            )}
-          </div>
-          {changePercent !== null && (
-            <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold backdrop-blur-sm border ${
-              isPositive ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/20" :
-              isNegative ? "bg-red-500/15 text-red-400 border-red-500/20" :
-              "bg-muted/50 text-muted-foreground border-border"
-            }`}>
-              {isPositive ? <TrendingUp className="w-3 h-3" /> :
-               isNegative ? <TrendingDown className="w-3 h-3" /> :
-               <Minus className="w-3 h-3" />}
-              {Math.abs(changePercent).toFixed(1)}%
-            </div>
+    <Card className="border border-border bg-card shadow-none h-full">
+      <CardContent className="p-4 flex flex-col justify-between h-full">
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-xs text-muted-foreground font-medium">{label}</p>
+          {tooltip && (
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="w-3.5 h-3.5 text-muted-foreground/50 cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[200px] text-xs">
+                  {tooltip}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
         </div>
+        <p className={`text-2xl font-bold tracking-tight ${valueColor}`}>
+          {fmt(animatedValue)}
+        </p>
+        {sublabel && (
+          <p className="text-[11px] text-muted-foreground mt-1">{sublabel}</p>
+        )}
       </CardContent>
     </Card>
   );
