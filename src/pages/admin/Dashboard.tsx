@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useMemo, useCallback, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import {
@@ -20,7 +20,7 @@ import DashboardChart from "@/components/admin/dashboard/DashboardChart";
 import DashboardMetricCard from "@/components/admin/dashboard/DashboardMetricCard";
 import DashboardHeroCard from "@/components/admin/dashboard/DashboardHeroCard";
 import DashboardStateMap from "@/components/admin/dashboard/DashboardStateMap";
-import DashboardCustomizer, { type MetricConfig } from "@/components/admin/dashboard/DashboardCustomizer";
+import type { MetricConfig } from "@/components/admin/dashboard/DashboardCustomizer";
 import { toast } from "sonner";
 
 const ALL_METRICS: MetricConfig[] = [
@@ -49,8 +49,6 @@ const Dashboard = () => {
   // Dashboard customization
   const [visibleMetrics, setVisibleMetrics] = useState<string[]>(DEFAULT_KEYS);
   const [metricsOrder, setMetricsOrder] = useState<string[]>(DEFAULT_KEYS);
-  const [savingPrefs, setSavingPrefs] = useState(false);
-  const [editingLayout, setEditingLayout] = useState(false);
 
   const ownerProductIds = useMemo(() => products.map((p) => p.id), [products]);
   const liveVisitors = useCheckoutPresence("watch", undefined, ownerProductIds);
@@ -71,29 +69,6 @@ const Dashboard = () => {
       });
   }, [user]);
 
-  const savePreferences = useCallback(async (visible: string[], order: string[]) => {
-    if (!user) return;
-    setSavingPrefs(true);
-    try {
-      const { error } = await supabase
-        .from("dashboard_preferences")
-        .upsert({
-          user_id: user.id,
-          visible_metrics: visible,
-          metrics_order: order,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: "user_id" });
-      if (error) throw error;
-      setVisibleMetrics(visible);
-      setMetricsOrder(order);
-      toast.success("Dashboard personalizado salvo!");
-    } catch (err) {
-      console.error(err);
-      toast.error("Erro ao salvar preferências");
-    } finally {
-      setSavingPrefs(false);
-    }
-  }, [user]);
 
   const getDateFilter = useCallback((p: Period): string | null => {
     const now = new Date();
@@ -274,85 +249,56 @@ const Dashboard = () => {
     .filter(Boolean);
 
   return (
-    <div className="flex gap-4">
-      {/* Sidebar de edição — estilo UTMify */}
-      {editingLayout && (
-        <DashboardCustomizer
-          allMetrics={ALL_METRICS}
-          visibleMetrics={visibleMetrics}
-          metricsOrder={metricsOrder}
-          onSave={savePreferences}
-          saving={savingPrefs}
-          editing={editingLayout}
-          onEditingChange={setEditingLayout}
-        />
-      )}
+    <div className="space-y-3">
+      <DashboardHeaderBar
+        period={period}
+        onPeriodChange={setPeriod}
+        selectedProductId={selectedProductId}
+        onProductChange={setSelectedProductId}
+        products={products}
+        liveVisitors={liveVisitors}
+        refreshing={refreshing}
+        onRefresh={() => loadData(true)}
+      />
 
-      {/* Main dashboard content */}
-      <div className="flex-1 min-w-0 space-y-3">
-        <DashboardHeaderBar
-          period={period}
-          onPeriodChange={setPeriod}
-          selectedProductId={selectedProductId}
-          onProductChange={setSelectedProductId}
-          products={products}
-          liveVisitors={liveVisitors}
-          refreshing={refreshing}
-          onRefresh={() => loadData(true)}
-          extraActions={
-            !editingLayout ? (
-              <DashboardCustomizer
-                allMetrics={ALL_METRICS}
-                visibleMetrics={visibleMetrics}
-                metricsOrder={metricsOrder}
-                onSave={savePreferences}
-                saving={savingPrefs}
-                editing={editingLayout}
-                onEditingChange={setEditingLayout}
-              />
-            ) : null
-          }
-        />
+      <GatewayAlerts />
 
-        <GatewayAlerts />
-
-        {/* Hero Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-          <div className="sm:col-span-3">
-            <DashboardHeroCard
-              label={heroLabel}
-              value={heroValue}
-              fmt={fmt}
-              sublabel={heroSub}
-              variant="revenue"
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <DashboardHeroCard
-              label="Vendas aprovadas"
-              value={totalVendas}
-              fmt={(v) => String(Math.round(v))}
-              sublabel={`${approved.length} de ${filtered.length} pedidos`}
-              variant="sales"
-            />
-          </div>
+      {/* Hero Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+        <div className="sm:col-span-3">
+          <DashboardHeroCard
+            label={heroLabel}
+            value={heroValue}
+            fmt={fmt}
+            sublabel={heroSub}
+            variant="revenue"
+          />
         </div>
-
-        {/* Chart + State Map */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-          <div className="lg:col-span-2">
-            <DashboardChart data={chartData} fmt={fmt} />
-          </div>
-          <DashboardStateMap salesByState={salesByState} fmt={fmt} />
+        <div className="sm:col-span-2">
+          <DashboardHeroCard
+            label="Vendas aprovadas"
+            value={totalVendas}
+            fmt={(v) => String(Math.round(v))}
+            sublabel={`${approved.length} de ${filtered.length} pedidos`}
+            variant="sales"
+          />
         </div>
-
-        {/* Metric cards grid */}
-        {renderedMetrics.length > 0 && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-            {renderedMetrics}
-          </div>
-        )}
       </div>
+
+      {/* Chart + State Map */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <div className="lg:col-span-2">
+          <DashboardChart data={chartData} fmt={fmt} />
+        </div>
+        <DashboardStateMap salesByState={salesByState} fmt={fmt} />
+      </div>
+
+      {/* Metric cards grid */}
+      {renderedMetrics.length > 0 && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+          {renderedMetrics}
+        </div>
+      )}
     </div>
   );
 };
