@@ -32,12 +32,9 @@ const DashboardStateMap = memo(function DashboardStateMap({ salesByState, fmt }:
   if (sorted.length === 0) {
     return (
       <Card className="border border-border bg-card shadow-none h-full">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <MapPin className="w-3.5 h-3.5 text-primary" />
-            <h3 className="text-xs font-semibold text-foreground">Vendas por Estado</h3>
-          </div>
-          <p className="text-[11px] text-muted-foreground text-center py-4">Sem dados de localização ainda</p>
+        <CardContent className="p-4 flex flex-col items-center justify-center h-full">
+          <MapPin className="w-8 h-8 text-muted-foreground/30 mb-2" />
+          <p className="text-xs text-muted-foreground text-center">Sem dados de<br/>localização ainda</p>
         </CardContent>
       </Card>
     );
@@ -47,14 +44,15 @@ const DashboardStateMap = memo(function DashboardStateMap({ salesByState, fmt }:
     <Card className="border border-border bg-card shadow-none h-full">
       <CardContent className="p-4">
         <div className="flex items-center gap-2 mb-3">
-          <MapPin className="w-3.5 h-3.5 text-primary" />
+          <MapPin className="w-4 h-4 text-primary" />
           <h3 className="text-xs font-semibold text-foreground">Top Estados</h3>
           <span className="text-[11px] text-muted-foreground ml-auto">{Object.keys(salesByState).length} UFs</span>
         </div>
-        <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
-          {sorted.map(([uf, data]) => {
+        <div className="space-y-2.5 max-h-[210px] overflow-y-auto scrollbar-thin pr-1">
+          {sorted.map(([uf, data], i) => {
             const pct = (data.count / maxCount) * 100;
             const isSelected = selected === uf;
+            const isTop3 = i < 3;
             return (
               <button
                 key={uf}
@@ -62,24 +60,28 @@ const DashboardStateMap = memo(function DashboardStateMap({ salesByState, fmt }:
                 className="w-full text-left group"
               >
                 <div className="flex items-center justify-between mb-0.5">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] font-bold text-foreground w-5">{uf}</span>
-                    <span className="text-[10px] text-muted-foreground hidden sm:inline truncate max-w-[80px]">
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs font-bold w-6 ${isTop3 ? "text-primary" : "text-foreground"}`}>{uf}</span>
+                    <span className="text-[11px] text-muted-foreground hidden sm:inline truncate max-w-[90px]">
                       {STATE_NAMES[uf]}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-semibold text-foreground">{data.count}</span>
                     {isSelected && (
-                      <span className="text-[10px] text-primary font-medium animate-in fade-in slide-in-from-right-2 duration-200">
+                      <span className="text-[11px] text-primary font-medium animate-in fade-in slide-in-from-right-2 duration-200">
                         {fmt(data.revenue)}
                       </span>
                     )}
+                    <span className={`text-xs font-bold ${isTop3 ? "text-primary" : "text-foreground"}`}>{data.count}</span>
                   </div>
                 </div>
-                <div className="h-1 rounded-full bg-muted overflow-hidden">
+                <div className="h-1.5 rounded-full bg-muted/60 overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-primary/70 to-primary transition-all duration-500 group-hover:from-primary group-hover:to-primary"
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      isTop3 
+                        ? "bg-gradient-to-r from-primary/80 to-primary group-hover:from-primary group-hover:to-primary shadow-sm shadow-primary/20" 
+                        : "bg-gradient-to-r from-primary/40 to-primary/60 group-hover:from-primary/60 group-hover:to-primary/80"
+                    }`}
                     style={{ width: `${pct}%` }}
                   />
                 </div>
