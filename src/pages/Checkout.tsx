@@ -25,6 +25,7 @@ interface Product {
   id: string; name: string; description: string | null; price: number;
   original_price: number | null; image_url: string | null;
   is_subscription: boolean; billing_cycle: string; user_id: string | null; show_coupon?: boolean;
+  currency?: string;
 }
 
 interface OrderBump {
