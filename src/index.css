@@ -112,33 +112,33 @@
 
   /* Light override */
   .light {
-    --background: 240 8% 97%;
-    --foreground: 260 12% 8%;
+    --background: 210 20% 97%;
+    --foreground: 215 18% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 260 12% 8%;
+    --card-foreground: 215 18% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 260 12% 8%;
+    --popover-foreground: 215 18% 8%;
 
-    --primary: 270 85% 60%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 160 84% 39%;
+    --primary-foreground: 0 0% 0%;
 
-    --secondary: 260 5% 93%;
-    --secondary-foreground: 260 12% 8%;
+    --secondary: 210 10% 93%;
+    --secondary-foreground: 215 18% 8%;
 
-    --muted: 260 5% 93%;
-    --muted-foreground: 250 8% 44%;
+    --muted: 210 10% 93%;
+    --muted-foreground: 215 10% 44%;
 
-    --accent: 260 5% 93%;
-    --accent-foreground: 260 12% 8%;
+    --accent: 210 10% 93%;
+    --accent-foreground: 215 18% 8%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 260 5% 88%;
-    --input: 260 5% 88%;
-    --ring: 270 85% 60%;
+    --border: 210 10% 88%;
+    --input: 210 10% 88%;
+    --ring: 160 84% 39%;
   }
 }
 
