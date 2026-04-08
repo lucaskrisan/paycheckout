@@ -1346,7 +1346,7 @@ const ProductEdit = () => {
                           )}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {co.price != null ? `R$ ${Number(co.price).toFixed(2).replace(".", ",")}` : `R$ ${Number(form.price).toFixed(2).replace(".", ",")} (padrão)`}
+                          {co.price != null ? `${form.currency === "USD" ? "$" : "R$"} ${Number(co.price).toFixed(2).replace(".", form.currency === "USD" ? "." : ",")}` : `${form.currency === "USD" ? "$" : "R$"} ${Number(form.price).toFixed(2).replace(".", form.currency === "USD" ? "." : ",")} (padrão)`}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1.5">
