@@ -50,6 +50,7 @@ const Dashboard = () => {
   const [visibleMetrics, setVisibleMetrics] = useState<string[]>(DEFAULT_KEYS);
   const [metricsOrder, setMetricsOrder] = useState<string[]>(DEFAULT_KEYS);
   const [savingPrefs, setSavingPrefs] = useState(false);
+  const [editingLayout, setEditingLayout] = useState(false);
 
   const ownerProductIds = useMemo(() => products.map((p) => p.id), [products]);
   const liveVisitors = useCheckoutPresence("watch", undefined, ownerProductIds);
