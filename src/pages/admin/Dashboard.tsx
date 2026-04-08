@@ -210,19 +210,25 @@ const Dashboard = () => {
       <GatewayAlerts />
 
       {/* Hero Row: Revenue + Sales count */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <DashboardHeroCard
-          label={heroLabel}
-          value={heroValue}
-          fmt={fmt}
-          sublabel={heroSub}
-        />
-        <DashboardHeroCard
-          label="Vendas aprovadas"
-          value={totalVendas}
-          fmt={(v) => String(Math.round(v))}
-          sublabel={`${approved.length} de ${filtered.length} pedidos`}
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+        <div className="sm:col-span-3">
+          <DashboardHeroCard
+            label={heroLabel}
+            value={heroValue}
+            fmt={fmt}
+            sublabel={heroSub}
+            variant="revenue"
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <DashboardHeroCard
+            label="Vendas aprovadas"
+            value={totalVendas}
+            fmt={(v) => String(Math.round(v))}
+            sublabel={`${approved.length} de ${filtered.length} pedidos`}
+            variant="sales"
+          />
+        </div>
       </div>
 
       {/* Chart + State Map */}
