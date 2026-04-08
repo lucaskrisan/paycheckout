@@ -35,6 +35,18 @@ interface GlobeProps {
   theta?: number
   diffuse?: number
   mapSamples?: number
+  onMarkerClick?: (markerId: string) => void
+}
+
+// Convert lat/lng to 3D position on unit sphere
+function latLngToXYZ(lat: number, lng: number): [number, number, number] {
+  const phi = (90 - lat) * (Math.PI / 180)
+  const theta = (lng + 180) * (Math.PI / 180)
+  return [
+    Math.sin(phi) * Math.cos(theta),
+    Math.cos(phi),
+    Math.sin(phi) * Math.sin(theta),
+  ]
 }
 
 export function Globe({
@@ -52,22 +64,26 @@ export function Globe({
   arcWidth = 0.5,
   arcHeight = 0.25,
   speed = 0.003,
-  theta = 0.2,
+  theta: thetaProp = 0.2,
   diffuse = 1.5,
   mapSamples = 16000,
+  onMarkerClick,
 }: GlobeProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const pointerInteracting = useRef<{ x: number; y: number } | null>(null)
+  const pointerDownPos = useRef<{ x: number; y: number } | null>(null)
   const lastPointer = useRef<{ x: number; y: number; t: number } | null>(null)
   const dragOffset = useRef({ phi: 0, theta: 0 })
   const velocity = useRef({ phi: 0, theta: 0 })
   const phiOffsetRef = useRef(0)
   const thetaOffsetRef = useRef(0)
   const isPausedRef = useRef(false)
+  const currentPhiRef = useRef(0)
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
       pointerInteracting.current = { x: e.clientX, y: e.clientY }
+      pointerDownPos.current = { x: e.clientX, y: e.clientY }
       if (canvasRef.current) canvasRef.current.style.cursor = "grabbing"
       isPausedRef.current = true
     },
@@ -84,21 +100,67 @@ export function Globe({
         const dt = Math.max(now - lastPointer.current.t, 1)
         const maxVelocity = 0.15
         velocity.current = {
-          phi: Math.max(
-            -maxVelocity,
-            Math.min(maxVelocity, ((e.clientX - lastPointer.current.x) / dt) * 0.3)
-          ),
-          theta: Math.max(
-            -maxVelocity,
-            Math.min(maxVelocity, ((e.clientY - lastPointer.current.y) / dt) * 0.08)
-          ),
+          phi: Math.max(-maxVelocity, Math.min(maxVelocity, ((e.clientX - lastPointer.current.x) / dt) * 0.3)),
+          theta: Math.max(-maxVelocity, Math.min(maxVelocity, ((e.clientY - lastPointer.current.y) / dt) * 0.08)),
         }
       }
       lastPointer.current = { x: e.clientX, y: e.clientY, t: now }
     }
   }, [])
 
-  const handlePointerUp = useCallback(() => {
+  const handlePointerUp = useCallback((e: PointerEvent) => {
+    // Detect click (minimal drag)
+    if (pointerDownPos.current && onMarkerClick && canvasRef.current) {
+      const dx = e.clientX - pointerDownPos.current.x
+      const dy = e.clientY - pointerDownPos.current.y
+      if (Math.abs(dx) < 5 && Math.abs(dy) < 5) {
+        // It's a click - find nearest marker
+        const rect = canvasRef.current.getBoundingClientRect()
+        const cx = rect.width / 2
+        const cy = rect.height / 2
+        const radius = rect.width / 2
+        const clickX = e.clientX - rect.left
+        const clickY = e.clientY - rect.top
+        
+        // Normalize click to [-1, 1]
+        const nx = (clickX - cx) / radius
+        const ny = (clickY - cy) / radius
+        
+        // Find closest marker by screen-space approximation
+        const currentPhi = currentPhiRef.current + phiOffsetRef.current + dragOffset.current.phi
+        const currentTheta = thetaProp + thetaOffsetRef.current + dragOffset.current.theta
+        
+        let bestDist = Infinity
+        let bestId = ""
+        
+        for (const m of markers) {
+          const [lat, lng] = m.location
+          const markerPhi = (90 - lat) * (Math.PI / 180)
+          const markerTheta = (lng + 180) * (Math.PI / 180)
+          
+          // Rotate by current globe phi
+          const rotatedTheta = markerTheta - currentPhi
+          
+          const sx = Math.sin(markerPhi) * Math.sin(rotatedTheta)
+          const sy = -(Math.cos(markerPhi) * Math.cos(currentTheta) - Math.sin(markerPhi) * Math.cos(rotatedTheta) * Math.sin(currentTheta))
+          const sz = Math.cos(markerPhi) * Math.sin(currentTheta) + Math.sin(markerPhi) * Math.cos(rotatedTheta) * Math.cos(currentTheta)
+          
+          // Only consider visible markers (front-facing)
+          if (sz < 0) continue
+          
+          const dist = Math.sqrt((sx - nx) ** 2 + (sy - ny) ** 2)
+          if (dist < bestDist) {
+            bestDist = dist
+            bestId = m.id
+          }
+        }
+        
+        if (bestId && bestDist < 0.25) {
+          onMarkerClick(bestId)
+        }
+      }
+    }
+    
     if (pointerInteracting.current !== null) {
       phiOffsetRef.current += dragOffset.current.phi
       thetaOffsetRef.current += dragOffset.current.theta
@@ -106,9 +168,10 @@ export function Globe({
       lastPointer.current = null
     }
     pointerInteracting.current = null
+    pointerDownPos.current = null
     if (canvasRef.current) canvasRef.current.style.cursor = "grab"
     isPausedRef.current = false
-  }, [])
+  }, [markers, onMarkerClick, thetaProp])
 
   useEffect(() => {
     window.addEventListener("pointermove", handlePointerMove, { passive: true })
@@ -124,7 +187,6 @@ export function Globe({
     const canvas = canvasRef.current
     let globe: ReturnType<typeof createGlobe> | null = null
     let animationId: number
-
     let phi = 0
 
     function init() {
@@ -137,7 +199,7 @@ export function Globe({
         width,
         height: width,
         phi: 0,
-        theta,
+        theta: thetaProp,
         dark,
         diffuse,
         mapSamples,
@@ -165,26 +227,23 @@ export function Globe({
       function animate() {
         if (!isPausedRef.current) {
           phi += speed
-          if (
-            Math.abs(velocity.current.phi) > 0.0001 ||
-            Math.abs(velocity.current.theta) > 0.0001
-          ) {
+          if (Math.abs(velocity.current.phi) > 0.0001 || Math.abs(velocity.current.theta) > 0.0001) {
             phiOffsetRef.current += velocity.current.phi
             thetaOffsetRef.current += velocity.current.theta
             velocity.current.phi *= 0.95
             velocity.current.theta *= 0.95
           }
-          const thetaMin = -0.4,
-            thetaMax = 0.4
+          const thetaMin = -0.4, thetaMax = 0.4
           if (thetaOffsetRef.current < thetaMin) {
             thetaOffsetRef.current += (thetaMin - thetaOffsetRef.current) * 0.1
           } else if (thetaOffsetRef.current > thetaMax) {
             thetaOffsetRef.current += (thetaMax - thetaOffsetRef.current) * 0.1
           }
         }
+        currentPhiRef.current = phi
         globe!.update({
           phi: phi + phiOffsetRef.current + dragOffset.current.phi,
-          theta: theta + thetaOffsetRef.current + dragOffset.current.theta,
+          theta: thetaProp + thetaOffsetRef.current + dragOffset.current.theta,
           dark,
           mapBrightness,
           markerColor,
@@ -224,7 +283,7 @@ export function Globe({
       if (animationId) cancelAnimationFrame(animationId)
       if (globe) globe.destroy()
     }
-  }, [markers, arcs, markerColor, baseColor, arcColor, glowColor, dark, mapBrightness, markerSize, markerElevation, arcWidth, arcHeight, speed, theta, diffuse, mapSamples])
+  }, [markers, arcs, markerColor, baseColor, arcColor, glowColor, dark, mapBrightness, markerSize, markerElevation, arcWidth, arcHeight, speed, thetaProp, diffuse, mapSamples])
 
   return (
     <div className={`relative aspect-square select-none ${className}`}>
