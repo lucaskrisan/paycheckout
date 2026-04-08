@@ -227,9 +227,11 @@ const Analytics = () => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="today">Hoje</SelectItem>
               <SelectItem value="7days">7 dias</SelectItem>
               <SelectItem value="30days">30 dias</SelectItem>
               <SelectItem value="90days">90 dias</SelectItem>
+              <SelectItem value="total">Total</SelectItem>
             </SelectContent>
           </Select>
           <Badge variant="outline" className="border-primary/30 text-primary">
