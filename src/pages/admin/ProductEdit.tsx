@@ -656,11 +656,26 @@ const ProductEdit = () => {
                 <div className="lg:col-span-8">
                   <div className="border border-border rounded-lg p-6 bg-card space-y-4">
                     <div className="space-y-1.5">
+                      <Label>Moeda</Label>
+                      <Select value={form.currency} onValueChange={(v) => setForm({ ...form, currency: v as "BRL" | "USD" })}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="BRL">🇧🇷 BRL — Real Brasileiro</SelectItem>
+                          <SelectItem value="USD">🇺🇸 USD — Dólar Americano (Stripe)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {form.currency === "USD" && (
+                        <p className="text-xs text-muted-foreground">Produtos em USD serão processados via Stripe automaticamente.</p>
+                      )}
+                    </div>
+                    <div className="space-y-1.5">
                       <Label>Preço</Label>
                       <div className="flex">
-                        <span className="inline-flex items-center px-3 text-sm text-muted-foreground bg-muted border border-r-0 border-input rounded-l-md">R$</span>
-                        <Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="rounded-l-none" placeholder="0,00" />
-                        <span className="inline-flex items-center px-3 text-sm text-muted-foreground bg-muted border border-l-0 border-input rounded-r-md">BRL</span>
+                        <span className="inline-flex items-center px-3 text-sm text-muted-foreground bg-muted border border-r-0 border-input rounded-l-md">{form.currency === "USD" ? "$" : "R$"}</span>
+                        <Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="rounded-l-none" placeholder="0.00" />
+                        <span className="inline-flex items-center px-3 text-sm text-muted-foreground bg-muted border border-l-0 border-input rounded-r-md">{form.currency}</span>
                       </div>
                     </div>
                     <div className="space-y-1.5">
