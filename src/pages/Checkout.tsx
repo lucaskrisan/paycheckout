@@ -335,7 +335,7 @@ const Checkout = () => {
               )}
             </div>
 
-            {product.show_coupon !== false && <CouponField productId={product.id} productPrice={product.price} onApply={setCoupon} />}
+            {product.show_coupon !== false && <CouponField productId={product.id} productPrice={product.price} onApply={setCoupon} isUSD={isUSD} />}
 
             <OrderBumps bumps={orderBumps} selectedBumps={selectedBumps} onToggle={toggleBump} installments={creditCard.installments} />
 
