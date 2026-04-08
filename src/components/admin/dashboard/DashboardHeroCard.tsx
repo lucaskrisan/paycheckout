@@ -47,27 +47,26 @@ const DashboardHeroCard = memo(function DashboardHeroCard({ label, value, previo
   const isNegative = changePercent !== null && changePercent < 0;
 
   return (
-    <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent shadow-lg shadow-primary/5">
-      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-      <div className="absolute bottom-0 left-0 w-24 h-24 bg-primary/3 rounded-full translate-y-1/2 -translate-x-1/2" />
-      <CardContent className="p-6 relative">
+    <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent shadow-sm">
+      <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+      <CardContent className="p-4 relative">
         <div className="flex items-start justify-between">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-primary/20">
-                <DollarSign className="w-5 h-5 text-primary" />
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5">
+              <div className="p-1.5 rounded-md bg-primary/20">
+                <DollarSign className="w-4 h-4 text-primary" />
               </div>
-              <p className="text-sm font-medium text-muted-foreground">{label}</p>
+              <p className="text-xs font-medium text-muted-foreground">{label}</p>
             </div>
-            <p className="text-3xl font-bold text-foreground tracking-tight">
+            <p className="text-2xl font-bold text-foreground tracking-tight">
               {fmt(animatedValue)}
             </p>
             {sublabel && (
-              <p className="text-xs text-muted-foreground">{sublabel}</p>
+              <p className="text-[11px] text-muted-foreground">{sublabel}</p>
             )}
           </div>
           {changePercent !== null && (
-            <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
+            <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
               isPositive ? "bg-emerald-500/15 text-emerald-500" :
               isNegative ? "bg-red-500/15 text-red-500" :
               "bg-muted text-muted-foreground"
