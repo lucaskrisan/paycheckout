@@ -32,6 +32,7 @@ interface Product {
   is_subscription: boolean;
   moderation_status?: string;
   rejection_reason?: string;
+  currency?: string;
 }
 
 const Products = () => {
@@ -44,6 +45,7 @@ const Products = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
   const [paymentType, setPaymentType] = useState<"one_time" | "subscription">("one_time");
+  const [currency, setCurrency] = useState<"BRL" | "USD">("BRL");
   const [newName, setNewName] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [newSalesPage, setNewSalesPage] = useState("");
@@ -54,7 +56,7 @@ const Products = () => {
   const loadProducts = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data } = await supabase.from("products").select("id, name, price, active, is_subscription, moderation_status, rejection_reason").eq("user_id", user.id).order("created_at", { ascending: false });
+    const { data } = await supabase.from("products").select("id, name, price, active, is_subscription, moderation_status, rejection_reason, currency").eq("user_id", user.id).order("created_at", { ascending: false });
     setProducts((data || []) as any);
   };
 
@@ -129,6 +131,7 @@ const Products = () => {
   const openDialog = () => {
     setStep(1);
     setPaymentType("one_time");
+    setCurrency("BRL");
     setNewName("");
     setNewDescription("");
     setNewSalesPage("");
@@ -150,6 +153,7 @@ const Products = () => {
         is_subscription: paymentType === "subscription",
         billing_cycle: paymentType === "subscription" ? "monthly" : "monthly",
         price: 0,
+        currency,
         user_id: currentUser.id,
         moderation_status: "pending_review",
       } as any).select("id").single();
@@ -165,7 +169,7 @@ const Products = () => {
     }
   };
 
-  const fmt = (v: number) => `R$ ${Number(v).toFixed(2).replace(".", ",")}`;
+  const fmt = (v: number, cur?: string) => cur === "USD" ? `$ ${Number(v).toFixed(2)}` : `R$ ${Number(v).toFixed(2).replace(".", ",")}`;
 
   const filtered = products.filter((p) => {
     const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
@@ -220,7 +224,7 @@ const Products = () => {
                     )}
                   </div>
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">{fmt(p.price)}</TableCell>
+                <TableCell className="text-sm text-muted-foreground">{fmt(p.price, p.currency)}</TableCell>
                 <TableCell>
                   {(p as any).moderation_status === "pending_review" ? (
                     <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
@@ -295,6 +299,22 @@ const Products = () => {
                     <SelectItem value="subscription">Assinatura recorrente</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Moeda</Label>
+                <Select value={currency} onValueChange={(v) => setCurrency(v as "BRL" | "USD")}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BRL">🇧🇷 BRL — Real Brasileiro</SelectItem>
+                    <SelectItem value="USD">🇺🇸 USD — Dólar Americano</SelectItem>
+                  </SelectContent>
+                </Select>
+                {currency === "USD" && (
+                  <p className="text-xs text-muted-foreground">Checkout será em inglês, pagamento via Stripe (cartão internacional).</p>
+                )}
               </div>
 
               <Button onClick={() => setStep(2)} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium">

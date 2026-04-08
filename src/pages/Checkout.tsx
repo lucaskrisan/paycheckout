@@ -25,6 +25,7 @@ interface Product {
   id: string; name: string; description: string | null; price: number;
   original_price: number | null; image_url: string | null;
   is_subscription: boolean; billing_cycle: string; user_id: string | null; show_coupon?: boolean;
+  currency?: string;
 }
 
 interface OrderBump {
@@ -90,7 +91,7 @@ const Checkout = () => {
         const configPrice = (builderRes.data as any)?.price;
         if (configPrice != null && configPrice > 0) p.price = Number(configPrice);
         setProduct(p);
-        if (p.is_subscription) setPaymentMethod("credit_card");
+        if (p.is_subscription || p.currency === 'USD') setPaymentMethod("credit_card");
         if (p.user_id) {
           const [{ data: settings }, { data: billingAcc }, { data: ownerRoles }] = await Promise.all([
             supabase.from("checkout_settings").select("logo_url, primary_color, custom_css, company_name").eq("user_id", p.user_id).maybeSingle(),
@@ -178,9 +179,12 @@ const Checkout = () => {
     </div>
   );
 
+  const isUSD = product.currency === "USD";
+  
+
   const couponDiscount = coupon ? (coupon.discount_type === "percent" ? Math.round(product.price * (coupon.discount_value / 100) * 100) / 100 : coupon.discount_value) : 0;
   const bumpTotal = orderBumps.filter((b) => selectedBumps.has(b.id)).reduce((sum, b) => sum + (b.bump_product?.price || 0), 0);
-  const pixDiscount = paymentMethod === "pix" ? Math.round(product.price * 0.05 * 100) / 100 : 0;
+  const pixDiscount = (!isUSD && paymentMethod === "pix") ? Math.round(product.price * 0.05 * 100) / 100 : 0;
   const frontEndAmount = Math.round((product.price - pixDiscount - couponDiscount) * 100) / 100;
   const finalAmount = Math.round((Math.max(frontEndAmount, 0) + bumpTotal) * 100) / 100;
 
@@ -196,14 +200,15 @@ const Checkout = () => {
   };
 
   const handleSubmit = async () => {
-    if (!customer.name || !customer.email || !customer.cpf || !customer.phone) { toast.error("Preencha todos os campos obrigatórios"); return; }
+    if (!customer.name || !customer.email) { toast.error(isUSD ? "Please fill in all required fields" : "Preencha todos os campos obrigatórios"); return; }
+    if (!isUSD && (!customer.cpf || !customer.phone)) { toast.error("Preencha todos os campos obrigatórios"); return; }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(customer.email.trim())) { toast.error("E-mail inválido. Verifique o endereço digitado."); return; }
-    if (!isValidCPF(customer.cpf)) { toast.error("CPF inválido. Verifique o número digitado."); return; }
+    if (!emailRegex.test(customer.email.trim())) { toast.error(isUSD ? "Invalid email address" : "E-mail inválido. Verifique o endereço digitado."); return; }
+    if (!isUSD && !isValidCPF(customer.cpf)) { toast.error("CPF inválido. Verifique o número digitado."); return; }
     const [expMonth, expYear] = creditCard.expiry.split("/");
     if (paymentMethod === "credit_card") {
-      if (!creditCard.number || !creditCard.name.trim() || !creditCard.expiry || !creditCard.cvv) { toast.error("Preencha todos os dados do cartão"); return; }
-      if (!expMonth || !expYear || expMonth.length !== 2 || expYear.length !== 2) { toast.error("Preencha a validade do cartão corretamente"); return; }
+      if (!creditCard.number || !creditCard.name.trim() || !creditCard.expiry || !creditCard.cvv) { toast.error(isUSD ? "Please fill in all card details" : "Preencha todos os dados do cartão"); return; }
+      if (!expMonth || !expYear || expMonth.length !== 2 || expYear.length !== 2) { toast.error(isUSD ? "Invalid card expiry date" : "Preencha a validade do cartão corretamente"); return; }
     }
 
     trackAddToCartMain();
@@ -212,7 +217,34 @@ const Checkout = () => {
     const utms = getUtms();
 
     try {
-      if (paymentMethod === "pix") {
+      if (isUSD) {
+        // USD → Stripe
+        const { data, error } = await supabase.functions.invoke("create-stripe-payment", {
+          body: {
+            amount: finalAmount, product_id: product.id, currency: "usd",
+            config_id: requestedConfigId || null, coupon_id: coupon?.id || null,
+            bump_product_ids: bumpProductIds, checkout_url: window.location.href, utms,
+            customer: { name: customer.name, email: customer.email, phone: customer.phone || undefined },
+          },
+        });
+        if (error) {
+          let msg = "Payment processing failed";
+          try { const ctx = (error as any).context; if (ctx && typeof ctx.json === "function") { const body = await ctx.json(); if (body?.error) msg = body.error; } } catch {}
+          throw new Error(msg);
+        }
+        if (data?.error) throw new Error(data.error);
+        if (data?.url) {
+          window.location.href = data.url;
+        } else {
+          const paymentId = data?.payment_id || data?.id;
+          if (paymentId) {
+            toast.success("Payment processed successfully!");
+            trackPurchase(finalAmount, "USD", paymentId);
+            await markPurchased();
+            navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product.id}${data.order_id ? `&order_id=${data.order_id}` : ''}`);
+          } else throw new Error("Payment processing failed");
+        }
+      } else if (paymentMethod === "pix") {
         const customerState = getStateFromPhone(customer.phone);
         const { data, error } = await supabase.functions.invoke("create-pix-payment", {
           body: { amount: finalAmount, product_id: product.id, config_id: requestedConfigId || null, coupon_id: coupon?.id || null, bump_product_ids: bumpProductIds, checkout_url: window.location.href, utms, customer_state: customerState, customer: { name: customer.name, email: customer.email, cpf: customer.cpf, phone: customer.phone } },
@@ -250,7 +282,7 @@ const Checkout = () => {
           navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product.id}${data.order_id ? `&order_id=${data.order_id}` : ''}`);
         } else throw new Error("Falha ao processar pagamento");
       }
-    } catch (err: any) { console.error("Payment error:", err); toast.error(err.message || "Erro ao processar pagamento."); }
+    } catch (err: any) { console.error("Payment error:", err); toast.error(err.message || (isUSD ? "Payment error." : "Erro ao processar pagamento.")); }
     finally { setIsSubmitting(false); }
   };
 
@@ -276,8 +308,16 @@ const Checkout = () => {
             <CheckoutBuilderRenderer components={sortedLayout} zone="left" productName={product.name} excludeTypes={["form", "button", "countdown", "facebook"]} />
 
             <div className="space-y-4">
-              <CustomerForm data={customer} onChange={setCustomer} />
-              {product.is_subscription ? (
+              <CustomerForm data={customer} onChange={setCustomer} hideDocumentPhone={isUSD} />
+              {isUSD ? (
+                <div className="bg-[#F7FAFA] border border-[#D5D9D9] rounded-lg p-3 flex items-center gap-2">
+                  <span className="text-lg">💳</span>
+                  <div>
+                    <p className="text-sm font-bold text-[#0F1111]">Credit Card</p>
+                    <p className="text-xs text-[#565959]">Secure international payment via Stripe</p>
+                  </div>
+                </div>
+              ) : product.is_subscription ? (
                 <div className="bg-[#F7FAFA] border border-[#D5D9D9] rounded-lg p-3 flex items-center gap-2">
                   <span className="text-lg">🔄</span>
                   <div>
@@ -288,7 +328,7 @@ const Checkout = () => {
               ) : (
                 <PaymentTabs activeMethod={paymentMethod} onMethodChange={setPaymentMethod} pixDiscountPercent={5} />
               )}
-              {paymentMethod === "pix" ? (
+              {!isUSD && paymentMethod === "pix" ? (
                 <PixPayment totalAmount={finalAmount} qrCodeData={pixData?.qrCodeUrl} pixCode={pixData?.pixCode} />
               ) : (
                 <CreditCardForm data={creditCard} onChange={setCreditCard} totalAmount={finalAmount} />
@@ -312,7 +352,9 @@ const Checkout = () => {
               {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : (
                 <span className="flex items-center justify-center gap-2">
                   <Lock className="w-4 h-4" />
-                  {product.is_subscription ? "Assinar agora" : paymentMethod === "pix" ? `Pagar ${finalAmount.toFixed(2).replace(".", ",")} com PIX` : submitLabel || "Finalizar compra"}
+                  {isUSD
+                    ? `Pay $${finalAmount.toFixed(2)}`
+                    : product.is_subscription ? "Assinar agora" : paymentMethod === "pix" ? `Pagar ${finalAmount.toFixed(2).replace(".", ",")} com PIX` : submitLabel || "Finalizar compra"}
                   <ArrowRight className="w-5 h-5" />
                 </span>
               )}
