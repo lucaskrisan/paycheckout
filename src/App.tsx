@@ -160,7 +160,6 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
             <CookieConsent />
-            </Routes>
           </Suspense>
           </ErrorBoundary>
         </AuthProvider>
