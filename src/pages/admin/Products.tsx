@@ -56,7 +56,7 @@ const Products = () => {
   const loadProducts = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data } = await supabase.from("products").select("id, name, price, active, is_subscription, moderation_status, rejection_reason").eq("user_id", user.id).order("created_at", { ascending: false });
+    const { data } = await supabase.from("products").select("id, name, price, active, is_subscription, moderation_status, rejection_reason, currency").eq("user_id", user.id).order("created_at", { ascending: false });
     setProducts((data || []) as any);
   };
 
