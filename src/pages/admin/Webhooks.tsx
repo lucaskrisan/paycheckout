@@ -476,7 +476,7 @@ export default function Webhooks() {
         </TabsContent>
       </Tabs>
 
-      {/* CREATE WEBHOOK DRAWER - Kiwify style */}
+      {/* CREATE WEBHOOK DRAWER */}
       <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
         <SheetContent className="sm:max-w-md overflow-y-auto">
           <SheetHeader>
