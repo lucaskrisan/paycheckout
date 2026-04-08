@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from "react";
+import { memo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import type { LucideIcon } from "lucide-react";
 
@@ -21,14 +21,14 @@ const DashboardMetricCard = memo(function DashboardMetricCard({ icon: Icon, labe
       }${onClick ? " cursor-pointer" : ""}`}
       onClick={onClick}
     >
-      <CardContent className="p-4 flex items-center gap-3">
-        <div className={`p-2 rounded-lg ${accent ? "bg-primary/15" : "bg-muted"}`}>
-          <Icon className={`w-4 h-4 ${accent ? "text-primary" : "text-muted-foreground"}`} />
+      <CardContent className="p-3 flex items-center gap-2.5">
+        <div className={`p-1.5 rounded-md ${accent ? "bg-primary/15" : "bg-muted"}`}>
+          <Icon className={`w-3.5 h-3.5 ${accent ? "text-primary" : "text-muted-foreground"}`} />
         </div>
         <div className="min-w-0">
-          <p className="text-xs text-muted-foreground truncate">{label}</p>
-          <p className="text-lg font-bold text-foreground leading-tight">{value}</p>
-          {sub && <p className="text-[11px] text-muted-foreground truncate">{sub}</p>}
+          <p className="text-[11px] text-muted-foreground truncate">{label}</p>
+          <p className="text-base font-bold text-foreground leading-tight">{value}</p>
+          {sub && <p className="text-[10px] text-muted-foreground truncate">{sub}</p>}
         </div>
       </CardContent>
     </Card>

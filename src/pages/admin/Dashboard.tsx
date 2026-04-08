@@ -195,7 +195,7 @@ const Dashboard = () => {
   const heroSub = totalTaxas > 0 ? `Bruto: ${fmt(totalBruto)} · Taxa: ${fmt(totalTaxas)}` : undefined;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <DashboardHeaderBar
         period={period}
         onPeriodChange={setPeriod}
@@ -210,7 +210,7 @@ const Dashboard = () => {
       <GatewayAlerts />
 
       {/* Hero Row: Revenue + Sales count */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <DashboardHeroCard
           label={heroLabel}
           value={heroValue}
@@ -226,7 +226,7 @@ const Dashboard = () => {
       </div>
 
       {/* Chart + State Map */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <div className="lg:col-span-2">
           <DashboardChart data={chartData} fmt={fmt} />
         </div>
@@ -234,7 +234,7 @@ const Dashboard = () => {
       </div>
 
       {/* Metric cards grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
         <DashboardMetricCard icon={CreditCard} label="Aprovação cartão" value={`${cardApprovalRate}%`} accent />
         <DashboardMetricCard
           icon={Globe}

@@ -28,9 +28,9 @@ const CustomTooltip = ({ active, payload, label, fmt }: any) => {
 
 const DashboardChart = memo(function DashboardChart({ data, fmt, currencyPrefix = "R$" }: Props) {
   return (
-    <Card className="border border-border bg-card shadow-none">
-      <CardContent className="p-5">
-        <div className="h-[240px]">
+    <Card className="border border-border bg-card shadow-none h-full">
+      <CardContent className="p-4">
+        <div className="h-[200px]">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
               <defs>
