@@ -71,6 +71,7 @@ const ApiKeys = lazy(() => import("./pages/admin/ApiKeys"));
 const ProductReview = lazy(() => import("./pages/admin/ProductReview"));
 const WhatsApp = lazy(() => import("./pages/admin/WhatsApp"));
 const VerificationReview = lazy(() => import("./pages/admin/VerificationReview"));
+const Analytics = lazy(() => import("./pages/admin/Analytics"));
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -152,6 +153,7 @@ const App = () => (
                 <Route path="api-keys" element={<ApiKeys />} />
                 <Route path="product-review" element={<ProductReview />} />
                 <Route path="whatsapp" element={<WhatsApp />} />
+                <Route path="analytics" element={<Analytics />} />
                 <Route path="verification-review" element={<VerificationReview />} />
               </Route>
               <Route path="*" element={<NotFound />} />
