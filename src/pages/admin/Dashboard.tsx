@@ -2,39 +2,16 @@
 import { useEffect, useMemo, useCallback, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import {
-  CreditCard,
-  RefreshCcw,
-  ShoppingCart,
-  Globe,
-  Clock,
-  Megaphone,
-  Leaf,
-  TrendingUp,
-} from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useCheckoutPresence } from "@/hooks/useCheckoutPresence";
 import GatewayAlerts from "@/components/admin/GatewayAlerts";
 import DashboardHeaderBar, { type Period } from "@/components/admin/dashboard/DashboardHeader";
 import DashboardChart from "@/components/admin/dashboard/DashboardChart";
-import DashboardMetricCard from "@/components/admin/dashboard/DashboardMetricCard";
 import DashboardHeroCard from "@/components/admin/dashboard/DashboardHeroCard";
+import DashboardMetricCard from "@/components/admin/dashboard/DashboardMetricCard";
 import DashboardStateMap from "@/components/admin/dashboard/DashboardStateMap";
-import type { MetricConfig } from "@/components/admin/dashboard/DashboardCustomizer";
-import { toast } from "sonner";
-
-const ALL_METRICS: MetricConfig[] = [
-  { key: "card_approval", label: "Aprovação cartão", icon: CreditCard },
-  { key: "pix_sales", label: "Vendas PIX", icon: Globe },
-  { key: "refund", label: "Reembolso", icon: RefreshCcw },
-  { key: "paid_ads", label: "Vendas Pagas (Ads)", icon: Megaphone },
-  { key: "organic", label: "Vendas Orgânicas", icon: Leaf },
-  { key: "pending", label: "Vendas pendentes", icon: Clock },
-  { key: "abandoned", label: "Carrinhos abandonados", icon: ShoppingCart },
-  { key: "avg_ticket", label: "Ticket médio", icon: TrendingUp },
-];
-
-const DEFAULT_KEYS = ALL_METRICS.map((m) => m.key);
+import DashboardApprovalCard from "@/components/admin/dashboard/DashboardApprovalCard";
+import DashboardWeekdayChart from "@/components/admin/dashboard/DashboardWeekdayChart";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -46,29 +23,8 @@ const Dashboard = () => {
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("all");
 
-  // Dashboard customization
-  const [visibleMetrics, setVisibleMetrics] = useState<string[]>(DEFAULT_KEYS);
-  const [metricsOrder, setMetricsOrder] = useState<string[]>(DEFAULT_KEYS);
-
   const ownerProductIds = useMemo(() => products.map((p) => p.id), [products]);
   const liveVisitors = useCheckoutPresence("watch", undefined, ownerProductIds);
-
-  // Load dashboard preferences
-  useEffect(() => {
-    if (!user) return;
-    supabase
-      .from("dashboard_preferences")
-      .select("visible_metrics, metrics_order")
-      .eq("user_id", user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) {
-          if (Array.isArray(data.visible_metrics)) setVisibleMetrics(data.visible_metrics);
-          if (Array.isArray(data.metrics_order)) setMetricsOrder(data.metrics_order);
-        }
-      });
-  }, [user]);
-
 
   const getDateFilter = useCallback((p: Period): string | null => {
     const now = new Date();
@@ -167,22 +123,23 @@ const Dashboard = () => {
   const approved = useMemo(() => filtered.filter((o) => ["paid", "approved", "confirmed"].includes(o.status)), [filtered]);
   const pending = useMemo(() => filtered.filter((o) => o.status === "pending"), [filtered]);
   const refunded = useMemo(() => filtered.filter((o) => o.status === "refunded"), [filtered]);
+  const chargedback = useMemo(() => filtered.filter((o) => o.status === "chargedback"), [filtered]);
 
   const totalBruto = approved.reduce((s, o) => s + Number(o.amount || 0), 0);
   const totalTaxas = approved.reduce((s, o) => s + Number(o.platform_fee_amount || 0), 0);
   const totalLiquido = totalBruto - totalTaxas;
   const totalVendas = approved.length;
   const totalPendente = pending.reduce((s, o) => s + Number(o.amount || 0), 0);
+  const totalRefunded = refunded.reduce((s, o) => s + Number(o.amount || 0), 0);
+  const totalChargeback = chargedback.reduce((s, o) => s + Number(o.amount || 0), 0);
 
   const cardAttempts = filtered.filter((o) => o.payment_method === "credit_card");
   const cardApproved = cardAttempts.filter((o) => o.status === "paid" || o.status === "approved");
-  const cardApprovalRate = cardAttempts.length > 0 ? ((cardApproved.length / cardAttempts.length) * 100).toFixed(0) : "0";
+  const cardApprovalRate = cardAttempts.length > 0 ? (cardApproved.length / cardAttempts.length) * 100 : 0;
 
   const pixAttempts = filtered.filter((o) => o.payment_method === "pix");
   const pixApproved = pixAttempts.filter((o) => o.status === "paid" || o.status === "approved");
-  const pixConversionRate = pixAttempts.length > 0 ? ((pixApproved.length / pixAttempts.length) * 100).toFixed(0) : "0";
-
-  const refundRate = filtered.length > 0 ? ((refunded.length / filtered.length) * 100).toFixed(0) : "0";
+  const pixApprovalRate = pixAttempts.length > 0 ? (pixApproved.length / pixAttempts.length) * 100 : 0;
 
   const paidSales = approved.filter((o) => (o.metadata as any)?.utm_source);
   const organicSales = approved.filter((o) => !(o.metadata as any)?.utm_source);
@@ -193,7 +150,9 @@ const Dashboard = () => {
   const recoveredCarts = abandonedCarts.filter((c) => c.recovered);
   const recoveryRate = totalAbandoned > 0 ? ((recoveredCarts.length / totalAbandoned) * 100).toFixed(0) : "0";
 
-  // Sales by state
+  const avgTicket = totalVendas > 0 ? totalBruto / totalVendas : 0;
+  const margin = totalBruto > 0 ? ((totalLiquido / totalBruto) * 100) : 0;
+
   const salesByState = useMemo(() => {
     const map: Record<string, { count: number; revenue: number }> = {};
     approved.forEach((o) => {
@@ -226,28 +185,6 @@ const Dashboard = () => {
 
   const fmt = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
 
-  const heroLabel = totalTaxas > 0 ? "Valor líquido" : "Faturamento";
-  const heroValue = totalTaxas > 0 ? totalLiquido : totalBruto;
-  const heroSub = totalTaxas > 0 ? `Bruto: ${fmt(totalBruto)} · Taxa: ${fmt(totalTaxas)}` : undefined;
-
-  // Metric cards map
-  const metricCards: Record<string, JSX.Element> = {
-    card_approval: <DashboardMetricCard key="card_approval" icon={CreditCard} label="Aprovação cartão" value={`${cardApprovalRate}%`} accent />,
-    pix_sales: <DashboardMetricCard key="pix_sales" icon={Globe} label="Vendas PIX" value={fmt(pixApproved.reduce((s, o) => s + Number(o.amount), 0))} sub={`${pixConversionRate}% conversão`} accent />,
-    refund: <DashboardMetricCard key="refund" icon={RefreshCcw} label="Reembolso" value={`${refundRate}%`} />,
-    paid_ads: <DashboardMetricCard key="paid_ads" icon={Megaphone} label="Vendas Pagas (Ads)" value={String(paidSales.length)} sub={fmt(paidRevenue)} />,
-    organic: <DashboardMetricCard key="organic" icon={Leaf} label="Vendas Orgânicas" value={String(organicSales.length)} sub={fmt(organicRevenue)} />,
-    pending: <DashboardMetricCard key="pending" icon={Clock} label="Vendas pendentes" value={String(pending.length)} sub={`${fmt(totalPendente)} aguardando`} onClick={() => navigate("/admin/orders")} />,
-    abandoned: <DashboardMetricCard key="abandoned" icon={ShoppingCart} label="Carrinhos abandonados" value={String(totalAbandoned)} sub={`${recoveryRate}% recuperados`} onClick={() => navigate("/admin/abandoned")} />,
-    avg_ticket: <DashboardMetricCard key="avg_ticket" icon={TrendingUp} label="Ticket médio" value={totalVendas > 0 ? fmt(totalBruto / totalVendas) : fmt(0)} />,
-  };
-
-  // Ordered + filtered metrics
-  const renderedMetrics = metricsOrder
-    .filter((key) => visibleMetrics.includes(key))
-    .map((key) => metricCards[key])
-    .filter(Boolean);
-
   return (
     <div className="space-y-3">
       <DashboardHeaderBar
@@ -263,42 +200,107 @@ const Dashboard = () => {
 
       <GatewayAlerts />
 
-      {/* Hero Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-        <div className="sm:col-span-3">
-          <DashboardHeroCard
-            label={heroLabel}
-            value={heroValue}
-            fmt={fmt}
-            sublabel={heroSub}
-            variant="revenue"
-          />
-        </div>
-        <div className="sm:col-span-2">
-          <DashboardHeroCard
-            label="Vendas aprovadas"
-            value={totalVendas}
-            fmt={(v) => String(Math.round(v))}
-            sublabel={`${approved.length} de ${filtered.length} pedidos`}
-            variant="sales"
-          />
-        </div>
+      {/* ROW 1 — 4 hero cards igual UTMify */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <DashboardHeroCard
+          label="Faturamento Líquido"
+          value={totalLiquido}
+          fmt={fmt}
+          tooltip="Receita total menos taxas da plataforma"
+        />
+        <DashboardHeroCard
+          label="Vendas Aprovadas"
+          value={totalVendas}
+          fmt={(v) => String(Math.round(v))}
+          sublabel={`${approved.length} de ${filtered.length} pedidos`}
+          tooltip="Total de vendas com pagamento confirmado"
+        />
+        <DashboardHeroCard
+          label="Ticket Médio"
+          value={avgTicket}
+          fmt={fmt}
+          tooltip="Valor médio por venda aprovada"
+        />
+        <DashboardHeroCard
+          label="Lucro"
+          value={totalLiquido}
+          fmt={fmt}
+          variant="accent"
+          tooltip="Receita líquida após taxas"
+        />
       </div>
 
-      {/* Chart + State Map */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <div className="lg:col-span-2">
+      {/* ROW 2 — Chart grande à esquerda + 6 metric cards à direita (2x3 grid) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        {/* Chart — ocupa 7 colunas */}
+        <div className="lg:col-span-7">
           <DashboardChart data={chartData} fmt={fmt} />
         </div>
-        <DashboardStateMap salesByState={salesByState} fmt={fmt} />
+
+        {/* 6 metric cards — ocupa 5 colunas, grid 2x3 */}
+        <div className="lg:col-span-5 grid grid-cols-2 gap-3">
+          <DashboardMetricCard
+            label="Vendas Pagas (Ads)"
+            value={String(paidSales.length)}
+            sub={fmt(paidRevenue)}
+            tooltip="Vendas atribuídas a campanhas pagas via UTM"
+          />
+          <DashboardMetricCard
+            label="Vendas Orgânicas"
+            value={String(organicSales.length)}
+            sub={fmt(organicRevenue)}
+            tooltip="Vendas sem parâmetros UTM identificados"
+          />
+          <DashboardMetricCard
+            label="Margem"
+            value={`${margin.toFixed(1)}%`}
+            accent
+            tooltip="Percentual do faturamento que é lucro líquido"
+          />
+          <DashboardMetricCard
+            label="Vendas Pendentes"
+            value={fmt(totalPendente)}
+            sub={`${pending.length} pedidos`}
+            onClick={() => navigate("/admin/orders")}
+            tooltip="Pedidos aguardando confirmação de pagamento"
+          />
+          <DashboardMetricCard
+            label="Vendas Chargeback"
+            value={fmt(totalChargeback)}
+            sub={`${chargedback.length} pedidos`}
+            tooltip="Valor total de contestações de compra"
+          />
+          <DashboardMetricCard
+            label="Vendas Reembolsadas"
+            value={fmt(totalRefunded)}
+            sub={`${refunded.length} pedidos`}
+            tooltip="Valor total de reembolsos processados"
+          />
+        </div>
       </div>
 
-      {/* Metric cards grid */}
-      {renderedMetrics.length > 0 && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-          {renderedMetrics}
-        </div>
-      )}
+      {/* ROW 3 — 3 cards rodapé igual UTMify */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <DashboardWeekdayChart orders={filtered} fmt={fmt} />
+        <DashboardStateMap salesByState={salesByState} fmt={fmt} />
+        <DashboardApprovalCard
+          items={[
+            { label: "Cartão", rate: cardApprovalRate },
+            { label: "Pix", rate: pixApprovalRate },
+          ]}
+        />
+      </div>
+
+      {/* ROW 4 — Carrinhos abandonados */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <DashboardMetricCard
+          label="Carrinhos Abandonados"
+          value={String(totalAbandoned)}
+          sub={`${recoveryRate}% recuperados`}
+          onClick={() => navigate("/admin/abandoned")}
+          tooltip="Total de checkouts iniciados sem finalização"
+        />
+      </div>
     </div>
   );
 };
