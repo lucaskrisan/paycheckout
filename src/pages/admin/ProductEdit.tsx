@@ -303,6 +303,7 @@ const ProductEdit = () => {
             billing_cycle: (data as any).billing_cycle || "monthly",
             show_coupon: (data as any).show_coupon !== false,
             delivery_method: (data as any).delivery_method || "appsell",
+            currency: (data as any).currency || "BRL",
             payment_settings: {
               payment_method: "all",
               max_installments: 12,
