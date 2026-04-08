@@ -309,8 +309,16 @@ const Checkout = () => {
             <CheckoutBuilderRenderer components={sortedLayout} zone="left" productName={product.name} excludeTypes={["form", "button", "countdown", "facebook"]} />
 
             <div className="space-y-4">
-              <CustomerForm data={customer} onChange={setCustomer} />
-              {product.is_subscription ? (
+              <CustomerForm data={customer} onChange={setCustomer} hideDocumentPhone={isUSD} />
+              {isUSD ? (
+                <div className="bg-[#F7FAFA] border border-[#D5D9D9] rounded-lg p-3 flex items-center gap-2">
+                  <span className="text-lg">💳</span>
+                  <div>
+                    <p className="text-sm font-bold text-[#0F1111]">Credit Card</p>
+                    <p className="text-xs text-[#565959]">Secure international payment via Stripe</p>
+                  </div>
+                </div>
+              ) : product.is_subscription ? (
                 <div className="bg-[#F7FAFA] border border-[#D5D9D9] rounded-lg p-3 flex items-center gap-2">
                   <span className="text-lg">🔄</span>
                   <div>
@@ -321,7 +329,7 @@ const Checkout = () => {
               ) : (
                 <PaymentTabs activeMethod={paymentMethod} onMethodChange={setPaymentMethod} pixDiscountPercent={5} />
               )}
-              {paymentMethod === "pix" ? (
+              {!isUSD && paymentMethod === "pix" ? (
                 <PixPayment totalAmount={finalAmount} qrCodeData={pixData?.qrCodeUrl} pixCode={pixData?.pixCode} />
               ) : (
                 <CreditCardForm data={creditCard} onChange={setCreditCard} totalAmount={finalAmount} />
