@@ -164,7 +164,7 @@ export default function ProducerVerification() {
           <ShieldCheck className="w-4 h-4" /> Verificação de Identidade
         </CardTitle>
         <p className="text-xs text-muted-foreground">
-          Envie seus documentos para obter o selo de verificado no seu perfil. Assim como na Kiwify e Cartpanda, produtores verificados transmitem mais confiança.
+          Envie seus documentos para obter o selo de verificado no seu perfil. Produtores verificados transmitem mais confiança aos compradores.
         </p>
       </CardHeader>
       <CardContent className="space-y-4">

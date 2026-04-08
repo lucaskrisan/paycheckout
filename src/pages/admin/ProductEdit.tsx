@@ -961,7 +961,7 @@ const ProductEdit = () => {
                     <div className="space-y-1.5">
                       <Label>Descrição na fatura do cartão</Label>
                       <div className="flex items-center">
-                        <span className="inline-flex items-center px-3 text-xs text-muted-foreground bg-muted border border-r-0 border-input rounded-l-md h-10 font-semibold">KIWIFY*</span>
+                        <span className="inline-flex items-center px-3 text-xs text-muted-foreground bg-muted border border-r-0 border-input rounded-l-md h-10 font-semibold">PANTTERA*</span>
                         <Input value={form.payment_settings.statement_descriptor} onChange={(e) => setForm((f) => ({ ...f, payment_settings: { ...f.payment_settings, statement_descriptor: e.target.value } }))} placeholder="MEUPRODUTO" className="rounded-l-none uppercase" />
                       </div>
                     </div>
