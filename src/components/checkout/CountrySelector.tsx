@@ -233,14 +233,22 @@ const countries: Country[] = [
   { code: "ZW", name: "Zimbabwe" },
 ];
 
-const getFlagEmoji = (code: string) => {
-  if (code === "AC" || code === "XK") return "🏳️";
-  return code
-    .toUpperCase()
-    .split("")
-    .map((c) => String.fromCodePoint(0x1f1e6 + c.charCodeAt(0) - 65))
-    .join("");
+const getFlagUrl = (code: string) => {
+  const c = code.toLowerCase();
+  return `https://flagcdn.com/w40/${c}.png`;
 };
+
+const FlagImg = ({ code, size = "w-5 h-4" }: { code: string; size?: string }) => (
+  <img
+    src={getFlagUrl(code)}
+    alt={code}
+    className={`${size} object-cover rounded-sm inline-block`}
+    loading="lazy"
+    onError={(e) => {
+      (e.target as HTMLImageElement).style.display = "none";
+    }}
+  />
+);
 
 interface CountrySelectorProps {
   selected: string;
