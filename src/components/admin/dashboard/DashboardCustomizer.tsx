@@ -1,15 +1,7 @@
 import { memo, useState, useCallback } from "react";
-import { Settings2, GripVertical, Eye, EyeOff, Save } from "lucide-react";
+import { Settings2, GripVertical, Save, X, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import type { LucideIcon } from "lucide-react";
 
 export interface MetricConfig {
@@ -24,6 +16,8 @@ interface Props {
   metricsOrder: string[];
   onSave: (visible: string[], order: string[]) => void;
   saving?: boolean;
+  editing: boolean;
+  onEditingChange: (editing: boolean) => void;
 }
 
 const DashboardCustomizer = memo(function DashboardCustomizer({
@@ -32,19 +26,22 @@ const DashboardCustomizer = memo(function DashboardCustomizer({
   metricsOrder,
   onSave,
   saving,
+  editing,
+  onEditingChange,
 }: Props) {
-  const [open, setOpen] = useState(false);
   const [localVisible, setLocalVisible] = useState<string[]>(visibleMetrics);
   const [localOrder, setLocalOrder] = useState<string[]>(metricsOrder);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
 
-  const handleOpen = useCallback((isOpen: boolean) => {
-    if (isOpen) {
-      setLocalVisible([...visibleMetrics]);
-      setLocalOrder([...metricsOrder]);
-    }
-    setOpen(isOpen);
-  }, [visibleMetrics, metricsOrder]);
+  const handleStartEditing = useCallback(() => {
+    setLocalVisible([...visibleMetrics]);
+    setLocalOrder([...metricsOrder]);
+    onEditingChange(true);
+  }, [visibleMetrics, metricsOrder, onEditingChange]);
+
+  const handleCancel = useCallback(() => {
+    onEditingChange(false);
+  }, [onEditingChange]);
 
   const toggleMetric = (key: string) => {
     setLocalVisible((prev) =>
@@ -68,85 +65,94 @@ const DashboardCustomizer = memo(function DashboardCustomizer({
 
   const handleSave = () => {
     onSave(localVisible, localOrder);
-    setOpen(false);
+    onEditingChange(false);
   };
 
   const orderedMetrics = localOrder
     .map((key) => allMetrics.find((m) => m.key === key))
     .filter(Boolean) as MetricConfig[];
 
-  // Add any metrics not in the order yet (new ones)
   allMetrics.forEach((m) => {
     if (!orderedMetrics.find((om) => om.key === m.key)) {
       orderedMetrics.push(m);
     }
   });
 
+  // Toggle button for header
+  if (!editing) {
+    return (
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-9 gap-2 text-muted-foreground hover:text-foreground"
+        onClick={handleStartEditing}
+      >
+        <Pencil className="w-3.5 h-3.5" />
+        <span className="hidden sm:inline text-xs">Editar layout</span>
+      </Button>
+    );
+  }
+
+  // Inline sidebar panel
   return (
-    <Sheet open={open} onOpenChange={handleOpen}>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-9 w-9" title="Personalizar dashboard">
-          <Settings2 className="w-4 h-4" />
+    <div className="w-[200px] flex-shrink-0 flex flex-col h-fit sticky top-4">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+          <Settings2 className="w-4 h-4 text-primary" />
+          Métricas
+        </h3>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCancel}>
+          <X className="w-3.5 h-3.5" />
         </Button>
-      </SheetTrigger>
-      <SheetContent side="right" className="w-[340px] sm:w-[380px]">
-        <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
-            <Settings2 className="w-5 h-5 text-primary" />
-            Personalizar Dashboard
-          </SheetTitle>
-          <SheetDescription>
-            Arraste para reordenar e use os toggles para mostrar/ocultar métricas.
-          </SheetDescription>
-        </SheetHeader>
+      </div>
 
-        <div className="mt-6 space-y-1.5">
-          {orderedMetrics.map((metric, idx) => {
-            const isVisible = localVisible.includes(metric.key);
-            const Icon = metric.icon;
-            return (
-              <div
-                key={metric.key}
-                draggable
-                onDragStart={() => handleDragStart(idx)}
-                onDragOver={(e) => handleDragOver(e, idx)}
-                onDragEnd={handleDragEnd}
-                className={`flex items-center gap-3 p-2.5 rounded-lg border transition-all cursor-grab active:cursor-grabbing ${
-                  dragIdx === idx
-                    ? "border-primary bg-primary/10 scale-[1.02]"
-                    : isVisible
-                    ? "border-border bg-card hover:bg-muted/40"
-                    : "border-border/50 bg-muted/20 opacity-60"
-                }`}
-              >
-                <GripVertical className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                <div className={`p-1.5 rounded-md ${isVisible ? "bg-primary/15" : "bg-muted"}`}>
-                  <Icon className={`w-3.5 h-3.5 ${isVisible ? "text-primary" : "text-muted-foreground"}`} />
-                </div>
-                <span className={`text-sm flex-1 ${isVisible ? "text-foreground" : "text-muted-foreground"}`}>
-                  {metric.label}
-                </span>
-                <Switch
-                  checked={isVisible}
-                  onCheckedChange={() => toggleMetric(metric.key)}
-                  className="scale-90"
-                />
-              </div>
-            );
-          })}
-        </div>
+      {/* Metric list */}
+      <div className="space-y-1">
+        {orderedMetrics.map((metric, idx) => {
+          const isVisible = localVisible.includes(metric.key);
+          const Icon = metric.icon;
+          return (
+            <div
+              key={metric.key}
+              draggable
+              onDragStart={() => handleDragStart(idx)}
+              onDragOver={(e) => handleDragOver(e, idx)}
+              onDragEnd={handleDragEnd}
+              className={`flex items-center gap-2 px-2.5 py-2 rounded-lg border text-xs transition-all cursor-grab active:cursor-grabbing ${
+                dragIdx === idx
+                  ? "border-primary bg-primary/10 scale-[1.02]"
+                  : isVisible
+                  ? "border-border bg-card hover:bg-muted/40"
+                  : "border-border/50 bg-muted/20 opacity-50"
+              }`}
+            >
+              <GripVertical className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+              <Icon className={`w-3 h-3 flex-shrink-0 ${isVisible ? "text-primary" : "text-muted-foreground"}`} />
+              <span className={`flex-1 truncate ${isVisible ? "text-foreground" : "text-muted-foreground"}`}>
+                {metric.label}
+              </span>
+              <Switch
+                checked={isVisible}
+                onCheckedChange={() => toggleMetric(metric.key)}
+                className="scale-75"
+              />
+            </div>
+          );
+        })}
+      </div>
 
-        <div className="mt-6 flex gap-2">
-          <Button onClick={handleSave} disabled={saving} className="flex-1 gap-2">
-            <Save className="w-4 h-4" />
-            {saving ? "Salvando..." : "Salvar"}
-          </Button>
-          <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancelar
-          </Button>
-        </div>
-      </SheetContent>
-    </Sheet>
+      {/* Actions */}
+      <div className="mt-3 flex gap-1.5">
+        <Button size="sm" onClick={handleSave} disabled={saving} className="flex-1 gap-1.5 h-8 text-xs">
+          <Save className="w-3 h-3" />
+          {saving ? "..." : "Salvar"}
+        </Button>
+        <Button size="sm" variant="outline" onClick={handleCancel} className="h-8 text-xs px-3">
+          Cancelar
+        </Button>
+      </div>
+    </div>
   );
 });
 
