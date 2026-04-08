@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { getStateFromPhone } from "@/lib/dddToState";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Lock, ArrowRight, Loader2, Shield } from "lucide-react";
+import CountrySelector from "@/components/checkout/CountrySelector";
 import CustomerForm, { type CustomerData, isValidCPF } from "@/components/checkout/CustomerForm";
 import PixPayment from "@/components/checkout/PixPayment";
 import PixModal from "@/components/checkout/PixModal";
@@ -57,6 +58,7 @@ const Checkout = () => {
   const [checkoutSettings, setCheckoutSettings] = useState<CheckoutSettings | null>(null);
   const [isOwnerSuperAdmin, setIsOwnerSuperAdmin] = useState(false);
   const [coupon, setCoupon] = useState<CouponData | null>(null);
+  const [selectedCountry, setSelectedCountry] = useState("US");
 
   const prefill = useMemo(() => {
     const params = new URLSearchParams(location.search);
@@ -224,6 +226,7 @@ const Checkout = () => {
             amount: finalAmount, product_id: product.id, currency: "usd",
             config_id: requestedConfigId || null, coupon_id: coupon?.id || null,
             bump_product_ids: bumpProductIds, checkout_url: window.location.href, utms,
+            customer_country: selectedCountry,
             customer: { name: customer.name, email: customer.email, phone: customer.phone || undefined },
           },
         });
@@ -308,6 +311,12 @@ const Checkout = () => {
             <CheckoutBuilderRenderer components={sortedLayout} zone="left" productName={product.name} excludeTypes={["form", "button", "countdown", "facebook"]} />
 
             <div className="space-y-4">
+              {isUSD && (
+                <div>
+                  <p className="text-xs font-semibold text-[#565959] uppercase tracking-wide mb-1.5">Your country</p>
+                  <CountrySelector selected={selectedCountry} onChange={setSelectedCountry} />
+                </div>
+              )}
               <CustomerForm data={customer} onChange={setCustomer} hideDocumentPhone={isUSD} />
               {isUSD ? (
                 <div className="bg-[#F7FAFA] border border-[#D5D9D9] rounded-lg p-3 flex items-center gap-2">
