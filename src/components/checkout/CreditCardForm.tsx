@@ -125,14 +125,6 @@ const CreditCardForm = ({ data, onChange, totalAmount, isUSD = false }: CreditCa
         </div>
       </div>
 
-      <Input
-        value={data.postalCode}
-        onChange={(e) => handleChange("postalCode", e.target.value)}
-        placeholder="CEP do titular"
-        inputMode="numeric"
-        autoComplete="postal-code"
-        className={inputClass}
-      />
 
       <Select value={data.installments} onValueChange={(v) => handleChange("installments", v)}>
         <SelectTrigger className={inputClass}>
