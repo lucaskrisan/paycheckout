@@ -9,9 +9,8 @@ interface PriceSummaryProps {
   finalAmount: number;
   paymentMethod: "pix" | "credit_card";
   couponCode?: string;
+  isUSD?: boolean;
 }
-
-const fmt = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
 
 const PriceSummary = ({
   originalPrice,
@@ -21,7 +20,11 @@ const PriceSummary = ({
   finalAmount,
   paymentMethod,
   couponCode,
+  isUSD = false,
 }: PriceSummaryProps) => {
+  const fmt = (v: number) =>
+    isUSD ? `$ ${v.toFixed(2)}` : `R$ ${v.toFixed(2).replace(".", ",")}`;
+
   const hasDiscount = pixDiscount > 0 || couponDiscount > 0;
 
   return (
@@ -29,13 +32,15 @@ const PriceSummary = ({
       {/* Header */}
       <div className="px-4 py-3 bg-[#F7F8F8] border-b border-[#E8EBED] flex items-center gap-2">
         <BadgePercent className="w-4 h-4 text-[#007185]" />
-        <span className="text-sm font-bold text-[#0F1111]">Resumo do pedido</span>
+        <span className="text-sm font-bold text-[#0F1111]">
+          {isUSD ? "Order summary" : "Resumo do pedido"}
+        </span>
       </div>
 
       <div className="px-4 py-3 space-y-2">
         {/* Original price */}
         <div className="flex justify-between text-sm">
-          <span className="text-[#565959]">Subtotal</span>
+          <span className="text-[#565959]">{isUSD ? "Subtotal" : "Subtotal"}</span>
           <span className={hasDiscount ? "line-through text-[#565959]" : "font-semibold text-[#0F1111]"}>
             {fmt(originalPrice)}
           </span>
@@ -70,7 +75,7 @@ const PriceSummary = ({
             >
               <span className="flex items-center gap-1.5 text-[#067D62]">
                 <Tag className="w-3.5 h-3.5" />
-                Cupom {couponCode ? couponCode.toUpperCase() : ""}
+                {isUSD ? "Coupon" : "Cupom"} {couponCode ? couponCode.toUpperCase() : ""}
               </span>
               <span className="font-semibold text-[#067D62]">- {fmt(couponDiscount)}</span>
             </motion.div>
@@ -80,7 +85,7 @@ const PriceSummary = ({
         {/* Bump total */}
         {bumpTotal > 0 && (
           <div className="flex justify-between text-sm">
-            <span className="text-[#565959]">Adicionais</span>
+            <span className="text-[#565959]">{isUSD ? "Add-ons" : "Adicionais"}</span>
             <span className="text-[#0F1111]">+ {fmt(bumpTotal)}</span>
           </div>
         )}
@@ -93,7 +98,7 @@ const PriceSummary = ({
           <span className="text-sm font-bold text-[#0F1111]">Total</span>
           <div className="text-right">
             <span className="text-xl font-extrabold text-[#0F1111]">{fmt(finalAmount)}</span>
-            {paymentMethod === "pix" && pixDiscount > 0 && (
+            {!isUSD && paymentMethod === "pix" && pixDiscount > 0 && (
               <p className="text-[10px] text-[#067D62] font-semibold mt-0.5">
                 Você economiza {fmt(pixDiscount)} com PIX! 🎉
               </p>

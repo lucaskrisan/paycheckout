@@ -15,6 +15,7 @@ interface CreditCardFormProps {
   data: CreditCardData;
   onChange: (data: CreditCardData) => void;
   totalAmount: number;
+  isUSD?: boolean;
 }
 
 const formatCardNumber = (value: string) => {
@@ -28,12 +29,12 @@ const formatCEP = (value: string) => {
   return digits;
 };
 
-const CreditCardForm = ({ data, onChange, totalAmount }: CreditCardFormProps) => {
+const CreditCardForm = ({ data, onChange, totalAmount, isUSD = false }: CreditCardFormProps) => {
   const handleChange = (field: keyof CreditCardData, value: string) => {
     let formatted = value;
     if (field === "number") formatted = formatCardNumber(value);
     if (field === "cvv") formatted = value.replace(/\D/g, "").slice(0, 4);
-    if (field === "postalCode") formatted = formatCEP(value);
+    if (field === "postalCode") formatted = isUSD ? value.slice(0, 10) : formatCEP(value);
     onChange({ ...data, [field]: formatted });
   };
 
@@ -50,20 +51,27 @@ const CreditCardForm = ({ data, onChange, totalAmount }: CreditCardFormProps) =>
   };
 
   const INTEREST_RATE = 0.0299;
-  const installmentOptions = Array.from({ length: 10 }, (_, i) => {
-    const n = i + 1;
-    if (n === 1) {
-      return { value: "1", label: `1x de R$ ${totalAmount.toFixed(2).replace(".", ",")} (sem juros)` };
-    }
-    const installmentValue = totalAmount * INTEREST_RATE / (1 - Math.pow(1 + INTEREST_RATE, -n));
-    const totalWithInterest = installmentValue * n;
-    return {
-      value: String(n),
-      label: `${n}x de R$ ${installmentValue.toFixed(2).replace(".", ",")} (R$ ${totalWithInterest.toFixed(2).replace(".", ",")})`,
-    };
-  });
+  const installmentOptions = isUSD
+    ? [{ value: "1", label: `1x of $${totalAmount.toFixed(2)}` }]
+    : Array.from({ length: 10 }, (_, i) => {
+        const n = i + 1;
+        if (n === 1) {
+          return { value: "1", label: `1x de R$ ${totalAmount.toFixed(2).replace(".", ",")} (sem juros)` };
+        }
+        const installmentValue = totalAmount * INTEREST_RATE / (1 - Math.pow(1 + INTEREST_RATE, -n));
+        const totalWithInterest = installmentValue * n;
+        return {
+          value: String(n),
+          label: `${n}x de R$ ${installmentValue.toFixed(2).replace(".", ",")} (R$ ${totalWithInterest.toFixed(2).replace(".", ",")})`,
+        };
+      });
 
   const inputClass = "h-11 bg-white border-[#D5D9D9] text-[#0F1111] placeholder:text-[#767676] rounded-lg focus:border-[#007185] focus:ring-[#007185]";
+
+  // For USD/Stripe, show a minimal form — Stripe Checkout handles the actual card
+  if (isUSD) {
+    return null;
+  }
 
   return (
     <div className="space-y-3">
