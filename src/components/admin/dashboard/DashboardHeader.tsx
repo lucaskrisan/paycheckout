@@ -70,7 +70,7 @@ const DashboardHeaderBar = memo(function DashboardHeaderBar({
             <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
           </span>
           <span className="text-foreground font-medium">{liveVisitors}</span>
-          <span className="text-muted-foreground text-xs">ao vivo</span>
+          <span className="text-muted-foreground text-xs">visitantes ao vivo</span>
         </div>
         {/* Currency Selector */}
         <DropdownMenu>
