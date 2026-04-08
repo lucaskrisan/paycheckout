@@ -69,29 +69,6 @@ const Dashboard = () => {
       });
   }, [user]);
 
-  const savePreferences = useCallback(async (visible: string[], order: string[]) => {
-    if (!user) return;
-    setSavingPrefs(true);
-    try {
-      const { error } = await supabase
-        .from("dashboard_preferences")
-        .upsert({
-          user_id: user.id,
-          visible_metrics: visible,
-          metrics_order: order,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: "user_id" });
-      if (error) throw error;
-      setVisibleMetrics(visible);
-      setMetricsOrder(order);
-      toast.success("Dashboard personalizado salvo!");
-    } catch (err) {
-      console.error(err);
-      toast.error("Erro ao salvar preferências");
-    } finally {
-      setSavingPrefs(false);
-    }
-  }, [user]);
 
   const getDateFilter = useCallback((p: Period): string | null => {
     const now = new Date();
