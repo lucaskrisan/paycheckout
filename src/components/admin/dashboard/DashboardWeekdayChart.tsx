@@ -24,12 +24,12 @@ interface Props {
   fmt: (v: number) => string;
 }
 
-const CustomTooltip = ({ active, payload, label, fmt }: any) => {
+const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-popover/95 backdrop-blur-xl border border-border/60 rounded-lg px-3 py-2 shadow-2xl shadow-black/40">
-      <p className="text-[11px] text-muted-foreground uppercase tracking-wider">{label}</p>
-      <p className="text-sm font-bold text-foreground font-display">{payload[0].value} vendas</p>
+    <div className="bg-card/95 backdrop-blur-xl border border-white/[0.08] rounded-lg px-3 py-2 shadow-2xl shadow-black/50">
+      <p className="text-[11px] text-muted-foreground">{label}</p>
+      <p className="text-sm font-bold text-foreground">{payload[0].value} vendas</p>
     </div>
   );
 };
@@ -51,10 +51,11 @@ const DashboardWeekdayChart = memo(function DashboardWeekdayChart({ orders, fmt 
   }, [orders]);
 
   return (
-    <Card className="border border-border/60 bg-card shadow-none h-full">
-      <CardContent className="p-4">
+    <Card className="border border-white/[0.06] bg-card/70 backdrop-blur-md shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),0_2px_12px_-4px_rgba(0,0,0,0.4)] h-full">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+      <CardContent className="p-4 relative">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider">Vendas por Dia</h3>
+          <h3 className="text-xs font-semibold text-foreground">Vendas por Dia da Semana</h3>
           <TooltipProvider delayDuration={200}>
             <UITooltip>
               <TooltipTrigger asChild>
@@ -70,33 +71,33 @@ const DashboardWeekdayChart = memo(function DashboardWeekdayChart({ orders, fmt 
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
               <defs>
-                <linearGradient id="barGradPantera" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="hsl(270 85% 60%)" stopOpacity={0.9} />
-                  <stop offset="100%" stopColor="hsl(270 85% 60%)" stopOpacity={0.3} />
+                <linearGradient id="barGradTactical" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(160 84% 39%)" stopOpacity={0.85} />
+                  <stop offset="100%" stopColor="hsl(160 84% 39%)" stopOpacity={0.2} />
                 </linearGradient>
               </defs>
               <XAxis
                 dataKey="name"
-                tick={{ fontSize: 11, fill: "hsl(250 8% 55%)" }}
+                tick={{ fontSize: 11, fill: "hsl(215 10% 48%)" }}
                 axisLine={false}
                 tickLine={false}
               />
               <YAxis
-                tick={{ fontSize: 11, fill: "hsl(250 8% 55%)" }}
+                tick={{ fontSize: 11, fill: "hsl(215 10% 48%)" }}
                 axisLine={false}
                 tickLine={false}
               />
-              <Tooltip content={<CustomTooltip fmt={fmt} />} />
+              <Tooltip content={<CustomTooltip />} />
               <Bar
                 dataKey="vendas"
-                fill="url(#barGradPantera)"
+                fill="url(#barGradTactical)"
                 radius={[4, 4, 0, 0]}
                 maxBarSize={28}
               >
                 {data.map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
-                    fillOpacity={0.4 + entry.pct * 0.6}
+                    fillOpacity={0.3 + entry.pct * 0.7}
                   />
                 ))}
               </Bar>

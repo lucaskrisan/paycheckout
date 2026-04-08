@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, useState } from "react";
-import { DollarSign, ShoppingCart, TrendingUp, Zap } from "lucide-react";
+import { DollarSign, ShoppingCart, TrendingUp, Zap, Eye } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -13,8 +13,9 @@ interface Props {
   previousValue?: number;
   fmt: (v: number) => string;
   sublabel?: string;
-  variant?: "revenue" | "sales" | "ticket" | "neutral" | "accent";
+  variant?: "revenue" | "sales" | "ticket" | "visitors" | "neutral";
   tooltip?: string;
+  sparklineData?: number[];
 }
 
 function useAnimatedNumber(target: number, duration = 900) {
@@ -40,73 +41,88 @@ function useAnimatedNumber(target: number, duration = 900) {
   return display;
 }
 
-const variantConfig = {
-  revenue: {
-    gradient: "from-violet-950 via-purple-900/80 to-violet-800/60",
-    border: "border-purple-500/20",
-    glow: "shadow-[inset_0_1px_0_0_rgba(168,85,247,0.15),0_4px_24px_-4px_rgba(139,92,246,0.25)]",
-    Icon: DollarSign,
-    iconColor: "text-purple-300",
-  },
-  sales: {
-    gradient: "from-slate-950 via-indigo-950/60 to-violet-950/40",
-    border: "border-indigo-500/15",
-    glow: "shadow-[inset_0_1px_0_0_rgba(99,102,241,0.12),0_4px_24px_-4px_rgba(99,102,241,0.2)]",
-    Icon: ShoppingCart,
-    iconColor: "text-indigo-300",
-  },
-  ticket: {
-    gradient: "from-slate-950 via-cyan-950/40 to-teal-950/30",
-    border: "border-cyan-500/15",
-    glow: "shadow-[inset_0_1px_0_0_rgba(6,182,212,0.12),0_4px_24px_-4px_rgba(6,182,212,0.2)]",
-    Icon: TrendingUp,
-    iconColor: "text-cyan-300",
-  },
-  neutral: {
-    gradient: "from-violet-950 via-purple-900/80 to-violet-800/60",
-    border: "border-purple-500/20",
-    glow: "shadow-[inset_0_1px_0_0_rgba(168,85,247,0.15),0_4px_24px_-4px_rgba(139,92,246,0.25)]",
-    Icon: Zap,
-    iconColor: "text-purple-300",
-  },
-  accent: {
-    gradient: "from-slate-950 via-cyan-950/40 to-teal-950/30",
-    border: "border-cyan-500/15",
-    glow: "shadow-[inset_0_1px_0_0_rgba(6,182,212,0.12),0_4px_24px_-4px_rgba(6,182,212,0.2)]",
-    Icon: Zap,
-    iconColor: "text-cyan-300",
-  },
-};
-
-const DashboardHeroCard = memo(function DashboardHeroCard({ label, value, fmt, sublabel, variant = "neutral", tooltip }: Props) {
-  const animatedValue = useAnimatedNumber(value);
-  const config = variantConfig[variant] || variantConfig.neutral;
-  const { Icon } = config;
+/* Mini sparkline SVG */
+function MiniSparkline({ data, color = "hsl(160 84% 39%)" }: { data: number[]; color?: string }) {
+  if (!data.length) return null;
+  const max = Math.max(...data, 1);
+  const min = Math.min(...data, 0);
+  const range = max - min || 1;
+  const w = 120;
+  const h = 32;
+  const points = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * w;
+    const y = h - ((v - min) / range) * (h - 4) - 2;
+    return `${x},${y}`;
+  }).join(" ");
 
   return (
-    <div className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${config.gradient} border ${config.border} ${config.glow} p-5 h-full min-h-[120px] flex flex-col justify-between`}>
-      {/* Texture noise overlay */}
-      <div className="absolute inset-0 opacity-[0.03] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc0JyBoZWlnaHQ9JzQnPgo8cmVjdCB3aWR0aD0nNCcgaGVpZ2h0PSc0JyBmaWxsPScjZmZmJy8+CjxyZWN0IHdpZHRoPScxJyBoZWlnaHQ9JzEnIGZpbGw9JyMwMDAnLz4KPC9zdmc+')] pointer-events-none" />
+    <svg width={w} height={h} className="overflow-visible">
+      <defs>
+        <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <polygon
+        points={`0,${h} ${points} ${w},${h}`}
+        fill="url(#sparkFill)"
+      />
+      <polyline
+        points={points}
+        fill="none"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Glow dot on last point */}
+      {data.length > 0 && (
+        <circle
+          cx={(data.length - 1) / (data.length - 1) * w}
+          cy={h - ((data[data.length - 1] - min) / range) * (h - 4) - 2}
+          r="3"
+          fill={color}
+          className="animate-pulse"
+        />
+      )}
+    </svg>
+  );
+}
 
-      {/* Subtle gradient orb */}
-      <div className="absolute -right-10 -top-10 w-32 h-32 rounded-full bg-white/[0.03] blur-2xl" />
+const variantIcons = {
+  revenue: DollarSign,
+  sales: ShoppingCart,
+  ticket: TrendingUp,
+  visitors: Eye,
+  neutral: Zap,
+};
 
+const DashboardHeroCard = memo(function DashboardHeroCard({ label, value, fmt, sublabel, variant = "neutral", tooltip, sparklineData }: Props) {
+  const animatedValue = useAnimatedNumber(value);
+  const Icon = variantIcons[variant] || Zap;
+  const isVisitors = variant === "visitors";
+
+  return (
+    <div className="relative overflow-hidden rounded-xl border border-white/[0.06] bg-card/70 backdrop-blur-md p-5 h-full min-h-[120px] flex flex-col justify-between shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),0_2px_20px_-4px_rgba(0,0,0,0.5)]">
+      {/* Top shine line */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
+      
       {/* Icon */}
       <div className="absolute right-4 top-4">
-        <div className="bg-white/[0.06] backdrop-blur-sm rounded-lg p-2">
-          <Icon className={`w-4 h-4 ${config.iconColor}`} />
+        <div className="bg-white/[0.04] border border-white/[0.06] rounded-lg p-2">
+          <Icon className="w-4 h-4 text-muted-foreground" />
         </div>
       </div>
 
       {/* Content */}
       <div>
         <div className="flex items-center gap-1.5">
-          <p className="text-xs font-medium text-white/50 uppercase tracking-wider">{label}</p>
+          <p className="text-xs font-medium text-muted-foreground">{label}</p>
           {tooltip && (
             <TooltipProvider delayDuration={200}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="text-white/25 cursor-help text-xs">ⓘ</span>
+                  <span className="text-muted-foreground/50 cursor-help text-xs">ⓘ</span>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-[200px] text-xs">
                   {tooltip}
@@ -115,13 +131,20 @@ const DashboardHeroCard = memo(function DashboardHeroCard({ label, value, fmt, s
             </TooltipProvider>
           )}
         </div>
-        <p className="text-2xl font-bold text-white tracking-tight mt-1.5 font-display">
+        <p className={`text-2xl font-bold tracking-tight mt-1.5 ${isVisitors ? "text-foreground" : "text-primary"}`}>
           {fmt(animatedValue)}
         </p>
       </div>
 
+      {/* Sparkline for visitors */}
+      {sparklineData && sparklineData.length > 1 && (
+        <div className="mt-2">
+          <MiniSparkline data={sparklineData} />
+        </div>
+      )}
+
       {sublabel && (
-        <p className="text-[11px] text-white/35 mt-2 font-mono">{sublabel}</p>
+        <p className="text-[11px] text-muted-foreground/70 mt-2">{sublabel}</p>
       )}
     </div>
   );
