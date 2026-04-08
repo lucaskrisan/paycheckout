@@ -360,7 +360,7 @@ const Checkout = () => {
               )}
             </button>
 
-            <TrustFooter />
+            <TrustFooter isUSD={isUSD} />
           </div>
         </div>
       </div>
