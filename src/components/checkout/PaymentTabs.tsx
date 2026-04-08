@@ -1,4 +1,5 @@
-import { CreditCard, QrCode, Zap } from "lucide-react";
+import { CreditCard, Zap } from "lucide-react";
+import pixIcon from "@/assets/pix-icon.png";
 import { cn } from "@/lib/utils";
 
 type PaymentMethod = "credit_card" | "pix";
