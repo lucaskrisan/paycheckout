@@ -725,8 +725,8 @@ const ProductEdit = () => {
                           {parseFloat(form.price) > 0 ? (
                             <TableRow>
                               <TableCell className="text-sm">{form.name || "Plano padrão"}</TableCell>
-                              <TableCell className="text-sm">R$ {parseFloat(form.price).toFixed(2).replace(".", ",")}</TableCell>
-                              <TableCell className="text-sm">R$ {parseFloat(form.price).toFixed(2).replace(".", ",")}</TableCell>
+                              <TableCell className="text-sm">{form.currency === "USD" ? "$" : "R$"} {parseFloat(form.price).toFixed(2).replace(".", form.currency === "USD" ? "." : ",")}</TableCell>
+                              <TableCell className="text-sm">{form.currency === "USD" ? "$" : "R$"} {parseFloat(form.price).toFixed(2).replace(".", form.currency === "USD" ? "." : ",")}</TableCell>
                               <TableCell className="text-sm capitalize">
                                 {{
                                   weekly: "Semanal",
