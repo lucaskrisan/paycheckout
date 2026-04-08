@@ -51,9 +51,11 @@ const Analytics = () => {
 
   const getDateFrom = (p: string) => {
     const now = new Date();
+    if (p === "today") { return new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString(); }
     if (p === "7days") { const d = new Date(now); d.setDate(d.getDate() - 7); return d.toISOString(); }
     if (p === "30days") { const d = new Date(now); d.setDate(d.getDate() - 30); return d.toISOString(); }
     if (p === "90days") { const d = new Date(now); d.setDate(d.getDate() - 90); return d.toISOString(); }
+    if (p === "total") { return null; }
     return null;
   };
 
@@ -225,9 +227,11 @@ const Analytics = () => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="today">Hoje</SelectItem>
               <SelectItem value="7days">7 dias</SelectItem>
               <SelectItem value="30days">30 dias</SelectItem>
               <SelectItem value="90days">90 dias</SelectItem>
+              <SelectItem value="total">Total</SelectItem>
             </SelectContent>
           </Select>
           <Badge variant="outline" className="border-primary/30 text-primary">
