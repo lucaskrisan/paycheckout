@@ -51,9 +51,11 @@ const Analytics = () => {
 
   const getDateFrom = (p: string) => {
     const now = new Date();
+    if (p === "today") { return new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString(); }
     if (p === "7days") { const d = new Date(now); d.setDate(d.getDate() - 7); return d.toISOString(); }
     if (p === "30days") { const d = new Date(now); d.setDate(d.getDate() - 30); return d.toISOString(); }
     if (p === "90days") { const d = new Date(now); d.setDate(d.getDate() - 90); return d.toISOString(); }
+    if (p === "total") { return null; }
     return null;
   };
 
