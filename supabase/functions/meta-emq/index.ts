@@ -76,9 +76,14 @@ Deno.serve(async (req) => {
     }
 
 
+    // Use global META_ACCESS_TOKEN for read operations (has ads_read permission)
+    // Fall back to per-pixel capi_token if not available
+    const globalToken = Deno.env.get('META_ACCESS_TOKEN');
+
     const results: any[] = [];
 
     for (const pixel of pixels) {
+      const readToken = globalToken || pixel.capi_token;
       const pixelResult: any = {
         pixel_id: pixel.pixel_id,
         events: [] as EmqEvent[],
@@ -101,7 +106,7 @@ Deno.serve(async (req) => {
 
         // Fetch event quality data from Meta Graph API
         const response = await fetchWithTimeout(
-          `https://graph.facebook.com/v22.0/${pixel.pixel_id}?fields=name,event_stats&access_token=${pixel.capi_token}`
+          `https://graph.facebook.com/v22.0/${pixel.pixel_id}?fields=name,event_stats&access_token=${readToken}`
         );
         const pixelData = await response.json();
 
@@ -114,7 +119,7 @@ Deno.serve(async (req) => {
 
         // Fetch diagnostic data via data_sources edge 
         const diagResponse = await fetchWithTimeout(
-          `https://graph.facebook.com/v22.0/${pixel.pixel_id}/events?fields=event_name,event_count,event_match_quality&access_token=${pixel.capi_token}`
+          `https://graph.facebook.com/v22.0/${pixel.pixel_id}/events?fields=event_name,event_count,event_match_quality&access_token=${readToken}`
         );
         const diagData = await diagResponse.json();
 
@@ -129,14 +134,14 @@ Deno.serve(async (req) => {
 
         // Also try the server_events endpoint for CAPI-specific quality
         const serverResponse = await fetchWithTimeout(
-          `https://graph.facebook.com/v22.0/${pixel.pixel_id}/server_events?fields=event_name,event_time&access_token=${pixel.capi_token}`
+          `https://graph.facebook.com/v22.0/${pixel.pixel_id}/server_events?fields=event_name,event_time&access_token=${readToken}`
         );
         const serverData = await serverResponse.json();
         pixelResult.server_events_available = !serverData.error;
 
         // Try the direct EMQ endpoint 
         const emqResponse = await fetchWithTimeout(
-          `https://graph.facebook.com/v22.0/${pixel.pixel_id}?fields=data_use_setting,event_bridge_setting,first_party_cookie_status&access_token=${pixel.capi_token}`
+          `https://graph.facebook.com/v22.0/${pixel.pixel_id}?fields=data_use_setting,event_bridge_setting,first_party_cookie_status&access_token=${readToken}`
         );
         const emqData = await emqResponse.json();
         if (!emqData.error) {
