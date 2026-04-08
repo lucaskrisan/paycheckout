@@ -1218,6 +1218,7 @@ export type Database = {
           amount: number
           created_at: string
           customer_id: string | null
+          customer_state: string | null
           external_id: string | null
           id: string
           metadata: Json | null
@@ -1233,6 +1234,7 @@ export type Database = {
           amount: number
           created_at?: string
           customer_id?: string | null
+          customer_state?: string | null
           external_id?: string | null
           id?: string
           metadata?: Json | null
@@ -1248,6 +1250,7 @@ export type Database = {
           amount?: number
           created_at?: string
           customer_id?: string | null
+          customer_state?: string | null
           external_id?: string | null
           id?: string
           metadata?: Json | null
@@ -1386,18 +1389,21 @@ export type Database = {
       }
       platform_settings: {
         Row: {
+          clarity_project_id: string | null
           id: string
           platform_fee_percent: number | null
           platform_name: string | null
           updated_at: string | null
         }
         Insert: {
+          clarity_project_id?: string | null
           id?: string
           platform_fee_percent?: number | null
           platform_name?: string | null
           updated_at?: string | null
         }
         Update: {
+          clarity_project_id?: string | null
           id?: string
           platform_fee_percent?: number | null
           platform_name?: string | null
