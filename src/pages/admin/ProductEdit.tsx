@@ -433,13 +433,15 @@ const ProductEdit = () => {
       updated_at: new Date().toISOString(),
     };
 
+    let savedProductId = productId;
+
     if (isNew) {
       payload.user_id = user?.id;
       payload.moderation_status = "pending_review";
-      const { error } = await supabase.from("products" as any).insert(payload);
+      const { data: inserted, error } = await supabase.from("products" as any).insert(payload).select("id").single();
       if (error) { toast.error("Erro ao criar produto"); setSaving(false); return; }
+      savedProductId = (inserted as any)?.id;
       toast.success("Produto criado! Aguarde a aprovação para começar a vender.");
-      navigate("/admin/products");
     } else {
       // If product was rejected, resubmit for review
       if (moderationStatus === "rejected") {
@@ -456,6 +458,25 @@ const ProductEdit = () => {
         toast.success("Produto salvo!");
       }
     }
+
+    // Auto-sync to Stripe for USD products
+    if (form.currency === "USD" && savedProductId) {
+      try {
+        const { error: syncError } = await supabase.functions.invoke("sync-product-stripe", {
+          body: { product_id: savedProductId },
+        });
+        if (syncError) {
+          console.error("Stripe sync error:", syncError);
+          toast.error("Produto salvo, mas falha ao sincronizar com Stripe. Verifique o gateway.");
+        } else {
+          toast.success("Produto sincronizado com Stripe ✓");
+        }
+      } catch (e) {
+        console.error("Stripe sync exception:", e);
+      }
+    }
+
+    if (isNew) navigate("/admin/products");
     setSaving(false);
   };
 
