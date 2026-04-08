@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useCheckoutPresence } from "@/hooks/useCheckoutPresence";
 import GatewayAlerts from "@/components/admin/GatewayAlerts";
-import DashboardHeaderBar, { type Period } from "@/components/admin/dashboard/DashboardHeader";
+import DashboardHeaderBar, { type Period, type Currency } from "@/components/admin/dashboard/DashboardHeader";
 import DashboardChart from "@/components/admin/dashboard/DashboardChart";
 import DashboardHeroCard from "@/components/admin/dashboard/DashboardHeroCard";
 import DashboardMetricCard from "@/components/admin/dashboard/DashboardMetricCard";
