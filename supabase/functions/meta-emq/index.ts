@@ -76,9 +76,14 @@ Deno.serve(async (req) => {
     }
 
 
+    // Use global META_ACCESS_TOKEN for read operations (has ads_read permission)
+    // Fall back to per-pixel capi_token if not available
+    const globalToken = Deno.env.get('META_ACCESS_TOKEN');
+
     const results: any[] = [];
 
     for (const pixel of pixels) {
+      const readToken = globalToken || pixel.capi_token;
       const pixelResult: any = {
         pixel_id: pixel.pixel_id,
         events: [] as EmqEvent[],
