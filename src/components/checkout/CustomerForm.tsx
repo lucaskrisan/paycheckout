@@ -45,7 +45,7 @@ const formatPhone = (value: string) => {
 const inputClass =
   "h-11 pl-10 bg-white border-[#D5D9D9] text-[#0F1111] placeholder:text-[#767676] rounded-xl focus:border-[#007185] focus:ring-[#007185] transition-colors";
 
-const CustomerForm = ({ data, onChange }: CustomerFormProps) => {
+const CustomerForm = ({ data, onChange, hideDocumentPhone }: CustomerFormProps) => {
   const handleChange = (field: keyof CustomerData, value: string) => {
     let formatted = value;
     // Length limits to prevent abuse
