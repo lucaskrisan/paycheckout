@@ -337,7 +337,7 @@ const Checkout = () => {
 
             {product.show_coupon !== false && <CouponField productId={product.id} productPrice={product.price} onApply={setCoupon} isUSD={isUSD} />}
 
-            <OrderBumps bumps={orderBumps} selectedBumps={selectedBumps} onToggle={toggleBump} installments={creditCard.installments} />
+            <OrderBumps bumps={orderBumps} selectedBumps={selectedBumps} onToggle={toggleBump} installments={creditCard.installments} isUSD={isUSD} />
 
             <CheckoutBuilderRenderer components={sortedLayout} zone="right" productName={product.name} excludeTypes={["form", "button", "countdown", "facebook"]} />
 
