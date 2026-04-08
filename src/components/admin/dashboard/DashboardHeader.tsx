@@ -64,6 +64,14 @@ const DashboardHeaderBar = memo(function DashboardHeaderBar({
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
       <h1 className="text-xl font-bold text-foreground">Dashboard</h1>
       <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 px-3 h-9 rounded-lg border border-white/[0.06] bg-card/70 backdrop-blur-sm text-sm">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+          </span>
+          <span className="text-foreground font-medium">{liveVisitors}</span>
+          <span className="text-muted-foreground text-xs">ao vivo</span>
+        </div>
         {/* Currency Selector */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
