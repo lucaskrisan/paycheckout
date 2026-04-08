@@ -22,78 +22,82 @@
 
 @layer base {
   :root {
-    /* PanteraPay is dark-first — root IS dark */
-    --background: 240 8% 4%;
-    --foreground: 0 0% 100%;
+    /* Pantera Negra — Abyssal Dark + Vibranium */
+    --background: 260 15% 3%;
+    --foreground: 220 10% 95%;
 
-    --card: 240 8% 8%;
-    --card-foreground: 0 0% 100%;
+    --card: 260 12% 7%;
+    --card-foreground: 220 10% 95%;
 
-    --popover: 240 8% 8%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 260 14% 8%;
+    --popover-foreground: 220 10% 95%;
 
-    --primary: 151 100% 45%;
-    --primary-foreground: 0 0% 0%;
+    --primary: 270 85% 60%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 7% 17%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 260 10% 14%;
+    --secondary-foreground: 220 10% 90%;
 
-    --muted: 240 8% 13%;
-    --muted-foreground: 240 5% 63%;
+    --muted: 260 10% 11%;
+    --muted-foreground: 250 8% 55%;
 
-    --accent: 240 7% 17%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 260 12% 16%;
+    --accent-foreground: 220 10% 95%;
 
-    --destructive: 0 100% 66%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 5% 17%;
-    --input: 240 8% 13%;
-    --ring: 151 100% 45%;
+    --border: 260 8% 14%;
+    --input: 260 10% 11%;
+    --ring: 270 85% 60%;
 
-    --radius: 0.5rem;
+    --radius: 0.625rem;
 
     /* Checkout (buyer-facing) — dark premium */
-    --checkout-surface: 240 8% 8%;
-    --checkout-surface-foreground: 0 0% 100%;
-    --checkout-highlight: 151 100% 45%;
-    --checkout-highlight-foreground: 0 0% 0%;
-    --checkout-muted: 240 5% 44%;
+    --checkout-surface: 260 12% 7%;
+    --checkout-surface-foreground: 220 10% 95%;
+    --checkout-highlight: 270 85% 60%;
+    --checkout-highlight-foreground: 0 0% 100%;
+    --checkout-muted: 250 8% 40%;
     --checkout-badge: 43 64% 52%;
 
-    /* Sidebar — Preto Profundo */
-    --sidebar-background: 240 8% 4%;
-    --sidebar-foreground: 240 5% 63%;
-    --sidebar-primary: 151 100% 45%;
-    --sidebar-primary-foreground: 0 0% 0%;
-    --sidebar-accent: 240 8% 13%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 240 5% 17%;
-    --sidebar-ring: 151 100% 45%;
+    /* Sidebar — Abyssal */
+    --sidebar-background: 260 18% 4%;
+    --sidebar-foreground: 250 8% 55%;
+    --sidebar-primary: 270 85% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 260 10% 11%;
+    --sidebar-accent-foreground: 220 10% 95%;
+    --sidebar-border: 260 8% 14%;
+    --sidebar-ring: 270 85% 60%;
 
     /* Member area — ultra dark */
-    --member-bg: 240 8% 4%;
-    --member-surface: 240 8% 8%;
-    --member-surface-hover: 240 8% 13%;
-    --member-surface-active: 240 7% 17%;
-    --member-foreground: 0 0% 100%;
-    --member-foreground-muted: 240 5% 63%;
-    --member-accent: 151 100% 45%;
-    --member-accent-glow: 151 100% 55%;
-    --member-border: 240 5% 17%;
-    --member-gradient-start: 151 100% 45%;
-    --member-gradient-end: 145 100% 39%;
-    --member-locked: 240 5% 24%;
+    --member-bg: 260 15% 3%;
+    --member-surface: 260 12% 7%;
+    --member-surface-hover: 260 10% 11%;
+    --member-surface-active: 260 10% 14%;
+    --member-foreground: 220 10% 95%;
+    --member-foreground-muted: 250 8% 55%;
+    --member-accent: 270 85% 60%;
+    --member-accent-glow: 275 90% 70%;
+    --member-border: 260 8% 14%;
+    --member-gradient-start: 270 85% 60%;
+    --member-gradient-end: 280 80% 50%;
+    --member-locked: 260 8% 20%;
     --member-gold: 43 64% 52%;
 
     /* Brand extras */
-    --brand-gradient: linear-gradient(90deg, #00E676, #00C853, #D4AF37);
-    --brand-glow: 0 8px 32px -8px hsl(151 100% 45% / 0.35);
+    --brand-gradient: linear-gradient(135deg, #7C3AED, #A855F7, #06B6D4);
+    --brand-glow: 0 8px 32px -8px hsl(270 85% 60% / 0.4);
+
+    /* Vibranium accent (ciano-elétrico) */
+    --vibranium: 185 90% 48%;
+    --vibranium-glow: 185 95% 60%;
 
     /* Status colors */
-    --status-success: 151 100% 45%;
+    --status-success: 160 84% 39%;
     --status-warning: 45 100% 51%;
-    --status-error: 0 100% 66%;
+    --status-error: 0 72% 51%;
     --status-chargeback: 14 100% 50%;
 
     /* Gold / Premium */
@@ -101,35 +105,35 @@
     --gold-soft: 43 86% 69%;
   }
 
-  /* Light override for admin forms / specific light contexts if needed */
+  /* Light override */
   .light {
     --background: 240 8% 97%;
-    --foreground: 240 8% 8%;
+    --foreground: 260 12% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 240 8% 8%;
+    --card-foreground: 260 12% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 8% 8%;
+    --popover-foreground: 260 12% 8%;
 
-    --primary: 151 100% 45%;
-    --primary-foreground: 0 0% 0%;
+    --primary: 270 85% 60%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 5% 93%;
-    --secondary-foreground: 240 8% 8%;
+    --secondary: 260 5% 93%;
+    --secondary-foreground: 260 12% 8%;
 
-    --muted: 240 5% 93%;
-    --muted-foreground: 240 5% 44%;
+    --muted: 260 5% 93%;
+    --muted-foreground: 250 8% 44%;
 
-    --accent: 240 5% 93%;
-    --accent-foreground: 240 8% 8%;
+    --accent: 260 5% 93%;
+    --accent-foreground: 260 12% 8%;
 
-    --destructive: 0 100% 66%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 5% 88%;
-    --input: 240 5% 88%;
-    --ring: 151 100% 45%;
+    --border: 260 5% 88%;
+    --input: 260 5% 88%;
+    --ring: 270 85% 60%;
   }
 }
 

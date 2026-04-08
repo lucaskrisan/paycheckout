@@ -74,6 +74,10 @@ export default {
           DEFAULT: "hsl(var(--gold))",
           soft: "hsl(var(--gold-soft))",
         },
+        vibranium: {
+          DEFAULT: "hsl(var(--vibranium))",
+          glow: "hsl(var(--vibranium-glow))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

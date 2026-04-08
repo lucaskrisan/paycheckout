@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, useState } from "react";
-import { DollarSign, ShoppingCart, TrendingUp } from "lucide-react";
+import { DollarSign, ShoppingCart, TrendingUp, Zap } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -42,29 +42,39 @@ function useAnimatedNumber(target: number, duration = 900) {
 
 const variantConfig = {
   revenue: {
-    gradient: "from-emerald-600 via-emerald-500 to-teal-400",
-    iconBg: "bg-white/20",
+    gradient: "from-violet-950 via-purple-900/80 to-violet-800/60",
+    border: "border-purple-500/20",
+    glow: "shadow-[inset_0_1px_0_0_rgba(168,85,247,0.15),0_4px_24px_-4px_rgba(139,92,246,0.25)]",
     Icon: DollarSign,
+    iconColor: "text-purple-300",
   },
   sales: {
-    gradient: "from-emerald-700 via-emerald-600 to-emerald-400",
-    iconBg: "bg-white/20",
+    gradient: "from-slate-950 via-indigo-950/60 to-violet-950/40",
+    border: "border-indigo-500/15",
+    glow: "shadow-[inset_0_1px_0_0_rgba(99,102,241,0.12),0_4px_24px_-4px_rgba(99,102,241,0.2)]",
     Icon: ShoppingCart,
+    iconColor: "text-indigo-300",
   },
   ticket: {
-    gradient: "from-amber-600 via-amber-500 to-yellow-400",
-    iconBg: "bg-white/20",
+    gradient: "from-slate-950 via-cyan-950/40 to-teal-950/30",
+    border: "border-cyan-500/15",
+    glow: "shadow-[inset_0_1px_0_0_rgba(6,182,212,0.12),0_4px_24px_-4px_rgba(6,182,212,0.2)]",
     Icon: TrendingUp,
+    iconColor: "text-cyan-300",
   },
   neutral: {
-    gradient: "from-emerald-600 via-emerald-500 to-teal-400",
-    iconBg: "bg-white/20",
-    Icon: DollarSign,
+    gradient: "from-violet-950 via-purple-900/80 to-violet-800/60",
+    border: "border-purple-500/20",
+    glow: "shadow-[inset_0_1px_0_0_rgba(168,85,247,0.15),0_4px_24px_-4px_rgba(139,92,246,0.25)]",
+    Icon: Zap,
+    iconColor: "text-purple-300",
   },
   accent: {
-    gradient: "from-emerald-600 via-emerald-500 to-teal-400",
-    iconBg: "bg-white/20",
-    Icon: DollarSign,
+    gradient: "from-slate-950 via-cyan-950/40 to-teal-950/30",
+    border: "border-cyan-500/15",
+    glow: "shadow-[inset_0_1px_0_0_rgba(6,182,212,0.12),0_4px_24px_-4px_rgba(6,182,212,0.2)]",
+    Icon: Zap,
+    iconColor: "text-cyan-300",
   },
 };
 
@@ -74,27 +84,29 @@ const DashboardHeroCard = memo(function DashboardHeroCard({ label, value, fmt, s
   const { Icon } = config;
 
   return (
-    <div className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${config.gradient} p-5 h-full min-h-[120px] flex flex-col justify-between shadow-lg`}>
-      {/* Decorative circles */}
-      <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-white/10" />
-      <div className="absolute -right-2 -top-2 w-20 h-20 rounded-full bg-white/5" />
+    <div className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${config.gradient} border ${config.border} ${config.glow} p-5 h-full min-h-[120px] flex flex-col justify-between`}>
+      {/* Texture noise overlay */}
+      <div className="absolute inset-0 opacity-[0.03] bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc0JyBoZWlnaHQ9JzQnPgo8cmVjdCB3aWR0aD0nNCcgaGVpZ2h0PSc0JyBmaWxsPScjZmZmJy8+CjxyZWN0IHdpZHRoPScxJyBoZWlnaHQ9JzEnIGZpbGw9JyMwMDAnLz4KPC9zdmc+')] pointer-events-none" />
+
+      {/* Subtle gradient orb */}
+      <div className="absolute -right-10 -top-10 w-32 h-32 rounded-full bg-white/[0.03] blur-2xl" />
 
       {/* Icon */}
       <div className="absolute right-4 top-4">
-        <div className={`${config.iconBg} backdrop-blur-sm rounded-full p-2.5`}>
-          <Icon className="w-5 h-5 text-white" />
+        <div className="bg-white/[0.06] backdrop-blur-sm rounded-lg p-2">
+          <Icon className={`w-4 h-4 ${config.iconColor}`} />
         </div>
       </div>
 
       {/* Content */}
       <div>
         <div className="flex items-center gap-1.5">
-          <p className="text-sm font-medium text-white/80">{label}</p>
+          <p className="text-xs font-medium text-white/50 uppercase tracking-wider">{label}</p>
           {tooltip && (
             <TooltipProvider delayDuration={200}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="text-white/40 cursor-help text-xs">ⓘ</span>
+                  <span className="text-white/25 cursor-help text-xs">ⓘ</span>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-[200px] text-xs">
                   {tooltip}
@@ -103,13 +115,13 @@ const DashboardHeroCard = memo(function DashboardHeroCard({ label, value, fmt, s
             </TooltipProvider>
           )}
         </div>
-        <p className="text-3xl font-bold text-white tracking-tight mt-1">
+        <p className="text-2xl font-bold text-white tracking-tight mt-1.5 font-display">
           {fmt(animatedValue)}
         </p>
       </div>
 
       {sublabel && (
-        <p className="text-xs text-white/70 mt-2">{sublabel}</p>
+        <p className="text-[11px] text-white/35 mt-2 font-mono">{sublabel}</p>
       )}
     </div>
   );
