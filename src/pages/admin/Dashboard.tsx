@@ -214,6 +214,7 @@ const Dashboard = () => {
           label="Faturamento Líquido"
           value={totalLiquido}
           fmt={fmt}
+          variant="revenue"
           sublabel={totalTaxas > 0 ? `Bruto: ${fmt(totalBruto)} · Taxa: ${fmt(totalTaxas)}` : undefined}
           tooltip="Receita aprovada menos taxas da plataforma"
         />
@@ -221,6 +222,7 @@ const Dashboard = () => {
           label="Vendas Aprovadas"
           value={totalVendas}
           fmt={(v) => String(Math.round(v))}
+          variant="sales"
           sublabel={`${approved.length} de ${filtered.length} pedidos`}
           tooltip="Total de vendas com pagamento confirmado"
         />
@@ -228,6 +230,7 @@ const Dashboard = () => {
           label="Ticket Médio"
           value={avgTicket}
           fmt={fmt}
+          variant="ticket"
           tooltip="Valor médio por venda aprovada"
         />
       </div>
