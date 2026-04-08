@@ -11,6 +11,7 @@ export interface CustomerData {
 interface CustomerFormProps {
   data: CustomerData;
   onChange: (data: CustomerData) => void;
+  hideDocumentPhone?: boolean;
 }
 
 const formatCPF = (value: string) => {
