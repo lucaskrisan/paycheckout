@@ -1524,6 +1524,8 @@ export type Database = {
           price: number
           rejection_reason: string | null
           show_coupon: boolean
+          stripe_price_id: string | null
+          stripe_product_id: string | null
           updated_at: string
           user_id: string | null
         }
@@ -1544,6 +1546,8 @@ export type Database = {
           price?: number
           rejection_reason?: string | null
           show_coupon?: boolean
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -1564,6 +1568,8 @@ export type Database = {
           price?: number
           rejection_reason?: string | null
           show_coupon?: boolean
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
           updated_at?: string
           user_id?: string | null
         }

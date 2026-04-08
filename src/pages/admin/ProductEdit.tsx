@@ -115,6 +115,7 @@ const ProductEdit = () => {
     billing_cycle: "monthly",
     show_coupon: true,
     delivery_method: "appsell" as "panttera" | "appsell" | "email",
+    currency: "BRL" as "BRL" | "USD",
     payment_settings: {
       payment_method: "all",
       max_installments: 12,
@@ -302,6 +303,7 @@ const ProductEdit = () => {
             billing_cycle: (data as any).billing_cycle || "monthly",
             show_coupon: (data as any).show_coupon !== false,
             delivery_method: (data as any).delivery_method || "appsell",
+            currency: (data as any).currency || "BRL",
             payment_settings: {
               payment_method: "all",
               max_installments: 12,
@@ -426,17 +428,20 @@ const ProductEdit = () => {
       billing_cycle: form.billing_cycle,
       show_coupon: form.show_coupon,
       delivery_method: form.delivery_method,
+      currency: form.currency,
       payment_settings: form.payment_settings,
       updated_at: new Date().toISOString(),
     };
 
+    let savedProductId = productId;
+
     if (isNew) {
       payload.user_id = user?.id;
       payload.moderation_status = "pending_review";
-      const { error } = await supabase.from("products" as any).insert(payload);
+      const { data: inserted, error } = await supabase.from("products" as any).insert(payload).select("id").single();
       if (error) { toast.error("Erro ao criar produto"); setSaving(false); return; }
+      savedProductId = (inserted as any)?.id;
       toast.success("Produto criado! Aguarde a aprovação para começar a vender.");
-      navigate("/admin/products");
     } else {
       // If product was rejected, resubmit for review
       if (moderationStatus === "rejected") {
@@ -453,6 +458,25 @@ const ProductEdit = () => {
         toast.success("Produto salvo!");
       }
     }
+
+    // Auto-sync to Stripe for USD products
+    if (form.currency === "USD" && savedProductId) {
+      try {
+        const { error: syncError } = await supabase.functions.invoke("sync-product-stripe", {
+          body: { product_id: savedProductId },
+        });
+        if (syncError) {
+          console.error("Stripe sync error:", syncError);
+          toast.error("Produto salvo, mas falha ao sincronizar com Stripe. Verifique o gateway.");
+        } else {
+          toast.success("Produto sincronizado com Stripe ✓");
+        }
+      } catch (e) {
+        console.error("Stripe sync exception:", e);
+      }
+    }
+
+    if (isNew) navigate("/admin/products");
     setSaving(false);
   };
 
@@ -632,11 +656,26 @@ const ProductEdit = () => {
                 <div className="lg:col-span-8">
                   <div className="border border-border rounded-lg p-6 bg-card space-y-4">
                     <div className="space-y-1.5">
+                      <Label>Moeda</Label>
+                      <Select value={form.currency} onValueChange={(v) => setForm({ ...form, currency: v as "BRL" | "USD" })}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="BRL">🇧🇷 BRL — Real Brasileiro</SelectItem>
+                          <SelectItem value="USD">🇺🇸 USD — Dólar Americano (Stripe)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {form.currency === "USD" && (
+                        <p className="text-xs text-muted-foreground">Produtos em USD serão processados via Stripe automaticamente.</p>
+                      )}
+                    </div>
+                    <div className="space-y-1.5">
                       <Label>Preço</Label>
                       <div className="flex">
-                        <span className="inline-flex items-center px-3 text-sm text-muted-foreground bg-muted border border-r-0 border-input rounded-l-md">R$</span>
-                        <Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="rounded-l-none" placeholder="0,00" />
-                        <span className="inline-flex items-center px-3 text-sm text-muted-foreground bg-muted border border-l-0 border-input rounded-r-md">BRL</span>
+                        <span className="inline-flex items-center px-3 text-sm text-muted-foreground bg-muted border border-r-0 border-input rounded-l-md">{form.currency === "USD" ? "$" : "R$"}</span>
+                        <Input type="number" step="0.01" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="rounded-l-none" placeholder="0.00" />
+                        <span className="inline-flex items-center px-3 text-sm text-muted-foreground bg-muted border border-l-0 border-input rounded-r-md">{form.currency}</span>
                       </div>
                     </div>
                     <div className="space-y-1.5">
