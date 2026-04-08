@@ -201,14 +201,15 @@ const Checkout = () => {
   };
 
   const handleSubmit = async () => {
-    if (!customer.name || !customer.email || !customer.cpf || !customer.phone) { toast.error("Preencha todos os campos obrigatórios"); return; }
+    if (!customer.name || !customer.email) { toast.error(isUSD ? "Please fill in all required fields" : "Preencha todos os campos obrigatórios"); return; }
+    if (!isUSD && (!customer.cpf || !customer.phone)) { toast.error("Preencha todos os campos obrigatórios"); return; }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(customer.email.trim())) { toast.error("E-mail inválido. Verifique o endereço digitado."); return; }
-    if (!isValidCPF(customer.cpf)) { toast.error("CPF inválido. Verifique o número digitado."); return; }
+    if (!emailRegex.test(customer.email.trim())) { toast.error(isUSD ? "Invalid email address" : "E-mail inválido. Verifique o endereço digitado."); return; }
+    if (!isUSD && !isValidCPF(customer.cpf)) { toast.error("CPF inválido. Verifique o número digitado."); return; }
     const [expMonth, expYear] = creditCard.expiry.split("/");
     if (paymentMethod === "credit_card") {
-      if (!creditCard.number || !creditCard.name.trim() || !creditCard.expiry || !creditCard.cvv) { toast.error("Preencha todos os dados do cartão"); return; }
-      if (!expMonth || !expYear || expMonth.length !== 2 || expYear.length !== 2) { toast.error("Preencha a validade do cartão corretamente"); return; }
+      if (!creditCard.number || !creditCard.name.trim() || !creditCard.expiry || !creditCard.cvv) { toast.error(isUSD ? "Please fill in all card details" : "Preencha todos os dados do cartão"); return; }
+      if (!expMonth || !expYear || expMonth.length !== 2 || expYear.length !== 2) { toast.error(isUSD ? "Invalid card expiry date" : "Preencha a validade do cartão corretamente"); return; }
     }
 
     trackAddToCartMain();
@@ -217,7 +218,34 @@ const Checkout = () => {
     const utms = getUtms();
 
     try {
-      if (paymentMethod === "pix") {
+      if (isUSD) {
+        // USD → Stripe
+        const { data, error } = await supabase.functions.invoke("create-stripe-payment", {
+          body: {
+            amount: finalAmount, product_id: product.id, currency: "usd",
+            config_id: requestedConfigId || null, coupon_id: coupon?.id || null,
+            bump_product_ids: bumpProductIds, checkout_url: window.location.href, utms,
+            customer: { name: customer.name, email: customer.email, phone: customer.phone || undefined },
+          },
+        });
+        if (error) {
+          let msg = "Payment processing failed";
+          try { const ctx = (error as any).context; if (ctx && typeof ctx.json === "function") { const body = await ctx.json(); if (body?.error) msg = body.error; } } catch {}
+          throw new Error(msg);
+        }
+        if (data?.error) throw new Error(data.error);
+        if (data?.url) {
+          window.location.href = data.url;
+        } else {
+          const paymentId = data?.payment_id || data?.id;
+          if (paymentId) {
+            toast.success("Payment processed successfully!");
+            trackPurchase(finalAmount, "USD", paymentId);
+            await markPurchased();
+            navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product.id}${data.order_id ? `&order_id=${data.order_id}` : ''}`);
+          } else throw new Error("Payment processing failed");
+        }
+      } else if (paymentMethod === "pix") {
         const customerState = getStateFromPhone(customer.phone);
         const { data, error } = await supabase.functions.invoke("create-pix-payment", {
           body: { amount: finalAmount, product_id: product.id, config_id: requestedConfigId || null, coupon_id: coupon?.id || null, bump_product_ids: bumpProductIds, checkout_url: window.location.href, utms, customer_state: customerState, customer: { name: customer.name, email: customer.email, cpf: customer.cpf, phone: customer.phone } },
@@ -255,7 +283,7 @@ const Checkout = () => {
           navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product.id}${data.order_id ? `&order_id=${data.order_id}` : ''}`);
         } else throw new Error("Falha ao processar pagamento");
       }
-    } catch (err: any) { console.error("Payment error:", err); toast.error(err.message || "Erro ao processar pagamento."); }
+    } catch (err: any) { console.error("Payment error:", err); toast.error(err.message || (isUSD ? "Payment error." : "Erro ao processar pagamento.")); }
     finally { setIsSubmitting(false); }
   };
 
