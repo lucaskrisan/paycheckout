@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
     let STRIPE_SECRET_KEY: string | null = null;
 
     const body = await req.json();
-    const { customer, product_id, coupon_id, config_id, bump_product_ids, checkout_url, utms } = body;
+    const { customer, product_id, coupon_id, config_id, bump_product_ids, checkout_url, utms, customer_country } = body;
     const amount = Math.round(Number(body.amount) * 100) / 100;
     const amountCents = Math.round(amount * 100);
 
