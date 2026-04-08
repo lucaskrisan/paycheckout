@@ -1,6 +1,5 @@
 import { memo, useEffect, useRef, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Info } from "lucide-react";
+import { DollarSign, ShoppingCart, TrendingUp } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -14,7 +13,7 @@ interface Props {
   previousValue?: number;
   fmt: (v: number) => string;
   sublabel?: string;
-  variant?: "revenue" | "sales" | "neutral" | "accent";
+  variant?: "revenue" | "sales" | "ticket" | "neutral" | "accent";
   tooltip?: string;
 }
 
@@ -41,21 +40,61 @@ function useAnimatedNumber(target: number, duration = 900) {
   return display;
 }
 
+const variantConfig = {
+  revenue: {
+    gradient: "from-emerald-600 via-emerald-500 to-teal-400",
+    iconBg: "bg-white/20",
+    Icon: DollarSign,
+  },
+  sales: {
+    gradient: "from-emerald-700 via-emerald-600 to-emerald-400",
+    iconBg: "bg-white/20",
+    Icon: ShoppingCart,
+  },
+  ticket: {
+    gradient: "from-amber-600 via-amber-500 to-yellow-400",
+    iconBg: "bg-white/20",
+    Icon: TrendingUp,
+  },
+  neutral: {
+    gradient: "from-emerald-600 via-emerald-500 to-teal-400",
+    iconBg: "bg-white/20",
+    Icon: DollarSign,
+  },
+  accent: {
+    gradient: "from-emerald-600 via-emerald-500 to-teal-400",
+    iconBg: "bg-white/20",
+    Icon: DollarSign,
+  },
+};
+
 const DashboardHeroCard = memo(function DashboardHeroCard({ label, value, fmt, sublabel, variant = "neutral", tooltip }: Props) {
   const animatedValue = useAnimatedNumber(value);
-
-  const valueColor = variant === "accent" ? "text-primary" : "text-foreground";
+  const config = variantConfig[variant] || variantConfig.neutral;
+  const { Icon } = config;
 
   return (
-    <Card className="border border-border bg-card shadow-none h-full">
-      <CardContent className="p-4 flex flex-col justify-between h-full">
-        <div className="flex items-center justify-between mb-1">
-          <p className="text-xs text-muted-foreground font-medium">{label}</p>
+    <div className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${config.gradient} p-5 h-full min-h-[120px] flex flex-col justify-between shadow-lg`}>
+      {/* Decorative circles */}
+      <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-white/10" />
+      <div className="absolute -right-2 -top-2 w-20 h-20 rounded-full bg-white/5" />
+
+      {/* Icon */}
+      <div className="absolute right-4 top-4">
+        <div className={`${config.iconBg} backdrop-blur-sm rounded-full p-2.5`}>
+          <Icon className="w-5 h-5 text-white" />
+        </div>
+      </div>
+
+      {/* Content */}
+      <div>
+        <div className="flex items-center gap-1.5">
+          <p className="text-sm font-medium text-white/80">{label}</p>
           {tooltip && (
             <TooltipProvider delayDuration={200}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Info className="w-3.5 h-3.5 text-muted-foreground/50 cursor-help" />
+                  <span className="text-white/40 cursor-help text-xs">ⓘ</span>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-[200px] text-xs">
                   {tooltip}
@@ -64,14 +103,15 @@ const DashboardHeroCard = memo(function DashboardHeroCard({ label, value, fmt, s
             </TooltipProvider>
           )}
         </div>
-        <p className={`text-2xl font-bold tracking-tight ${valueColor}`}>
+        <p className="text-3xl font-bold text-white tracking-tight mt-1">
           {fmt(animatedValue)}
         </p>
-        {sublabel && (
-          <p className="text-[11px] text-muted-foreground mt-1">{sublabel}</p>
-        )}
-      </CardContent>
-    </Card>
+      </div>
+
+      {sublabel && (
+        <p className="text-xs text-white/70 mt-2">{sublabel}</p>
+      )}
+    </div>
   );
 });
 
