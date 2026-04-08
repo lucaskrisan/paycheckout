@@ -254,10 +254,10 @@ const Dashboard = () => {
             tooltip="Vendas sem parâmetros UTM identificados"
           />
           <DashboardMetricCard
-            label="Retenção"
-            value={`${retentionRate.toFixed(1)}%`}
-            accent
-            tooltip="Percentual do faturamento retido após taxas da plataforma (R$0,99/venda)"
+            label="Total de Pedidos"
+            value={String(filtered.length)}
+            sub={`${approved.length} aprovados`}
+            tooltip="Número total de pedidos no período selecionado"
           />
           <DashboardMetricCard
             label="Vendas Pendentes"
