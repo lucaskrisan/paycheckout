@@ -169,7 +169,7 @@ const Products = () => {
     }
   };
 
-  const fmt = (v: number) => `R$ ${Number(v).toFixed(2).replace(".", ",")}`;
+  const fmt = (v: number, cur?: string) => cur === "USD" ? `$ ${Number(v).toFixed(2)}` : `R$ ${Number(v).toFixed(2).replace(".", ",")}`;
 
   const filtered = products.filter((p) => {
     const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
