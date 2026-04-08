@@ -273,6 +273,7 @@ Deno.serve(async (req) => {
     // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,
+      locale: 'auto',
       line_items: [
         {
           price_data: {
