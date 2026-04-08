@@ -66,14 +66,16 @@ const CustomerForm = ({ data, onChange, hideDocumentPhone }: CustomerFormProps) 
 
   return (
     <div className="space-y-3">
-      <p className="text-xs font-bold text-[#565959] uppercase tracking-wider">Seus dados</p>
+      <p className="text-xs font-bold text-[#565959] uppercase tracking-wider">
+        {hideDocumentPhone ? "Your details" : "Seus dados"}
+      </p>
 
       <div className="relative">
         <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#565959]" />
         <Input
           value={data.name}
           onChange={(e) => handleChange("name", e.target.value)}
-          placeholder="Nome completo"
+          placeholder={hideDocumentPhone ? "Full name" : "Nome completo"}
           className={inputClass}
         />
       </div>
@@ -86,39 +88,41 @@ const CustomerForm = ({ data, onChange, hideDocumentPhone }: CustomerFormProps) 
           autoComplete="email"
           value={data.email}
           onChange={(e) => handleChange("email", e.target.value)}
-          placeholder="E-mail"
+          placeholder={hideDocumentPhone ? "Email" : "E-mail"}
           className={inputClass}
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div>
+      {!hideDocumentPhone && (
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <div className="relative">
+              <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#565959]" />
+              <Input
+                inputMode="numeric"
+                autoComplete="off"
+                value={data.cpf}
+                onChange={(e) => handleChange("cpf", e.target.value)}
+                placeholder="CPF"
+                className={`${inputClass} ${cpfInvalid ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""}`}
+              />
+            </div>
+            {cpfInvalid && (
+              <p className="text-xs text-red-500 mt-1">CPF inválido</p>
+            )}
+          </div>
           <div className="relative">
-            <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#565959]" />
+            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#565959]" />
             <Input
-              inputMode="numeric"
-              autoComplete="off"
-              value={data.cpf}
-              onChange={(e) => handleChange("cpf", e.target.value)}
-              placeholder="CPF"
-              className={`${inputClass} ${cpfInvalid ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""}`}
+              type="tel"
+              value={data.phone}
+              onChange={(e) => handleChange("phone", e.target.value)}
+              placeholder="Celular"
+              className={inputClass}
             />
           </div>
-          {cpfInvalid && (
-            <p className="text-xs text-red-500 mt-1">CPF inválido</p>
-          )}
         </div>
-        <div className="relative">
-          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#565959]" />
-          <Input
-            type="tel"
-            value={data.phone}
-            onChange={(e) => handleChange("phone", e.target.value)}
-            placeholder="Celular"
-            className={inputClass}
-          />
-        </div>
-      </div>
+      )}
     </div>
   );
 };
