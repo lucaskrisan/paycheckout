@@ -223,7 +223,7 @@ const AbandonedCarts = () => {
         </Card>
       </div>
 
-      {/* Filters row – matching Kiwify layout */}
+      {/* Filters row */}
       <div className="flex flex-wrap items-center gap-3">
         <Select value={filterProduct} onValueChange={setFilterProduct}>
           <SelectTrigger className="w-[200px] bg-card"><SelectValue placeholder="Todos os produtos" /></SelectTrigger>

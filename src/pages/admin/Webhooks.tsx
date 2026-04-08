@@ -264,7 +264,7 @@ export default function Webhooks() {
           <TabsTrigger value="docs">Documentação</TabsTrigger>
         </TabsList>
 
-        {/* WEBHOOKS TAB - Kiwify style table */}
+        {/* WEBHOOKS TAB */}
         <TabsContent value="webhooks" className="mt-6 space-y-4">
           {/* Toolbar: Search + Filter + Create */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
@@ -476,7 +476,7 @@ export default function Webhooks() {
         </TabsContent>
       </Tabs>
 
-      {/* CREATE WEBHOOK DRAWER - Kiwify style */}
+      {/* CREATE WEBHOOK DRAWER */}
       <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
         <SheetContent className="sm:max-w-md overflow-y-auto">
           <SheetHeader>
