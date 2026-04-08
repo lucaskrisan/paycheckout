@@ -22,6 +22,7 @@ const Dashboard = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("all");
+  const [currency, setCurrency] = useState<Currency>("BRL");
 
   const ownerProductIds = useMemo(() => products.map((p) => p.id), [products]);
   const liveVisitors = useCheckoutPresence("watch", undefined, ownerProductIds);
