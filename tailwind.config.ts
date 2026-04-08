@@ -78,6 +78,9 @@ export default {
           DEFAULT: "hsl(var(--vibranium))",
           glow: "hsl(var(--vibranium-glow))",
         },
+        glass: {
+          border: "hsl(var(--glass-border))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
