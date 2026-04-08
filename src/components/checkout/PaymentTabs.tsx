@@ -1,4 +1,5 @@
-import { CreditCard, QrCode, Zap } from "lucide-react";
+import { CreditCard, Zap } from "lucide-react";
+import pixIcon from "@/assets/pix-icon.png";
 import { cn } from "@/lib/utils";
 
 type PaymentMethod = "credit_card" | "pix";
@@ -28,7 +29,7 @@ const PaymentTabs = ({ activeMethod, onMethodChange, pixDiscountPercent = 5 }: P
             {pixDiscountPercent}% OFF
           </span>
         )}
-        <QrCode className={cn("w-5 h-5", activeMethod === "pix" ? "text-[#007185]" : "text-[#565959]")} />
+        <img src={pixIcon} alt="PIX" className="w-5 h-5" />
         <span className={cn("text-sm font-semibold", activeMethod === "pix" ? "text-[#007185]" : "text-[#0F1111]")}>
           Pix
         </span>

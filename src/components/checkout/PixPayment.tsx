@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Copy, Clock, QrCode, CheckCircle2, Zap } from "lucide-react";
+import pixIcon from "@/assets/pix-icon.png";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
@@ -25,7 +26,7 @@ const PixPayment = ({ totalAmount, qrCodeData, pixCode }: PixPaymentProps) => {
       {/* PIX info banner */}
       <div className="flex items-center gap-3 bg-gradient-to-r from-[#F0FAF8] to-[#F7FAFA] border border-[#B8E0D8] border-l-4 border-l-[#067D62] rounded-xl p-4">
         <div className="p-2 rounded-lg bg-[#067D62]/10">
-          <Zap className="w-5 h-5 text-[#067D62]" />
+          <img src={pixIcon} alt="PIX" className="w-5 h-5" />
         </div>
         <div>
           <p className="text-sm font-bold text-[#0F1111]">Pagamento instantâneo via PIX</p>
