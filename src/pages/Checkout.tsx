@@ -310,6 +310,12 @@ const Checkout = () => {
             <CheckoutBuilderRenderer components={sortedLayout} zone="left" productName={product.name} excludeTypes={["form", "button", "countdown", "facebook"]} />
 
             <div className="space-y-4">
+              {isUSD && (
+                <div>
+                  <p className="text-xs font-semibold text-[#565959] uppercase tracking-wide mb-1.5">Your country</p>
+                  <CountrySelector selected={selectedCountry} onChange={setSelectedCountry} />
+                </div>
+              )}
               <CustomerForm data={customer} onChange={setCustomer} hideDocumentPhone={isUSD} />
               {isUSD ? (
                 <div className="bg-[#F7FAFA] border border-[#D5D9D9] rounded-lg p-3 flex items-center gap-2">
