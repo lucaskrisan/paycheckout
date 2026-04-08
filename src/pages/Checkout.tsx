@@ -267,7 +267,7 @@ const Checkout = () => {
             amount: finalAmount, product_id: product.id, payment_method: "credit_card", installments: creditCard.installments,
             is_subscription: product.is_subscription, billing_cycle: product.billing_cycle, config_id: requestedConfigId || null,
             coupon_id: coupon?.id || null, bump_product_ids: bumpProductIds, checkout_url: window.location.href, utms, customer_state: customerState,
-            customer: { name: customer.name, email: customer.email, cpf: customer.cpf, phone: customer.phone, postalCode: creditCard.postalCode, addressNumber: "0",
+            customer: { name: customer.name, email: customer.email, cpf: customer.cpf, phone: customer.phone, postalCode: "00000000", addressNumber: "0",
               creditCard: { holderName: creditCard.name, number: creditCard.number.replace(/\s/g, ""), expiryMonth: expMonth, expiryYear: `20${expYear}`, ccv: creditCard.cvv } },
           },
         });
