@@ -195,7 +195,7 @@ const Dashboard = () => {
   const heroSub = totalTaxas > 0 ? `Bruto: ${fmt(totalBruto)} · Taxa: ${fmt(totalTaxas)}` : undefined;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <DashboardHeaderBar
         period={period}
         onPeriodChange={setPeriod}
