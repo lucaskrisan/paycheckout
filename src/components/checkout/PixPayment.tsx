@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Copy, Clock, QrCode, CheckCircle2, Zap } from "lucide-react";
+import pixIcon from "@/assets/pix-icon.png";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
