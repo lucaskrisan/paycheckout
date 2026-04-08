@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { getStateFromPhone } from "@/lib/dddToState";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Lock, ArrowRight, Loader2, Shield } from "lucide-react";
+import CountrySelector from "@/components/checkout/CountrySelector";
 import CustomerForm, { type CustomerData, isValidCPF } from "@/components/checkout/CustomerForm";
 import PixPayment from "@/components/checkout/PixPayment";
 import PixModal from "@/components/checkout/PixModal";
