@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { getStateFromPhone } from "@/lib/dddToState";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Lock, ArrowRight, Loader2, Shield } from "lucide-react";
 import CustomerForm, { type CustomerData, isValidCPF } from "@/components/checkout/CustomerForm";
