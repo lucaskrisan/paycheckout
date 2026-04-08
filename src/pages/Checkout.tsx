@@ -206,9 +206,9 @@ const Checkout = () => {
     if (!emailRegex.test(customer.email.trim())) { toast.error(isUSD ? "Invalid email address" : "E-mail inválido. Verifique o endereço digitado."); return; }
     if (!isUSD && !isValidCPF(customer.cpf)) { toast.error("CPF inválido. Verifique o número digitado."); return; }
     const [expMonth, expYear] = creditCard.expiry.split("/");
-    if (paymentMethod === "credit_card") {
-      if (!creditCard.number || !creditCard.name.trim() || !creditCard.expiry || !creditCard.cvv) { toast.error(isUSD ? "Please fill in all card details" : "Preencha todos os dados do cartão"); return; }
-      if (!expMonth || !expYear || expMonth.length !== 2 || expYear.length !== 2) { toast.error(isUSD ? "Invalid card expiry date" : "Preencha a validade do cartão corretamente"); return; }
+    if (paymentMethod === "credit_card" && !isUSD) {
+      if (!creditCard.number || !creditCard.name.trim() || !creditCard.expiry || !creditCard.cvv) { toast.error("Preencha todos os dados do cartão"); return; }
+      if (!expMonth || !expYear || expMonth.length !== 2 || expYear.length !== 2) { toast.error("Preencha a validade do cartão corretamente"); return; }
     }
 
     trackAddToCartMain();
