@@ -288,7 +288,7 @@ const Checkout = () => {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#F2F4F8", fontFamily: "Arial, sans-serif" }}>
-      <CountdownTimer minutes={countdownMinutes} />
+      <CountdownTimer minutes={countdownMinutes} isUSD={isUSD} />
       <div className="max-w-[620px] mx-auto px-4 pt-16 pb-8">
         <div className="bg-white rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.05)] overflow-hidden">
           <div className="p-5 sm:p-6 space-y-5">
@@ -331,17 +331,17 @@ const Checkout = () => {
               {!isUSD && paymentMethod === "pix" ? (
                 <PixPayment totalAmount={finalAmount} qrCodeData={pixData?.qrCodeUrl} pixCode={pixData?.pixCode} />
               ) : (
-                <CreditCardForm data={creditCard} onChange={setCreditCard} totalAmount={finalAmount} />
+                <CreditCardForm data={creditCard} onChange={setCreditCard} totalAmount={finalAmount} isUSD={isUSD} />
               )}
             </div>
 
-            {product.show_coupon !== false && <CouponField productId={product.id} productPrice={product.price} onApply={setCoupon} />}
+            {product.show_coupon !== false && <CouponField productId={product.id} productPrice={product.price} onApply={setCoupon} isUSD={isUSD} />}
 
-            <OrderBumps bumps={orderBumps} selectedBumps={selectedBumps} onToggle={toggleBump} installments={creditCard.installments} />
+            <OrderBumps bumps={orderBumps} selectedBumps={selectedBumps} onToggle={toggleBump} installments={creditCard.installments} isUSD={isUSD} />
 
             <CheckoutBuilderRenderer components={sortedLayout} zone="right" productName={product.name} excludeTypes={["form", "button", "countdown", "facebook"]} />
 
-            <PriceSummary originalPrice={product.price} pixDiscount={pixDiscount} couponDiscount={couponDiscount} bumpTotal={bumpTotal} finalAmount={finalAmount} paymentMethod={paymentMethod} couponCode={coupon?.code} />
+            <PriceSummary originalPrice={product.price} pixDiscount={pixDiscount} couponDiscount={couponDiscount} bumpTotal={bumpTotal} finalAmount={finalAmount} paymentMethod={paymentMethod} couponCode={coupon?.code} isUSD={isUSD} />
 
             <button
               onClick={handleSubmit}
@@ -360,7 +360,7 @@ const Checkout = () => {
               )}
             </button>
 
-            <TrustFooter />
+            <TrustFooter isUSD={isUSD} />
           </div>
         </div>
       </div>

@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 
 interface CountdownTimerProps {
   minutes?: number;
+  isUSD?: boolean;
 }
 
-const CountdownTimer = ({ minutes = 15 }: CountdownTimerProps) => {
+const CountdownTimer = ({ minutes = 15, isUSD = false }: CountdownTimerProps) => {
   const [seconds, setSeconds] = useState(minutes * 60);
 
   useEffect(() => {
@@ -23,11 +24,14 @@ const CountdownTimer = ({ minutes = 15 }: CountdownTimerProps) => {
         className="text-center py-2.5 px-4 text-sm font-bold tracking-wide"
         style={{ backgroundColor: "hsl(215, 27%, 19%)", color: "#fff" }}
       >
-        🛒 Seu pedido está reservado por{" "}
+        🛒{" "}
+        {isUSD
+          ? "Your order is reserved for "
+          : "Seu pedido está reservado por "}
         <span className="font-mono text-base" style={{ color: "hsl(47, 95%, 53%)" }}>
           {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
         </span>
-        {" "}— Complete o checkout!
+        {isUSD ? " — Complete checkout!" : " — Complete o checkout!"}
       </div>
       <div
         className="h-1"

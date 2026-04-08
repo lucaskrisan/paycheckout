@@ -22,10 +22,14 @@ interface Props {
   selectedBumps: Set<string>;
   onToggle: (bumpId: string) => void;
   installments?: string;
+  isUSD?: boolean;
 }
 
-const OrderBumps = memo(function OrderBumps({ bumps, selectedBumps, onToggle, installments = "1" }: Props) {
+const OrderBumps = memo(function OrderBumps({ bumps, selectedBumps, onToggle, installments = "1", isUSD = false }: Props) {
   if (bumps.length === 0) return null;
+
+  const fmt = (v: number) =>
+    isUSD ? `$${v.toFixed(2)}` : `R$ ${v.toFixed(2).replace(".", ",")}`;
 
   return (
     <div className="space-y-3">
@@ -66,10 +70,10 @@ const OrderBumps = memo(function OrderBumps({ bumps, selectedBumps, onToggle, in
                 <span className="text-[#0F1111]">{bump.description}</span>
                 {bump.bump_product?.price && (
                   <span className="text-[#565959]">
-                    {" "}— Adicionar a compra ·{" "}
-                    {installments !== "1"
-                      ? `${installments}x de R$ ${(bump.bump_product.price / Number(installments || 1)).toFixed(2).replace(".", ",")}`
-                      : `R$ ${bump.bump_product.price.toFixed(2).replace(".", ",")}`}
+                    {" "}— {isUSD ? "Add to order" : "Adicionar a compra"} ·{" "}
+                    {!isUSD && installments !== "1"
+                      ? `${installments}x de ${fmt(bump.bump_product.price / Number(installments || 1))}`
+                      : fmt(bump.bump_product.price)}
                   </span>
                 )}
               </p>
