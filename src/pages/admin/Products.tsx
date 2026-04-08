@@ -152,6 +152,7 @@ const Products = () => {
         is_subscription: paymentType === "subscription",
         billing_cycle: paymentType === "subscription" ? "monthly" : "monthly",
         price: 0,
+        currency,
         user_id: currentUser.id,
         moderation_status: "pending_review",
       } as any).select("id").single();
