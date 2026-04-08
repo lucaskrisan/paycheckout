@@ -41,6 +41,7 @@ const DashboardHeaderBar = memo(function DashboardHeaderBar({
   liveVisitors,
   refreshing,
   onRefresh,
+  extraActions,
 }: Props) {
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
