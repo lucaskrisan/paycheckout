@@ -1,11 +1,12 @@
 // @ts-nocheck
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import {
   BarChart3,
@@ -14,45 +15,80 @@ import {
   MousePointerClick,
   Activity,
   Settings,
-  ExternalLink,
   Save,
   Loader2,
   TrendingUp,
-  Users,
   Globe,
-  Smartphone,
   Monitor,
+  Smartphone,
+  ShoppingCart,
+  CreditCard,
+  ArrowDown,
+  Copy,
 } from "lucide-react";
 import BrazilMap from "@/components/admin/analytics/BrazilMap";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+
+const FUNNEL_STEPS = [
+  { key: "PageView", label: "Visualização", icon: Eye, color: "hsl(var(--primary))" },
+  { key: "ViewContent", label: "Conteúdo", icon: Globe, color: "hsl(151, 80%, 50%)" },
+  { key: "InitiateCheckout", label: "Checkout", icon: ShoppingCart, color: "hsl(151, 70%, 45%)" },
+  { key: "AddPaymentInfo", label: "Pagamento", icon: CreditCard, color: "hsl(151, 60%, 40%)" },
+  { key: "Purchase", label: "Compra", icon: TrendingUp, color: "hsl(151, 100%, 35%)" },
+];
+
+const PIE_COLORS = ["hsl(151,100%,45%)", "hsl(220,80%,55%)", "hsl(280,60%,55%)", "hsl(40,90%,55%)"];
 
 const Analytics = () => {
-  const { user, isSuperAdmin } = useAuth();
+  const { user } = useAuth();
   const [clarityId, setClarityId] = useState("");
   const [savedClarityId, setSavedClarityId] = useState("");
   const [saving, setSaving] = useState(false);
   const [orders, setOrders] = useState<any[]>([]);
+  const [pixelEvents, setPixelEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState("30days");
 
-  // Load settings & orders
+  const getDateFrom = (p: string) => {
+    const now = new Date();
+    if (p === "7days") { const d = new Date(now); d.setDate(d.getDate() - 7); return d.toISOString(); }
+    if (p === "30days") { const d = new Date(now); d.setDate(d.getDate() - 30); return d.toISOString(); }
+    if (p === "90days") { const d = new Date(now); d.setDate(d.getDate() - 90); return d.toISOString(); }
+    return null;
+  };
+
   useEffect(() => {
     if (!user) return;
     const load = async () => {
       setLoading(true);
       try {
-        const [settingsRes, ordersRes] = await Promise.all([
+        const dateFrom = getDateFrom(period);
+        const ordersQuery = supabase
+          .from("orders")
+          .select("id, status, amount, customer_state, payment_method, created_at, metadata")
+          .in("status", ["paid", "approved", "confirmed"])
+          .order("created_at", { ascending: false })
+          .limit(1000);
+        if (dateFrom) ordersQuery.gte("created_at", dateFrom);
+
+        const eventsQuery = supabase
+          .from("pixel_events")
+          .select("id, event_name, source, created_at, visitor_id")
+          .order("created_at", { ascending: false })
+          .limit(1000);
+        if (dateFrom) eventsQuery.gte("created_at", dateFrom);
+
+        const [settingsRes, ordersRes, eventsRes] = await Promise.all([
           supabase.from("platform_settings").select("clarity_project_id").limit(1).single(),
-          supabase
-            .from("orders")
-            .select("id, status, amount, customer_state, payment_method, created_at, metadata")
-            .in("status", ["paid", "approved", "confirmed"])
-            .order("created_at", { ascending: false })
-            .limit(1000),
+          ordersQuery,
+          eventsQuery,
         ]);
         if (settingsRes.data?.clarity_project_id) {
           setClarityId(settingsRes.data.clarity_project_id);
           setSavedClarityId(settingsRes.data.clarity_project_id);
         }
         setOrders(ordersRes.data || []);
+        setPixelEvents(eventsRes.data || []);
       } catch (err) {
         console.error(err);
       } finally {
@@ -60,7 +96,7 @@ const Analytics = () => {
       }
     };
     load();
-  }, [user]);
+  }, [user, period]);
 
   const saveClarityId = async () => {
     setSaving(true);
@@ -71,9 +107,9 @@ const Analytics = () => {
         .not("id", "is", null);
       if (error) throw error;
       setSavedClarityId(clarityId);
-      toast.success("Clarity ID salvo com sucesso!");
+      toast.success("Clarity ID salvo!");
     } catch (err: any) {
-      toast.error("Erro ao salvar: " + err.message);
+      toast.error("Erro: " + err.message);
     } finally {
       setSaving(false);
     }
@@ -92,27 +128,75 @@ const Analytics = () => {
     return map;
   }, [orders]);
 
-  const totalWithState = useMemo(
-    () => orders.filter((o) => o.customer_state).length,
-    [orders]
-  );
+  const totalWithState = useMemo(() => orders.filter((o) => o.customer_state).length, [orders]);
 
   // Top 5 states
-  const topStates = useMemo(() => {
-    return Object.entries(salesByState)
-      .sort((a, b) => b[1].revenue - a[1].revenue)
-      .slice(0, 5);
-  }, [salesByState]);
+  const topStates = useMemo(() =>
+    Object.entries(salesByState).sort((a, b) => b[1].revenue - a[1].revenue).slice(0, 5),
+    [salesByState]
+  );
+
+  // Funnel from pixel_events
+  const funnelData = useMemo(() => {
+    const counts: Record<string, number> = {};
+    pixelEvents.forEach((e) => { counts[e.event_name] = (counts[e.event_name] || 0) + 1; });
+    return FUNNEL_STEPS.map((step) => ({ ...step, count: counts[step.key] || 0 }));
+  }, [pixelEvents]);
+
+  const funnelMax = Math.max(...funnelData.map((f) => f.count), 1);
 
   // Payment method distribution
   const paymentDist = useMemo(() => {
     const pix = orders.filter((o) => o.payment_method === "pix").length;
     const card = orders.filter((o) => o.payment_method === "credit_card").length;
-    const other = orders.length - pix - card;
-    return { pix, card, other };
+    const boleto = orders.filter((o) => o.payment_method === "boleto").length;
+    const other = orders.length - pix - card - boleto;
+    return [
+      { name: "PIX", value: pix },
+      { name: "Cartão", value: card },
+      { name: "Boleto", value: boleto },
+      { name: "Outros", value: other },
+    ].filter((d) => d.value > 0);
+  }, [orders]);
+
+  // Revenue by day chart
+  const revenueByDay = useMemo(() => {
+    const days: Record<string, number> = {};
+    const numDays = period === "7days" ? 7 : period === "30days" ? 30 : 90;
+    const now = new Date();
+    for (let i = numDays - 1; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      days[d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })] = 0;
+    }
+    orders.forEach((o) => {
+      const key = new Date(o.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+      if (days[key] !== undefined) days[key] += Number(o.amount || 0);
+    });
+    return Object.entries(days).map(([name, total]) => ({ name, total }));
+  }, [orders, period]);
+
+  // Device breakdown from pixel_events (derive from source or visitor patterns)
+  const deviceData = useMemo(() => {
+    // We'll estimate based on unique visitors
+    const uniqueVisitors = new Set(pixelEvents.filter((e) => e.visitor_id).map((e) => e.visitor_id));
+    const browserEvents = pixelEvents.filter((e) => e.source === "browser").length;
+    const serverEvents = pixelEvents.filter((e) => e.source === "server").length;
+    return { uniqueVisitors: uniqueVisitors.size, browserEvents, serverEvents, totalEvents: pixelEvents.length };
+  }, [pixelEvents]);
+
+  // UTM source distribution from orders
+  const utmSources = useMemo(() => {
+    const sources: Record<string, number> = {};
+    orders.forEach((o) => {
+      const src = (o.metadata as any)?.utm_source || "Orgânico";
+      sources[src] = (sources[src] || 0) + 1;
+    });
+    return Object.entries(sources).sort((a, b) => b[1] - a[1]).slice(0, 5);
   }, [orders]);
 
   const fmt = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
+  const totalRevenue = orders.reduce((s, o) => s + Number(o.amount || 0), 0);
 
   if (loading) {
     return (
@@ -125,7 +209,7 @@ const Analytics = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <BarChart3 className="w-6 h-6 text-primary" />
@@ -135,57 +219,24 @@ const Analytics = () => {
             Visão completa de comportamento e conversões
           </p>
         </div>
-        <Badge variant="outline" className="border-primary/30 text-primary">
-          Super Admin
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Select value={period} onValueChange={setPeriod}>
+            <SelectTrigger className="w-[140px] bg-secondary/50 border-border">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7days">7 dias</SelectItem>
+              <SelectItem value="30days">30 dias</SelectItem>
+              <SelectItem value="90days">90 dias</SelectItem>
+            </SelectContent>
+          </Select>
+          <Badge variant="outline" className="border-primary/30 text-primary">
+            Super Admin
+          </Badge>
+        </div>
       </div>
 
-      {/* Clarity Config */}
-      <Card className="border-border bg-card">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
-            <Settings className="w-4 h-4 text-muted-foreground" />
-            Microsoft Clarity — Configuração
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-3">
-            <Input
-              placeholder="Cole seu Clarity Project ID (ex: abc123xyz)"
-              value={clarityId}
-              onChange={(e) => setClarityId(e.target.value)}
-              className="max-w-md bg-secondary/50 border-border"
-            />
-            <Button
-              onClick={saveClarityId}
-              disabled={saving || clarityId === savedClarityId}
-              size="sm"
-              className="gap-1.5"
-            >
-              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-              Salvar
-            </Button>
-            {savedClarityId && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-1.5"
-                onClick={() => window.open(`https://clarity.microsoft.com/projects/view/${savedClarityId}/dashboard`, "_blank")}
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-                Abrir Clarity
-              </Button>
-            )}
-          </div>
-          {savedClarityId && (
-            <p className="text-xs text-muted-foreground mt-2">
-              ✅ Clarity ativo — ID: <code className="text-primary">{savedClarityId}</code>
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Quick Stats */}
+      {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <Card className="border-border bg-card">
           <CardContent className="p-4 flex items-center gap-3">
@@ -193,53 +244,127 @@ const Analytics = () => {
               <TrendingUp className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Total Vendas</p>
+              <p className="text-xs text-muted-foreground">Faturamento</p>
+              <p className="text-lg font-bold text-foreground">{fmt(totalRevenue)}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border bg-card">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2 rounded-full bg-primary/10">
+              <ShoppingCart className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Vendas</p>
               <p className="text-lg font-bold text-foreground">{orders.length}</p>
             </div>
           </CardContent>
         </Card>
         <Card className="border-border bg-card">
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-full bg-blue-500/10">
-              <Map className="w-4 h-4 text-blue-400" />
+            <div className="p-2 rounded-full bg-primary/10">
+              <Eye className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Com Estado</p>
+              <p className="text-xs text-muted-foreground">Visitantes</p>
+              <p className="text-lg font-bold text-foreground">{deviceData.uniqueVisitors}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border bg-card">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2 rounded-full bg-primary/10">
+              <Activity className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Conversão</p>
               <p className="text-lg font-bold text-foreground">
-                {totalWithState}
-                <span className="text-xs text-muted-foreground ml-1">
-                  ({orders.length > 0 ? ((totalWithState / orders.length) * 100).toFixed(0) : 0}%)
-                </span>
+                {deviceData.uniqueVisitors > 0
+                  ? ((orders.length / deviceData.uniqueVisitors) * 100).toFixed(1)
+                  : "0"}%
               </p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border bg-card">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-full bg-green-500/10">
-              <Globe className="w-4 h-4 text-green-400" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">PIX</p>
-              <p className="text-lg font-bold text-foreground">{paymentDist.pix}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border bg-card">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-full bg-purple-500/10">
-              <MousePointerClick className="w-4 h-4 text-purple-400" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Cartão</p>
-              <p className="text-lg font-bold text-foreground">{paymentDist.card}</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Map + Top States */}
+      {/* Revenue Chart + Funnel */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Revenue Chart */}
+        <Card className="border-border bg-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-primary" />
+              Faturamento por dia
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[260px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={revenueByDay}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="name" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
+                  <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
+                  <ReTooltip
+                    contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
+                    labelStyle={{ color: "hsl(var(--foreground))" }}
+                    formatter={(value: number) => [fmt(value), "Receita"]}
+                  />
+                  <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Conversion Funnel */}
+        <Card className="border-border bg-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
+              <ArrowDown className="w-4 h-4 text-primary" />
+              Funil de Conversão
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {funnelData.map((step, i) => {
+                const Icon = step.icon;
+                const prevCount = i > 0 ? funnelData[i - 1].count : step.count;
+                const dropRate = prevCount > 0 && i > 0 ? ((1 - step.count / prevCount) * 100).toFixed(0) : null;
+                return (
+                  <div key={step.key} className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Icon className="w-4 h-4" style={{ color: step.color }} />
+                        <span className="text-sm text-foreground font-medium">{step.label}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-foreground">{step.count}</span>
+                        {dropRate && (
+                          <span className="text-xs text-red-400">-{dropRate}%</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{
+                          width: `${(step.count / funnelMax) * 100}%`,
+                          backgroundColor: step.color,
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Map + Sidebar */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Brazil Map */}
         <Card className="border-border bg-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
@@ -251,12 +376,8 @@ const Analytics = () => {
             {totalWithState === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Map className="w-12 h-12 text-muted-foreground/30 mb-3" />
-                <p className="text-sm text-muted-foreground">
-                  Nenhuma venda com estado registrado ainda.
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  O estado será capturado automaticamente nas próximas vendas via checkout.
-                </p>
+                <p className="text-sm text-muted-foreground">Nenhuma venda com estado registrado.</p>
+                <p className="text-xs text-muted-foreground mt-1">O estado será capturado automaticamente via DDD do telefone nas próximas vendas.</p>
               </div>
             ) : (
               <BrazilMap salesByState={salesByState} />
@@ -264,8 +385,9 @@ const Analytics = () => {
           </CardContent>
         </Card>
 
+        {/* Right Column: Top States + Payment Dist + UTM Sources */}
         <div className="space-y-4">
-          {/* Top States Ranking */}
+          {/* Top States */}
           <Card className="border-border bg-card">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
@@ -275,30 +397,19 @@ const Analytics = () => {
             </CardHeader>
             <CardContent>
               {topStates.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">
-                  Sem dados geográficos disponíveis
-                </p>
+                <p className="text-sm text-muted-foreground py-4 text-center">Sem dados geográficos</p>
               ) : (
                 <div className="space-y-3">
                   {topStates.map(([uf, data], i) => (
                     <div key={uf} className="flex items-center gap-3">
-                      <span className="text-xs font-bold text-muted-foreground w-5">
-                        #{i + 1}
-                      </span>
+                      <span className="text-xs font-bold text-muted-foreground w-5">#{i + 1}</span>
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-sm font-medium text-foreground">{uf}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {data.count} vendas · {fmt(data.revenue)}
-                          </span>
+                          <span className="text-xs text-muted-foreground">{data.count} · {fmt(data.revenue)}</span>
                         </div>
                         <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-primary rounded-full transition-all duration-500"
-                            style={{
-                              width: `${(data.revenue / (topStates[0]?.[1]?.revenue || 1)) * 100}%`,
-                            }}
-                          />
+                          <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${(data.revenue / (topStates[0]?.[1]?.revenue || 1)) * 100}%` }} />
                         </div>
                       </div>
                     </div>
@@ -308,74 +419,117 @@ const Analytics = () => {
             </CardContent>
           </Card>
 
-          {/* Clarity Insights Embed */}
-          {savedClarityId && (
-            <Card className="border-border bg-card">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
-                  <Eye className="w-4 h-4 text-primary" />
-                  Clarity Dashboard
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-lg border border-border overflow-hidden bg-secondary/30">
-                  <iframe
-                    src={`https://clarity.microsoft.com/projects/view/${savedClarityId}/dashboard`}
-                    className="w-full h-[400px] border-0"
-                    title="Microsoft Clarity Dashboard"
-                    allow="clipboard-read; clipboard-write"
-                  />
+          {/* Payment Distribution */}
+          <Card className="border-border bg-card">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-primary" />
+                Métodos de Pagamento
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {paymentDist.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">Sem dados</p>
+              ) : (
+                <div className="flex items-center gap-4">
+                  <div className="w-[120px] h-[120px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={paymentDist} cx="50%" cy="50%" innerRadius={30} outerRadius={50} dataKey="value" strokeWidth={0}>
+                          {paymentDist.map((_, i) => (
+                            <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    {paymentDist.map((d, i) => (
+                      <div key={d.name} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
+                          <span className="text-xs text-foreground">{d.name}</span>
+                        </div>
+                        <span className="text-xs font-bold text-foreground">{d.value}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2 text-center">
-                  Heatmaps, gravações de sessão e métricas de engajamento em tempo real
-                </p>
-              </CardContent>
-            </Card>
-          )}
+              )}
+            </CardContent>
+          </Card>
+
+          {/* UTM Sources */}
+          <Card className="border-border bg-card">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
+                <Globe className="w-4 h-4 text-primary" />
+                Fontes de Tráfego
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {utmSources.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">Sem dados</p>
+              ) : (
+                <div className="space-y-2">
+                  {utmSources.map(([src, count]) => (
+                    <div key={src} className="flex items-center justify-between">
+                      <span className="text-xs text-foreground truncate max-w-[150px]">{src}</span>
+                      <Badge variant="secondary" className="text-xs">{count}</Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
 
-      {/* Clarity Script Info */}
-      {savedClarityId && (
-        <Card className="border-border bg-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
-              <Monitor className="w-4 h-4 text-muted-foreground" />
-              Script de Instalação
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground mb-3">
-              Cole este script na sua página de vendas para capturar heatmaps e gravações:
-            </p>
-            <div className="relative">
-              <pre className="bg-secondary/60 rounded-lg p-4 text-xs text-foreground overflow-x-auto border border-border">
-{`<script type="text/javascript">
-  (function(c,l,a,r,i,t,y){
-    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-    t=l.createElement(r);t.async=1;
-    t.src="https://www.clarity.ms/tag/"+i;
-    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-  })(window,document,"clarity","script","${savedClarityId}");
-</script>`}
-              </pre>
-              <Button
-                variant="outline"
-                size="sm"
-                className="absolute top-2 right-2 text-xs"
-                onClick={() => {
-                  navigator.clipboard.writeText(
-                    `<script type="text/javascript">(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/${savedClarityId}";y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","${savedClarityId}");</script>`
-                  );
-                  toast.success("Script copiado!");
-                }}
-              >
-                Copiar
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Clarity Config (Optional) */}
+      <Card className="border-border bg-card">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
+            <Settings className="w-4 h-4 text-muted-foreground" />
+            Microsoft Clarity — Heatmaps & Gravações (Opcional)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Para heatmaps e gravações de sessão, configure o Clarity. O dashboard acima funciona 100% sem ele.
+          </p>
+          <div className="flex items-center gap-3">
+            <Input
+              placeholder="Clarity Project ID (ex: abc123xyz)"
+              value={clarityId}
+              onChange={(e) => setClarityId(e.target.value)}
+              className="max-w-md bg-secondary/50 border-border"
+            />
+            <Button onClick={saveClarityId} disabled={saving || clarityId === savedClarityId} size="sm" className="gap-1.5">
+              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              Salvar
+            </Button>
+          </div>
+          {savedClarityId && (
+            <>
+              <p className="text-xs text-muted-foreground">✅ Ativo — ID: <code className="text-primary">{savedClarityId}</code></p>
+              <div className="relative">
+                <pre className="bg-secondary/60 rounded-lg p-3 text-xs text-foreground overflow-x-auto border border-border">
+{`<script>(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","${savedClarityId}");</script>`}
+                </pre>
+                <Button
+                  variant="outline" size="sm" className="absolute top-2 right-2 text-xs gap-1"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`<script>(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/${savedClarityId}";y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","${savedClarityId}");</script>`);
+                    toast.success("Copiado!");
+                  }}
+                >
+                  <Copy className="w-3 h-3" /> Copiar
+                </Button>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
