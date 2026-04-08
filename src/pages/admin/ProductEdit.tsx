@@ -428,6 +428,7 @@ const ProductEdit = () => {
       billing_cycle: form.billing_cycle,
       show_coupon: form.show_coupon,
       delivery_method: form.delivery_method,
+      currency: form.currency,
       payment_settings: form.payment_settings,
       updated_at: new Date().toISOString(),
     };
