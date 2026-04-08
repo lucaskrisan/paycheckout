@@ -100,51 +100,55 @@ const variantIcons = {
 const DashboardHeroCard = memo(function DashboardHeroCard({ label, value, fmt, sublabel, variant = "neutral", tooltip, sparklineData }: Props) {
   const animatedValue = useAnimatedNumber(value);
   const Icon = variantIcons[variant] || Zap;
-  const isVisitors = variant === "visitors";
+  const isRevenue = variant === "revenue";
+
+  const containerClass = isRevenue
+    ? "relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-400 p-5 h-full min-h-[120px] flex flex-col justify-between shadow-[0_4px_24px_-4px_rgba(16,185,129,0.3)]"
+    : "relative overflow-hidden rounded-xl border border-white/[0.06] bg-card/70 backdrop-blur-md p-5 h-full min-h-[120px] flex flex-col justify-between shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),0_2px_20px_-4px_rgba(0,0,0,0.5)]";
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-white/[0.06] bg-card/70 backdrop-blur-md p-5 h-full min-h-[120px] flex flex-col justify-between shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),0_2px_20px_-4px_rgba(0,0,0,0.5)]">
-      {/* Top shine line */}
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
-      
-      {/* Icon */}
+    <div className={containerClass}>
+      {isRevenue && (
+        <>
+          <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-white/10" />
+          <div className="absolute -right-3 -top-3 w-20 h-20 rounded-full bg-white/[0.06]" />
+        </>
+      )}
+      {!isRevenue && (
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
+      )}
+
       <div className="absolute right-4 top-4">
-        <div className="bg-white/[0.04] border border-white/[0.06] rounded-lg p-2">
-          <Icon className="w-4 h-4 text-muted-foreground" />
+        <div className={isRevenue ? "bg-white/20 backdrop-blur-sm rounded-full p-2.5" : "bg-white/[0.04] border border-white/[0.06] rounded-lg p-2"}>
+          <Icon className={`w-4 h-4 ${isRevenue ? "text-white" : "text-muted-foreground"}`} />
         </div>
       </div>
 
-      {/* Content */}
       <div>
         <div className="flex items-center gap-1.5">
-          <p className="text-xs font-medium text-muted-foreground">{label}</p>
+          <p className={`text-xs font-medium ${isRevenue ? "text-white/80" : "text-muted-foreground"}`}>{label}</p>
           {tooltip && (
             <TooltipProvider delayDuration={200}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="text-muted-foreground/50 cursor-help text-xs">ⓘ</span>
+                  <span className={`cursor-help text-xs ${isRevenue ? "text-white/40" : "text-muted-foreground/50"}`}>ⓘ</span>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[200px] text-xs">
-                  {tooltip}
-                </TooltipContent>
+                <TooltipContent side="top" className="max-w-[200px] text-xs">{tooltip}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           )}
         </div>
-        <p className={`text-2xl font-bold tracking-tight mt-1.5 ${isVisitors ? "text-foreground" : "text-primary"}`}>
+        <p className={`text-2xl font-bold tracking-tight mt-1.5 ${isRevenue ? "text-white" : "text-primary"}`}>
           {fmt(animatedValue)}
         </p>
       </div>
 
-      {/* Sparkline for visitors */}
       {sparklineData && sparklineData.length > 1 && (
-        <div className="mt-2">
-          <MiniSparkline data={sparklineData} />
-        </div>
+        <div className="mt-2"><MiniSparkline data={sparklineData} /></div>
       )}
 
       {sublabel && (
-        <p className="text-[11px] text-muted-foreground/70 mt-2">{sublabel}</p>
+        <p className={`text-[11px] mt-2 ${isRevenue ? "text-white/60" : "text-muted-foreground/70"}`}>{sublabel}</p>
       )}
     </div>
   );
