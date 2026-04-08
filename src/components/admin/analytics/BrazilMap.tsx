@@ -1,6 +1,16 @@
 // @ts-nocheck
-import { useMemo } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { Globe } from "@/components/ui/cobe-globe";
+
+const STATE_NAMES: Record<string, string> = {
+  AC: "Acre", AL: "Alagoas", AM: "Amazonas", AP: "Amapá",
+  BA: "Bahia", CE: "Ceará", DF: "Distrito Federal", ES: "Espírito Santo",
+  GO: "Goiás", MA: "Maranhão", MG: "Minas Gerais", MS: "Mato Grosso do Sul",
+  MT: "Mato Grosso", PA: "Pará", PB: "Paraíba", PE: "Pernambuco",
+  PI: "Piauí", PR: "Paraná", RJ: "Rio de Janeiro", RN: "Rio Grande do Norte",
+  RO: "Rondônia", RR: "Roraima", RS: "Rio Grande do Sul", SC: "Santa Catarina",
+  SE: "Sergipe", SP: "São Paulo", TO: "Tocantins",
+};
 
 const STATE_COORDS: Record<string, [number, number]> = {
   AC: [-9.9747, -67.8100], AL: [-9.6658, -35.7353], AM: [-3.1190, -60.0217],
@@ -18,8 +28,13 @@ interface BrazilMapProps {
   salesByState: Record<string, { count: number; revenue: number }>;
 }
 
+const fmt = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
+
 const BrazilMap = ({ salesByState }: BrazilMapProps) => {
+  const [selected, setSelected] = useState<string | null>(null);
+
   const markers = useMemo(() => {
+    const maxCount = Math.max(...Object.values(salesByState).map((s) => s.count), 1);
     return Object.entries(salesByState)
       .filter(([uf]) => STATE_COORDS[uf])
       .map(([uf, data]) => ({
@@ -41,25 +56,71 @@ const BrazilMap = ({ salesByState }: BrazilMapProps) => {
     }));
   }, [salesByState]);
 
+  const handleMarkerClick = useCallback((markerId: string) => {
+    setSelected((prev) => (prev === markerId ? null : markerId));
+  }, []);
+
+  const selectedData = selected
+    ? salesByState[selected.toUpperCase()]
+    : null;
+  const selectedUF = selected?.toUpperCase() || "";
+
+  // sorted list for the legend below
+  const sortedStates = useMemo(() => {
+    return Object.entries(salesByState)
+      .filter(([uf]) => STATE_COORDS[uf])
+      .sort((a, b) => b[1].count - a[1].count);
+  }, [salesByState]);
+
   return (
-    <div className="flex flex-col items-center">
-      <Globe
-        markers={markers}
-        arcs={arcs}
-        className="w-full max-w-[360px]"
-        markerColor={[0.2, 0.8, 0.4]}
-        baseColor={[0.15, 0.15, 0.2]}
-        arcColor={[0.2, 0.9, 0.5]}
-        glowColor={[0.1, 0.3, 0.15]}
-        dark={1}
-        mapBrightness={6}
-        markerSize={0.03}
-        markerElevation={0.02}
-        speed={0.002}
-        theta={0.3}
-      />
-      <p className="text-xs text-muted-foreground mt-2">
-        Arraste para girar • {markers.length} estados com vendas
+    <div className="flex flex-col items-center gap-3">
+      <div className="relative w-full max-w-[360px]">
+        <Globe
+          markers={markers}
+          arcs={arcs}
+          className="w-full"
+          markerColor={[0.2, 0.8, 0.4]}
+          baseColor={[0.15, 0.15, 0.2]}
+          arcColor={[0.2, 0.9, 0.5]}
+          glowColor={[0.1, 0.3, 0.15]}
+          dark={1}
+          mapBrightness={6}
+          markerSize={0.06}
+          markerElevation={0.03}
+          speed={0.002}
+          theta={0.3}
+          onMarkerClick={handleMarkerClick}
+        />
+      </div>
+
+      {/* Selected state tooltip */}
+      {selectedData && (
+        <div className="bg-card border border-primary/30 rounded-lg px-4 py-3 text-center shadow-lg shadow-primary/10 animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <p className="text-xs text-muted-foreground">{STATE_NAMES[selectedUF] || selectedUF}</p>
+          <p className="text-lg font-bold text-foreground">{selectedData.count} vendas</p>
+          <p className="text-sm text-primary font-medium">{fmt(selectedData.revenue)}</p>
+        </div>
+      )}
+
+      {/* State pills */}
+      <div className="flex flex-wrap gap-1.5 justify-center max-w-[360px]">
+        {sortedStates.map(([uf, data]) => (
+          <button
+            key={uf}
+            onClick={() => setSelected((prev) => (prev === uf.toLowerCase() ? null : uf.toLowerCase()))}
+            className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-all cursor-pointer border ${
+              selected === uf.toLowerCase()
+                ? "bg-primary text-primary-foreground border-primary shadow-md shadow-primary/20"
+                : "bg-secondary/50 text-muted-foreground border-border hover:bg-secondary hover:text-foreground"
+            }`}
+          >
+            {uf} · {data.count}
+          </button>
+        ))}
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        Arraste para girar • Clique no estado para detalhes
       </p>
     </div>
   );
