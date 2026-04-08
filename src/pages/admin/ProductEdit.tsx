@@ -1521,7 +1521,7 @@ const ProductEdit = () => {
                             <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-500">Checkout</span>
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
-                            {form.price ? `R$ ${Number(form.price).toFixed(2).replace(".", ",")}` : "—"}
+                            {form.price ? `${form.currency === "USD" ? "$" : "R$"} ${Number(form.price).toFixed(2).replace(".", form.currency === "USD" ? "." : ",")}` : "—"}
                           </TableCell>
                           <TableCell>
                             <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${form.active ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"}`}>
