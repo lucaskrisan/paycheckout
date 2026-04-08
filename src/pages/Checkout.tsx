@@ -58,6 +58,7 @@ const Checkout = () => {
   const [checkoutSettings, setCheckoutSettings] = useState<CheckoutSettings | null>(null);
   const [isOwnerSuperAdmin, setIsOwnerSuperAdmin] = useState(false);
   const [coupon, setCoupon] = useState<CouponData | null>(null);
+  const [selectedCountry, setSelectedCountry] = useState("US");
 
   const prefill = useMemo(() => {
     const params = new URLSearchParams(location.search);
