@@ -1611,7 +1611,7 @@ const ProductEdit = () => {
             <div className="space-y-1.5">
               <Label>Preço</Label>
               <div className="flex">
-                <span className="inline-flex items-center px-3 text-sm text-muted-foreground bg-muted border border-r-0 border-input rounded-l-md">R$</span>
+                <span className="inline-flex items-center px-3 text-sm text-muted-foreground bg-muted border border-r-0 border-input rounded-l-md">{form.currency === "USD" ? "$" : "R$"}</span>
                 <Input type="number" step="0.01" value={planPrice} onChange={(e) => setPlanPrice(e.target.value)} className="rounded-l-none rounded-r-none" />
                 <Select defaultValue="BRL">
                   <SelectTrigger className="w-24 rounded-l-none border-l-0">
