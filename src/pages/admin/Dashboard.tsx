@@ -20,6 +20,21 @@ import DashboardChart from "@/components/admin/dashboard/DashboardChart";
 import DashboardMetricCard from "@/components/admin/dashboard/DashboardMetricCard";
 import DashboardHeroCard from "@/components/admin/dashboard/DashboardHeroCard";
 import DashboardStateMap from "@/components/admin/dashboard/DashboardStateMap";
+import DashboardCustomizer, { type MetricConfig } from "@/components/admin/dashboard/DashboardCustomizer";
+import { toast } from "sonner";
+
+const ALL_METRICS: MetricConfig[] = [
+  { key: "card_approval", label: "Aprovação cartão", icon: CreditCard },
+  { key: "pix_sales", label: "Vendas PIX", icon: Globe },
+  { key: "refund", label: "Reembolso", icon: RefreshCcw },
+  { key: "paid_ads", label: "Vendas Pagas (Ads)", icon: Megaphone },
+  { key: "organic", label: "Vendas Orgânicas", icon: Leaf },
+  { key: "pending", label: "Vendas pendentes", icon: Clock },
+  { key: "abandoned", label: "Carrinhos abandonados", icon: ShoppingCart },
+  { key: "avg_ticket", label: "Ticket médio", icon: TrendingUp },
+];
+
+const DEFAULT_KEYS = ALL_METRICS.map((m) => m.key);
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -31,8 +46,53 @@ const Dashboard = () => {
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("all");
 
+  // Dashboard customization
+  const [visibleMetrics, setVisibleMetrics] = useState<string[]>(DEFAULT_KEYS);
+  const [metricsOrder, setMetricsOrder] = useState<string[]>(DEFAULT_KEYS);
+  const [savingPrefs, setSavingPrefs] = useState(false);
+
   const ownerProductIds = useMemo(() => products.map((p) => p.id), [products]);
   const liveVisitors = useCheckoutPresence("watch", undefined, ownerProductIds);
+
+  // Load dashboard preferences
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("dashboard_preferences")
+      .select("visible_metrics, metrics_order")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          if (Array.isArray(data.visible_metrics)) setVisibleMetrics(data.visible_metrics);
+          if (Array.isArray(data.metrics_order)) setMetricsOrder(data.metrics_order);
+        }
+      });
+  }, [user]);
+
+  const savePreferences = useCallback(async (visible: string[], order: string[]) => {
+    if (!user) return;
+    setSavingPrefs(true);
+    try {
+      const { error } = await supabase
+        .from("dashboard_preferences")
+        .upsert({
+          user_id: user.id,
+          visible_metrics: visible,
+          metrics_order: order,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id" });
+      if (error) throw error;
+      setVisibleMetrics(visible);
+      setMetricsOrder(order);
+      toast.success("Dashboard personalizado salvo!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao salvar preferências");
+    } finally {
+      setSavingPrefs(false);
+    }
+  }, [user]);
 
   const getDateFilter = useCallback((p: Period): string | null => {
     const now = new Date();
@@ -194,6 +254,24 @@ const Dashboard = () => {
   const heroValue = totalTaxas > 0 ? totalLiquido : totalBruto;
   const heroSub = totalTaxas > 0 ? `Bruto: ${fmt(totalBruto)} · Taxa: ${fmt(totalTaxas)}` : undefined;
 
+  // Metric cards map
+  const metricCards: Record<string, JSX.Element> = {
+    card_approval: <DashboardMetricCard key="card_approval" icon={CreditCard} label="Aprovação cartão" value={`${cardApprovalRate}%`} accent />,
+    pix_sales: <DashboardMetricCard key="pix_sales" icon={Globe} label="Vendas PIX" value={fmt(pixApproved.reduce((s, o) => s + Number(o.amount), 0))} sub={`${pixConversionRate}% conversão`} accent />,
+    refund: <DashboardMetricCard key="refund" icon={RefreshCcw} label="Reembolso" value={`${refundRate}%`} />,
+    paid_ads: <DashboardMetricCard key="paid_ads" icon={Megaphone} label="Vendas Pagas (Ads)" value={String(paidSales.length)} sub={fmt(paidRevenue)} />,
+    organic: <DashboardMetricCard key="organic" icon={Leaf} label="Vendas Orgânicas" value={String(organicSales.length)} sub={fmt(organicRevenue)} />,
+    pending: <DashboardMetricCard key="pending" icon={Clock} label="Vendas pendentes" value={String(pending.length)} sub={`${fmt(totalPendente)} aguardando`} onClick={() => navigate("/admin/orders")} />,
+    abandoned: <DashboardMetricCard key="abandoned" icon={ShoppingCart} label="Carrinhos abandonados" value={String(totalAbandoned)} sub={`${recoveryRate}% recuperados`} onClick={() => navigate("/admin/abandoned")} />,
+    avg_ticket: <DashboardMetricCard key="avg_ticket" icon={TrendingUp} label="Ticket médio" value={totalVendas > 0 ? fmt(totalBruto / totalVendas) : fmt(0)} />,
+  };
+
+  // Ordered + filtered metrics
+  const renderedMetrics = metricsOrder
+    .filter((key) => visibleMetrics.includes(key))
+    .map((key) => metricCards[key])
+    .filter(Boolean);
+
   return (
     <div className="space-y-3">
       <DashboardHeaderBar
@@ -205,6 +283,15 @@ const Dashboard = () => {
         liveVisitors={liveVisitors}
         refreshing={refreshing}
         onRefresh={() => loadData(true)}
+        extraActions={
+          <DashboardCustomizer
+            allMetrics={ALL_METRICS}
+            visibleMetrics={visibleMetrics}
+            metricsOrder={metricsOrder}
+            onSave={savePreferences}
+            saving={savingPrefs}
+          />
+        }
       />
 
       <GatewayAlerts />
@@ -239,49 +326,12 @@ const Dashboard = () => {
         <DashboardStateMap salesByState={salesByState} fmt={fmt} />
       </div>
 
-      {/* Metric cards grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-        <DashboardMetricCard icon={CreditCard} label="Aprovação cartão" value={`${cardApprovalRate}%`} accent />
-        <DashboardMetricCard
-          icon={Globe}
-          label="Vendas PIX"
-          value={fmt(pixApproved.reduce((s, o) => s + Number(o.amount), 0))}
-          sub={`${pixConversionRate}% conversão`}
-          accent
-        />
-        <DashboardMetricCard icon={RefreshCcw} label="Reembolso" value={`${refundRate}%`} />
-        <DashboardMetricCard
-          icon={Megaphone}
-          label="Vendas Pagas (Ads)"
-          value={String(paidSales.length)}
-          sub={fmt(paidRevenue)}
-        />
-        <DashboardMetricCard
-          icon={Leaf}
-          label="Vendas Orgânicas"
-          value={String(organicSales.length)}
-          sub={fmt(organicRevenue)}
-        />
-        <DashboardMetricCard
-          icon={Clock}
-          label="Vendas pendentes"
-          value={String(pending.length)}
-          sub={`${fmt(totalPendente)} aguardando`}
-          onClick={() => navigate("/admin/orders")}
-        />
-        <DashboardMetricCard
-          icon={ShoppingCart}
-          label="Carrinhos abandonados"
-          value={String(totalAbandoned)}
-          sub={`${recoveryRate}% recuperados`}
-          onClick={() => navigate("/admin/abandoned")}
-        />
-        <DashboardMetricCard
-          icon={TrendingUp}
-          label="Ticket médio"
-          value={totalVendas > 0 ? fmt(totalBruto / totalVendas) : fmt(0)}
-        />
-      </div>
+      {/* Metric cards grid — customizable */}
+      {renderedMetrics.length > 0 && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+          {renderedMetrics}
+        </div>
+      )}
     </div>
   );
 };
