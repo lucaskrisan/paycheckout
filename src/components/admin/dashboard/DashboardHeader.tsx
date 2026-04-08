@@ -64,7 +64,7 @@ const DashboardHeaderBar = memo(function DashboardHeaderBar({
         >
           <RefreshCcw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
         </Button>
-        {extraActions}
+        
         <Select value={period} onValueChange={(v) => onPeriodChange(v as Period)}>
           <SelectTrigger className="w-[150px] h-9 text-sm bg-background border-border">
             <SelectValue />
