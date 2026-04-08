@@ -130,6 +130,7 @@ const Products = () => {
   const openDialog = () => {
     setStep(1);
     setPaymentType("one_time");
+    setCurrency("BRL");
     setNewName("");
     setNewDescription("");
     setNewSalesPage("");
