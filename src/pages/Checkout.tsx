@@ -331,7 +331,7 @@ const Checkout = () => {
               {!isUSD && paymentMethod === "pix" ? (
                 <PixPayment totalAmount={finalAmount} qrCodeData={pixData?.qrCodeUrl} pixCode={pixData?.pixCode} />
               ) : (
-                <CreditCardForm data={creditCard} onChange={setCreditCard} totalAmount={finalAmount} />
+                <CreditCardForm data={creditCard} onChange={setCreditCard} totalAmount={finalAmount} isUSD={isUSD} />
               )}
             </div>
 
