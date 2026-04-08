@@ -29,6 +29,7 @@ interface Props {
   liveVisitors: number;
   refreshing: boolean;
   onRefresh: () => void;
+  extraActions?: React.ReactNode;
 }
 
 const DashboardHeaderBar = memo(function DashboardHeaderBar({
