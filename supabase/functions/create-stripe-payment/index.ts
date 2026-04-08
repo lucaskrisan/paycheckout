@@ -270,10 +270,32 @@ Deno.serve(async (req) => {
       ? new URL(checkout_url).origin
       : (req.headers.get('origin') || 'https://app.panttera.com.br');
 
+    // Map country code to Stripe locale
+    const countryToLocale: Record<string, string> = {
+      BR: 'pt-BR', PT: 'pt-BR', MZ: 'pt-BR', AO: 'pt-BR', CV: 'pt-BR', ST: 'pt-BR',
+      US: 'en', GB: 'en', AU: 'en', CA: 'en', IE: 'en', NZ: 'en', JM: 'en', TT: 'en', BB: 'en', BS: 'en', GY: 'en', BZ: 'en', PR: 'en', VI: 'en',
+      MX: 'es', CO: 'es', AR: 'es', PE: 'es', CL: 'es', EC: 'es', VE: 'es', UY: 'es', PY: 'es', BO: 'es', CR: 'es', PA: 'es', DO: 'es', GT: 'es', HN: 'es', SV: 'es', NI: 'es', CU: 'es', ES: 'es',
+      FR: 'fr', BE: 'fr', CH: 'fr', LU: 'fr', MC: 'fr', SN: 'fr', CI: 'fr', CM: 'fr', MG: 'fr', HT: 'fr', GF: 'fr', GP: 'fr', MQ: 'fr', RE: 'fr',
+      DE: 'de', AT: 'de', LI: 'de',
+      IT: 'it', SM: 'it', VA: 'it',
+      JP: 'ja', KR: 'ko', CN: 'zh', TW: 'zh-TW', HK: 'zh-HK',
+      NL: 'nl', SR: 'nl',
+      PL: 'pl', CZ: 'cs', SK: 'sk', HU: 'hu', RO: 'ro', BG: 'bg', HR: 'hr',
+      SE: 'sv', NO: 'nb', DK: 'da', FI: 'fi', IS: 'fi',
+      TR: 'tr', ID: 'id', TH: 'th', VN: 'vi', PH: 'fil',
+      IN: 'hi', BD: 'bn', PK: 'ur',
+      IL: 'he', SA: 'ar', AE: 'ar', EG: 'ar', JO: 'ar', KW: 'ar', QA: 'ar', BH: 'ar', OM: 'ar', LB: 'ar', MA: 'ar', DZ: 'ar', TN: 'ar',
+      UA: 'uk', GE: 'ka', AM: 'hy', KZ: 'kk',
+      GR: 'el', EE: 'et', LV: 'lv', LT: 'lt',
+      RU: 'ru', BY: 'ru', KG: 'ru', TJ: 'ru', UZ: 'uz',
+      MY: 'ms', SG: 'en', NG: 'en', GH: 'en', KE: 'en', ZA: 'en',
+    };
+    const stripeLocale = customer_country && countryToLocale[customer_country] ? countryToLocale[customer_country] : 'auto';
+
     // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,
-      locale: 'auto',
+      locale: stripeLocale as any,
       line_items: [
         {
           price_data: {
@@ -292,6 +314,7 @@ Deno.serve(async (req) => {
         customer_id: customerId,
         coupon_id: coupon_id || '',
         bump_product_ids: bump_product_ids?.length > 0 ? JSON.stringify(bump_product_ids) : '',
+        customer_country: customer_country || '',
         ...(utms || {}),
       },
     });
