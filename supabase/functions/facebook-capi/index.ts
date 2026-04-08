@@ -211,8 +211,19 @@ Deno.serve(async (req) => {
       user_data: userData,
     };
 
+    // Always include custom_data with BRL currency as default
     if (custom_data) {
-      event.custom_data = custom_data;
+      event.custom_data = {
+        ...custom_data,
+        // CRITICAL: Force BRL — Meta defaults to USD if omitted
+        currency: custom_data.currency || 'BRL',
+      };
+      // Ensure value is a number if present
+      if (event.custom_data.value !== undefined) {
+        event.custom_data.value = Number(event.custom_data.value);
+      }
+    } else {
+      event.custom_data = { currency: 'BRL' };
     }
 
     const results: any[] = [];
