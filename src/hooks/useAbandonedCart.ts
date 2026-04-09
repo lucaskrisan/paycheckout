@@ -12,12 +12,12 @@ interface UseAbandonedCartProps {
 export function useAbandonedCart({ productId, customer, paymentMethod, productOwnerId }: UseAbandonedCartProps) {
   const cartIdRef = useRef<string | null>(null);
   const purchasedRef = useRef(false);
-  const initializedRef = useRef(false);
+  const createdRef = useRef(false);
 
-  const saveCart = useCallback(async (force = false) => {
+  const saveCart = useCallback(async () => {
     if (purchasedRef.current) return;
-    // Allow saving even without email/phone when forced (initial mount)
-    if (!force && !customer.email && !customer.phone) return;
+    // CRITICAL: Never create a cart without productOwnerId — it makes the cart invisible to the producer
+    if (!productOwnerId) return;
 
     try {
       const params = new URLSearchParams(window.location.search);
@@ -32,11 +32,13 @@ export function useAbandonedCart({ productId, customer, paymentMethod, productOw
             customer_phone: customer.phone || null,
             customer_cpf: customer.cpf || null,
             payment_method: paymentMethod,
+            user_id: productOwnerId,
             updated_at: new Date().toISOString(),
           })
           .eq("id", cartIdRef.current);
-      } else {
-        // Insert new cart
+      } else if (!createdRef.current) {
+        createdRef.current = true;
+        // Insert new cart — always with user_id
         const { data } = await supabase
           .from("abandoned_carts")
           .insert({
@@ -51,24 +53,29 @@ export function useAbandonedCart({ productId, customer, paymentMethod, productOw
             utm_campaign: params.get("utm_campaign") || null,
             utm_content: params.get("utm_content") || null,
             utm_term: params.get("utm_term") || null,
-            user_id: productOwnerId || null,
+            user_id: productOwnerId,
           })
           .select("id")
           .single();
 
-        if (data) cartIdRef.current = data.id;
+        if (data) {
+          cartIdRef.current = data.id;
+        } else {
+          // Allow retry if insert failed
+          createdRef.current = false;
+        }
       }
     } catch {
       // Silent fail – don't block checkout
+      if (!cartIdRef.current) createdRef.current = false;
     }
   }, [productId, customer, paymentMethod, productOwnerId]);
 
-  // Create cart immediately on mount (captures even visitors who leave without filling anything)
+  // Create cart as soon as productOwnerId is available (product loaded)
   useEffect(() => {
-    if (!productId || initializedRef.current) return;
-    initializedRef.current = true;
-    saveCart(true);
-  }, [productId, saveCart]);
+    if (!productId || !productOwnerId || cartIdRef.current || createdRef.current) return;
+    saveCart();
+  }, [productId, productOwnerId, saveCart]);
 
   // Save on blur (tab switch / close) — use pagehide for mobile reliability
   useEffect(() => {
