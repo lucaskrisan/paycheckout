@@ -58,6 +58,17 @@ const Products = () => {
 
   useEffect(() => { loadProducts(); checkVerification(); }, []);
 
+  const checkVerification = async () => {
+    if (isSuperAdmin) { setIsVerified(true); return; }
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const [{ data: verData }, { data: profileData }] = await Promise.all([
+      supabase.from("producer_verifications").select("status").eq("user_id", user.id).eq("status", "approved").limit(1).maybeSingle(),
+      supabase.from("profiles").select("verified").eq("id", user.id).single(),
+    ]);
+    setIsVerified(verData?.status === "approved" || profileData?.verified === true);
+  };
+
   const loadProducts = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
