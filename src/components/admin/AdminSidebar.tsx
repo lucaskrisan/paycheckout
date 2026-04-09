@@ -66,6 +66,7 @@ const principalItems = [
 // 2. VENDAS — ferramentas de conversão e receita
 const vendasItems = [
   { title: "Checkouts", url: "/admin/settings", icon: Paintbrush },
+  { title: "Carrinhos Abandonados", url: "/admin/abandoned", icon: ShoppingCart },
   { title: "Upsell", url: "/admin/upsell", icon: Zap },
   { title: "Cupons", url: "/admin/coupons", icon: Tag },
 ];
@@ -79,7 +80,6 @@ const conteudoItems = [
 // 4. ANÁLISE — dados e relatórios
 const analiseItems = [
   { title: "Analytics", url: "/admin/analytics", icon: Activity },
-  { title: "Relatórios", url: "/admin/abandoned", icon: Activity },
   { title: "Métricas", url: "/admin/metrics", icon: TrendingUp },
   { title: "Financeiro", url: "/admin/financeiro", icon: Wallet },
 ];
