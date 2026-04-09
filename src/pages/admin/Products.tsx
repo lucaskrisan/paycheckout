@@ -198,9 +198,22 @@ const Products = () => {
 
   return (
     <div className="space-y-6">
+      {isVerified === false && (
+        <div className="flex items-center gap-3 p-4 rounded-lg border border-destructive/30 bg-destructive/5">
+          <ShieldAlert className="w-5 h-5 text-destructive shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-foreground">Verificação de identidade pendente</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Você precisa verificar sua identidade antes de criar produtos e começar a vender.</p>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => navigate("/admin/my-account")} className="shrink-0">
+            Verificar agora
+          </Button>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-foreground">Produtos</h1>
-        <Button onClick={openDialog} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+        <Button onClick={openDialog} disabled={isVerified === false} className="bg-primary hover:bg-primary/90 text-primary-foreground">
           Criar produto
         </Button>
       </div>
