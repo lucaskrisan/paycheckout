@@ -13,7 +13,7 @@ interface Props {
   previousValue?: number;
   fmt: (v: number) => string;
   sublabel?: string;
-  variant?: "revenue" | "sales" | "ticket" | "visitors" | "neutral";
+  variant?: "revenue" | "sales" | "ticket" | "pending" | "visitors" | "neutral";
   tooltip?: string;
   sparklineData?: number[];
 }
