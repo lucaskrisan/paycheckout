@@ -66,6 +66,7 @@ const principalItems = [
 // 2. VENDAS — ferramentas de conversão e receita
 const vendasItems = [
   { title: "Checkouts", url: "/admin/settings", icon: Paintbrush },
+  { title: "Carrinhos Abandonados", url: "/admin/abandoned", icon: ShoppingCart },
   { title: "Upsell", url: "/admin/upsell", icon: Zap },
   { title: "Cupons", url: "/admin/coupons", icon: Tag },
 ];
