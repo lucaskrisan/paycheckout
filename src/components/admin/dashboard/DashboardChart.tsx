@@ -15,6 +15,8 @@ interface Props {
   data: { name: string; total: number }[];
   fmt: (v: number) => string;
   currencyPrefix?: string;
+  title?: string;
+  subtitle?: string;
 }
 
 const CustomTooltip = ({ active, payload, label, fmt }: any) => {
