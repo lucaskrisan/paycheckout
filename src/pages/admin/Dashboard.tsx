@@ -320,8 +320,6 @@ const Dashboard = () => {
         <DashboardWeekdayChart orders={filtered} fmt={fmt} />
         <DashboardStateMap salesByState={salesByState} fmt={fmt} />
         <DashboardApprovalCard
-          chargebackValue={fmt(totalChargeback)}
-          chargebackCount={chargedback.length}
           items={[
             { label: "Cartão", rate: cardApprovalRate },
             { label: "Pix", rate: pixApprovalRate },
