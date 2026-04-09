@@ -165,13 +165,15 @@ Deno.serve(async (req) => {
 
     // Fetch product
     const products: Array<Record<string, unknown>> = [];
+    let productCurrency = 'BRL';
     if (order.product_id) {
       const { data: prod } = await supabase
         .from('products')
-        .select('id, name, price')
+        .select('id, name, price, currency')
         .eq('id', order.product_id)
         .single();
       if (prod) {
+        productCurrency = (prod as any).currency || 'BRL';
         products.push({
           id: prod.id,
           name: prod.name,
@@ -199,7 +201,7 @@ Deno.serve(async (req) => {
       customer,
       products,
       tracking,
-      currency: 'BRL',
+      currency: productCurrency,
     };
 
     console.log('[appsell-notify] Sending to AppSell:', JSON.stringify({ event: appsellEvent, orderId: order.id }));
