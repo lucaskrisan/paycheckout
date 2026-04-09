@@ -88,7 +88,7 @@ const DashboardChart = memo(function DashboardChart({ data, fmt, currencyPrefix 
         </div>
         {/* Summary bar */}
         <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/[0.04]">
-          <span className="text-[11px] text-muted-foreground">Receita diária</span>
+          <span className="text-[11px] text-muted-foreground">Receita total</span>
           <span className="text-sm font-bold text-primary">{fmt(totalRevenue)}</span>
           <span className="text-[11px] text-muted-foreground">Média</span>
           <span className="text-sm font-bold text-foreground">{fmt(avgPerDay)}</span>
