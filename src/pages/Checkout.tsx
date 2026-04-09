@@ -62,7 +62,7 @@ const Checkout = () => {
   const [coupon, setCoupon] = useState<CouponData | null>(null);
   const { country: geoCountry } = useGeoCountry("US");
   const [selectedCountry, setSelectedCountry] = useState("US");
-  const [geoApplied, setGeoApplied] = useState(false);
+  
 
   const prefill = useMemo(() => {
     const params = new URLSearchParams(location.search);
@@ -216,10 +216,10 @@ const Checkout = () => {
   };
 
   const handleSubmit = async () => {
-    if (!customer.name || !customer.email) { toast.error(isUSD ? "Please fill in all required fields" : "Preencha todos os campos obrigatórios"); return; }
+    if (!customer.name || !customer.email) { toast.error(isUSD ? t.fillRequired : "Preencha todos os campos obrigatórios"); return; }
     if (!isUSD && (!customer.cpf || !customer.phone)) { toast.error("Preencha todos os campos obrigatórios"); return; }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(customer.email.trim())) { toast.error(isUSD ? "Invalid email address" : "E-mail inválido. Verifique o endereço digitado."); return; }
+    if (!emailRegex.test(customer.email.trim())) { toast.error(isUSD ? t.invalidEmail : "E-mail inválido. Verifique o endereço digitado."); return; }
     if (!isUSD && !isValidCPF(customer.cpf)) { toast.error("CPF inválido. Verifique o número digitado."); return; }
     const [expMonth, expYear] = creditCard.expiry.split("/");
     if (paymentMethod === "credit_card" && !isUSD) {
@@ -327,7 +327,7 @@ const Checkout = () => {
             <div className="space-y-4">
               {isUSD && (
                 <div>
-                  <p className="text-xs font-semibold text-[#565959] uppercase tracking-wide mb-1.5">Your country</p>
+                  <p className="text-xs font-semibold text-[#565959] uppercase tracking-wide mb-1.5">{t.yourCountry}</p>
                   <CountrySelector selected={selectedCountry} onChange={setSelectedCountry} />
                 </div>
               )}
@@ -336,8 +336,8 @@ const Checkout = () => {
                 <div className="bg-[#F7FAFA] border border-[#D5D9D9] rounded-lg p-3 flex items-center gap-2">
                   <span className="text-lg">💳</span>
                   <div>
-                    <p className="text-sm font-bold text-[#0F1111]">Credit Card</p>
-                    <p className="text-xs text-[#565959]">Secure international payment via Stripe</p>
+                    <p className="text-sm font-bold text-[#0F1111]">{t.creditCard}</p>
+                    <p className="text-xs text-[#565959]">{t.securePayment}</p>
                   </div>
                 </div>
               ) : product.is_subscription ? (
@@ -376,7 +376,7 @@ const Checkout = () => {
                 <span className="flex items-center justify-center gap-2">
                   <Lock className="w-4 h-4" />
                   {isUSD
-                    ? `Pay $${finalAmount.toFixed(2)}`
+                    ? t.payButton(finalAmount.toFixed(2))
                     : product.is_subscription ? "Assinar agora" : paymentMethod === "pix" ? `Pagar ${finalAmount.toFixed(2).replace(".", ",")} com PIX` : submitLabel || "Finalizar compra"}
                   <ArrowRight className="w-5 h-5" />
                 </span>
