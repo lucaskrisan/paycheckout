@@ -262,7 +262,7 @@ const Checkout = () => {
             toast.success(t.paymentSuccess);
             trackPurchase(finalAmount, "USD", paymentId);
             await markPurchased();
-            navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product.id}${data.order_id ? `&order_id=${data.order_id}` : ''}`);
+            navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product.id}${data.order_id ? `&order_id=${data.order_id}` : ''}${isUSD ? '&lang=en' : ''}`);
           } else throw new Error("Payment processing failed");
         }
       } else if (paymentMethod === "pix") {
@@ -300,7 +300,7 @@ const Checkout = () => {
           toast.success("Pagamento processado com sucesso!");
           trackPurchase(finalAmount, "BRL", paymentId);
           await markPurchased();
-          navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product.id}${data.order_id ? `&order_id=${data.order_id}` : ''}`);
+          navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product.id}${data.order_id ? `&order_id=${data.order_id}` : ''}${isUSD ? '&lang=en' : ''}`);
         } else throw new Error("Falha ao processar pagamento");
       }
     } catch (err: any) { console.error("Payment error:", err); toast.error(err.message || (isUSD ? t.paymentError : "Erro ao processar pagamento.")); }
