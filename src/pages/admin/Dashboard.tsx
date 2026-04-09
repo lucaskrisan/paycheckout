@@ -294,12 +294,6 @@ const Dashboard = () => {
             tooltip="Número total de pedidos no período selecionado"
           />
           <DashboardMetricCard
-            label="Ticket Médio"
-            value={fmt(avgTicket)}
-            sub="Valor médio por venda"
-            tooltip="Valor médio por venda aprovada"
-          />
-          <DashboardMetricCard
             label="Reembolsos"
             value={fmt(totalRefunded)}
             sub={`${refunded.length} pedidos`}
@@ -311,6 +305,12 @@ const Dashboard = () => {
             sub={`${recoveryRate}% recuperados`}
             onClick={() => navigate("/admin/abandoned")}
             tooltip="Total de checkouts iniciados sem finalização"
+          />
+          <DashboardMetricCard
+            label="Chargeback"
+            value={fmt(totalChargeback)}
+            sub={`${chargedback.length} pedidos`}
+            tooltip="Valor total de chargebacks"
           />
         </div>
       </div>
