@@ -40,9 +40,11 @@ interface Product {
 
 const Products = () => {
   const navigate = useNavigate();
+  const { isSuperAdmin } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [isVerified, setIsVerified] = useState<boolean | null>(null);
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -54,7 +56,7 @@ const Products = () => {
   const [newSalesPage, setNewSalesPage] = useState("");
   const [creating, setCreating] = useState(false);
 
-  useEffect(() => { loadProducts(); }, []);
+  useEffect(() => { loadProducts(); checkVerification(); }, []);
 
   const loadProducts = async () => {
     const { data: { user } } = await supabase.auth.getUser();
