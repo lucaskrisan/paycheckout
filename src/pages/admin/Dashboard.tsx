@@ -270,24 +270,13 @@ const Dashboard = () => {
         />
       </div>
 
-      {/* ROW 2 — Chart + metrics */}
+      {/* ROW 2 — Chart + metrics (cognitive grouping) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
         <div className="lg:col-span-7">
-          <DashboardChart data={chartData} fmt={fmt} title={isHourly ? "Vendas" : "Receita Diária"} subtitle={isHourly ? "Receita no período selecionado" : undefined} />
+          <DashboardChart data={chartData} fmt={fmt} title={isHourly ? "Vendas" : "Receita Diária"} subtitle={isHourly ? "Receita no período selecionado" : undefined} highlightValue={fmt(totalLiquido)} />
         </div>
         <div className="lg:col-span-5 grid grid-cols-2 gap-3">
-          <DashboardMetricCard
-            label="Vendas via Ads"
-            value={String(paidSales.length)}
-            sub={fmt(paidRevenue)}
-            tooltip="Vendas com UTM identificado (tráfego pago)"
-          />
-          <DashboardMetricCard
-            label="Vendas Orgânicas"
-            value={String(organicSales.length)}
-            sub={fmt(organicRevenue)}
-            tooltip="Vendas sem UTM (tráfego orgânico/direto)"
-          />
+          {/* Grupo 1: Volume + Valor */}
           <DashboardMetricCard
             label="Total de Pedidos"
             value={String(filtered.length)}
@@ -295,29 +284,38 @@ const Dashboard = () => {
             tooltip="Número total de pedidos no período selecionado"
           />
           <DashboardMetricCard
+            label="Vendas via Ads"
+            value={String(paidSales.length)}
+            sub={fmt(paidRevenue)}
+            tooltip="Vendas com UTM identificado (tráfego pago)"
+          />
+          {/* Grupo 2: Origem */}
+          <DashboardMetricCard
+            label="Vendas Orgânicas"
+            value={String(organicSales.length)}
+            sub={fmt(organicRevenue)}
+            tooltip="Vendas sem UTM (tráfego orgânico/direto)"
+          />
+          {/* Grupo 3: Perdas (dimmed when zero) */}
+          <DashboardMetricCard
             label="Reembolsos"
             value={fmt(totalRefunded)}
             sub={`${refunded.length} pedidos`}
             tooltip="Valor total de reembolsos processados"
-          />
-          <DashboardMetricCard
-            label="Carrinhos Abandonados"
-            value={String(totalAbandoned)}
-            sub={`${recoveryRate}% recuperados`}
-            onClick={() => navigate("/admin/abandoned")}
-            tooltip="Total de checkouts iniciados sem finalização"
+            dimmed={totalRefunded === 0}
           />
           <DashboardMetricCard
             label="Chargeback"
             value={fmt(totalChargeback)}
             sub={`${chargedback.length} pedidos`}
             tooltip="Valor total de chargebacks"
+            dimmed={totalChargeback === 0}
           />
         </div>
       </div>
 
       {/* ROW 3 — Bottom cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">
         <DashboardWeekdayChart orders={filtered} fmt={fmt} />
         <DashboardStateMap salesByState={salesByState} fmt={fmt} />
         <DashboardApprovalCard
@@ -325,6 +323,13 @@ const Dashboard = () => {
             { label: "Cartão", rate: cardApprovalRate },
             { label: "Pix", rate: pixApprovalRate },
           ]}
+        />
+        <DashboardMetricCard
+          label="Carrinhos Abandonados"
+          value={String(totalAbandoned)}
+          sub={`${recoveryRate}% recuperados`}
+          onClick={() => navigate("/admin/abandoned")}
+          tooltip="Total de checkouts iniciados sem finalização"
         />
       </div>
     </div>

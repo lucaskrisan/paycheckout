@@ -17,6 +17,7 @@ interface Props {
   currencyPrefix?: string;
   title?: string;
   subtitle?: string;
+  highlightValue?: string;
 }
 
 const CustomTooltip = ({ active, payload, label, fmt }: any) => {
@@ -29,7 +30,7 @@ const CustomTooltip = ({ active, payload, label, fmt }: any) => {
   );
 };
 
-const DashboardChart = memo(function DashboardChart({ data, fmt, currencyPrefix = "R$", title = "Receita Diária", subtitle }: Props) {
+const DashboardChart = memo(function DashboardChart({ data, fmt, currencyPrefix = "R$", title = "Receita Diária", subtitle, highlightValue }: Props) {
   const hasData = data.some(d => d.total > 0);
   const totalRevenue = data.reduce((s, d) => s + d.total, 0);
   const avgPerDay = data.length > 0 ? totalRevenue / data.length : 0;
@@ -38,12 +39,18 @@ const DashboardChart = memo(function DashboardChart({ data, fmt, currencyPrefix 
     <Card className="border border-white/[0.06] bg-card/70 backdrop-blur-md shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),0_2px_20px_-4px_rgba(0,0,0,0.5)] h-full overflow-hidden">
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
       <CardContent className="p-4 relative">
-        <div className="flex items-center gap-2 mb-1">
-          <BarChart3 className="w-4 h-4 text-primary" />
-          <h3 className="text-xs font-semibold text-foreground">{title}</h3>
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2">
+            <BarChart3 className="w-4 h-4 text-primary" />
+            <div>
+              <h3 className="text-xs font-semibold text-foreground">{title}</h3>
+              {subtitle && <p className="text-[11px] text-muted-foreground">{subtitle}</p>}
+            </div>
+          </div>
+          {highlightValue && (
+            <p className="text-lg font-bold text-primary">{highlightValue}</p>
+          )}
         </div>
-        {subtitle && <p className="text-[11px] text-muted-foreground mb-2 ml-6">{subtitle}</p>}
-        {!subtitle && <div className="mb-3" />}
         <div className="h-[210px]">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
