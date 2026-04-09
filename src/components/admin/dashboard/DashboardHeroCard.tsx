@@ -148,10 +148,10 @@ const DashboardHeroCard = memo(function DashboardHeroCard({ label, value, fmt, s
         </>
       )}
       {isSales && (
-        <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-sky-400/[0.06]" />
+        <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-sky-400/[0.03]" />
       )}
       {isTicket && (
-        <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-amber-400/[0.06]" />
+        <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-amber-400/[0.03]" />
       )}
       {!isRevenue && !isSales && !isTicket && (
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
