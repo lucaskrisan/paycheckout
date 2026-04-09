@@ -79,6 +79,8 @@ interface LocalCurrencyResult {
   localCurrency: string | null;
   localSymbol: string | null;
   localFormatted: string | null;
+  /** Format any USD amount to local currency string */
+  formatLocal: (usdAmount: number) => string | null;
   loading: boolean;
 }
 
@@ -139,16 +141,26 @@ export function useLocalCurrency(
     return () => { cancelled = true; };
   }, [targetCurrency, isUsdCountry]);
 
+  const noDecimalCurrencies = ["JPY", "KRW", "CLP", "PYG", "VND", "HUF", "IDR"];
+
+  const formatLocal = (amt: number): string | null => {
+    if (isUsdCountry || rate === null || !currencyInfo || !targetCurrency) return null;
+    const converted = Math.round(amt * rate * 100) / 100;
+    const decimals = noDecimalCurrencies.includes(targetCurrency) ? 0 : 2;
+    const num = converted.toFixed(decimals);
+    return currencyInfo.position === "before"
+      ? `${currencyInfo.symbol}${num}`
+      : `${num} ${currencyInfo.symbol}`;
+  };
+
   if (isUsdCountry || rate === null) {
-    return { localAmount: null, localCurrency: null, localSymbol: null, localFormatted: null, loading };
+    return { localAmount: null, localCurrency: null, localSymbol: null, localFormatted: null, formatLocal: () => null, loading };
   }
 
   const localAmount = Math.round(usdAmount * rate * 100) / 100;
   const symbol = currencyInfo!.symbol;
   const position = currencyInfo!.position;
 
-  // Format with appropriate decimal places
-  const noDecimalCurrencies = ["JPY", "KRW", "CLP", "PYG", "VND", "HUF", "IDR"];
   const decimals = noDecimalCurrencies.includes(targetCurrency!) ? 0 : 2;
   const formattedNum = localAmount.toFixed(decimals);
 
@@ -161,6 +173,7 @@ export function useLocalCurrency(
     localCurrency: targetCurrency,
     localSymbol: symbol,
     localFormatted,
+    formatLocal,
     loading,
   };
 }
