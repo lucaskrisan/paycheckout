@@ -226,41 +226,34 @@ const Dashboard = () => {
       <GatewayAlerts />
 
       {/* ROW 1 — Hero revenue + compact stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-        {/* Protagonista absoluto */}
-        <div className="lg:col-span-5">
-          <DashboardHeroCard
-            label="Receita Líquida"
-            value={totalLiquido}
-            fmt={fmt}
-            variant="revenue"
-            sublabel={totalTaxas > 0 ? `Bruto ${fmt(totalBruto)}` : undefined}
-            tooltip="Receita aprovada menos taxas da plataforma"
-            sparklineData={chartData.map(d => d.total)}
-          />
-        </div>
-        {/* Stats compactas — hierarquia secundária */}
-        <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <DashboardMetricCard
-            label="Vendas Aprovadas"
-            value={String(totalVendas)}
-            sub={filtered.length > 0 ? `${((approved.length / filtered.length) * 100).toFixed(0)}% aprovação` : undefined}
-            accent
-            tooltip="Total de vendas com pagamento confirmado"
-          />
-          <DashboardMetricCard
-            label="Vendas Pendentes"
-            value={fmt(totalPendente)}
-            sub={`${pending.length} pedidos`}
-            tooltip="Pedidos aguardando confirmação de pagamento"
-          />
-          <DashboardMetricCard
-            label="Ticket Médio"
-            value={fmt(avgTicket)}
-            sub="Valor médio por venda"
-            tooltip="Valor médio por venda aprovada"
-          />
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <DashboardHeroCard
+          label="Receita Líquida"
+          value={totalLiquido}
+          fmt={fmt}
+          variant="revenue"
+          sublabel={totalTaxas > 0 ? `Bruto ${fmt(totalBruto)}` : undefined}
+          tooltip="Receita aprovada menos taxas da plataforma"
+        />
+        <DashboardMetricCard
+          label="Vendas Aprovadas"
+          value={String(totalVendas)}
+          sub={filtered.length > 0 ? `${((approved.length / filtered.length) * 100).toFixed(0)}% aprovação` : undefined}
+          accent
+          tooltip="Total de vendas com pagamento confirmado"
+        />
+        <DashboardMetricCard
+          label="Vendas Pendentes"
+          value={fmt(totalPendente)}
+          sub={`${pending.length} pedidos`}
+          tooltip="Pedidos aguardando confirmação de pagamento"
+        />
+        <DashboardMetricCard
+          label="Ticket Médio"
+          value={fmt(avgTicket)}
+          sub="Valor médio por venda"
+          tooltip="Valor médio por venda aprovada"
+        />
       </div>
 
       {/* ROW 2 — Chart + metrics */}
