@@ -244,11 +244,12 @@ const Dashboard = () => {
           tooltip="Total de vendas com pagamento confirmado"
         />
         <DashboardHeroCard
-          label="Ticket Médio"
-          value={avgTicket}
+          label="Vendas Pendentes"
+          value={totalPendente}
           fmt={fmt}
           variant="ticket"
-          tooltip="Valor médio por venda aprovada"
+          sublabel={`${pending.length} pedidos`}
+          tooltip="Pedidos aguardando confirmação de pagamento"
         />
       </div>
 
