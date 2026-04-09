@@ -17,6 +17,7 @@ interface Props {
   currencyPrefix?: string;
   title?: string;
   subtitle?: string;
+  highlightValue?: string;
 }
 
 const CustomTooltip = ({ active, payload, label, fmt }: any) => {
