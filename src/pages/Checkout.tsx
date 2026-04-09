@@ -60,6 +60,7 @@ const Checkout = () => {
   const [checkoutSettings, setCheckoutSettings] = useState<CheckoutSettings | null>(null);
   const [isOwnerSuperAdmin, setIsOwnerSuperAdmin] = useState(false);
   const [coupon, setCoupon] = useState<CouponData | null>(null);
+  const { country: geoCountry } = useGeoCountry("US");
   const [selectedCountry, setSelectedCountry] = useState("US");
 
   const prefill = useMemo(() => {
