@@ -12,18 +12,20 @@ import MemberMobileSidebar from "@/components/member/MemberMobileSidebar";
 import MemberSidebarContent from "@/components/member/MemberSidebarContent";
 import MemberCatalogPanel from "@/components/member/MemberCatalogPanel";
 import MemberLessonViewer from "@/components/member/MemberLessonViewer";
+import { getMemberTranslations, langFromCurrency, type MemberLang, type MemberTranslations } from "@/lib/memberI18n";
 
 interface Lesson { id: string; title: string; content_type: string; content: string | null; file_url: string | null; sort_order: number; }
 interface Module { id: string; title: string; description: string | null; sort_order: number; lessons: Lesson[]; }
-interface Course { id: string; title: string; description: string | null; cover_image_url: string | null; }
+interface Course { id: string; title: string; description: string | null; cover_image_url: string | null; product_id?: string | null; }
 interface MemberAccess { id: string; course_id: string; customer_id: string; }
-interface Product { id: string; name: string; description: string | null; price: number; original_price: number | null; image_url: string | null; active: boolean; }
+interface Product { id: string; name: string; description: string | null; price: number; original_price: number | null; image_url: string | null; active: boolean; currency?: string; }
 interface OtherCourse { id: string; title: string; description: string | null; cover_image_url: string | null; product_id: string | null; product?: Product | null; hasAccess: boolean; }
 
 const MemberArea = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get("token");
+  const langParam = searchParams.get("lang") as MemberLang | null;
 
   const tokenClient = useMemo(() => {
     if (!token) return supabase;
@@ -45,6 +47,9 @@ const MemberArea = () => {
   const [showCatalog, setShowCatalog] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const [lang, setLang] = useState<MemberLang>(langParam || "pt");
+
+  const t = getMemberTranslations(lang);
 
   useEffect(() => {
     if (!token) { setLoading(false); return; }
@@ -56,16 +61,25 @@ const MemberArea = () => {
       const { data: accessData, error: accessError } = await tokenClient
         .from("member_access").select("id, course_id, customer_id, expires_at").eq("access_token", token!).maybeSingle();
 
-      if (accessError || !accessData) { toast.error("Link de acesso inválido ou expirado."); setLoading(false); return; }
-      if (accessData.expires_at && new Date(accessData.expires_at) < new Date()) { toast.error("Seu acesso expirou."); setLoading(false); return; }
+      if (accessError || !accessData) { toast.error(t.invalidLink); setLoading(false); return; }
+      if (accessData.expires_at && new Date(accessData.expires_at) < new Date()) { toast.error(t.accessExpired); setLoading(false); return; }
 
       setAccess(accessData);
 
       const { data: customerData } = await tokenClient.from("customers").select("name").eq("id", accessData.customer_id).single();
       if (customerData) setCustomerName(customerData.name.split(" ")[0]);
 
-      const { data: courseData } = await tokenClient.from("courses").select("*").eq("id", accessData.course_id).single();
-      if (courseData) setCourse(courseData);
+      const { data: courseData } = await tokenClient.from("courses").select("*, product_id").eq("id", accessData.course_id).single();
+      if (courseData) {
+        setCourse(courseData);
+        // Detect language from product currency if no lang param
+        if (!langParam && courseData.product_id) {
+          const { data: prodData } = await tokenClient.from("products").select("currency").eq("id", courseData.product_id).maybeSingle();
+          if (prodData?.currency) {
+            setLang(langFromCurrency(prodData.currency));
+          }
+        }
+      }
 
       const { data: modulesData } = await tokenClient.from("course_modules").select("*").eq("course_id", accessData.course_id).order("sort_order");
 
@@ -104,7 +118,7 @@ const MemberArea = () => {
       }
     } catch (err) {
       console.error("Error loading member data:", err);
-      toast.error("Erro ao carregar conteúdo.");
+      toast.error(t.errorLoading);
     }
     setLoading(false);
   };
@@ -140,7 +154,7 @@ const MemberArea = () => {
         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[hsl(145,65%,42%)] to-[hsl(160,70%,36%)] flex items-center justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-white" />
         </div>
-        <p className="text-[hsl(220,10%,55%)] text-sm">Carregando seu conteúdo...</p>
+        <p className="text-[hsl(220,10%,55%)] text-sm">{t.loadingContent}</p>
       </motion.div>
     </div>
   );
@@ -154,10 +168,10 @@ const MemberArea = () => {
         <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-[hsl(220,10%,25%)] to-[hsl(220,10%,18%)] flex items-center justify-center">
           <Lock className="w-10 h-10 text-[hsl(220,10%,45%)]" />
         </div>
-        <h1 className="text-2xl font-bold text-white mb-3">Acesso Restrito</h1>
-        <p className="text-[hsl(220,10%,55%)] mb-6">Você precisa de um link de acesso válido para entrar na área de membros.</p>
+        <h1 className="text-2xl font-bold text-white mb-3">{t.restrictedAccess}</h1>
+        <p className="text-[hsl(220,10%,55%)] mb-6">{t.restrictedDesc}</p>
         <button onClick={() => navigate("/")} className="px-6 py-3 rounded-xl text-sm font-medium transition-all" style={{ background: "hsl(220 18% 14%)", color: "hsl(0 0% 70%)" }}>
-          Voltar ao Início
+          {t.backToHome}
         </button>
       </motion.div>
     </div>
@@ -180,6 +194,7 @@ const MemberArea = () => {
         onToggleCatalog={() => setShowCatalog(!showCatalog)}
         onOpenMobileSidebar={() => setShowMobileSidebar(true)}
         token={token}
+        t={t}
       />
 
       <MemberMobileSidebar open={showMobileSidebar} onClose={() => setShowMobileSidebar(false)} token={token}>
@@ -192,6 +207,7 @@ const MemberArea = () => {
           onSelectLesson={selectLesson}
           otherCoursesCount={otherCourses.length}
           onShowCatalog={() => { setShowCatalog(true); setShowMobileSidebar(false); }}
+          t={t}
         />
       </MemberMobileSidebar>
 
@@ -200,16 +216,18 @@ const MemberArea = () => {
         customerId={access.customer_id}
         open={showCatalog}
         onClose={() => setShowCatalog(false)}
+        t={t}
+        lang={lang}
       />
 
       {/* Welcome banner */}
       <div className="max-w-[1440px] mx-auto px-3 sm:px-6 pt-4 sm:pt-6 pb-2">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <h2 className="text-white text-base sm:text-xl font-bold">
-            {customerName ? `Olá, ${customerName}` : "Bem-vindo"} 👋
+            {t.welcome(customerName)} 👋
           </h2>
           <p className="text-[hsl(220,10%,45%)] text-xs sm:text-sm mt-0.5">
-            Continue de onde parou • {completedLessons.size}/{totalLessons} aulas concluídas
+            {t.continueWhere} • {t.lessonsCompleted(completedLessons.size, totalLessons)}
           </p>
         </motion.div>
       </div>
@@ -229,6 +247,7 @@ const MemberArea = () => {
                 onSelectLesson={selectLesson}
                 otherCoursesCount={otherCourses.length}
                 onShowCatalog={() => setShowCatalog(true)}
+                t={t}
               />
             </div>
           </aside>
@@ -242,21 +261,22 @@ const MemberArea = () => {
                   isCompleted={completedLessons.has(activeLesson.id)}
                   onToggleComplete={toggleLessonComplete}
                   accessId={access.id}
-                  customerName={customerName || "Aluno"}
+                  customerName={customerName || (lang === "en" ? "Student" : "Aluno")}
                   tokenClient={tokenClient}
                   accessToken={token || undefined}
+                  t={t}
                 />
 
                 {/* Navigation */}
                 <div className="flex items-center justify-between mt-4 gap-2">
                   {prevLesson ? (
                     <button onClick={() => selectLesson(prevLesson)} className="flex items-center gap-2 px-3 sm:px-4 py-3 rounded-xl text-xs sm:text-sm transition-all hover:bg-[hsl(220,16%,14%)]" style={{ color: "hsl(0,0%,60%)" }}>
-                      ← Anterior
+                      {t.previous}
                     </button>
                   ) : <div />}
                   {nextLesson && (
                     <button onClick={() => selectLesson(nextLesson)} className="flex items-center gap-2 px-4 sm:px-5 py-3 rounded-xl text-xs sm:text-sm font-semibold transition-all hover:scale-[1.02]" style={{ backgroundImage: "linear-gradient(135deg, hsl(145,65%,42%), hsl(160,70%,36%))", color: "white" }}>
-                      Próxima Aula →
+                      {t.nextLesson}
                     </button>
                   )}
                 </div>
@@ -269,13 +289,13 @@ const MemberArea = () => {
                 <div className="w-16 sm:w-20 h-16 sm:h-20 mx-auto mb-4 sm:mb-6 rounded-2xl flex items-center justify-center" style={{ background: "hsl(220,18%,14%)" }}>
                   <PlayCircle className="w-8 sm:w-10 h-8 sm:h-10 text-[hsl(145,65%,42%)]" />
                 </div>
-                <h3 className="text-white text-base sm:text-lg font-bold mb-2">Selecione uma aula</h3>
-                <p className="text-[hsl(220,10%,45%)] text-xs sm:text-sm">Escolha uma aula no menu para começar.</p>
+                <h3 className="text-white text-base sm:text-lg font-bold mb-2">{t.selectLesson}</h3>
+                <p className="text-[hsl(220,10%,45%)] text-xs sm:text-sm">{t.selectLessonDesc}</p>
                 <button onClick={() => setShowMobileSidebar(true)}
                   className="lg:hidden mt-4 inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold"
                   style={{ backgroundImage: "linear-gradient(135deg, hsl(145,65%,42%), hsl(160,70%,36%))", color: "white" }}
                 >
-                  <List className="w-4 h-4" /> Ver Aulas
+                  <List className="w-4 h-4" /> {t.viewLessons}
                 </button>
               </motion.div>
             )}
