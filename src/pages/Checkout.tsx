@@ -299,7 +299,7 @@ const Checkout = () => {
           navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product.id}${data.order_id ? `&order_id=${data.order_id}` : ''}`);
         } else throw new Error("Falha ao processar pagamento");
       }
-    } catch (err: any) { console.error("Payment error:", err); toast.error(err.message || (isUSD ? "Payment error." : "Erro ao processar pagamento.")); }
+    } catch (err: any) { console.error("Payment error:", err); toast.error(err.message || (isUSD ? t.paymentError : "Erro ao processar pagamento.")); }
     finally { setIsSubmitting(false); }
   };
 
