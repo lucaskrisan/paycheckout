@@ -20,6 +20,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useFacebookPixel } from "@/hooks/useFacebookPixel";
 import { useAbandonedCart } from "@/hooks/useAbandonedCart";
 import { useCheckoutPresence } from "@/hooks/useCheckoutPresence";
+import { useGeoCountry } from "@/hooks/useGeoCountry";
+import { getCheckoutTranslations } from "@/lib/checkoutI18n";
 import type { BuilderComponent } from "@/components/checkout-builder/types";
 
 interface Product {
@@ -58,7 +60,9 @@ const Checkout = () => {
   const [checkoutSettings, setCheckoutSettings] = useState<CheckoutSettings | null>(null);
   const [isOwnerSuperAdmin, setIsOwnerSuperAdmin] = useState(false);
   const [coupon, setCoupon] = useState<CouponData | null>(null);
+  const { country: geoCountry } = useGeoCountry("US");
   const [selectedCountry, setSelectedCountry] = useState("US");
+  
 
   const prefill = useMemo(() => {
     const params = new URLSearchParams(location.search);
@@ -70,6 +74,16 @@ const Checkout = () => {
 
   const { markPurchased } = useAbandonedCart({ productId: productId || "", customer, paymentMethod, productOwnerId: product?.user_id });
   useCheckoutPresence("track", productId);
+
+  // Auto-set country from IP geolocation (only once)
+  useEffect(() => {
+    if (geoCountry && geoCountry !== "US") {
+      setSelectedCountry(geoCountry);
+    }
+  }, [geoCountry]);
+
+  // i18n translations based on selected country
+  const t = useMemo(() => getCheckoutTranslations(selectedCountry), [selectedCountry]);
 
   // Load product data
   useEffect(() => {
@@ -202,10 +216,10 @@ const Checkout = () => {
   };
 
   const handleSubmit = async () => {
-    if (!customer.name || !customer.email) { toast.error(isUSD ? "Please fill in all required fields" : "Preencha todos os campos obrigatórios"); return; }
+    if (!customer.name || !customer.email) { toast.error(isUSD ? t.fillRequired : "Preencha todos os campos obrigatórios"); return; }
     if (!isUSD && (!customer.cpf || !customer.phone)) { toast.error("Preencha todos os campos obrigatórios"); return; }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(customer.email.trim())) { toast.error(isUSD ? "Invalid email address" : "E-mail inválido. Verifique o endereço digitado."); return; }
+    if (!emailRegex.test(customer.email.trim())) { toast.error(isUSD ? t.invalidEmail : "E-mail inválido. Verifique o endereço digitado."); return; }
     if (!isUSD && !isValidCPF(customer.cpf)) { toast.error("CPF inválido. Verifique o número digitado."); return; }
     const [expMonth, expYear] = creditCard.expiry.split("/");
     if (paymentMethod === "credit_card" && !isUSD) {
@@ -231,7 +245,7 @@ const Checkout = () => {
           },
         });
         if (error) {
-          let msg = "Payment processing failed";
+          let msg = t.paymentError;
           try { const ctx = (error as any).context; if (ctx && typeof ctx.json === "function") { const body = await ctx.json(); if (body?.error) msg = body.error; } } catch {}
           throw new Error(msg);
         }
@@ -241,7 +255,7 @@ const Checkout = () => {
         } else {
           const paymentId = data?.payment_id || data?.id;
           if (paymentId) {
-            toast.success("Payment processed successfully!");
+            toast.success(t.paymentSuccess);
             trackPurchase(finalAmount, "USD", paymentId);
             await markPurchased();
             navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product.id}${data.order_id ? `&order_id=${data.order_id}` : ''}`);
@@ -285,7 +299,7 @@ const Checkout = () => {
           navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product.id}${data.order_id ? `&order_id=${data.order_id}` : ''}`);
         } else throw new Error("Falha ao processar pagamento");
       }
-    } catch (err: any) { console.error("Payment error:", err); toast.error(err.message || (isUSD ? "Payment error." : "Erro ao processar pagamento.")); }
+    } catch (err: any) { console.error("Payment error:", err); toast.error(err.message || (isUSD ? t.paymentError : "Erro ao processar pagamento.")); }
     finally { setIsSubmitting(false); }
   };
 
@@ -313,7 +327,7 @@ const Checkout = () => {
             <div className="space-y-4">
               {isUSD && (
                 <div>
-                  <p className="text-xs font-semibold text-[#565959] uppercase tracking-wide mb-1.5">Your country</p>
+                  <p className="text-xs font-semibold text-[#565959] uppercase tracking-wide mb-1.5">{t.yourCountry}</p>
                   <CountrySelector selected={selectedCountry} onChange={setSelectedCountry} />
                 </div>
               )}
@@ -322,8 +336,8 @@ const Checkout = () => {
                 <div className="bg-[#F7FAFA] border border-[#D5D9D9] rounded-lg p-3 flex items-center gap-2">
                   <span className="text-lg">💳</span>
                   <div>
-                    <p className="text-sm font-bold text-[#0F1111]">Credit Card</p>
-                    <p className="text-xs text-[#565959]">Secure international payment via Stripe</p>
+                    <p className="text-sm font-bold text-[#0F1111]">{t.creditCard}</p>
+                    <p className="text-xs text-[#565959]">{t.securePayment}</p>
                   </div>
                 </div>
               ) : product.is_subscription ? (
@@ -362,7 +376,7 @@ const Checkout = () => {
                 <span className="flex items-center justify-center gap-2">
                   <Lock className="w-4 h-4" />
                   {isUSD
-                    ? `Pay $${finalAmount.toFixed(2)}`
+                    ? t.payButton(finalAmount.toFixed(2))
                     : product.is_subscription ? "Assinar agora" : paymentMethod === "pix" ? `Pagar ${finalAmount.toFixed(2).replace(".", ",")} com PIX` : submitLabel || "Finalizar compra"}
                   <ArrowRight className="w-5 h-5" />
                 </span>
