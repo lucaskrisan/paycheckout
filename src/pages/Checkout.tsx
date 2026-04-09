@@ -86,10 +86,9 @@ const Checkout = () => {
   // i18n translations based on selected country
   const t = useMemo(() => getCheckoutTranslations(selectedCountry), [selectedCountry]);
 
-  // Local currency conversion for non-USD countries
-  // Note: finalAmount is computed after loading, but hook must be called unconditionally
-  // We pass product?.price as a rough estimate; the real display uses finalAmount below
-  const localCurrency = useLocalCurrency(product?.price || 0, selectedCountry);
+  // Local currency conversion for non-USD countries  
+  const localCurrency = useLocalCurrency(0, selectedCountry); // rate-only; format done inline
+
 
   useEffect(() => {
     if (!productId) { setNotFound(true); setLoading(false); return; }
