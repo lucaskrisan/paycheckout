@@ -123,9 +123,9 @@ const DashboardHeroCard = memo(function DashboardHeroCard({ label, value, fmt, s
   const iconColor = isRevenue
     ? "text-white"
     : isSales
-    ? "text-sky-400"
+    ? "text-sky-400/70"
     : isTicket
-    ? "text-amber-400"
+    ? "text-amber-400/70"
     : "text-muted-foreground";
 
   const valueColor = isRevenue
