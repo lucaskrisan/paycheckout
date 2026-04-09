@@ -16,12 +16,13 @@ interface Props {
   accent?: boolean;
   tooltip?: string;
   icon?: any;
+  dimmed?: boolean;
 }
 
-const DashboardMetricCard = memo(function DashboardMetricCard({ label, value, sub, onClick, accent, tooltip }: Props) {
+const DashboardMetricCard = memo(function DashboardMetricCard({ label, value, sub, onClick, accent, tooltip, dimmed }: Props) {
   return (
     <Card
-      className={`border border-white/[0.06] bg-card/70 backdrop-blur-md shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),0_2px_12px_-4px_rgba(0,0,0,0.4)] h-full transition-all duration-200 ${onClick ? "cursor-pointer hover:bg-accent/50 hover:border-white/[0.1]" : ""}`}
+      className={`border border-white/[0.06] bg-card/70 backdrop-blur-md shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),0_2px_12px_-4px_rgba(0,0,0,0.4)] h-full transition-all duration-200 ${onClick ? "cursor-pointer hover:bg-accent/50 hover:border-white/[0.1]" : ""} ${dimmed ? "opacity-50" : ""}`}
       onClick={onClick}
     >
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent rounded-t-xl" />
