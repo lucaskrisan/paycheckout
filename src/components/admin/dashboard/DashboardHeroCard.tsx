@@ -107,9 +107,9 @@ const DashboardHeroCard = memo(function DashboardHeroCard({ label, value, fmt, s
   const containerClass = isRevenue
     ? "relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-400 p-5 h-full min-h-[120px] flex flex-col justify-between shadow-[0_4px_24px_-4px_rgba(16,185,129,0.3)]"
     : isSales
-    ? "relative overflow-hidden rounded-xl bg-gradient-to-br from-sky-500/10 via-blue-500/5 to-indigo-500/10 border border-sky-400/10 backdrop-blur-md p-5 h-full min-h-[120px] flex flex-col justify-between shadow-[inset_0_1px_0_0_rgba(56,189,248,0.08),0_2px_20px_-4px_rgba(0,0,0,0.5)]"
+    ? "relative overflow-hidden rounded-xl bg-sky-500/[0.04] border border-sky-400/[0.06] backdrop-blur-md p-5 h-full min-h-[120px] flex flex-col justify-between shadow-[inset_0_1px_0_0_rgba(56,189,248,0.04),0_2px_20px_-4px_rgba(0,0,0,0.5)]"
     : isTicket
-    ? "relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-500/10 via-orange-500/8 to-rose-500/10 border border-amber-400/10 backdrop-blur-md p-5 h-full min-h-[120px] flex flex-col justify-between shadow-[inset_0_1px_0_0_rgba(251,191,36,0.08),0_2px_20px_-4px_rgba(0,0,0,0.5)]"
+    ? "relative overflow-hidden rounded-xl bg-amber-500/[0.04] border border-amber-400/[0.06] backdrop-blur-md p-5 h-full min-h-[120px] flex flex-col justify-between shadow-[inset_0_1px_0_0_rgba(251,191,36,0.04),0_2px_20px_-4px_rgba(0,0,0,0.5)]"
     : "relative overflow-hidden rounded-xl border border-white/[0.06] bg-card/70 backdrop-blur-md p-5 h-full min-h-[120px] flex flex-col justify-between shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),0_2px_20px_-4px_rgba(0,0,0,0.5)]";
 
   const iconBgClass = isRevenue
