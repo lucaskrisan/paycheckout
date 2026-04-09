@@ -315,9 +315,8 @@ const Dashboard = () => {
       </div>
 
       {/* ROW 3 — Bottom cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <DashboardWeekdayChart orders={filtered} fmt={fmt} />
-        <DashboardStateMap salesByState={salesByState} fmt={fmt} />
         <DashboardApprovalCard
           items={[
             { label: "Cartão", rate: cardApprovalRate },
