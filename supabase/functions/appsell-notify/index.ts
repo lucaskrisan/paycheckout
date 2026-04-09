@@ -201,7 +201,7 @@ Deno.serve(async (req) => {
       customer,
       products,
       tracking,
-      currency: 'BRL',
+      currency: productCurrency,
     };
 
     console.log('[appsell-notify] Sending to AppSell:', JSON.stringify({ event: appsellEvent, orderId: order.id }));
