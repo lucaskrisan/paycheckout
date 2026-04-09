@@ -47,6 +47,8 @@ const Dashboard = () => {
       .select("id, created_at, status, amount, platform_fee_amount, payment_method, product_id, metadata, customer_state")
       .order("created_at", { ascending: false });
 
+    if (!isSuperAdmin && user) query = query.eq("user_id", user.id);
+
     const dateFrom = getDateFilter(p);
     if (dateFrom) {
       query = query.gte("created_at", dateFrom);
@@ -63,7 +65,7 @@ const Dashboard = () => {
     const { data, error } = await query;
     if (error) throw error;
     return data || [];
-  }, [getDateFilter]);
+  }, [getDateFilter, isSuperAdmin, user]);
 
   const fetchAndSetData = useCallback(async () => {
     if (!user) return;

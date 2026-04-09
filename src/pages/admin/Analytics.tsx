@@ -71,6 +71,7 @@ const Analytics = () => {
           .in("status", ["paid", "approved", "confirmed"])
           .order("created_at", { ascending: false })
           .limit(1000);
+        if (!isSuperAdmin) ordersQuery.eq("user_id", user.id);
         if (dateFrom) ordersQuery.gte("created_at", dateFrom);
 
         const eventsQuery = supabase
@@ -78,6 +79,7 @@ const Analytics = () => {
           .select("id, event_name, source, created_at, visitor_id")
           .order("created_at", { ascending: false })
           .limit(1000);
+        if (!isSuperAdmin) eventsQuery.eq("user_id", user.id);
         if (dateFrom) eventsQuery.gte("created_at", dateFrom);
 
         const [settingsRes, ordersRes, eventsRes] = await Promise.all([
