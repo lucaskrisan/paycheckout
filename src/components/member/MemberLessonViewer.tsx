@@ -47,6 +47,7 @@ const MemberLessonViewer = memo(function MemberLessonViewer({
   accessId,
   customerName,
   tokenClient,
+  accessToken,
 }: Props) {
   return (
     <motion.div
@@ -175,7 +176,7 @@ const MemberLessonViewer = memo(function MemberLessonViewer({
 
       {/* Materials */}
       <div className="mt-4">
-        <LessonMaterials lessonId={lesson.id} client={tokenClient} />
+        <LessonMaterials lessonId={lesson.id} client={tokenClient} accessToken={accessToken} />
       </div>
 
       {/* Reviews */}
