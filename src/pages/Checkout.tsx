@@ -21,6 +21,7 @@ import { useFacebookPixel } from "@/hooks/useFacebookPixel";
 import { useAbandonedCart } from "@/hooks/useAbandonedCart";
 import { useCheckoutPresence } from "@/hooks/useCheckoutPresence";
 import { useGeoCountry } from "@/hooks/useGeoCountry";
+import { useLocalCurrency } from "@/hooks/useLocalCurrency";
 import { getCheckoutTranslations } from "@/lib/checkoutI18n";
 import type { BuilderComponent } from "@/components/checkout-builder/types";
 
