@@ -259,16 +259,16 @@ const Dashboard = () => {
         </div>
         <div className="lg:col-span-5 grid grid-cols-2 gap-3">
           <DashboardMetricCard
-            label="Paid Sales (Google Ads)"
+            label="Vendas via Ads"
             value={String(paidSales.length)}
             sub={fmt(paidRevenue)}
-            tooltip="Vendas atribuídas a campanhas pagas via UTM"
+            tooltip="Vendas com UTM identificado (tráfego pago)"
           />
           <DashboardMetricCard
-            label="Organic Sales"
+            label="Vendas Orgânicas"
             value={String(organicSales.length)}
             sub={fmt(organicRevenue)}
-            tooltip="Vendas sem parâmetros UTM identificados"
+            tooltip="Vendas sem UTM (tráfego orgânico/direto)"
           />
           <DashboardMetricCard
             label="Total de Pedidos"
