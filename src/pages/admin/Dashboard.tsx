@@ -240,7 +240,7 @@ const Dashboard = () => {
           />
         </div>
         {/* Stats compactas — hierarquia secundária */}
-        <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-3">
           <DashboardMetricCard
             label="Vendas Aprovadas"
             value={String(totalVendas)}
@@ -259,12 +259,6 @@ const Dashboard = () => {
             value={fmt(avgTicket)}
             sub="Valor médio por venda"
             tooltip="Valor médio por venda aprovada"
-          />
-          <DashboardMetricCard
-            label="Visitantes ao Vivo"
-            value={String(liveVisitors)}
-            sub="No checkout agora"
-            tooltip="Visitantes ativos no checkout em tempo real"
           />
         </div>
       </div>
