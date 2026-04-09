@@ -102,7 +102,7 @@ const DashboardHeroCard = memo(function DashboardHeroCard({ label, value, fmt, s
   const Icon = variantIcons[variant] || Zap;
 
   return (
-    <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-400 p-6 h-full min-h-[160px] flex flex-col justify-between shadow-[0_4px_24px_-4px_rgba(16,185,129,0.3)]">
+    <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-400 p-5 h-full min-h-[120px] flex flex-col justify-between shadow-[0_4px_24px_-4px_rgba(16,185,129,0.3)]">
       <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-white/10" />
       <div className="absolute -right-3 -top-3 w-20 h-20 rounded-full bg-white/[0.06]" />
       <div className="absolute right-4 top-4">
