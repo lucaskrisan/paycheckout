@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { MoreVertical, Search, Pencil, Trash2, Copy, ExternalLink, ArrowLeft, Link as LinkIcon } from "lucide-react";
 import { toast } from "sonner";
+import { ShieldAlert } from "lucide-react";
 
 const PUBLISHED_URL = "https://app.panttera.com.br";
 const getPublicUrl = () => (window.location.hostname.includes("lovable") ? PUBLISHED_URL : window.location.origin);
@@ -37,9 +39,11 @@ interface Product {
 
 const Products = () => {
   const navigate = useNavigate();
+  const { isSuperAdmin } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [isVerified, setIsVerified] = useState<boolean | null>(null);
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -51,7 +55,18 @@ const Products = () => {
   const [newSalesPage, setNewSalesPage] = useState("");
   const [creating, setCreating] = useState(false);
 
-  useEffect(() => { loadProducts(); }, []);
+  useEffect(() => { loadProducts(); checkVerification(); }, []);
+
+  const checkVerification = async () => {
+    if (isSuperAdmin) { setIsVerified(true); return; }
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const [{ data: verData }, { data: profileData }] = await Promise.all([
+      supabase.from("producer_verifications").select("status").eq("user_id", user.id).eq("status", "approved").limit(1).maybeSingle(),
+      supabase.from("profiles").select("verified").eq("id", user.id).single(),
+    ]);
+    setIsVerified(verData?.status === "approved" || profileData?.verified === true);
+  };
 
   const loadProducts = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -129,6 +144,10 @@ const Products = () => {
   };
 
   const openDialog = () => {
+    if (isVerified === false) {
+      toast.error("Verifique sua identidade antes de criar produtos. Acesse 'Minha Conta' para enviar seus documentos.");
+      return;
+    }
     setStep(1);
     setPaymentType("one_time");
     setCurrency("BRL");
@@ -179,9 +198,22 @@ const Products = () => {
 
   return (
     <div className="space-y-6">
+      {isVerified === false && (
+        <div className="flex items-center gap-3 p-4 rounded-lg border border-destructive/30 bg-destructive/5">
+          <ShieldAlert className="w-5 h-5 text-destructive shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-foreground">Verificação de identidade pendente</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Você precisa verificar sua identidade antes de criar produtos e começar a vender.</p>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => navigate("/admin/my-account")} className="shrink-0">
+            Verificar agora
+          </Button>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-foreground">Produtos</h1>
-        <Button onClick={openDialog} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+        <Button onClick={openDialog} disabled={isVerified === false} className="bg-primary hover:bg-primary/90 text-primary-foreground">
           Criar produto
         </Button>
       </div>
