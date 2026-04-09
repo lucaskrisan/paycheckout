@@ -80,7 +80,6 @@ const conteudoItems = [
 // 4. ANÁLISE — dados e relatórios
 const analiseItems = [
   { title: "Analytics", url: "/admin/analytics", icon: Activity },
-  { title: "Relatórios", url: "/admin/abandoned", icon: Activity },
   { title: "Métricas", url: "/admin/metrics", icon: TrendingUp },
   { title: "Financeiro", url: "/admin/financeiro", icon: Wallet },
 ];
