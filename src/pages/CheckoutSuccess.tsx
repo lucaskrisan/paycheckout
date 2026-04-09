@@ -5,6 +5,7 @@ import { CheckCircle, PartyPopper, Mail, ArrowRight, Loader2, Gift, ShoppingBag 
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getMemberTranslations, type MemberLang } from "@/lib/memberI18n";
 
 const confettiColors = ["#22c55e", "#f59e0b", "#3b82f6", "#ef4444", "#a855f7", "#ec4899"];
 
@@ -36,6 +37,10 @@ const CheckoutSuccess = () => {
   const email = searchParams.get("email") || "";
   const productId = searchParams.get("product_id") || "";
   const orderId = searchParams.get("order_id") || "";
+  const lang = (searchParams.get("lang") as MemberLang) || "pt";
+
+  const t = getMemberTranslations(lang);
+  const isEN = lang === "en";
 
   const [confetti, setConfetti] = useState<ConfettiPiece[]>([]);
   const [upsellOffers, setUpsellOffers] = useState<UpsellOffer[]>([]);
@@ -90,13 +95,13 @@ const CheckoutSuccess = () => {
 
       if (data?.success) {
         setPurchasedUpsells((prev) => new Set(prev).add(offer.id));
-        toast.success(`🎉 ${offer.upsell_product.name} adquirido com sucesso!`);
+        toast.success(t.upsellSuccess(offer.upsell_product.name));
       } else {
-        throw new Error("Falha ao processar upsell");
+        throw new Error(t.upsellError);
       }
     } catch (err: any) {
       console.error("Upsell error:", err);
-      toast.error(err.message || "Erro ao processar compra. Tente novamente.");
+      toast.error(err.message || t.upsellError);
     } finally {
       setProcessingUpsell(null);
     }
@@ -108,6 +113,11 @@ const CheckoutSuccess = () => {
       return Math.round(original * (1 - offer.discount_percent / 100) * 100) / 100;
     }
     return original;
+  };
+
+  const formatPrice = (value: number) => {
+    if (isEN) return `$${value.toFixed(2)}`;
+    return `R$ ${value.toFixed(2).replace(".", ",")}`;
   };
 
   const activeUpsells = upsellOffers.filter((o) => !purchasedUpsells.has(o.id));
@@ -151,13 +161,13 @@ const CheckoutSuccess = () => {
           <div className="flex items-center justify-center gap-2">
             <PartyPopper className="w-5 h-5 text-primary" />
             <h1 className="font-display text-2xl font-bold text-foreground">
-              {method === "credit_card" ? "Pagamento Aprovado!" : "PIX Gerado com Sucesso!"}
+              {method === "credit_card" ? t.paymentApproved : t.pixGenerated}
             </h1>
           </div>
           <p className="text-muted-foreground">
             {method === "credit_card"
-              ? `Sua compra de "${productName}" foi confirmada.`
-              : `Após a confirmação do pagamento, você receberá o acesso a "${productName}".`}
+              ? t.purchaseConfirmed(productName)
+              : t.pixPending(productName)}
           </p>
         </div>
 
@@ -165,9 +175,9 @@ const CheckoutSuccess = () => {
           <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
             <Mail className="w-5 h-5 text-primary shrink-0" />
             <div className="text-left">
-              <p className="text-sm font-medium text-foreground">Verifique seu e-mail</p>
+              <p className="text-sm font-medium text-foreground">{t.checkEmail}</p>
               <p className="text-xs text-muted-foreground">
-                Enviamos os detalhes da compra para <strong>{email}</strong>
+                {t.sentDetails(email)} <strong>{email}</strong>
               </p>
             </div>
           </div>
@@ -184,7 +194,7 @@ const CheckoutSuccess = () => {
             >
               <div className="flex items-center justify-center gap-2 text-primary">
                 <Gift className="w-4 h-4" />
-                <p className="text-sm font-semibold uppercase tracking-wide">Oferta exclusiva para você!</p>
+                <p className="text-sm font-semibold uppercase tracking-wide">{t.exclusiveOffer}</p>
               </div>
 
               {activeUpsells.map((offer) => {
@@ -220,11 +230,11 @@ const CheckoutSuccess = () => {
                         <div className="flex items-center gap-2 mt-1">
                           {offer.discount_percent > 0 && (
                             <span className="text-xs line-through text-muted-foreground">
-                              R$ {offer.upsell_product.price.toFixed(2).replace(".", ",")}
+                              {formatPrice(offer.upsell_product.price)}
                             </span>
                           )}
                           <span className="text-sm font-bold text-primary">
-                            R$ {finalPrice.toFixed(2).replace(".", ",")}
+                            {formatPrice(finalPrice)}
                           </span>
                           {offer.discount_percent > 0 && (
                             <span className="text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full font-bold">
@@ -243,17 +253,17 @@ const CheckoutSuccess = () => {
                       {isProcessing ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin" />
-                          Processando...
+                          {t.processing}
                         </>
                       ) : (
                         <>
                           <Gift className="w-4 h-4" />
-                          Comprar com 1 clique
+                          {t.buyOneClick}
                         </>
                       )}
                     </Button>
                     <p className="text-[10px] text-center text-muted-foreground">
-                      Cobrado no mesmo cartão utilizado na compra anterior
+                      {t.chargedSameCard}
                     </p>
                   </motion.div>
                 );
@@ -270,7 +280,7 @@ const CheckoutSuccess = () => {
             animate={{ opacity: 1 }}
           >
             <p className="text-sm text-primary font-medium">
-              ✅ {purchasedUpsells.size} produto(s) adicional(is) adquirido(s) com sucesso!
+              ✅ {t.additionalPurchased(purchasedUpsells.size)}
             </p>
           </motion.div>
         )}
@@ -278,7 +288,7 @@ const CheckoutSuccess = () => {
         <div className="pt-4">
           <Link to="/">
             <Button variant="outline" className="gap-2">
-              Voltar ao início
+              {isEN ? "Back to home" : "Voltar ao início"}
               <ArrowRight className="w-4 h-4" />
             </Button>
           </Link>
