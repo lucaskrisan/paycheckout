@@ -78,6 +78,7 @@ const conteudoItems = [
 
 // 4. ANÁLISE — dados e relatórios
 const analiseItems = [
+  { title: "Analytics", url: "/admin/analytics", icon: Activity },
   { title: "Relatórios", url: "/admin/abandoned", icon: Activity },
   { title: "Métricas", url: "/admin/metrics", icon: TrendingUp },
   { title: "Financeiro", url: "/admin/financeiro", icon: Wallet },
@@ -103,7 +104,6 @@ const configSuperAdminOnly = [
 
 // 6. SUPER ADMIN — visível apenas para super_admin
 const superAdminItems = [
-  { title: "Analytics", url: "/admin/analytics", icon: Activity },
   { title: "WhatsApp", url: "/admin/whatsapp", icon: MessageSquare },
   { title: "Revisão Produtos", url: "/admin/product-review", icon: ShieldCheck },
   { title: "Verificação Produtores", url: "/admin/verification-review", icon: User },

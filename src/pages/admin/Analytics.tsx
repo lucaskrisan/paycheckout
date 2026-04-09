@@ -234,9 +234,6 @@ const Analytics = () => {
               <SelectItem value="total">Total</SelectItem>
             </SelectContent>
           </Select>
-          <Badge variant="outline" className="border-primary/30 text-primary">
-            Super Admin
-          </Badge>
         </div>
       </div>
 
