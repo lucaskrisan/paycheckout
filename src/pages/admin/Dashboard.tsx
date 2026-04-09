@@ -15,7 +15,7 @@ import DashboardWeekdayChart from "@/components/admin/dashboard/DashboardWeekday
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
   const [orders, setOrders] = useState<any[]>([]);
   const [abandonedCarts, setAbandonedCarts] = useState<any[]>([]);
   const [period, setPeriod] = useState<Period>("today");
@@ -47,6 +47,8 @@ const Dashboard = () => {
       .select("id, created_at, status, amount, platform_fee_amount, payment_method, product_id, metadata, customer_state")
       .order("created_at", { ascending: false });
 
+    if (!isSuperAdmin && user) query = query.eq("user_id", user.id);
+
     const dateFrom = getDateFilter(p);
     if (dateFrom) {
       query = query.gte("created_at", dateFrom);
@@ -63,13 +65,15 @@ const Dashboard = () => {
     const { data, error } = await query;
     if (error) throw error;
     return data || [];
-  }, [getDateFilter]);
+  }, [getDateFilter, isSuperAdmin, user]);
 
   const fetchAndSetData = useCallback(async () => {
     if (!user) return;
+    let cartsQuery = supabase.from("abandoned_carts").select("id, created_at, recovered").order("created_at", { ascending: false }).limit(500);
+    if (!isSuperAdmin) cartsQuery = cartsQuery.eq("user_id", user.id);
     const [periodOrders, cartsRes, productsRes] = await Promise.all([
       fetchOrders(period),
-      supabase.from("abandoned_carts").select("id, created_at, recovered").order("created_at", { ascending: false }).limit(500),
+      cartsQuery,
       supabase.from("products").select("id, name").eq("user_id", user.id),
     ]);
     setOrders(periodOrders);
