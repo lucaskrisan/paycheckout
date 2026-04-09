@@ -138,7 +138,7 @@ const DashboardHeroCard = memo(function DashboardHeroCard({ label, value, fmt, s
             </TooltipProvider>
           )}
         </div>
-        <p className={`${isRevenue ? "text-3xl" : "text-2xl"} font-bold tracking-tight mt-1.5 ${isRevenue ? "text-white" : "text-primary"}`}>
+        <p className={`text-3xl font-bold tracking-tight mt-1.5 ${isRevenue ? "text-white" : "text-primary"}`}>
           {fmt(animatedValue)}
         </p>
       </div>
