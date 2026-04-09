@@ -273,7 +273,7 @@ const Dashboard = () => {
       {/* ROW 2 — Chart + metrics (cognitive grouping) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
         <div className="lg:col-span-7">
-          <DashboardChart data={chartData} fmt={fmt} title={isHourly ? "Vendas" : "Receita Diária"} subtitle={isHourly ? "Receita no período selecionado" : undefined} highlightValue={fmt(totalLiquido)} />
+          <DashboardChart data={chartData} fmt={fmt} title={isHourly ? "Vendas" : "Receita Diária"} subtitle={isHourly ? "Receita no período selecionado" : undefined} />
         </div>
         <div className="lg:col-span-5 grid grid-cols-2 gap-3">
           {/* Grupo 1: Volume + Valor */}
