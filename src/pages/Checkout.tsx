@@ -75,6 +75,16 @@ const Checkout = () => {
   const { markPurchased } = useAbandonedCart({ productId: productId || "", customer, paymentMethod, productOwnerId: product?.user_id });
   useCheckoutPresence("track", productId);
 
+  // Auto-set country from IP geolocation (only once)
+  useEffect(() => {
+    if (geoCountry && geoCountry !== "US") {
+      setSelectedCountry(geoCountry);
+    }
+  }, [geoCountry]);
+
+  // i18n translations based on selected country
+  const t = useMemo(() => getCheckoutTranslations(selectedCountry), [selectedCountry]);
+
   // Load product data
   useEffect(() => {
     if (!productId) { setNotFound(true); setLoading(false); return; }
