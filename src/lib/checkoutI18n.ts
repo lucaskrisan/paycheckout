@@ -1,0 +1,168 @@
+/**
+ * Checkout i18n translations based on country code.
+ * Covers the main languages of our international audience.
+ */
+
+export interface CheckoutTranslations {
+  yourCountry: string;
+  creditCard: string;
+  securePayment: string;
+  payButton: (amount: string) => string;
+  fillRequired: string;
+  invalidEmail: string;
+  paymentError: string;
+  paymentSuccess: string;
+  name: string;
+  email: string;
+  searchCountry: string;
+  couponPlaceholder: string;
+  couponApply: string;
+  orderSummary: string;
+  discount: string;
+  total: string;
+  secureCheckout: string;
+  guaranteeText: string;
+}
+
+const pt: CheckoutTranslations = {
+  yourCountry: "Seu país",
+  creditCard: "Cartão de Crédito",
+  securePayment: "Pagamento seguro internacional via Stripe",
+  payButton: (amount) => `Pagar $${amount}`,
+  fillRequired: "Preencha todos os campos obrigatórios",
+  invalidEmail: "E-mail inválido",
+  paymentError: "Erro ao processar pagamento",
+  paymentSuccess: "Pagamento processado com sucesso!",
+  name: "Seu nome completo",
+  email: "Seu e-mail",
+  searchCountry: "Buscar país...",
+  couponPlaceholder: "Cupom de desconto",
+  couponApply: "Aplicar",
+  orderSummary: "Resumo do pedido",
+  discount: "Desconto",
+  total: "Total",
+  secureCheckout: "Seus dados estão protegidos com criptografia SSL",
+  guaranteeText: "Garantia de 7 dias • Compra 100% segura",
+};
+
+const en: CheckoutTranslations = {
+  yourCountry: "Your country",
+  creditCard: "Credit Card",
+  securePayment: "Secure international payment via Stripe",
+  payButton: (amount) => `Pay $${amount}`,
+  fillRequired: "Please fill in all required fields",
+  invalidEmail: "Invalid email address",
+  paymentError: "Payment processing failed",
+  paymentSuccess: "Payment processed successfully!",
+  name: "Your full name",
+  email: "Your email",
+  searchCountry: "Search country...",
+  couponPlaceholder: "Discount code",
+  couponApply: "Apply",
+  orderSummary: "Order summary",
+  discount: "Discount",
+  total: "Total",
+  secureCheckout: "Your data is protected with SSL encryption",
+  guaranteeText: "7-day guarantee • 100% secure purchase",
+};
+
+const es: CheckoutTranslations = {
+  yourCountry: "Tu país",
+  creditCard: "Tarjeta de Crédito",
+  securePayment: "Pago seguro internacional vía Stripe",
+  payButton: (amount) => `Pagar $${amount}`,
+  fillRequired: "Completa todos los campos obligatorios",
+  invalidEmail: "Correo electrónico inválido",
+  paymentError: "Error al procesar el pago",
+  paymentSuccess: "¡Pago procesado exitosamente!",
+  name: "Tu nombre completo",
+  email: "Tu correo electrónico",
+  searchCountry: "Buscar país...",
+  couponPlaceholder: "Código de descuento",
+  couponApply: "Aplicar",
+  orderSummary: "Resumen del pedido",
+  discount: "Descuento",
+  total: "Total",
+  secureCheckout: "Tus datos están protegidos con encriptación SSL",
+  guaranteeText: "Garantía de 7 días • Compra 100% segura",
+};
+
+const fr: CheckoutTranslations = {
+  yourCountry: "Votre pays",
+  creditCard: "Carte de crédit",
+  securePayment: "Paiement international sécurisé via Stripe",
+  payButton: (amount) => `Payer $${amount}`,
+  fillRequired: "Veuillez remplir tous les champs obligatoires",
+  invalidEmail: "Adresse e-mail invalide",
+  paymentError: "Erreur lors du traitement du paiement",
+  paymentSuccess: "Paiement traité avec succès !",
+  name: "Votre nom complet",
+  email: "Votre e-mail",
+  searchCountry: "Rechercher un pays...",
+  couponPlaceholder: "Code de réduction",
+  couponApply: "Appliquer",
+  orderSummary: "Récapitulatif de commande",
+  discount: "Réduction",
+  total: "Total",
+  secureCheckout: "Vos données sont protégées par le cryptage SSL",
+  guaranteeText: "Garantie de 7 jours • Achat 100% sécurisé",
+};
+
+const de: CheckoutTranslations = {
+  yourCountry: "Ihr Land",
+  creditCard: "Kreditkarte",
+  securePayment: "Sichere internationale Zahlung über Stripe",
+  payButton: (amount) => `$${amount} bezahlen`,
+  fillRequired: "Bitte füllen Sie alle Pflichtfelder aus",
+  invalidEmail: "Ungültige E-Mail-Adresse",
+  paymentError: "Fehler bei der Zahlungsverarbeitung",
+  paymentSuccess: "Zahlung erfolgreich verarbeitet!",
+  name: "Ihr vollständiger Name",
+  email: "Ihre E-Mail",
+  searchCountry: "Land suchen...",
+  couponPlaceholder: "Rabattcode",
+  couponApply: "Anwenden",
+  orderSummary: "Bestellübersicht",
+  discount: "Rabatt",
+  total: "Gesamt",
+  secureCheckout: "Ihre Daten sind durch SSL-Verschlüsselung geschützt",
+  guaranteeText: "7-Tage-Garantie • 100% sicherer Kauf",
+};
+
+const it: CheckoutTranslations = {
+  yourCountry: "Il tuo paese",
+  creditCard: "Carta di credito",
+  securePayment: "Pagamento internazionale sicuro tramite Stripe",
+  payButton: (amount) => `Paga $${amount}`,
+  fillRequired: "Compila tutti i campi obbligatori",
+  invalidEmail: "Indirizzo email non valido",
+  paymentError: "Errore nell'elaborazione del pagamento",
+  paymentSuccess: "Pagamento elaborato con successo!",
+  name: "Il tuo nome completo",
+  email: "La tua email",
+  searchCountry: "Cerca paese...",
+  couponPlaceholder: "Codice sconto",
+  couponApply: "Applica",
+  orderSummary: "Riepilogo ordine",
+  discount: "Sconto",
+  total: "Totale",
+  secureCheckout: "I tuoi dati sono protetti con crittografia SSL",
+  guaranteeText: "Garanzia di 7 giorni • Acquisto 100% sicuro",
+};
+
+// Map country code to language
+const countryToLang: Record<string, string> = {
+  BR: "pt", PT: "pt", MZ: "pt", AO: "pt", CV: "pt", ST: "pt",
+  US: "en", GB: "en", AU: "en", CA: "en", IE: "en", NZ: "en", JM: "en", SG: "en", ZA: "en", NG: "en", GH: "en", KE: "en", PH: "en", IN: "en",
+  MX: "es", CO: "es", AR: "es", PE: "es", CL: "es", EC: "es", VE: "es", UY: "es", PY: "es", BO: "es", CR: "es", PA: "es", DO: "es", GT: "es", HN: "es", SV: "es", NI: "es", CU: "es", ES: "es", PR: "es",
+  FR: "fr", BE: "fr", CH: "fr", SN: "fr", CI: "fr", CM: "fr", HT: "fr",
+  DE: "de", AT: "de",
+  IT: "it",
+};
+
+const translations: Record<string, CheckoutTranslations> = { pt, en, es, fr, de, it };
+
+export function getCheckoutTranslations(countryCode: string): CheckoutTranslations {
+  const lang = countryToLang[countryCode] || "en";
+  return translations[lang] || en;
+}
