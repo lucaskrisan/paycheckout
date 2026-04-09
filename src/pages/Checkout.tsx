@@ -21,6 +21,7 @@ import { useFacebookPixel } from "@/hooks/useFacebookPixel";
 import { useAbandonedCart } from "@/hooks/useAbandonedCart";
 import { useCheckoutPresence } from "@/hooks/useCheckoutPresence";
 import { useGeoCountry } from "@/hooks/useGeoCountry";
+import { useLocalCurrency } from "@/hooks/useLocalCurrency";
 import { getCheckoutTranslations } from "@/lib/checkoutI18n";
 import type { BuilderComponent } from "@/components/checkout-builder/types";
 
@@ -85,7 +86,10 @@ const Checkout = () => {
   // i18n translations based on selected country
   const t = useMemo(() => getCheckoutTranslations(selectedCountry), [selectedCountry]);
 
-  // Load product data
+  // Local currency conversion for non-USD countries
+  const { formatLocal } = useLocalCurrency(0, selectedCountry);
+
+
   useEffect(() => {
     if (!productId) { setNotFound(true); setLoading(false); return; }
     const load = async () => {
@@ -365,6 +369,13 @@ const Checkout = () => {
             <CheckoutBuilderRenderer components={sortedLayout} zone="right" productName={product.name} excludeTypes={["form", "button", "countdown", "facebook"]} />
 
             <PriceSummary originalPrice={product.price} pixDiscount={pixDiscount} couponDiscount={couponDiscount} bumpTotal={bumpTotal} finalAmount={finalAmount} paymentMethod={paymentMethod} couponCode={coupon?.code} isUSD={isUSD} />
+
+            {/* Local currency hint for international buyers */}
+            {isUSD && formatLocal(finalAmount) && (
+              <div className="text-center text-sm text-[#565959] bg-[#F7FAFA] border border-[#D5D9D9] rounded-lg py-2 px-3">
+                ≈ {formatLocal(finalAmount)} <span className="text-xs opacity-70">({t.yourCountry.toLowerCase()})</span>
+              </div>
+            )}
 
             <button
               onClick={handleSubmit}
