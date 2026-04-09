@@ -370,6 +370,13 @@ const Checkout = () => {
 
             <PriceSummary originalPrice={product.price} pixDiscount={pixDiscount} couponDiscount={couponDiscount} bumpTotal={bumpTotal} finalAmount={finalAmount} paymentMethod={paymentMethod} couponCode={coupon?.code} isUSD={isUSD} />
 
+            {/* Local currency hint for international buyers */}
+            {isUSD && formatLocal(finalAmount) && (
+              <div className="text-center text-sm text-[#565959] bg-[#F7FAFA] border border-[#D5D9D9] rounded-lg py-2 px-3">
+                ≈ {formatLocal(finalAmount)} <span className="text-xs opacity-70">({t.yourCountry.toLowerCase()})</span>
+              </div>
+            )}
+
             <button
               onClick={handleSubmit}
               disabled={isSubmitting}
