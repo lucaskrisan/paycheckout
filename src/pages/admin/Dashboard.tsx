@@ -69,9 +69,11 @@ const Dashboard = () => {
 
   const fetchAndSetData = useCallback(async () => {
     if (!user) return;
+    let cartsQuery = supabase.from("abandoned_carts").select("id, created_at, recovered").order("created_at", { ascending: false }).limit(500);
+    if (!isSuperAdmin) cartsQuery = cartsQuery.eq("user_id", user.id);
     const [periodOrders, cartsRes, productsRes] = await Promise.all([
       fetchOrders(period),
-      supabase.from("abandoned_carts").select("id, created_at, recovered").order("created_at", { ascending: false }).limit(500),
+      cartsQuery,
       supabase.from("products").select("id, name").eq("user_id", user.id),
     ]);
     setOrders(periodOrders);
