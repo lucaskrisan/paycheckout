@@ -104,7 +104,6 @@ const configSuperAdminOnly = [
 
 // 6. SUPER ADMIN — visível apenas para super_admin
 const superAdminItems = [
-  { title: "Analytics", url: "/admin/analytics", icon: Activity },
   { title: "WhatsApp", url: "/admin/whatsapp", icon: MessageSquare },
   { title: "Revisão Produtos", url: "/admin/product-review", icon: ShieldCheck },
   { title: "Verificação Produtores", url: "/admin/verification-review", icon: User },
