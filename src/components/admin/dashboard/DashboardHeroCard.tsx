@@ -101,10 +101,43 @@ const DashboardHeroCard = memo(function DashboardHeroCard({ label, value, fmt, s
   const animatedValue = useAnimatedNumber(value);
   const Icon = variantIcons[variant] || Zap;
   const isRevenue = variant === "revenue";
+  const isSales = variant === "sales";
+  const isTicket = variant === "ticket";
 
   const containerClass = isRevenue
     ? "relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-400 p-5 h-full min-h-[120px] flex flex-col justify-between shadow-[0_4px_24px_-4px_rgba(16,185,129,0.3)]"
+    : isSales
+    ? "relative overflow-hidden rounded-xl bg-gradient-to-br from-sky-500/10 via-blue-500/5 to-indigo-500/10 border border-sky-400/10 backdrop-blur-md p-5 h-full min-h-[120px] flex flex-col justify-between shadow-[inset_0_1px_0_0_rgba(56,189,248,0.08),0_2px_20px_-4px_rgba(0,0,0,0.5)]"
+    : isTicket
+    ? "relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-500/10 via-orange-500/8 to-rose-500/10 border border-amber-400/10 backdrop-blur-md p-5 h-full min-h-[120px] flex flex-col justify-between shadow-[inset_0_1px_0_0_rgba(251,191,36,0.08),0_2px_20px_-4px_rgba(0,0,0,0.5)]"
     : "relative overflow-hidden rounded-xl border border-white/[0.06] bg-card/70 backdrop-blur-md p-5 h-full min-h-[120px] flex flex-col justify-between shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),0_2px_20px_-4px_rgba(0,0,0,0.5)]";
+
+  const iconBgClass = isRevenue
+    ? "bg-white/20 backdrop-blur-sm rounded-full p-2.5"
+    : isSales
+    ? "bg-sky-400/10 border border-sky-400/10 rounded-lg p-2"
+    : isTicket
+    ? "bg-amber-400/10 border border-amber-400/10 rounded-lg p-2"
+    : "bg-white/[0.04] border border-white/[0.06] rounded-lg p-2";
+
+  const iconColor = isRevenue
+    ? "text-white"
+    : isSales
+    ? "text-sky-400"
+    : isTicket
+    ? "text-amber-400"
+    : "text-muted-foreground";
+
+  const valueColor = isRevenue
+    ? "text-white"
+    : isSales
+    ? "text-sky-300"
+    : isTicket
+    ? "text-amber-300"
+    : "text-primary";
+
+  const labelColor = isRevenue ? "text-white/80" : "text-muted-foreground";
+  const sublabelColor = isRevenue ? "text-white/60" : "text-muted-foreground/70";
 
   return (
     <div className={containerClass}>
@@ -114,19 +147,25 @@ const DashboardHeroCard = memo(function DashboardHeroCard({ label, value, fmt, s
           <div className="absolute -right-3 -top-3 w-20 h-20 rounded-full bg-white/[0.06]" />
         </>
       )}
-      {!isRevenue && (
+      {isSales && (
+        <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-sky-400/[0.06]" />
+      )}
+      {isTicket && (
+        <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-amber-400/[0.06]" />
+      )}
+      {!isRevenue && !isSales && !isTicket && (
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/[0.08] to-transparent" />
       )}
 
       <div className="absolute right-4 top-4">
-        <div className={isRevenue ? "bg-white/20 backdrop-blur-sm rounded-full p-2.5" : "bg-white/[0.04] border border-white/[0.06] rounded-lg p-2"}>
-          <Icon className={`w-4 h-4 ${isRevenue ? "text-white" : "text-muted-foreground"}`} />
+        <div className={iconBgClass}>
+          <Icon className={`w-4 h-4 ${iconColor}`} />
         </div>
       </div>
 
       <div>
         <div className="flex items-center gap-1.5">
-          <p className={`text-xs font-medium ${isRevenue ? "text-white/80" : "text-muted-foreground"}`}>{label}</p>
+          <p className={`text-xs font-medium ${labelColor}`}>{label}</p>
           {tooltip && (
             <TooltipProvider delayDuration={200}>
               <Tooltip>
@@ -138,7 +177,7 @@ const DashboardHeroCard = memo(function DashboardHeroCard({ label, value, fmt, s
             </TooltipProvider>
           )}
         </div>
-        <p className={`text-3xl font-bold tracking-tight mt-1.5 ${isRevenue ? "text-white" : "text-primary"}`}>
+        <p className={`text-3xl font-bold tracking-tight mt-1.5 ${valueColor}`}>
           {fmt(animatedValue)}
         </p>
       </div>
@@ -148,7 +187,7 @@ const DashboardHeroCard = memo(function DashboardHeroCard({ label, value, fmt, s
       )}
 
       {sublabel && (
-        <p className={`text-[11px] mt-2 ${isRevenue ? "text-white/60" : "text-muted-foreground/70"}`}>{sublabel}</p>
+        <p className={`text-[11px] mt-2 ${sublabelColor}`}>{sublabel}</p>
       )}
     </div>
   );
