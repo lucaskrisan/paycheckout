@@ -86,8 +86,8 @@ const Checkout = () => {
   // i18n translations based on selected country
   const t = useMemo(() => getCheckoutTranslations(selectedCountry), [selectedCountry]);
 
-  // Local currency conversion for non-USD countries  
-  const localCurrency = useLocalCurrency(0, selectedCountry); // rate-only; format done inline
+  // Local currency conversion for non-USD countries
+  const { formatLocal } = useLocalCurrency(0, selectedCountry);
 
 
   useEffect(() => {
