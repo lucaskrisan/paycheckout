@@ -115,9 +115,9 @@ const DashboardHeroCard = memo(function DashboardHeroCard({ label, value, fmt, s
   const iconBgClass = isRevenue
     ? "bg-white/20 backdrop-blur-sm rounded-full p-2.5"
     : isSales
-    ? "bg-sky-400/10 border border-sky-400/10 rounded-lg p-2"
+    ? "bg-sky-400/[0.06] border border-sky-400/[0.06] rounded-lg p-2"
     : isTicket
-    ? "bg-amber-400/10 border border-amber-400/10 rounded-lg p-2"
+    ? "bg-amber-400/[0.06] border border-amber-400/[0.06] rounded-lg p-2"
     : "bg-white/[0.04] border border-white/[0.06] rounded-lg p-2";
 
   const iconColor = isRevenue
