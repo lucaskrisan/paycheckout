@@ -145,6 +145,10 @@ const Products = () => {
   };
 
   const openDialog = () => {
+    if (isVerified === false) {
+      toast.error("Verifique sua identidade antes de criar produtos. Acesse 'Minha Conta' para enviar seus documentos.");
+      return;
+    }
     setStep(1);
     setPaymentType("one_time");
     setCurrency("BRL");
