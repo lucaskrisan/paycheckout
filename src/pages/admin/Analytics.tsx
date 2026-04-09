@@ -40,7 +40,7 @@ const FUNNEL_STEPS = [
 const PIE_COLORS = ["hsl(151,100%,45%)", "hsl(220,80%,55%)", "hsl(280,60%,55%)", "hsl(40,90%,55%)"];
 
 const Analytics = () => {
-  const { user } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
   const [clarityId, setClarityId] = useState("");
   const [savedClarityId, setSavedClarityId] = useState("");
   const [saving, setSaving] = useState(false);
