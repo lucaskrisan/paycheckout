@@ -245,7 +245,7 @@ const Checkout = () => {
           },
         });
         if (error) {
-          let msg = "Payment processing failed";
+          let msg = t.paymentError;
           try { const ctx = (error as any).context; if (ctx && typeof ctx.json === "function") { const body = await ctx.json(); if (body?.error) msg = body.error; } } catch {}
           throw new Error(msg);
         }
@@ -255,7 +255,7 @@ const Checkout = () => {
         } else {
           const paymentId = data?.payment_id || data?.id;
           if (paymentId) {
-            toast.success("Payment processed successfully!");
+            toast.success(t.paymentSuccess);
             trackPurchase(finalAmount, "USD", paymentId);
             await markPurchased();
             navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product.id}${data.order_id ? `&order_id=${data.order_id}` : ''}`);
