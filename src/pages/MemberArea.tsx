@@ -244,6 +244,7 @@ const MemberArea = () => {
                   accessId={access.id}
                   customerName={customerName || "Aluno"}
                   tokenClient={tokenClient}
+                  accessToken={token || undefined}
                 />
 
                 {/* Navigation */}

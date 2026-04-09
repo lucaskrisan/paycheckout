@@ -37,6 +37,7 @@ interface Props {
   accessId: string;
   customerName: string;
   tokenClient: any;
+  accessToken?: string;
 }
 
 const MemberLessonViewer = memo(function MemberLessonViewer({
