@@ -240,7 +240,7 @@ const Dashboard = () => {
           value={totalVendas}
           fmt={(v) => String(Math.round(v))}
           variant="sales"
-          sublabel={`${approved.length} de ${filtered.length} pedidos`}
+          sublabel={filtered.length > 0 ? `${((approved.length / filtered.length) * 100).toFixed(0)}% de aprovação` : undefined}
           tooltip="Total de vendas com pagamento confirmado"
         />
         <DashboardHeroCard
