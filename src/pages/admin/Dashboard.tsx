@@ -171,10 +171,24 @@ const Dashboard = () => {
     return map;
   }, [approved]);
 
+  const isHourly = period === "today" || period === "yesterday";
+
   const chartData = useMemo(() => {
+    if (isHourly) {
+      const hours: Record<string, number> = {};
+      for (let h = 0; h < 24; h++) {
+        hours[`${String(h).padStart(2, "0")}:00`] = 0;
+      }
+      approved.forEach((o) => {
+        const hour = new Date(o.created_at).getHours();
+        const key = `${String(hour).padStart(2, "0")}:00`;
+        if (hours[key] !== undefined) hours[key] += Number(o.amount);
+      });
+      return Object.entries(hours).map(([name, total]) => ({ name, total }));
+    }
     const days: Record<string, number> = {};
     const now = new Date();
-    const numDays = period === "today" || period === "yesterday" ? 1 : period === "7days" ? 7 : 30;
+    const numDays = period === "7days" ? 7 : 30;
     for (let i = numDays - 1; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
@@ -186,7 +200,7 @@ const Dashboard = () => {
       if (days[key] !== undefined) days[key] += Number(o.amount);
     });
     return Object.entries(days).map(([name, total]) => ({ name, total }));
-  }, [approved, period]);
+  }, [approved, period, isHourly]);
 
   // Sparkline data for visitors (simulated recent activity)
   const visitorSparkline = useMemo(() => {
@@ -259,7 +273,7 @@ const Dashboard = () => {
       {/* ROW 2 — Chart + metrics */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
         <div className="lg:col-span-7">
-          <DashboardChart data={chartData} fmt={fmt} />
+          <DashboardChart data={chartData} fmt={fmt} title={isHourly ? "Vendas" : "Receita Diária"} subtitle={isHourly ? "Receita no período selecionado" : undefined} />
         </div>
         <div className="lg:col-span-5 grid grid-cols-2 gap-3">
           <DashboardMetricCard
