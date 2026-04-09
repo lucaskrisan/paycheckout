@@ -62,6 +62,7 @@ const Checkout = () => {
   const [coupon, setCoupon] = useState<CouponData | null>(null);
   const { country: geoCountry } = useGeoCountry("US");
   const [selectedCountry, setSelectedCountry] = useState("US");
+  const [geoApplied, setGeoApplied] = useState(false);
 
   const prefill = useMemo(() => {
     const params = new URLSearchParams(location.search);
