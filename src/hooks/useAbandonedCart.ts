@@ -38,10 +38,14 @@ export function useAbandonedCart({ productId, customer, paymentMethod, productOw
       const params = new URLSearchParams(window.location.search);
 
       if (cartIdRef.current) {
-        await supabase
-          .from("abandoned_carts")
-          .update(payload)
-          .eq("id", cartIdRef.current);
+        await supabase.rpc("update_abandoned_cart", {
+          p_cart_id: cartIdRef.current,
+          p_customer_name: payload.customer_name,
+          p_customer_email: payload.customer_email,
+          p_customer_phone: payload.customer_phone,
+          p_customer_cpf: payload.customer_cpf,
+          p_payment_method: payload.payment_method,
+        });
         return;
       }
 
