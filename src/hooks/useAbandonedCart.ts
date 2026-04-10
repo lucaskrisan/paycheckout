@@ -37,12 +37,11 @@ export function useAbandonedCart({ productId, customer, paymentMethod, productOw
   latestRef.current = { customer, paymentMethod, productOwnerId, productId };
 
   /**
-   * Minimum viable data: at least two characters in name AND (email OR phone).
-   * This prevents creating carts on the very first keystroke.
+   * Minimum viable data: valid email (5+ chars) is enough to create the cart.
+   * Name and phone will be captured via debounced updates.
    */
   const hasMinimumData = Boolean(
-    customer.name.trim().length >= 2 &&
-    (customer.email.trim().length >= 5 || customer.phone.trim().length >= 8),
+    customer.email.trim().length >= 5,
   );
 
   const saveCart = useCallback(async () => {
