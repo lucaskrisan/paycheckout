@@ -24,6 +24,10 @@ function buildPayload(customer: CustomerData, paymentMethod: string, productOwne
   };
 }
 
+function getCurrentPageUrl() {
+  return window.location.href;
+}
+
 export function useAbandonedCart({ productId, customer, paymentMethod, productOwnerId }: UseAbandonedCartProps) {
   const cartIdRef = useRef<string | null>(null);
   const purchasedRef = useRef(false);
@@ -72,12 +76,13 @@ export function useAbandonedCart({ productId, customer, paymentMethod, productOw
           id: clientId,
           product_id: productId,
           ...payload,
+          page_url: getCurrentPageUrl(),
           utm_source: params.get("utm_source") || null,
           utm_medium: params.get("utm_medium") || null,
           utm_campaign: params.get("utm_campaign") || null,
           utm_content: params.get("utm_content") || null,
           utm_term: params.get("utm_term") || null,
-        });
+        } as any);
 
       if (!error) {
         cartIdRef.current = clientId;
