@@ -155,11 +155,24 @@ export function useAbandonedCart({ productId, customer, paymentMethod, productOw
 
   const markPurchased = useCallback(async () => {
     purchasedRef.current = true;
+    const { customer: c, productId: pid } = latestRef.current;
+
     if (cartIdRef.current) {
       await supabase
         .from("abandoned_carts")
         .update({ recovered: true })
         .eq("id", cartIdRef.current);
+    }
+
+    // Fallback: mark by product + email if cartIdRef was lost (fast purchase / remount)
+    const email = c.email.trim();
+    if (email && pid) {
+      await supabase
+        .from("abandoned_carts")
+        .update({ recovered: true })
+        .eq("product_id", pid)
+        .eq("customer_email", email)
+        .eq("recovered", false);
     }
   }, []);
 
