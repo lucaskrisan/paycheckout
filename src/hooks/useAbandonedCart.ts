@@ -14,92 +14,95 @@ export function useAbandonedCart({ productId, customer, paymentMethod, productOw
   const purchasedRef = useRef(false);
   const createdRef = useRef(false);
 
+  const hasCustomerData = Boolean(
+    customer.name.trim() ||
+    customer.email.trim() ||
+    customer.phone.trim() ||
+    customer.cpf.trim(),
+  );
+
   const saveCart = useCallback(async () => {
-    if (purchasedRef.current) return;
-    // CRITICAL: Never create a cart without productOwnerId — it makes the cart invisible to the producer
-    if (!productOwnerId) return;
+    if (purchasedRef.current || !productId || !productOwnerId || !hasCustomerData) return;
+
+    const payload = {
+      customer_name: customer.name.trim() || null,
+      customer_email: customer.email.trim() || null,
+      customer_phone: customer.phone.trim() || null,
+      customer_cpf: customer.cpf.trim() || null,
+      payment_method: paymentMethod,
+      user_id: productOwnerId,
+      updated_at: new Date().toISOString(),
+    };
 
     try {
       const params = new URLSearchParams(window.location.search);
 
       if (cartIdRef.current) {
-        // Update existing cart
         await supabase
           .from("abandoned_carts")
-          .update({
-            customer_name: customer.name || null,
-            customer_email: customer.email || null,
-            customer_phone: customer.phone || null,
-            customer_cpf: customer.cpf || null,
-            payment_method: paymentMethod,
-            user_id: productOwnerId,
-            updated_at: new Date().toISOString(),
-          })
+          .update(payload)
           .eq("id", cartIdRef.current);
-      } else if (!createdRef.current) {
-        createdRef.current = true;
+        return;
+      }
 
-        // Generate UUID client-side so we don't need .select() after insert.
-        // Anon users have no SELECT policy on abandoned_carts, which causes
-        // PostgREST to roll back the insert when .select().single() returns 0 rows.
-        const clientId = crypto.randomUUID();
+      if (createdRef.current) return;
+      createdRef.current = true;
 
-        const { error } = await supabase
-          .from("abandoned_carts")
-          .insert({
-            id: clientId,
-            product_id: productId,
-            customer_name: customer.name || null,
-            customer_email: customer.email || null,
-            customer_phone: customer.phone || null,
-            customer_cpf: customer.cpf || null,
-            payment_method: paymentMethod,
-            utm_source: params.get("utm_source") || null,
-            utm_medium: params.get("utm_medium") || null,
-            utm_campaign: params.get("utm_campaign") || null,
-            utm_content: params.get("utm_content") || null,
-            utm_term: params.get("utm_term") || null,
-            user_id: productOwnerId,
-          });
+      const clientId = crypto.randomUUID();
+      const { error } = await supabase
+        .from("abandoned_carts")
+        .insert({
+          id: clientId,
+          product_id: productId,
+          ...payload,
+          utm_source: params.get("utm_source") || null,
+          utm_medium: params.get("utm_medium") || null,
+          utm_campaign: params.get("utm_campaign") || null,
+          utm_content: params.get("utm_content") || null,
+          utm_term: params.get("utm_term") || null,
+        });
 
-        if (!error) {
-          cartIdRef.current = clientId;
-        } else {
-          // Allow retry if insert failed
-          createdRef.current = false;
-        }
+      if (!error) {
+        cartIdRef.current = clientId;
+      } else {
+        createdRef.current = false;
       }
     } catch {
-      // Silent fail – don't block checkout
       if (!cartIdRef.current) createdRef.current = false;
     }
-  }, [productId, customer, paymentMethod, productOwnerId]);
+  }, [customer.cpf, customer.email, customer.name, customer.phone, hasCustomerData, paymentMethod, productId, productOwnerId]);
 
-  // Create cart as soon as productOwnerId is available (product loaded)
   useEffect(() => {
-    if (!productId || !productOwnerId || cartIdRef.current || createdRef.current) return;
+    if (!hasCustomerData || cartIdRef.current || createdRef.current) return;
     saveCart();
-  }, [productId, productOwnerId, saveCart]);
+  }, [hasCustomerData, saveCart]);
 
-  // Save on blur (tab switch / close) — use pagehide for mobile reliability
   useEffect(() => {
-    const handler = () => saveCart();
-    document.addEventListener("visibilitychange", handler);
-    window.addEventListener("beforeunload", handler);
-    window.addEventListener("pagehide", handler);
+    if (!hasCustomerData) return;
+    const timeoutId = window.setTimeout(saveCart, 400);
+    return () => window.clearTimeout(timeoutId);
+  }, [customer.cpf, customer.email, customer.name, customer.phone, hasCustomerData, saveCart]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "hidden") return;
+      saveCart();
+    };
+
+    const handlePageExit = () => {
+      saveCart();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("beforeunload", handlePageExit);
+    window.addEventListener("pagehide", handlePageExit);
+
     return () => {
-      document.removeEventListener("visibilitychange", handler);
-      window.removeEventListener("beforeunload", handler);
-      window.removeEventListener("pagehide", handler);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handlePageExit);
+      window.removeEventListener("pagehide", handlePageExit);
     };
   }, [saveCart]);
-
-  // Debounced save when customer data changes
-  useEffect(() => {
-    if (!customer.email && !customer.phone) return;
-    const t = setTimeout(saveCart, 2000);
-    return () => clearTimeout(t);
-  }, [customer.email, customer.phone, customer.name, saveCart]);
 
   const markPurchased = useCallback(async () => {
     purchasedRef.current = true;
