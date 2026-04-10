@@ -69,7 +69,7 @@ const GatewayManagement = () => {
     setGateways(data.map((g: any) => ({
       id: g.id, provider: g.provider, name: g.name, environment: g.environment,
       active: g.active, payment_methods: (g.payment_methods as string[]) || [],
-      config: (g.config as Record<string, any>) || {},
+      config: {},
       user_id: g.user_id,
     })));
     setLoading(false);
