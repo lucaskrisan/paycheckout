@@ -2443,6 +2443,17 @@ export type Database = {
           read_ct: number
         }[]
       }
+      update_abandoned_cart: {
+        Args: {
+          p_cart_id: string
+          p_customer_cpf?: string
+          p_customer_email?: string
+          p_customer_name?: string
+          p_customer_phone?: string
+          p_payment_method?: string
+        }
+        Returns: boolean
+      }
       validate_coupon: {
         Args: { p_code: string }
         Returns: {
