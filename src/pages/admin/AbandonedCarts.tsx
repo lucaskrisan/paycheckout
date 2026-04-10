@@ -243,7 +243,6 @@ const AbandonedCarts = () => {
           </div>
 
           {loading ? (
-          {loading ? (
             <div className="py-12 text-center text-muted-foreground">Carregando...</div>
           ) : paginated.length === 0 ? (
             <div className="py-12 text-center">
