@@ -22,6 +22,7 @@ export type Database = {
           customer_name: string | null
           customer_phone: string | null
           id: string
+          page_url: string | null
           payment_method: string | null
           product_id: string
           recovered: boolean
@@ -40,6 +41,7 @@ export type Database = {
           customer_name?: string | null
           customer_phone?: string | null
           id?: string
+          page_url?: string | null
           payment_method?: string | null
           product_id: string
           recovered?: boolean
@@ -58,6 +60,7 @@ export type Database = {
           customer_name?: string | null
           customer_phone?: string | null
           id?: string
+          page_url?: string | null
           payment_method?: string | null
           product_id?: string
           recovered?: boolean
