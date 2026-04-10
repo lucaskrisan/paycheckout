@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { ShoppingBag, ChevronLeft, ChevronRight, Download, Copy, Check, MessageCircle, ArrowLeft } from "lucide-react";
+import { ShoppingBag, ChevronLeft, ChevronRight, Download, Copy, Check, MessageCircle, ArrowLeft, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { format, startOfDay, addDays } from "date-fns";
@@ -164,18 +164,9 @@ const AbandonedCarts = () => {
     }
   };
 
-  // Report metrics
-  const totalFiltered = filtered.length;
-  const recoveredCount = filtered.filter(c => c.recovered).length;
-  const abandonedCount = totalFiltered - recoveredCount;
-  const recoveryRate = totalFiltered > 0 ? ((recoveredCount / totalFiltered) * 100).toFixed(1) : "0";
-  const withPhone = filtered.filter(c => c.customer_phone).length;
-  
-  const phoneRate = totalFiltered > 0 ? ((withPhone / totalFiltered) * 100).toFixed(0) : "0";
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => window.history.back()}>
@@ -189,107 +180,68 @@ const AbandonedCarts = () => {
         </Button>
       </div>
 
-      {/* Report cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <Card className="border border-border shadow-none">
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Total de carrinhos</p>
-            <p className="text-2xl font-bold text-foreground">{totalFiltered}</p>
-          </CardContent>
-        </Card>
-        <Card className="border border-border shadow-none">
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Abandonados</p>
-            <p className="text-2xl font-bold text-destructive">{abandonedCount}</p>
-          </CardContent>
-        </Card>
-        <Card className="border border-border shadow-none">
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Recuperados</p>
-            <p className="text-2xl font-bold text-primary">{recoveredCount}</p>
-          </CardContent>
-        </Card>
-        <Card className="border border-border shadow-none">
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Taxa de recuperação</p>
-            <p className="text-2xl font-bold text-foreground">{recoveryRate}%</p>
-          </CardContent>
-        </Card>
-        <Card className="border border-border shadow-none">
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Com telefone</p>
-            <p className="text-2xl font-bold text-foreground">{withPhone} <span className="text-sm font-normal text-muted-foreground">({phoneRate}%)</span></p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters row */}
-      <div className="flex flex-wrap items-center gap-3">
-        <Select value={filterProduct} onValueChange={setFilterProduct}>
-          <SelectTrigger className="w-[200px] bg-card"><SelectValue placeholder="Todos os produtos" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os produtos</SelectItem>
-            {products.map(p => (
-              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <div className="flex-1" />
-
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-[160px] bg-card"><SelectValue placeholder="Todos" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="abandoned">Abandonados</SelectItem>
-            <SelectItem value="recovered">Recuperados</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* Period with calendar popover */}
-        <Popover open={periodOpen} onOpenChange={setPeriodOpen}>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className="w-[200px] justify-between bg-card font-normal">
-              {periodLabel}
-              <ChevronRight className="w-4 h-4 rotate-90 text-muted-foreground" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="end">
-            <div className="flex flex-col">
-              {/* Preset options */}
-              <div className="border-b border-border">
-                {[
-                  { value: "today", label: "Hoje" },
-                  { value: "7d", label: "Últimos 7 dias" },
-                  { value: "30d", label: "Últimos 30 dias" },
-                  { value: "all", label: "Tempo todo" },
-                ].map(opt => (
-                  <button
-                    key={opt.value}
-                    onClick={() => selectPreset(opt.value)}
-                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-muted/50 transition-colors ${filterPeriod === opt.value ? "text-primary font-medium" : "text-foreground"}`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-              {/* Calendar */}
-              <Calendar
-                mode="single"
-                selected={customDate}
-                onSelect={selectDate}
-                locale={ptBR}
-                disabled={(date) => date > new Date()}
-                className="p-3"
-              />
-            </div>
-          </PopoverContent>
-        </Popover>
-      </div>
-
-      {/* Table */}
-      <Card>
+      <Card className="overflow-hidden border border-border shadow-none">
         <CardContent className="p-0">
+          <div className="flex flex-wrap items-center gap-3 border-b border-border bg-card px-4 py-4 md:px-5">
+            <Select value={filterProduct} onValueChange={setFilterProduct}>
+              <SelectTrigger className="w-full bg-background sm:w-[270px]"><SelectValue placeholder="Todos os produtos" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os produtos</SelectItem>
+                {products.map(p => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className="flex flex-wrap items-center gap-3 sm:ml-auto">
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-full bg-background sm:w-[160px]"><SelectValue placeholder="Todos" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="abandoned">Abandonados</SelectItem>
+                  <SelectItem value="recovered">Recuperados</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Popover open={periodOpen} onOpenChange={setPeriodOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between bg-background font-normal sm:w-[200px]">
+                    {periodLabel}
+                    <ChevronRight className="w-4 h-4 rotate-90 text-muted-foreground" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                  <div className="flex flex-col">
+                    <div className="border-b border-border">
+                      {[
+                        { value: "today", label: "Hoje" },
+                        { value: "7d", label: "Últimos 7 dias" },
+                        { value: "30d", label: "Últimos 30 dias" },
+                        { value: "all", label: "Tempo todo" },
+                      ].map(opt => (
+                        <button
+                          key={opt.value}
+                          onClick={() => selectPreset(opt.value)}
+                          className={`w-full px-4 py-2.5 text-left text-sm transition-colors hover:bg-muted/50 ${filterPeriod === opt.value ? "font-medium text-primary" : "text-foreground"}`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                    <Calendar
+                      mode="single"
+                      selected={customDate}
+                      onSelect={selectDate}
+                      locale={ptBR}
+                      disabled={(date) => date > new Date()}
+                      className="p-3"
+                    />
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+
           {loading ? (
             <div className="py-12 text-center text-muted-foreground">Carregando...</div>
           ) : paginated.length === 0 ? (
@@ -316,15 +268,16 @@ const AbandonedCarts = () => {
                         <TableCell className="text-muted-foreground whitespace-nowrap">
                           {format(new Date(cart.created_at), "dd/MM/yyyy HH:mm")}
                         </TableCell>
-                        <TableCell className="font-medium">
-                          {cart.products?.name || "—"}
+                        <TableCell className="max-w-[280px] font-medium">
+                          <p className="truncate">{cart.products?.name || "—"}</p>
                         </TableCell>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{cart.customer_name || "—"}</p>
+                        <TableCell className="min-w-[240px]">
+                          <div className="space-y-1">
+                            <p className="font-medium text-foreground">{cart.customer_name || "—"}</p>
                             {cart.customer_email && (
-                              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                ✉ {cart.customer_email}
+                              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <Mail className="h-3.5 w-3.5 shrink-0" />
+                                <span className="truncate">{cart.customer_email}</span>
                               </p>
                             )}
                           </div>
@@ -333,11 +286,11 @@ const AbandonedCarts = () => {
                           {cart.customer_phone ? (
                             <button
                               onClick={() => openWhatsApp(cart.customer_phone, cart)}
-                              className="flex items-center gap-1.5 text-sm text-green-600 hover:text-green-700 transition-colors"
+                              className="flex items-center gap-2 text-sm text-primary transition-opacity hover:opacity-80"
                               title="Abrir WhatsApp"
                             >
-                              <MessageCircle className="w-4 h-4" />
-                              <span>{cart.customer_phone}</span>
+                              <MessageCircle className="h-4 w-4 shrink-0" />
+                              <span className="truncate">{cart.customer_phone}</span>
                             </button>
                           ) : (
                             <span className="text-muted-foreground">—</span>
@@ -346,13 +299,13 @@ const AbandonedCarts = () => {
                         <TableCell>
                           <button
                             onClick={() => copyUrl(cart)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border bg-muted/50 hover:bg-muted text-xs font-mono max-w-[280px] truncate transition-colors"
+                            className="flex max-w-[360px] items-center gap-1.5 rounded-md border border-border bg-background px-3 py-2 text-xs font-mono transition-colors hover:bg-muted/50"
                             title="Copiar link"
                           >
                             {copiedId === cart.id ? (
-                              <Check className="w-3.5 h-3.5 text-primary shrink-0" />
+                              <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
                             ) : (
-                              <Copy className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                              <Copy className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                             )}
                             <span className="truncate">{buildCheckoutUrl(cart)}</span>
                           </button>
