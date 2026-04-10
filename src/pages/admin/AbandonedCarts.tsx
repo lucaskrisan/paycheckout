@@ -111,7 +111,7 @@ const AbandonedCarts = () => {
     // If the original page URL was stored, use it directly
     if (cart.page_url) return cart.page_url;
     // Fallback: reconstruct using published URL
-    const base = `https://paycheckout.lovable.app/checkout/${cart.product_id}`;
+    const base = `https://app.panttera.com.br/checkout/${cart.product_id}`;
     const params = new URLSearchParams();
     if (cart.customer_name) params.set("name", cart.customer_name);
     if (cart.customer_email) params.set("email", cart.customer_email);
