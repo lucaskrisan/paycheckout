@@ -24,6 +24,10 @@ function buildPayload(customer: CustomerData, paymentMethod: string, productOwne
   };
 }
 
+function getCurrentPageUrl() {
+  return window.location.href;
+}
+
 export function useAbandonedCart({ productId, customer, paymentMethod, productOwnerId }: UseAbandonedCartProps) {
   const cartIdRef = useRef<string | null>(null);
   const purchasedRef = useRef(false);
