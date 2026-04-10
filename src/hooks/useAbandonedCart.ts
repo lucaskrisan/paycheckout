@@ -9,36 +9,48 @@ interface UseAbandonedCartProps {
   productOwnerId?: string | null;
 }
 
+/**
+ * Build a plain payload object from the current customer data.
+ */
+function buildPayload(customer: CustomerData, paymentMethod: string, productOwnerId: string | null | undefined) {
+  return {
+    customer_name: customer.name.trim() || null,
+    customer_email: customer.email.trim() || null,
+    customer_phone: customer.phone.trim() || null,
+    customer_cpf: customer.cpf.trim() || null,
+    payment_method: paymentMethod,
+    user_id: productOwnerId ?? null,
+    updated_at: new Date().toISOString(),
+  };
+}
+
 export function useAbandonedCart({ productId, customer, paymentMethod, productOwnerId }: UseAbandonedCartProps) {
   const cartIdRef = useRef<string | null>(null);
   const purchasedRef = useRef(false);
   const createdRef = useRef(false);
+  // Keep a mutable snapshot so beacon/exit handlers always see the latest values
+  const latestRef = useRef({ customer, paymentMethod, productOwnerId, productId });
+  latestRef.current = { customer, paymentMethod, productOwnerId, productId };
 
-  const hasCustomerData = Boolean(
-    customer.name.trim() ||
-    customer.email.trim() ||
-    customer.phone.trim() ||
-    customer.cpf.trim(),
+  /**
+   * Minimum viable data: at least two characters in name AND (email OR phone).
+   * This prevents creating carts on the very first keystroke.
+   */
+  const hasMinimumData = Boolean(
+    customer.name.trim().length >= 2 &&
+    (customer.email.trim().length >= 5 || customer.phone.trim().length >= 8),
   );
 
   const saveCart = useCallback(async () => {
-    if (purchasedRef.current || !productId || !productOwnerId || !hasCustomerData) return;
+    if (purchasedRef.current || !productId || !productOwnerId || !hasMinimumData) return;
 
-    const payload = {
-      customer_name: customer.name.trim() || null,
-      customer_email: customer.email.trim() || null,
-      customer_phone: customer.phone.trim() || null,
-      customer_cpf: customer.cpf.trim() || null,
-      payment_method: paymentMethod,
-      user_id: productOwnerId,
-      updated_at: new Date().toISOString(),
-    };
+    const payload = buildPayload(customer, paymentMethod, productOwnerId);
 
     try {
       const params = new URLSearchParams(window.location.search);
 
       if (cartIdRef.current) {
-        await supabase.rpc("update_abandoned_cart", {
+        const { error } = await supabase.rpc("update_abandoned_cart", {
           p_cart_id: cartIdRef.current,
           p_customer_name: payload.customer_name,
           p_customer_email: payload.customer_email,
@@ -46,6 +58,7 @@ export function useAbandonedCart({ productId, customer, paymentMethod, productOw
           p_customer_cpf: payload.customer_cpf,
           p_payment_method: payload.payment_method,
         });
+        if (error) console.error("[abandoned-cart] update failed:", error.message);
         return;
       }
 
@@ -69,44 +82,72 @@ export function useAbandonedCart({ productId, customer, paymentMethod, productOw
       if (!error) {
         cartIdRef.current = clientId;
       } else {
+        console.error("[abandoned-cart] insert failed:", error.message);
         createdRef.current = false;
       }
-    } catch {
+    } catch (e) {
+      console.error("[abandoned-cart] unexpected error:", e);
       if (!cartIdRef.current) createdRef.current = false;
     }
-  }, [customer.cpf, customer.email, customer.name, customer.phone, hasCustomerData, paymentMethod, productId, productOwnerId]);
+  }, [customer.cpf, customer.email, customer.name, customer.phone, hasMinimumData, paymentMethod, productId, productOwnerId]);
 
+  // --- Create cart when minimum data is first available ---
   useEffect(() => {
-    if (!hasCustomerData || cartIdRef.current || createdRef.current) return;
+    if (!hasMinimumData || cartIdRef.current || createdRef.current) return;
     saveCart();
-  }, [hasCustomerData, saveCart]);
+  }, [hasMinimumData, saveCart]);
 
+  // --- Debounced updates as fields change ---
   useEffect(() => {
-    if (!hasCustomerData) return;
+    if (!hasMinimumData) return;
     const timeoutId = window.setTimeout(saveCart, 400);
     return () => window.clearTimeout(timeoutId);
-  }, [customer.cpf, customer.email, customer.name, customer.phone, hasCustomerData, saveCart]);
+  }, [customer.cpf, customer.email, customer.name, customer.phone, hasMinimumData, saveCart]);
 
+  // --- Reliable page-exit saves using sendBeacon + fetch keepalive ---
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState !== "hidden") return;
-      saveCart();
+    const flushViaBeacon = () => {
+      const cartId = cartIdRef.current;
+      if (!cartId || purchasedRef.current) return;
+
+      const { customer: c, paymentMethod: pm } = latestRef.current;
+      const payload = buildPayload(c, pm, latestRef.current.productOwnerId);
+
+      // Use sendBeacon for reliable delivery on page unload
+      const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL;
+      const anonKey = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY;
+      if (!supabaseUrl || !anonKey) return;
+
+      const body = JSON.stringify({
+        p_cart_id: cartId,
+        p_customer_name: payload.customer_name,
+        p_customer_email: payload.customer_email,
+        p_customer_phone: payload.customer_phone,
+        p_customer_cpf: payload.customer_cpf,
+        p_payment_method: payload.payment_method,
+      });
+
+      const blob = new Blob([body], { type: "application/json" });
+      navigator.sendBeacon(
+        `${supabaseUrl}/rest/v1/rpc/update_abandoned_cart?apikey=${anonKey}`,
+        blob,
+      );
     };
 
-    const handlePageExit = () => {
-      saveCart();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        flushViaBeacon();
+      }
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("beforeunload", handlePageExit);
-    window.addEventListener("pagehide", handlePageExit);
+    window.addEventListener("pagehide", flushViaBeacon);
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("beforeunload", handlePageExit);
-      window.removeEventListener("pagehide", handlePageExit);
+      window.removeEventListener("pagehide", flushViaBeacon);
     };
-  }, [saveCart]);
+  }, []);
 
   const markPurchased = useCallback(async () => {
     purchasedRef.current = true;
