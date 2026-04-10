@@ -38,10 +38,16 @@ export function useAbandonedCart({ productId, customer, paymentMethod, productOw
           .eq("id", cartIdRef.current);
       } else if (!createdRef.current) {
         createdRef.current = true;
-        // Insert new cart — always with user_id
-        const { data } = await supabase
+
+        // Generate UUID client-side so we don't need .select() after insert.
+        // Anon users have no SELECT policy on abandoned_carts, which causes
+        // PostgREST to roll back the insert when .select().single() returns 0 rows.
+        const clientId = crypto.randomUUID();
+
+        const { error } = await supabase
           .from("abandoned_carts")
           .insert({
+            id: clientId,
             product_id: productId,
             customer_name: customer.name || null,
             customer_email: customer.email || null,
@@ -54,12 +60,10 @@ export function useAbandonedCart({ productId, customer, paymentMethod, productOw
             utm_content: params.get("utm_content") || null,
             utm_term: params.get("utm_term") || null,
             user_id: productOwnerId,
-          })
-          .select("id")
-          .single();
+          });
 
-        if (data) {
-          cartIdRef.current = data.id;
+        if (!error) {
+          cartIdRef.current = clientId;
         } else {
           // Allow retry if insert failed
           createdRef.current = false;
