@@ -277,6 +277,33 @@ export type Database = {
         }
         Relationships: []
       }
+      cart_recovery_settings: {
+        Row: {
+          created_at: string
+          email_delay_minutes: number
+          email_enabled: boolean
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_delay_minutes?: number
+          email_enabled?: boolean
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_delay_minutes?: number
+          email_enabled?: boolean
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       checkout_builder_configs: {
         Row: {
           created_at: string
