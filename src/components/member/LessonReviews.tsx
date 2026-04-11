@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Star, Send, MessageCircle, Clock, ThumbsUp, Heart, Reply, Bot } from "lucide-react";
+import { Star, Send, MessageCircle, Clock, ThumbsUp, Heart, Reply } from "lucide-react";
+import mariaAvatar from "@/assets/maria-avatar.png";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import type { SupabaseClient } from "@supabase/supabase-js";

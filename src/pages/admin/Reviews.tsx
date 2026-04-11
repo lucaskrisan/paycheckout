@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, CheckCircle2, XCircle, MessageCircle, Clock, Filter, Bot, Reply, Sparkles } from "lucide-react";
+import { Star, CheckCircle2, XCircle, MessageCircle, Clock, Filter, Reply, Sparkles } from "lucide-react";
+import mariaAvatar from "@/assets/maria-avatar.png";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
