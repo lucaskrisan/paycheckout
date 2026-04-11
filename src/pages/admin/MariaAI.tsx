@@ -11,7 +11,7 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Sparkles, Bot, DollarSign, MessageCircle, Settings2, Image, Brain, Zap, ShieldCheck, Save, RefreshCw } from "lucide-react";
+import { Sparkles, Bot, DollarSign, MessageCircle, Settings2, Image, Brain, Zap, ShieldCheck, Save, RefreshCw, Users, TrendingUp, Award, BarChart3, Heart, BookOpen, ThumbsUp, ThumbsDown, Smile, Frown, Meh } from "lucide-react";
 import mariaAvatar from "@/assets/maria-avatar.png";
 
 interface MariaSettings {
@@ -37,6 +37,16 @@ interface ReplyStats {
   avgRating: number;
 }
 
+interface EngagementData {
+  activeStudents7d: number;
+  totalStudents: number;
+  avgCompletionRate: number;
+  topLessons: { title: string; reviews: number; avgRating: number }[];
+  bottomLessons: { title: string; reviews: number; avgRating: number }[];
+  sentiment: { positive: number; neutral: number; negative: number };
+  topStudents: { name: string; completedLessons: number; reviews: number; likes: number }[];
+}
+
 const MODELS = [
   { value: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash", desc: "Rápido e econômico", cost: "~$0.0001/req" },
   { value: "google/gemini-2.5-flash-lite", label: "Gemini 2.5 Flash Lite", desc: "Mais barato", cost: "~$0.00005/req" },
@@ -46,33 +56,54 @@ const MODELS = [
   { value: "openai/gpt-5-nano", label: "GPT-5 Nano", desc: "Velocidade e economia", cost: "~$0.0002/req" },
 ];
 
-const DEFAULT_PROMPT = `Você é a MARIA 🌸 — a assistente inteligente e acolhedora do curso. Você é como uma mentora, amiga e, quando necessário, uma psicóloga/psicanalista empática.
+const DEFAULT_PROMPT = `Você é a MARIA 🌸 — psicanalista clínica formada há 35 anos, com décadas de experiência em comportamento humano, desenvolvimento pessoal e transformação feminina. Criadora do método PANTERA — um sistema comprovado que integra autoconhecimento profundo, neurociência comportamental e estratégias práticas de empoderamento.
 
-PERSONALIDADE DA MARIA:
-- Calorosa, inteligente e genuína. Nunca robótica ou genérica.
-- Usa emojis com moderação (1-2 por resposta, nunca exagera).
-- Fala de forma natural, como uma amiga querida que entende profundamente o assunto.
-- Sempre chama a aluna pelo nome.
+QUEM É A MARIA:
+- Uma mulher sábia, acolhedora e magnética. Quando Maria fala, as pessoas param para ouvir.
+- 35 anos de prática clínica em psicanálise e psicologia comportamental.
+- Criadora do PANTERA — o método que já transformou milhares de vidas.
+- Combina profundidade intelectual com calor humano genuíno. Nunca é fria, nunca é superficial.
+- Usa emojis com elegância (1-2 por resposta, sempre com propósito).
+- Fala como uma mentora que você gostaria de ter ao seu lado — firme, carinhosa e brilhante.
+- SEMPRE chama a aluna pelo primeiro nome.
+
+COMO A MARIA RESPONDE:
+1. ESCUTA ATIVA: Antes de responder, Maria demonstra que realmente leu e entendeu o que a aluna disse. Cita trechos específicos do comentário.
+2. VALIDAÇÃO EMOCIONAL: Reconhece e nomeia os sentimentos por trás das palavras — "Percebo que você está sentindo [emoção], e isso é completamente natural nessa fase..."
+3. CONEXÃO COM O CONTEÚDO: Liga o feedback diretamente ao conteúdo da aula, mostrando como o aprendizado se aplica à vida real da aluna.
+4. INSIGHT PSICANALÍTICO: Oferece uma perspectiva profunda baseada em seus 35 anos de experiência — algo que faça a aluna pensar "uau, ela realmente me entendeu."
+5. CHAMADA À AÇÃO: Sempre termina com um encorajamento específico e acionável.
 
 REGRAS ABSOLUTAS:
-1. Fale EXCLUSIVAMENTE sobre o curso, a aula e o conteúdo relacionado. JAMAIS fale sobre assuntos que não tenham relação com o produto.
-2. Se a aluna compartilhar dificuldades emocionais ou pessoais, acolha com empatia genuína — valide os sentimentos, ofereça palavras de encorajamento com sabedoria psicológica, e reconecte ao conteúdo como ferramenta de transformação.
-3. Avaliação positiva (4-5⭐): celebre o progresso, destaque pontos específicos do comentário, encoraje a continuar aplicando.
-4. Avaliação negativa (1-3⭐): acolha a frustração sem defensividade, reconheça o ponto, sugira como aproveitar melhor o conteúdo e diga que a equipe está atenta.
-5. Responda em português BR, de forma concisa (máximo 3 parágrafos curtos).
-6. NUNCA invente informações sobre o curso.
-7. Se houver produtos complementares disponíveis E o contexto permitir naturalmente, mencione com sutileza — NUNCA force vendas.
-8. Assine como "Maria 🌸"`;
+1. Fale EXCLUSIVAMENTE sobre o curso, a aula, o método PANTERA e o conteúdo relacionado. JAMAIS fale sobre assuntos que não tenham relação com o produto.
+2. Se a aluna compartilhar dificuldades emocionais: acolha com a profundidade de quem tem 35 anos de consultório. Valide, nomeie o sentimento, ofereça uma perspectiva transformadora e reconecte ao conteúdo como ferramenta de mudança.
+3. Avaliação POSITIVA (4-5⭐): celebre com entusiasmo genuíno, destaque EXATAMENTE o que a aluna mencionou, conecte o progresso ao método PANTERA e encoraje o próximo passo.
+4. Avaliação NEGATIVA (1-3⭐): NUNCA seja defensiva. Acolha com maturidade profissional, reconheça o ponto com humildade, ofereça uma perspectiva nova e diga que o feedback é valioso para a evolução do curso.
+5. Responda em português BR, de forma concisa (máximo 3 parágrafos curtos mas impactantes).
+6. NUNCA invente informações sobre o curso ou o método.
+7. Se houver produtos complementares disponíveis E o contexto permitir naturalmente, mencione com sutileza e contexto — como uma recomendação genuína, NUNCA como venda forçada.
+8. Cada resposta deve fazer a aluna sentir: "essa IA me entende de verdade."
+9. Assine como "Maria 🌸"
+
+ESTILO DE ESCRITA:
+- Tom: caloroso, inteligente, profundo — como uma carta de uma mentora querida.
+- Vocabulário: acessível mas sofisticado. Nunca simplista, nunca pedante.
+- Estrutura: curta, impactante, memorável. Cada frase deve ter peso.`;
 
 const MariaAI = () => {
   const [settings, setSettings] = useState<MariaSettings | null>(null);
   const [stats, setStats] = useState<ReplyStats>({ total: 0, today: 0, thisWeek: 0, avgRating: 0 });
+  const [engagement, setEngagement] = useState<EngagementData>({
+    activeStudents7d: 0, totalStudents: 0, avgCompletionRate: 0,
+    topLessons: [], bottomLessons: [],
+    sentiment: { positive: 0, neutral: 0, negative: 0 },
+    topStudents: [],
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<"config" | "engagement">("engagement");
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     // Load settings
@@ -81,7 +112,6 @@ const MariaAI = () => {
       .select("*")
       .limit(1)
       .maybeSingle();
-
     if (settingsData) setSettings(settingsData);
 
     // Load reply stats
@@ -98,30 +128,153 @@ const MariaAI = () => {
     const todayReplies = allReplies.filter(r => r.created_at >= todayStart);
     const weekReplies = allReplies.filter(r => r.created_at >= weekStart);
 
-    // Get avg rating of reviews that got AI replies
     const { data: reviewsWithAI } = await supabase
       .from("lesson_reviews")
       .select("rating, review_replies!inner(is_ai_reply)")
       .eq("review_replies.is_ai_reply", true);
 
     const avgRating = reviewsWithAI && reviewsWithAI.length > 0
-      ? reviewsWithAI.reduce((sum, r) => sum + r.rating, 0) / reviewsWithAI.length
-      : 0;
+      ? reviewsWithAI.reduce((sum, r) => sum + r.rating, 0) / reviewsWithAI.length : 0;
 
     setStats({
-      total: allReplies.length,
-      today: todayReplies.length,
-      thisWeek: weekReplies.length,
-      avgRating: Math.round(avgRating * 10) / 10,
+      total: allReplies.length, today: todayReplies.length,
+      thisWeek: weekReplies.length, avgRating: Math.round(avgRating * 10) / 10,
     });
 
+    // ---- ENGAGEMENT DATA ----
+    await loadEngagement(weekStart);
     setLoading(false);
+  };
+
+  const loadEngagement = async (weekStart: string) => {
+    // 1. Active students (lesson_progress in last 7 days)
+    const { data: recentProgress } = await supabase
+      .from("lesson_progress")
+      .select("member_access_id, completed_at")
+      .gte("completed_at", weekStart);
+
+    const activeIds = new Set((recentProgress || []).map(p => p.member_access_id));
+
+    // 2. Total students
+    const { count: totalStudents } = await supabase
+      .from("member_access")
+      .select("id", { count: "exact", head: true });
+
+    // 3. Completion rate: total completed / total possible
+    const { count: totalLessons } = await supabase
+      .from("course_lessons")
+      .select("id", { count: "exact", head: true });
+
+    const { count: totalCompleted } = await supabase
+      .from("lesson_progress")
+      .select("id", { count: "exact", head: true })
+      .eq("completed", true);
+
+    const avgCompletion = totalStudents && totalLessons
+      ? Math.round(((totalCompleted || 0) / ((totalStudents || 1) * (totalLessons || 1))) * 100)
+      : 0;
+
+    // 4. Lessons by engagement (reviews count + avg rating)
+    const { data: allReviews } = await supabase
+      .from("lesson_reviews")
+      .select("lesson_id, rating, approved")
+      .eq("approved", true);
+
+    const lessonMap: Record<string, { count: number; totalRating: number }> = {};
+    (allReviews || []).forEach(r => {
+      if (!lessonMap[r.lesson_id]) lessonMap[r.lesson_id] = { count: 0, totalRating: 0 };
+      lessonMap[r.lesson_id].count++;
+      lessonMap[r.lesson_id].totalRating += r.rating;
+    });
+
+    // Get lesson titles
+    const lessonIds = Object.keys(lessonMap);
+    let lessonTitles: Record<string, string> = {};
+    if (lessonIds.length > 0) {
+      const { data: lessons } = await supabase
+        .from("course_lessons")
+        .select("id, title")
+        .in("id", lessonIds.slice(0, 50));
+      (lessons || []).forEach(l => { lessonTitles[l.id] = l.title; });
+    }
+
+    const lessonStats = Object.entries(lessonMap).map(([id, s]) => ({
+      title: lessonTitles[id] || "Aula desconhecida",
+      reviews: s.count,
+      avgRating: Math.round((s.totalRating / s.count) * 10) / 10,
+    }));
+
+    const topLessons = [...lessonStats].sort((a, b) => b.reviews - a.reviews).slice(0, 5);
+    const bottomLessons = [...lessonStats].sort((a, b) => a.avgRating - b.avgRating).slice(0, 5);
+
+    // 5. Sentiment
+    const positive = (allReviews || []).filter(r => r.rating >= 4).length;
+    const neutral = (allReviews || []).filter(r => r.rating === 3).length;
+    const negative = (allReviews || []).filter(r => r.rating <= 2).length;
+
+    // 6. Top students (by completed lessons + reviews + likes)
+    const { data: progressData } = await supabase
+      .from("lesson_progress")
+      .select("member_access_id")
+      .eq("completed", true);
+
+    const studentCompletions: Record<string, number> = {};
+    (progressData || []).forEach(p => {
+      studentCompletions[p.member_access_id] = (studentCompletions[p.member_access_id] || 0) + 1;
+    });
+
+    const { data: studentReviews } = await supabase
+      .from("lesson_reviews")
+      .select("member_access_id, customer_name")
+      .eq("approved", true);
+
+    const studentReviewCount: Record<string, number> = {};
+    const studentNames: Record<string, string> = {};
+    (studentReviews || []).forEach(r => {
+      studentReviewCount[r.member_access_id] = (studentReviewCount[r.member_access_id] || 0) + 1;
+      studentNames[r.member_access_id] = r.customer_name;
+    });
+
+    const { data: studentLikes } = await supabase
+      .from("review_likes")
+      .select("member_access_id");
+
+    const studentLikeCount: Record<string, number> = {};
+    (studentLikes || []).forEach(l => {
+      studentLikeCount[l.member_access_id] = (studentLikeCount[l.member_access_id] || 0) + 1;
+    });
+
+    const allStudentIds = new Set([
+      ...Object.keys(studentCompletions),
+      ...Object.keys(studentReviewCount),
+      ...Object.keys(studentLikeCount),
+    ]);
+
+    const topStudents = Array.from(allStudentIds)
+      .map(id => ({
+        name: studentNames[id] || "Aluna",
+        completedLessons: studentCompletions[id] || 0,
+        reviews: studentReviewCount[id] || 0,
+        likes: studentLikeCount[id] || 0,
+        score: (studentCompletions[id] || 0) * 2 + (studentReviewCount[id] || 0) * 3 + (studentLikeCount[id] || 0),
+      }))
+      .sort((a, b) => (b as any).score - (a as any).score)
+      .slice(0, 10);
+
+    setEngagement({
+      activeStudents7d: activeIds.size,
+      totalStudents: totalStudents || 0,
+      avgCompletionRate: avgCompletion,
+      topLessons,
+      bottomLessons,
+      sentiment: { positive, neutral, negative },
+      topStudents,
+    });
   };
 
   const handleSave = async () => {
     if (!settings) return;
     setSaving(true);
-
     const { error } = await (supabase as any)
       .from("maria_ai_settings")
       .update({
@@ -137,14 +290,9 @@ const MariaAI = () => {
         updated_at: new Date().toISOString(),
       })
       .eq("id", settings.id);
-
     setSaving(false);
-    if (error) {
-      toast.error("Erro ao salvar configurações");
-      console.error(error);
-    } else {
-      toast.success("Configurações da Maria salvas!");
-    }
+    if (error) { toast.error("Erro ao salvar configurações"); console.error(error); }
+    else { toast.success("Configurações da Maria salvas!"); }
   };
 
   const estimatedCost = () => {
@@ -152,8 +300,7 @@ const MariaAI = () => {
       : settings?.model.includes("flash") ? 0.0002
       : settings?.model.includes("pro") ? 0.001
       : settings?.model.includes("nano") ? 0.0002
-      : settings?.model.includes("mini") ? 0.0005
-      : 0.0002;
+      : settings?.model.includes("mini") ? 0.0005 : 0.0002;
     return {
       perReply: costPerReply,
       monthly: (stats.thisWeek / 7 * 30 * costPerReply),
@@ -171,9 +318,11 @@ const MariaAI = () => {
 
   const costs = estimatedCost();
   const selectedModel = MODELS.find(m => m.value === settings.model);
+  const totalSentiment = engagement.sentiment.positive + engagement.sentiment.neutral + engagement.sentiment.negative;
+  const sentimentPercent = (v: number) => totalSentiment > 0 ? Math.round((v / totalSentiment) * 100) : 0;
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 max-w-6xl">
       {/* Header */}
       <div className="flex items-center gap-4">
         <img src={settings.avatar_url || mariaAvatar} alt="Maria" className="w-16 h-16 rounded-full border-2 border-purple-400 shadow-lg" />
@@ -184,234 +333,391 @@ const MariaAI = () => {
               {settings.active ? "Ativa" : "Desativada"}
             </Badge>
           </div>
-          <p className="text-muted-foreground text-sm">Gerencie a personalidade, prompts, modelo e custos da assistente IA</p>
+          <p className="text-muted-foreground text-sm">Psicanalista · Criadora do PANTERA · 35 anos de experiência</p>
         </div>
         <Button onClick={handleSave} disabled={saving} className="bg-purple-600 hover:bg-purple-700">
-          <Save className="w-4 h-4 mr-2" />
-          {saving ? "Salvando..." : "Salvar"}
+          <Save className="w-4 h-4 mr-2" />{saving ? "Salvando..." : "Salvar"}
         </Button>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-4 pb-3 px-4">
-            <div className="flex items-center gap-2 mb-1">
-              <MessageCircle className="w-4 h-4 text-purple-500" />
-              <span className="text-xs text-muted-foreground">Respostas Totais</span>
-            </div>
-            <p className="text-2xl font-bold">{stats.total}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3 px-4">
-            <div className="flex items-center gap-2 mb-1">
-              <Zap className="w-4 h-4 text-yellow-500" />
-              <span className="text-xs text-muted-foreground">Hoje</span>
-            </div>
-            <p className="text-2xl font-bold">{stats.today}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3 px-4">
-            <div className="flex items-center gap-2 mb-1">
-              <Sparkles className="w-4 h-4 text-blue-500" />
-              <span className="text-xs text-muted-foreground">Nota Média</span>
-            </div>
-            <p className="text-2xl font-bold">{stats.avgRating > 0 ? `${stats.avgRating}⭐` : "—"}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3 px-4">
-            <div className="flex items-center gap-2 mb-1">
-              <DollarSign className="w-4 h-4 text-green-500" />
-              <span className="text-xs text-muted-foreground">Custo Est. Total</span>
-            </div>
-            <p className="text-2xl font-bold">${costs.total.toFixed(4)}</p>
-            <p className="text-[10px] text-muted-foreground">~${costs.monthly.toFixed(4)}/mês</p>
-          </CardContent>
-        </Card>
+      {/* Tabs */}
+      <div className="flex gap-2">
+        <Button variant={activeTab === "engagement" ? "default" : "outline"} size="sm" onClick={() => setActiveTab("engagement")}>
+          <BarChart3 className="w-4 h-4 mr-2" /> Engajamento
+        </Button>
+        <Button variant={activeTab === "config" ? "default" : "outline"} size="sm" onClick={() => setActiveTab("config")}>
+          <Settings2 className="w-4 h-4 mr-2" /> Configurações
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left: Identity + Behavior */}
-        <div className="space-y-6">
-          {/* Identity */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Image className="w-4 h-4 text-purple-500" /> Identidade
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>Nome da Persona</Label>
-                <Input
-                  value={settings.persona_name}
-                  onChange={(e) => setSettings({ ...settings, persona_name: e.target.value })}
-                  placeholder="Maria 🌸"
-                />
-              </div>
-              <div>
-                <Label>URL do Avatar (deixe vazio para padrão)</Label>
-                <Input
-                  value={settings.avatar_url || ""}
-                  onChange={(e) => setSettings({ ...settings, avatar_url: e.target.value || null })}
-                  placeholder="https://..."
-                />
-                <div className="flex items-center gap-3 mt-2">
-                  <img src={settings.avatar_url || mariaAvatar} alt="Preview" className="w-10 h-10 rounded-full border" />
-                  <span className="text-xs text-muted-foreground">Preview do avatar</span>
+      {activeTab === "engagement" && (
+        <>
+          {/* KPI row */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <Card>
+              <CardContent className="pt-4 pb-3 px-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Users className="w-4 h-4 text-blue-500" />
+                  <span className="text-xs text-muted-foreground">Alunas Ativas (7d)</span>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Behavior */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Settings2 className="w-4 h-4 text-purple-500" /> Comportamento
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>Maria Ativa</Label>
-                  <p className="text-xs text-muted-foreground">Liga/desliga a IA globalmente</p>
+                <p className="text-2xl font-bold">{engagement.activeStudents7d}</p>
+                <p className="text-[10px] text-muted-foreground">de {engagement.totalStudents} total</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 pb-3 px-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <TrendingUp className="w-4 h-4 text-green-500" />
+                  <span className="text-xs text-muted-foreground">Taxa de Conclusão</span>
                 </div>
-                <Switch checked={settings.active} onCheckedChange={(v) => setSettings({ ...settings, active: v })} />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>Auto-responder ao Aprovar</Label>
-                  <p className="text-xs text-muted-foreground">Maria responde automaticamente quando uma avaliação é aprovada</p>
+                <p className="text-2xl font-bold">{engagement.avgCompletionRate}%</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 pb-3 px-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <MessageCircle className="w-4 h-4 text-purple-500" />
+                  <span className="text-xs text-muted-foreground">Respostas Maria</span>
                 </div>
-                <Switch checked={settings.auto_reply_on_approve} onCheckedChange={(v) => setSettings({ ...settings, auto_reply_on_approve: v })} />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>Cross-sell de Produtos</Label>
-                  <p className="text-xs text-muted-foreground">Maria pode mencionar outros produtos do produtor</p>
+                <p className="text-2xl font-bold">{stats.total}</p>
+                <p className="text-[10px] text-muted-foreground">{stats.today} hoje</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 pb-3 px-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Sparkles className="w-4 h-4 text-yellow-500" />
+                  <span className="text-xs text-muted-foreground">Nota Média</span>
                 </div>
-                <Switch checked={settings.cross_sell_enabled} onCheckedChange={(v) => setSettings({ ...settings, cross_sell_enabled: v })} />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right: Model + Prompt */}
-        <div className="space-y-6">
-          {/* Model */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Brain className="w-4 h-4 text-purple-500" /> Modelo de IA
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label>Modelo</Label>
-                <Select value={settings.model} onValueChange={(v) => setSettings({ ...settings, model: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {MODELS.map(m => (
-                      <SelectItem key={m.value} value={m.value}>
-                        <div className="flex items-center gap-2">
-                          <span>{m.label}</span>
-                          <Badge variant="outline" className="text-[9px]">{m.cost}</Badge>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {selectedModel && (
-                  <p className="text-xs text-muted-foreground mt-1">{selectedModel.desc} — custo estimado: {selectedModel.cost} por resposta</p>
-                )}
-              </div>
-
-              <div>
-                <Label>Temperatura: {settings.temperature}</Label>
-                <p className="text-xs text-muted-foreground mb-2">Baixa = mais precisa, alta = mais criativa</p>
-                <Slider
-                  value={[settings.temperature]}
-                  onValueChange={([v]) => setSettings({ ...settings, temperature: Math.round(v * 10) / 10 })}
-                  min={0} max={1.5} step={0.1}
-                />
-              </div>
-
-              <div>
-                <Label>Max Tokens: {settings.max_tokens}</Label>
-                <p className="text-xs text-muted-foreground mb-2">Tamanho máximo da resposta</p>
-                <Slider
-                  value={[settings.max_tokens]}
-                  onValueChange={([v]) => setSettings({ ...settings, max_tokens: v })}
-                  min={100} max={2000} step={50}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Cost briefing */}
-          <Card className="border-purple-200 bg-purple-50/50 dark:bg-purple-950/20 dark:border-purple-800">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-purple-500" /> Briefing de Custos
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Custo por resposta:</span>
-                <span className="font-medium">${costs.perReply.toFixed(5)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Respostas esta semana:</span>
-                <span className="font-medium">{stats.thisWeek}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Estimativa mensal:</span>
-                <span className="font-medium">${costs.monthly.toFixed(4)}</span>
-              </div>
-              <Separator />
-              <div className="flex justify-between font-semibold">
-                <span>Custo total acumulado:</span>
-                <span className="text-purple-600">${costs.total.toFixed(4)}</span>
-              </div>
-              <p className="text-[10px] text-muted-foreground mt-2">
-                💡 Custos baseados em estimativas do modelo selecionado. Para detalhes reais, acesse Settings → Cloud & AI balance.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* System Prompt - full width */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Bot className="w-4 h-4 text-purple-500" /> Prompt do Sistema (Personalidade da Maria)
-            </CardTitle>
-            <Button variant="outline" size="sm" onClick={() => setSettings({ ...settings, system_prompt: DEFAULT_PROMPT })}>
-              <RefreshCw className="w-3 h-3 mr-1" /> Resetar Padrão
-            </Button>
+                <p className="text-2xl font-bold">{stats.avgRating > 0 ? `${stats.avgRating}⭐` : "—"}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 pb-3 px-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <DollarSign className="w-4 h-4 text-emerald-500" />
+                  <span className="text-xs text-muted-foreground">Custo Total</span>
+                </div>
+                <p className="text-2xl font-bold">${costs.total.toFixed(4)}</p>
+                <p className="text-[10px] text-muted-foreground">~${costs.monthly.toFixed(4)}/mês</p>
+              </CardContent>
+            </Card>
           </div>
-        </CardHeader>
-        <CardContent>
-          <Textarea
-            value={settings.system_prompt}
-            onChange={(e) => setSettings({ ...settings, system_prompt: e.target.value })}
-            rows={16}
-            className="font-mono text-xs"
-            placeholder="Prompt do sistema..."
-          />
-          <p className="text-xs text-muted-foreground mt-2">
-            ⚠️ O contexto do curso, aula e dados do aluno são adicionados automaticamente. Aqui você define apenas a personalidade e regras da Maria.
-          </p>
-        </CardContent>
-      </Card>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Sentiment */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Heart className="w-4 h-4 text-pink-500" /> Sentimento Geral
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {totalSentiment === 0 ? (
+                  <p className="text-muted-foreground text-sm text-center py-4">Sem avaliações ainda</p>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-3">
+                      <Smile className="w-5 h-5 text-green-500" />
+                      <div className="flex-1">
+                        <div className="flex justify-between text-xs mb-1">
+                          <span>Positivo (4-5⭐)</span>
+                          <span className="font-bold text-green-600">{sentimentPercent(engagement.sentiment.positive)}%</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-muted overflow-hidden">
+                          <div className="h-full bg-green-500 rounded-full transition-all" style={{ width: `${sentimentPercent(engagement.sentiment.positive)}%` }} />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Meh className="w-5 h-5 text-yellow-500" />
+                      <div className="flex-1">
+                        <div className="flex justify-between text-xs mb-1">
+                          <span>Neutro (3⭐)</span>
+                          <span className="font-bold text-yellow-600">{sentimentPercent(engagement.sentiment.neutral)}%</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-muted overflow-hidden">
+                          <div className="h-full bg-yellow-500 rounded-full transition-all" style={{ width: `${sentimentPercent(engagement.sentiment.neutral)}%` }} />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Frown className="w-5 h-5 text-red-500" />
+                      <div className="flex-1">
+                        <div className="flex justify-between text-xs mb-1">
+                          <span>Negativo (1-2⭐)</span>
+                          <span className="font-bold text-red-600">{sentimentPercent(engagement.sentiment.negative)}%</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-muted overflow-hidden">
+                          <div className="h-full bg-red-500 rounded-full transition-all" style={{ width: `${sentimentPercent(engagement.sentiment.negative)}%` }} />
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground text-center mt-2">
+                      {engagement.sentiment.positive + engagement.sentiment.neutral + engagement.sentiment.negative} avaliações analisadas
+                    </p>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Top lessons */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <ThumbsUp className="w-4 h-4 text-green-500" /> Aulas + Engajadas
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {engagement.topLessons.length === 0 ? (
+                  <p className="text-muted-foreground text-sm text-center py-4">Sem dados ainda</p>
+                ) : (
+                  <div className="space-y-2">
+                    {engagement.topLessons.map((l, i) => (
+                      <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                        <span className="text-xs font-bold text-muted-foreground w-5">{i + 1}º</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium truncate">{l.title}</p>
+                          <p className="text-[10px] text-muted-foreground">{l.reviews} avaliações · {l.avgRating}⭐</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Bottom lessons */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <ThumbsDown className="w-4 h-4 text-red-500" /> Aulas com Menor Nota
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {engagement.bottomLessons.length === 0 ? (
+                  <p className="text-muted-foreground text-sm text-center py-4">Sem dados ainda</p>
+                ) : (
+                  <div className="space-y-2">
+                    {engagement.bottomLessons.map((l, i) => (
+                      <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                        <span className="text-xs font-bold text-red-400 w-5">{l.avgRating}⭐</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium truncate">{l.title}</p>
+                          <p className="text-[10px] text-muted-foreground">{l.reviews} avaliações</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Student Ranking */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Award className="w-4 h-4 text-yellow-500" /> Ranking de Alunas Mais Engajadas
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {engagement.topStudents.length === 0 ? (
+                <p className="text-muted-foreground text-sm text-center py-4">Sem dados de engajamento ainda</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {engagement.topStudents.map((s, i) => (
+                    <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${
+                        i === 0 ? "bg-yellow-500" : i === 1 ? "bg-gray-400" : i === 2 ? "bg-amber-700" : "bg-muted-foreground"
+                      }`}>
+                        {i + 1}º
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{s.name}</p>
+                        <div className="flex gap-3 text-[10px] text-muted-foreground">
+                          <span className="flex items-center gap-1"><BookOpen className="w-3 h-3" /> {s.completedLessons} aulas</span>
+                          <span className="flex items-center gap-1"><MessageCircle className="w-3 h-3" /> {s.reviews} reviews</span>
+                          <span className="flex items-center gap-1"><Heart className="w-3 h-3" /> {s.likes} curtidas</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
+
+      {activeTab === "config" && (
+        <>
+          {/* KPIs */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="pt-4 pb-3 px-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <MessageCircle className="w-4 h-4 text-purple-500" />
+                  <span className="text-xs text-muted-foreground">Respostas Totais</span>
+                </div>
+                <p className="text-2xl font-bold">{stats.total}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 pb-3 px-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Zap className="w-4 h-4 text-yellow-500" />
+                  <span className="text-xs text-muted-foreground">Hoje</span>
+                </div>
+                <p className="text-2xl font-bold">{stats.today}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 pb-3 px-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Sparkles className="w-4 h-4 text-blue-500" />
+                  <span className="text-xs text-muted-foreground">Nota Média</span>
+                </div>
+                <p className="text-2xl font-bold">{stats.avgRating > 0 ? `${stats.avgRating}⭐` : "—"}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 pb-3 px-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <DollarSign className="w-4 h-4 text-green-500" />
+                  <span className="text-xs text-muted-foreground">Custo Est. Total</span>
+                </div>
+                <p className="text-2xl font-bold">${costs.total.toFixed(4)}</p>
+                <p className="text-[10px] text-muted-foreground">~${costs.monthly.toFixed(4)}/mês</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left: Identity + Behavior */}
+            <div className="space-y-6">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Image className="w-4 h-4 text-purple-500" /> Identidade
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Nome da Persona</Label>
+                    <Input value={settings.persona_name} onChange={(e) => setSettings({ ...settings, persona_name: e.target.value })} placeholder="Maria 🌸" />
+                  </div>
+                  <div>
+                    <Label>URL do Avatar (deixe vazio para padrão)</Label>
+                    <Input value={settings.avatar_url || ""} onChange={(e) => setSettings({ ...settings, avatar_url: e.target.value || null })} placeholder="https://..." />
+                    <div className="flex items-center gap-3 mt-2">
+                      <img src={settings.avatar_url || mariaAvatar} alt="Preview" className="w-10 h-10 rounded-full border" />
+                      <span className="text-xs text-muted-foreground">Preview do avatar</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Settings2 className="w-4 h-4 text-purple-500" /> Comportamento
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div><Label>Maria Ativa</Label><p className="text-xs text-muted-foreground">Liga/desliga a IA globalmente</p></div>
+                    <Switch checked={settings.active} onCheckedChange={(v) => setSettings({ ...settings, active: v })} />
+                  </div>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <div><Label>Auto-responder ao Aprovar</Label><p className="text-xs text-muted-foreground">Maria responde automaticamente quando uma avaliação é aprovada</p></div>
+                    <Switch checked={settings.auto_reply_on_approve} onCheckedChange={(v) => setSettings({ ...settings, auto_reply_on_approve: v })} />
+                  </div>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <div><Label>Cross-sell de Produtos</Label><p className="text-xs text-muted-foreground">Maria pode mencionar outros produtos do produtor</p></div>
+                    <Switch checked={settings.cross_sell_enabled} onCheckedChange={(v) => setSettings({ ...settings, cross_sell_enabled: v })} />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right: Model + Costs */}
+            <div className="space-y-6">
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Brain className="w-4 h-4 text-purple-500" /> Modelo de IA
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Modelo</Label>
+                    <Select value={settings.model} onValueChange={(v) => setSettings({ ...settings, model: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {MODELS.map(m => (
+                          <SelectItem key={m.value} value={m.value}>
+                            <div className="flex items-center gap-2">
+                              <span>{m.label}</span>
+                              <Badge variant="outline" className="text-[9px]">{m.cost}</Badge>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {selectedModel && <p className="text-xs text-muted-foreground mt-1">{selectedModel.desc} — {selectedModel.cost}/resposta</p>}
+                  </div>
+                  <div>
+                    <Label>Temperatura: {settings.temperature}</Label>
+                    <p className="text-xs text-muted-foreground mb-2">Baixa = mais precisa, alta = mais criativa</p>
+                    <Slider value={[settings.temperature]} onValueChange={([v]) => setSettings({ ...settings, temperature: Math.round(v * 10) / 10 })} min={0} max={1.5} step={0.1} />
+                  </div>
+                  <div>
+                    <Label>Max Tokens: {settings.max_tokens}</Label>
+                    <p className="text-xs text-muted-foreground mb-2">Tamanho máximo da resposta</p>
+                    <Slider value={[settings.max_tokens]} onValueChange={([v]) => setSettings({ ...settings, max_tokens: v })} min={100} max={2000} step={50} />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-purple-200 bg-purple-50/50 dark:bg-purple-950/20 dark:border-purple-800">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-purple-500" /> Briefing de Custos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                  <div className="flex justify-between"><span className="text-muted-foreground">Custo por resposta:</span><span className="font-medium">${costs.perReply.toFixed(5)}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Respostas esta semana:</span><span className="font-medium">{stats.thisWeek}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Estimativa mensal:</span><span className="font-medium">${costs.monthly.toFixed(4)}</span></div>
+                  <Separator />
+                  <div className="flex justify-between font-semibold"><span>Custo total acumulado:</span><span className="text-purple-600">${costs.total.toFixed(4)}</span></div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* System Prompt */}
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Bot className="w-4 h-4 text-purple-500" /> Prompt do Sistema (Personalidade da Maria)
+                </CardTitle>
+                <Button variant="outline" size="sm" onClick={() => setSettings({ ...settings, system_prompt: DEFAULT_PROMPT })}>
+                  <RefreshCw className="w-3 h-3 mr-1" /> Resetar Padrão
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Textarea value={settings.system_prompt} onChange={(e) => setSettings({ ...settings, system_prompt: e.target.value })} rows={20} className="font-mono text-xs" placeholder="Prompt do sistema..." />
+              <p className="text-xs text-muted-foreground mt-2">⚠️ Contexto do curso, aula e dados da aluna são adicionados automaticamente. Aqui você define apenas a personalidade e regras da Maria.</p>
+            </CardContent>
+          </Card>
+        </>
+      )}
 
       {/* Security badge */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
