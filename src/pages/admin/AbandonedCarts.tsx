@@ -224,6 +224,53 @@ const AbandonedCarts = () => {
 
   return (
     <div className="space-y-4">
+      {/* Recovery Settings Card */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Mail className="w-5 h-5 text-primary" />
+            Recuperação automática por e-mail
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex items-center gap-3">
+              <Switch
+                checked={emailEnabled}
+                onCheckedChange={(checked) => {
+                  setEmailEnabled(checked);
+                  saveRecoverySetting("email_enabled", checked);
+                }}
+              />
+              <Label className="text-sm font-medium cursor-pointer">
+                Ativar recuperação por e-mail
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Label className="text-sm text-muted-foreground whitespace-nowrap">Enviar após:</Label>
+              <Select
+                value={emailDelay}
+                onValueChange={(val) => {
+                  setEmailDelay(val);
+                  saveRecoverySetting("email_delay_minutes", Number(val));
+                }}
+              >
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="15">15 min</SelectItem>
+                  <SelectItem value="30">30 min</SelectItem>
+                  <SelectItem value="60">1 hora</SelectItem>
+                  <SelectItem value="120">2 horas</SelectItem>
+                  <SelectItem value="360">6 horas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-foreground">Checkouts Abandonados</h1>
