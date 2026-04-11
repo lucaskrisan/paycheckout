@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback, memo } from "react";
-import { MessageCircle, X, Send, Loader2 } from "lucide-react";
+import { X, Send, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import ninaAvatar from "@/assets/nina-avatar.png";
 
 interface ChatMessage {
   role: "user" | "assistant";
