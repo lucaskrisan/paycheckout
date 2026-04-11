@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback, memo } from "react";
-import { MessageCircle, X, Send, Loader2 } from "lucide-react";
+import { X, Send, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import ninaAvatar from "@/assets/nina-avatar.png";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -103,13 +104,13 @@ const NinaChatWidget = memo(function NinaChatWidget({ accessToken, courseId, act
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             onClick={() => setOpen(true)}
-            className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-transform hover:scale-110"
+            className="fixed bottom-6 right-6 z-50 w-16 h-16 rounded-full shadow-2xl flex items-center justify-center transition-transform hover:scale-110 overflow-hidden border-2"
             style={{
-              backgroundImage: "linear-gradient(135deg, hsl(145,65%,42%), hsl(160,70%,36%))",
+              borderColor: "hsl(145,65%,42%)",
               boxShadow: "0 4px 20px hsla(145,65%,42%,0.4)",
             }}
           >
-            <MessageCircle className="w-6 h-6 text-white" />
+            <img src={ninaAvatar} alt="Nina" className="w-full h-full object-cover" />
             {/* Pulse ring */}
             <span className="absolute inset-0 rounded-full animate-ping opacity-20" style={{ background: "hsl(145,65%,42%)" }} />
           </motion.button>
@@ -134,8 +135,8 @@ const NinaChatWidget = memo(function NinaChatWidget({ accessToken, courseId, act
           >
             {/* Header */}
             <div className="flex items-center gap-3 px-4 py-3 border-b" style={{ borderColor: "hsl(220 15% 14%)", background: "hsl(220 18% 8%)" }}>
-              <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg" style={{ backgroundImage: "linear-gradient(135deg, hsl(145,65%,42%), hsl(160,70%,36%))" }}>
-                🐆
+              <div className="w-10 h-10 rounded-full overflow-hidden border-2 flex-shrink-0" style={{ borderColor: "hsl(145,65%,42%)" }}>
+                <img src={ninaAvatar} alt="Nina" className="w-full h-full object-cover" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-white font-bold text-sm leading-tight">{t.title}</p>
