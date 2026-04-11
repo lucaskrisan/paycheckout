@@ -135,8 +135,8 @@ const NinaChatWidget = memo(function NinaChatWidget({ accessToken, courseId, act
           >
             {/* Header */}
             <div className="flex items-center gap-3 px-4 py-3 border-b" style={{ borderColor: "hsl(220 15% 14%)", background: "hsl(220 18% 8%)" }}>
-              <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg" style={{ backgroundImage: "linear-gradient(135deg, hsl(145,65%,42%), hsl(160,70%,36%))" }}>
-                🐆
+              <div className="w-10 h-10 rounded-full overflow-hidden border-2 flex-shrink-0" style={{ borderColor: "hsl(145,65%,42%)" }}>
+                <img src={ninaAvatar} alt="Nina" className="w-full h-full object-cover" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-white font-bold text-sm leading-tight">{t.title}</p>
