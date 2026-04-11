@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, CheckCircle2, XCircle, MessageCircle, Clock, Filter, Bot, Reply, Sparkles } from "lucide-react";
+import { Star, CheckCircle2, XCircle, MessageCircle, Clock, Filter, Reply, Sparkles } from "lucide-react";
+import mariaAvatar from "@/assets/maria-avatar.png";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -177,9 +178,13 @@ const Reviews = () => {
                         <div className="mt-3 pl-10 space-y-2">
                           {r.replies.map((rep) => (
                             <div key={rep.id} className="flex gap-2 p-2.5 rounded-lg bg-muted/50 border border-border/50">
-                              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0 ${rep.is_ai_reply ? "bg-purple-600 text-white" : "bg-blue-600 text-white"}`}>
-                                {rep.is_ai_reply ? <Bot className="w-3 h-3" /> : <Reply className="w-3 h-3" />}
-                              </div>
+                              {rep.is_ai_reply ? (
+                                <img src={mariaAvatar} alt="Maria" className="w-5 h-5 rounded-full flex-shrink-0" loading="lazy" width={20} height={20} />
+                              ) : (
+                                <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0 bg-blue-600 text-white">
+                                  <Reply className="w-3 h-3" />
+                                </div>
+                              )}
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5">
                                   <span className="text-xs font-medium">{rep.author_name}</span>
@@ -197,8 +202,8 @@ const Reviews = () => {
                     <div className="flex items-center gap-2 sm:flex-shrink-0">
                       {r.approved && !hasAIReply && (
                         <Button size="sm" variant="outline" onClick={() => triggerAIReply(r.id)} disabled={generatingAI === r.id} className="text-purple-600 border-purple-300 hover:bg-purple-50">
-                          {generatingAI === r.id ? <span className="animate-spin">⏳</span> : <Bot className="w-4 h-4 mr-1" />}
-                          Gerar IA
+                          {generatingAI === r.id ? <span className="animate-spin">⏳</span> : <img src={mariaAvatar} alt="Maria" className="w-4 h-4 rounded-full inline" />}
+                          Maria IA
                         </Button>
                       )}
                       {!r.approved && (

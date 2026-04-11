@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Star, Send, MessageCircle, Clock, ThumbsUp, Heart, Reply, Bot } from "lucide-react";
+import { Star, Send, MessageCircle, Clock, ThumbsUp, Heart, Reply } from "lucide-react";
+import mariaAvatar from "@/assets/maria-avatar.png";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -181,14 +182,16 @@ export default function LessonReviews({ lessonId, memberAccessId, customerName, 
                     <div className="border-t px-4 py-3 space-y-3" style={{ borderColor: "hsl(220,15%,18%)", background: "hsl(220,18%,12%)" }}>
                       {reviewReplies.map((reply) => (
                         <div key={reply.id} className="flex gap-2">
-                          <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5" style={{
-                            backgroundImage: reply.is_ai_reply
-                              ? "linear-gradient(135deg, hsl(260,70%,50%), hsl(290,65%,45%))"
-                              : "linear-gradient(135deg, hsl(200,60%,40%), hsl(220,55%,35%))",
-                            color: "white"
-                          }}>
-                            {reply.is_ai_reply ? <Bot className="w-3.5 h-3.5" /> : reply.author_name.charAt(0).toUpperCase()}
-                          </div>
+                          {reply.is_ai_reply ? (
+                            <img src={mariaAvatar} alt="Maria" className="w-6 h-6 rounded-full flex-shrink-0 mt-0.5" loading="lazy" width={24} height={24} />
+                          ) : (
+                            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5" style={{
+                              backgroundImage: "linear-gradient(135deg, hsl(200,60%,40%), hsl(220,55%,35%))",
+                              color: "white"
+                            }}>
+                              {reply.author_name.charAt(0).toUpperCase()}
+                            </div>
+                          )}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <span className="text-white text-xs font-medium">{reply.author_name}</span>
