@@ -17,7 +17,6 @@ import {
   ShieldCheck,
   ShieldBan,
   Webhook,
-  Mail,
   Smartphone,
   Globe,
   Zap,
@@ -26,9 +25,9 @@ import {
   Key,
   Activity,
   TrendingUp,
-  Megaphone,
   Tag,
   ClipboardList,
+  Sparkles,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -105,6 +104,7 @@ const configSuperAdminOnly = [
 // 6. SUPER ADMIN — visível apenas para super_admin
 const superAdminItems = [
   { title: "WhatsApp", url: "/admin/whatsapp", icon: MessageSquare },
+  { title: "Maria IA", url: "/admin/reviews", icon: Sparkles },
   { title: "Revisão Produtos", url: "/admin/product-review", icon: ShieldCheck },
   { title: "Verificação Produtores", url: "/admin/verification-review", icon: User },
   { title: "Painel Plataforma", url: "/admin/platform", icon: Crown },
