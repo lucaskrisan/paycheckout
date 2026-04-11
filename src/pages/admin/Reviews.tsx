@@ -142,6 +142,21 @@ const Reviews = () => {
             <SelectItem value="all">Todas</SelectItem>
           </SelectContent>
         </Select>
+        {unrepliedCount > 0 && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleBatchAIReply}
+            disabled={batchReplying}
+            className="ml-auto text-purple-600 border-purple-300 hover:bg-purple-50"
+          >
+            {batchReplying ? (
+              <><span className="animate-spin mr-1">⏳</span>Respondendo...</>
+            ) : (
+              <><Sparkles className="w-4 h-4 mr-1" />Nina: Responder {unrepliedCount} pendente{unrepliedCount > 1 ? "s" : ""}</>
+            )}
+          </Button>
+        )}
       </div>
 
       {loading ? (
