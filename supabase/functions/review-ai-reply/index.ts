@@ -83,21 +83,28 @@ Deno.serve(async (req) => {
     const studentName = review.customer_name || "Aluna";
     const studentComment = review.comment || "";
     const studentRating = review.rating;
-    const personaName = ninaSettings.persona_name || "Nina 🐆";
+    const personaName = ninaSettings.persona_name || "Nina";
 
     // Build system prompt from settings + dynamic context
-    const basePrompt = ninaSettings.system_prompt || "Você é a NINA 🐆";
+    const basePrompt = ninaSettings.system_prompt || "Você é a Nina";
     const systemPrompt = `${basePrompt}
 
-CONTEXTO DO CURSO (adicionado automaticamente):
+CONTEXTO (automático):
 - Curso: "${courseName}"
 - Descrição: ${courseDesc}
-- Aula avaliada: "${lessonName}"
-- Assine como "${personaName}"${crossSellInfo}`;
+- Aula avaliada: "${lessonName}"${crossSellInfo}
+
+REGRAS PARA RESPOSTA À AVALIAÇÃO:
+1. Responda ao que a aluna DISSE especificamente. Não generalize.
+2. Máximo 2-3 frases curtas e impactantes. Sem enrolação.
+3. NUNCA assine a mensagem. NUNCA coloque nome no final.
+4. NUNCA use tom de IA: nada de "Fico feliz!", "Excelente!", "Estou aqui para você!".
+5. Fale como pessoa real — natural, direto, com calor humano genuíno.
+6. Máximo 1 emoji por resposta, só se fizer sentido.`;
 
     const userMessage = `A aluna "${studentName}" avaliou a aula "${lessonName}" com ${studentRating}/5 estrelas e comentou: "${studentComment}"
 
-Gere uma resposta como ${personaName}.`;
+Responda de forma curta e humana.`;
 
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) {
