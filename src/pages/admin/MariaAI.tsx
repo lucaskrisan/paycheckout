@@ -11,7 +11,7 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Sparkles, Bot, DollarSign, MessageCircle, Settings2, Image, Brain, Zap, ShieldCheck, Save, RefreshCw, Users, TrendingUp, Award, BarChart3, Heart, BookOpen, ThumbsUp, ThumbsDown, Smile, Frown, Meh } from "lucide-react";
+import { Sparkles, Bot, DollarSign, MessageCircle, Settings2, Image, Brain, Zap, Save, RefreshCw, Users, TrendingUp, Award, BarChart3, Heart, BookOpen, ThumbsUp, ThumbsDown, Smile, Frown, Meh } from "lucide-react";
 import ninaAvatar from "@/assets/nina-avatar.png";
 
 interface NinaSettings {
@@ -107,7 +107,7 @@ const MariaAI = () => {
 
   const loadData = async () => {
     // Load settings
-    const { data: settingsData } = await (supabase as any)
+    const { data: settingsData } = await supabase
       .from("maria_ai_settings")
       .select("*")
       .limit(1)
@@ -268,7 +268,7 @@ const MariaAI = () => {
   const handleSave = async () => {
     if (!settings) return;
     setSaving(true);
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from("maria_ai_settings")
       .update({
         persona_name: settings.persona_name,

@@ -74,7 +74,7 @@ const SocialProof = () => (
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
         >
-          "Migrei da Hotmart pro PanteraPay e minhas vendas{" "}
+          "Migrei para o PanteraPay e minhas vendas{" "}
           <span className="text-primary font-semibold">subiram 47% no primeiro mês.</span>{" "}
           Nunca mais volto." — <span className="text-white/80 font-medium">@rodrigo.mkt</span>
         </motion.p>
