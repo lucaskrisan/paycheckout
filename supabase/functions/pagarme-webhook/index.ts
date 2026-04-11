@@ -252,6 +252,27 @@ Deno.serve(async (req) => {
         console.error('[pagarme-webhook] CAPI fallback error (non-blocking):', capiErr);
       }
 
+      // --- Mark abandoned carts as recovered ---
+      try {
+        const { data: recoverCust } = await supabase
+          .from('customers')
+          .select('email')
+          .eq('id', orderData.customer_id)
+          .maybeSingle();
+
+        if (recoverCust?.email) {
+          await supabase
+            .from('abandoned_carts')
+            .update({ recovered: true })
+            .eq('product_id', orderData.product_id)
+            .eq('customer_email', recoverCust.email)
+            .eq('recovered', false);
+        }
+      } catch (recoverErr) {
+        console.error('[pagarme-webhook] Cart recovery mark error (non-blocking):', recoverErr);
+      }
+
+
       // --- Member access (main product + bump products) ---
       // Only create member access if product delivery_method is 'panttera'
       try {

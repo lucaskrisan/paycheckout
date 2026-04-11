@@ -28,7 +28,10 @@ export function useAbandonedCart({ productId, customer, paymentMethod, productOw
   const latestRef = useRef({ customer, paymentMethod, productOwnerId, productId });
   latestRef.current = { customer, paymentMethod, productOwnerId, productId };
 
-  const hasMinimumData = Boolean(customer.email.trim().length >= 5);
+  const hasMinimumData = Boolean(
+    customer.email.trim().length >= 5 ||
+    customer.phone.trim().length >= 8
+  );
 
   const saveCart = useCallback(async () => {
     if (purchasedRef.current || !productId || !productOwnerId || !hasMinimumData) return;

@@ -376,6 +376,18 @@ async function processOrder(
         .single();
 
       if (custData) {
+        // Mark abandoned carts as recovered
+        try {
+          await supabase
+            .from('abandoned_carts')
+            .update({ recovered: true })
+            .eq('product_id', orderData.product_id)
+            .eq('customer_email', custData.email)
+            .eq('recovered', false);
+        } catch (recoverErr) {
+          console.error('[stripe-webhook] Cart recovery mark error (non-blocking):', recoverErr);
+        }
+
         await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/facebook-capi`, {
           method: 'POST',
           headers: {
