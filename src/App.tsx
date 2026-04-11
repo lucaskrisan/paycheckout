@@ -127,6 +127,7 @@ const App = () => (
                 <Route path="courses" element={<Courses />} />
                 <Route path="coupons" element={<Coupons />} />
                 <Route path="abandoned" element={<AbandonedCarts />} />
+                <Route path="abandoned-carts/:id" element={<AbandonedCartDetail />} />
                 <Route path="integrations" element={<Integrations />} />
                 <Route path="gateway-management" element={<GatewayManagement />} />
                 
