@@ -72,20 +72,26 @@ const Reviews = () => {
     if (error) { toast.error("Erro ao aprovar avaliação"); return; }
     toast.success("Avaliação aprovada e publicada!");
     setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, approved: true } : r)));
-    // Check if auto-reply is enabled
-    const { data: mariaSettings } = await (supabase as any).from("maria_ai_settings").select("auto_reply_on_approve, active").limit(1).maybeSingle();
-    if (mariaSettings?.active && mariaSettings?.auto_reply_on_approve) {
-      triggerAIReply(id);
+    // Always try auto-reply - check settings and trigger
+    try {
+      const { data: ninaSettings } = await supabase.from("maria_ai_settings").select("auto_reply_on_approve, active").limit(1).maybeSingle();
+      if (ninaSettings?.active && ninaSettings?.auto_reply_on_approve) {
+        triggerAIReply(id);
+      }
+    } catch (e) {
+      console.error("Failed to check Nina settings:", e);
     }
   };
 
   const triggerAIReply = async (reviewId: string) => {
     setGeneratingAI(reviewId);
     try {
-      const { error } = await supabase.functions.invoke("review-ai-reply", { body: { review_id: reviewId } });
-      if (error) console.error("AI reply error:", error);
-      else { toast.success("🤖 Resposta da IA gerada!"); loadReviews(); }
-    } catch (e) { console.error(e); }
+      const { data, error } = await supabase.functions.invoke("review-ai-reply", { body: { review_id: reviewId } });
+      if (error) { console.error("AI reply error:", error); toast.error("Erro ao gerar resposta da Nina"); }
+      else if (data?.success) { toast.success("🐆 Nina respondeu!"); await loadReviews(); }
+      else if (data?.skipped) { toast.info("Nina já respondeu esta avaliação"); }
+      else { toast.error("Erro inesperado ao gerar resposta"); }
+    } catch (e) { console.error(e); toast.error("Erro de conexão"); }
     setGeneratingAI(null);
   };
 
@@ -219,7 +225,7 @@ const Reviews = () => {
                           {r.replies.map((rep) => (
                             <div key={rep.id} className="flex gap-2 p-2.5 rounded-lg bg-muted/50 border border-border/50">
                               {rep.is_ai_reply ? (
-                                <img src={mariaAvatar} alt="Maria" className="w-5 h-5 rounded-full flex-shrink-0" loading="lazy" width={20} height={20} />
+                                <img src={mariaAvatar} alt="Nina" className="w-5 h-5 rounded-full flex-shrink-0" loading="lazy" width={20} height={20} />
                               ) : (
                                 <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0 bg-blue-600 text-white">
                                   <Reply className="w-3 h-3" />
@@ -242,8 +248,8 @@ const Reviews = () => {
                     <div className="flex items-center gap-2 sm:flex-shrink-0">
                       {r.approved && !hasAIReply && (
                         <Button size="sm" variant="outline" onClick={() => triggerAIReply(r.id)} disabled={generatingAI === r.id} className="text-purple-600 border-purple-300 hover:bg-purple-50">
-                          {generatingAI === r.id ? <span className="animate-spin">⏳</span> : <img src={mariaAvatar} alt="Maria" className="w-4 h-4 rounded-full inline" />}
-                          Maria IA
+                          {generatingAI === r.id ? <span className="animate-spin">⏳</span> : <Sparkles className="w-4 h-4 mr-1" />}
+                          Nina
                         </Button>
                       )}
                       {!r.approved && (
