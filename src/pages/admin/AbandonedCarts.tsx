@@ -6,15 +6,19 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import {
   Download, ChevronRight, ChevronLeft, ChevronsLeft, ChevronsRight,
-  Filter, Search, ShoppingBag, MessageCircle,
+  Filter, Search, ShoppingBag, MessageCircle, Mail,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
-
+import { toast } from "sonner";
 
 interface AbandonedCart {
   id: string;
@@ -40,6 +44,9 @@ const AbandonedCarts = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
 
+  // Recovery settings
+  const [emailEnabled, setEmailEnabled] = useState(true);
+  const [emailDelay, setEmailDelay] = useState("30");
 
   // Filters
   const [filterRecovered, setFilterRecovered] = useState<boolean[]>([]);
@@ -48,6 +55,40 @@ const AbandonedCarts = () => {
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [datePickerOpen, setDatePickerOpen] = useState<"from" | "to" | null>(null);
 
+  // Load recovery settings
+  useEffect(() => {
+    const loadSettings = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("cart_recovery_settings")
+        .select("email_enabled, email_delay_minutes")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (data) {
+        setEmailEnabled(data.email_enabled);
+        setEmailDelay(String(data.email_delay_minutes));
+      }
+    };
+    loadSettings();
+  }, []);
+
+  const saveRecoverySetting = async (field: "email_enabled" | "email_delay_minutes", value: boolean | number) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const payload = {
+      user_id: user.id,
+      [field]: value,
+    };
+    const { error } = await supabase
+      .from("cart_recovery_settings")
+      .upsert(payload, { onConflict: "user_id" });
+    if (error) {
+      toast.error("Erro ao salvar configuração");
+    } else {
+      toast.success("Configuração salva!");
+    }
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -183,6 +224,53 @@ const AbandonedCarts = () => {
 
   return (
     <div className="space-y-4">
+      {/* Recovery Settings Card */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Mail className="w-5 h-5 text-primary" />
+            Recuperação automática por e-mail
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex items-center gap-3">
+              <Switch
+                checked={emailEnabled}
+                onCheckedChange={(checked) => {
+                  setEmailEnabled(checked);
+                  saveRecoverySetting("email_enabled", checked);
+                }}
+              />
+              <Label className="text-sm font-medium cursor-pointer">
+                Ativar recuperação por e-mail
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Label className="text-sm text-muted-foreground whitespace-nowrap">Enviar após:</Label>
+              <Select
+                value={emailDelay}
+                onValueChange={(val) => {
+                  setEmailDelay(val);
+                  saveRecoverySetting("email_delay_minutes", Number(val));
+                }}
+              >
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="15">15 min</SelectItem>
+                  <SelectItem value="30">30 min</SelectItem>
+                  <SelectItem value="60">1 hora</SelectItem>
+                  <SelectItem value="120">2 horas</SelectItem>
+                  <SelectItem value="360">6 horas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-foreground">Checkouts Abandonados</h1>
