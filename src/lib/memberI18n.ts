@@ -155,6 +155,8 @@ const pt: MemberTranslations = {
   yourReview: "Sua avaliação",
   awaitingApproval: "Aguardando aprovação",
   published: "Publicada",
+  replyAction: "Responder",
+  writeReply: "Escreva uma resposta...",
 
   otherCourses: "Outros Cursos",
   expandKnowledge: "Expanda seu conhecimento",
@@ -246,6 +248,8 @@ const en: MemberTranslations = {
   yourReview: "Your review",
   awaitingApproval: "Awaiting approval",
   published: "Published",
+  replyAction: "Reply",
+  writeReply: "Write a reply...",
 
   otherCourses: "Other Courses",
   expandKnowledge: "Expand your knowledge",
