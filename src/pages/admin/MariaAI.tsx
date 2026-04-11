@@ -107,7 +107,7 @@ const MariaAI = () => {
 
   const loadData = async () => {
     // Load settings
-    const { data: settingsData } = await (supabase as any)
+    const { data: settingsData } = await supabase
       .from("maria_ai_settings")
       .select("*")
       .limit(1)
@@ -268,7 +268,7 @@ const MariaAI = () => {
   const handleSave = async () => {
     if (!settings) return;
     setSaving(true);
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from("maria_ai_settings")
       .update({
         persona_name: settings.persona_name,

@@ -143,7 +143,12 @@ const Reviews = () => {
       if (total > 0) {
         toast.success(`🐆 Nina está respondendo ${total} avaliação(ões) em background!`);
         // Poll for completion
-        setTimeout(() => { loadReviews(); setBatchReplying(false); }, total * 4000);
+        // Poll periodically until done
+        const pollInterval = setInterval(async () => {
+          await loadReviews();
+          setBatchReplying(false);
+          clearInterval(pollInterval);
+        }, Math.min(total * 3000, 30000));
       } else {
         toast.info("Todas as avaliações já foram respondidas!");
         setBatchReplying(false);

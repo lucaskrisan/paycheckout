@@ -45,7 +45,7 @@ const NinaChatWidget = memo(function NinaChatWidget({ accessToken, courseId, act
       setMessages([{ role: "assistant", content: t.greeting }]);
       setHasGreeted(true);
     }
-  }, [open, hasGreeted]);
+  }, [open, hasGreeted, t.greeting]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
