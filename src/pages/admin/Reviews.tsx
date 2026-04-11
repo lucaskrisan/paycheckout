@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Star, CheckCircle2, XCircle, MessageCircle, Clock, Filter, Reply, Sparkles } from "lucide-react";
-import mariaAvatar from "@/assets/maria-avatar.png";
+import ninaAvatar from "@/assets/nina-avatar.png";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -225,7 +225,7 @@ const Reviews = () => {
                           {r.replies.map((rep) => (
                             <div key={rep.id} className="flex gap-2 p-2.5 rounded-lg bg-muted/50 border border-border/50">
                               {rep.is_ai_reply ? (
-                                <img src={mariaAvatar} alt="Nina" className="w-5 h-5 rounded-full flex-shrink-0" loading="lazy" width={20} height={20} />
+                                <img src={ninaAvatar} alt="Nina" className="w-5 h-5 rounded-full flex-shrink-0" loading="lazy" width={20} height={20} />
                               ) : (
                                 <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0 bg-blue-600 text-white">
                                   <Reply className="w-3 h-3" />
