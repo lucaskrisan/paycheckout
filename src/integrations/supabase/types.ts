@@ -16,17 +16,25 @@ export type Database = {
     Tables: {
       abandoned_carts: {
         Row: {
+          checkout_step: string | null
+          checkout_url: string | null
           created_at: string
           customer_cpf: string | null
           customer_email: string | null
           customer_name: string | null
           customer_phone: string | null
+          email_recovery_sent_at: string | null
+          email_recovery_status: string | null
           id: string
+          ip_address: string | null
+          notes: string | null
           page_url: string | null
           payment_method: string | null
           product_id: string
+          product_price: number | null
           recovered: boolean
           updated_at: string
+          user_agent: string | null
           user_id: string | null
           utm_campaign: string | null
           utm_content: string | null
@@ -35,17 +43,25 @@ export type Database = {
           utm_term: string | null
         }
         Insert: {
+          checkout_step?: string | null
+          checkout_url?: string | null
           created_at?: string
           customer_cpf?: string | null
           customer_email?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          email_recovery_sent_at?: string | null
+          email_recovery_status?: string | null
           id?: string
+          ip_address?: string | null
+          notes?: string | null
           page_url?: string | null
           payment_method?: string | null
           product_id: string
+          product_price?: number | null
           recovered?: boolean
           updated_at?: string
+          user_agent?: string | null
           user_id?: string | null
           utm_campaign?: string | null
           utm_content?: string | null
@@ -54,17 +70,25 @@ export type Database = {
           utm_term?: string | null
         }
         Update: {
+          checkout_step?: string | null
+          checkout_url?: string | null
           created_at?: string
           customer_cpf?: string | null
           customer_email?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          email_recovery_sent_at?: string | null
+          email_recovery_status?: string | null
           id?: string
+          ip_address?: string | null
+          notes?: string | null
           page_url?: string | null
           payment_method?: string | null
           product_id?: string
+          product_price?: number | null
           recovered?: boolean
           updated_at?: string
+          user_agent?: string | null
           user_id?: string | null
           utm_campaign?: string | null
           utm_content?: string | null
