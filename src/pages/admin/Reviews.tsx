@@ -116,6 +116,7 @@ const Reviews = () => {
   });
 
   const pendingCount = reviews.filter((r) => !r.approved).length;
+  const unrepliedCount = reviews.filter((r) => r.approved && !r.replies?.some(rep => rep.is_ai_reply)).length;
 
   return (
     <div className="space-y-6">
