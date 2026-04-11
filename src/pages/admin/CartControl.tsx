@@ -1,7 +1,5 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -13,7 +11,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { toast } from "sonner";
 
 const DELAY_OPTIONS = [
   { value: "15", label: "15 minutos" },
@@ -59,9 +56,6 @@ const CartControl = () => {
   const [recentRecoveries, setRecentRecoveries] = useState<RecentRecovery[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Global settings (super admin override)
-  const [globalEnabled, setGlobalEnabled] = useState(true);
-  const [globalDelay, setGlobalDelay] = useState("30");
 
   useEffect(() => {
     if (!isSuperAdmin) return;
