@@ -73,7 +73,7 @@ const ProductReview = lazy(() => import("./pages/admin/ProductReview"));
 const WhatsApp = lazy(() => import("./pages/admin/WhatsApp"));
 const VerificationReview = lazy(() => import("./pages/admin/VerificationReview"));
 const Analytics = lazy(() => import("./pages/admin/Analytics"));
-
+const MariaAI = lazy(() => import("./pages/admin/MariaAI"));
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
     <Loader2 className="w-8 h-8 animate-spin text-primary" />
