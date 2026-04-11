@@ -9,9 +9,6 @@ interface UseAbandonedCartProps {
   productOwnerId?: string | null;
 }
 
-/**
- * Build a plain payload object from the current customer data.
- */
 function buildPayload(customer: CustomerData, paymentMethod: string, productOwnerId: string | null | undefined) {
   return {
     customer_name: customer.name.trim() || null,
@@ -24,25 +21,14 @@ function buildPayload(customer: CustomerData, paymentMethod: string, productOwne
   };
 }
 
-function getCurrentPageUrl() {
-  return window.location.href;
-}
-
 export function useAbandonedCart({ productId, customer, paymentMethod, productOwnerId }: UseAbandonedCartProps) {
   const cartIdRef = useRef<string | null>(null);
   const purchasedRef = useRef(false);
   const createdRef = useRef(false);
-  // Keep a mutable snapshot so beacon/exit handlers always see the latest values
   const latestRef = useRef({ customer, paymentMethod, productOwnerId, productId });
   latestRef.current = { customer, paymentMethod, productOwnerId, productId };
 
-  /**
-   * Minimum viable data: valid email (5+ chars) is enough to create the cart.
-   * Name and phone will be captured via debounced updates.
-   */
-  const hasMinimumData = Boolean(
-    customer.email.trim().length >= 5,
-  );
+  const hasMinimumData = Boolean(customer.email.trim().length >= 5);
 
   const saveCart = useCallback(async () => {
     if (purchasedRef.current || !productId || !productOwnerId || !hasMinimumData) return;
@@ -75,7 +61,10 @@ export function useAbandonedCart({ productId, customer, paymentMethod, productOw
           id: clientId,
           product_id: productId,
           ...payload,
-          page_url: getCurrentPageUrl(),
+          page_url: window.location.href,
+          checkout_url: window.location.href,
+          user_agent: navigator.userAgent,
+          checkout_step: "opened",
           utm_source: params.get("utm_source") || null,
           utm_medium: params.get("utm_medium") || null,
           utm_campaign: params.get("utm_campaign") || null,
@@ -108,7 +97,7 @@ export function useAbandonedCart({ productId, customer, paymentMethod, productOw
     return () => window.clearTimeout(timeoutId);
   }, [customer.cpf, customer.email, customer.name, customer.phone, hasMinimumData, saveCart]);
 
-  // --- Reliable page-exit saves using sendBeacon + fetch keepalive ---
+  // --- Reliable page-exit saves using sendBeacon ---
   useEffect(() => {
     const flushViaBeacon = () => {
       const cartId = cartIdRef.current;
@@ -117,7 +106,6 @@ export function useAbandonedCart({ productId, customer, paymentMethod, productOw
       const { customer: c, paymentMethod: pm } = latestRef.current;
       const payload = buildPayload(c, pm, latestRef.current.productOwnerId);
 
-      // Use sendBeacon for reliable delivery on page unload
       const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL;
       const anonKey = (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY;
       if (!supabaseUrl || !anonKey) return;
@@ -164,7 +152,6 @@ export function useAbandonedCart({ productId, customer, paymentMethod, productOw
         .eq("id", cartIdRef.current);
     }
 
-    // Fallback: mark by product + email if cartIdRef was lost (fast purchase / remount)
     const email = c.email.trim();
     if (email && pid) {
       await supabase
@@ -176,5 +163,18 @@ export function useAbandonedCart({ productId, customer, paymentMethod, productOw
     }
   }, []);
 
-  return { markPurchased };
+  const markStep = useCallback(async (step: string) => {
+    const cartId = cartIdRef.current;
+    if (!cartId || purchasedRef.current) return;
+    try {
+      await supabase
+        .from("abandoned_carts")
+        .update({ checkout_step: step, updated_at: new Date().toISOString() } as any)
+        .eq("id", cartId);
+    } catch (e) {
+      console.error("[abandoned-cart] markStep error:", e);
+    }
+  }, []);
+
+  return { markPurchased, markStep };
 }
