@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { Sparkles, Bot, DollarSign, MessageCircle, Settings2, Image, Brain, Zap, ShieldCheck, Save, RefreshCw, Users, TrendingUp, Award, BarChart3, Heart, BookOpen, ThumbsUp, ThumbsDown, Smile, Frown, Meh } from "lucide-react";
 import mariaAvatar from "@/assets/maria-avatar.png";
 
-interface MariaSettings {
+interface NinaSettings {
   id: string;
   avatar_url: string | null;
   persona_name: string;
@@ -56,10 +56,10 @@ const MODELS = [
   { value: "openai/gpt-5-nano", label: "GPT-5 Nano", desc: "Velocidade e economia", cost: "~$0.0002/req" },
 ];
 
-const DEFAULT_PROMPT = `Você é a MARIA 🌸 — psicanalista clínica formada há 35 anos, com décadas de experiência em comportamento humano, desenvolvimento pessoal e transformação feminina. Criadora do método PANTERA — um sistema comprovado que integra autoconhecimento profundo, neurociência comportamental e estratégias práticas de empoderamento.
+const DEFAULT_PROMPT = `Você é a NINA 🐆 — psicanalista clínica formada há 35 anos, com décadas de experiência em comportamento humano, desenvolvimento pessoal e transformação feminina. Criadora do método PANTERA — um sistema comprovado que integra autoconhecimento profundo, neurociência comportamental e estratégias práticas de empoderamento.
 
-QUEM É A MARIA:
-- Uma mulher sábia, acolhedora e magnética. Quando Maria fala, as pessoas param para ouvir.
+QUEM É A NINA:
+- Uma mulher sábia, acolhedora e magnética. Quando Nina fala, as pessoas param para ouvir.
 - 35 anos de prática clínica em psicanálise e psicologia comportamental.
 - Criadora do PANTERA — o método que já transformou milhares de vidas.
 - Combina profundidade intelectual com calor humano genuíno. Nunca é fria, nunca é superficial.
@@ -67,8 +67,8 @@ QUEM É A MARIA:
 - Fala como uma mentora que você gostaria de ter ao seu lado — firme, carinhosa e brilhante.
 - SEMPRE chama a aluna pelo primeiro nome.
 
-COMO A MARIA RESPONDE:
-1. ESCUTA ATIVA: Antes de responder, Maria demonstra que realmente leu e entendeu o que a aluna disse. Cita trechos específicos do comentário.
+COMO A NINA RESPONDE:
+1. ESCUTA ATIVA: Antes de responder, Nina demonstra que realmente leu e entendeu o que a aluna disse. Cita trechos específicos do comentário.
 2. VALIDAÇÃO EMOCIONAL: Reconhece e nomeia os sentimentos por trás das palavras — "Percebo que você está sentindo [emoção], e isso é completamente natural nessa fase..."
 3. CONEXÃO COM O CONTEÚDO: Liga o feedback diretamente ao conteúdo da aula, mostrando como o aprendizado se aplica à vida real da aluna.
 4. INSIGHT PSICANALÍTICO: Oferece uma perspectiva profunda baseada em seus 35 anos de experiência — algo que faça a aluna pensar "uau, ela realmente me entendeu."
@@ -83,15 +83,15 @@ REGRAS ABSOLUTAS:
 6. NUNCA invente informações sobre o curso ou o método.
 7. Se houver produtos complementares disponíveis E o contexto permitir naturalmente, mencione com sutileza e contexto — como uma recomendação genuína, NUNCA como venda forçada.
 8. Cada resposta deve fazer a aluna sentir: "essa IA me entende de verdade."
-9. Assine como "Maria 🌸"
+9. Assine como "Nina 🐆"
 
 ESTILO DE ESCRITA:
 - Tom: caloroso, inteligente, profundo — como uma carta de uma mentora querida.
-- Vocabulário: acessível mas sofisticado. Nunca simplista, nunca pedante.
+- Vocabulário: acessível mas sofisticado. Nunca simplista, nunca é pedante.
 - Estrutura: curta, impactante, memorável. Cada frase deve ter peso.`;
 
 const MariaAI = () => {
-  const [settings, setSettings] = useState<MariaSettings | null>(null);
+  const [settings, setSettings] = useState<NinaSettings | null>(null);
   const [stats, setStats] = useState<ReplyStats>({ total: 0, today: 0, thisWeek: 0, avgRating: 0 });
   const [engagement, setEngagement] = useState<EngagementData>({
     activeStudents7d: 0, totalStudents: 0, avgCompletionRate: 0,
@@ -147,7 +147,6 @@ const MariaAI = () => {
   };
 
   const loadEngagement = async (weekStart: string) => {
-    // 1. Active students (lesson_progress in last 7 days)
     const { data: recentProgress } = await supabase
       .from("lesson_progress")
       .select("member_access_id, completed_at")
@@ -155,12 +154,10 @@ const MariaAI = () => {
 
     const activeIds = new Set((recentProgress || []).map(p => p.member_access_id));
 
-    // 2. Total students
     const { count: totalStudents } = await supabase
       .from("member_access")
       .select("id", { count: "exact", head: true });
 
-    // 3. Completion rate: total completed / total possible
     const { count: totalLessons } = await supabase
       .from("course_lessons")
       .select("id", { count: "exact", head: true });
@@ -174,7 +171,6 @@ const MariaAI = () => {
       ? Math.round(((totalCompleted || 0) / ((totalStudents || 1) * (totalLessons || 1))) * 100)
       : 0;
 
-    // 4. Lessons by engagement (reviews count + avg rating)
     const { data: allReviews } = await supabase
       .from("lesson_reviews")
       .select("lesson_id, rating, approved")
@@ -187,7 +183,6 @@ const MariaAI = () => {
       lessonMap[r.lesson_id].totalRating += r.rating;
     });
 
-    // Get lesson titles
     const lessonIds = Object.keys(lessonMap);
     let lessonTitles: Record<string, string> = {};
     if (lessonIds.length > 0) {
@@ -207,12 +202,10 @@ const MariaAI = () => {
     const topLessons = [...lessonStats].sort((a, b) => b.reviews - a.reviews).slice(0, 5);
     const bottomLessons = [...lessonStats].sort((a, b) => a.avgRating - b.avgRating).slice(0, 5);
 
-    // 5. Sentiment
     const positive = (allReviews || []).filter(r => r.rating >= 4).length;
     const neutral = (allReviews || []).filter(r => r.rating === 3).length;
     const negative = (allReviews || []).filter(r => r.rating <= 2).length;
 
-    // 6. Top students (by completed lessons + reviews + likes)
     const { data: progressData } = await supabase
       .from("lesson_progress")
       .select("member_access_id")
@@ -292,7 +285,7 @@ const MariaAI = () => {
       .eq("id", settings.id);
     setSaving(false);
     if (error) { toast.error("Erro ao salvar configurações"); console.error(error); }
-    else { toast.success("Configurações da Maria salvas!"); }
+    else { toast.success("Configurações da Nina salvas! 🐆"); }
   };
 
   const estimatedCost = () => {
@@ -313,7 +306,7 @@ const MariaAI = () => {
   }
 
   if (!settings) {
-    return <p className="text-muted-foreground text-center py-12">Configurações da Maria não encontradas.</p>;
+    return <p className="text-muted-foreground text-center py-12">Configurações da Nina não encontradas.</p>;
   }
 
   const costs = estimatedCost();
@@ -325,10 +318,10 @@ const MariaAI = () => {
     <div className="space-y-6 max-w-6xl">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <img src={settings.avatar_url || mariaAvatar} alt="Maria" className="w-16 h-16 rounded-full border-2 border-purple-400 shadow-lg" />
+        <img src={settings.avatar_url || mariaAvatar} alt="Nina" className="w-16 h-16 rounded-full border-2 border-purple-400 shadow-lg" />
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold">Maria IA — Painel de Controle</h1>
+            <h1 className="text-2xl font-bold">Nina 🐆 — Painel de Controle</h1>
             <Badge variant={settings.active ? "default" : "secondary"} className={settings.active ? "bg-green-600" : ""}>
               {settings.active ? "Ativa" : "Desativada"}
             </Badge>
@@ -377,7 +370,7 @@ const MariaAI = () => {
               <CardContent className="pt-4 pb-3 px-4">
                 <div className="flex items-center gap-2 mb-1">
                   <MessageCircle className="w-4 h-4 text-purple-500" />
-                  <span className="text-xs text-muted-foreground">Respostas Maria</span>
+                  <span className="text-xs text-muted-foreground">Respostas Nina</span>
                 </div>
                 <p className="text-2xl font-bold">{stats.total}</p>
                 <p className="text-[10px] text-muted-foreground">{stats.today} hoje</p>
@@ -605,7 +598,7 @@ const MariaAI = () => {
                 <CardContent className="space-y-4">
                   <div>
                     <Label>Nome da Persona</Label>
-                    <Input value={settings.persona_name} onChange={(e) => setSettings({ ...settings, persona_name: e.target.value })} placeholder="Maria 🌸" />
+                    <Input value={settings.persona_name} onChange={(e) => setSettings({ ...settings, persona_name: e.target.value })} placeholder="Nina 🐆" />
                   </div>
                   <div>
                     <Label>URL do Avatar (deixe vazio para padrão)</Label>
@@ -626,17 +619,17 @@ const MariaAI = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <div><Label>Maria Ativa</Label><p className="text-xs text-muted-foreground">Liga/desliga a IA globalmente</p></div>
+                    <div><Label>Nina Ativa</Label><p className="text-xs text-muted-foreground">Liga/desliga a IA globalmente</p></div>
                     <Switch checked={settings.active} onCheckedChange={(v) => setSettings({ ...settings, active: v })} />
                   </div>
                   <Separator />
                   <div className="flex items-center justify-between">
-                    <div><Label>Auto-responder ao Aprovar</Label><p className="text-xs text-muted-foreground">Maria responde automaticamente quando uma avaliação é aprovada</p></div>
+                    <div><Label>Auto-responder ao Aprovar</Label><p className="text-xs text-muted-foreground">Nina responde automaticamente quando uma avaliação é aprovada</p></div>
                     <Switch checked={settings.auto_reply_on_approve} onCheckedChange={(v) => setSettings({ ...settings, auto_reply_on_approve: v })} />
                   </div>
                   <Separator />
                   <div className="flex items-center justify-between">
-                    <div><Label>Cross-sell de Produtos</Label><p className="text-xs text-muted-foreground">Maria pode mencionar outros produtos do produtor</p></div>
+                    <div><Label>Cross-sell de Produtos</Label><p className="text-xs text-muted-foreground">Nina pode mencionar outros produtos do produtor</p></div>
                     <Switch checked={settings.cross_sell_enabled} onCheckedChange={(v) => setSettings({ ...settings, cross_sell_enabled: v })} />
                   </div>
                 </CardContent>
@@ -704,7 +697,7 @@ const MariaAI = () => {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Bot className="w-4 h-4 text-purple-500" /> Prompt do Sistema (Personalidade da Maria)
+                  <Bot className="w-4 h-4 text-purple-500" /> Prompt do Sistema (Personalidade da Nina)
                 </CardTitle>
                 <Button variant="outline" size="sm" onClick={() => setSettings({ ...settings, system_prompt: DEFAULT_PROMPT })}>
                   <RefreshCw className="w-3 h-3 mr-1" /> Resetar Padrão
@@ -713,17 +706,10 @@ const MariaAI = () => {
             </CardHeader>
             <CardContent>
               <Textarea value={settings.system_prompt} onChange={(e) => setSettings({ ...settings, system_prompt: e.target.value })} rows={20} className="font-mono text-xs" placeholder="Prompt do sistema..." />
-              <p className="text-xs text-muted-foreground mt-2">⚠️ Contexto do curso, aula e dados da aluna são adicionados automaticamente. Aqui você define apenas a personalidade e regras da Maria.</p>
             </CardContent>
           </Card>
         </>
       )}
-
-      {/* Security badge */}
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <ShieldCheck className="w-4 h-4 text-green-500" />
-        <span>Configurações protegidas — acesso exclusivo Super Admin. Prompts executados no backend via Edge Function.</span>
-      </div>
     </div>
   );
 };

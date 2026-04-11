@@ -19,15 +19,15 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Load Maria settings
-    const { data: mariaSettings } = await supabaseAdmin
+    // Load Nina settings
+    const { data: ninaSettings } = await supabaseAdmin
       .from("maria_ai_settings")
       .select("*")
       .limit(1)
       .maybeSingle();
 
-    if (!mariaSettings?.active) {
-      return new Response(JSON.stringify({ skipped: true, reason: "Maria AI is disabled" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!ninaSettings?.active) {
+      return new Response(JSON.stringify({ skipped: true, reason: "Nina AI is disabled" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // Get review with lesson and course context
@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ skipped: true, reason: "AI replies disabled for this course" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Check if Maria already replied
+    // Check if Nina already replied
     const { data: existingReply } = await supabaseAdmin
       .from("review_replies")
       .select("id")
@@ -58,12 +58,12 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (existingReply) {
-      return new Response(JSON.stringify({ skipped: true, reason: "Maria already replied" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ skipped: true, reason: "Nina already replied" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // Get other products from the same producer for cross-sell
     let crossSellInfo = "";
-    if (mariaSettings.cross_sell_enabled && course.user_id) {
+    if (ninaSettings.cross_sell_enabled && course.user_id) {
       const { data: otherProducts } = await supabaseAdmin
         .from("products")
         .select("name, price, description")
@@ -83,10 +83,10 @@ Deno.serve(async (req) => {
     const studentName = review.customer_name || "Aluna";
     const studentComment = review.comment || "";
     const studentRating = review.rating;
-    const personaName = mariaSettings.persona_name || "Maria 🌸";
+    const personaName = ninaSettings.persona_name || "Nina 🐆";
 
     // Build system prompt from settings + dynamic context
-    const basePrompt = mariaSettings.system_prompt || "Você é a MARIA 🌸";
+    const basePrompt = ninaSettings.system_prompt || "Você é a NINA 🐆";
     const systemPrompt = `${basePrompt}
 
 CONTEXTO DO CURSO (adicionado automaticamente):
@@ -111,13 +111,13 @@ Gere uma resposta como ${personaName}.`;
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: mariaSettings.model || "google/gemini-2.5-flash",
+        model: ninaSettings.model || "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userMessage },
         ],
-        max_tokens: mariaSettings.max_tokens || 500,
-        temperature: mariaSettings.temperature || 0.7,
+        max_tokens: ninaSettings.max_tokens || 500,
+        temperature: ninaSettings.temperature || 0.7,
       }),
     });
 
@@ -141,7 +141,7 @@ Gere uma resposta como ${personaName}.`;
       return new Response(JSON.stringify({ error: "Empty AI response" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Insert Maria's reply
+    // Insert Nina's reply
     const { error: insertErr } = await supabaseAdmin
       .from("review_replies")
       .insert({
@@ -161,11 +161,11 @@ Gere uma resposta como ${personaName}.`;
     await supabaseAdmin
       .from("maria_ai_settings")
       .update({
-        total_replies: (mariaSettings.total_replies || 0) + 1,
-        total_tokens_used: (mariaSettings.total_tokens_used || 0) + tokensUsed,
+        total_replies: (ninaSettings.total_replies || 0) + 1,
+        total_tokens_used: (ninaSettings.total_tokens_used || 0) + tokensUsed,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", mariaSettings.id);
+      .eq("id", ninaSettings.id);
 
     return new Response(JSON.stringify({ success: true, reply: aiContent.trim(), tokens_used: tokensUsed }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
