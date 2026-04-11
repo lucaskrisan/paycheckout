@@ -229,6 +229,8 @@ const Checkout = () => {
     if (paymentMethod === "credit_card" && !isUSD) {
       if (!creditCard.number || !creditCard.name.trim() || !creditCard.expiry || !creditCard.cvv) { toast.error("Preencha todos os dados do cartão"); return; }
       if (!expMonth || !expYear || expMonth.length !== 2 || expYear.length !== 2) { toast.error("Preencha a validade do cartão corretamente"); return; }
+      const cepDigits = (customer.cep || "").replace(/\D/g, "");
+      if (!cepDigits || cepDigits.length !== 8) { toast.error("Preencha o CEP corretamente (8 dígitos)"); return; }
     }
 
     trackAddToCartMain();
