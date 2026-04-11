@@ -28,13 +28,45 @@ interface Review {
 const Reviews = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "pending" | "approved">("pending");
   const [generatingAI, setGeneratingAI] = useState<string | null>(null);
   const [batchReplying, setBatchReplying] = useState(false);
 
   useEffect(() => { loadReviews(); }, []);
 
+  const loadRepliesByReview = async (reviewIds: string[]) => {
+    if (reviewIds.length === 0) return {} as Record<string, ReviewReply[]>;
+
+    const grouped: Record<string, ReviewReply[]> = {};
+    const chunkSize = 20;
+
+    for (let i = 0; i < reviewIds.length; i += chunkSize) {
+      const chunk = reviewIds.slice(i, i + chunkSize);
+      const { data, error } = await supabase
+        .from("review_replies")
+        .select("id, review_id, author_name, content, is_ai_reply, created_at")
+        .in("review_id", chunk)
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        console.error("Error loading review replies:", error);
+        continue;
+      }
+
+      (data || []).forEach((reply) => {
+        if (!grouped[reply.review_id]) grouped[reply.review_id] = [];
+        grouped[reply.review_id].push(reply as ReviewReply);
+      });
+    }
+
+    return grouped;
+  };
+
   const loadReviews = async () => {
+    setLoading(true);
+    setLoadError(null);
+
     const { data, error } = await supabase
       .from("lesson_reviews")
       .select(`
@@ -47,12 +79,19 @@ const Reviews = () => {
         ),
         member_access (
           customers ( name, email )
-        ),
-        review_replies ( id, author_name, content, is_ai_reply, created_at )
+        )
       `)
       .order("created_at", { ascending: false });
 
-    if (error) { console.error(error); setLoading(false); return; }
+    if (error) {
+      console.error(error);
+      setReviews([]);
+      setLoadError("Não foi possível carregar as avaliações agora.");
+      setLoading(false);
+      return;
+    }
+
+    const repliesByReview = await loadRepliesByReview((data || []).map((review: any) => review.id));
 
     const enriched: Review[] = (data || []).map((r: any) => ({
       ...r,
@@ -60,7 +99,7 @@ const Reviews = () => {
       course_title: r.course_lessons?.course_modules?.courses?.title || "",
       customer_name: r.member_access?.customers?.name || r.customer_name || "Aluno",
       customer_email: r.member_access?.customers?.email || null,
-      replies: r.review_replies || [],
+      replies: repliesByReview[r.id] || [],
     }));
 
     setReviews(enriched);
@@ -173,6 +212,14 @@ const Reviews = () => {
 
       {loading ? (
         <p className="text-muted-foreground text-sm">Carregando...</p>
+      ) : loadError ? (
+        <Card>
+          <CardContent className="py-12 text-center space-y-3">
+            <MessageCircle className="w-12 h-12 mx-auto text-muted-foreground" />
+            <p className="text-muted-foreground">{loadError}</p>
+            <Button variant="outline" onClick={loadReviews}>Tentar novamente</Button>
+          </CardContent>
+        </Card>
       ) : filtered.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
