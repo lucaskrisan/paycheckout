@@ -89,6 +89,20 @@ const Reviews = () => {
     setGeneratingAI(null);
   };
 
+  const handleBatchAIReply = async () => {
+    setBatchReplying(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("batch-ai-reply");
+      if (error) { toast.error("Erro ao disparar respostas"); return; }
+      const { replied, errors: errCount } = data || {};
+      if (replied > 0) toast.success(`Nina respondeu ${replied} avaliação(ões)!`);
+      else toast.info("Nenhuma avaliação pendente de resposta.");
+      if (errCount > 0) toast.warning(`${errCount} erro(s) ao gerar respostas`);
+      loadReviews();
+    } catch { toast.error("Erro inesperado"); }
+    setBatchReplying(false);
+  };
+
   const handleReject = async (id: string) => {
     const { error } = await supabase.from("lesson_reviews").delete().eq("id", id);
     if (error) { toast.error("Erro ao rejeitar avaliação"); }
