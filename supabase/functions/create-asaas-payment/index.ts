@@ -448,13 +448,20 @@ Deno.serve(async (req) => {
       };
 
       if (customer.creditCard) {
+        const subPostalCode = String(customer.postalCode || '').replace(/\D/g, '');
+        if (!subPostalCode || subPostalCode.length !== 8) {
+          return new Response(
+            JSON.stringify({ error: 'CEP do titular é obrigatório para pagamento com cartão.' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
         subscriptionPayload.creditCard = customer.creditCard;
         subscriptionPayload.creditCardHolderInfo = {
           name: customer.name,
           email: customer.email,
           cpfCnpj: cleanCpf,
           phone: customer.phone?.replace(/\D/g, '') || '',
-          postalCode: customer.postalCode || '00000000',
+          postalCode: subPostalCode,
           addressNumber: customer.addressNumber || '0',
         };
       }
@@ -552,13 +559,20 @@ Deno.serve(async (req) => {
       }
 
       if (customer.creditCard) {
+        const holderPostalCode = String(customer.postalCode || '').replace(/\D/g, '');
+        if (!holderPostalCode || holderPostalCode.length !== 8) {
+          return new Response(
+            JSON.stringify({ error: 'CEP do titular é obrigatório para pagamento com cartão.' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
         paymentPayload.creditCard = customer.creditCard;
         paymentPayload.creditCardHolderInfo = {
           name: customer.name,
           email: customer.email,
           cpfCnpj: cleanCpf,
           phone: customer.phone?.replace(/\D/g, '') || '',
-          postalCode: customer.postalCode || '00000000',
+          postalCode: holderPostalCode,
           addressNumber: customer.addressNumber || '0',
         };
       }
