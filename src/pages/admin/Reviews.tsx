@@ -71,8 +71,11 @@ const Reviews = () => {
     if (error) { toast.error("Erro ao aprovar avaliação"); return; }
     toast.success("Avaliação aprovada e publicada!");
     setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, approved: true } : r)));
-    // Trigger AI reply after approval
-    triggerAIReply(id);
+    // Check if auto-reply is enabled
+    const { data: mariaSettings } = await (supabase as any).from("maria_ai_settings").select("auto_reply_on_approve, active").limit(1).maybeSingle();
+    if (mariaSettings?.active && mariaSettings?.auto_reply_on_approve) {
+      triggerAIReply(id);
+    }
   };
 
   const triggerAIReply = async (reviewId: string) => {

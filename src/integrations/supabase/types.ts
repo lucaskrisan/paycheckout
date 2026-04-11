@@ -1077,6 +1077,54 @@ export type Database = {
           },
         ]
       }
+      maria_ai_settings: {
+        Row: {
+          active: boolean
+          auto_reply_on_approve: boolean
+          avatar_url: string | null
+          cross_sell_enabled: boolean
+          id: string
+          max_tokens: number
+          model: string
+          persona_name: string
+          system_prompt: string
+          temperature: number
+          total_replies: number
+          total_tokens_used: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          auto_reply_on_approve?: boolean
+          avatar_url?: string | null
+          cross_sell_enabled?: boolean
+          id?: string
+          max_tokens?: number
+          model?: string
+          persona_name?: string
+          system_prompt?: string
+          temperature?: number
+          total_replies?: number
+          total_tokens_used?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          auto_reply_on_approve?: boolean
+          avatar_url?: string | null
+          cross_sell_enabled?: boolean
+          id?: string
+          max_tokens?: number
+          model?: string
+          persona_name?: string
+          system_prompt?: string
+          temperature?: number
+          total_replies?: number
+          total_tokens_used?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       member_access: {
         Row: {
           access_token: string
