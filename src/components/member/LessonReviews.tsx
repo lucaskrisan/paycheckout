@@ -40,12 +40,54 @@ export default function LessonReviews({ lessonId, memberAccessId, customerName, 
   };
 
   const loadReplies = async (reviewIds: string[]) => {
-    const { data } = await client.from("review_replies").select("*").in("review_id", reviewIds).order("created_at", { ascending: true });
-    if (data) {
-      const grouped: Record<string, ReviewReply[]> = {};
-      data.forEach((r: any) => { if (!grouped[r.review_id]) grouped[r.review_id] = []; grouped[r.review_id].push(r); });
-      setReplies(grouped);
+    if (reviewIds.length === 0) {
+      setReplies({});
+      return;
     }
+
+    const grouped: Record<string, ReviewReply[]> = {};
+    const replySelect = "id, review_id, author_name, content, is_ai_reply, created_at, member_access_id";
+    const chunkSize = 8;
+
+    for (let i = 0; i < reviewIds.length; i += chunkSize) {
+      const batchIds = reviewIds.slice(i, i + chunkSize);
+      const { data, error } = await client
+        .from("review_replies")
+        .select(replySelect)
+        .in("review_id", batchIds)
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        console.error("Error loading review replies batch:", error);
+
+        for (const reviewId of batchIds) {
+          const { data: singleData, error: singleError } = await client
+            .from("review_replies")
+            .select(replySelect)
+            .eq("review_id", reviewId)
+            .order("created_at", { ascending: true });
+
+          if (singleError) {
+            console.error(`Error loading replies for review ${reviewId}:`, singleError);
+            continue;
+          }
+
+          singleData?.forEach((reply: any) => {
+            if (!grouped[reply.review_id]) grouped[reply.review_id] = [];
+            grouped[reply.review_id].push(reply);
+          });
+        }
+
+        continue;
+      }
+
+      data?.forEach((reply: any) => {
+        if (!grouped[reply.review_id]) grouped[reply.review_id] = [];
+        grouped[reply.review_id].push(reply);
+      });
+    }
+
+    setReplies(grouped);
   };
 
   const loadLikes = async (reviewIds: string[]) => {
