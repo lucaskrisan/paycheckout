@@ -26,25 +26,49 @@ Deno.serve(async (req) => {
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
-    // 1. Fetch all producers with email_enabled = true
-    const { data: settings, error: settingsError } = await supabaseAdmin
-      .from("cart_recovery_settings")
-      .select("user_id, email_delay_minutes")
-      .eq("email_enabled", true);
+    // 1. Fetch all distinct producers that have abandoned carts pending recovery
+    const { data: producerRows, error: producerError } = await supabaseAdmin
+      .from("abandoned_carts")
+      .select("user_id")
+      .eq("recovered", false)
+      .not("customer_email", "is", null)
+      .is("email_recovery_sent_at", null);
 
-    if (settingsError) {
-      console.error("[cron] Error fetching settings:", settingsError);
-      return new Response(JSON.stringify({ error: settingsError.message }), {
+    if (producerError) {
+      console.error("[cron] Error fetching producers:", producerError);
+      return new Response(JSON.stringify({ error: producerError.message }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    if (!settings || settings.length === 0) {
-      return new Response(JSON.stringify({ processed: 0, message: "No producers with email recovery enabled" }), {
+    if (!producerRows || producerRows.length === 0) {
+      return new Response(JSON.stringify({ processed: 0, message: "No pending abandoned carts" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Deduplicate producer user_ids
+    const uniqueProducerIds = [...new Set(producerRows.map((r) => r.user_id).filter(Boolean))] as string[];
+
+    // 2. Fetch settings for producers that have explicit config
+    const { data: settingsRows } = await supabaseAdmin
+      .from("cart_recovery_settings")
+      .select("user_id, email_enabled, email_delay_minutes")
+      .in("user_id", uniqueProducerIds);
+
+    const settingsMap = new Map<string, { email_enabled: boolean; email_delay_minutes: number }>();
+    for (const s of settingsRows || []) {
+      settingsMap.set(s.user_id, { email_enabled: s.email_enabled, email_delay_minutes: s.email_delay_minutes });
+    }
+
+    // Build final list: use defaults (enabled=true, 30min) for producers without config
+    const settings = uniqueProducerIds
+      .map((uid) => {
+        const cfg = settingsMap.get(uid) || { email_enabled: true, email_delay_minutes: 30 };
+        return { user_id: uid, email_delay_minutes: cfg.email_delay_minutes, email_enabled: cfg.email_enabled };
+      })
+      .filter((s) => s.email_enabled);
 
     let totalProcessed = 0;
     const MAX_TOTAL = 50;
