@@ -51,10 +51,6 @@ const AbandonedCarts = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
 
-  // Recovery settings
-  const [emailEnabled, setEmailEnabled] = useState(true);
-  const [emailDelay, setEmailDelay] = useState("30");
-  const [settingsLoading, setSettingsLoading] = useState(true);
 
   // Filters
   const [filterRecovered, setFilterRecovered] = useState<boolean[]>([]);
