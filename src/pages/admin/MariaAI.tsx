@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Sparkles, Bot, DollarSign, MessageCircle, Settings2, Image, Brain, Zap, ShieldCheck, Save, RefreshCw, Users, TrendingUp, Award, BarChart3, Heart, BookOpen, ThumbsUp, ThumbsDown, Smile, Frown, Meh } from "lucide-react";
-import mariaAvatar from "@/assets/maria-avatar.png";
+import ninaAvatar from "@/assets/nina-avatar.png";
 
 interface NinaSettings {
   id: string;
