@@ -91,3 +91,5 @@ project_id = "vipltojtcrqatwvzobro"
     verify_jwt = false
   [functions.send-abandoned-cart-email]
     verify_jwt = false
+  [functions.abandoned-cart-email-recovery-cron]
+    verify_jwt = false
