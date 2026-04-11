@@ -44,6 +44,9 @@ const AbandonedCarts = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
 
+  // Recovery settings
+  const [emailEnabled, setEmailEnabled] = useState(true);
+  const [emailDelay, setEmailDelay] = useState("30");
 
   // Filters
   const [filterRecovered, setFilterRecovered] = useState<boolean[]>([]);
@@ -52,6 +55,40 @@ const AbandonedCarts = () => {
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [datePickerOpen, setDatePickerOpen] = useState<"from" | "to" | null>(null);
 
+  // Load recovery settings
+  useEffect(() => {
+    const loadSettings = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("cart_recovery_settings")
+        .select("email_enabled, email_delay_minutes")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (data) {
+        setEmailEnabled(data.email_enabled);
+        setEmailDelay(String(data.email_delay_minutes));
+      }
+    };
+    loadSettings();
+  }, []);
+
+  const saveRecoverySetting = async (field: "email_enabled" | "email_delay_minutes", value: boolean | number) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const payload = {
+      user_id: user.id,
+      [field]: value,
+    };
+    const { error } = await supabase
+      .from("cart_recovery_settings")
+      .upsert(payload, { onConflict: "user_id" });
+    if (error) {
+      toast.error("Erro ao salvar configuração");
+    } else {
+      toast.success("Configuração salva!");
+    }
+  };
 
   useEffect(() => {
     const load = async () => {
