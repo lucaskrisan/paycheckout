@@ -93,14 +93,20 @@ const Reviews = () => {
     setBatchReplying(true);
     try {
       const { data, error } = await supabase.functions.invoke("batch-ai-reply");
-      if (error) { toast.error("Erro ao disparar respostas"); return; }
-      const { replied, errors: errCount } = data || {};
-      if (replied > 0) toast.success(`Nina respondeu ${replied} avaliação(ões)!`);
-      else toast.info("Nenhuma avaliação pendente de resposta.");
-      if (errCount > 0) toast.warning(`${errCount} erro(s) ao gerar respostas`);
-      loadReviews();
-    } catch { toast.error("Erro inesperado"); }
-    setBatchReplying(false);
+      if (error) { toast.error("Erro ao disparar respostas: " + (error.message || "unknown")); setBatchReplying(false); return; }
+      const total = data?.total || 0;
+      if (total > 0) {
+        toast.success(`🐆 Nina está respondendo ${total} avaliação(ões) em background!`);
+        // Poll for completion
+        setTimeout(() => { loadReviews(); setBatchReplying(false); }, total * 4000);
+      } else {
+        toast.info("Todas as avaliações já foram respondidas!");
+        setBatchReplying(false);
+      }
+    } catch (e: any) {
+      toast.error("Erro inesperado: " + (e?.message || ""));
+      setBatchReplying(false);
+    }
   };
 
   const handleReject = async (id: string) => {
