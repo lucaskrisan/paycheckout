@@ -94,6 +94,11 @@ CONTEXTO (automático):
 - Descrição: ${courseDesc}
 - Aula avaliada: "${lessonName}"${crossSellInfo}
 
+REGRAS ABSOLUTAS (NUNCA violar):
+1. NUNCA mencione concorrentes: Kiwify, Hotmart, Eduzz, Monetizze, Braip, Cartpanda, Guru, Pepper, Lastlink ou qualquer outra plataforma.
+2. O email de suporte é: suportepaolasemfiltro@gmail.com
+3. A plataforma se chama PanteraPay.
+
 REGRAS PARA RESPOSTA À AVALIAÇÃO:
 1. Responda ao que a aluna DISSE especificamente. Não generalize.
 2. Máximo 2-3 frases curtas e impactantes. Sem enrolação.
