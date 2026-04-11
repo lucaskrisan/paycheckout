@@ -7,6 +7,7 @@ import { List, Loader2, Lock, PlayCircle } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import MemberInstallBanner from "@/components/member/MemberInstallBanner";
+import NinaChatWidget from "@/components/member/NinaChatWidget";
 import MemberHeader from "@/components/member/MemberHeader";
 import MemberMobileSidebar from "@/components/member/MemberMobileSidebar";
 import MemberSidebarContent from "@/components/member/MemberSidebarContent";
@@ -303,6 +304,15 @@ const MemberArea = () => {
         </div>
       </div>
       <MemberInstallBanner />
+      {token && access && course && (
+        <NinaChatWidget
+          accessToken={token}
+          courseId={course.id}
+          activeLessonId={activeLesson?.id}
+          studentName={customerName || (lang === "en" ? "Student" : "Aluna")}
+          lang={lang}
+        />
+      )}
     </div>
   );
 };
