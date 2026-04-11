@@ -515,6 +515,7 @@ export type Database = {
       }
       courses: {
         Row: {
+          ai_reply_enabled: boolean
           cover_image_url: string | null
           created_at: string
           description: string | null
@@ -525,6 +526,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          ai_reply_enabled?: boolean
           cover_image_url?: string | null
           created_at?: string
           description?: string | null
@@ -535,6 +537,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          ai_reply_enabled?: boolean
           cover_image_url?: string | null
           created_at?: string
           description?: string | null
@@ -1712,6 +1715,87 @@ export type Database = {
           identifier?: string
         }
         Relationships: []
+      }
+      review_likes: {
+        Row: {
+          created_at: string
+          id: string
+          member_access_id: string
+          review_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          member_access_id: string
+          review_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          member_access_id?: string
+          review_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_likes_member_access_id_fkey"
+            columns: ["member_access_id"]
+            isOneToOne: false
+            referencedRelation: "member_access"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_likes_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "lesson_reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      review_replies: {
+        Row: {
+          author_name: string
+          content: string
+          created_at: string
+          id: string
+          is_ai_reply: boolean
+          member_access_id: string | null
+          review_id: string
+        }
+        Insert: {
+          author_name?: string
+          content: string
+          created_at?: string
+          id?: string
+          is_ai_reply?: boolean
+          member_access_id?: string | null
+          review_id: string
+        }
+        Update: {
+          author_name?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_ai_reply?: boolean
+          member_access_id?: string | null
+          review_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_replies_member_access_id_fkey"
+            columns: ["member_access_id"]
+            isOneToOne: false
+            referencedRelation: "member_access"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_replies_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "lesson_reviews"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sales_pages: {
         Row: {
