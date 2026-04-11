@@ -67,10 +67,10 @@ const Checkout = () => {
 
   const prefill = useMemo(() => {
     const params = new URLSearchParams(location.search);
-    return { name: params.get("name") || "", email: params.get("email") || "", phone: params.get("phone") || "", cpf: params.get("cpf") || "" };
+    return { name: params.get("name") || "", email: params.get("email") || "", phone: params.get("phone") || "", cpf: params.get("cpf") || "", cep: params.get("cep") || "" };
   }, [location.search]);
 
-  const [customer, setCustomer] = useState<CustomerData>({ name: prefill.name, email: prefill.email, phone: prefill.phone, cpf: prefill.cpf });
+  const [customer, setCustomer] = useState<CustomerData>({ name: prefill.name, email: prefill.email, phone: prefill.phone, cpf: prefill.cpf, cep: prefill.cep });
   const [creditCard, setCreditCard] = useState<CreditCardData>({ number: "", name: "", expiry: "", cvv: "", installments: "1" });
 
   const { markPurchased } = useAbandonedCart({ productId: productId || "", customer, paymentMethod, productOwnerId: product?.user_id });
@@ -229,6 +229,8 @@ const Checkout = () => {
     if (paymentMethod === "credit_card" && !isUSD) {
       if (!creditCard.number || !creditCard.name.trim() || !creditCard.expiry || !creditCard.cvv) { toast.error("Preencha todos os dados do cartão"); return; }
       if (!expMonth || !expYear || expMonth.length !== 2 || expYear.length !== 2) { toast.error("Preencha a validade do cartão corretamente"); return; }
+      const cepDigits = (customer.cep || "").replace(/\D/g, "");
+      if (!cepDigits || cepDigits.length !== 8) { toast.error("Preencha o CEP corretamente (8 dígitos)"); return; }
     }
 
     trackAddToCartMain();
@@ -285,7 +287,7 @@ const Checkout = () => {
             amount: finalAmount, product_id: product.id, payment_method: "credit_card", installments: creditCard.installments,
             is_subscription: product.is_subscription, billing_cycle: product.billing_cycle, config_id: requestedConfigId || null,
             coupon_id: coupon?.id || null, bump_product_ids: bumpProductIds, checkout_url: window.location.href, utms, customer_state: customerState,
-            customer: { name: customer.name, email: customer.email, cpf: customer.cpf, phone: customer.phone, postalCode: "00000000", addressNumber: "0",
+            customer: { name: customer.name, email: customer.email, cpf: customer.cpf, phone: customer.phone, postalCode: customer.cep?.replace(/\D/g, "") || "00000000", addressNumber: "0",
               creditCard: { holderName: creditCard.name, number: creditCard.number.replace(/\s/g, ""), expiryMonth: expMonth, expiryYear: `20${expYear}`, ccv: creditCard.cvv } },
           },
         });
