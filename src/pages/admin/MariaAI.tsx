@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Sparkles, Bot, DollarSign, MessageCircle, Settings2, Image, Brain, Zap, ShieldCheck, Save, RefreshCw, Users, TrendingUp, Award, BarChart3, Heart, BookOpen, ThumbsUp, ThumbsDown, Smile, Frown, Meh } from "lucide-react";
-import mariaAvatar from "@/assets/maria-avatar.png";
+import ninaAvatar from "@/assets/nina-avatar.png";
 
 interface NinaSettings {
   id: string;
@@ -318,7 +318,7 @@ const MariaAI = () => {
     <div className="space-y-6 max-w-6xl">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <img src={settings.avatar_url || mariaAvatar} alt="Nina" className="w-16 h-16 rounded-full border-2 border-purple-400 shadow-lg" />
+        <img src={settings.avatar_url || ninaAvatar} alt="Nina" className="w-16 h-16 rounded-full border-2 border-purple-400 shadow-lg" />
         <div className="flex-1">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold">Nina 🐆 — Painel de Controle</h1>
@@ -604,7 +604,7 @@ const MariaAI = () => {
                     <Label>URL do Avatar (deixe vazio para padrão)</Label>
                     <Input value={settings.avatar_url || ""} onChange={(e) => setSettings({ ...settings, avatar_url: e.target.value || null })} placeholder="https://..." />
                     <div className="flex items-center gap-3 mt-2">
-                      <img src={settings.avatar_url || mariaAvatar} alt="Preview" className="w-10 h-10 rounded-full border" />
+                      <img src={settings.avatar_url || ninaAvatar} alt="Preview" className="w-10 h-10 rounded-full border" />
                       <span className="text-xs text-muted-foreground">Preview do avatar</span>
                     </div>
                   </div>
