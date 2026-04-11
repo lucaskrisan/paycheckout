@@ -107,6 +107,7 @@ const superAdminItems = [
   { title: "Nina IA", url: "/admin/maria-ia", icon: Sparkles },
   { title: "Revisão Produtos", url: "/admin/product-review", icon: ShieldCheck },
   { title: "Verificação Produtores", url: "/admin/verification-review", icon: User },
+  { title: "Controle de Carrinhos", url: "/admin/cart-control", icon: ShoppingCart },
   { title: "Painel Plataforma", url: "/admin/platform", icon: Crown },
   { title: "Billing", url: "/admin/billing", icon: Wallet },
   { title: "API Keys", url: "/admin/api-keys", icon: Key },

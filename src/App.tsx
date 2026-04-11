@@ -75,6 +75,7 @@ const VerificationReview = lazy(() => import("./pages/admin/VerificationReview")
 const Analytics = lazy(() => import("./pages/admin/Analytics"));
 const MariaAI = lazy(() => import("./pages/admin/MariaAI"));
 const AbandonedCartDetail = lazy(() => import("./pages/admin/AbandonedCartDetail"));
+const CartControl = lazy(() => import("./pages/admin/CartControl"));
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
     <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -143,6 +144,7 @@ const App = () => (
                 
                 <Route path="billing" element={<Billing />} />
                 <Route path="platform" element={<SuperAdminDashboard />} />
+                <Route path="cart-control" element={<CartControl />} />
                 <Route path="domains" element={<Domains />} />
                 
                 
