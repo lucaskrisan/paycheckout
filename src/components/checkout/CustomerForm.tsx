@@ -94,7 +94,17 @@ const CustomerForm = ({ data, onChange, hideDocumentPhone }: CustomerFormProps) 
       </div>
 
       {!hideDocumentPhone && (
-        <div className="grid grid-cols-2 gap-3">
+        <>
+          <div className="relative">
+            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#565959]" />
+            <Input
+              type="tel"
+              value={data.phone}
+              onChange={(e) => handleChange("phone", e.target.value)}
+              placeholder="Celular (WhatsApp)"
+              className={inputClass}
+            />
+          </div>
           <div>
             <div className="relative">
               <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#565959]" />
@@ -111,17 +121,7 @@ const CustomerForm = ({ data, onChange, hideDocumentPhone }: CustomerFormProps) 
               <p className="text-xs text-red-500 mt-1">CPF inválido</p>
             )}
           </div>
-          <div className="relative">
-            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#565959]" />
-            <Input
-              type="tel"
-              value={data.phone}
-              onChange={(e) => handleChange("phone", e.target.value)}
-              placeholder="Celular"
-              className={inputClass}
-            />
-          </div>
-        </div>
+        </>
       )}
     </div>
   );
