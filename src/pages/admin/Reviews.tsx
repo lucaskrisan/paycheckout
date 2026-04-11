@@ -30,6 +30,7 @@ const Reviews = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pending" | "approved">("pending");
   const [generatingAI, setGeneratingAI] = useState<string | null>(null);
+  const [batchReplying, setBatchReplying] = useState(false);
 
   useEffect(() => { loadReviews(); }, []);
 
