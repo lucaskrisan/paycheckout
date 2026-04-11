@@ -1,12 +1,11 @@
 import { Input } from "@/components/ui/input";
-import { User, Mail, Phone, FileText, MapPin } from "lucide-react";
+import { User, Mail, Phone, FileText } from "lucide-react";
 
 export interface CustomerData {
   name: string;
   email: string;
   phone: string;
   cpf: string;
-  cep: string;
 }
 
 interface CustomerFormProps {
@@ -43,12 +42,6 @@ const formatPhone = (value: string) => {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 };
 
-const formatCEP = (value: string) => {
-  const digits = value.replace(/\D/g, "").slice(0, 8);
-  if (digits.length <= 5) return digits;
-  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
-};
-
 const inputClass =
   "h-11 pl-10 bg-white border-[#D5D9D9] text-[#0F1111] placeholder:text-[#767676] rounded-xl focus:border-[#007185] focus:ring-[#007185] transition-colors";
 
@@ -60,7 +53,6 @@ const CustomerForm = ({ data, onChange, hideDocumentPhone }: CustomerFormProps) 
     if (field === "email" && value.length > 255) return;
     if (field === "cpf") formatted = formatCPF(value);
     if (field === "phone") formatted = formatPhone(value);
-    if (field === "cep") formatted = formatCEP(value);
     // Strip any HTML tags from text fields
     if (field === "name" || field === "email") {
       formatted = formatted.replace(/<[^>]*>/g, '');
@@ -71,10 +63,6 @@ const CustomerForm = ({ data, onChange, hideDocumentPhone }: CustomerFormProps) 
   const cpfDigits = data.cpf.replace(/\D/g, "");
   const cpfComplete = cpfDigits.length === 11;
   const cpfInvalid = cpfComplete && !isValidCPF(data.cpf);
-
-  const cepDigits = (data.cep || "").replace(/\D/g, "");
-  const cepComplete = cepDigits.length === 8;
-  const cepInvalid = cepComplete && !/^\d{8}$/.test(cepDigits);
 
   return (
     <div className="space-y-3">
@@ -117,39 +105,19 @@ const CustomerForm = ({ data, onChange, hideDocumentPhone }: CustomerFormProps) 
               className={inputClass}
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <div className="relative">
-                <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#565959]" />
-                <Input
-                  inputMode="numeric"
-                  autoComplete="off"
-                  value={data.cpf}
-                  onChange={(e) => handleChange("cpf", e.target.value)}
-                  placeholder="CPF"
-                  className={`${inputClass} ${cpfInvalid ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""}`}
-                />
-              </div>
-              {cpfInvalid && (
-                <p className="text-xs text-red-500 mt-1">CPF inválido</p>
-              )}
-            </div>
-            <div>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#565959]" />
-                <Input
-                  inputMode="numeric"
-                  autoComplete="postal-code"
-                  value={data.cep || ""}
-                  onChange={(e) => handleChange("cep", e.target.value)}
-                  placeholder="CEP"
-                  className={`${inputClass} ${cepInvalid ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""}`}
-                />
-              </div>
-              {cepInvalid && (
-                <p className="text-xs text-red-500 mt-1">CEP inválido</p>
-              )}
-            </div>
+          <div className="relative">
+            <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#565959]" />
+            <Input
+              inputMode="numeric"
+              autoComplete="off"
+              value={data.cpf}
+              onChange={(e) => handleChange("cpf", e.target.value)}
+              placeholder="CPF"
+              className={`${inputClass} ${cpfInvalid ? "border-red-500 focus:border-red-500 focus:ring-red-500" : ""}`}
+            />
+            {cpfInvalid && (
+              <p className="text-xs text-red-500 mt-1">CPF inválido</p>
+            )}
           </div>
         </>
       )}
