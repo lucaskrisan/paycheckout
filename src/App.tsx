@@ -156,6 +156,7 @@ const App = () => (
                 <Route path="whatsapp" element={<WhatsApp />} />
                 <Route path="analytics" element={<Analytics />} />
                 <Route path="verification-review" element={<VerificationReview />} />
+                <Route path="maria-ia" element={<MariaAI />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
