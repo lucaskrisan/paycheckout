@@ -59,6 +59,8 @@ export interface MemberTranslations {
   yourReview: string;
   awaitingApproval: string;
   published: string;
+  replyAction: string;
+  writeReply: string;
 
   // Catalog
   otherCourses: string;
