@@ -1,19 +1,23 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Download, ChevronRight, ChevronLeft, ChevronsLeft, ChevronsRight,
-  Filter, Search, ShoppingBag, MessageCircle,
+  Filter, Search, ShoppingBag, MessageCircle, Mail,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 interface AbandonedCart {
   id: string;
@@ -32,6 +36,14 @@ interface AbandonedCart {
 
 const ITEMS_PER_PAGE = 20;
 
+const DELAY_OPTIONS = [
+  { value: "15", label: "15 minutos" },
+  { value: "30", label: "30 minutos" },
+  { value: "60", label: "1 hora" },
+  { value: "120", label: "2 horas" },
+  { value: "360", label: "6 horas" },
+];
+
 const AbandonedCarts = () => {
   const navigate = useNavigate();
   const [carts, setCarts] = useState<AbandonedCart[]>([]);
@@ -39,12 +51,69 @@ const AbandonedCarts = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
 
+  // Recovery settings
+  const [emailEnabled, setEmailEnabled] = useState(true);
+  const [emailDelay, setEmailDelay] = useState("30");
+  const [settingsLoading, setSettingsLoading] = useState(true);
+
   // Filters
   const [filterRecovered, setFilterRecovered] = useState<boolean[]>([]);
   const [filterEmailStatus, setFilterEmailStatus] = useState<string[]>([]);
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [datePickerOpen, setDatePickerOpen] = useState<"from" | "to" | null>(null);
+
+  // Load recovery settings
+  useEffect(() => {
+    const loadSettings = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data } = await supabase
+        .from("cart_recovery_settings")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (data) {
+        setEmailEnabled(data.email_enabled);
+        setEmailDelay(String(data.email_delay_minutes));
+      }
+      setSettingsLoading(false);
+    };
+    loadSettings();
+  }, []);
+
+  const saveSettings = useCallback(async (enabled: boolean, delay: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { error } = await supabase
+      .from("cart_recovery_settings")
+      .upsert({
+        user_id: user.id,
+        email_enabled: enabled,
+        email_delay_minutes: parseInt(delay),
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id" });
+
+    if (error) {
+      toast.error("Erro ao salvar configurações");
+      console.error(error);
+    } else {
+      toast.success("Configurações salvas");
+    }
+  }, []);
+
+  const handleToggleEmail = async (checked: boolean) => {
+    setEmailEnabled(checked);
+    await saveSettings(checked, emailDelay);
+  };
+
+  const handleDelayChange = async (value: string) => {
+    setEmailDelay(value);
+    await saveSettings(emailEnabled, value);
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -200,7 +269,6 @@ const AbandonedCarts = () => {
                 <SheetTitle>Mais filtros</SheetTitle>
               </SheetHeader>
               <div className="mt-6 space-y-6">
-                {/* Date range */}
                 <div>
                   <h4 className="font-medium mb-3">Última atualização</h4>
                   <div className="flex items-center gap-2">
@@ -228,7 +296,6 @@ const AbandonedCarts = () => {
                   </div>
                 </div>
 
-                {/* Email status */}
                 <div>
                   <h4 className="font-medium mb-3">Status do e-mail</h4>
                   <div className="space-y-2">
@@ -247,7 +314,6 @@ const AbandonedCarts = () => {
                   </div>
                 </div>
 
-                {/* Recovery status */}
                 <div>
                   <h4 className="font-medium mb-3">Status da recuperação</h4>
                   <div className="space-y-2">
@@ -270,6 +336,48 @@ const AbandonedCarts = () => {
           </Sheet>
         </div>
       </div>
+
+      {/* Recovery Settings Card */}
+      <Card className="border-border bg-card">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Mail className="w-4 h-4 text-primary" />
+            Recuperação por e-mail
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {settingsLoading ? (
+            <p className="text-sm text-muted-foreground">Carregando...</p>
+          ) : (
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex items-center gap-3">
+                <Switch
+                  checked={emailEnabled}
+                  onCheckedChange={handleToggleEmail}
+                />
+                <span className="text-sm text-foreground">
+                  {emailEnabled ? "E-mail automático ativado" : "E-mail automático desativado"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground whitespace-nowrap">Enviar após:</span>
+                <Select value={emailDelay} onValueChange={handleDelayChange} disabled={!emailEnabled}>
+                  <SelectTrigger className="w-[140px] h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DELAY_OPTIONS.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Search */}
       <div className="relative max-w-md">
