@@ -104,13 +104,13 @@ const NinaChatWidget = memo(function NinaChatWidget({ accessToken, courseId, act
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             onClick={() => setOpen(true)}
-            className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-transform hover:scale-110"
+            className="fixed bottom-6 right-6 z-50 w-16 h-16 rounded-full shadow-2xl flex items-center justify-center transition-transform hover:scale-110 overflow-hidden border-2"
             style={{
-              backgroundImage: "linear-gradient(135deg, hsl(145,65%,42%), hsl(160,70%,36%))",
+              borderColor: "hsl(145,65%,42%)",
               boxShadow: "0 4px 20px hsla(145,65%,42%,0.4)",
             }}
           >
-            <MessageCircle className="w-6 h-6 text-white" />
+            <img src={ninaAvatar} alt="Nina" className="w-full h-full object-cover" />
             {/* Pulse ring */}
             <span className="absolute inset-0 rounded-full animate-ping opacity-20" style={{ background: "hsl(145,65%,42%)" }} />
           </motion.button>
