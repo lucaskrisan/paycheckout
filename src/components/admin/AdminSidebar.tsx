@@ -17,7 +17,6 @@ import {
   ShieldCheck,
   ShieldBan,
   Webhook,
-  Mail,
   Smartphone,
   Globe,
   Zap,
@@ -26,9 +25,9 @@ import {
   Key,
   Activity,
   TrendingUp,
-  Megaphone,
   Tag,
   ClipboardList,
+  Sparkles,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
