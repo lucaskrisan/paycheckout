@@ -144,6 +144,7 @@ const App = () => (
                 
                 <Route path="billing" element={<Billing />} />
                 <Route path="platform" element={<SuperAdminDashboard />} />
+                <Route path="cart-control" element={<CartControl />} />
                 <Route path="domains" element={<Domains />} />
                 
                 
