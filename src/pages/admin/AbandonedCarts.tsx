@@ -158,6 +158,12 @@ const AbandonedCarts = () => {
       });
     }
 
+    // Prioritize abandoned (non-recovered) first, then by date desc
+    result = [...result].sort((a, b) => {
+      if (a.recovered !== b.recovered) return a.recovered ? 1 : -1;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+
     return result;
   }, [carts, search, dateFrom, dateTo, filterRecovered, filterEmailStatus]);
 
@@ -551,13 +557,9 @@ const AbandonedCarts = () => {
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <span className={`text-xs px-2 py-1 rounded border ${
-                        cart.recovered
-                          ? "text-green-700 bg-green-50 border-green-200"
-                          : "text-red-700 bg-red-50 border-red-200"
-                      }`}>
-                        {cart.recovered ? "Recuperado" : "Não Recuperado"}
-                      </span>
+                      <Badge variant={cart.recovered ? "default" : "destructive"}>
+                        {cart.recovered ? "✅ Recuperado" : "🛒 Abandonado"}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <ChevronRight className="w-4 h-4 text-muted-foreground" />
