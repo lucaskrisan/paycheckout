@@ -40,6 +40,7 @@ const ITEMS_PER_PAGE = 20;
 
 const AbandonedCarts = () => {
   const navigate = useNavigate();
+  const { isSuperAdmin } = useAuth();
   const [carts, setCarts] = useState<AbandonedCart[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
