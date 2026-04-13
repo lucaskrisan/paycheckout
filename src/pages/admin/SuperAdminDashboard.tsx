@@ -115,6 +115,7 @@ const SuperAdminDashboard = () => {
   const [emailLogs, setEmailLogs] = useState<any[]>([]);
    const [webhookEndpoints, setWebhookEndpoints] = useState<any[]>([]);
    const [rateLimitHits, setRateLimitHits] = useState<any[]>([]);
+   const [allGateways, setAllGateways] = useState<any[]>([]);
 
   // UI state
   const [loading, setLoading] = useState(true);
