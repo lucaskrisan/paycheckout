@@ -147,6 +147,7 @@ const SuperAdminDashboard = () => {
       { data: emailData },
       { data: webhooksData },
       { data: rateLimitData },
+      { data: gatewaysData },
     ] = await Promise.all([
       supabase.from("user_roles").select("user_id, role"),
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
@@ -158,6 +159,7 @@ const SuperAdminDashboard = () => {
       supabase.from("email_logs").select("id, email_type, status, to_email, to_name, subject, created_at, user_id, cost_estimate").order("created_at", { ascending: false }).limit(100),
       supabase.from("webhook_endpoints").select("*"),
       supabase.from("rate_limit_hits").select("*").order("created_at", { ascending: false }).limit(500),
+      supabase.from("payment_gateways").select("id, active, environment, provider, name, user_id"),
     ]);
 
     // Fetch emails from auth.users via edge function
