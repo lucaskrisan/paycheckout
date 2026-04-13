@@ -73,7 +73,7 @@ const Checkout = () => {
   const [customer, setCustomer] = useState<CustomerData>({ name: prefill.name, email: prefill.email, phone: prefill.phone, cpf: prefill.cpf });
   const [creditCard, setCreditCard] = useState<CreditCardData>({ number: "", name: "", expiry: "", cvv: "", installments: "1" });
 
-  const { markPurchased } = useAbandonedCart({ productId: productId || "", customer, paymentMethod, productOwnerId: product?.user_id });
+  const { markPurchased } = useAbandonedCart({ productId: productId || "", customer, paymentMethod, productOwnerId: product?.user_id, productPrice: product?.price });
   useCheckoutPresence("track", productId);
 
   // Auto-set country from IP geolocation (only once)
