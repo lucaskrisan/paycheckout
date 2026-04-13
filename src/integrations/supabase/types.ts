@@ -25,6 +25,7 @@ export type Database = {
           customer_phone: string | null
           email_recovery_sent_at: string | null
           email_recovery_status: string | null
+          email_reminder_count: number | null
           id: string
           ip_address: string | null
           notes: string | null
@@ -52,6 +53,7 @@ export type Database = {
           customer_phone?: string | null
           email_recovery_sent_at?: string | null
           email_recovery_status?: string | null
+          email_reminder_count?: number | null
           id?: string
           ip_address?: string | null
           notes?: string | null
@@ -79,6 +81,7 @@ export type Database = {
           customer_phone?: string | null
           email_recovery_sent_at?: string | null
           email_recovery_status?: string | null
+          email_reminder_count?: number | null
           id?: string
           ip_address?: string | null
           notes?: string | null
@@ -280,25 +283,43 @@ export type Database = {
       cart_recovery_settings: {
         Row: {
           created_at: string
+          email_button_color: string | null
+          email_button_text: string | null
           email_delay_minutes: number
           email_enabled: boolean
+          email_heading: string | null
+          email_subject: string | null
           id: string
+          second_email_delay_hours: number | null
+          second_email_enabled: boolean | null
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          email_button_color?: string | null
+          email_button_text?: string | null
           email_delay_minutes?: number
           email_enabled?: boolean
+          email_heading?: string | null
+          email_subject?: string | null
           id?: string
+          second_email_delay_hours?: number | null
+          second_email_enabled?: boolean | null
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          email_button_color?: string | null
+          email_button_text?: string | null
           email_delay_minutes?: number
           email_enabled?: boolean
+          email_heading?: string | null
+          email_subject?: string | null
           id?: string
+          second_email_delay_hours?: number | null
+          second_email_enabled?: boolean | null
           updated_at?: string
           user_id?: string
         }
