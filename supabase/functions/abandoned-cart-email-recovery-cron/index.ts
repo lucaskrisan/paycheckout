@@ -32,6 +32,10 @@ const DEFAULT_CONFIG = {
 // Configurable rate limit per cron execution
 const MAX_EMAILS_PER_RUN = 50;
 
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 function buildEmailHtml(
   cart: any,
   product: any,
@@ -40,7 +44,7 @@ function buildEmailHtml(
   config: ProducerConfig,
   isSecondReminder: boolean
 ) {
-  const productName = product?.name || "seu produto";
+  const productName = escapeHtml(product?.name || "seu produto");
   const productPrice = cart.product_price || product?.price || 0;
   const heading = isSecondReminder
     ? "Última chance! Seu carrinho vai expirar ⏰"
@@ -51,7 +55,7 @@ function buildEmailHtml(
   return `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
       <h2 style="color: #333;">${heading}</h2>
-      <p style="color: #666;">Olá${cart.customer_name ? ` ${cart.customer_name}` : ''},</p>
+      <p style="color: #666;">Olá${cart.customer_name ? ` ${escapeHtml(cart.customer_name)}` : ''},</p>
       <p style="color: #666;">${isSecondReminder
         ? "Este é seu último lembrete! Seu carrinho ainda está esperando, mas não por muito tempo."
         : "Notamos que você não finalizou sua compra. Seu carrinho ainda está esperando por você!"

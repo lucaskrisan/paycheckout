@@ -286,19 +286,9 @@ Deno.serve(async (req) => {
       .select('id')
       .single();
 
-    // Increment coupon usage
+    // Increment coupon usage atomically
     if (coupon_id) {
-      const { data: couponData } = await supabaseAdmin
-        .from('coupons')
-        .select('used_count')
-        .eq('id', coupon_id)
-        .single();
-      if (couponData) {
-        await supabaseAdmin
-          .from('coupons')
-          .update({ used_count: couponData.used_count + 1 })
-          .eq('id', coupon_id);
-      }
+      await supabaseAdmin.rpc('increment_coupon_usage', { p_coupon_id: coupon_id });
     }
 
     const qrCode = mpData.point_of_interaction?.transaction_data?.qr_code;
