@@ -319,7 +319,7 @@ const AbandonedCartDetail = () => {
                 <div className="flex items-center justify-between">
                   <span className="text-sm">{cart.customer_phone}</span>
                   <button onClick={openWhatsApp} className="text-green-500 hover:text-green-600">
-                    <WhatsAppIcon className="h-4 w-4" />
+                    <WhatsAppIcon className="h-5 w-5" />
                   </button>
                 </div>
               )}

@@ -545,7 +545,7 @@ const AbandonedCarts = () => {
                             className="text-green-500 hover:text-green-600"
                             title="WhatsApp"
                           >
-                            <WhatsAppIcon className="h-4 w-4" />
+                            <WhatsAppIcon className="h-5 w-5" />
                           </button>
                         </div>
                       ) : (
