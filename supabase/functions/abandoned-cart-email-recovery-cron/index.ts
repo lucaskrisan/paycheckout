@@ -29,6 +29,9 @@ const DEFAULT_CONFIG = {
   second_email_delay_hours: 24,
 };
 
+// Configurable rate limit per cron execution
+const MAX_EMAILS_PER_RUN = 50;
+
 function buildEmailHtml(
   cart: any,
   product: any,
@@ -73,15 +76,19 @@ function buildEmailHtml(
   `;
 }
 
-function buildCheckoutUrl(cart: any, baseUrl: string): string {
+function buildCheckoutUrl(cart: any, baseUrl: string, channel: string): string {
   let checkoutUrl = cart.checkout_url || cart.page_url || `${baseUrl}/checkout/${cart.product_id}`;
   const params = new URLSearchParams();
   if (cart.customer_name) params.set("name", cart.customer_name);
   if (cart.customer_email) params.set("email", cart.customer_email);
   if (cart.customer_phone) params.set("phone", cart.customer_phone);
   if (cart.customer_cpf) params.set("cpf", cart.customer_cpf);
+  // UTM tracking for recovery attribution
+  params.set("utm_source", "recovery");
+  params.set("utm_medium", channel);
+  params.set("utm_campaign", "abandoned_cart");
   const separator = checkoutUrl.includes("?") ? "&" : "?";
-  return params.toString() ? `${checkoutUrl}${separator}${params}` : checkoutUrl;
+  return `${checkoutUrl}${separator}${params}`;
 }
 
 Deno.serve(async (req) => {
@@ -105,22 +112,31 @@ Deno.serve(async (req) => {
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
     const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
 
+    // ── Load suppressed emails blacklist ─────────────────────────
+    const { data: suppressedRows } = await supabaseAdmin
+      .from("suppressed_emails")
+      .select("email");
+    const suppressedSet = new Set(
+      (suppressedRows || []).map((r: any) => r.email?.toLowerCase())
+    );
+
     // ── PHASE 1: First reminder emails ──────────────────────────────
     const firstReminderResult = await processReminders(supabaseAdmin, {
       resendApiKey, lovableApiKey, supabaseUrl, gatewayUrl: GATEWAY_URL,
-      reminderType: "first",
+      reminderType: "first", suppressedSet,
     });
 
     // ── PHASE 2: Second reminder emails (24h follow-up) ─────────────
     const secondReminderResult = await processReminders(supabaseAdmin, {
       resendApiKey, lovableApiKey, supabaseUrl, gatewayUrl: GATEWAY_URL,
-      reminderType: "second",
+      reminderType: "second", suppressedSet,
     });
 
     const totalProcessed = firstReminderResult.processed + secondReminderResult.processed;
     const totalSkipped = firstReminderResult.skipped + secondReminderResult.skipped;
+    const totalSuppressed = firstReminderResult.suppressed + secondReminderResult.suppressed;
 
-    console.log(`[cron] First: ${firstReminderResult.processed} sent, ${firstReminderResult.skipped} skipped. Second: ${secondReminderResult.processed} sent, ${secondReminderResult.skipped} skipped.`);
+    console.log(`[cron] First: ${firstReminderResult.processed} sent, ${firstReminderResult.skipped} skipped, ${firstReminderResult.suppressed} suppressed. Second: ${secondReminderResult.processed} sent, ${secondReminderResult.skipped} skipped, ${secondReminderResult.suppressed} suppressed.`);
 
     return new Response(JSON.stringify({
       success: true,
@@ -128,6 +144,7 @@ Deno.serve(async (req) => {
       second_reminder: secondReminderResult,
       total_processed: totalProcessed,
       total_skipped: totalSkipped,
+      total_suppressed: totalSuppressed,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -148,12 +165,13 @@ async function processReminders(
     supabaseUrl: string;
     gatewayUrl: string;
     reminderType: "first" | "second";
+    suppressedSet: Set<string>;
   }
 ) {
   const isSecond = opts.reminderType === "second";
   let totalProcessed = 0;
   let totalSkipped = 0;
-  const MAX_TOTAL = 50;
+  let totalSuppressed = 0;
 
   // Fetch eligible carts based on reminder type
   let query = supabaseAdmin
@@ -163,10 +181,8 @@ async function processReminders(
     .not("customer_email", "is", null);
 
   if (isSecond) {
-    // Second reminder: already got first email, not recovered, count = 1
     query = query.eq("email_reminder_count", 1);
   } else {
-    // First reminder: never got an email
     query = query.is("email_recovery_sent_at", null);
   }
 
@@ -180,7 +196,7 @@ async function processReminders(
 
     if (producerError) {
       console.error(`[cron][${opts.reminderType}] Error fetching producers:`, producerError);
-      return { processed: 0, skipped: 0 };
+      return { processed: 0, skipped: 0, suppressed: 0 };
     }
     if (!producerRows || producerRows.length === 0) break;
     for (const r of producerRows) {
@@ -191,7 +207,7 @@ async function processReminders(
   }
 
   const uniqueProducerIds = [...new Set(allProducerIds)];
-  if (uniqueProducerIds.length === 0) return { processed: 0, skipped: 0 };
+  if (uniqueProducerIds.length === 0) return { processed: 0, skipped: 0, suppressed: 0 };
 
   // Fetch settings
   const { data: settingsRows } = await supabaseAdmin
@@ -226,7 +242,7 @@ async function processReminders(
     });
 
   for (const config of configs) {
-    if (totalProcessed >= MAX_TOTAL) break;
+    if (totalProcessed >= MAX_EMAILS_PER_RUN) break;
 
     // Calculate cutoff time
     const cutoffMs = isSecond
@@ -242,15 +258,13 @@ async function processReminders(
       .eq("recovered", false)
       .not("customer_email", "is", null)
       .order("created_at", { ascending: true })
-      .limit(MAX_TOTAL - totalProcessed);
+      .limit(MAX_EMAILS_PER_RUN - totalProcessed);
 
     if (isSecond) {
-      // Second: got first email, first email sent before cutoff
       cartQuery = cartQuery
         .eq("email_reminder_count", 1)
         .lt("email_recovery_sent_at", cutoff);
     } else {
-      // First: no email sent yet, created before cutoff
       cartQuery = cartQuery
         .is("email_recovery_sent_at", null)
         .lt("created_at", cutoff);
@@ -297,7 +311,21 @@ async function processReminders(
 
     // Send emails
     for (const cart of carts) {
-      if (totalProcessed >= MAX_TOTAL) break;
+      if (totalProcessed >= MAX_EMAILS_PER_RUN) break;
+
+      // ── Blacklist check: skip suppressed emails ──
+      if (opts.suppressedSet.has(cart.customer_email?.toLowerCase())) {
+        totalSuppressed++;
+        await supabaseAdmin
+          .from("abandoned_carts")
+          .update({
+            email_recovery_sent_at: new Date().toISOString(),
+            email_recovery_status: "suppressed",
+            email_reminder_count: isSecond ? 2 : 1,
+          } as any)
+          .eq("id", cart.id);
+        continue;
+      }
 
       // Deduplication check (first reminder only)
       if (!isSecond) {
@@ -318,7 +346,7 @@ async function processReminders(
       }
 
       const product = (cart as any).products;
-      const finalUrl = buildCheckoutUrl(cart, baseUrl);
+      const finalUrl = buildCheckoutUrl(cart, baseUrl, "email");
 
       const subject = isSecond
         ? "Última chance! Seu carrinho vai expirar ⏰"
@@ -392,5 +420,5 @@ async function processReminders(
     }
   }
 
-  return { processed: totalProcessed, skipped: totalSkipped };
+  return { processed: totalProcessed, skipped: totalSkipped, suppressed: totalSuppressed };
 }
