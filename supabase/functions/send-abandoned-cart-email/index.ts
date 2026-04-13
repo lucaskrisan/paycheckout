@@ -83,6 +83,24 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Deduplication: check if this customer+product already received a recovery email
+    const { data: existingSent } = await supabaseAdmin
+      .from("abandoned_carts")
+      .select("id")
+      .eq("customer_email", cart.customer_email)
+      .eq("product_id", cart.product_id)
+      .eq("user_id", userData.user.id)
+      .not("email_recovery_sent_at", "is", null)
+      .eq("email_recovery_status", "sent")
+      .limit(1);
+
+    if (existingSent && existingSent.length > 0) {
+      return new Response(JSON.stringify({ error: "Recovery email already sent to this customer for this product" }), {
+        status: 409,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Fetch checkout settings for company name
     const { data: settings } = await supabaseAdmin
       .from("checkout_settings")
@@ -92,8 +110,20 @@ Deno.serve(async (req) => {
 
     const companyName = settings?.company_name || "Loja Online";
 
+    // Check for custom domain
+    const { data: customDomain } = await supabaseAdmin
+      .from("custom_domains")
+      .select("hostname")
+      .eq("user_id", userData.user.id)
+      .eq("status", "active")
+      .maybeSingle();
+
+    const baseUrl = customDomain?.hostname
+      ? `https://${customDomain.hostname}`
+      : `${supabaseUrl.replace('.supabase.co', '')}.lovable.app`;
+
     // Build checkout URL with pre-filled params
-    let checkoutUrl = cart.checkout_url || cart.page_url || `https://app.panttera.com.br/checkout/${cart.product_id}`;
+    let checkoutUrl = cart.checkout_url || cart.page_url || `${baseUrl}/checkout/${cart.product_id}`;
     const params = new URLSearchParams();
     if (cart.customer_name) params.set("name", cart.customer_name);
     if (cart.customer_email) params.set("email", cart.customer_email);
@@ -112,13 +142,19 @@ Deno.serve(async (req) => {
         <p style="color: #666;">Notamos que você não finalizou sua compra. Seu carrinho ainda está esperando por você!</p>
         <div style="background: #f9f9f9; border-radius: 8px; padding: 16px; margin: 20px 0;">
           <p style="font-weight: bold; margin: 0;">${productName}</p>
-          <p style="color: #22c55e; font-size: 18px; margin: 8px 0;">R$ ${productPrice.toFixed(2)}</p>
+          <p style="color: #22c55e; font-size: 18px; margin: 8px 0;">R$ ${Number(productPrice).toFixed(2)}</p>
         </div>
         <a href="${finalUrl}" style="display: inline-block; background: #22c55e; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; margin: 16px 0;">
           Finalizar compra →
         </a>
         <p style="color: #999; font-size: 12px; margin-top: 24px;">
           Se você já finalizou sua compra, por favor ignore este e-mail.
+        </p>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+        <p style="color: #aaa; font-size: 11px; text-align: center;">
+          Você recebeu este e-mail porque iniciou uma compra em ${companyName}.<br/>
+          Se não deseja receber lembretes, <a href="${finalUrl}" style="color: #aaa;">clique aqui</a> para finalizar ou ignore esta mensagem.
+          Este é um envio único — você não receberá outro lembrete para este produto.
         </p>
       </div>
     `;
@@ -143,6 +179,7 @@ Deno.serve(async (req) => {
 
     const emailResult = await emailRes.json();
     const emailStatus = emailRes.ok ? "sent" : "error";
+    const resendId = emailResult?.id || null;
 
     // Update cart
     await supabaseAdmin
@@ -152,6 +189,26 @@ Deno.serve(async (req) => {
         email_recovery_status: emailStatus,
       } as any)
       .eq("id", cart_id);
+
+    // Register in email_logs for admin visibility
+    try {
+      await supabaseAdmin.from("email_logs").insert({
+        user_id: userData.user.id,
+        to_email: cart.customer_email,
+        to_name: cart.customer_name || null,
+        subject: "Você esqueceu algo no carrinho 🛒",
+        email_type: "transactional",
+        status: emailStatus,
+        source: "abandoned_cart_manual",
+        product_id: cart.product_id,
+        resend_id: resendId,
+        html_body: html,
+        cost_estimate: 0.00115,
+        metadata: { cart_id: cart_id },
+      });
+    } catch (logErr) {
+      console.error("[send-abandoned-cart-email] Failed to log email:", logErr);
+    }
 
     if (!emailRes.ok) {
       console.error("[send-abandoned-cart-email] Resend error:", emailResult);

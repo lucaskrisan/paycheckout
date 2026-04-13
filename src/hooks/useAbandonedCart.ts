@@ -7,6 +7,7 @@ interface UseAbandonedCartProps {
   customer: CustomerData;
   paymentMethod: string;
   productOwnerId?: string | null;
+  productPrice?: number | null;
 }
 
 function buildPayload(customer: CustomerData, paymentMethod: string, productOwnerId: string | null | undefined) {
@@ -21,12 +22,12 @@ function buildPayload(customer: CustomerData, paymentMethod: string, productOwne
   };
 }
 
-export function useAbandonedCart({ productId, customer, paymentMethod, productOwnerId }: UseAbandonedCartProps) {
+export function useAbandonedCart({ productId, customer, paymentMethod, productOwnerId, productPrice }: UseAbandonedCartProps) {
   const cartIdRef = useRef<string | null>(null);
   const purchasedRef = useRef(false);
   const createdRef = useRef(false);
-  const latestRef = useRef({ customer, paymentMethod, productOwnerId, productId });
-  latestRef.current = { customer, paymentMethod, productOwnerId, productId };
+  const latestRef = useRef({ customer, paymentMethod, productOwnerId, productId, productPrice });
+  latestRef.current = { customer, paymentMethod, productOwnerId, productId, productPrice };
 
   const hasMinimumData = Boolean(
     customer.email.trim().length >= 5 ||
@@ -64,6 +65,7 @@ export function useAbandonedCart({ productId, customer, paymentMethod, productOw
           id: clientId,
           product_id: productId,
           ...payload,
+          product_price: productPrice ?? null,
           page_url: window.location.href,
           checkout_url: window.location.href,
           user_agent: navigator.userAgent,
