@@ -4,6 +4,7 @@ import { lazy, Suspense, useState, useEffect, useRef, useCallback } from "react"
 const WhatsAppTemplates = lazy(() => import("@/components/admin/WhatsAppTemplates"));
 const WhatsAppFeatureFlags = lazy(() => import("@/components/admin/WhatsAppFeatureFlags"));
 const WhatsAppSendLog = lazy(() => import("@/components/admin/WhatsAppSendLog"));
+const WhatsAppStarterTemplates = lazy(() => import("@/components/admin/WhatsAppStarterTemplates"));
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -275,6 +276,10 @@ const WhatsApp = () => {
           <WhatsAppFeatureFlags />
         </Suspense>
       )}
+
+      <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
+        <WhatsAppStarterTemplates />
+      </Suspense>
 
       <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
         <WhatsAppTemplates />

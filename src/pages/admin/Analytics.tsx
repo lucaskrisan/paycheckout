@@ -12,29 +12,29 @@ import {
   BarChart3,
   Map,
   Eye,
-  MousePointerClick,
   Activity,
   Settings,
   Save,
   Loader2,
   TrendingUp,
   Globe,
-  Monitor,
-  Smartphone,
   ShoppingCart,
   CreditCard,
   ArrowDown,
   Copy,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
 } from "lucide-react";
 import BrazilMap from "@/components/admin/analytics/BrazilMap";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 const FUNNEL_STEPS = [
-  { key: "PageView", label: "Visualização", icon: Eye, color: "hsl(var(--primary))" },
-  { key: "ViewContent", label: "Conteúdo", icon: Globe, color: "hsl(151, 80%, 50%)" },
+  { key: "PageView", label: "Visitante", icon: Eye, color: "hsl(220, 80%, 60%)" },
+  { key: "ViewContent", label: "Viu Produto", icon: Globe, color: "hsl(200, 70%, 50%)" },
   { key: "InitiateCheckout", label: "Checkout", icon: ShoppingCart, color: "hsl(151, 70%, 45%)" },
-  { key: "AddPaymentInfo", label: "Pagamento", icon: CreditCard, color: "hsl(151, 60%, 40%)" },
-  { key: "Purchase", label: "Compra", icon: TrendingUp, color: "hsl(151, 100%, 35%)" },
+  { key: "AddPaymentInfo", label: "Pagamento", icon: CreditCard, color: "hsl(40, 90%, 50%)" },
+  { key: "Purchase", label: "Aprovado", icon: CheckCircle, color: "hsl(151, 100%, 35%)" },
 ];
 
 const PIE_COLORS = ["hsl(151,100%,45%)", "hsl(220,80%,55%)", "hsl(280,60%,55%)", "hsl(40,90%,55%)"];
@@ -46,6 +46,7 @@ const Analytics = () => {
   const [saving, setSaving] = useState(false);
   const [orders, setOrders] = useState<any[]>([]);
   const [pixelEvents, setPixelEvents] = useState<any[]>([]);
+  const [abandonedCarts, setAbandonedCarts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState("30days");
 
@@ -68,7 +69,6 @@ const Analytics = () => {
         const ordersQuery = supabase
           .from("orders")
           .select("id, status, amount, customer_state, payment_method, created_at, metadata")
-          .in("status", ["paid", "approved", "confirmed"])
           .order("created_at", { ascending: false })
           .limit(1000);
         if (!isSuperAdmin) ordersQuery.eq("user_id", user.id);
@@ -82,10 +82,19 @@ const Analytics = () => {
         if (!isSuperAdmin) eventsQuery.eq("user_id", user.id);
         if (dateFrom) eventsQuery.gte("created_at", dateFrom);
 
-        const [settingsRes, ordersRes, eventsRes] = await Promise.all([
+        const cartsQuery = supabase
+          .from("abandoned_carts")
+          .select("id, recovered, created_at, product_price")
+          .order("created_at", { ascending: false })
+          .limit(1000);
+        if (!isSuperAdmin) cartsQuery.eq("user_id", user.id);
+        if (dateFrom) cartsQuery.gte("created_at", dateFrom);
+
+        const [settingsRes, ordersRes, eventsRes, cartsRes] = await Promise.all([
           supabase.from("platform_settings").select("clarity_project_id").limit(1).single(),
           ordersQuery,
           eventsQuery,
+          cartsQuery,
         ]);
         if (settingsRes.data?.clarity_project_id) {
           setClarityId(settingsRes.data.clarity_project_id);
@@ -93,6 +102,7 @@ const Analytics = () => {
         }
         setOrders(ordersRes.data || []);
         setPixelEvents(eventsRes.data || []);
+        setAbandonedCarts(cartsRes.data || []);
       } catch (err) {
         console.error(err);
       } finally {
@@ -122,7 +132,7 @@ const Analytics = () => {
   // Sales by state
   const salesByState = useMemo(() => {
     const map: Record<string, { count: number; revenue: number }> = {};
-    orders.forEach((o) => {
+    orders.filter(o => ["paid", "approved", "confirmed"].includes(o.status)).forEach((o) => {
       const state = o.customer_state?.toUpperCase();
       if (!state) return;
       if (!map[state]) map[state] = { count: 0, revenue: 0 };
@@ -132,7 +142,7 @@ const Analytics = () => {
     return map;
   }, [orders]);
 
-  const totalWithState = useMemo(() => orders.filter((o) => o.customer_state).length, [orders]);
+  const totalWithState = useMemo(() => orders.filter((o) => o.customer_state && ["paid", "approved", "confirmed"].includes(o.status)).length, [orders]);
 
   // Top 5 states
   const topStates = useMemo(() =>
@@ -140,49 +150,64 @@ const Analytics = () => {
     [salesByState]
   );
 
-  // Funnel from pixel_events
+  // Funnel from pixel_events + orders + abandoned carts
   const funnelData = useMemo(() => {
     const counts: Record<string, number> = {};
     pixelEvents.forEach((e) => { counts[e.event_name] = (counts[e.event_name] || 0) + 1; });
-    return FUNNEL_STEPS.map((step) => ({ ...step, count: counts[step.key] || 0 }));
-  }, [pixelEvents]);
+    
+    return FUNNEL_STEPS.map((step) => {
+      const count = counts[step.key] || 0;
+      return { ...step, count };
+    });
+  }, [pixelEvents, abandonedCarts]);
 
   const funnelMax = Math.max(...funnelData.map((f) => f.count), 1);
 
+  // Abandoned vs recovered metrics
+  const cartMetrics = useMemo(() => {
+    const total = abandonedCarts.length;
+    const recovered = abandonedCarts.filter(c => c.recovered).length;
+    const abandoned = total - recovered;
+    const recoveryRate = total > 0 ? ((recovered / total) * 100).toFixed(1) : "0";
+    const lostRevenue = abandonedCarts.filter(c => !c.recovered).reduce((s, c) => s + Number(c.product_price || 0), 0);
+    const recoveredRevenue = abandonedCarts.filter(c => c.recovered).reduce((s, c) => s + Number(c.product_price || 0), 0);
+    return { total, recovered, abandoned, recoveryRate, lostRevenue, recoveredRevenue };
+  }, [abandonedCarts]);
+
   // Payment method distribution
+  const paidOrders = useMemo(() => orders.filter(o => ["paid", "approved", "confirmed"].includes(o.status)), [orders]);
   const paymentDist = useMemo(() => {
-    const pix = orders.filter((o) => o.payment_method === "pix").length;
-    const card = orders.filter((o) => o.payment_method === "credit_card").length;
-    const boleto = orders.filter((o) => o.payment_method === "boleto").length;
-    const other = orders.length - pix - card - boleto;
+    const pix = paidOrders.filter((o) => o.payment_method === "pix").length;
+    const card = paidOrders.filter((o) => o.payment_method === "credit_card").length;
+    const boleto = paidOrders.filter((o) => o.payment_method === "boleto").length;
+    const other = paidOrders.length - pix - card - boleto;
     return [
       { name: "PIX", value: pix },
       { name: "Cartão", value: card },
       { name: "Boleto", value: boleto },
       { name: "Outros", value: other },
     ].filter((d) => d.value > 0);
-  }, [orders]);
+  }, [paidOrders]);
 
   // Revenue by day chart
   const revenueByDay = useMemo(() => {
     const days: Record<string, number> = {};
-    const numDays = period === "7days" ? 7 : period === "30days" ? 30 : 90;
+    const numDays = period === "7days" ? 7 : period === "30days" ? 30 : period === "today" ? 1 : 90;
     const now = new Date();
     for (let i = numDays - 1; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
       days[d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })] = 0;
     }
-    orders.forEach((o) => {
+    paidOrders.forEach((o) => {
       const key = new Date(o.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
       if (days[key] !== undefined) days[key] += Number(o.amount || 0);
     });
     return Object.entries(days).map(([name, total]) => ({ name, total }));
-  }, [orders, period]);
+  }, [paidOrders, period]);
 
-  // Device breakdown from pixel_events (derive from source or visitor patterns)
+  // Device breakdown from pixel_events
   const deviceData = useMemo(() => {
-    // We'll estimate based on unique visitors
     const uniqueVisitors = new Set(pixelEvents.filter((e) => e.visitor_id).map((e) => e.visitor_id));
     const browserEvents = pixelEvents.filter((e) => e.source === "browser").length;
     const serverEvents = pixelEvents.filter((e) => e.source === "server").length;
@@ -192,15 +217,17 @@ const Analytics = () => {
   // UTM source distribution from orders
   const utmSources = useMemo(() => {
     const sources: Record<string, number> = {};
-    orders.forEach((o) => {
+    paidOrders.forEach((o) => {
       const src = (o.metadata as any)?.utm_source || "Orgânico";
       sources[src] = (sources[src] || 0) + 1;
     });
     return Object.entries(sources).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  }, [orders]);
+  }, [paidOrders]);
 
   const fmt = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
-  const totalRevenue = orders.reduce((s, o) => s + Number(o.amount || 0), 0);
+  const totalRevenue = paidOrders.reduce((s, o) => s + Number(o.amount || 0), 0);
+  const pendingOrders = orders.filter(o => o.status === "pending");
+  const totalPending = pendingOrders.reduce((s, o) => s + Number(o.amount || 0), 0);
 
   if (loading) {
     return (
@@ -258,8 +285,8 @@ const Analytics = () => {
               <ShoppingCart className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Vendas</p>
-              <p className="text-lg font-bold text-foreground">{orders.length}</p>
+              <p className="text-xs text-muted-foreground">Vendas Aprovadas</p>
+              <p className="text-lg font-bold text-foreground">{paidOrders.length}</p>
             </div>
           </CardContent>
         </Card>
@@ -283,7 +310,7 @@ const Analytics = () => {
               <p className="text-xs text-muted-foreground">Conversão</p>
               <p className="text-lg font-bold text-foreground">
                 {deviceData.uniqueVisitors > 0
-                  ? ((orders.length / deviceData.uniqueVisitors) * 100).toFixed(1)
+                  ? ((paidOrders.length / deviceData.uniqueVisitors) * 100).toFixed(1)
                   : "0"}%
               </p>
             </div>
@@ -291,7 +318,56 @@ const Analytics = () => {
         </Card>
       </div>
 
-      {/* Revenue Chart + Funnel */}
+      {/* Abandonment KPIs */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <Card className="border-border bg-card">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2 rounded-full bg-destructive/10">
+              <XCircle className="w-4 h-4 text-destructive" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Abandonos</p>
+              <p className="text-lg font-bold text-foreground">{cartMetrics.abandoned}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border bg-card">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2 rounded-full bg-emerald-500/10">
+              <CheckCircle className="w-4 h-4 text-emerald-500" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Recuperados</p>
+              <p className="text-lg font-bold text-foreground">{cartMetrics.recovered}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border bg-card">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2 rounded-full bg-primary/10">
+              <TrendingUp className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Taxa Recuperação</p>
+              <p className="text-lg font-bold text-foreground">{cartMetrics.recoveryRate}%</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border bg-card">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2 rounded-full bg-yellow-500/10">
+              <AlertTriangle className="w-4 h-4 text-yellow-500" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Pendentes</p>
+              <p className="text-lg font-bold text-foreground">{pendingOrders.length}</p>
+              <p className="text-[10px] text-muted-foreground">{fmt(totalPending)}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Revenue Chart + Full Funnel */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue Chart */}
         <Card className="border-border bg-card">
@@ -320,12 +396,12 @@ const Analytics = () => {
           </CardContent>
         </Card>
 
-        {/* Conversion Funnel */}
+        {/* Full Conversion Funnel */}
         <Card className="border-border bg-card">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
               <ArrowDown className="w-4 h-4 text-primary" />
-              Funil de Conversão
+              Funil Completo: Visitante → Aprovado
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -334,6 +410,7 @@ const Analytics = () => {
                 const Icon = step.icon;
                 const prevCount = i > 0 ? funnelData[i - 1].count : step.count;
                 const dropRate = prevCount > 0 && i > 0 ? ((1 - step.count / prevCount) * 100).toFixed(0) : null;
+                const convFromFirst = funnelData[0].count > 0 ? ((step.count / funnelData[0].count) * 100).toFixed(1) : "0";
                 return (
                   <div key={step.key} className="space-y-1">
                     <div className="flex items-center justify-between">
@@ -343,7 +420,10 @@ const Analytics = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-bold text-foreground">{step.count}</span>
-                        {dropRate && (
+                        {i > 0 && (
+                          <span className="text-[10px] text-muted-foreground">({convFromFirst}%)</span>
+                        )}
+                        {dropRate && Number(dropRate) > 0 && (
                           <span className="text-xs text-red-400">-{dropRate}%</span>
                         )}
                       </div>
@@ -357,10 +437,28 @@ const Analytics = () => {
                         }}
                       />
                     </div>
+                    {/* Show abandonment between checkout and payment */}
+                    {step.key === "InitiateCheckout" && cartMetrics.abandoned > 0 && (
+                      <div className="flex items-center gap-2 pl-6 pt-1">
+                        <XCircle className="w-3 h-3 text-red-400" />
+                        <span className="text-[11px] text-red-400">
+                          {cartMetrics.abandoned} abandonaram · {cartMetrics.recovered} recuperados ({cartMetrics.recoveryRate}%)
+                        </span>
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </div>
+            {/* Overall conversion summary */}
+            {funnelData[0].count > 0 && (
+              <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Conversão total (Visitante → Aprovado)</span>
+                <span className="text-sm font-bold text-primary">
+                  {((funnelData[funnelData.length - 1].count / funnelData[0].count) * 100).toFixed(1)}%
+                </span>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -388,7 +486,7 @@ const Analytics = () => {
           </CardContent>
         </Card>
 
-        {/* Right Column: Top States + Payment Dist + UTM Sources */}
+        {/* Right Column */}
         <div className="space-y-4">
           {/* Top States */}
           <Card className="border-border bg-card">
