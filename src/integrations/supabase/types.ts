@@ -1971,6 +1971,7 @@ export type Database = {
           id: string
           metadata: Json | null
           reason: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -1978,6 +1979,7 @@ export type Database = {
           id?: string
           metadata?: Json | null
           reason: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -1985,6 +1987,7 @@ export type Database = {
           id?: string
           metadata?: Json | null
           reason?: string
+          user_id?: string | null
         }
         Relationships: []
       }
