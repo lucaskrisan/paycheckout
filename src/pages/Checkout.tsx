@@ -73,7 +73,16 @@ const Checkout = () => {
   const [customer, setCustomer] = useState<CustomerData>({ name: prefill.name, email: prefill.email, phone: prefill.phone, cpf: prefill.cpf });
   const [creditCard, setCreditCard] = useState<CreditCardData>({ number: "", name: "", expiry: "", cvv: "", installments: "1" });
 
-  const { markPurchased } = useAbandonedCart({ productId: productId || "", customer, paymentMethod, productOwnerId: product?.user_id, productPrice: product?.price });
+  const { markPurchased, markStep } = useAbandonedCart({ productId: productId || "", customer, paymentMethod, productOwnerId: product?.user_id, productPrice: product?.price });
+
+  // Track checkout_step: personal_info when customer fills minimum data
+  useEffect(() => {
+    const hasName = customer.name.trim().length >= 2;
+    const hasEmail = customer.email.trim().length >= 5;
+    if (hasName && hasEmail) {
+      markStep("personal_info");
+    }
+  }, [customer.name, customer.email, markStep]);
   useCheckoutPresence("track", productId);
 
   // Auto-set country from IP geolocation (only once)
@@ -231,6 +240,7 @@ const Checkout = () => {
       if (!expMonth || !expYear || expMonth.length !== 2 || expYear.length !== 2) { toast.error("Preencha a validade do cartão corretamente"); return; }
     }
 
+    markStep("payment");
     trackAddToCartMain();
     setIsSubmitting(true);
     const bumpProductIds = orderBumps.filter((b) => selectedBumps.has(b.id)).map((b) => b.bump_product.id);
