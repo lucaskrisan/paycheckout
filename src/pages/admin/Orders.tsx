@@ -116,7 +116,7 @@ const isUpsellOrder = (order: Order): boolean => {
 };
 
 const Orders = () => {
-  const { user } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -186,8 +186,10 @@ const Orders = () => {
     if (!user?.id) return;
     const load = async () => {
       setLoading(true);
+      let ordersQuery = supabase.from("orders").select("*, customers(name, email, phone, cpf), products(name)").order("created_at", { ascending: false }).limit(1000);
+      if (!isSuperAdmin) ordersQuery = ordersQuery.eq("user_id", user.id);
       const [ordersRes, productsRes] = await Promise.all([
-        supabase.from("orders").select("*, customers(name, email, phone, cpf), products(name)").order("created_at", { ascending: false }).limit(1000),
+        ordersQuery,
         supabase.from("products").select("id, name").eq("user_id", user.id),
       ]);
       setOrders((ordersRes.data as any) || []);
