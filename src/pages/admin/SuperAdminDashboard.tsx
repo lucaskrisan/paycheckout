@@ -115,6 +115,7 @@ const SuperAdminDashboard = () => {
   const [emailLogs, setEmailLogs] = useState<any[]>([]);
    const [webhookEndpoints, setWebhookEndpoints] = useState<any[]>([]);
    const [rateLimitHits, setRateLimitHits] = useState<any[]>([]);
+   const [allGateways, setAllGateways] = useState<any[]>([]);
 
   // UI state
   const [loading, setLoading] = useState(true);
@@ -146,6 +147,7 @@ const SuperAdminDashboard = () => {
       { data: emailData },
       { data: webhooksData },
       { data: rateLimitData },
+      { data: gatewaysData },
     ] = await Promise.all([
       supabase.from("user_roles").select("user_id, role"),
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
@@ -157,6 +159,7 @@ const SuperAdminDashboard = () => {
       supabase.from("email_logs").select("id, email_type, status, to_email, to_name, subject, created_at, user_id, cost_estimate").order("created_at", { ascending: false }).limit(100),
       supabase.from("webhook_endpoints").select("*"),
       supabase.from("rate_limit_hits").select("*").order("created_at", { ascending: false }).limit(500),
+      supabase.from("payment_gateways").select("id, active, environment, provider, name, user_id"),
     ]);
 
     // Fetch emails from auth.users via edge function
@@ -232,6 +235,7 @@ const SuperAdminDashboard = () => {
     setEmailLogs((emailData || []).map((e: any) => ({ ...e, producer_name: nameMap.get(e.user_id) || "—" })));
     setWebhookEndpoints(webhooksData || []);
     setRateLimitHits(rateLimitData || []);
+    setAllGateways(gatewaysData || []);
 
     setLoading(false);
   }, []);
@@ -365,6 +369,88 @@ const SuperAdminDashboard = () => {
     return Object.entries(days).map(([name, v]) => ({ name, ...v }));
   }, [periodApproved, period, feePercent]);
 
+  // Monthly accumulated fees chart (last 12 months)
+  const monthlyFeesChart = useMemo(() => {
+    const months: Record<string, { revenue: number; fees: number; feeCount: number }> = {};
+    const now = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
+      months[key] = { revenue: 0, fees: 0, feeCount: 0 };
+    }
+    // Use billing transactions for actual fees charged
+    billingTxs.filter(t => t.type === "fee").forEach((tx) => {
+      const d = new Date(tx.created_at);
+      const key = d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
+      if (months[key] !== undefined) {
+        months[key].fees += Number(tx.amount);
+        months[key].feeCount++;
+      }
+    });
+    // Revenue from approved orders
+    orders.filter(o => ["paid", "approved"].includes(String(o.status).toLowerCase())).forEach((o) => {
+      const d = new Date(o.created_at);
+      const key = d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
+      if (months[key] !== undefined) {
+        months[key].revenue += Number(o.amount);
+      }
+    });
+    return Object.entries(months).map(([name, v]) => ({ name, ...v }));
+  }, [orders, billingTxs]);
+
+  // Automatic alerts
+  const platformAlerts = useMemo(() => {
+    const alerts: { id: string; icon: typeof AlertTriangle; message: string; variant: "error" | "warning" }[] = [];
+
+    // Producers with negative balance
+    const negativeAccounts = billingAccounts.filter(b => b.balance < 0);
+    if (negativeAccounts.length > 0) {
+      alerts.push({
+        id: "negative-balance",
+        icon: DollarSign,
+        message: `${negativeAccounts.length} produtor(es) com saldo negativo: ${negativeAccounts.map(b => b.producer_name).join(", ")}`,
+        variant: "error",
+      });
+    }
+
+    // Blocked producers
+    const blockedAccounts = billingAccounts.filter(b => b.blocked);
+    if (blockedAccounts.length > 0) {
+      alerts.push({
+        id: "blocked-producers",
+        icon: Ban,
+        message: `${blockedAccounts.length} produtor(es) bloqueado(s): ${blockedAccounts.map(b => b.producer_name).join(", ")}`,
+        variant: "error",
+      });
+    }
+
+    // Producers with NO active gateway but with active products
+    const producersWithGateway = new Set((allGateways || []).filter(g => g.active).map(g => g.user_id));
+    const producersWithProducts = producers.filter(p => p.product_count > 0 && !producersWithGateway.has(p.id) && p.id !== user?.id);
+    if (producersWithProducts.length > 0) {
+      alerts.push({
+        id: "no-gateway",
+        icon: CreditCard,
+        message: `${producersWithProducts.length} produtor(es) sem gateway ativo: ${producersWithProducts.map(p => p.full_name || "Sem nome").join(", ")}`,
+        variant: "warning",
+      });
+    }
+
+    // All active gateways in sandbox mode
+    const activeGateways = (allGateways || []).filter(g => g.active);
+    const allSandbox = activeGateways.length > 0 && activeGateways.every(g => g.environment === "sandbox");
+    if (allSandbox) {
+      alerts.push({
+        id: "all-sandbox",
+        icon: AlertTriangle,
+        message: "Todos os gateways ativos estão em modo sandbox. Pagamentos reais não serão processados.",
+        variant: "warning",
+      });
+    }
+
+    return alerts;
+  }, [billingAccounts, allGateways, producers, user?.id]);
+
   // Producer drill-down
   const selectedProducer = useMemo(() => producers.find((p) => p.id === selectedProducerId), [producers, selectedProducerId]);
   const producerOrders = useMemo(() => {
@@ -406,6 +492,32 @@ const SuperAdminDashboard = () => {
           </SelectContent>
         </Select>
       </div>
+
+      {/* ═══ AUTOMATIC ALERTS ═══ */}
+      {platformAlerts.length > 0 && (
+        <div className="space-y-2">
+          {platformAlerts.map((alert) => (
+            <div
+              key={alert.id}
+              className={`flex items-center gap-3 rounded-lg border p-3 ${
+                alert.variant === "error"
+                  ? "border-destructive/50 bg-destructive/5"
+                  : "border-yellow-500/50 bg-yellow-500/5"
+              }`}
+            >
+              <alert.icon
+                className={`w-4 h-4 shrink-0 ${
+                  alert.variant === "error" ? "text-destructive" : "text-yellow-500"
+                }`}
+              />
+              <span className="text-sm text-foreground flex-1">{alert.message}</span>
+              <Badge variant={alert.variant === "error" ? "destructive" : "outline"} className="text-[10px] shrink-0">
+                {alert.variant === "error" ? "Crítico" : "Atenção"}
+              </Badge>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Global KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
@@ -614,6 +726,71 @@ const SuperAdminDashboard = () => {
         {/* ═══ FINANCIAL TAB ═══ */}
         <TabsContent value="financial">
           <div className="space-y-4">
+            {/* Monthly accumulated fees chart */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-amber-500" /> Receita da Plataforma — Taxas Acumuladas (12 meses)
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">Taxas de R$0,99 cobradas por venda aprovada. Visão mensal acumulada.</p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                  {(() => {
+                    const totalFees = monthlyFeesChart.reduce((s, m) => s + m.fees, 0);
+                    const totalRev = monthlyFeesChart.reduce((s, m) => s + m.revenue, 0);
+                    const totalCount = monthlyFeesChart.reduce((s, m) => s + m.feeCount, 0);
+                    const avgMonthly = totalFees / Math.max(monthlyFeesChart.filter(m => m.fees > 0).length, 1);
+                    return [
+                      { label: "Total Taxas (12m)", value: fmt(totalFees), color: "text-amber-500" },
+                      { label: "GMV Total (12m)", value: fmt(totalRev), color: "text-primary" },
+                      { label: "Vendas Taxadas", value: String(totalCount), color: "text-foreground" },
+                      { label: "Média Mensal", value: fmt(avgMonthly), color: "text-muted-foreground" },
+                    ].map((kpi, i) => (
+                      <div key={i} className="p-3 rounded-lg bg-muted/50 border">
+                        <p className="text-xs text-muted-foreground">{kpi.label}</p>
+                        <p className={`text-lg font-bold ${kpi.color}`}>{kpi.value}</p>
+                      </div>
+                    ));
+                  })()}
+                </div>
+                <div className="h-[250px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={monthlyFeesChart}>
+                      <defs>
+                        <linearGradient id="gMonthFee" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.2} />
+                          <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="gMonthRev" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.1} />
+                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
+                      <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `R$${v}`} />
+                      <Tooltip
+                        content={({ active, payload, label }) => {
+                          if (!active || !payload?.length) return null;
+                          return (
+                            <div className="bg-card/95 backdrop-blur-xl border border-border rounded-lg px-4 py-2.5 shadow-xl">
+                              <p className="text-[11px] text-muted-foreground font-medium">{label}</p>
+                              <p className="text-sm font-bold text-amber-500">Taxas: {fmt(payload[0]?.value as number || 0)}</p>
+                              <p className="text-sm font-bold text-primary">GMV: {fmt(payload[1]?.value as number || 0)}</p>
+                              <p className="text-[11px] text-muted-foreground">{payload[0]?.payload?.feeCount || 0} vendas taxadas</p>
+                            </div>
+                          );
+                        }}
+                      />
+                      <Area type="monotone" dataKey="fees" stroke="#f59e0b" fill="url(#gMonthFee)" strokeWidth={2} name="Taxas" />
+                      <Area type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" fill="url(#gMonthRev)" strokeWidth={1.5} name="GMV" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Billing accounts overview */}
             <Card>
               <CardHeader className="pb-3"><CardTitle className="text-lg flex items-center gap-2"><Wallet className="w-5 h-5" /> Contas de Billing dos Produtores</CardTitle></CardHeader>
