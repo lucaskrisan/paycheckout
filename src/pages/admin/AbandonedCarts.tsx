@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { useAuth } from "@/hooks/useAuth";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,7 @@ const ITEMS_PER_PAGE = 20;
 
 const AbandonedCarts = () => {
   const navigate = useNavigate();
+  const { isSuperAdmin } = useAuth();
   const [carts, setCarts] = useState<AbandonedCart[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -236,8 +238,8 @@ const AbandonedCarts = () => {
 
   return (
     <div className="space-y-4">
-      {/* Recovery Settings Card */}
-      <Card>
+      {/* Recovery Settings Card - Super Admin only */}
+      {isSuperAdmin && <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <Mail className="w-5 h-5 text-primary" />
@@ -374,7 +376,7 @@ const AbandonedCarts = () => {
             </div>
           )}
         </CardContent>
-      </Card>
+      </Card>}
 
       {/* Header */}
       <div className="flex items-center justify-between">
