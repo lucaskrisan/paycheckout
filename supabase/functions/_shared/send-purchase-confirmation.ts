@@ -16,6 +16,10 @@ interface PurchaseConfirmationParams {
   source: string;
 }
 
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 export async function sendPurchaseConfirmationEmail(params: PurchaseConfirmationParams): Promise<void> {
   const { supabase, orderId, customerId, productId, userId, amount, paymentMethod, currency = 'BRL', source } = params;
 
