@@ -238,8 +238,8 @@ const AbandonedCarts = () => {
 
   return (
     <div className="space-y-4">
-      {/* Recovery Settings Card */}
-      <Card>
+      {/* Recovery Settings Card - Super Admin only */}
+      {isSuperAdmin && <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <Mail className="w-5 h-5 text-primary" />
