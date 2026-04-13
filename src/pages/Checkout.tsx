@@ -241,8 +241,8 @@ const Checkout = () => {
     }
 
     markStep("payment");
-
-    try {
+    trackAddToCartMain();
+    setIsSubmitting(true);
     const bumpProductIds = orderBumps.filter((b) => selectedBumps.has(b.id)).map((b) => b.bump_product.id);
     const utms = getUtms();
 
