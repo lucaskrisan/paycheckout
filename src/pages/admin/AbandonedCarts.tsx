@@ -280,6 +280,99 @@ const AbandonedCarts = () => {
               </Select>
             </div>
           </div>
+
+          {/* Template Customization */}
+          {emailEnabled && (
+            <div className="mt-4 pt-4 border-t border-border space-y-3">
+              <p className="text-sm font-medium text-foreground">Personalizar e-mail</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Assunto do e-mail</Label>
+                  <Input
+                    value={emailSubject}
+                    onChange={(e) => setEmailSubject(e.target.value)}
+                    onBlur={() => saveRecoverySetting("email_subject", emailSubject)}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Título do e-mail</Label>
+                  <Input
+                    value={emailHeading}
+                    onChange={(e) => setEmailHeading(e.target.value)}
+                    onBlur={() => saveRecoverySetting("email_heading", emailHeading)}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Texto do botão</Label>
+                  <Input
+                    value={emailButtonText}
+                    onChange={(e) => setEmailButtonText(e.target.value)}
+                    onBlur={() => saveRecoverySetting("email_button_text", emailButtonText)}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Cor do botão</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <input
+                      type="color"
+                      value={emailButtonColor}
+                      onChange={(e) => {
+                        setEmailButtonColor(e.target.value);
+                        saveRecoverySetting("email_button_color", e.target.value);
+                      }}
+                      className="w-8 h-8 rounded border border-border cursor-pointer"
+                    />
+                    <Input
+                      value={emailButtonColor}
+                      onChange={(e) => setEmailButtonColor(e.target.value)}
+                      onBlur={() => saveRecoverySetting("email_button_color", emailButtonColor)}
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Second Reminder */}
+              <div className="pt-3 border-t border-border">
+                <div className="flex items-center gap-3">
+                  <Switch
+                    checked={secondEmailEnabled}
+                    onCheckedChange={(checked) => {
+                      setSecondEmailEnabled(checked);
+                      saveRecoverySetting("second_email_enabled", checked);
+                    }}
+                  />
+                  <Label className="text-sm font-medium cursor-pointer">
+                    Enviar 2º lembrete (última chance)
+                  </Label>
+                </div>
+                {secondEmailEnabled && (
+                  <div className="flex items-center gap-2 mt-2 ml-10">
+                    <Label className="text-sm text-muted-foreground whitespace-nowrap">Enviar após:</Label>
+                    <Select
+                      value={secondEmailDelay}
+                      onValueChange={(val) => {
+                        setSecondEmailDelay(val);
+                        saveRecoverySetting("second_email_delay_hours", Number(val));
+                      }}
+                    >
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="12">12 horas</SelectItem>
+                        <SelectItem value="24">24 horas</SelectItem>
+                        <SelectItem value="48">48 horas</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
