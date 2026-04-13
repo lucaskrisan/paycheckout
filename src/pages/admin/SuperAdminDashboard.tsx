@@ -726,6 +726,71 @@ const SuperAdminDashboard = () => {
         {/* ═══ FINANCIAL TAB ═══ */}
         <TabsContent value="financial">
           <div className="space-y-4">
+            {/* Monthly accumulated fees chart */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-amber-500" /> Receita da Plataforma — Taxas Acumuladas (12 meses)
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">Taxas de R$0,99 cobradas por venda aprovada. Visão mensal acumulada.</p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                  {(() => {
+                    const totalFees = monthlyFeesChart.reduce((s, m) => s + m.fees, 0);
+                    const totalRev = monthlyFeesChart.reduce((s, m) => s + m.revenue, 0);
+                    const totalCount = monthlyFeesChart.reduce((s, m) => s + m.feeCount, 0);
+                    const avgMonthly = totalFees / Math.max(monthlyFeesChart.filter(m => m.fees > 0).length, 1);
+                    return [
+                      { label: "Total Taxas (12m)", value: fmt(totalFees), color: "text-amber-500" },
+                      { label: "GMV Total (12m)", value: fmt(totalRev), color: "text-primary" },
+                      { label: "Vendas Taxadas", value: String(totalCount), color: "text-foreground" },
+                      { label: "Média Mensal", value: fmt(avgMonthly), color: "text-muted-foreground" },
+                    ].map((kpi, i) => (
+                      <div key={i} className="p-3 rounded-lg bg-muted/50 border">
+                        <p className="text-xs text-muted-foreground">{kpi.label}</p>
+                        <p className={`text-lg font-bold ${kpi.color}`}>{kpi.value}</p>
+                      </div>
+                    ));
+                  })()}
+                </div>
+                <div className="h-[250px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={monthlyFeesChart}>
+                      <defs>
+                        <linearGradient id="gMonthFee" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.2} />
+                          <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="gMonthRev" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.1} />
+                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
+                      <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `R$${v}`} />
+                      <Tooltip
+                        content={({ active, payload, label }) => {
+                          if (!active || !payload?.length) return null;
+                          return (
+                            <div className="bg-card/95 backdrop-blur-xl border border-border rounded-lg px-4 py-2.5 shadow-xl">
+                              <p className="text-[11px] text-muted-foreground font-medium">{label}</p>
+                              <p className="text-sm font-bold text-amber-500">Taxas: {fmt(payload[0]?.value as number || 0)}</p>
+                              <p className="text-sm font-bold text-primary">GMV: {fmt(payload[1]?.value as number || 0)}</p>
+                              <p className="text-[11px] text-muted-foreground">{payload[0]?.payload?.feeCount || 0} vendas taxadas</p>
+                            </div>
+                          );
+                        }}
+                      />
+                      <Area type="monotone" dataKey="fees" stroke="#f59e0b" fill="url(#gMonthFee)" strokeWidth={2} name="Taxas" />
+                      <Area type="monotone" dataKey="revenue" stroke="hsl(var(--primary))" fill="url(#gMonthRev)" strokeWidth={1.5} name="GMV" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Billing accounts overview */}
             <Card>
               <CardHeader className="pb-3"><CardTitle className="text-lg flex items-center gap-2"><Wallet className="w-5 h-5" /> Contas de Billing dos Produtores</CardTitle></CardHeader>
