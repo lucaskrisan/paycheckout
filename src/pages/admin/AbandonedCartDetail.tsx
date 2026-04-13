@@ -341,9 +341,6 @@ const AbandonedCartDetail = () => {
           </Card>
 
           {/* Actions */}
-          <Button className="w-full" onClick={() => toast.info("Funcionalidade em breve")}>
-            Criar pedido
-          </Button>
 
           {cart.email_recovery_sent_at ? (
             <Button variant="outline" className="w-full gap-2" disabled>
