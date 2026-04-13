@@ -14,8 +14,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import {
   Download, ChevronRight, ChevronLeft, ChevronsLeft, ChevronsRight,
-  Filter, Search, ShoppingBag, MessageCircle, Mail, RefreshCw,
+  Filter, Search, ShoppingBag, Mail, RefreshCw,
 } from "lucide-react";
+import WhatsAppIcon from "@/components/WhatsAppIcon";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -544,7 +545,7 @@ const AbandonedCarts = () => {
                             className="text-green-500 hover:text-green-600"
                             title="WhatsApp"
                           >
-                            <MessageCircle className="h-4 w-4" />
+                            <WhatsAppIcon className="h-4 w-4" />
                           </button>
                         </div>
                       ) : (
