@@ -39,6 +39,10 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // --- Rate Limiting ---
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || req.headers.get('cf-connecting-ip') || 'unknown';
+
     let PAGARME_API_KEY: string | null = null;
 
     const supabaseAdmin = createClient(
@@ -46,6 +50,20 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
+    const { data: rlData } = await supabaseAdmin.rpc('check_rate_limit', {
+      p_identifier: clientIp,
+      p_action: 'create-pagarme-card-payment',
+      p_max_hits: 5,
+      p_window_seconds: 300,
+    });
+
+    if (rlData === true) {
+      console.warn(`[create-pagarme-card-payment] Rate limited IP: ${clientIp}`);
+      return new Response(
+        JSON.stringify({ error: 'Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     const body = await req.json();
     const {
       customer, product_id, installments, is_subscription, billing_cycle,
