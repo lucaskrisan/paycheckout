@@ -54,6 +54,13 @@ const AbandonedCarts = () => {
   const [secondEmailEnabled, setSecondEmailEnabled] = useState(true);
   const [secondEmailDelay, setSecondEmailDelay] = useState("24");
 
+  // Filters
+  const [filterRecovered, setFilterRecovered] = useState<boolean[]>([]);
+  const [filterEmailStatus, setFilterEmailStatus] = useState<string[]>([]);
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
+  const [datePickerOpen, setDatePickerOpen] = useState<"from" | "to" | null>(null);
+
   // Load recovery settings
   useEffect(() => {
     const loadSettings = async () => {
