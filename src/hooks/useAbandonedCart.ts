@@ -172,10 +172,10 @@ export function useAbandonedCart({ productId, customer, paymentMethod, productOw
     const cartId = cartIdRef.current;
     if (!cartId || purchasedRef.current) return;
     try {
-      await supabase
-        .from("abandoned_carts")
-        .update({ checkout_step: step, updated_at: new Date().toISOString() } as any)
-        .eq("id", cartId);
+      await supabase.rpc("update_abandoned_cart", {
+        p_cart_id: cartId,
+        p_checkout_step: step,
+      });
     } catch (e) {
       console.error("[abandoned-cart] markStep error:", e);
     }
