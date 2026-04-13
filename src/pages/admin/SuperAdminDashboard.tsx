@@ -20,7 +20,7 @@ import {
   Users, DollarSign, ShoppingCart, TrendingUp, Search, ShieldCheck, ShieldX, Loader2,
   Crown, Eye, ArrowLeft, CreditCard, AlertTriangle, Ban, CheckCircle, RefreshCcw,
   Activity, Webhook, Mail, Package, BarChart3, Wallet, Server, UserPlus, Trash2, Send,
-  Globe, Shield, Clock, Zap, XCircle,
+  Globe, Shield, Clock,
 } from "lucide-react";
 import { useCheckoutPresence } from "@/hooks/useCheckoutPresence";
 import {
@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import {
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import SecurityScanner from "@/components/admin/SecurityScanner";
 
