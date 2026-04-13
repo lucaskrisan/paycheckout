@@ -369,6 +369,89 @@ const SuperAdminDashboard = () => {
     return Object.entries(days).map(([name, v]) => ({ name, ...v }));
   }, [periodApproved, period, feePercent]);
 
+  // Monthly accumulated fees chart (last 12 months)
+  const monthlyFeesChart = useMemo(() => {
+    const months: Record<string, { revenue: number; fees: number; feeCount: number }> = {};
+    const now = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
+      months[key] = { revenue: 0, fees: 0, feeCount: 0 };
+    }
+    // Use billing transactions for actual fees charged
+    billingTxs.filter(t => t.type === "fee").forEach((tx) => {
+      const d = new Date(tx.created_at);
+      const key = d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
+      if (months[key] !== undefined) {
+        months[key].fees += Number(tx.amount);
+        months[key].feeCount++;
+      }
+    });
+    // Revenue from approved orders
+    orders.filter(o => ["paid", "approved"].includes(String(o.status).toLowerCase())).forEach((o) => {
+      const d = new Date(o.created_at);
+      const key = d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
+      if (months[key] !== undefined) {
+        months[key].revenue += Number(o.amount);
+      }
+    });
+    return Object.entries(months).map(([name, v]) => ({ name, ...v }));
+  }, [orders, billingTxs]);
+
+  // Automatic alerts
+  const platformAlerts = useMemo(() => {
+    const alerts: { id: string; icon: typeof AlertTriangle; message: string; variant: "error" | "warning" }[] = [];
+
+    // Producers with negative balance
+    const negativeAccounts = billingAccounts.filter(b => b.balance < 0);
+    if (negativeAccounts.length > 0) {
+      alerts.push({
+        id: "negative-balance",
+        icon: DollarSign,
+        message: `${negativeAccounts.length} produtor(es) com saldo negativo: ${negativeAccounts.map(b => b.producer_name).join(", ")}`,
+        variant: "error",
+      });
+    }
+
+    // Blocked producers
+    const blockedAccounts = billingAccounts.filter(b => b.blocked);
+    if (blockedAccounts.length > 0) {
+      alerts.push({
+        id: "blocked-producers",
+        icon: Ban,
+        message: `${blockedAccounts.length} produtor(es) bloqueado(s): ${blockedAccounts.map(b => b.producer_name).join(", ")}`,
+        variant: "error",
+      });
+    }
+
+    // Producers with NO active gateway but with active products
+    const producerIds = new Set(producers.map(p => p.id));
+    const producersWithGateway = new Set((allGateways || []).filter(g => g.active).map(g => g.user_id));
+    const producersWithProducts = producers.filter(p => p.product_count > 0 && !producersWithGateway.has(p.id) && p.id !== user?.id);
+    if (producersWithProducts.length > 0) {
+      alerts.push({
+        id: "no-gateway",
+        icon: CreditCard,
+        message: `${producersWithProducts.length} produtor(es) sem gateway ativo: ${producersWithProducts.map(p => p.full_name || "Sem nome").join(", ")}`,
+        variant: "warning",
+      });
+    }
+
+    // All active gateways in sandbox mode
+    const activeGateways = (allGateways || []).filter(g => g.active);
+    const allSandbox = activeGateways.length > 0 && activeGateways.every(g => g.environment === "sandbox");
+    if (allSandbox) {
+      alerts.push({
+        id: "all-sandbox",
+        icon: AlertTriangle,
+        message: "Todos os gateways ativos estão em modo sandbox. Pagamentos reais não serão processados.",
+        variant: "warning",
+      });
+    }
+
+    return alerts;
+  }, [billingAccounts, allGateways, producers, user?.id]);
+
   // Producer drill-down
   const selectedProducer = useMemo(() => producers.find((p) => p.id === selectedProducerId), [producers, selectedProducerId]);
   const producerOrders = useMemo(() => {
@@ -410,6 +493,32 @@ const SuperAdminDashboard = () => {
           </SelectContent>
         </Select>
       </div>
+
+      {/* ═══ AUTOMATIC ALERTS ═══ */}
+      {platformAlerts.length > 0 && (
+        <div className="space-y-2">
+          {platformAlerts.map((alert) => (
+            <div
+              key={alert.id}
+              className={`flex items-center gap-3 rounded-lg border p-3 ${
+                alert.variant === "error"
+                  ? "border-destructive/50 bg-destructive/5"
+                  : "border-yellow-500/50 bg-yellow-500/5"
+              }`}
+            >
+              <alert.icon
+                className={`w-4 h-4 shrink-0 ${
+                  alert.variant === "error" ? "text-destructive" : "text-yellow-500"
+                }`}
+              />
+              <span className="text-sm text-foreground flex-1">{alert.message}</span>
+              <Badge variant={alert.variant === "error" ? "destructive" : "outline"} className="text-[10px] shrink-0">
+                {alert.variant === "error" ? "Crítico" : "Atenção"}
+              </Badge>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Global KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
