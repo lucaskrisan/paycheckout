@@ -30,7 +30,7 @@ export function useAbandonedCart({ productId, customer, paymentMethod, productOw
   latestRef.current = { customer, paymentMethod, productOwnerId, productId, productPrice };
 
   const hasMinimumData = Boolean(
-    customer.email.trim().length >= 5 ||
+    customer.email.trim().length >= 5 &&
     customer.phone.trim().length >= 8
   );
 
