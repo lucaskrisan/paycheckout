@@ -261,12 +261,32 @@ Deno.serve(async (req) => {
           .maybeSingle();
 
         if (recoverCust?.email) {
-          await supabase
+          const { count: recoveredCount } = await supabase
             .from('abandoned_carts')
             .update({ recovered: true })
             .eq('product_id', orderData.product_id)
             .eq('customer_email', recoverCust.email)
             .eq('recovered', false);
+
+          // Fire cart.recovered webhook if any carts were recovered
+          if (recoveredCount && recoveredCount > 0) {
+            try {
+              await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/fire-webhooks`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+                },
+                body: JSON.stringify({
+                  event: 'cart.recovered',
+                  order_id: orderData.id,
+                  user_id: orderData.user_id,
+                }),
+              });
+            } catch (whErr) {
+              console.error('[pagarme-webhook] cart.recovered webhook error (non-blocking):', whErr);
+            }
+          }
         }
       } catch (recoverErr) {
         console.error('[pagarme-webhook] Cart recovery mark error (non-blocking):', recoverErr);
