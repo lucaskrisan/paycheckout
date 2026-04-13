@@ -132,6 +132,11 @@ const Checkout = () => {
           const isSuperAdmin = (ownerRoles as any[])?.length > 0;
           setIsOwnerSuperAdmin(isSuperAdmin);
           if (!isSuperAdmin && (billingAcc as any)?.blocked === true) { setProducerBlocked(true); setLoading(false); return; }
+          // Check if producer has an active gateway configured
+          if (!isSuperAdmin) {
+            const { data: hasGw } = await supabase.rpc("producer_has_gateway", { p_user_id: p.user_id });
+            if (!hasGw) { setNoGateway(true); setLoading(false); return; }
+          }
         }
       }
       if (bumpsRes.data) setOrderBumps(bumpsRes.data as any);
