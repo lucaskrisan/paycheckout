@@ -364,6 +364,13 @@ const AbandonedCarts = () => {
         </div>
       </div>
 
+  // Filters
+  const [filterRecovered, setFilterRecovered] = useState<boolean[]>([]);
+  const [filterEmailStatus, setFilterEmailStatus] = useState<string[]>([]);
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
+  const [datePickerOpen, setDatePickerOpen] = useState<"from" | "to" | null>(null);
+
 
       {/* Search */}
       <div className="relative max-w-md">
