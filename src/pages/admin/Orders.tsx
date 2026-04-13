@@ -116,7 +116,7 @@ const isUpsellOrder = (order: Order): boolean => {
 };
 
 const Orders = () => {
-  const { user } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
