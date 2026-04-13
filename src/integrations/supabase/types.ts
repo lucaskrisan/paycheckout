@@ -2651,6 +2651,7 @@ export type Database = {
           read_ct: number
         }[]
       }
+      reconcile_abandoned_carts: { Args: never; Returns: number }
       update_abandoned_cart: {
         Args: {
           p_cart_id: string
