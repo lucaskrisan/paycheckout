@@ -83,6 +83,20 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ── Blacklist check: skip suppressed emails ──
+    const { data: suppressed } = await supabaseAdmin
+      .from("suppressed_emails")
+      .select("id")
+      .eq("email", cart.customer_email.toLowerCase())
+      .limit(1);
+
+    if (suppressed && suppressed.length > 0) {
+      return new Response(JSON.stringify({ error: "This email is suppressed/unsubscribed" }), {
+        status: 409,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Deduplication: check if this customer+product already received a recovery email
     const { data: existingSent } = await supabaseAdmin
       .from("abandoned_carts")
@@ -122,15 +136,18 @@ Deno.serve(async (req) => {
       ? `https://${customDomain.hostname}`
       : `${supabaseUrl.replace('.supabase.co', '')}.lovable.app`;
 
-    // Build checkout URL with pre-filled params
+    // Build checkout URL with pre-filled params + UTM
     let checkoutUrl = cart.checkout_url || cart.page_url || `${baseUrl}/checkout/${cart.product_id}`;
     const params = new URLSearchParams();
     if (cart.customer_name) params.set("name", cart.customer_name);
     if (cart.customer_email) params.set("email", cart.customer_email);
     if (cart.customer_phone) params.set("phone", cart.customer_phone);
     if (cart.customer_cpf) params.set("cpf", cart.customer_cpf);
+    params.set("utm_source", "recovery");
+    params.set("utm_medium", "email");
+    params.set("utm_campaign", "abandoned_cart_manual");
     const separator = checkoutUrl.includes("?") ? "&" : "?";
-    const finalUrl = params.toString() ? `${checkoutUrl}${separator}${params}` : checkoutUrl;
+    const finalUrl = `${checkoutUrl}${separator}${params}`;
 
     const productName = product?.name || "seu produto";
     const productPrice = (cart as any).product_price || product?.price || 0;
