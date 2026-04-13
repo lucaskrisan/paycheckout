@@ -425,7 +425,6 @@ const SuperAdminDashboard = () => {
     }
 
     // Producers with NO active gateway but with active products
-    const producerIds = new Set(producers.map(p => p.id));
     const producersWithGateway = new Set((allGateways || []).filter(g => g.active).map(g => g.user_id));
     const producersWithProducts = producers.filter(p => p.product_count > 0 && !producersWithGateway.has(p.id) && p.id !== user?.id);
     if (producersWithProducts.length > 0) {
