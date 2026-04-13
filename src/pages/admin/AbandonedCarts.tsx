@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import {
   Download, ChevronRight, ChevronLeft, ChevronsLeft, ChevronsRight,
-  Filter, Search, ShoppingBag, MessageCircle, Mail,
+  Filter, Search, ShoppingBag, MessageCircle, Mail, RefreshCw,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -104,17 +104,19 @@ const AbandonedCarts = () => {
     }
   };
 
+  const loadCarts = async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from("abandoned_carts")
+      .select("*, products(name)")
+      .order("created_at", { ascending: false })
+      .limit(1000);
+    setCarts((data as any) || []);
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase
-        .from("abandoned_carts")
-        .select("*, products(name)")
-        .order("created_at", { ascending: false })
-        .limit(1000);
-      setCarts((data as any) || []);
-      setLoading(false);
-    };
-    load();
+    loadCarts();
   }, []);
 
   const filtered = useMemo(() => {
@@ -383,6 +385,9 @@ const AbandonedCarts = () => {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-foreground">Checkouts Abandonados</h1>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" onClick={loadCarts} disabled={loading} title="Atualizar">
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+          </Button>
           <Button variant="outline" className="gap-2" onClick={exportCSV}>
             <Download className="w-4 h-4" />
             Exportar
