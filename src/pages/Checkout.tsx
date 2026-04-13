@@ -208,7 +208,16 @@ const Checkout = () => {
     </div>
   );
 
-  if (notFound || !product) return (
+  if (noGateway) return (
+    <div className="min-h-screen bg-[#F2F4F8] flex items-center justify-center px-4">
+      <div className="text-center space-y-4 max-w-md">
+        <div className="w-16 h-16 rounded-full bg-yellow-100 flex items-center justify-center mx-auto"><Shield className="w-8 h-8 text-yellow-600" /></div>
+        <h1 className="text-2xl font-bold text-[#0F1111]">Checkout indisponível</h1>
+        <p className="text-[#565959]">O produtor ainda não configurou o gateway de pagamento. Não é possível processar compras neste momento.</p>
+      </div>
+    </div>
+  );
+
     <div className="min-h-screen bg-[#F2F4F8] flex items-center justify-center">
       <div className="text-center space-y-3"><h1 className="text-2xl font-bold text-[#0F1111]">Produto não encontrado</h1><p className="text-[#565959]">Este produto não existe ou não está disponível.</p></div>
     </div>
