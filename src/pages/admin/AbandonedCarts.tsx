@@ -188,8 +188,9 @@ const AbandonedCarts = () => {
     e.stopPropagation();
     if (!phone) return;
     const clean = phone.replace(/\D/g, "");
+    const number = clean.startsWith("55") ? clean : `55${clean}`;
     const msg = encodeURIComponent("Olá! Vi que você se interessou pelo nosso produto. Posso te ajudar?");
-    window.open(`https://wa.me/${clean}?text=${msg}`, "_blank");
+    window.open(`https://wa.me/${number}?text=${msg}`, "_blank");
   };
 
   const toggleRecoveredFilter = (val: boolean) => {
