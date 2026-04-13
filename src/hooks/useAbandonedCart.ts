@@ -7,6 +7,7 @@ interface UseAbandonedCartProps {
   customer: CustomerData;
   paymentMethod: string;
   productOwnerId?: string | null;
+  productPrice?: number | null;
 }
 
 function buildPayload(customer: CustomerData, paymentMethod: string, productOwnerId: string | null | undefined) {
