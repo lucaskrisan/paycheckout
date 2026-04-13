@@ -47,13 +47,12 @@ const AbandonedCarts = () => {
   // Recovery settings
   const [emailEnabled, setEmailEnabled] = useState(true);
   const [emailDelay, setEmailDelay] = useState("30");
-
-  // Filters
-  const [filterRecovered, setFilterRecovered] = useState<boolean[]>([]);
-  const [filterEmailStatus, setFilterEmailStatus] = useState<string[]>([]);
-  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
-  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
-  const [datePickerOpen, setDatePickerOpen] = useState<"from" | "to" | null>(null);
+  const [emailSubject, setEmailSubject] = useState("Você esqueceu algo no carrinho 🛒");
+  const [emailHeading, setEmailHeading] = useState("Você esqueceu algo no carrinho 🛒");
+  const [emailButtonText, setEmailButtonText] = useState("Finalizar compra →");
+  const [emailButtonColor, setEmailButtonColor] = useState("#22c55e");
+  const [secondEmailEnabled, setSecondEmailEnabled] = useState(true);
+  const [secondEmailDelay, setSecondEmailDelay] = useState("24");
 
   // Load recovery settings
   useEffect(() => {
@@ -62,18 +61,24 @@ const AbandonedCarts = () => {
       if (!user) return;
       const { data } = await supabase
         .from("cart_recovery_settings")
-        .select("email_enabled, email_delay_minutes")
+        .select("email_enabled, email_delay_minutes, email_subject, email_heading, email_button_text, email_button_color, second_email_enabled, second_email_delay_hours")
         .eq("user_id", user.id)
         .maybeSingle();
       if (data) {
         setEmailEnabled(data.email_enabled);
         setEmailDelay(String(data.email_delay_minutes));
+        if (data.email_subject) setEmailSubject(data.email_subject);
+        if (data.email_heading) setEmailHeading(data.email_heading);
+        if (data.email_button_text) setEmailButtonText(data.email_button_text);
+        if (data.email_button_color) setEmailButtonColor(data.email_button_color);
+        setSecondEmailEnabled(data.second_email_enabled ?? true);
+        if (data.second_email_delay_hours) setSecondEmailDelay(String(data.second_email_delay_hours));
       }
     };
     loadSettings();
   }, []);
 
-  const saveRecoverySetting = async (field: "email_enabled" | "email_delay_minutes", value: boolean | number) => {
+  const saveRecoverySetting = async (field: string, value: boolean | number | string) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const payload = {
@@ -82,7 +87,7 @@ const AbandonedCarts = () => {
     };
     const { error } = await supabase
       .from("cart_recovery_settings")
-      .upsert(payload, { onConflict: "user_id" });
+      .upsert(payload as any, { onConflict: "user_id" });
     if (error) {
       toast.error("Erro ao salvar configuração");
     } else {
