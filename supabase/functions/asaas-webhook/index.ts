@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { sendPurchaseConfirmationEmail } from '../_shared/send-purchase-confirmation.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -327,8 +328,21 @@ Deno.serve(async (req) => {
       }
     }
 
-    // On confirmed payment, handle CAPI fallback + member access
+    // On confirmed payment, handle purchase confirmation email + CAPI fallback + member access
     if ((event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED') && orderData?.product_id && orderData?.customer_id) {
+
+      // --- Send purchase confirmation email to customer ---
+      await sendPurchaseConfirmationEmail({
+        supabase,
+        orderId: orderData.id,
+        customerId: orderData.customer_id,
+        productId: orderData.product_id,
+        userId: orderData.user_id,
+        amount: orderData.amount,
+        paymentMethod: orderData.payment_method,
+        currency: 'BRL',
+        source: 'asaas-webhook',
+      });
 
       // --- CAPI Purchase fallback ---
       // If browser tracking failed (adblock, user navigated away), fire CAPI as safety net.

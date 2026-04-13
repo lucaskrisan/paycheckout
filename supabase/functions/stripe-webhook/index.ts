@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { sendPurchaseConfirmationEmail } from '../_shared/send-purchase-confirmation.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -251,6 +252,19 @@ async function processOrder(
 
   // On payment success
   if (status === 'paid' && orderData?.product_id && orderData?.customer_id) {
+    // --- Send purchase confirmation email to customer ---
+    await sendPurchaseConfirmationEmail({
+      supabase,
+      orderId: orderData.id,
+      customerId: orderData.customer_id,
+      productId: orderData.product_id,
+      userId: orderData.user_id,
+      amount: orderData.amount,
+      paymentMethod: orderData.payment_method,
+      currency: productCurrency,
+      source: 'stripe-webhook',
+    });
+
     // Fire user webhooks
     if (orderData.user_id) {
       for (const evt of ['payment.approved', 'order.paid']) {
