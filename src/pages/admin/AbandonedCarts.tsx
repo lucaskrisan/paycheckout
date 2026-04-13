@@ -376,7 +376,7 @@ const AbandonedCarts = () => {
             </div>
           )}
         </CardContent>
-      </Card>
+      </Card>}
 
       {/* Header */}
       <div className="flex items-center justify-between">
