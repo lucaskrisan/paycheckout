@@ -240,8 +240,9 @@ const Checkout = () => {
       if (!expMonth || !expYear || expMonth.length !== 2 || expYear.length !== 2) { toast.error("Preencha a validade do cartão corretamente"); return; }
     }
 
-    trackAddToCartMain();
-    setIsSubmitting(true);
+    markStep("payment");
+
+    try {
     const bumpProductIds = orderBumps.filter((b) => selectedBumps.has(b.id)).map((b) => b.bump_product.id);
     const utms = getUtms();
 
