@@ -22,12 +22,12 @@ function buildPayload(customer: CustomerData, paymentMethod: string, productOwne
   };
 }
 
-export function useAbandonedCart({ productId, customer, paymentMethod, productOwnerId }: UseAbandonedCartProps) {
+export function useAbandonedCart({ productId, customer, paymentMethod, productOwnerId, productPrice }: UseAbandonedCartProps) {
   const cartIdRef = useRef<string | null>(null);
   const purchasedRef = useRef(false);
   const createdRef = useRef(false);
-  const latestRef = useRef({ customer, paymentMethod, productOwnerId, productId });
-  latestRef.current = { customer, paymentMethod, productOwnerId, productId };
+  const latestRef = useRef({ customer, paymentMethod, productOwnerId, productId, productPrice });
+  latestRef.current = { customer, paymentMethod, productOwnerId, productId, productPrice };
 
   const hasMinimumData = Boolean(
     customer.email.trim().length >= 5 ||
