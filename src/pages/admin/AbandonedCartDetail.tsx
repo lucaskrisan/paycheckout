@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, CheckCircle2, MessageCircle, Copy, Mail } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Copy, Mail } from "lucide-react";
+import WhatsAppIcon from "@/components/WhatsAppIcon";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -318,7 +319,7 @@ const AbandonedCartDetail = () => {
                 <div className="flex items-center justify-between">
                   <span className="text-sm">{cart.customer_phone}</span>
                   <button onClick={openWhatsApp} className="text-green-500 hover:text-green-600">
-                    <MessageCircle className="h-4 w-4" />
+                    <WhatsAppIcon className="h-4 w-4" />
                   </button>
                 </div>
               )}

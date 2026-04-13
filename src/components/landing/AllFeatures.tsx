@@ -1,6 +1,6 @@
 import {
   BarChart3, Globe, ShoppingCart, Users, Layers, Webhook,
-  Bell, Mail, TrendingUp, FileText, Shield, MessageCircle,
+  Bell, Mail, TrendingUp, FileText, Shield,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { SectionHeader } from "./FeaturesGrid";

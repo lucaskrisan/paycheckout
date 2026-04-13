@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { MessageCircle, Send, RotateCcw, Clock, CheckCheck } from "lucide-react";
+import { Send, RotateCcw, Clock, CheckCheck } from "lucide-react";
+import WhatsAppIcon from "@/components/WhatsAppIcon";
 
 const features = [
   {
@@ -33,7 +34,7 @@ const WhatsAppSection = () => (
           transition={{ duration: 0.7 }}
         >
           <div className="inline-flex items-center gap-2 bg-[#25D366]/10 border border-[#25D366]/20 rounded-full px-4 py-1.5">
-            <MessageCircle className="w-3.5 h-3.5 text-[#25D366]" aria-hidden="true" />
+            <WhatsAppIcon className="w-3.5 h-3.5" />
             <span className="text-[11px] font-semibold text-[#25D366] uppercase tracking-[0.15em]">
               WhatsApp Automático
             </span>
