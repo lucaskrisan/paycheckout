@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { sendPurchaseConfirmationEmail } from '../_shared/send-purchase-confirmation.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
