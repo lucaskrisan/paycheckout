@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  Mail,
   LayoutDashboard,
   ShoppingCart,
   Package,
@@ -101,19 +102,29 @@ const configSuperAdminOnly = [
   { title: "App Mobile", url: "/admin/pwa", icon: Smartphone },
 ];
 
-// 6. SUPER ADMIN — visível apenas para super_admin
-const superAdminItems = [
+// 6. SUPER ADMIN — organizado por seções
+const superAdminAutomacao = [
   { title: "WhatsApp", url: "/admin/whatsapp", icon: MessageSquare },
   { title: "Nina IA", url: "/admin/maria-ia", icon: Sparkles },
+  { title: "Central de E-mails", url: "/admin/email-templates", icon: Mail },
+  { title: "Controle de Carrinhos", url: "/admin/cart-control", icon: ShoppingCart },
+];
+
+const superAdminGestao = [
   { title: "Revisão Produtos", url: "/admin/product-review", icon: ShieldCheck },
   { title: "Verificação Produtores", url: "/admin/verification-review", icon: User },
-  { title: "Controle de Carrinhos", url: "/admin/cart-control", icon: ShoppingCart },
   { title: "Painel Plataforma", url: "/admin/platform", icon: Crown },
   { title: "Billing", url: "/admin/billing", icon: Wallet },
-  { title: "API Keys", url: "/admin/api-keys", icon: Key },
+];
+
+const superAdminSeguranca = [
   { title: "Blacklist", url: "/admin/blacklist", icon: ShieldBan },
-  { title: "Roadmap", url: "/admin/roadmap", icon: ClipboardList },
+  { title: "API Keys", url: "/admin/api-keys", icon: Key },
   { title: "Fiscalizar", url: "/admin/health", icon: ShieldCheck },
+];
+
+const superAdminRecursos = [
+  { title: "Roadmap", url: "/admin/roadmap", icon: ClipboardList },
   { title: "Manual Técnico", url: "/admin/manual", icon: BookOpen },
 ];
 
@@ -230,18 +241,41 @@ export function AdminSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* 6. SUPER ADMIN */}
+        {/* 6. SUPER ADMIN — seções organizadas */}
         {isSuperAdmin && (
-          <SidebarGroup>
-            <SidebarGroupLabel>
-              {!collapsed && (
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/50 flex items-center gap-1.5 px-1">
-                  <Crown className="w-3 h-3 text-checkout-badge" /> Plataforma
-                </span>
-              )}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>{renderItems(superAdminItems)}</SidebarGroupContent>
-          </SidebarGroup>
+          <>
+            <SidebarGroup>
+              <SidebarGroupLabel>
+                {!collapsed && (
+                  <span className="text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/50 flex items-center gap-1.5 px-1">
+                    <Crown className="w-3 h-3 text-checkout-badge" /> Automação
+                  </span>
+                )}
+              </SidebarGroupLabel>
+              <SidebarGroupContent>{renderItems(superAdminAutomacao)}</SidebarGroupContent>
+            </SidebarGroup>
+
+            <SidebarGroup>
+              <SidebarGroupLabel>
+                {renderSectionLabel("Gestão")}
+              </SidebarGroupLabel>
+              <SidebarGroupContent>{renderItems(superAdminGestao)}</SidebarGroupContent>
+            </SidebarGroup>
+
+            <SidebarGroup>
+              <SidebarGroupLabel>
+                {renderSectionLabel("Segurança")}
+              </SidebarGroupLabel>
+              <SidebarGroupContent>{renderItems(superAdminSeguranca)}</SidebarGroupContent>
+            </SidebarGroup>
+
+            <SidebarGroup>
+              <SidebarGroupLabel>
+                {renderSectionLabel("Recursos")}
+              </SidebarGroupLabel>
+              <SidebarGroupContent>{renderItems(superAdminRecursos)}</SidebarGroupContent>
+            </SidebarGroup>
+          </>
         )}
       </SidebarContent>
 
