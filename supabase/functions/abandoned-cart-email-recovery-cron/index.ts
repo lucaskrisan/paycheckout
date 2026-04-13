@@ -27,29 +27,46 @@ Deno.serve(async (req) => {
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
     // 1. Fetch all distinct producers that have abandoned carts pending recovery
-    const { data: producerRows, error: producerError } = await supabaseAdmin
-      .from("abandoned_carts")
-      .select("user_id")
-      .eq("recovered", false)
-      .not("customer_email", "is", null)
-      .is("email_recovery_sent_at", null);
+    // Use pagination to avoid 1000-row limit
+    let allProducerIds: string[] = [];
+    let offset = 0;
+    const PAGE_SIZE = 1000;
 
-    if (producerError) {
-      console.error("[cron] Error fetching producers:", producerError);
-      return new Response(JSON.stringify({ error: producerError.message }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    while (true) {
+      const { data: producerRows, error: producerError } = await supabaseAdmin
+        .from("abandoned_carts")
+        .select("user_id")
+        .eq("recovered", false)
+        .not("customer_email", "is", null)
+        .is("email_recovery_sent_at", null)
+        .range(offset, offset + PAGE_SIZE - 1);
+
+      if (producerError) {
+        console.error("[cron] Error fetching producers:", producerError);
+        return new Response(JSON.stringify({ error: producerError.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (!producerRows || producerRows.length === 0) break;
+
+      for (const r of producerRows) {
+        if (r.user_id) allProducerIds.push(r.user_id);
+      }
+
+      if (producerRows.length < PAGE_SIZE) break;
+      offset += PAGE_SIZE;
     }
 
-    if (!producerRows || producerRows.length === 0) {
+    // Deduplicate
+    const uniqueProducerIds = [...new Set(allProducerIds)];
+
+    if (uniqueProducerIds.length === 0) {
       return new Response(JSON.stringify({ processed: 0, message: "No pending abandoned carts" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    // Deduplicate producer user_ids
-    const uniqueProducerIds = [...new Set(producerRows.map((r) => r.user_id).filter(Boolean))] as string[];
 
     // 2. Fetch settings for producers that have explicit config
     const { data: settingsRows } = await supabaseAdmin
@@ -71,6 +88,7 @@ Deno.serve(async (req) => {
       .filter((s) => s.email_enabled);
 
     let totalProcessed = 0;
+    let totalSkippedDuplicate = 0;
     const MAX_TOTAL = 50;
     const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
 
@@ -79,7 +97,7 @@ Deno.serve(async (req) => {
 
       const cutoff = new Date(Date.now() - setting.email_delay_minutes * 60 * 1000).toISOString();
 
-      // 2. Fetch eligible abandoned carts for this producer
+      // Fetch eligible abandoned carts for this producer
       const { data: carts, error: cartsError } = await supabaseAdmin
         .from("abandoned_carts")
         .select("*, products(name, price, image_url, user_id)")
@@ -93,7 +111,22 @@ Deno.serve(async (req) => {
 
       if (cartsError || !carts || carts.length === 0) continue;
 
-      // Fetch company name for this producer
+      // Deduplication: check which customer_email+product_id combos already received an email
+      const emailProductPairs = carts.map(c => ({ email: c.customer_email, product_id: c.product_id }));
+      const uniqueEmails = [...new Set(emailProductPairs.map(p => p.email))];
+
+      const { data: alreadySentCarts } = await supabaseAdmin
+        .from("abandoned_carts")
+        .select("customer_email, product_id")
+        .eq("user_id", setting.user_id)
+        .not("email_recovery_sent_at", "is", null)
+        .in("customer_email", uniqueEmails);
+
+      const sentSet = new Set(
+        (alreadySentCarts || []).map(c => `${c.customer_email}::${c.product_id}`)
+      );
+
+      // Fetch company name and custom domain for this producer
       const { data: checkoutSettings } = await supabaseAdmin
         .from("checkout_settings")
         .select("company_name")
@@ -102,16 +135,46 @@ Deno.serve(async (req) => {
 
       const companyName = checkoutSettings?.company_name || "Loja Online";
 
-      // 3. Send emails
+      // Check for custom domain
+      const { data: customDomain } = await supabaseAdmin
+        .from("custom_domains")
+        .select("hostname")
+        .eq("user_id", setting.user_id)
+        .eq("status", "active")
+        .maybeSingle();
+
+      const baseUrl = customDomain?.hostname
+        ? `https://${customDomain.hostname}`
+        : `${supabaseUrl.replace('.supabase.co', '')}.lovable.app`;
+
+      // Send emails
       for (const cart of carts) {
         if (totalProcessed >= MAX_TOTAL) break;
 
+        // Deduplication check: skip if this customer+product already got an email
+        const dedupeKey = `${cart.customer_email}::${cart.product_id}`;
+        if (sentSet.has(dedupeKey)) {
+          totalSkippedDuplicate++;
+          // Mark as skipped so we don't re-check next time
+          await supabaseAdmin
+            .from("abandoned_carts")
+            .update({
+              email_recovery_sent_at: new Date().toISOString(),
+              email_recovery_status: "skipped_duplicate",
+            } as any)
+            .eq("id", cart.id);
+          continue;
+        }
+
+        // Add to set to prevent duplicates within same batch
+        sentSet.add(dedupeKey);
+
         const product = (cart as any).products;
         const productName = product?.name || "seu produto";
-        const productPrice = (cart as any).product_price || product?.price || 0;
+        const productPrice = cart.product_price || product?.price || 0;
 
         // Build checkout URL with pre-filled params
-        let checkoutUrl = cart.checkout_url || cart.page_url || `https://app.panttera.com.br/checkout/${cart.product_id}`;
+        let checkoutUrl = cart.checkout_url || cart.page_url || `${baseUrl}/checkout/${cart.product_id}`;
         const params = new URLSearchParams();
         if (cart.customer_name) params.set("name", cart.customer_name);
         if (cart.customer_email) params.set("email", cart.customer_email);
@@ -135,10 +198,17 @@ Deno.serve(async (req) => {
             <p style="color: #999; font-size: 12px; margin-top: 24px;">
               Se você já finalizou sua compra, por favor ignore este e-mail.
             </p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+            <p style="color: #aaa; font-size: 11px; text-align: center;">
+              Você recebeu este e-mail porque iniciou uma compra em ${companyName}.<br/>
+              Se não deseja receber lembretes, <a href="${finalUrl}" style="color: #aaa;">clique aqui</a> para finalizar ou ignore esta mensagem.
+              Este é um envio único — você não receberá outro lembrete para este produto.
+            </p>
           </div>
         `;
 
         let emailStatus = "error";
+        let resendId: string | null = null;
         try {
           const emailRes = await fetch(`${GATEWAY_URL}/emails`, {
             method: "POST",
@@ -157,6 +227,8 @@ Deno.serve(async (req) => {
 
           if (emailRes.ok) {
             emailStatus = "sent";
+            const result = await emailRes.json();
+            resendId = result?.id || null;
           } else {
             const errBody = await emailRes.text();
             console.error(`[cron] Resend error for cart ${cart.id}:`, errBody);
@@ -165,7 +237,7 @@ Deno.serve(async (req) => {
           console.error(`[cron] Send error for cart ${cart.id}:`, sendErr);
         }
 
-        // 4. Update cart status
+        // Update cart status
         await supabaseAdmin
           .from("abandoned_carts")
           .update({
@@ -174,13 +246,33 @@ Deno.serve(async (req) => {
           } as any)
           .eq("id", cart.id);
 
+        // Register in email_logs for admin visibility
+        try {
+          await supabaseAdmin.from("email_logs").insert({
+            user_id: setting.user_id,
+            to_email: cart.customer_email,
+            to_name: cart.customer_name || null,
+            subject: "Você esqueceu algo no carrinho 🛒",
+            email_type: "transactional",
+            status: emailStatus,
+            source: "abandoned_cart_cron",
+            product_id: cart.product_id,
+            resend_id: resendId,
+            html_body: html,
+            cost_estimate: 0.00115,
+            metadata: { cart_id: cart.id },
+          });
+        } catch (logErr) {
+          console.error(`[cron] Failed to log email for cart ${cart.id}:`, logErr);
+        }
+
         totalProcessed++;
       }
     }
 
-    console.log(`[cron] Processed ${totalProcessed} abandoned cart emails`);
+    console.log(`[cron] Processed ${totalProcessed} abandoned cart emails, skipped ${totalSkippedDuplicate} duplicates`);
 
-    return new Response(JSON.stringify({ success: true, processed: totalProcessed }), {
+    return new Response(JSON.stringify({ success: true, processed: totalProcessed, skipped_duplicates: totalSkippedDuplicate }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
