@@ -50,6 +50,7 @@ const Checkout = () => {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [producerBlocked, setProducerBlocked] = useState(false);
+  const [noGateway, setNoGateway] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pixData, setPixData] = useState<{ qrCodeUrl?: string; pixCode?: string; orderId?: string } | null>(null);
   const [pixModalOpen, setPixModalOpen] = useState(false);
@@ -131,6 +132,11 @@ const Checkout = () => {
           const isSuperAdmin = (ownerRoles as any[])?.length > 0;
           setIsOwnerSuperAdmin(isSuperAdmin);
           if (!isSuperAdmin && (billingAcc as any)?.blocked === true) { setProducerBlocked(true); setLoading(false); return; }
+          // Check if producer has an active gateway configured
+          if (!isSuperAdmin) {
+            const { data: hasGw } = await supabase.rpc("producer_has_gateway", { p_user_id: p.user_id });
+            if (!hasGw) { setNoGateway(true); setLoading(false); return; }
+          }
         }
       }
       if (bumpsRes.data) setOrderBumps(bumpsRes.data as any);
@@ -198,6 +204,16 @@ const Checkout = () => {
         <div className="w-16 h-16 rounded-full bg-yellow-100 flex items-center justify-center mx-auto"><Shield className="w-8 h-8 text-yellow-600" /></div>
         <h1 className="text-2xl font-bold text-[#0F1111]">Página em manutenção</h1>
         <p className="text-[#565959]">Este checkout está temporariamente indisponível. Por favor, tente novamente mais tarde.</p>
+      </div>
+    </div>
+  );
+
+  if (noGateway) return (
+    <div className="min-h-screen bg-[#F2F4F8] flex items-center justify-center px-4">
+      <div className="text-center space-y-4 max-w-md">
+        <div className="w-16 h-16 rounded-full bg-yellow-100 flex items-center justify-center mx-auto"><Shield className="w-8 h-8 text-yellow-600" /></div>
+        <h1 className="text-2xl font-bold text-[#0F1111]">Checkout indisponível</h1>
+        <p className="text-[#565959]">O produtor ainda não configurou o gateway de pagamento. Não é possível processar compras neste momento.</p>
       </div>
     </div>
   );
