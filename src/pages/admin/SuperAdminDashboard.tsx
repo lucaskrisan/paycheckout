@@ -235,6 +235,7 @@ const SuperAdminDashboard = () => {
     setEmailLogs((emailData || []).map((e: any) => ({ ...e, producer_name: nameMap.get(e.user_id) || "—" })));
     setWebhookEndpoints(webhooksData || []);
     setRateLimitHits(rateLimitData || []);
+    setAllGateways(gatewaysData || []);
 
     setLoading(false);
   }, []);
