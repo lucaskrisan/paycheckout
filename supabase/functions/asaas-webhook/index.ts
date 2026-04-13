@@ -45,6 +45,10 @@ async function sendPushNotification(title: string, message: string, targetUserId
   }
 }
 
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 async function sendAccessEmail(supabase: any, customerId: string, course: { id: string; title: string }, accessToken: string, orderId?: string, userId?: string) {
   try {
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
@@ -71,11 +75,11 @@ async function sendAccessEmail(supabase: any, customerId: string, course: { id: 
             <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">🎉 Pagamento confirmado!</h1>
           </div>
           <div style="padding:32px 40px;">
-            <p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 16px;">
-              Olá <strong>${customer.name.split(' ')[0]}</strong>,
+             <p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 16px;">
+              Olá <strong>${escapeHtml(customer.name.split(' ')[0])}</strong>,
             </p>
             <p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 24px;">
-              Seu pagamento foi confirmado e seu acesso ao curso <strong>"${course.title}"</strong> está liberado! 🚀
+              Seu pagamento foi confirmado e seu acesso ao curso <strong>"${escapeHtml(course.title)}"</strong> está liberado! 🚀
             </p>
             <div style="text-align:center;margin:32px 0;">
               <a href="${accessUrl}" style="display:inline-block;background:linear-gradient(135deg,#22c55e,#16a34a);color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:8px;font-size:16px;font-weight:600;box-shadow:0 4px 12px rgba(34,197,94,0.4);">
