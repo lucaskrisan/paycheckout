@@ -4,7 +4,7 @@ interface WhatsAppIconProps {
   className?: string;
 }
 
-const WhatsAppIcon = ({ className = "w-4 h-4" }: WhatsAppIconProps) => (
+const WhatsAppIcon = ({ className = "w-5 h-5" }: WhatsAppIconProps) => (
   <img src={whatsappIcon} alt="WhatsApp" className={className} />
 );
 

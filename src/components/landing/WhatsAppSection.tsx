@@ -34,7 +34,7 @@ const WhatsAppSection = () => (
           transition={{ duration: 0.7 }}
         >
           <div className="inline-flex items-center gap-2 bg-[#25D366]/10 border border-[#25D366]/20 rounded-full px-4 py-1.5">
-            <WhatsAppIcon className="w-3.5 h-3.5" />
+            <WhatsAppIcon className="w-4 h-4" />
             <span className="text-[11px] font-semibold text-[#25D366] uppercase tracking-[0.15em]">
               WhatsApp Automático
             </span>
