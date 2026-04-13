@@ -12,15 +12,12 @@ import {
   BarChart3,
   Map,
   Eye,
-  MousePointerClick,
   Activity,
   Settings,
   Save,
   Loader2,
   TrendingUp,
   Globe,
-  Monitor,
-  Smartphone,
   ShoppingCart,
   CreditCard,
   ArrowDown,
@@ -158,12 +155,8 @@ const Analytics = () => {
     const counts: Record<string, number> = {};
     pixelEvents.forEach((e) => { counts[e.event_name] = (counts[e.event_name] || 0) + 1; });
     
-    // Enrich with abandoned cart data (they represent InitiateCheckout without Purchase)
-    const totalAbandoned = abandonedCarts.filter(c => !c.recovered).length;
-    const totalRecovered = abandonedCarts.filter(c => c.recovered).length;
-    
-    return FUNNEL_STEPS.map((step, i) => {
-      let count = counts[step.key] || 0;
+    return FUNNEL_STEPS.map((step) => {
+      const count = counts[step.key] || 0;
       return { ...step, count };
     });
   }, [pixelEvents, abandonedCarts]);
