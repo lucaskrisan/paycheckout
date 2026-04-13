@@ -4,6 +4,11 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { SectionHeader } from "./FeaturesGrid";
+import whatsappIcon from "@/assets/whatsapp-icon.png";
+
+const WhatsAppFeatureIcon = ({ className }: { className?: string }) => (
+  <img src={whatsappIcon} alt="WhatsApp" className={className} />
+);
 
 const allFeatures = [
   { icon: BarChart3, title: "Dashboard em tempo real", desc: "Cada venda aparece ao vivo. Com notificação Ka-CHING que vicia." },
@@ -17,7 +22,7 @@ const allFeatures = [
   { icon: TrendingUp, title: "Atribuição UTM", desc: "Saiba exatamente qual campanha trouxe cada centavo." },
   { icon: FileText, title: "Relatórios cirúrgicos", desc: "Métricas por método, chargeback, reembolso. Dados que decidem." },
   { icon: Shield, title: "Segurança blindada", desc: "RLS, SSL, antifraude. Seu dinheiro protegido em todos os gateways." },
-  { icon: MessageCircle, title: "WhatsApp (em breve)", desc: "Recuperação e entrega via WhatsApp. O canal que todo mundo usa." },
+  { icon: WhatsAppFeatureIcon, title: "WhatsApp (em breve)", desc: "Recuperação e entrega via WhatsApp. O canal que todo mundo usa." },
 ];
 
 const AllFeatures = () => (
