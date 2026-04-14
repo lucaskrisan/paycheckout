@@ -33,60 +33,28 @@ export default function LessonReviews({ lessonId, memberAccessId, customerName, 
       setReviews(data);
       const reviewIds = data.filter((r: Review) => r.approved).map((r: Review) => r.id);
       if (reviewIds.length > 0) {
-        loadReplies(reviewIds);
-        loadLikes(reviewIds);
+        // Load replies and likes in parallel
+        await Promise.all([loadReplies(reviewIds), loadLikes(reviewIds)]);
       }
     }
   };
 
   const loadReplies = async (reviewIds: string[]) => {
-    if (reviewIds.length === 0) {
-      setReplies({});
-      return;
-    }
+    if (reviewIds.length === 0) { setReplies({}); return; }
+
+    const { data, error } = await client
+      .from("review_replies")
+      .select("id, review_id, author_name, content, is_ai_reply, created_at, member_access_id")
+      .in("review_id", reviewIds)
+      .order("created_at", { ascending: true });
+
+    if (error) { console.error("Error loading replies:", error); return; }
 
     const grouped: Record<string, ReviewReply[]> = {};
-    const replySelect = "id, review_id, author_name, content, is_ai_reply, created_at, member_access_id";
-    const chunkSize = 8;
-
-    for (let i = 0; i < reviewIds.length; i += chunkSize) {
-      const batchIds = reviewIds.slice(i, i + chunkSize);
-      const { data, error } = await client
-        .from("review_replies")
-        .select(replySelect)
-        .in("review_id", batchIds)
-        .order("created_at", { ascending: true });
-
-      if (error) {
-        console.error("Error loading review replies batch:", error);
-
-        for (const reviewId of batchIds) {
-          const { data: singleData, error: singleError } = await client
-            .from("review_replies")
-            .select(replySelect)
-            .eq("review_id", reviewId)
-            .order("created_at", { ascending: true });
-
-          if (singleError) {
-            console.error(`Error loading replies for review ${reviewId}:`, singleError);
-            continue;
-          }
-
-          singleData?.forEach((reply: any) => {
-            if (!grouped[reply.review_id]) grouped[reply.review_id] = [];
-            grouped[reply.review_id].push(reply);
-          });
-        }
-
-        continue;
-      }
-
-      data?.forEach((reply: any) => {
-        if (!grouped[reply.review_id]) grouped[reply.review_id] = [];
-        grouped[reply.review_id].push(reply);
-      });
-    }
-
+    data?.forEach((reply: any) => {
+      if (!grouped[reply.review_id]) grouped[reply.review_id] = [];
+      grouped[reply.review_id].push(reply);
+    });
     setReplies(grouped);
   };
 
