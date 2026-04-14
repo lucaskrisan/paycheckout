@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { sendPurchaseConfirmationEmail } from '../_shared/send-purchase-confirmation.ts';
+import { processOrderPaid } from '../_shared/process-order-paid.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -55,12 +55,10 @@ Deno.serve(async (req) => {
     );
 
     // --- Resolve the webhook secret from the producer's gateway config ---
-    // First, find the product owner from the event metadata or order
     const obj = event.data?.object;
     let resolvedWebhookSecret: string | null = null;
     let producerUserId: string | null = null;
 
-    // Try to get product_id from session metadata
     const metaProductId = obj?.metadata?.product_id;
     if (metaProductId) {
       const { data: prod } = await supabase
@@ -71,7 +69,6 @@ Deno.serve(async (req) => {
       if (prod?.user_id) producerUserId = prod.user_id;
     }
 
-    // Fallback: try to find order by external_id
     if (!producerUserId) {
       const exId = event.type === 'checkout.session.completed' ? obj?.id : (obj?.payment_intent || obj?.id);
       if (exId) {
@@ -84,7 +81,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Resolve webhook_secret from producer's Stripe gateway
     if (producerUserId) {
       const { data: gw } = await supabase
         .from('payment_gateways')
@@ -111,7 +107,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Verify signature if we have a secret
+    // Verify signature
     if (resolvedWebhookSecret) {
       if (!sigHeader) {
         console.warn('[stripe-webhook] No stripe-signature header present');
@@ -127,7 +123,7 @@ Deno.serve(async (req) => {
       console.warn('[stripe-webhook] No webhook secret found — skipping signature verification');
     }
 
-    // --- Idempotency: deduplicate webhook events ---
+    // --- Idempotency ---
     const dedupKey = `stripe_${event.id}`;
     const { data: inserted } = await supabase
       .from('webhook_events')
@@ -183,7 +179,7 @@ Deno.serve(async (req) => {
     }
 
     // --- Status transition guard ---
-    const { data: orderData, error: updateErr } = await supabase
+    let { data: orderData, error: updateErr } = await supabase
       .from('orders')
       .update({ status, updated_at: new Date().toISOString() })
       .eq('external_id', externalId)
@@ -209,14 +205,68 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (fallbackOrder) {
         console.log('[stripe-webhook] Found order via payment_intent fallback');
-        return await processOrder(supabase, fallbackOrder, status, externalId, event, corsHeaders);
+        orderData = fallbackOrder;
       }
     }
 
     console.log('[stripe-webhook] Order update:', { externalId, status, found: !!orderData });
 
-    if (orderData) {
-      return await processOrder(supabase, orderData, status, externalId, event, corsHeaders);
+    if (!orderData) {
+      return new Response(JSON.stringify({ received: true, status }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Determine product currency
+    let productCurrency = 'BRL';
+    if (orderData.product_id) {
+      const { data: prodInfo } = await supabase
+        .from('products')
+        .select('currency')
+        .eq('id', orderData.product_id)
+        .maybeSingle();
+      if (prodInfo?.currency) productCurrency = prodInfo.currency;
+    }
+
+    // Fire user webhooks (non-blocking)
+    if (orderData.user_id) {
+      const evtMap: Record<string, string[]> = {
+        paid: ['payment.approved', 'order.paid'],
+        refunded: ['payment.refunded', 'order.refunded'],
+        failed: ['payment.failed'],
+        cancelled: ['payment.failed', 'order.cancelled'],
+      };
+      for (const evt of (evtMap[status] || [])) {
+        fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/fire-webhooks`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+          },
+          body: JSON.stringify({ event: evt, order_id: orderData.id, user_id: orderData.user_id }),
+        }).catch(err => console.error('[stripe-webhook] fire-webhooks error:', err));
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // On confirmed payment → delegate ALL side effects to shared processor
+    // ═══════════════════════════════════════════════════════════════════════
+    if (status === 'paid' && orderData.product_id && orderData.customer_id) {
+      await processOrderPaid({
+        supabase,
+        orderData: {
+          id: orderData.id,
+          amount: orderData.amount,
+          payment_method: orderData.payment_method,
+          product_id: orderData.product_id,
+          customer_id: orderData.customer_id,
+          user_id: orderData.user_id,
+          metadata: orderData.metadata as Record<string, unknown> | null,
+        },
+        externalId,
+        source: 'stripe-webhook',
+        currency: productCurrency,
+      });
     }
 
     return new Response(JSON.stringify({ received: true, status }), {
@@ -230,270 +280,3 @@ Deno.serve(async (req) => {
     });
   }
 });
-
-async function processOrder(
-  supabase: any,
-  orderData: any,
-  status: string,
-  externalId: string,
-  event: any,
-  corsHeaders: Record<string, string>
-) {
-  // Determine product currency
-  let productCurrency = 'BRL';
-  if (orderData.product_id) {
-    const { data: prodInfo } = await supabase
-      .from('products')
-      .select('currency')
-      .eq('id', orderData.product_id)
-      .maybeSingle();
-    if (prodInfo?.currency) productCurrency = prodInfo.currency;
-  }
-
-  // On payment success
-  if (status === 'paid' && orderData?.product_id && orderData?.customer_id) {
-    // --- Send purchase confirmation email to customer ---
-    await sendPurchaseConfirmationEmail({
-      supabase,
-      orderId: orderData.id,
-      customerId: orderData.customer_id,
-      productId: orderData.product_id,
-      userId: orderData.user_id,
-      amount: orderData.amount,
-      paymentMethod: orderData.payment_method,
-      currency: productCurrency,
-      source: 'stripe-webhook',
-    });
-
-    // Fire user webhooks
-    if (orderData.user_id) {
-      for (const evt of ['payment.approved', 'order.paid']) {
-        fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/fire-webhooks`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-          },
-          body: JSON.stringify({ event: evt, order_id: orderData.id, user_id: orderData.user_id }),
-        }).catch(err => console.error('[stripe-webhook] fire-webhooks error:', err));
-      }
-    }
-
-    // Create member access — only if product uses 'panttera' delivery
-    const { data: mainProd } = await supabase
-      .from('products')
-      .select('delivery_method')
-      .eq('id', orderData.product_id)
-      .maybeSingle();
-
-    if (mainProd?.delivery_method !== 'panttera') {
-      console.log('[stripe-webhook] Skipping member access — delivery_method is', mainProd?.delivery_method || 'appsell');
-    } else {
-      const productIdsForAccess = [orderData.product_id];
-      const bumpIds = (orderData.metadata as any)?.bump_product_ids;
-      if (Array.isArray(bumpIds)) productIdsForAccess.push(...bumpIds);
-
-      const { data: courses } = await supabase
-        .from('courses')
-        .select('id, title, product_id')
-        .in('product_id', productIdsForAccess);
-
-      if (courses && courses.length > 0) {
-        for (const course of courses) {
-          const { data: newAccess } = await supabase
-            .from('member_access')
-            .upsert(
-              { customer_id: orderData.customer_id, course_id: course.id, order_id: orderData.id },
-              { onConflict: 'customer_id,course_id', ignoreDuplicates: true }
-            )
-            .select('access_token')
-            .maybeSingle();
-
-          if (newAccess?.access_token) {
-            console.log('[stripe-webhook] Upserted member access for course:', course.id);
-
-            const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-            if (RESEND_API_KEY) {
-              try {
-                const { data: custData } = await supabase
-                  .from('customers')
-                  .select('name, email')
-                  .eq('id', orderData.customer_id)
-                  .single();
-
-                if (custData) {
-                  const accessUrl = `https://app.panttera.com.br/membros?token=${newAccess.access_token}`;
-                  const isEnglish = productCurrency === 'USD';
-                  const emailHtml = `
-                    <!DOCTYPE html>
-                    <html>
-                    <head><meta charset="utf-8"></head>
-                    <body style="margin:0;padding:0;background:#f4f4f5;font-family:sans-serif;">
-                      <div style="max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;">
-                        <div style="background:linear-gradient(135deg,#22c55e,#16a34a);padding:32px;text-align:center;">
-                          <h1 style="margin:0;color:#fff;font-size:24px;">🎉 ${isEnglish ? 'Payment confirmed!' : 'Pagamento confirmado!'}</h1>
-                        </div>
-                        <div style="padding:32px;">
-                          <p>${isEnglish ? 'Hi' : 'Olá'} <strong>${custData.name.split(' ')[0]}</strong>,</p>
-                          <p>${isEnglish ? `Your access to the course <strong>"${course.title}"</strong> is ready!` : `Seu acesso ao curso <strong>"${course.title}"</strong> está liberado!`}</p>
-                          <div style="text-align:center;margin:32px 0;">
-                            <a href="${accessUrl}" style="background:#22c55e;color:#fff;padding:14px 40px;border-radius:8px;text-decoration:none;font-weight:600;">${isEnglish ? 'Access Course' : 'Acessar Curso'}</a>
-                          </div>
-                        </div>
-                      </div>
-                    </body>
-                    </html>
-                  `;
-
-                  const emailRes = await fetch('https://api.resend.com/emails', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      from: 'PanteraPay <noreply@app.panttera.com.br>',
-                      to: [custData.email],
-                      subject: `🎉 ${isEnglish ? 'Access granted' : 'Acesso liberado'} — "${course.title}"`,
-                      html: emailHtml,
-                    }),
-                  });
-                  const emailData = await emailRes.json();
-                  console.log('[stripe-webhook] Email sent to', custData.email, emailRes.ok ? '✅' : '❌');
-
-                  await supabase.from('email_logs').insert({
-                    user_id: orderData.user_id,
-                    to_email: custData.email,
-                    to_name: custData.name,
-                    subject: `🎉 ${isEnglish ? 'Access granted' : 'Acesso liberado'} — "${course.title}"`,
-                    html_body: emailHtml,
-                    email_type: 'payment_confirmed',
-                    status: emailRes.ok ? 'sent' : 'failed',
-                    resend_id: emailData?.id || null,
-                    customer_id: orderData.customer_id,
-                    product_id: course.product_id,
-                    source: 'stripe-webhook',
-                  });
-                }
-              } catch (emailErr) {
-                console.error('[stripe-webhook] Email error:', emailErr);
-              }
-            }
-          }
-        }
-      }
-    }
-
-    // CAPI fallback
-    try {
-      const { data: custData } = await supabase
-        .from('customers')
-        .select('name, email, phone, cpf')
-        .eq('id', orderData.customer_id)
-        .single();
-
-      if (custData) {
-        // Mark abandoned carts as recovered
-        try {
-          const { count: recoveredCount } = await supabase
-            .from('abandoned_carts')
-            .update({ recovered: true })
-            .eq('product_id', orderData.product_id)
-            .eq('customer_email', custData.email)
-            .eq('recovered', false);
-
-          // Fire cart.recovered webhook if any carts were recovered
-          if (recoveredCount && recoveredCount > 0) {
-            try {
-              await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/fire-webhooks`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-                },
-                body: JSON.stringify({
-                  event: 'cart.recovered',
-                  order_id: orderData.id,
-                  user_id: orderData.user_id,
-                }),
-              });
-            } catch (whErr) {
-              console.error('[stripe-webhook] cart.recovered webhook error (non-blocking):', whErr);
-            }
-          }
-        } catch (recoverErr) {
-          console.error('[stripe-webhook] Cart recovery mark error (non-blocking):', recoverErr);
-        }
-
-        await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/facebook-capi`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-          },
-          body: JSON.stringify({
-            product_id: orderData.product_id,
-            event_name: 'Purchase',
-            event_id: externalId,
-            event_source_url: (orderData.metadata as any)?.checkout_url || `https://app.panttera.com.br/checkout/${orderData.product_id}`,
-            customer: custData,
-            custom_data: {
-              value: Number(orderData.amount),
-              currency: productCurrency,
-              content_type: 'product',
-              order_id: orderData.id,
-            },
-            log_browser: true,
-          }),
-        });
-      }
-    } catch (capiErr) {
-      console.error('[stripe-webhook] CAPI error:', capiErr);
-    }
-  }
-
-  // WhatsApp dispatch (non-blocking)
-  if (status === 'paid' && orderData?.user_id && orderData?.customer_id) {
-    try {
-      const { data: custWa } = await supabase.from('customers').select('name, phone').eq('id', orderData.customer_id).maybeSingle();
-      const { data: prodWa } = await supabase.from('products').select('name, price').eq('id', orderData.product_id || '').maybeSingle();
-      if (custWa?.phone) {
-        fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/whatsapp-dispatch`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
-          body: JSON.stringify({
-            tenant_id: orderData.user_id,
-            order_id: orderData.id,
-            customer_phone: custWa.phone,
-            customer_name: custWa.name,
-            product_name: prodWa?.name || '',
-            product_price: String(orderData.amount),
-            category: 'confirmacao',
-          }),
-        }).catch(e => console.error('[stripe-webhook] whatsapp-dispatch error:', e));
-      }
-    } catch (waErr) {
-      console.error('[stripe-webhook] WhatsApp dispatch error (non-blocking):', waErr);
-    }
-  }
-
-  // Fire webhooks for non-paid statuses
-  if (orderData?.user_id && status !== 'paid') {
-    const evtMap: Record<string, string[]> = {
-      refunded: ['payment.refunded', 'order.refunded'],
-      failed: ['payment.failed'],
-      cancelled: ['payment.failed', 'order.cancelled'],
-    };
-    for (const evt of (evtMap[status] || [])) {
-      fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/fire-webhooks`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-        },
-        body: JSON.stringify({ event: evt, order_id: orderData.id, user_id: orderData.user_id }),
-      }).catch(err => console.error('[stripe-webhook] fire-webhooks error:', err));
-    }
-  }
-
-  return new Response(JSON.stringify({ received: true, status }), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
-}
