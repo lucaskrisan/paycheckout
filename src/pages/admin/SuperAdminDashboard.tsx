@@ -314,7 +314,7 @@ const SuperAdminDashboard = () => {
     if (!producerEmail) { toast.error("Email não encontrado"); return; }
     setActionLoading("resend-" + producerEmail);
     const { error } = await supabase.auth.resetPasswordForEmail(producerEmail, {
-      redirectTo: window.location.origin + "/login",
+      redirectTo: "https://app.panttera.com.br/login",
     });
     if (error) {
       toast.error("Erro ao reenviar: " + error.message);
