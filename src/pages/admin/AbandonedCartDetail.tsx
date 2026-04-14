@@ -249,9 +249,9 @@ const AbandonedCartDetail = () => {
               </div>
 
               {/* Dropoff alert */}
-              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
-                <p className="text-sm font-medium text-amber-800">⚠ {dropoffMessage()}</p>
-                <p className="text-xs text-amber-700 mt-1">
+              <div className={`rounded-lg border p-3 ${isRecovered ? "bg-green-50 border-green-200" : "bg-amber-50 border-amber-200"}`}>
+                <p className={`text-sm font-medium ${isRecovered ? "text-green-800" : "text-amber-800"}`}>{isRecovered ? "" : "⚠ "}{dropoffMessage()}</p>
+                <p className={`text-xs mt-1 ${isRecovered ? "text-green-700" : "text-amber-700"}`}>
                   Última atividade: {format(new Date(cart.updated_at), "dd/MM/yyyy h:mma", { locale: ptBR })}
                 </p>
               </div>
