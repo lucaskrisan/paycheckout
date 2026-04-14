@@ -132,7 +132,7 @@ Deno.serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'PanteraPay <noreply@paolasemfiltro.com>',
+          from: 'PanteraPay <noreply@app.panttera.com.br>',
           to: [producerEmail],
           subject,
           html,

@@ -516,7 +516,7 @@ Deno.serve(async (req) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: 'PanteraPay <noreply@paolasemfiltro.com>',
+            from: 'PanteraPay <noreply@app.panttera.com.br>',
             to: [customer.email],
             subject: `💠 Seu PIX de ${formattedAmount} foi gerado — finalize agora!`,
             html: emailHtml,

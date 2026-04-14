@@ -187,7 +187,7 @@ Deno.serve(async (req) => {
         "X-Connection-Api-Key": resendApiKey,
       },
       body: JSON.stringify({
-        from: `${companyName} <onboarding@resend.dev>`,
+        from: `${companyName} <noreply@app.panttera.com.br>`,
         to: [cart.customer_email],
         subject: "Você esqueceu algo no carrinho 🛒",
         html,
