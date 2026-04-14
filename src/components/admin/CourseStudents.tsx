@@ -160,7 +160,7 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
 
       if (accessErr) throw accessErr;
 
-      const accessUrl = `${window.location.origin}/membros?token=${newAccess.access_token}`;
+      const accessUrl = `https://app.panttera.com.br/membros?token=${newAccess.access_token}`;
       
       // Send access email via edge function
       try {
@@ -236,7 +236,7 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
         },
       });
       if (error) throw error;
-      const accessUrl = `${window.location.origin}/membros?token=${student.access_token}`;
+      const accessUrl = `https://app.panttera.com.br/membros?token=${student.access_token}`;
       if (data?.email_sent === false) {
         navigator.clipboard.writeText(accessUrl).catch(() => {});
         toast.success("Link copiado! (Verifique domínio no Resend para enviar emails)", {
