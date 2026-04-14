@@ -15,9 +15,12 @@ const json = (payload: unknown, status = 200) =>
 /**
  * whatsapp-pix-reminder
  *
- * Called by pg_cron every 30 minutes.
- * Finds pending PIX orders older than 15 min and
- * dispatches a WhatsApp reminder via whatsapp-dispatch.
+ * Called by pg_cron every 10 minutes.
+ * Finds pending PIX orders older than 7 min (but less than 4h)
+ * and dispatches a WhatsApp reminder via whatsapp-dispatch.
+ *
+ * IMPORTANT: Re-checks payment status right before dispatch
+ * to avoid sending reminders for orders that were already paid.
  */
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -30,16 +33,16 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const fifteenMinAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    const sevenMinAgo = new Date(Date.now() - 7 * 60 * 1000).toISOString();
     const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
 
-    // Find pending PIX orders
+    // Find pending PIX orders between 7min and 4h old
     const { data: orders, error: orderError } = await supabase
       .from("orders")
-      .select("id, user_id, customer_id, product_id, amount")
+      .select("id, user_id, customer_id, product_id, amount, status")
       .eq("status", "pending")
       .eq("payment_method", "pix")
-      .lt("created_at", fifteenMinAgo)
+      .lt("created_at", sevenMinAgo)
       .gt("created_at", fourHoursAgo)
       .limit(50);
 
@@ -60,13 +63,28 @@ Deno.serve(async (req) => {
       .eq("template_category", "lembrete_pix")
       .in("order_id", orderIds);
 
-    const sentSet = new Set((alreadySent || []).map((s) => s.order_id));
+    const sentSet = new Set((alreadySent || []).map((s: any) => s.order_id));
     const pendingOrders = orders.filter((o) => !sentSet.has(o.id));
 
     let dispatched = 0;
+    let skippedPaid = 0;
 
     for (const order of pendingOrders) {
       if (!order.user_id || !order.customer_id) continue;
+
+      // ── CRITICAL: Re-check payment status before dispatch ──
+      // The order could have been paid between the initial query and now
+      const { data: freshOrder } = await supabase
+        .from("orders")
+        .select("status")
+        .eq("id", order.id)
+        .maybeSingle();
+
+      if (!freshOrder || freshOrder.status !== "pending") {
+        skippedPaid++;
+        console.log(`[pix-reminder] Skipped order ${order.id} — status is now "${freshOrder?.status}"`);
+        continue;
+      }
 
       // Get customer info
       const { data: customer } = await supabase
@@ -97,12 +115,15 @@ Deno.serve(async (req) => {
           },
         });
         dispatched++;
+        console.log(`[pix-reminder] Dispatched reminder for order ${order.id}`);
       } catch (err) {
         console.error("Dispatch error for order:", order.id, err);
       }
     }
 
-    return json({ processed: pendingOrders.length, dispatched });
+    console.log(`[pix-reminder] Total: ${pendingOrders.length}, dispatched: ${dispatched}, skipped_paid: ${skippedPaid}`);
+
+    return json({ processed: pendingOrders.length, dispatched, skipped_paid: skippedPaid });
   } catch (err) {
     console.error("whatsapp-pix-reminder error:", err);
     return json({ error: "Internal error" }, 500);
