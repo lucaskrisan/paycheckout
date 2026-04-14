@@ -370,7 +370,7 @@ async function processReminders(
             "X-Connection-Api-Key": opts.resendApiKey,
           },
           body: JSON.stringify({
-            from: `${companyName} <noreply@app.panttera.com.br>`,
+            from: `${companyName} <noreply@notify.app.panttera.com.br>`,
             to: [cart.customer_email],
             subject,
             html,
