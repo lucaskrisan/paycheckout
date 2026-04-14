@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getAuthOrigin } from "@/lib/getAuthOrigin";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -314,7 +315,7 @@ const SuperAdminDashboard = () => {
     if (!producerEmail) { toast.error("Email não encontrado"); return; }
     setActionLoading("resend-" + producerEmail);
     const { error } = await supabase.auth.resetPasswordForEmail(producerEmail, {
-      redirectTo: "https://app.panttera.com.br/login",
+      redirectTo: `${getAuthOrigin()}/login`,
     });
     if (error) {
       toast.error("Erro ao reenviar: " + error.message);

@@ -13,6 +13,7 @@ import { Eye, EyeOff, ArrowRight, CheckCircle2, BarChart3, GraduationCap, Chevro
 import TurnstileWidget from "@/components/TurnstileWidget";
 import { supabase } from "@/integrations/supabase/client";
 import { validateCpfCnpj, validatePhone } from "@/lib/validators";
+import { getAuthOrigin } from "@/lib/getAuthOrigin";
 
 const formatCpfCnpj = (value: string) => {
   const digits = value.replace(/\D/g, "");
@@ -145,9 +146,8 @@ const Login = () => {
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
-    const CANONICAL_ORIGIN = "https://app.panttera.com.br";
     const { error } = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: CANONICAL_ORIGIN,
+      redirect_uri: getAuthOrigin(),
       extraParams: { prompt: "select_account" },
     });
     if (error) {
@@ -359,7 +359,7 @@ const Login = () => {
                           }
                           try {
                             const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                              redirectTo: "https://app.panttera.com.br/reset-password",
+                              redirectTo: `${getAuthOrigin()}/reset-password`,
                             });
                             if (error) throw error;
                             toast.success("Link de redefinição enviado! Verifique seu e-mail.", { duration: 6000 });

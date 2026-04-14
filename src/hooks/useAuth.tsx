@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { createContext, useContext, useEffect, useState, useCallback, useMemo, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getAuthOrigin } from "@/lib/getAuthOrigin";
 import type { User, Session } from "@supabase/supabase-js";
 
 /* ── Types ── */
@@ -140,7 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
       options: {
         data: { full_name: fullName },
-        emailRedirectTo: "https://app.panttera.com.br",
+        emailRedirectTo: getAuthOrigin(),
       },
     });
     if (error) throw error;

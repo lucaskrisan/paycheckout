@@ -134,7 +134,7 @@ Deno.serve(async (req) => {
 
     const baseUrl = customDomain?.hostname
       ? `https://${customDomain.hostname}`
-      : `${supabaseUrl.replace('.supabase.co', '')}.lovable.app`;
+      : "https://app.panttera.com.br";
 
     // Build checkout URL with pre-filled params + UTM
     let checkoutUrl = cart.checkout_url || cart.page_url || `${baseUrl}/checkout/${cart.product_id}`;
