@@ -19,6 +19,9 @@ const json = (payload: unknown, status = 200) =>
  * Two modes:
  * 1. Standard: Finds abandoned carts older than 30 min with a phone and no email sent
  * 2. Fallback: If email was sent 2h+ ago and NOT opened, tries WhatsApp as 2nd channel
+ *
+ * FIX v2: Dedup now checks whatsapp_send_log (not email_logs).
+ *         Pre-send recovery check prevents messaging paid customers.
  */
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -90,28 +93,23 @@ Deno.serve(async (req) => {
       return json({ processed: 0, reason: "no_carts" });
     }
 
-    // Deduplication: check which carts already had a WhatsApp message sent
+    // ── FIX: Dedup using whatsapp_send_log (correct table) ──
+    const cartIds = allCarts.map((c) => c.id);
     const { data: alreadySent } = await supabase
-      .from("email_logs")
-      .select("metadata")
-      .eq("source", "whatsapp_abandon_cron");
+      .from("whatsapp_send_log")
+      .select("order_id, customer_phone")
+      .eq("template_category", "abandono")
+      .eq("status", "sent")
+      .in("order_id", cartIds);
 
     const sentCartIds = new Set<string>();
-    for (const log of alreadySent || []) {
-      const cartId = (log.metadata as any)?.cart_id;
-      if (cartId) sentCartIds.add(cartId);
-    }
-
-    // Also deduplicate by phone+product
     const phoneProductSent = new Set<string>();
-    const { data: phoneLogs } = await supabase
-      .from("email_logs")
-      .select("to_email, product_id")
-      .eq("source", "whatsapp_abandon_cron");
-
-    for (const log of phoneLogs || []) {
-      if (log.to_email && log.product_id) {
-        phoneProductSent.add(`${log.to_email}::${log.product_id}`);
+    for (const log of alreadySent || []) {
+      if (log.order_id) sentCartIds.add(log.order_id);
+      if (log.customer_phone) {
+        // Also build phone-level dedup from the same query
+        const cart = allCarts.find((c) => c.id === log.order_id);
+        if (cart) phoneProductSent.add(`${log.customer_phone}::${cart.product_id}`);
       }
     }
 
@@ -123,10 +121,24 @@ Deno.serve(async (req) => {
 
     let dispatched = 0;
     let fallbackCount = 0;
-    const fallbackIds = new Set(eligibleFallbacks.map(c => c.id));
+    let skippedRecovered = 0;
+    const fallbackIds = new Set(eligibleFallbacks.map((c) => c.id));
 
     for (const cart of pendingCarts) {
       if (!cart.user_id) continue;
+
+      // ── FIX: Pre-send recovery check — avoid messaging customers who already paid ──
+      const { data: freshCart } = await supabase
+        .from("abandoned_carts")
+        .select("recovered")
+        .eq("id", cart.id)
+        .maybeSingle();
+
+      if (!freshCart || freshCart.recovered) {
+        skippedRecovered++;
+        console.log(`[wa-cron] Skipped cart ${cart.id} — already recovered`);
+        continue;
+      }
 
       const { data: product } = await supabase
         .from("products")
@@ -150,28 +162,6 @@ Deno.serve(async (req) => {
         const isFallback = fallbackIds.has(cart.id);
         if (isFallback) fallbackCount++;
 
-        // Log the dispatch
-        try {
-          await supabase.from("email_logs").insert({
-            user_id: cart.user_id,
-            to_email: cart.customer_phone,
-            to_name: cart.customer_name || null,
-            subject: `WhatsApp: Carrinho abandonado - ${product?.name || "Produto"}`,
-            email_type: "transactional",
-            status: "sent",
-            source: "whatsapp_abandon_cron",
-            product_id: cart.product_id,
-            cost_estimate: 0,
-            metadata: {
-              cart_id: cart.id,
-              channel: "whatsapp",
-              trigger: isFallback ? "email_fallback_2h" : "standard",
-            },
-          });
-        } catch (logErr) {
-          console.error(`[wa-cron] Failed to log dispatch for cart ${cart.id}:`, logErr);
-        }
-
         phoneProductSent.add(`${cart.customer_phone}::${cart.product_id}`);
         dispatched++;
       } catch (err) {
@@ -179,12 +169,13 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log(`[wa-cron] Processed ${pendingCarts.length}, dispatched ${dispatched}, fallback ${fallbackCount}`);
+    console.log(`[wa-cron] Processed ${pendingCarts.length}, dispatched ${dispatched}, fallback ${fallbackCount}, skipped_recovered ${skippedRecovered}`);
 
     return json({
       processed: pendingCarts.length,
       dispatched,
       fallback_triggered: fallbackCount,
+      skipped_recovered: skippedRecovered,
     });
   } catch (err) {
     console.error("whatsapp-abandon-cron error:", err);

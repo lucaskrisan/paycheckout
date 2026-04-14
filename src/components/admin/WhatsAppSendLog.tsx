@@ -63,7 +63,7 @@ const WhatsAppSendLog = () => {
       .from("whatsapp_send_log")
       .select("*")
       .order("created_at", { ascending: false })
-      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
     if (filterStatus !== "all") {
       query = query.eq("status", filterStatus);
