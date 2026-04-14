@@ -14,7 +14,6 @@ const json = (payload: unknown, status = 200) =>
 const readResponseBody = async (res: Response) => {
   const text = await res.text();
   if (!text) return null;
-
   try {
     return JSON.parse(text);
   } catch {
@@ -24,14 +23,11 @@ const readResponseBody = async (res: Response) => {
 
 const extractErrorMessage = (payload: any) => {
   const message = payload?.response?.message ?? payload?.message ?? payload?.error ?? payload;
-
   if (Array.isArray(message)) return message.join(" ");
   if (typeof message === "string" && message.trim()) return message;
-
   return "Erro desconhecido";
 };
 
-/** Supported media types for Evolution API v2 */
 const MEDIA_TYPES = ["image", "audio", "video", "document"] as const;
 type MediaType = typeof MEDIA_TYPES[number];
 
@@ -56,13 +52,13 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims?.sub) {
+    // ✅ Use getUser() instead of getClaims()
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user?.id) {
       return json({ error: "Token inválido" }, 401);
     }
 
-    const userId = claimsData.claims.sub as string;
+    const userId = user.id;
     const body = await req.json().catch(() => null);
 
     if (!body || typeof body !== "object") {
@@ -79,7 +75,6 @@ Deno.serve(async (req) => {
       return json({ error: "to_number é obrigatório" }, 400);
     }
 
-    // For text messages, message is required. For media, media_url is required.
     if (!mediaType && !message) {
       return json({ error: "message é obrigatório para mensagens de texto" }, 400);
     }
@@ -92,7 +87,6 @@ Deno.serve(async (req) => {
       return json({ error: "media_url é obrigatório para mensagens de mídia" }, 400);
     }
 
-    // Validate media_url is a valid URL if provided
     if (mediaUrl) {
       try {
         new URL(mediaUrl);
@@ -139,37 +133,29 @@ Deno.serve(async (req) => {
     }
 
     const whatsappNumber = `${cleanNumber}@s.whatsapp.net`;
+
+    // ✅ Add 10s timeout
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000);
+
     let sendRes: Response;
 
     if (mediaType && mediaUrl) {
-      // Send media via Evolution API v2
       sendRes = await fetch(`${EVOLUTION_API_URL}/message/sendMedia/${sessionRow.instance_id}`, {
         method: "POST",
-        headers: {
-          apikey: EVOLUTION_API_KEY,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          number: whatsappNumber,
-          mediatype: mediaType,
-          media: mediaUrl,
-          caption: message || undefined,
-        }),
+        headers: { apikey: EVOLUTION_API_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ number: whatsappNumber, mediatype: mediaType, media: mediaUrl, caption: message || undefined }),
+        signal: controller.signal,
       });
     } else {
-      // Send text via Evolution API v2
       sendRes = await fetch(`${EVOLUTION_API_URL}/message/sendText/${sessionRow.instance_id}`, {
         method: "POST",
-        headers: {
-          apikey: EVOLUTION_API_KEY,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          number: whatsappNumber,
-          text: message,
-        }),
+        headers: { apikey: EVOLUTION_API_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ number: whatsappNumber, text: message }),
+        signal: controller.signal,
       });
     }
+    clearTimeout(timeout);
 
     const sendData = await readResponseBody(sendRes);
 
@@ -181,7 +167,6 @@ Deno.serve(async (req) => {
           .eq("id", pendingSendId)
           .eq("tenant_id", userId);
       }
-
       return json({ success: true });
     }
 
@@ -196,19 +181,15 @@ Deno.serve(async (req) => {
     }
 
     if (sendRes.status === 401 || sendRes.status === 403) {
-      return json(
-        {
-          error: "Falha na autenticação com a Evolution API",
-          details:
-            "A chave configurada no backend não coincide com AUTHENTICATION_API_KEY da sua Evolution API.",
-        },
-        502
-      );
+      return json({ error: "Falha na autenticação com a Evolution API", details: "A chave configurada no backend não coincide com AUTHENTICATION_API_KEY da sua Evolution API." }, 502);
     }
 
     return json({ success: false, error: "Falha ao enviar mensagem", details: extractErrorMessage(sendData) }, 500);
   } catch (err) {
     console.error("send-whatsapp-message error:", err);
+    if (err instanceof DOMException && err.name === "AbortError") {
+      return json({ error: "Evolution API não respondeu a tempo (timeout 10s)" }, 504);
+    }
     return json({ error: "Erro interno do servidor" }, 500);
   }
 });

@@ -14,7 +14,6 @@ const json = (payload: unknown, status = 200) =>
 const readResponseBody = async (res: Response) => {
   const text = await res.text();
   if (!text) return null;
-
   try {
     return JSON.parse(text);
   } catch {
@@ -24,10 +23,8 @@ const readResponseBody = async (res: Response) => {
 
 const extractErrorMessage = (payload: any) => {
   const message = payload?.response?.message ?? payload?.message ?? payload?.error ?? payload;
-
   if (Array.isArray(message)) return message.join(" ");
   if (typeof message === "string" && message.trim()) return message;
-
   return "Erro desconhecido";
 };
 
@@ -48,13 +45,13 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims?.sub) {
+    // ✅ Use getUser() instead of getClaims()
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user?.id) {
       return json({ error: "Token inválido" }, 401);
     }
 
-    const userId = claimsData.claims.sub as string;
+    const userId = user.id;
     const EVOLUTION_API_URL = Deno.env.get("EVOLUTION_API_URL")!;
     const EVOLUTION_API_KEY = Deno.env.get("EVOLUTION_API_KEY")!;
 
@@ -75,29 +72,24 @@ Deno.serve(async (req) => {
       return json({ state: "close", phone_number: null });
     }
 
+    // ✅ Add 10s timeout
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000);
+
     const stateRes = await fetch(`${EVOLUTION_API_URL}/instance/connectionState/${sessionRow.instance_id}`, {
       headers: { apikey: EVOLUTION_API_KEY },
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
+
     const stateData = await readResponseBody(stateRes);
 
     if (!stateRes.ok) {
       console.error("check-whatsapp-status upstream error:", stateData);
-
       if (stateRes.status === 401 || stateRes.status === 403) {
-        return json(
-          {
-            error: "Falha na autenticação com a Evolution API",
-            details:
-              "A chave configurada no backend não coincide com AUTHENTICATION_API_KEY da sua Evolution API.",
-          },
-          502
-        );
+        return json({ error: "Falha na autenticação com a Evolution API", details: "A chave configurada no backend não coincide com AUTHENTICATION_API_KEY da sua Evolution API." }, 502);
       }
-
-      return json(
-        { error: "Falha ao consultar status do WhatsApp", details: extractErrorMessage(stateData) },
-        500
-      );
+      return json({ error: "Falha ao consultar status do WhatsApp", details: extractErrorMessage(stateData) }, 500);
     }
 
     const state = stateData?.instance?.state ?? stateData?.state ?? "close";
@@ -105,9 +97,14 @@ Deno.serve(async (req) => {
 
     if (state === "open") {
       try {
+        const instController = new AbortController();
+        const instTimeout = setTimeout(() => instController.abort(), 10_000);
         const instancesRes = await fetch(`${EVOLUTION_API_URL}/instance/fetchInstances`, {
           headers: { apikey: EVOLUTION_API_KEY },
+          signal: instController.signal,
         });
+        clearTimeout(instTimeout);
+
         const instancesPayload = await readResponseBody(instancesRes);
         const instances = Array.isArray(instancesPayload)
           ? instancesPayload
@@ -163,6 +160,9 @@ Deno.serve(async (req) => {
     return json({ state, phone_number: phoneNumber, instance_id: sessionRow.instance_id });
   } catch (err) {
     console.error("check-whatsapp-status error:", err);
+    if (err instanceof DOMException && err.name === "AbortError") {
+      return json({ error: "Evolution API não respondeu a tempo (timeout 10s)" }, 504);
+    }
     return json({ error: "Erro interno do servidor" }, 500);
   }
 });
