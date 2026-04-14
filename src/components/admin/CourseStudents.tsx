@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getAuthOrigin } from "@/lib/getAuthOrigin";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -160,7 +161,7 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
 
       if (accessErr) throw accessErr;
 
-      const accessUrl = `https://app.panttera.com.br/membros?token=${newAccess.access_token}`;
+      const accessUrl = `${getAuthOrigin()}/membros?token=${newAccess.access_token}`;
       
       // Send access email via edge function
       try {
@@ -236,7 +237,7 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
         },
       });
       if (error) throw error;
-      const accessUrl = `https://app.panttera.com.br/membros?token=${student.access_token}`;
+      const accessUrl = `${getAuthOrigin()}/membros?token=${student.access_token}`;
       if (data?.email_sent === false) {
         navigator.clipboard.writeText(accessUrl).catch(() => {});
         toast.success("Link copiado! (Verifique domínio no Resend para enviar emails)", {
