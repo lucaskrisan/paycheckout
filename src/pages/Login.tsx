@@ -13,6 +13,7 @@ import { Eye, EyeOff, ArrowRight, CheckCircle2, BarChart3, GraduationCap, Chevro
 import TurnstileWidget from "@/components/TurnstileWidget";
 import { supabase } from "@/integrations/supabase/client";
 import { validateCpfCnpj, validatePhone } from "@/lib/validators";
+import { getAuthOrigin } from "@/lib/getAuthOrigin";
 
 const formatCpfCnpj = (value: string) => {
   const digits = value.replace(/\D/g, "");
