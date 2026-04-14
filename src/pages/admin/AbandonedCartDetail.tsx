@@ -120,8 +120,9 @@ const AbandonedCartDetail = () => {
   const openWhatsApp = () => {
     if (!cart?.customer_phone) return;
     const clean = cart.customer_phone.replace(/\D/g, "");
+    const number = clean.startsWith("55") ? clean : `55${clean}`;
     const msg = encodeURIComponent("Olá! Vi que você se interessou pelo nosso produto. Posso te ajudar?");
-    window.open(`https://wa.me/${clean}?text=${msg}`, "_blank");
+    window.open(`https://wa.me/${number}?text=${msg}`, "_blank");
   };
 
   if (loading) {
