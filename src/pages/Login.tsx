@@ -146,9 +146,8 @@ const Login = () => {
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
-    const CANONICAL_ORIGIN = "https://app.panttera.com.br";
     const { error } = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: CANONICAL_ORIGIN,
+      redirect_uri: getAuthOrigin(),
       extraParams: { prompt: "select_account" },
     });
     if (error) {
