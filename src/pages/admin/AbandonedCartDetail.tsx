@@ -227,11 +227,13 @@ const AbandonedCartDetail = () => {
                   <div key={step.key} className="flex items-center flex-1">
                     <div className="flex flex-col items-center">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                        i <= currentStep
+                        i < currentStep
                           ? "bg-green-500 text-white"
+                          : i === currentStep
+                          ? "bg-amber-500 text-white animate-pulse"
                           : "bg-gray-200 text-gray-500"
                       }`}>
-                        {i <= currentStep ? "✓" : ""}
+                        {i < currentStep ? "✓" : i === currentStep ? "●" : ""}
                       </div>
                       <p className="text-xs mt-1 text-center max-w-[100px]">{step.label}</p>
                     </div>
