@@ -144,8 +144,8 @@ const AbandonedCartDetail = () => {
   const checkoutUrl = cart.checkout_url || cart.page_url || "";
 
   const dropoffMessage = () => {
-    if (cart.checkout_step === "payment") return "O cliente desistiu durante o pagamento";
-    if (cart.checkout_step === "personal_info") return "O cliente desistiu durante as informações pessoais";
+    if (cart.checkout_step === "payment") return "O cliente chegou ao pagamento mas não finalizou";
+    if (cart.checkout_step === "personal_info") return "O cliente parou nas informações pessoais";
     return "O cliente saiu sem preencher nenhuma informação";
   };
 
@@ -227,11 +227,13 @@ const AbandonedCartDetail = () => {
                   <div key={step.key} className="flex items-center flex-1">
                     <div className="flex flex-col items-center">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                        i <= currentStep
+                        i < currentStep
                           ? "bg-green-500 text-white"
+                          : i === currentStep
+                          ? "bg-amber-500 text-white animate-pulse"
                           : "bg-gray-200 text-gray-500"
                       }`}>
-                        {i <= currentStep ? "✓" : ""}
+                        {i < currentStep ? "✓" : i === currentStep ? "●" : ""}
                       </div>
                       <p className="text-xs mt-1 text-center max-w-[100px]">{step.label}</p>
                     </div>
