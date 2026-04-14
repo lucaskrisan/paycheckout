@@ -13,97 +13,160 @@ import DashboardStateMap from "@/components/admin/dashboard/DashboardStateMap";
 import DashboardApprovalCard from "@/components/admin/dashboard/DashboardApprovalCard";
 import DashboardWeekdayChart from "@/components/admin/dashboard/DashboardWeekdayChart";
 
+interface DashboardMetrics {
+  total_bruto: number;
+  total_taxas: number;
+  total_pendente: number;
+  total_refunded: number;
+  total_chargeback: number;
+  count_approved: number;
+  count_pending: number;
+  count_refunded: number;
+  count_chargedback: number;
+  count_total: number;
+  card_decided: number;
+  card_approved: number;
+  pix_decided: number;
+  pix_approved: number;
+  paid_sales_count: number;
+  paid_revenue: number;
+  organic_sales_count: number;
+  organic_revenue: number;
+  abandoned_total: number;
+  abandoned_recovered: number;
+  sales_by_state: Record<string, { count: number; revenue: number }>;
+  chart_hourly: { hour: number; total: number }[];
+  chart_daily: { date: string; total: number }[];
+}
+
+const emptyMetrics: DashboardMetrics = {
+  total_bruto: 0, total_taxas: 0, total_pendente: 0, total_refunded: 0, total_chargeback: 0,
+  count_approved: 0, count_pending: 0, count_refunded: 0, count_chargedback: 0, count_total: 0,
+  card_decided: 0, card_approved: 0, pix_decided: 0, pix_approved: 0,
+  paid_sales_count: 0, paid_revenue: 0, organic_sales_count: 0, organic_revenue: 0,
+  abandoned_total: 0, abandoned_recovered: 0,
+  sales_by_state: {}, chart_hourly: [], chart_daily: [],
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, isSuperAdmin } = useAuth();
-  const [orders, setOrders] = useState<any[]>([]);
-  const [abandonedCarts, setAbandonedCarts] = useState<any[]>([]);
+  const [metrics, setMetrics] = useState<DashboardMetrics>(emptyMetrics);
   const [period, setPeriod] = useState<Period>("today");
   const [refreshing, setRefreshing] = useState(false);
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("all");
   const [currency, setCurrency] = useState<Currency>("BRL");
 
+  // For DashboardWeekdayChart we still need raw orders for weekday grouping
+  const [weekdayOrders, setWeekdayOrders] = useState<any[]>([]);
+
   const ownerProductIds = useMemo(() => products.map((p) => p.id), [products]);
   const liveVisitors = useCheckoutPresence("watch", undefined, ownerProductIds);
 
-  const getDateFilter = useCallback((p: Period): string | null => {
+  const getDateRange = useCallback((p: Period): { from: string | null; to: string | null } => {
     const now = new Date();
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     switch (p) {
-      case "today": return startOfDay.toISOString();
-      case "yesterday": { const y = new Date(startOfDay); y.setDate(y.getDate() - 1); return y.toISOString(); }
-      case "7days": { const w = new Date(startOfDay); w.setDate(w.getDate() - 7); return w.toISOString(); }
-      case "month": return new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      case "lastMonth": return new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
-      case "total": return null;
-      default: return null;
+      case "today": return { from: startOfDay.toISOString(), to: null };
+      case "yesterday": {
+        const y = new Date(startOfDay);
+        y.setDate(y.getDate() - 1);
+        return { from: y.toISOString(), to: startOfDay.toISOString() };
+      }
+      case "7days": {
+        const w = new Date(startOfDay);
+        w.setDate(w.getDate() - 7);
+        return { from: w.toISOString(), to: null };
+      }
+      case "month": return { from: new Date(now.getFullYear(), now.getMonth(), 1).toISOString(), to: null };
+      case "lastMonth": {
+        return {
+          from: new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString(),
+          to: new Date(now.getFullYear(), now.getMonth(), 1).toISOString(),
+        };
+      }
+      case "total": return { from: null, to: null };
+      default: return { from: null, to: null };
     }
   }, []);
 
-  const fetchOrders = useCallback(async (p: Period) => {
+  const fetchMetrics = useCallback(async () => {
+    if (!user) return;
+
+    const { from, to } = getDateRange(period);
+    const productId = selectedProductId === "all" ? null : selectedProductId;
+
+    const { data, error } = await supabase.rpc("get_dashboard_metrics", {
+      p_user_id: user.id,
+      p_date_from: from,
+      p_date_to: to,
+      p_product_id: productId,
+      p_is_super_admin: isSuperAdmin,
+    });
+
+    if (error) {
+      console.error("[dashboard] RPC error:", error);
+      return;
+    }
+
+    setMetrics(data || emptyMetrics);
+  }, [user, period, selectedProductId, isSuperAdmin, getDateRange]);
+
+  const fetchProducts = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase.from("products").select("id, name").eq("user_id", user.id);
+    setProducts(data || []);
+  }, [user]);
+
+  // Fetch minimal orders for weekday chart (only needs created_at, amount, status)
+  const fetchWeekdayOrders = useCallback(async () => {
+    if (!user) return;
+    const { from, to } = getDateRange(period);
     let query = supabase
       .from("orders")
-      .select("id, created_at, status, amount, platform_fee_amount, payment_method, product_id, metadata, customer_state")
+      .select("created_at, amount, status, payment_method")
       .order("created_at", { ascending: false });
 
-    if (!isSuperAdmin && user) query = query.eq("user_id", user.id);
+    if (!isSuperAdmin) query = query.eq("user_id", user.id);
+    if (selectedProductId !== "all") query = query.eq("product_id", selectedProductId);
+    if (from) query = query.gte("created_at", from);
+    if (to) query = query.lt("created_at", to);
+    query = query.limit(5000);
 
-    const dateFrom = getDateFilter(p);
-    if (dateFrom) {
-      query = query.gte("created_at", dateFrom);
-      if (p === "yesterday") {
-        const now = new Date();
-        query = query.lt("created_at", new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString());
-      }
-      if (p === "lastMonth") {
-        const now = new Date();
-        query = query.lte("created_at", new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59).toISOString());
-      }
-    }
-    query = query.limit(1000);
-    const { data, error } = await query;
-    if (error) throw error;
-    return data || [];
-  }, [getDateFilter, isSuperAdmin, user]);
-
-  const fetchAndSetData = useCallback(async () => {
-    if (!user) return;
-    let cartsQuery = supabase.from("abandoned_carts").select("id, created_at, recovered").order("created_at", { ascending: false }).limit(500);
-    if (!isSuperAdmin) cartsQuery = cartsQuery.eq("user_id", user.id);
-    const [periodOrders, cartsRes, productsRes] = await Promise.all([
-      fetchOrders(period),
-      cartsQuery,
-      supabase.from("products").select("id, name").eq("user_id", user.id),
-    ]);
-    setOrders(periodOrders);
-    setAbandonedCarts(cartsRes.data || []);
-    setProducts(productsRes.data || []);
-  }, [fetchOrders, user, period]);
+    const { data } = await query;
+    setWeekdayOrders(data || []);
+  }, [user, period, selectedProductId, isSuperAdmin, getDateRange]);
 
   const loadData = useCallback(async (isRefresh = false) => {
     if (!user) return;
     if (isRefresh) setRefreshing(true);
-    try { await fetchAndSetData(); }
-    catch (error) { console.error("[dashboard] loadData error:", error); }
-    finally { if (isRefresh) setRefreshing(false); }
-  }, [fetchAndSetData, user]);
+    try {
+      await Promise.all([fetchMetrics(), fetchProducts(), fetchWeekdayOrders()]);
+    } catch (error) {
+      console.error("[dashboard] loadData error:", error);
+    } finally {
+      if (isRefresh) setRefreshing(false);
+    }
+  }, [fetchMetrics, fetchProducts, fetchWeekdayOrders, user]);
 
+  // Reconcile on mount
   useEffect(() => {
     if (!user) return;
     const doSync = async () => {
       try {
         const { error } = await supabase.functions.invoke("reconcile-orders", { body: { hours_back: 24 * 30 } });
-        if (!error) await fetchAndSetData();
+        if (!error) await loadData(false);
       } catch {}
     };
     const timeout = setTimeout(doSync, 3000);
     const interval = setInterval(doSync, 15 * 60 * 1000);
     return () => { clearTimeout(timeout); clearInterval(interval); };
-  }, [user, fetchAndSetData]);
+  }, [user, loadData]);
 
   useEffect(() => { loadData(false); }, [loadData]);
 
+  // Realtime refresh
   useEffect(() => {
     if (!user) return;
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -118,104 +181,33 @@ const Dashboard = () => {
     return () => { if (debounceTimer) clearTimeout(debounceTimer); supabase.removeChannel(channel); };
   }, [user, loadData]);
 
-  // Computed metrics
-  const productFiltered = useMemo(() => {
-    if (selectedProductId === "all") return orders;
-    return orders.filter((o) => o.product_id === selectedProductId);
-  }, [orders, selectedProductId]);
-
-  const filtered = productFiltered;
-  const approved = useMemo(() => filtered.filter((o) => ["paid", "approved", "confirmed"].includes(o.status)), [filtered]);
-  const pending = useMemo(() => filtered.filter((o) => o.status === "pending"), [filtered]);
-  const refunded = useMemo(() => filtered.filter((o) => o.status === "refunded"), [filtered]);
-  const chargedback = useMemo(() => filtered.filter((o) => o.status === "chargedback"), [filtered]);
-
-  const totalBruto = approved.reduce((s, o) => s + Number(o.amount || 0), 0);
-  const totalTaxas = approved.reduce((s, o) => s + Number(o.platform_fee_amount || 0), 0);
-  const totalLiquido = totalBruto - totalTaxas;
-  const totalVendas = approved.length;
-  const totalPendente = pending.reduce((s, o) => s + Number(o.amount || 0), 0);
-  const totalRefunded = refunded.reduce((s, o) => s + Number(o.amount || 0), 0);
-  const totalChargeback = chargedback.reduce((s, o) => s + Number(o.amount || 0), 0);
-
-  const cardDecided = filtered.filter((o) => o.payment_method === "credit_card" && o.status !== "pending");
-  const cardApproved = cardDecided.filter((o) => o.status === "paid" || o.status === "approved");
-  const cardApprovalRate = cardDecided.length > 0 ? (cardApproved.length / cardDecided.length) * 100 : 0;
-
-  const pixDecided = filtered.filter((o) => o.payment_method === "pix" && o.status !== "pending");
-  const pixApproved = pixDecided.filter((o) => o.status === "paid" || o.status === "approved");
-  const pixApprovalRate = pixDecided.length > 0 ? (pixApproved.length / pixDecided.length) * 100 : 0;
-
-  const paidSales = approved.filter((o) => (o.metadata as any)?.utm_source);
-  const organicSales = approved.filter((o) => !(o.metadata as any)?.utm_source);
-  const organicRevenue = organicSales.reduce((s, o) => s + Number(o.amount || 0), 0);
-  const paidRevenue = paidSales.reduce((s, o) => s + Number(o.amount || 0), 0);
-
-  const abandonedFiltered = useMemo(() => {
-    const dateFrom = getDateFilter(period);
-    if (!dateFrom) return abandonedCarts;
-    return abandonedCarts.filter((c) => c.created_at >= dateFrom);
-  }, [abandonedCarts, period, getDateFilter]);
-  const totalAbandoned = abandonedFiltered.length;
-  const recoveredCarts = abandonedFiltered.filter((c) => c.recovered);
-  const recoveryRate = totalAbandoned > 0 ? ((recoveredCarts.length / totalAbandoned) * 100).toFixed(0) : "0";
-
-  const avgTicket = totalVendas > 0 ? totalBruto / totalVendas : 0;
-
-  const salesByState = useMemo(() => {
-    const map: Record<string, { count: number; revenue: number }> = {};
-    approved.forEach((o) => {
-      const st = o.customer_state?.toUpperCase()?.trim();
-      if (st && st.length === 2) {
-        if (!map[st]) map[st] = { count: 0, revenue: 0 };
-        map[st].count++;
-        map[st].revenue += Number(o.amount || 0);
-      }
-    });
-    return map;
-  }, [approved]);
+  // Derived values from metrics
+  const m = metrics;
+  const totalLiquido = m.total_bruto - m.total_taxas;
+  const cardApprovalRate = m.card_decided > 0 ? (m.card_approved / m.card_decided) * 100 : 0;
+  const pixApprovalRate = m.pix_decided > 0 ? (m.pix_approved / m.pix_decided) * 100 : 0;
+  const avgTicket = m.count_approved > 0 ? m.total_bruto / m.count_approved : 0;
+  const recoveryRate = m.abandoned_total > 0 ? ((m.abandoned_recovered / m.abandoned_total) * 100).toFixed(0) : "0";
 
   const isHourly = period === "today" || period === "yesterday";
 
   const chartData = useMemo(() => {
     if (isHourly) {
-      const hours: Record<string, number> = {};
-      for (let h = 0; h < 24; h++) {
-        hours[`${String(h).padStart(2, "0")}:00`] = 0;
-      }
-      approved.forEach((o) => {
-        const hour = new Date(o.created_at).getHours();
-        const key = `${String(hour).padStart(2, "0")}:00`;
-        if (hours[key] !== undefined) hours[key] += Number(o.amount);
-      });
-      return Object.entries(hours).map(([name, total]) => ({ name, total }));
+      return (m.chart_hourly || []).map((h) => ({
+        name: `${String(h.hour).padStart(2, "0")}:00`,
+        total: Number(h.total),
+      }));
     }
-    const days: Record<string, number> = {};
-    const now = new Date();
-    const numDays = period === "7days" ? 7 : 30;
-    for (let i = numDays - 1; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i);
-      const key = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-      days[key] = 0;
-    }
-    approved.forEach((o) => {
-      const key = new Date(o.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-      if (days[key] !== undefined) days[key] += Number(o.amount);
+    return (m.chart_daily || []).map((d) => {
+      const dt = new Date(d.date);
+      return {
+        name: dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
+        total: Number(d.total),
+      };
     });
-    return Object.entries(days).map(([name, total]) => ({ name, total }));
-  }, [approved, period, isHourly]);
+  }, [m.chart_hourly, m.chart_daily, isHourly]);
 
-  // Sparkline data for visitors (simulated recent activity)
-  const visitorSparkline = useMemo(() => {
-    // Generate last 12 data points based on recent order frequency
-    const points: number[] = [];
-    for (let i = 0; i < 12; i++) {
-      points.push(Math.max(0, liveVisitors + Math.floor(Math.random() * 3) - 1));
-    }
-    points[points.length - 1] = liveVisitors;
-    return points;
-  }, [liveVisitors]);
+  const salesByState = m.sales_by_state || {};
 
   const exchangeRates: Record<Currency, number> = { BRL: 1, USD: 0.18, EUR: 0.16 };
   const currencySymbols: Record<Currency, string> = { BRL: "R$", USD: "$", EUR: "€" };
@@ -250,20 +242,20 @@ const Dashboard = () => {
           value={totalLiquido}
           fmt={fmt}
           variant="revenue"
-          sublabel={totalTaxas > 0 ? `Bruto ${fmt(totalBruto)}` : undefined}
+          sublabel={m.total_taxas > 0 ? `Bruto ${fmt(m.total_bruto)}` : undefined}
           tooltip="Receita aprovada menos taxas da plataforma"
         />
         <DashboardMetricCard
           label="Vendas Aprovadas"
-          value={String(totalVendas)}
-          sub={filtered.length > 0 ? `${((approved.length / filtered.length) * 100).toFixed(0)}% aprovação` : undefined}
+          value={String(m.count_approved)}
+          sub={m.count_total > 0 ? `${((m.count_approved / m.count_total) * 100).toFixed(0)}% aprovação` : undefined}
           accent
           tooltip="Total de vendas com pagamento confirmado"
         />
         <DashboardMetricCard
           label="Vendas Pendentes"
-          value={fmt(totalPendente)}
-          sub={`${pending.length} pedidos`}
+          value={fmt(m.total_pendente)}
+          sub={`${m.count_pending} pedidos`}
           tooltip="Pedidos aguardando confirmação de pagamento"
         />
         <DashboardMetricCard
@@ -274,53 +266,50 @@ const Dashboard = () => {
         />
       </div>
 
-      {/* ROW 2 — Chart + metrics (cognitive grouping) */}
+      {/* ROW 2 — Chart + metrics */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
         <div className="lg:col-span-7">
           <DashboardChart data={chartData} fmt={fmt} title={isHourly ? "Vendas" : "Receita Diária"} subtitle={isHourly ? "Receita no período selecionado" : undefined} />
         </div>
         <div className="lg:col-span-5 grid grid-cols-2 gap-3">
-          {/* Grupo 1: Volume + Valor */}
           <DashboardMetricCard
             label="Total de Pedidos"
-            value={String(filtered.length)}
-            sub={`${approved.length} aprovados · ${pending.length} pendentes`}
+            value={String(m.count_total)}
+            sub={`${m.count_approved} aprovados · ${m.count_pending} pendentes`}
             tooltip="Número total de pedidos no período selecionado"
           />
           <DashboardMetricCard
             label="Vendas via Ads"
-            value={String(paidSales.length)}
-            sub={fmt(paidRevenue)}
+            value={String(m.paid_sales_count)}
+            sub={fmt(m.paid_revenue)}
             tooltip="Vendas com UTM identificado (tráfego pago)"
           />
-          {/* Grupo 2: Origem */}
           <DashboardMetricCard
             label="Vendas Orgânicas"
-            value={String(organicSales.length)}
-            sub={fmt(organicRevenue)}
+            value={String(m.organic_sales_count)}
+            sub={fmt(m.organic_revenue)}
             tooltip="Vendas sem UTM (tráfego orgânico/direto)"
           />
-          {/* Grupo 3: Perdas (dimmed when zero) */}
           <DashboardMetricCard
             label="Reembolsos"
-            value={fmt(totalRefunded)}
-            sub={`${refunded.length} pedidos`}
+            value={fmt(m.total_refunded)}
+            sub={`${m.count_refunded} pedidos`}
             tooltip="Valor total de reembolsos processados"
-            dimmed={totalRefunded === 0}
+            dimmed={m.total_refunded === 0}
           />
           <DashboardMetricCard
             label="Chargeback"
-            value={fmt(totalChargeback)}
-            sub={`${chargedback.length} pedidos`}
+            value={fmt(m.total_chargeback)}
+            sub={`${m.count_chargedback} pedidos`}
             tooltip="Valor total de chargebacks"
-            dimmed={totalChargeback === 0}
+            dimmed={m.total_chargeback === 0}
           />
         </div>
       </div>
 
       {/* ROW 3 — Bottom cards */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <DashboardWeekdayChart orders={filtered} fmt={fmt} />
+        <DashboardWeekdayChart orders={weekdayOrders} fmt={fmt} />
         <DashboardApprovalCard
           items={[
             { label: "Cartão", rate: cardApprovalRate },
@@ -329,7 +318,7 @@ const Dashboard = () => {
         />
         <DashboardMetricCard
           label="Carrinhos Abandonados"
-          value={String(totalAbandoned)}
+          value={String(m.abandoned_total)}
           sub={`${recoveryRate}% recuperados`}
           onClick={() => navigate("/admin/abandoned")}
           tooltip="Total de checkouts iniciados sem finalização"
