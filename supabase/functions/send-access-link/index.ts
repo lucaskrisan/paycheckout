@@ -139,7 +139,7 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'PayCheckout <noreply@app.panttera.com.br>',
+        from: 'PanteraPay <noreply@app.panttera.com.br>',
         to: [customer.email],
         subject: `Seu acesso ao curso "${course.title}" está liberado! 🎉`,
         html: emailHtml,
