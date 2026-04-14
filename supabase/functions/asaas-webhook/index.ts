@@ -147,27 +147,31 @@ Deno.serve(async (req) => {
   try {
     const rawBody = await req.text();
 
-    // --- Webhook signature verification ---
+    // --- Webhook signature verification (MANDATORY) ---
     const ASAAS_WEBHOOK_TOKEN = Deno.env.get('ASAAS_WEBHOOK_TOKEN')?.trim();
-    if (ASAAS_WEBHOOK_TOKEN) {
-      const receivedToken = (
-        req.headers.get('asaas-access-token') ||
-        req.headers.get('access_token') ||
-        ''
-      ).trim();
+    if (!ASAAS_WEBHOOK_TOKEN) {
+      console.error('[asaas-webhook] ASAAS_WEBHOOK_TOKEN not configured — rejecting request');
+      return new Response(JSON.stringify({ error: 'Webhook verification not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
-      if (!receivedToken || receivedToken !== ASAAS_WEBHOOK_TOKEN) {
-        console.error('[asaas-webhook] Invalid webhook token', {
-          has_token: Boolean(receivedToken),
-          token_length: receivedToken.length,
-        });
-        return new Response(JSON.stringify({ error: 'Invalid webhook token' }), {
-          status: 401,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-    } else {
-      console.warn('[asaas-webhook] ASAAS_WEBHOOK_TOKEN not set — skipping signature verification');
+    const receivedToken = (
+      req.headers.get('asaas-access-token') ||
+      req.headers.get('access_token') ||
+      ''
+    ).trim();
+
+    if (!receivedToken || receivedToken !== ASAAS_WEBHOOK_TOKEN) {
+      console.error('[asaas-webhook] Invalid webhook token', {
+        has_token: Boolean(receivedToken),
+        token_length: receivedToken.length,
+      });
+      return new Response(JSON.stringify({ error: 'Invalid webhook token' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const payload = JSON.parse(rawBody);

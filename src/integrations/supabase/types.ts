@@ -2605,6 +2605,16 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: undefined
       }
+      get_dashboard_metrics: {
+        Args: {
+          p_date_from?: string
+          p_date_to?: string
+          p_is_super_admin?: boolean
+          p_product_id?: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       get_revenue_summary: {
         Args: { p_user_id: string }
         Returns: {
