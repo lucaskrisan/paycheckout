@@ -140,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
       options: {
         data: { full_name: fullName },
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: "https://app.panttera.com.br",
       },
     });
     if (error) throw error;

@@ -145,8 +145,9 @@ const Login = () => {
 
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
+    const CANONICAL_ORIGIN = "https://app.panttera.com.br";
     const { error } = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: CANONICAL_ORIGIN,
       extraParams: { prompt: "select_account" },
     });
     if (error) {
@@ -358,7 +359,7 @@ const Login = () => {
                           }
                           try {
                             const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                              redirectTo: `${window.location.origin}/reset-password`,
+                              redirectTo: "https://app.panttera.com.br/reset-password",
                             });
                             if (error) throw error;
                             toast.success("Link de redefinição enviado! Verifique seu e-mail.", { duration: 6000 });
