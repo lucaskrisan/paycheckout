@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const json = (payload: unknown, status = 200) =>
@@ -19,8 +19,7 @@ const json = (payload: unknown, status = 200) =>
  * Finds pending PIX orders older than 7 min (but less than 4h)
  * and dispatches a WhatsApp reminder via whatsapp-dispatch.
  *
- * IMPORTANT: Re-checks payment status right before dispatch
- * to avoid sending reminders for orders that were already paid.
+ * FIX v2: Full CORS headers + 10s AbortController timeout on Evolution API calls.
  */
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -73,7 +72,6 @@ Deno.serve(async (req) => {
       if (!order.user_id || !order.customer_id) continue;
 
       // ── CRITICAL: Re-check payment status before dispatch ──
-      // The order could have been paid between the initial query and now
       const { data: freshOrder } = await supabase
         .from("orders")
         .select("status")

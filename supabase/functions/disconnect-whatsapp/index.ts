@@ -11,10 +11,20 @@ const json = (payload: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
+const fetchWithTimeout = async (url: string, init: RequestInit, timeoutMs = 10000) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...init, signal: controller.signal });
+    return res;
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
 const readResponseBody = async (res: Response) => {
   const text = await res.text();
   if (!text) return null;
-
   try {
     return JSON.parse(text);
   } catch {
@@ -39,13 +49,13 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims?.sub) {
+    // FIX: Use getUser() instead of getClaims() for reliability across SDK versions
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError || !userData?.user?.id) {
       return json({ error: "Token inválido" }, 401);
     }
 
-    const userId = claimsData.claims.sub as string;
+    const userId = userData.user.id;
     const EVOLUTION_API_URL = Deno.env.get("EVOLUTION_API_URL")!;
     const EVOLUTION_API_KEY = Deno.env.get("EVOLUTION_API_KEY")!;
 
@@ -85,7 +95,7 @@ Deno.serve(async (req) => {
 
       for (const request of requests) {
         try {
-          const response = await fetch(request.url, request.init);
+          const response = await fetchWithTimeout(request.url, request.init, 10000);
           statuses.push(response.status);
           await readResponseBody(response);
         } catch (error) {
