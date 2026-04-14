@@ -359,7 +359,7 @@ const Login = () => {
                           }
                           try {
                             const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                              redirectTo: `${window.location.origin}/reset-password`,
+                              redirectTo: "https://app.panttera.com.br/reset-password",
                             });
                             if (error) throw error;
                             toast.success("Link de redefinição enviado! Verifique seu e-mail.", { duration: 6000 });
