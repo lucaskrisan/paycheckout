@@ -129,7 +129,7 @@ serve(async (req) => {
         method: "POST",
         headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          from: `${companyName} <noreply@paolasemfiltro.com>`,
+          from: `${companyName} <noreply@app.panttera.com.br>`,
           to: [customerEmail],
           subject: editedSubject,
           html: fullHtml,
@@ -251,7 +251,7 @@ O cliente gerou o PIX mas não pagou ainda.`,
       method: "POST",
       headers: { Authorization: `Bearer ${resendKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        from: `${companyName} <noreply@paolasemfiltro.com>`,
+        from: `${companyName} <noreply@app.panttera.com.br>`,
         to: [customerEmail],
         subject: emailSubject,
         html: fullHtml,

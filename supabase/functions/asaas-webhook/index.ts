@@ -106,7 +106,7 @@ async function sendAccessEmail(supabase: any, customerId: string, course: { id: 
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'PanteraPay <noreply@paolasemfiltro.com>',
+        from: 'PanteraPay <noreply@app.panttera.com.br>',
         to: [customer.email],
         subject: `🎉 Acesso liberado — "${course.title}"`,
         html: emailHtml,

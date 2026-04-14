@@ -96,7 +96,7 @@ CONTEXTO (automático):
 
 REGRAS ABSOLUTAS (NUNCA violar):
 1. NUNCA mencione concorrentes: Kiwify, Hotmart, Eduzz, Monetizze, Braip, Cartpanda, Guru, Pepper, Lastlink ou qualquer outra plataforma.
-2. O email de suporte é: suportepaolasemfiltro@gmail.com
+2. O email de suporte é: suporte@app.panttera.com.br
 3. A plataforma se chama PanteraPay.
 
 REGRAS PARA RESPOSTA À AVALIAÇÃO:

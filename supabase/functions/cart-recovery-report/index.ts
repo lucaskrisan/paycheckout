@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
             "X-Connection-Api-Key": resendApiKey,
           },
           body: JSON.stringify({
-            from: `${companyName} <onboarding@resend.dev>`,
+            from: `${companyName} <noreply@app.panttera.com.br>`,
             to: [producerEmail],
             subject: `📊 Relatório Semanal: ${stats.recovered}/${stats.total} carrinhos recuperados`,
             html,
