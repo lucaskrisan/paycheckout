@@ -139,11 +139,13 @@ const AbandonedCartDetail = () => {
     );
   }
 
-  const currentStep = stepIndex(cart.checkout_step);
+  const isRecovered = cart.recovered === true;
+  const currentStep = isRecovered ? STEPS.length : stepIndex(cart.checkout_step);
   const productPrice = cart.product_price || cart.products?.price || 0;
   const checkoutUrl = cart.checkout_url || cart.page_url || "";
 
   const dropoffMessage = () => {
+    if (isRecovered) return "✅ Cliente concluiu a compra";
     if (cart.checkout_step === "payment") return "O cliente chegou ao pagamento mas não finalizou";
     if (cart.checkout_step === "personal_info") return "O cliente parou nas informações pessoais";
     return "O cliente saiu sem preencher nenhuma informação";
