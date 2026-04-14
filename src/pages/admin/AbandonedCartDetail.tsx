@@ -144,8 +144,8 @@ const AbandonedCartDetail = () => {
   const checkoutUrl = cart.checkout_url || cart.page_url || "";
 
   const dropoffMessage = () => {
-    if (cart.checkout_step === "payment") return "O cliente desistiu durante o pagamento";
-    if (cart.checkout_step === "personal_info") return "O cliente desistiu durante as informações pessoais";
+    if (cart.checkout_step === "payment") return "O cliente chegou ao pagamento mas não finalizou";
+    if (cart.checkout_step === "personal_info") return "O cliente parou nas informações pessoais";
     return "O cliente saiu sem preencher nenhuma informação";
   };
 
