@@ -139,11 +139,13 @@ const AbandonedCartDetail = () => {
     );
   }
 
-  const currentStep = stepIndex(cart.checkout_step);
+  const isRecovered = cart.recovered === true;
+  const currentStep = isRecovered ? STEPS.length : stepIndex(cart.checkout_step);
   const productPrice = cart.product_price || cart.products?.price || 0;
   const checkoutUrl = cart.checkout_url || cart.page_url || "";
 
   const dropoffMessage = () => {
+    if (isRecovered) return "✅ Cliente concluiu a compra";
     if (cart.checkout_step === "payment") return "O cliente chegou ao pagamento mas não finalizou";
     if (cart.checkout_step === "personal_info") return "O cliente parou nas informações pessoais";
     return "O cliente saiu sem preencher nenhuma informação";
@@ -247,9 +249,9 @@ const AbandonedCartDetail = () => {
               </div>
 
               {/* Dropoff alert */}
-              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3">
-                <p className="text-sm font-medium text-amber-800">⚠ {dropoffMessage()}</p>
-                <p className="text-xs text-amber-700 mt-1">
+              <div className={`rounded-lg border p-3 ${isRecovered ? "bg-green-50 border-green-200" : "bg-amber-50 border-amber-200"}`}>
+                <p className={`text-sm font-medium ${isRecovered ? "text-green-800" : "text-amber-800"}`}>{isRecovered ? "" : "⚠ "}{dropoffMessage()}</p>
+                <p className={`text-xs mt-1 ${isRecovered ? "text-green-700" : "text-amber-700"}`}>
                   Última atividade: {format(new Date(cart.updated_at), "dd/MM/yyyy h:mma", { locale: ptBR })}
                 </p>
               </div>
