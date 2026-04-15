@@ -32,30 +32,30 @@ export const SignupEmail = ({
 }: SignupEmailProps) => (
   <Html lang="pt-BR" dir="ltr">
     <Head />
-    <Preview>Confirme seu e-mail — {siteName}</Preview>
+    <Preview>Falta um clique para ativar sua conta — {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
         <Img src={LOGO_URL} width="48" height="48" alt={siteName} style={logo} />
-        <Heading style={h1}>Confirme seu e-mail</Heading>
+        <Heading style={h1}>Bem-vindo à elite digital.</Heading>
         <Text style={text}>
-          Obrigado por se cadastrar na{' '}
+          Sua conta na{' '}
           <Link href={siteUrl} style={link}>
             <strong>{siteName}</strong>
-          </Link>
-          !
+          </Link>{' '}
+          foi criada com sucesso.
         </Text>
         <Text style={text}>
-          Confirme seu endereço de e-mail (
+          Confirme o e-mail{' '}
           <Link href={`mailto:${recipient}`} style={link}>
             {recipient}
-          </Link>
-          ) clicando no botão abaixo:
+          </Link>{' '}
+          para desbloquear acesso total à plataforma:
         </Text>
         <Button style={button} href={confirmationUrl}>
-          Verificar E-mail
+          Ativar Minha Conta
         </Button>
         <Text style={footer}>
-          Se você não criou uma conta, ignore este e-mail com segurança.
+          Não reconhece este cadastro? Ignore este e-mail — nenhuma ação será tomada.
         </Text>
       </Container>
     </Body>

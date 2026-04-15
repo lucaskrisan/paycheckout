@@ -32,30 +32,32 @@ export const EmailChangeEmail = ({
 }: EmailChangeEmailProps) => (
   <Html lang="pt-BR" dir="ltr">
     <Head />
-    <Preview>Confirme a alteração de e-mail — {siteName}</Preview>
+    <Preview>Confirme seu novo e-mail — {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
         <Img src={LOGO_URL} width="48" height="48" alt={siteName} style={logo} />
-        <Heading style={h1}>Confirme a alteração de e-mail</Heading>
+        <Heading style={h1}>Confirme a troca de e-mail.</Heading>
         <Text style={text}>
-          Você solicitou a alteração do e-mail da sua conta na {siteName} de{' '}
-          <Link href={`mailto:${email}`} style={link}>
-            {email}
-          </Link>{' '}
-          para{' '}
-          <Link href={`mailto:${newEmail}`} style={link}>
-            {newEmail}
-          </Link>
-          .
+          Você solicitou a alteração do e-mail da sua conta {siteName}:
         </Text>
         <Text style={text}>
-          Clique no botão abaixo para confirmar a alteração:
+          De{' '}
+          <Link href={`mailto:${email}`} style={link}>
+            <strong>{email}</strong>
+          </Link>
+          {' → '}
+          <Link href={`mailto:${newEmail}`} style={link}>
+            <strong>{newEmail}</strong>
+          </Link>
+        </Text>
+        <Text style={text}>
+          Confirme clicando abaixo. Após a confirmação, o acesso será vinculado ao novo endereço.
         </Text>
         <Button style={button} href={confirmationUrl}>
-          Confirmar Alteração
+          Confirmar Novo E-mail
         </Button>
         <Text style={footer}>
-          Se você não solicitou essa alteração, proteja sua conta imediatamente.
+          Não reconhece essa solicitação? Proteja sua conta imediatamente alterando sua senha.
         </Text>
       </Container>
     </Body>

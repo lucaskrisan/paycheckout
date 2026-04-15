@@ -22,15 +22,15 @@ const LOGO_URL = 'https://vipltojtcrqatwvzobro.supabase.co/storage/v1/object/pub
 export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => (
   <Html lang="pt-BR" dir="ltr">
     <Head />
-    <Preview>Seu código de verificação</Preview>
+    <Preview>Código de segurança — PanteraPay</Preview>
     <Body style={main}>
       <Container style={container}>
         <Img src={LOGO_URL} width="48" height="48" alt="PanteraPay" style={logo} />
-        <Heading style={h1}>Confirme sua identidade</Heading>
-        <Text style={text}>Use o código abaixo para confirmar sua identidade:</Text>
+        <Heading style={h1}>Verificação de segurança.</Heading>
+        <Text style={text}>Insira o código abaixo para confirmar que é você. Ele expira em poucos minutos.</Text>
         <Text style={codeStyle}>{token}</Text>
         <Text style={footer}>
-          Este código expira em breve. Se você não solicitou, ignore este e-mail.
+          Não solicitou este código? Ignore — sua conta continua segura.
         </Text>
       </Container>
     </Body>
