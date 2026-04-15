@@ -20,7 +20,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, MessageSquare, CheckCircle2, XCircle, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Loader2, MessageSquare, CheckCircle2, XCircle, RefreshCw, ChevronLeft, ChevronRight, Check, CheckCheck, Eye } from "lucide-react";
 import { format } from "date-fns";
 
 interface LogEntry {
@@ -31,8 +37,11 @@ interface LogEntry {
   template_category: string;
   message_body: string;
   status: string;
+  delivery_status: string;
   error_message: string | null;
   created_at: string;
+  delivered_at: string | null;
+  read_at: string | null;
 }
 
 const PAGE_SIZE = 15;
@@ -44,6 +53,41 @@ const CATEGORY_LABELS: Record<string, string> = {
   lembrete_pix: "Lembrete PIX",
   acesso: "Acesso",
   geral: "Geral",
+};
+
+const DeliveryIcon = ({ delivery_status, delivered_at, read_at }: { delivery_status: string; delivered_at: string | null; read_at: string | null }) => {
+  const tooltipMap: Record<string, string> = {
+    sent: "Enviado ao servidor",
+    server: "Recebido pelo WhatsApp",
+    delivered: delivered_at ? `Entregue em ${format(new Date(delivered_at), "dd/MM HH:mm")}` : "Entregue",
+    read: read_at ? `Lido em ${format(new Date(read_at), "dd/MM HH:mm")}` : "Lido",
+    failed: "Falha na entrega",
+  };
+
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex items-center">
+            {delivery_status === "read" ? (
+              <CheckCheck className="h-4 w-4 text-blue-500" />
+            ) : delivery_status === "delivered" ? (
+              <CheckCheck className="h-4 w-4 text-muted-foreground" />
+            ) : delivery_status === "server" ? (
+              <Check className="h-4 w-4 text-muted-foreground" />
+            ) : delivery_status === "failed" ? (
+              <XCircle className="h-4 w-4 text-destructive" />
+            ) : (
+              <Check className="h-4 w-4 text-muted-foreground/50" />
+            )}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="text-xs">
+          {tooltipMap[delivery_status] || delivery_status}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 };
 
 const WhatsAppSendLog = () => {
@@ -151,6 +195,7 @@ const WhatsAppSendLog = () => {
                     <TableHead className="text-xs">Categoria</TableHead>
                     <TableHead className="text-xs">Mensagem</TableHead>
                     <TableHead className="text-xs">Status</TableHead>
+                    <TableHead className="text-xs w-[50px]">Entrega</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -183,10 +228,25 @@ const WhatsAppSendLog = () => {
                           </Badge>
                         )}
                       </TableCell>
+                      <TableCell>
+                        {log.status === "sent" && (
+                          <DeliveryIcon
+                            delivery_status={log.delivery_status || "sent"}
+                            delivered_at={log.delivered_at}
+                            read_at={log.read_at}
+                          />
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+            </div>
+            {/* Legend */}
+            <div className="flex items-center gap-4 mt-3 text-[10px] text-muted-foreground">
+              <span className="flex items-center gap-1"><Check className="h-3 w-3 text-muted-foreground/50" /> Enviado</span>
+              <span className="flex items-center gap-1"><CheckCheck className="h-3 w-3 text-muted-foreground" /> Entregue</span>
+              <span className="flex items-center gap-1"><CheckCheck className="h-3 w-3 text-blue-500" /> Lido</span>
             </div>
             <div className="flex items-center justify-between mt-4">
               <p className="text-xs text-muted-foreground">Página {page + 1}</p>
