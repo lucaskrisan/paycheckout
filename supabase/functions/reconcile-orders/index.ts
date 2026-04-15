@@ -181,7 +181,6 @@ Deno.serve(async (req) => {
               console.error('[reconcile] Webhook fire error:', whErr);
             }
           }
-        }
         } else if (pagarmeStatus === 'canceled' || pagarmeStatus === 'failed') {
           // Update to reflect actual status
           const mappedStatus = pagarmeStatus === 'canceled' ? 'cancelled' : 'failed';
