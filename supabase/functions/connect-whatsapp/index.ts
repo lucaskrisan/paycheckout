@@ -140,7 +140,7 @@ Deno.serve(async (req) => {
           url: webhookUrl,
           webhook_by_events: false,
           webhook_base64: false,
-          events: ["CONNECTION_UPDATE", "MESSAGES_UPSERT"],
+          events: ["CONNECTION_UPDATE", "MESSAGES_UPSERT", "MESSAGES_UPDATE"],
         }),
         signal: whController.signal,
       });

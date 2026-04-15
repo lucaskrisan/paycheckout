@@ -27,16 +27,19 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const event = body?.event;
 
+    const serviceClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    // ═══════════════════════════════════════════════════════
+    // Event: CONNECTION_UPDATE — update session status
+    // ═══════════════════════════════════════════════════════
     if (event === "connection.update" || event === "CONNECTION_UPDATE") {
       const instanceName = body?.instance ?? body?.data?.instance?.instanceName ?? body?.data?.instanceName;
       const state = body?.data?.state ?? body?.state;
 
       if (instanceName && state) {
-        const serviceClient = createClient(
-          Deno.env.get("SUPABASE_URL")!,
-          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-        );
-
         const mappedStatus = state === "open" ? "connected" : state === "connecting" ? "connecting" : "disconnected";
         const updateData: Record<string, string | null> = {
           status: mappedStatus,
@@ -45,7 +48,6 @@ Deno.serve(async (req) => {
 
         if (state === "open") {
           updateData.connected_at = new Date().toISOString();
-
           const ownerJid = body?.data?.ownerJid ?? body?.data?.instance?.ownerJid ?? null;
           if (typeof ownerJid === "string" && ownerJid) {
             updateData.phone_number = ownerJid.replace("@s.whatsapp.net", "");
@@ -58,6 +60,94 @@ Deno.serve(async (req) => {
         }
 
         await serviceClient.from("whatsapp_sessions").update(updateData).eq("instance_id", instanceName);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // Event: MESSAGES_UPDATE — delivery/read receipts
+    // ═══════════════════════════════════════════════════════
+    if (event === "messages.update" || event === "MESSAGES_UPDATE") {
+      const updates = body?.data;
+      const items = Array.isArray(updates) ? updates : updates ? [updates] : [];
+
+      for (const item of items) {
+        const messageId = item?.key?.id ?? item?.id;
+        const status = item?.update?.status ?? item?.status;
+
+        if (!messageId || !status) continue;
+
+        // Map Evolution API status codes to readable values
+        // 2 = sent (server), 3 = delivered, 4 = read, 5 = played (audio/video read)
+        let deliveryStatus: string | null = null;
+        const updatePayload: Record<string, string> = {};
+
+        if (status === 3 || status === "DELIVERY_ACK" || status === "delivered") {
+          deliveryStatus = "delivered";
+          updatePayload.delivered_at = new Date().toISOString();
+        } else if (status === 4 || status === 5 || status === "READ" || status === "PLAYED" || status === "read") {
+          deliveryStatus = "read";
+          updatePayload.read_at = new Date().toISOString();
+          // Also set delivered_at if not yet set
+          updatePayload.delivered_at = new Date().toISOString();
+        } else if (status === "ERROR" || status === "error" || status === 0) {
+          deliveryStatus = "failed";
+        }
+
+        if (deliveryStatus) {
+          updatePayload.delivery_status = deliveryStatus;
+
+          const { error } = await serviceClient
+            .from("whatsapp_send_log")
+            .update(updatePayload)
+            .eq("external_message_id", messageId);
+
+          if (error) {
+            console.warn(`[whatsapp-webhook] Failed to update delivery status for ${messageId}:`, error.message);
+          } else {
+            console.log(`[whatsapp-webhook] Updated delivery: ${messageId} → ${deliveryStatus}`);
+          }
+        }
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // Event: MESSAGES_UPSERT — capture outgoing message IDs
+    // ═══════════════════════════════════════════════════════
+    if (event === "messages.upsert" || event === "MESSAGES_UPSERT") {
+      const messages = body?.data;
+      const items = Array.isArray(messages) ? messages : messages ? [messages] : [];
+
+      for (const msg of items) {
+        const key = msg?.key;
+        if (!key?.fromMe) continue; // Only track outgoing messages
+
+        const messageId = key?.id;
+        const remoteJid = key?.remoteJid;
+
+        if (!messageId || !remoteJid) continue;
+
+        // Extract phone number from JID
+        const phone = remoteJid.replace("@s.whatsapp.net", "").replace("@g.us", "");
+
+        // Try to link this message ID to a recent send_log entry
+        // Match by phone number + recent timestamp (last 30 seconds)
+        const thirtySecondsAgo = new Date(Date.now() - 30_000).toISOString();
+
+        const { error } = await serviceClient
+          .from("whatsapp_send_log")
+          .update({
+            external_message_id: messageId,
+            delivery_status: "server",
+          })
+          .is("external_message_id", null)
+          .ilike("customer_phone", `%${phone.slice(-8)}`)
+          .gte("created_at", thirtySecondsAgo)
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+        if (error) {
+          console.warn(`[whatsapp-webhook] Failed to link message ID ${messageId}:`, error.message);
+        }
       }
     }
 

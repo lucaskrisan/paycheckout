@@ -2309,10 +2309,14 @@ export type Database = {
         Row: {
           created_at: string
           customer_phone: string | null
+          delivered_at: string | null
+          delivery_status: string
           error_message: string | null
+          external_message_id: string | null
           id: string
           message_body: string
           order_id: string | null
+          read_at: string | null
           status: string
           template_category: string
           tenant_id: string
@@ -2320,10 +2324,14 @@ export type Database = {
         Insert: {
           created_at?: string
           customer_phone?: string | null
+          delivered_at?: string | null
+          delivery_status?: string
           error_message?: string | null
+          external_message_id?: string | null
           id?: string
           message_body: string
           order_id?: string | null
+          read_at?: string | null
           status?: string
           template_category: string
           tenant_id: string
@@ -2331,10 +2339,14 @@ export type Database = {
         Update: {
           created_at?: string
           customer_phone?: string | null
+          delivered_at?: string | null
+          delivery_status?: string
           error_message?: string | null
+          external_message_id?: string | null
           id?: string
           message_body?: string
           order_id?: string | null
+          read_at?: string | null
           status?: string
           template_category?: string
           tenant_id?: string
