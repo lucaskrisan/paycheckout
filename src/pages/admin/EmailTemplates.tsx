@@ -51,13 +51,13 @@ const TEMPLATES: TemplateInfo[] = [
     name: "Confirmação de Cadastro",
     category: "auth",
     description: "Enviado quando um novo usuário se cadastra para verificar o e-mail.",
-    subject: "Confirme seu e-mail — PanteraPay",
+    subject: "Falta um clique para ativar sua conta — PanteraPay",
     previewHtml: wrap(`
-      <h1>Confirme seu e-mail</h1>
-      <p class="text">Obrigado por se cadastrar na <a href="#" class="link"><strong>PanteraPay</strong></a>!</p>
-      <p class="text">Confirme seu endereço de e-mail (<a href="#" class="link">usuario@exemplo.com</a>) clicando no botão abaixo:</p>
-      <a href="#" class="btn">Verificar E-mail</a>
-      <p class="footer">Se você não criou uma conta, ignore este e-mail com segurança.</p>
+      <h1>Bem-vindo à elite digital.</h1>
+      <p class="text">Sua conta na <a href="#" class="link"><strong>PanteraPay</strong></a> foi criada com sucesso.</p>
+      <p class="text">Confirme o e-mail <a href="#" class="link">usuario@exemplo.com</a> para desbloquear acesso total à plataforma:</p>
+      <a href="#" class="btn">Ativar Minha Conta</a>
+      <p class="footer">Não reconhece este cadastro? Ignore este e-mail — nenhuma ação será tomada.</p>
     `),
   },
   {
@@ -65,12 +65,12 @@ const TEMPLATES: TemplateInfo[] = [
     name: "Redefinição de Senha",
     category: "auth",
     description: "Enviado quando o usuário solicita redefinição de senha.",
-    subject: "Redefinir sua senha — PanteraPay",
+    subject: "Solicitação de nova senha — PanteraPay",
     previewHtml: wrap(`
-      <h1>Redefinir sua senha</h1>
-      <p class="text">Recebemos uma solicitação para redefinir a senha da sua conta na PanteraPay. Clique no botão abaixo para escolher uma nova senha.</p>
-      <a href="#" class="btn">Redefinir Senha</a>
-      <p class="footer">Se você não solicitou a redefinição de senha, ignore este e-mail.</p>
+      <h1>Crie sua nova senha agora.</h1>
+      <p class="text">Recebemos sua solicitação para redefinir a senha da conta PanteraPay. Clique abaixo para criar uma nova senha segura — o link é válido por tempo limitado.</p>
+      <a href="#" class="btn">Redefinir Minha Senha</a>
+      <p class="footer">Se você não fez essa solicitação, desconsidere — sua conta permanece protegida.</p>
     `),
   },
   {
@@ -78,12 +78,12 @@ const TEMPLATES: TemplateInfo[] = [
     name: "Link Mágico",
     category: "auth",
     description: "Enviado para login sem senha via link mágico.",
-    subject: "Seu link de acesso — PanteraPay",
+    subject: "Acesso instantâneo à sua conta — PanteraPay",
     previewHtml: wrap(`
-      <h1>Seu link de acesso</h1>
-      <p class="text">Clique no botão abaixo para acessar sua conta na PanteraPay. Este link expira em breve.</p>
-      <a href="#" class="btn">Acessar Conta</a>
-      <p class="footer">Se você não solicitou este link, ignore este e-mail com segurança.</p>
+      <h1>Seu acesso exclusivo está pronto.</h1>
+      <p class="text">Um clique e você está dentro. Use o botão abaixo para entrar na sua conta PanteraPay — sem precisar de senha. O link expira em minutos.</p>
+      <a href="#" class="btn">Entrar Agora</a>
+      <p class="footer">Não solicitou este acesso? Desconsidere com segurança — nenhuma ação será tomada.</p>
     `),
   },
   {
@@ -91,12 +91,12 @@ const TEMPLATES: TemplateInfo[] = [
     name: "Convite",
     category: "auth",
     description: "Enviado quando um usuário é convidado para a plataforma.",
-    subject: "Você foi convidado para a PanteraPay",
+    subject: "Convite exclusivo para a PanteraPay",
     previewHtml: wrap(`
-      <h1>Você foi convidado!</h1>
-      <p class="text">Você recebeu um convite para participar da <a href="#" class="link"><strong>PanteraPay</strong></a>. Clique no botão abaixo para aceitar o convite e criar sua conta.</p>
+      <h1>Você foi selecionado.</h1>
+      <p class="text">Alguém da <a href="#" class="link"><strong>PanteraPay</strong></a> confiou em você e liberou seu acesso à plataforma. Aceite o convite abaixo para criar sua conta e começar agora.</p>
       <a href="#" class="btn">Aceitar Convite</a>
-      <p class="footer">Se você não esperava este convite, ignore este e-mail com segurança.</p>
+      <p class="footer">Não esperava este convite? Ignore com segurança — nenhuma conta será criada.</p>
     `),
   },
   {
@@ -104,13 +104,14 @@ const TEMPLATES: TemplateInfo[] = [
     name: "Alteração de E-mail",
     category: "auth",
     description: "Enviado quando o usuário solicita alteração de e-mail.",
-    subject: "Confirme a alteração de e-mail — PanteraPay",
+    subject: "Confirme seu novo e-mail — PanteraPay",
     previewHtml: wrap(`
-      <h1>Confirme a alteração de e-mail</h1>
-      <p class="text">Você solicitou a alteração do e-mail da sua conta na PanteraPay de <a href="#" class="link">antigo@exemplo.com</a> para <a href="#" class="link">novo@exemplo.com</a>.</p>
-      <p class="text">Clique no botão abaixo para confirmar a alteração:</p>
-      <a href="#" class="btn">Confirmar Alteração</a>
-      <p class="footer">Se você não solicitou essa alteração, proteja sua conta imediatamente.</p>
+      <h1>Confirme a troca de e-mail.</h1>
+      <p class="text">Você solicitou a alteração do e-mail da sua conta PanteraPay:</p>
+      <p class="text">De <a href="#" class="link"><strong>antigo@exemplo.com</strong></a> → <a href="#" class="link"><strong>novo@exemplo.com</strong></a></p>
+      <p class="text">Confirme clicando abaixo. Após a confirmação, o acesso será vinculado ao novo endereço.</p>
+      <a href="#" class="btn">Confirmar Novo E-mail</a>
+      <p class="footer">Não reconhece essa solicitação? Proteja sua conta imediatamente alterando sua senha.</p>
     `),
   },
   {
@@ -118,12 +119,12 @@ const TEMPLATES: TemplateInfo[] = [
     name: "Código de Verificação (2FA)",
     category: "auth",
     description: "Enviado para reautenticação com código OTP.",
-    subject: "Seu código de verificação",
+    subject: "Código de segurança — PanteraPay",
     previewHtml: wrap(`
-      <h1>Confirme sua identidade</h1>
-      <p class="text">Use o código abaixo para confirmar sua identidade:</p>
+      <h1>Verificação de segurança.</h1>
+      <p class="text">Insira o código abaixo para confirmar que é você. Ele expira em poucos minutos.</p>
       <p class="code">847291</p>
-      <p class="footer">Este código expira em breve. Se você não solicitou, ignore este e-mail.</p>
+      <p class="footer">Não solicitou este código? Ignore — sua conta continua segura.</p>
     `),
   },
   {
@@ -131,29 +132,30 @@ const TEMPLATES: TemplateInfo[] = [
     name: "Pedido Confirmado",
     category: "transactional",
     description: "Enviado automaticamente após confirmação de pagamento (Asaas, Pagar.me, Stripe).",
-    subject: '✅ Pedido confirmado — "Nome do Produto"',
+    subject: '✅ Pagamento confirmado — Acesso liberado',
     previewHtml: `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
     <body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
       <div style="max-width:560px;margin:40px auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
         <div style="background:linear-gradient(135deg,#22c55e,#16a34a);padding:32px 40px;text-align:center;">
-          <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">✅ Pedido Confirmado!</h1>
+          <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">Pagamento confirmado.</h1>
+          <p style="margin:8px 0 0;color:rgba(255,255,255,0.85);font-size:14px;">Seu acesso já está liberado.</p>
         </div>
         <div style="padding:32px 40px;">
           <p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 16px;">Olá <strong>João</strong>,</p>
-          <p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 24px;">Seu pagamento foi confirmado! Aqui estão os detalhes do seu pedido:</p>
+          <p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 24px;">Parabéns pela decisão. Seu pagamento foi processado e o acesso ao produto está disponível imediatamente.</p>
           <div style="background:#f9fafb;border-radius:8px;padding:24px;margin:0 0 24px;">
             <table style="width:100%;border-collapse:collapse;">
               <tr><td style="padding:8px 0;color:#6b7280;font-size:14px;">Produto</td><td style="padding:8px 0;color:#111827;font-size:14px;font-weight:600;text-align:right;">Curso Premium</td></tr>
-              <tr><td style="padding:8px 0;color:#6b7280;font-size:14px;border-top:1px solid #e5e7eb;">Valor</td><td style="padding:8px 0;color:#22c55e;font-size:18px;font-weight:700;text-align:right;border-top:1px solid #e5e7eb;">R$ 297,00</td></tr>
+              <tr><td style="padding:8px 0;color:#6b7280;font-size:14px;border-top:1px solid #e5e7eb;">Investimento</td><td style="padding:8px 0;color:#22c55e;font-size:18px;font-weight:700;text-align:right;border-top:1px solid #e5e7eb;">R$ 297,00</td></tr>
               <tr><td style="padding:8px 0;color:#6b7280;font-size:14px;border-top:1px solid #e5e7eb;">Pagamento</td><td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;border-top:1px solid #e5e7eb;">PIX</td></tr>
-              <tr><td style="padding:8px 0;color:#6b7280;font-size:14px;border-top:1px solid #e5e7eb;">Data</td><td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;border-top:1px solid #e5e7eb;">13 de abril de 2026</td></tr>
+              <tr><td style="padding:8px 0;color:#6b7280;font-size:14px;border-top:1px solid #e5e7eb;">Data</td><td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;border-top:1px solid #e5e7eb;">15 de abril de 2026</td></tr>
               <tr><td style="padding:8px 0;color:#6b7280;font-size:14px;border-top:1px solid #e5e7eb;">Pedido</td><td style="padding:8px 0;color:#111827;font-size:12px;text-align:right;border-top:1px solid #e5e7eb;font-family:monospace;">A1B2C3D4</td></tr>
             </table>
           </div>
-          <p style="color:#6b7280;font-size:14px;line-height:1.5;margin:0 0 8px;">Se tiver alguma dúvida, responda este email.</p>
+          <p style="color:#6b7280;font-size:14px;line-height:1.5;margin:0 0 8px;">Dúvidas? Responda este e-mail — estamos prontos para ajudar.</p>
         </div>
         <div style="background:#f9fafb;padding:20px 40px;text-align:center;border-top:1px solid #e5e7eb;">
-          <p style="color:#9ca3af;font-size:12px;margin:0;">Obrigado pela sua compra! 💚</p>
+          <p style="color:#9ca3af;font-size:12px;margin:0;">Obrigado por confiar na PanteraPay 💚</p>
         </div>
       </div>
     </body></html>`,
@@ -163,16 +165,16 @@ const TEMPLATES: TemplateInfo[] = [
     name: "PIX Gerado",
     category: "transactional",
     description: "Enviado quando um pagamento PIX é gerado no checkout.",
-    subject: "Seu PIX foi gerado — Complete o pagamento",
+    subject: "PIX gerado — Finalize em poucos segundos",
     previewHtml: wrap(`
-      <h1>PIX Gerado</h1>
-      <p class="text">Seu pagamento via PIX foi gerado com sucesso! Escaneie o QR Code ou copie o código para completar o pagamento.</p>
+      <h1>Seu PIX está pronto.</h1>
+      <p class="text">O pagamento foi gerado com sucesso. Escaneie o QR Code ou copie o código Pix para finalizar — é rápido e seguro.</p>
       <div style="background:#f9fafb;border-radius:8px;padding:20px;text-align:center;margin:0 0 24px;">
-        <p style="font-size:14px;color:#6b7280;margin:0 0 8px;">Valor:</p>
+        <p style="font-size:14px;color:#6b7280;margin:0 0 8px;">Investimento:</p>
         <p style="font-size:24px;font-weight:bold;color:#22c55e;margin:0;">R$ 97,00</p>
       </div>
       <a href="#" class="btn">Pagar Agora</a>
-      <p class="footer">O PIX expira em 30 minutos. Após o pagamento, o acesso é liberado automaticamente.</p>
+      <p class="footer">⏱ O PIX expira em 30 minutos. Após o pagamento, seu acesso é liberado automaticamente.</p>
     `),
   },
   {
@@ -180,12 +182,12 @@ const TEMPLATES: TemplateInfo[] = [
     name: "Lembrete de PIX",
     category: "transactional",
     description: "Enviado como lembrete para pagamentos PIX pendentes.",
-    subject: "⏰ Seu PIX está pendente — Não perca!",
+    subject: "⏰ Seu PIX ainda está pendente",
     previewHtml: wrap(`
-      <h1>Pagamento Pendente</h1>
-      <p class="text">Notamos que seu pagamento PIX ainda está pendente. Não deixe para depois — conclua agora!</p>
-      <a href="#" class="btn">Completar Pagamento</a>
-      <p class="footer">Se já realizou o pagamento, desconsidere este e-mail.</p>
+      <h1>Você está quase lá.</h1>
+      <p class="text">Notamos que seu pagamento PIX ainda não foi concluído. O acesso ao produto será liberado imediatamente após a confirmação.</p>
+      <a href="#" class="btn">Finalizar Pagamento</a>
+      <p class="footer">Já realizou o pagamento? Desconsidere — a confirmação pode levar alguns instantes.</p>
     `),
   },
   {
@@ -193,12 +195,12 @@ const TEMPLATES: TemplateInfo[] = [
     name: "Link de Acesso (Pós-Compra)",
     category: "transactional",
     description: "Enviado automaticamente após confirmação do pagamento com link para área de membros.",
-    subject: "🔑 Seu acesso está pronto!",
+    subject: "🔑 Acesso liberado — Entre agora",
     previewHtml: wrap(`
-      <h1>Seu acesso está pronto!</h1>
-      <p class="text">Parabéns pela compra! Clique no botão abaixo para acessar seu conteúdo exclusivo na área de membros.</p>
-      <a href="#" class="btn">Acessar Conteúdo</a>
-      <p class="footer">Guarde este e-mail. Você pode usar este link para acessar a qualquer momento.</p>
+      <h1>Acesso liberado. É só entrar.</h1>
+      <p class="text">Seu pagamento foi confirmado e o conteúdo exclusivo já está disponível na área de membros. Clique abaixo para começar.</p>
+      <a href="#" class="btn">Acessar Meu Conteúdo</a>
+      <p class="footer">Salve este e-mail — você pode usar este link para acessar quando quiser.</p>
     `),
   },
   {
@@ -206,12 +208,12 @@ const TEMPLATES: TemplateInfo[] = [
     name: "Carrinho Abandonado",
     category: "transactional",
     description: "Enviado para recuperação de carrinhos abandonados no checkout.",
-    subject: "Você esqueceu algo no carrinho 🛒",
+    subject: "Sua vaga ainda está reservada 🔒",
     previewHtml: wrap(`
-      <h1>Você esqueceu algo!</h1>
-      <p class="text">Notamos que você começou uma compra mas não finalizou. Seu carrinho está esperando por você!</p>
-      <a href="#" class="btn">Finalizar Compra</a>
-      <p class="footer">Esta oferta pode expirar em breve.</p>
+      <h1>Reservamos sua vaga.</h1>
+      <p class="text">Você iniciou uma compra mas não finalizou. O produto ainda está disponível — mas não garantimos por muito tempo.</p>
+      <a href="#" class="btn">Garantir Minha Vaga</a>
+      <p class="footer">Vagas limitadas. Após o encerramento, o acesso não poderá ser garantido.</p>
     `),
   },
 ];

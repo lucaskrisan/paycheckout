@@ -30,23 +30,24 @@ export const InviteEmail = ({
 }: InviteEmailProps) => (
   <Html lang="pt-BR" dir="ltr">
     <Head />
-    <Preview>Você foi convidado para a {siteName}</Preview>
+    <Preview>Convite exclusivo para a {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
         <Img src={LOGO_URL} width="48" height="48" alt={siteName} style={logo} />
-        <Heading style={h1}>Você foi convidado!</Heading>
+        <Heading style={h1}>Você foi selecionado.</Heading>
         <Text style={text}>
-          Você recebeu um convite para participar da{' '}
+          Alguém da{' '}
           <Link href={siteUrl} style={link}>
             <strong>{siteName}</strong>
-          </Link>
-          . Clique no botão abaixo para aceitar o convite e criar sua conta.
+          </Link>{' '}
+          confiou em você e liberou seu acesso à plataforma.
+          Aceite o convite abaixo para criar sua conta e começar agora.
         </Text>
         <Button style={button} href={confirmationUrl}>
           Aceitar Convite
         </Button>
         <Text style={footer}>
-          Se você não esperava este convite, ignore este e-mail com segurança.
+          Não esperava este convite? Ignore com segurança — nenhuma conta será criada.
         </Text>
       </Container>
     </Body>
