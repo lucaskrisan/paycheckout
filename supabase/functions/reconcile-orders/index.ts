@@ -6,6 +6,40 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+async function resolvePagarmeApiKey(supabase: ReturnType<typeof createClient>, userId: string | null) {
+  if (!userId) {
+    return Deno.env.get('PAGARME_API_KEY') || null;
+  }
+
+  const { data: gateway } = await supabase
+    .from('payment_gateways')
+    .select('config')
+    .eq('user_id', userId)
+    .eq('provider', 'pagarme')
+    .eq('active', true)
+    .maybeSingle();
+
+  if (gateway?.config && typeof gateway.config === 'object' && 'api_key' in gateway.config) {
+    const apiKey = gateway.config.api_key;
+    if (typeof apiKey === 'string' && apiKey.length > 0) {
+      return apiKey;
+    }
+  }
+
+  const { data: ownerRole } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', userId)
+    .eq('role', 'super_admin')
+    .maybeSingle();
+
+  if (ownerRole) {
+    return Deno.env.get('PAGARME_API_KEY') || null;
+  }
+
+  return null;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -44,14 +78,6 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-    }
-
-    const PAGARME_API_KEY = Deno.env.get('PAGARME_API_KEY');
-    if (!PAGARME_API_KEY) {
-      return new Response(JSON.stringify({ error: 'PAGARME_API_KEY not configured' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
     }
 
     // Get all pending orders with external_id (Pagar.me orders)
@@ -99,10 +125,17 @@ Deno.serve(async (req) => {
       if (!order.external_id) continue;
 
       try {
+        const pagarmeApiKey = await resolvePagarmeApiKey(supabase, order.user_id);
+        if (!pagarmeApiKey) {
+          console.warn(`[reconcile] No Pagar.me API key found for user ${order.user_id} (order ${order.id})`);
+          results.push({ order_id: order.id, external_id: order.external_id, pagarme_status: 'missing_gateway', action: 'skipped' });
+          continue;
+        }
+
         // Query Pagar.me API for order status
         const pagarmeRes = await fetch(`https://api.pagar.me/core/v5/orders/${order.external_id}`, {
           headers: {
-            'Authorization': `Basic ${btoa(PAGARME_API_KEY + ':')}`,
+            'Authorization': `Basic ${btoa(pagarmeApiKey + ':')}`,
             'Content-Type': 'application/json',
           },
         });
