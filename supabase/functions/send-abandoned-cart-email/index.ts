@@ -6,6 +6,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const SENDER_DOMAIN = "notify.app.panttera.com.br";
+const FROM_DOMAIN = "app.panttera.com.br";
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -14,15 +17,6 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
-
-    if (!resendApiKey) {
-      return new Response(JSON.stringify({ error: "RESEND_API_KEY not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
 
     // Auth check
     const authHeader = req.headers.get("Authorization");
@@ -83,7 +77,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ── Blacklist check: skip suppressed emails ──
+    // Blacklist check
     const { data: suppressed } = await supabaseAdmin
       .from("suppressed_emails")
       .select("id")
@@ -97,7 +91,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Deduplication: check if this customer+product already received a recovery email
+    // Deduplication
     const { data: existingSent } = await supabaseAdmin
       .from("abandoned_carts")
       .select("id")
@@ -136,7 +130,7 @@ Deno.serve(async (req) => {
       ? `https://${customDomain.hostname}`
       : "https://app.panttera.com.br";
 
-    // Build checkout URL with pre-filled params + UTM
+    // Build checkout URL
     let checkoutUrl = cart.checkout_url || cart.page_url || `${baseUrl}/checkout/${cart.product_id}`;
     const params = new URLSearchParams();
     if (cart.customer_name) params.set("name", cart.customer_name);
@@ -152,9 +146,11 @@ Deno.serve(async (req) => {
     const productName = product?.name || "seu produto";
     const productPrice = (cart as any).product_price || product?.price || 0;
 
+    const subject = "Você esqueceu algo no carrinho 🛒";
+
     const html = `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #333;">Você esqueceu algo no carrinho 🛒</h2>
+        <h2 style="color: #333;">${subject}</h2>
         <p style="color: #666;">Olá${cart.customer_name ? ` ${cart.customer_name}` : ''},</p>
         <p style="color: #666;">Notamos que você não finalizou sua compra. Seu carrinho ainda está esperando por você!</p>
         <div style="background: #f9f9f9; border-radius: 8px; padding: 16px; margin: 20px 0;">
@@ -170,33 +166,35 @@ Deno.serve(async (req) => {
         <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
         <p style="color: #aaa; font-size: 11px; text-align: center;">
           Você recebeu este e-mail porque iniciou uma compra em ${companyName}.<br/>
-          Se não deseja receber lembretes, <a href="${finalUrl}" style="color: #aaa;">clique aqui</a> para finalizar ou ignore esta mensagem.
+          Se não deseja receber lembretes, ignore esta mensagem.
           Este é um envio único — você não receberá outro lembrete para este produto.
         </p>
       </div>
     `;
 
-    // Send via Resend through the connector gateway
-    const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
-
-    const emailRes = await fetch(`${GATEWAY_URL}/emails`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${lovableApiKey}`,
-        "X-Connection-Api-Key": resendApiKey,
-      },
-      body: JSON.stringify({
-        from: `${companyName} <noreply@notify.app.panttera.com.br>`,
-        to: [cart.customer_email],
-        subject: "Você esqueceu algo no carrinho 🛒",
+    // Enqueue via Lovable email queue
+    const messageId = crypto.randomUUID();
+    const { error: enqueueError } = await supabaseAdmin.rpc("enqueue_email", {
+      queue_name: "transactional_emails",
+      payload: {
+        to: cart.customer_email,
+        from: `${companyName} <noreply@${FROM_DOMAIN}>`,
+        sender_domain: SENDER_DOMAIN,
+        subject,
         html,
-      }),
+        purpose: "transactional",
+        label: "abandoned_cart_manual",
+        idempotency_key: `cart-recovery-manual-${cart_id}`,
+        message_id: messageId,
+        queued_at: new Date().toISOString(),
+      },
     });
 
-    const emailResult = await emailRes.json();
-    const emailStatus = emailRes.ok ? "sent" : "error";
-    const resendId = emailResult?.id || null;
+    const emailStatus = enqueueError ? "error" : "sent";
+
+    if (enqueueError) {
+      console.error("[send-abandoned-cart-email] Enqueue error:", enqueueError);
+    }
 
     // Update cart
     await supabaseAdmin
@@ -207,18 +205,18 @@ Deno.serve(async (req) => {
       } as any)
       .eq("id", cart_id);
 
-    // Register in email_logs for admin visibility
+    // Register in email_logs
     try {
       await supabaseAdmin.from("email_logs").insert({
         user_id: userData.user.id,
         to_email: cart.customer_email,
         to_name: cart.customer_name || null,
-        subject: "Você esqueceu algo no carrinho 🛒",
+        subject,
         email_type: "transactional",
         status: emailStatus,
         source: "abandoned_cart_manual",
         product_id: cart.product_id,
-        resend_id: resendId,
+        resend_id: messageId,
         html_body: html,
         cost_estimate: 0.00115,
         metadata: { cart_id: cart_id },
@@ -227,9 +225,8 @@ Deno.serve(async (req) => {
       console.error("[send-abandoned-cart-email] Failed to log email:", logErr);
     }
 
-    if (!emailRes.ok) {
-      console.error("[send-abandoned-cart-email] Resend error:", emailResult);
-      return new Response(JSON.stringify({ error: "Email sending failed", details: emailResult }), {
+    if (enqueueError) {
+      return new Response(JSON.stringify({ error: "Email enqueue failed", details: enqueueError.message }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

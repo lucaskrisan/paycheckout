@@ -6,6 +6,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const SENDER_DOMAIN = "notify.app.panttera.com.br";
+const FROM_DOMAIN = "app.panttera.com.br";
+
 interface ProducerConfig {
   user_id: string;
   email_delay_minutes: number;
@@ -29,7 +32,6 @@ const DEFAULT_CONFIG = {
   second_email_delay_hours: 24,
 };
 
-// Configurable rate limit per cron execution
 const MAX_EMAILS_PER_RUN = 50;
 
 function escapeHtml(str: string): string {
@@ -73,7 +75,7 @@ function buildEmailHtml(
       <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
       <p style="color: #aaa; font-size: 11px; text-align: center;">
         Você recebeu este e-mail porque iniciou uma compra em ${companyName}.<br/>
-        Se não deseja receber lembretes, <a href="${finalUrl}" style="color: #aaa;">clique aqui</a> para finalizar ou ignore esta mensagem.
+        Se não deseja receber lembretes, ignore esta mensagem.
         ${isSecondReminder ? "Este é o último lembrete — você não receberá mais mensagens." : ""}
       </p>
     </div>
@@ -87,7 +89,6 @@ function buildCheckoutUrl(cart: any, baseUrl: string, channel: string): string {
   if (cart.customer_email) params.set("email", cart.customer_email);
   if (cart.customer_phone) params.set("phone", cart.customer_phone);
   if (cart.customer_cpf) params.set("cpf", cart.customer_cpf);
-  // UTM tracking for recovery attribution
   params.set("utm_source", "recovery");
   params.set("utm_medium", channel);
   params.set("utm_campaign", "abandoned_cart");
@@ -103,20 +104,10 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
-
-    if (!resendApiKey || !lovableApiKey) {
-      return new Response(JSON.stringify({ error: "Missing API keys" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
-    const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
 
-    // ── Load suppressed emails blacklist ─────────────────────────
+    // Load suppressed emails blacklist
     const { data: suppressedRows } = await supabaseAdmin
       .from("suppressed_emails")
       .select("email");
@@ -124,16 +115,18 @@ Deno.serve(async (req) => {
       (suppressedRows || []).map((r: any) => r.email?.toLowerCase())
     );
 
-    // ── PHASE 1: First reminder emails ──────────────────────────────
+    // PHASE 1: First reminder emails
     const firstReminderResult = await processReminders(supabaseAdmin, {
-      resendApiKey, lovableApiKey, supabaseUrl, gatewayUrl: GATEWAY_URL,
-      reminderType: "first", suppressedSet,
+      supabaseUrl,
+      reminderType: "first",
+      suppressedSet,
     });
 
-    // ── PHASE 2: Second reminder emails (24h follow-up) ─────────────
+    // PHASE 2: Second reminder emails (24h follow-up)
     const secondReminderResult = await processReminders(supabaseAdmin, {
-      resendApiKey, lovableApiKey, supabaseUrl, gatewayUrl: GATEWAY_URL,
-      reminderType: "second", suppressedSet,
+      supabaseUrl,
+      reminderType: "second",
+      suppressedSet,
     });
 
     const totalProcessed = firstReminderResult.processed + secondReminderResult.processed;
@@ -164,10 +157,7 @@ Deno.serve(async (req) => {
 async function processReminders(
   supabaseAdmin: any,
   opts: {
-    resendApiKey: string;
-    lovableApiKey: string;
     supabaseUrl: string;
-    gatewayUrl: string;
     reminderType: "first" | "second";
     suppressedSet: Set<string>;
   }
@@ -177,7 +167,7 @@ async function processReminders(
   let totalSkipped = 0;
   let totalSuppressed = 0;
 
-  // Fetch eligible carts based on reminder type
+  // Fetch eligible carts
   let query = supabaseAdmin
     .from("abandoned_carts")
     .select("user_id")
@@ -190,14 +180,12 @@ async function processReminders(
     query = query.is("email_recovery_sent_at", null);
   }
 
-  // Paginate to get all producer IDs
   let allProducerIds: string[] = [];
   let offset = 0;
   const PAGE_SIZE = 1000;
 
   while (true) {
     const { data: producerRows, error: producerError } = await query.range(offset, offset + PAGE_SIZE - 1);
-
     if (producerError) {
       console.error(`[cron][${opts.reminderType}] Error fetching producers:`, producerError);
       return { processed: 0, skipped: 0, suppressed: 0 };
@@ -248,13 +236,11 @@ async function processReminders(
   for (const config of configs) {
     if (totalProcessed >= MAX_EMAILS_PER_RUN) break;
 
-    // Calculate cutoff time
     const cutoffMs = isSecond
       ? config.second_email_delay_hours * 60 * 60 * 1000
       : config.email_delay_minutes * 60 * 1000;
     const cutoff = new Date(Date.now() - cutoffMs).toISOString();
 
-    // Build cart query
     let cartQuery = supabaseAdmin
       .from("abandoned_carts")
       .select("*, products(name, price, image_url, user_id)")
@@ -311,13 +297,13 @@ async function processReminders(
 
     const baseUrl = customDomain?.hostname
       ? `https://${customDomain.hostname}`
-      : `${opts.supabaseUrl.replace('.supabase.co', '')}.lovable.app`;
+      : "https://app.panttera.com.br";
 
     // Send emails
     for (const cart of carts) {
       if (totalProcessed >= MAX_EMAILS_PER_RUN) break;
 
-      // ── Blacklist check: skip suppressed emails ──
+      // Blacklist check
       if (opts.suppressedSet.has(cart.customer_email?.toLowerCase())) {
         totalSuppressed++;
         await supabaseAdmin
@@ -359,31 +345,31 @@ async function processReminders(
       const html = buildEmailHtml(cart, product, finalUrl, companyName, config, isSecond);
 
       let emailStatus = "error";
-      let resendId: string | null = null;
 
       try {
-        const emailRes = await fetch(`${opts.gatewayUrl}/emails`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${opts.lovableApiKey}`,
-            "X-Connection-Api-Key": opts.resendApiKey,
-          },
-          body: JSON.stringify({
-            from: `${companyName} <noreply@notify.app.panttera.com.br>`,
-            to: [cart.customer_email],
+        const messageId = crypto.randomUUID();
+        const reminderLabel = isSecond ? "abandoned_cart_cron_2nd" : "abandoned_cart_cron";
+
+        const { error: enqueueError } = await supabaseAdmin.rpc("enqueue_email", {
+          queue_name: "transactional_emails",
+          payload: {
+            to: cart.customer_email,
+            from: `${companyName} <noreply@${FROM_DOMAIN}>`,
+            sender_domain: SENDER_DOMAIN,
             subject,
             html,
-          }),
+            purpose: "transactional",
+            label: reminderLabel,
+            idempotency_key: `cart-recovery-${isSecond ? "2nd" : "1st"}-${cart.id}`,
+            message_id: messageId,
+            queued_at: new Date().toISOString(),
+          },
         });
 
-        if (emailRes.ok) {
+        if (!enqueueError) {
           emailStatus = "sent";
-          const result = await emailRes.json();
-          resendId = result?.id || null;
         } else {
-          const errBody = await emailRes.text();
-          console.error(`[cron][${opts.reminderType}] Resend error for cart ${cart.id}:`, errBody);
+          console.error(`[cron][${opts.reminderType}] Enqueue error for cart ${cart.id}:`, enqueueError);
         }
       } catch (sendErr) {
         console.error(`[cron][${opts.reminderType}] Send error for cart ${cart.id}:`, sendErr);
@@ -411,7 +397,6 @@ async function processReminders(
           status: emailStatus,
           source: isSecond ? "abandoned_cart_cron_2nd" : "abandoned_cart_cron",
           product_id: cart.product_id,
-          resend_id: resendId,
           html_body: html,
           cost_estimate: 0.00115,
           metadata: { cart_id: cart.id, reminder: isSecond ? 2 : 1 },
