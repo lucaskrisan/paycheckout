@@ -26,7 +26,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Loader2, MessageSquare, CheckCircle2, XCircle, RefreshCw, ChevronLeft, ChevronRight, Check, CheckCheck, Eye } from "lucide-react";
+import { Loader2, MessageSquare, CheckCircle2, XCircle, RefreshCw, ChevronLeft, ChevronRight, Check, CheckCheck } from "lucide-react";
 import { format } from "date-fns";
 
 interface LogEntry {
