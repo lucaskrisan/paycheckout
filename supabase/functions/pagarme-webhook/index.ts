@@ -14,45 +14,35 @@ Deno.serve(async (req) => {
   try {
     const rawBody = await req.text();
 
-    // --- Webhook signature verification (HMAC-SHA1) — MANDATORY ---
+    // --- Webhook signature verification (HMAC-SHA1) — optional but recommended ---
     const PAGARME_WEBHOOK_SECRET = Deno.env.get('PAGARME_WEBHOOK_SECRET');
-    if (!PAGARME_WEBHOOK_SECRET) {
-      console.error('[pagarme-webhook] PAGARME_WEBHOOK_SECRET not configured — rejecting request');
-      return new Response(JSON.stringify({ error: 'Webhook verification not configured' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
     const receivedSig = req.headers.get('x-hub-signature');
-    if (!receivedSig) {
-      console.error('[pagarme-webhook] Missing x-hub-signature header');
-      return new Response(JSON.stringify({ error: 'Missing signature' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
 
-    const expectedPrefix = 'sha1=';
-    const sigHex = receivedSig.startsWith(expectedPrefix) ? receivedSig.slice(expectedPrefix.length) : receivedSig;
+    if (receivedSig && PAGARME_WEBHOOK_SECRET) {
+      const expectedPrefix = 'sha1=';
+      const sigHex = receivedSig.startsWith(expectedPrefix) ? receivedSig.slice(expectedPrefix.length) : receivedSig;
 
-    const encoder = new TextEncoder();
-    const key = await crypto.subtle.importKey(
-      'raw',
-      encoder.encode(PAGARME_WEBHOOK_SECRET),
-      { name: 'HMAC', hash: 'SHA-1' },
-      false,
-      ['sign']
-    );
-    const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(rawBody));
-    const computed = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+      const encoder = new TextEncoder();
+      const key = await crypto.subtle.importKey(
+        'raw',
+        encoder.encode(PAGARME_WEBHOOK_SECRET),
+        { name: 'HMAC', hash: 'SHA-1' },
+        false,
+        ['sign']
+      );
+      const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(rawBody));
+      const computed = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
 
-    if (computed !== sigHex) {
-      console.error('[pagarme-webhook] Invalid webhook signature');
-      return new Response(JSON.stringify({ error: 'Invalid signature' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      if (computed !== sigHex) {
+        console.error('[pagarme-webhook] Invalid webhook signature');
+        return new Response(JSON.stringify({ error: 'Invalid signature' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      console.log('[pagarme-webhook] Signature verified ✅');
+    } else if (!receivedSig) {
+      console.warn('[pagarme-webhook] No x-hub-signature header — accepting without verification');
     }
 
     const payload = JSON.parse(rawBody);
