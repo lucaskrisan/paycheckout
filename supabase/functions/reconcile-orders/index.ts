@@ -143,48 +143,31 @@ Deno.serve(async (req) => {
             console.log(`[reconcile] ✅ Updated ${order.id} to PAID (${customerName})`);
             results.push({ order_id: order.id, external_id: order.external_id, pagarme_status: 'paid', action: 'updated_to_paid', customer: customerName });
 
-            // Fire CAPI Purchase fallback (same logic as webhook)
+            // ═══════════════════════════════════════════════════════════════
+            // CRITICAL: Delegate ALL side effects to shared processor
+            // (member access, emails, CAPI, push, WhatsApp)
+            // ═══════════════════════════════════════════════════════════════
             try {
-              const { data: purchaseExists } = await supabase
-                .from('pixel_events')
-                .select('id')
-                .eq('product_id', order.product_id)
-                .eq('event_name', 'Purchase')
-                .like('event_id', `%${order.external_id}%`)
-                .limit(1);
-
-              if (!purchaseExists || purchaseExists.length === 0) {
-                const { data: custData } = await supabase
-                  .from('customers')
-                  .select('name, email, phone, cpf')
-                  .eq('id', order.customer_id)
-                  .single();
-
-                if (custData) {
-                  await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/facebook-capi`, {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-                    },
-                    body: JSON.stringify({
-                      product_id: order.product_id,
-                      event_name: 'Purchase',
-                      event_id: order.external_id,
-                      event_source_url: `https://app.panttera.com.br/checkout/${order.product_id}`,
-                      customer: { name: custData.name, email: custData.email, phone: custData.phone, cpf: custData.cpf },
-                      custom_data: { value: Number(order.amount), currency: 'BRL', content_type: 'product', order_id: order.id },
-                      log_browser: true,
-                    }),
-                  });
-                  console.log(`[reconcile] CAPI Purchase fired for ${customerName}`);
-                }
-              }
-            } catch (capiErr) {
-              console.error('[reconcile] CAPI error:', capiErr);
+              await processOrderPaid({
+                supabase,
+                orderData: {
+                  id: order.id,
+                  amount: order.amount,
+                  payment_method: order.payment_method,
+                  product_id: order.product_id,
+                  customer_id: order.customer_id,
+                  user_id: order.user_id,
+                  metadata: order.metadata as Record<string, unknown> | null,
+                },
+                externalId: order.external_id,
+                source: 'reconcile-orders',
+                currency: 'BRL',
+              });
+            } catch (popErr) {
+              console.error(`[reconcile] processOrderPaid error for ${order.id}:`, popErr);
             }
 
-            // Fire member access + email (trigger webhook handler)
+            // Fire user webhooks (non-blocking)
             try {
               await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/fire-webhooks`, {
                 method: 'POST',
@@ -192,12 +175,13 @@ Deno.serve(async (req) => {
                   'Content-Type': 'application/json',
                   'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
                 },
-                body: JSON.stringify({ event: 'order.paid', order_id: order.id, user_id: order.user_id }),
+                body: JSON.stringify({ event: 'payment.approved', order_id: order.id, user_id: order.user_id }),
               });
             } catch (whErr) {
               console.error('[reconcile] Webhook fire error:', whErr);
             }
           }
+        }
         } else if (pagarmeStatus === 'canceled' || pagarmeStatus === 'failed') {
           // Update to reflect actual status
           const mappedStatus = pagarmeStatus === 'canceled' ? 'cancelled' : 'failed';
