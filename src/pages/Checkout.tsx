@@ -20,7 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useFacebookPixel } from "@/hooks/useFacebookPixel";
 import { useAbandonedCart } from "@/hooks/useAbandonedCart";
 import { useCheckoutPresence } from "@/hooks/useCheckoutPresence";
-import { useGeoCountry } from "@/hooks/useGeoCountry";
+import { useGeo } from "@/hooks/useGeo";
 import { useLocalCurrency } from "@/hooks/useLocalCurrency";
 import { getCheckoutTranslations } from "@/lib/checkoutI18n";
 import type { BuilderComponent } from "@/components/checkout-builder/types";
@@ -62,8 +62,8 @@ const Checkout = () => {
   const [checkoutSettings, setCheckoutSettings] = useState<CheckoutSettings | null>(null);
   const [isOwnerSuperAdmin, setIsOwnerSuperAdmin] = useState(false);
   const [coupon, setCoupon] = useState<CouponData | null>(null);
-  const { country: geoCountry } = useGeoCountry("US");
-  const [selectedCountry, setSelectedCountry] = useState("US");
+  const { country: geoCountry, city: geoCity, state: geoState, zip: geoZip } = useGeo();
+  const [selectedCountry, setSelectedCountry] = useState(geoCountry || "US");
   
 
   const prefill = useMemo(() => {
@@ -86,7 +86,7 @@ const Checkout = () => {
   }, [customer.name, customer.email, markStep]);
   useCheckoutPresence("track", productId);
 
-  // Auto-set country from IP geolocation (only once)
+  // Auto-set country from Cloudflare geo (only once)
   useEffect(() => {
     if (geoCountry && geoCountry !== "US") {
       setSelectedCountry(geoCountry);
