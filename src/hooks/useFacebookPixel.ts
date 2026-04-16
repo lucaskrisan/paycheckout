@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getCfGeo, getCountry as getGeoCountry, getCity, getState, getZip } from "@/lib/cfGeo";
 
 declare global {
   interface Window {
@@ -35,31 +36,26 @@ function setCookie(name: string, value: string, days: number) {
   document.cookie = `${name}=${value};expires=${expires};path=/;SameSite=Lax`;
 }
 
-/** Get or create a persistent visitor ID for journey tracking.
- *  If a `vid` query parameter exists (cross-domain from LP), adopt it. */
+/** Get or create a persistent visitor ID for journey tracking. */
 function getVisitorId(): string {
   const key = "_vid";
-
-  // Cross-domain: LP passes vid as URL param — adopt it so the journey stays linked
   const urlVid = new URLSearchParams(window.location.search).get("vid");
   if (urlVid && urlVid.startsWith("v_")) {
     setCookie(key, urlVid, 390);
     return urlVid;
   }
-
   let vid = getCookie(key);
   if (!vid) {
     vid = `v_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
-    setCookie(key, vid, 390); // ~13 months
+    setCookie(key, vid, 390);
   }
   return vid;
 }
 
-/** Generate or read _fbp cookie (fallback if Meta pixel didn't create one, e.g. adblock) */
+/** Generate or read _fbp cookie */
 function ensureFbp(): string {
   let fbp = getCookie("_fbp");
   if (!fbp) {
-    // Meta _fbp format: fb.1.<creation_time>.<random_10_digits>
     const rand = Math.floor(1000000000 + Math.random() * 9000000000);
     fbp = `fb.1.${Date.now()}.${rand}`;
     setCookie("_fbp", fbp, 390);
@@ -67,43 +63,27 @@ function ensureFbp(): string {
   return fbp;
 }
 
-/**
- * Extract a raw query parameter value WITHOUT URL-decoding.
- * URLSearchParams.get() auto-decodes percent-encoded chars, which modifies
- * Meta's fbclid (new format uses base64 with special chars). Meta flags
- * modified fbclid as a diagnostic error that hurts EMQ.
- */
 function getRawParam(name: string): string | null {
-  const search = window.location.search.substring(1); // remove leading "?"
+  const search = window.location.search.substring(1);
   const regex = new RegExp(`(?:^|&)${name}=([^&]*)`);
   const match = search.match(regex);
   return match ? match[1] : null;
 }
 
-/**
- * Capture fbclid / fbp from URL params (cross-domain propagation).
- * Uses raw extraction (no URL-decoding) to preserve fbclid integrity.
- */
 function hydrateClickParams() {
-  // fbc passed cross-domain (already formatted fb.1.xxx.fbclid) → _fbc cookie
   const fbcParam = getRawParam("fbc");
   if (fbcParam && fbcParam.startsWith("fb.") && !getCookie("_fbc")) {
-    // Validate age — Meta rejects ClickIDs older than 90 days
     const fbcTs = parseInt(fbcParam.split(".")[2], 10);
     const isExpired = fbcTs && (Date.now() - fbcTs) > 90 * 24 * 60 * 60 * 1000;
     if (!isExpired) {
       setCookie("_fbc", fbcParam, 90);
     }
   }
-
-  // fbclid → _fbc cookie (fallback if fbc param wasn't passed)
   const fbclid = getRawParam("fbclid");
   if (fbclid && !getCookie("_fbc")) {
     const fbc = `fb.1.${Date.now()}.${fbclid}`;
     setCookie("_fbc", fbc, 90);
   }
-
-  // Purge existing _fbc if older than 90 days
   const existingFbc = getCookie("_fbc");
   if (existingFbc) {
     const ts = parseInt(existingFbc.split(".")[2], 10);
@@ -111,8 +91,6 @@ function hydrateClickParams() {
       document.cookie = "_fbc=;max-age=0;path=/";
     }
   }
-
-  // fbp passed cross-domain → _fbp cookie (safe to use URLSearchParams here)
   const fbpParam = getRawParam("fbp");
   if (fbpParam && fbpParam.startsWith("fb.") && !getCookie("_fbp")) {
     setCookie("_fbp", fbpParam, 390);
@@ -126,25 +104,48 @@ interface CustomerInfo {
   cpf?: string;
 }
 
-export function useFacebookPixel(productId: string | undefined, productPrice?: number, productName?: string) {
+/** Build the geo payload sent to CAPI from window.cfGeo (Cloudflare Worker). */
+function buildGeoPayload() {
+  const geo = getCfGeo();
+  if (!geo) return null;
+  return {
+    city: getCity() || undefined,
+    state: getState() || undefined,
+    zip: getZip() || undefined,
+    country: getGeoCountry() || undefined,
+  };
+}
+
+export function useFacebookPixel(productId: string | undefined, productPrice?: number, productName?: string, productCurrency?: string) {
   const initializedRef = useRef(false);
   const pixelIdsRef = useRef<string[]>([]);
   const firedEventsRef = useRef<Set<string>>(new Set());
   const customerRef = useRef<CustomerInfo>({});
   const productPriceRef = useRef(productPrice);
   const productNameRef = useRef(productName);
+  const productCurrencyRef = useRef(productCurrency);
 
-  // Keep refs updated
   useEffect(() => {
     productPriceRef.current = productPrice;
     productNameRef.current = productName;
-  }, [productPrice, productName]);
+    productCurrencyRef.current = productCurrency;
+  }, [productPrice, productName, productCurrency]);
+
+  /** Resolve event currency: product currency wins; fallback to Cloudflare currency; final fallback BRL */
+  const resolveCurrency = useCallback((override?: string) => {
+    if (override) return override.toUpperCase();
+    if (productCurrencyRef.current) return productCurrencyRef.current.toUpperCase();
+    const geoCurr = getCfGeo()?.currency;
+    if (geoCurr) return geoCurr.toUpperCase();
+    return "BRL";
+  }, []);
 
   /** Send event to CAPI edge function (server-side, non-blocking) */
   const sendCAPI = useCallback((eventName: string, eventId: string, customData?: Record<string, unknown>) => {
     if (!productId) return;
     const visitorId = getVisitorId();
     const fbp = ensureFbp();
+    const geo = buildGeoPayload();
 
     supabase.functions.invoke("facebook-capi", {
       body: {
@@ -159,6 +160,7 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
         visitor_id: visitorId,
         user_agent: navigator.userAgent,
         log_browser: true,
+        geo,
       },
     }).catch((err) => console.warn("[CAPI] non-blocking error:", err));
   }, [productId]);
@@ -167,12 +169,10 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
   useEffect(() => {
     if (!productId || initializedRef.current) return;
 
-    // Hydrate fbclid/fbp from URL params (cross-domain decorator)
     hydrateClickParams();
 
     let cancelled = false;
 
-    // Generate dedup IDs upfront so CAPI fallback uses same IDs
     const pvId = generateEventId("PageView");
     const icId = generateEventId("InitiateCheckout");
 
@@ -185,9 +185,7 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
 
       if (cancelled) return;
 
-      // Always send CAPI for PageView & InitiateCheckout (log_browser: true handles both entries)
       sendCAPI("PageView", pvId);
-
       sendCAPI("InitiateCheckout", icId, {
         content_type: "product",
         content_ids: [productId],
@@ -200,7 +198,6 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
 
       pixelIdsRef.current = (data as any[]).map((px: any) => px.pixel_id);
 
-      // Inject FB Pixel base code if not already present
       if (!window.fbq) {
         const script = document.createElement("script");
         script.innerHTML = `
@@ -216,12 +213,10 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
         document.head.appendChild(script);
       }
 
-      // Wait for fbq to be available then init each pixel
       const waitForFbq = setInterval(() => {
         if (window.fbq) {
           clearInterval(waitForFbq);
 
-          // Init each pixel WITHOUT automatic config PageView
           (data as any[]).forEach((px: any) => {
             window.fbq("set", "autoConfig", false, px.pixel_id);
             window.fbq("init", px.pixel_id);
@@ -229,7 +224,6 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
 
           initializedRef.current = true;
 
-          // Fire browser-side PageView + InitiateCheckout (same eventIDs for dedup)
           window.fbq("track", "PageView", {}, { eventID: pvId });
           window.fbq("track", "InitiateCheckout", {
             content_type: "product",
@@ -238,7 +232,6 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
         }
       }, 100);
 
-      // If fbq never loads (adblock), still mark as initialized
       setTimeout(() => {
         clearInterval(waitForFbq);
         initializedRef.current = true;
@@ -252,12 +245,12 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
   }, [productId, sendCAPI]);
 
   /**
-   * Set Advanced Matching data (call when customer fills the form).
+   * Set Advanced Matching data. Phone country prefix is dynamic based on
+   * Cloudflare-detected country (only forces +55 when country is BR).
    */
   const setAdvancedMatching = useCallback((customer: CustomerInfo) => {
     customerRef.current = customer;
 
-    // Re-enrich top-of-funnel events with customer data for better EMQ (CAPI only, no browser duplicate)
     const enrichId = generateEventId("PageView_enrich");
     sendCAPI("PageView", enrichId, {
       content_type: "product",
@@ -270,7 +263,13 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     const firstName = nameParts[0] || "";
     const lastName = nameParts.slice(1).join(" ") || "";
     const phone = digitsOnly(customer.phone);
-    const formattedPhone = phone.startsWith("55") ? `+${phone}` : `+55${phone}`;
+
+    // Dynamic country prefix — only force +55 if visitor is BR
+    const country = getGeoCountry() || "BR";
+    let formattedPhone = phone ? `+${phone}` : "";
+    if (country === "BR" && phone && !phone.startsWith("55")) {
+      formattedPhone = `+55${phone}`;
+    }
 
     const userData: Record<string, string> = {};
     if (customer.email) userData.em = normalizeParam(customer.email);
@@ -279,15 +278,20 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     if (formattedPhone) userData.ph = formattedPhone;
     if (customer.cpf) userData.external_id = digitsOnly(customer.cpf);
 
+    // Geo advanced matching (browser-side)
+    const ct = getCity();
+    const st = getState();
+    const zp = getZip();
+    if (ct) userData.ct = normalizeParam(ct).replace(/\s+/g, "");
+    if (st) userData.st = normalizeParam(st);
+    if (zp) userData.zp = digitsOnly(zp);
+    userData.country = country.toLowerCase();
+
     pixelIdsRef.current.forEach((pixelId) => {
       window.fbq("init", pixelId, userData);
     });
   }, [productId, sendCAPI]);
 
-  /**
-   * Track AddPaymentInfo event (when user selects payment method).
-   * Fires only once per session.
-   */
   const trackAddPaymentInfo = useCallback((paymentMethod: string) => {
     const dedup = "AddPaymentInfo";
     if (firedEventsRef.current.has(dedup)) return;
@@ -298,7 +302,7 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
       content_type: "product",
       content_ids: productId ? [productId] : [],
       payment_method: paymentMethod,
-      currency: "BRL",
+      currency: resolveCurrency(),
     };
     if (productPriceRef.current) customData.value = productPriceRef.current;
     if (productNameRef.current) customData.content_name = productNameRef.current;
@@ -307,11 +311,8 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
       window.fbq("track", "AddPaymentInfo", customData, { eventID: eventId });
     }
     sendCAPI("AddPaymentInfo", eventId, customData);
-  }, [productId, sendCAPI]);
+  }, [productId, sendCAPI, resolveCurrency]);
 
-  /**
-   * Track AddToCart for the main product (fired on buy click).
-   */
   const trackAddToCartMain = useCallback(() => {
     const dedupKey = "AddToCart_main";
     if (firedEventsRef.current.has(dedupKey)) return;
@@ -321,7 +322,7 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     const customData: Record<string, unknown> = {
       content_type: "product",
       content_ids: productId ? [productId] : [],
-      currency: "BRL",
+      currency: resolveCurrency(),
     };
     if (productPriceRef.current) customData.value = productPriceRef.current;
     if (productNameRef.current) customData.content_name = productNameRef.current;
@@ -330,11 +331,8 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
       window.fbq("track", "AddToCart", customData, { eventID: eventId });
     }
     sendCAPI("AddToCart", eventId, customData);
-  }, [productId, sendCAPI]);
+  }, [productId, sendCAPI, resolveCurrency]);
 
-  /**
-   * Track AddToCart event (Order Bump selected).
-   */
   const trackAddToCart = useCallback((bumpProductId: string, bumpPrice?: number) => {
     const dedupKey = `AddToCart_${bumpProductId}`;
     if (firedEventsRef.current.has(dedupKey)) return;
@@ -345,19 +343,16 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
       content_type: "product",
       content_ids: [bumpProductId],
       value: bumpPrice || 0,
-      currency: "BRL",
+      currency: resolveCurrency(),
     };
 
     if (window.fbq) {
       window.fbq("track", "AddToCart", customData, { eventID: eventId });
     }
     sendCAPI("AddToCart", eventId, customData);
-  }, [productId, sendCAPI]);
+  }, [productId, sendCAPI, resolveCurrency]);
 
-  /**
-   * Track Purchase event with full data and deduplication.
-   */
-  const trackPurchase = useCallback((value: number, currency = "BRL", orderId?: string) => {
+  const trackPurchase = useCallback((value: number, currency?: string, orderId?: string) => {
     const dedupKey = orderId ? `Purchase_${orderId}` : "Purchase";
     if (firedEventsRef.current.has(dedupKey)) return;
     firedEventsRef.current.add(dedupKey);
@@ -365,7 +360,7 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     const eventId = orderId || generateEventId("Purchase");
     const customData: Record<string, unknown> = {
       value,
-      currency,
+      currency: resolveCurrency(currency),
       content_type: "product",
       content_ids: productId ? [productId] : [],
       num_items: 1,
@@ -377,11 +372,8 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
       window.fbq("track", "Purchase", customData, { eventID: eventId });
     }
     sendCAPI("Purchase", eventId, customData);
-  }, [productId, sendCAPI]);
+  }, [productId, sendCAPI, resolveCurrency]);
 
-  /**
-   * Track custom lead/contact event (e.g., after form fill).
-   */
   const trackLead = useCallback(() => {
     if (firedEventsRef.current.has("Lead")) return;
     firedEventsRef.current.add("Lead");
@@ -390,7 +382,7 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     const customData: Record<string, unknown> = {
       content_type: "product",
       content_ids: productId ? [productId] : [],
-      currency: "BRL",
+      currency: resolveCurrency(),
     };
     if (productPriceRef.current) customData.value = productPriceRef.current;
     if (productNameRef.current) customData.content_name = productNameRef.current;
@@ -399,7 +391,7 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
       window.fbq("track", "Lead", customData, { eventID: eventId });
     }
     sendCAPI("Lead", eventId, customData);
-  }, [productId, sendCAPI]);
+  }, [productId, sendCAPI, resolveCurrency]);
 
   return {
     trackPurchase,
