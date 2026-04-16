@@ -330,6 +330,9 @@ Deno.serve(async (req) => {
         customer_id: customerId,
         user_id: productOwnerId,
         external_id: session.id,
+        customer_city: body.geo?.customer_city || null,
+        customer_zip: body.geo?.customer_zip || null,
+        customer_country: body.geo?.customer_country || null,
         platform_fee_percent: feePercent,
         platform_fee_amount: feeAmount,
         metadata: {
