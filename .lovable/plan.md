@@ -1,40 +1,34 @@
 
 
-## Worker está vivo e funcionando
+Beleza, então vamos limpar. Você só usa `app.panttera.com.br`.
 
-Acabei de testar `https://geo.panttera.com.br` e ele respondeu certinho:
-- HTTP 200, JSON válido
-- CORS liberado pra `app.panttera.com.br`
-- Geo populado (`country`, `city`, `currency`, etc.)
+## O que muda
 
-Agora falta a **Fase 2**: fazer o app consumir esse endpoint.
+**Worker (você cola no Cloudflare):**
+```js
+const allowed = ['https://app.panttera.com.br'];
+```
+Só isso. Resto do Worker fica igual.
 
-## O que vou implementar (com sua aprovação)
+## Passo a passo pra você
 
-### 1. `src/lib/cfGeo.ts` — adicionar função `bootGeo()`
-- Faz `fetch('https://geo.panttera.com.br')` com timeout de 1.5s
-- Cacheia o resultado em `sessionStorage` (chave `cfGeo`) — só busca 1x por aba
-- Seta `window.cfGeo` com o JSON recebido
-- Se falhar/timeout → fica `null`, app continua funcionando (degradação graciosa que já existe)
+1. Cloudflare → Workers & Pages → seu Worker de geo
+2. Clica em **Edit Code**
+3. Acha a linha do `const allowed = [...]`
+4. Substitui por: `const allowed = ['https://app.panttera.com.br'];`
+5. Clica **Deploy**
 
-### 2. `src/main.tsx` — chamar no boot
-- Antes do `createRoot().render()`, chama `bootGeo()` com `Promise.race` + timeout 1.5s
-- Não bloqueia a renderização: se demorar, React monta sem geo e os hooks (`useGeo`) re-leem depois
+## No código do app
 
-### 3. Resto do código — **zero mudanças**
-- `useGeo`, `useFacebookPixel`, `facebook-capi`, `Checkout` já consomem `window.cfGeo`
-- Vão começar a funcionar automaticamente
+Nada muda. O `cfGeo.ts` não tem essa lista — ela só existe no Worker.
 
-## Como vou validar
+## Sobre o `window.cfGeo` ainda undefined
 
-1. Abrir `app.panttera.com.br` no console:
-   - `window.cfGeo` retorna objeto com `country`, `city`, etc.
-2. Aba Network: 1 request pra `geo.panttera.com.br` no boot, ~50-100ms
-3. Pixel Helper / CAPI: eventos começam a sair com geo dinâmico
+Esse é outro problema (provavelmente Service Worker antigo em cache). Depois que você atualizar o Worker, faz:
+1. DevTools → Application → Service Workers → **Unregister**
+2. Application → Storage → **Clear site data**
+3. **Ctrl+Shift+R**
+4. Console: `window.cfGeo`
 
-## Risco
-
-Praticamente zero. Se o Worker cair ou der timeout:
-- App roda igual hoje (sem geo, mas funcional)
-- Sem white screen, sem erro pro usuário
+Se ainda não aparecer, me manda print do Console filtrando por `[cfGeo]` que eu investigo.
 
