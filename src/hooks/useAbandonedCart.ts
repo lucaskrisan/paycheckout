@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getCity, getState, getZip, getCountry } from "@/lib/cfGeo";
 import type { CustomerData } from "@/components/checkout/CustomerForm";
 
 interface UseAbandonedCartProps {
@@ -70,6 +71,9 @@ export function useAbandonedCart({ productId, customer, paymentMethod, productOw
           checkout_url: window.location.href,
           user_agent: navigator.userAgent,
           checkout_step: "opened",
+          customer_city: getCity() || null,
+          customer_zip: getZip() || null,
+          customer_country: getCountry() || null,
           utm_source: params.get("utm_source") || null,
           utm_medium: params.get("utm_medium") || null,
           utm_campaign: params.get("utm_campaign") || null,

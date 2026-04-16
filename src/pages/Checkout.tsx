@@ -20,7 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useFacebookPixel } from "@/hooks/useFacebookPixel";
 import { useAbandonedCart } from "@/hooks/useAbandonedCart";
 import { useCheckoutPresence } from "@/hooks/useCheckoutPresence";
-import { useGeoCountry } from "@/hooks/useGeoCountry";
+import { useGeo } from "@/hooks/useGeo";
 import { useLocalCurrency } from "@/hooks/useLocalCurrency";
 import { getCheckoutTranslations } from "@/lib/checkoutI18n";
 import type { BuilderComponent } from "@/components/checkout-builder/types";
@@ -54,7 +54,7 @@ const Checkout = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pixData, setPixData] = useState<{ qrCodeUrl?: string; pixCode?: string; orderId?: string } | null>(null);
   const [pixModalOpen, setPixModalOpen] = useState(false);
-  const { trackPurchase, trackAddPaymentInfo, trackAddToCart, trackAddToCartMain, trackLead, setAdvancedMatching } = useFacebookPixel(productId, product?.price, product?.name);
+  const { trackPurchase, trackAddPaymentInfo, trackAddToCart, trackAddToCartMain, trackLead, setAdvancedMatching } = useFacebookPixel(productId, product?.price, product?.name, product?.currency);
   const [orderBumps, setOrderBumps] = useState<OrderBump[]>([]);
   const [selectedBumps, setSelectedBumps] = useState<Set<string>>(new Set());
   const [builderLayout, setBuilderLayout] = useState<BuilderComponent[]>([]);
@@ -62,8 +62,8 @@ const Checkout = () => {
   const [checkoutSettings, setCheckoutSettings] = useState<CheckoutSettings | null>(null);
   const [isOwnerSuperAdmin, setIsOwnerSuperAdmin] = useState(false);
   const [coupon, setCoupon] = useState<CouponData | null>(null);
-  const { country: geoCountry } = useGeoCountry("US");
-  const [selectedCountry, setSelectedCountry] = useState("US");
+  const { country: geoCountry, city: geoCity, state: geoState, zip: geoZip } = useGeo();
+  const [selectedCountry, setSelectedCountry] = useState(geoCountry || "US");
   
 
   const prefill = useMemo(() => {
@@ -86,7 +86,7 @@ const Checkout = () => {
   }, [customer.name, customer.email, markStep]);
   useCheckoutPresence("track", productId);
 
-  // Auto-set country from IP geolocation (only once)
+  // Auto-set country from Cloudflare geo (only once)
   useEffect(() => {
     if (geoCountry && geoCountry !== "US") {
       setSelectedCountry(geoCountry);
@@ -244,6 +244,13 @@ const Checkout = () => {
     };
   };
 
+  const geoPayload = {
+    customer_city: geoCity || null,
+    customer_zip: geoZip || null,
+    customer_country: geoCountry || null,
+    customer_state_geo: geoState || null,
+  };
+
   const handleSubmit = async () => {
     if (!customer.name || !customer.email) { toast.error(isUSD ? t.fillRequired : "Preencha todos os campos obrigatórios"); return; }
     if (!isUSD && (!customer.cpf || !customer.phone)) { toast.error("Preencha todos os campos obrigatórios"); return; }
@@ -271,6 +278,7 @@ const Checkout = () => {
             config_id: requestedConfigId || null, coupon_id: coupon?.id || null,
             bump_product_ids: bumpProductIds, checkout_url: window.location.href, utms,
             customer_country: selectedCountry,
+            geo: geoPayload,
             customer: { name: customer.name, email: customer.email, phone: customer.phone || undefined },
           },
         });
@@ -294,7 +302,7 @@ const Checkout = () => {
       } else if (paymentMethod === "pix") {
         const customerState = getStateFromPhone(customer.phone);
         const { data, error } = await supabase.functions.invoke("create-pix-payment", {
-          body: { amount: finalAmount, product_id: product.id, config_id: requestedConfigId || null, coupon_id: coupon?.id || null, bump_product_ids: bumpProductIds, checkout_url: window.location.href, utms, customer_state: customerState, customer: { name: customer.name, email: customer.email, cpf: customer.cpf, phone: customer.phone } },
+          body: { amount: finalAmount, product_id: product.id, config_id: requestedConfigId || null, coupon_id: coupon?.id || null, bump_product_ids: bumpProductIds, checkout_url: window.location.href, utms, customer_state: customerState, geo: geoPayload, customer: { name: customer.name, email: customer.email, cpf: customer.cpf, phone: customer.phone } },
         });
         if (error) {
           let msg = "Falha ao gerar o PIX";
@@ -311,6 +319,7 @@ const Checkout = () => {
             amount: finalAmount, product_id: product.id, payment_method: "credit_card", installments: creditCard.installments,
             is_subscription: product.is_subscription, billing_cycle: product.billing_cycle, config_id: requestedConfigId || null,
             coupon_id: coupon?.id || null, bump_product_ids: bumpProductIds, checkout_url: window.location.href, utms, customer_state: customerState,
+            geo: geoPayload,
             customer: { name: customer.name, email: customer.email, cpf: customer.cpf, phone: customer.phone, addressNumber: "0",
               creditCard: { holderName: creditCard.name, number: creditCard.number.replace(/\s/g, ""), expiryMonth: expMonth, expiryYear: `20${expYear}`, ccv: creditCard.cvv } },
           },

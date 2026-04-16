@@ -60,6 +60,7 @@ Deno.serve(async (req) => {
       user_agent,
       log_browser,
       payment_method,
+      geo,
     } = await req.json();
 
     if (!product_id || !event_name) {
@@ -170,8 +171,27 @@ Deno.serve(async (req) => {
     }
     if (fbp && typeof fbp === 'string' && fbp.startsWith('fb.')) userData.fbp = fbp;
 
-    // Always send country for Brazilian users (boosts EMQ significantly)
-    (userData as any).country = [await hashSHA256('br')];
+    // === GEO from Cloudflare Worker (window.cfGeo) ===
+    // Hash ct/st/zp/country with SHA-256 lowercase per Meta CAPI spec.
+    // Fallback country: 'br' (BR is the primary market) when geo is missing.
+    const geoCity: string | undefined = geo?.city;
+    const geoState: string | undefined = geo?.state;
+    const geoZip: string | undefined = geo?.zip;
+    const geoCountry: string = (geo?.country || 'BR').toLowerCase();
+
+    if (geoCity) {
+      const normalizedCity = geoCity.trim().toLowerCase().replace(/\s+/g, '').replace(/[^\w]/g, '');
+      if (normalizedCity) (userData as any).ct = [await hashSHA256(normalizedCity)];
+    }
+    if (geoState) {
+      const normalizedState = geoState.trim().toLowerCase().replace(/\s+/g, '');
+      if (normalizedState) (userData as any).st = [await hashSHA256(normalizedState)];
+    }
+    if (geoZip) {
+      const normalizedZip = geoZip.replace(/\D/g, '');
+      if (normalizedZip) (userData as any).zp = [await hashSHA256(normalizedZip)];
+    }
+    (userData as any).country = [await hashSHA256(geoCountry)];
 
     // Build external_id array: CPF (primary) + visitor_id (session continuity)
     const externalIds: string[] = [];
@@ -190,7 +210,8 @@ Deno.serve(async (req) => {
     }
     if (customer?.phone) {
       const phone = customer.phone.replace(/\D/g, '');
-      const withCountry = phone.startsWith('55') ? phone : `55${phone}`;
+      // Dynamic country prefix — only force 55 when visitor country is BR
+      const withCountry = phone.startsWith('55') || geoCountry !== 'br' ? phone : `55${phone}`;
       const formatted = `+${withCountry}`;
       userData.ph = [await hashSHA256(formatted)];
     }

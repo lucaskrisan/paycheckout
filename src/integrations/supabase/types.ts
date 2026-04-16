@@ -19,10 +19,13 @@ export type Database = {
           checkout_step: string | null
           checkout_url: string | null
           created_at: string
+          customer_city: string | null
+          customer_country: string | null
           customer_cpf: string | null
           customer_email: string | null
           customer_name: string | null
           customer_phone: string | null
+          customer_zip: string | null
           email_recovery_sent_at: string | null
           email_recovery_status: string | null
           email_reminder_count: number | null
@@ -47,10 +50,13 @@ export type Database = {
           checkout_step?: string | null
           checkout_url?: string | null
           created_at?: string
+          customer_city?: string | null
+          customer_country?: string | null
           customer_cpf?: string | null
           customer_email?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          customer_zip?: string | null
           email_recovery_sent_at?: string | null
           email_recovery_status?: string | null
           email_reminder_count?: number | null
@@ -75,10 +81,13 @@ export type Database = {
           checkout_step?: string | null
           checkout_url?: string | null
           created_at?: string
+          customer_city?: string | null
+          customer_country?: string | null
           customer_cpf?: string | null
           customer_email?: string | null
           customer_name?: string | null
           customer_phone?: string | null
+          customer_zip?: string | null
           email_recovery_sent_at?: string | null
           email_recovery_status?: string | null
           email_reminder_count?: number | null
@@ -1367,8 +1376,11 @@ export type Database = {
         Row: {
           amount: number
           created_at: string
+          customer_city: string | null
+          customer_country: string | null
           customer_id: string | null
           customer_state: string | null
+          customer_zip: string | null
           external_id: string | null
           id: string
           metadata: Json | null
@@ -1383,8 +1395,11 @@ export type Database = {
         Insert: {
           amount: number
           created_at?: string
+          customer_city?: string | null
+          customer_country?: string | null
           customer_id?: string | null
           customer_state?: string | null
+          customer_zip?: string | null
           external_id?: string | null
           id?: string
           metadata?: Json | null
@@ -1399,8 +1414,11 @@ export type Database = {
         Update: {
           amount?: number
           created_at?: string
+          customer_city?: string | null
+          customer_country?: string | null
           customer_id?: string | null
           customer_state?: string | null
+          customer_zip?: string | null
           external_id?: string | null
           id?: string
           metadata?: Json | null
