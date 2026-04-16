@@ -54,7 +54,7 @@ const Checkout = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pixData, setPixData] = useState<{ qrCodeUrl?: string; pixCode?: string; orderId?: string } | null>(null);
   const [pixModalOpen, setPixModalOpen] = useState(false);
-  const { trackPurchase, trackAddPaymentInfo, trackAddToCart, trackAddToCartMain, trackLead, setAdvancedMatching } = useFacebookPixel(productId, product?.price, product?.name);
+  const { trackPurchase, trackAddPaymentInfo, trackAddToCart, trackAddToCartMain, trackLead, setAdvancedMatching } = useFacebookPixel(productId, product?.price, product?.name, product?.currency);
   const [orderBumps, setOrderBumps] = useState<OrderBump[]>([]);
   const [selectedBumps, setSelectedBumps] = useState<Set<string>>(new Set());
   const [builderLayout, setBuilderLayout] = useState<BuilderComponent[]>([]);
@@ -242,6 +242,13 @@ const Checkout = () => {
       utm_content: params.get("utm_content") || undefined,
       utm_term: params.get("utm_term") || undefined,
     };
+  };
+
+  const geoPayload = {
+    customer_city: geoCity || null,
+    customer_zip: geoZip || null,
+    customer_country: geoCountry || null,
+    customer_state_geo: geoState || null,
   };
 
   const handleSubmit = async () => {
