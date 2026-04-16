@@ -16,6 +16,7 @@ import NotificationsSection from "@/components/landing/NotificationsSection";
 import AchievementsSection from "@/components/landing/AchievementsSection";
 import CheckoutCustomSection from "@/components/landing/CheckoutCustomSection";
 import PricingSection from "@/components/landing/PricingSection";
+import { CookieConsent } from "@/components/ui/cookie-consent";
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -96,6 +97,7 @@ const Index = () => {
         <CTASection />
       </main>
       <LandingFooter />
+      <CookieConsent />
     </div>
   );
 };

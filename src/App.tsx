@@ -8,7 +8,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { Loader2 } from "lucide-react";
-import { CookieConsent } from "@/components/ui/cookie-consent";
 
 // Eagerly loaded — landing & critical auth paths
 import Index from "./pages/Index";
@@ -166,7 +165,6 @@ const App = () => (
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
-            <CookieConsent />
           </Suspense>
           </ErrorBoundary>
         </AuthProvider>
