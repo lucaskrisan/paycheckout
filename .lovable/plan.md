@@ -1,36 +1,40 @@
 
 
-## Voltando ao Worker Cloudflare — Próximo passo
+## Worker está vivo e funcionando
 
-Pelo histórico, a gente parou no diagnóstico de que o **Worker não estava injetando `window.cfGeo`** porque o `HTMLRewriter` procurava `<head>` (que não existe no HTML cru do Vite). A correção proposta foi trocar para `'html'`.
+Acabei de testar `https://geo.panttera.com.br` e ele respondeu certinho:
+- HTTP 200, JSON válido
+- CORS liberado pra `app.panttera.com.br`
+- Geo populado (`country`, `city`, `currency`, etc.)
 
-Antes de continuar, preciso saber em que pé está:
+Agora falta a **Fase 2**: fazer o app consumir esse endpoint.
 
-### Ponto de status
+## O que vou implementar (com sua aprovação)
 
-Você precisa me dizer:
+### 1. `src/lib/cfGeo.ts` — adicionar função `bootGeo()`
+- Faz `fetch('https://geo.panttera.com.br')` com timeout de 1.5s
+- Cacheia o resultado em `sessionStorage` (chave `cfGeo`) — só busca 1x por aba
+- Seta `window.cfGeo` com o JSON recebido
+- Se falhar/timeout → fica `null`, app continua funcionando (degradação graciosa que já existe)
 
-1. **Atualizou o Worker?** Se sim, no console de `app.panttera.com.br` (aba anônima), o que aparece quando digita `window.cfGeo`?
-   - Objeto com `country`, `city`, etc → Worker OK, posso seguir pra Fase final
-   - `undefined` → Worker ainda não injeta, precisa ajustar
-   - Não atualizou ainda → te passo o código novamente
+### 2. `src/main.tsx` — chamar no boot
+- Antes do `createRoot().render()`, chama `bootGeo()` com `Promise.race` + timeout 1.5s
+- Não bloqueia a renderização: se demorar, React monta sem geo e os hooks (`useGeo`) re-leem depois
 
-2. **Quer mudar a abordagem?** Opções:
-   - **A)** Continuar com Worker injetando `window.cfGeo` (plano atual)
-   - **B)** Trocar pra Edge Function própria que retorna geo via header `CF-IPCountry` (sem depender de Worker no Cloudflare)
-   - **C)** Outra coisa que você tem em mente
+### 3. Resto do código — **zero mudanças**
+- `useGeo`, `useFacebookPixel`, `facebook-capi`, `Checkout` já consomem `window.cfGeo`
+- Vão começar a funcionar automaticamente
 
-### O que eu já tenho pronto no código (do lado do app)
-- ✅ `src/lib/cfGeo.ts` lê `window.cfGeo` síncrono
-- ✅ `src/hooks/useGeo.ts` exporta `{ country, currency, city, state, zip }`
-- ✅ `useFacebookPixel.ts` usa geo dinâmico (telefone, currency, CAPI)
-- ✅ `facebook-capi/index.ts` hasheia `ct/st/zp/country` dinâmicos
-- ✅ `Checkout.tsx` propaga geo pros pagamentos
-- ✅ Migration DB com `customer_city/zip/country`
+## Como vou validar
 
-Tudo do lado app está pronto e gracioso (não quebra se `cfGeo` for undefined). **Falta só o Worker injetar de verdade.**
+1. Abrir `app.panttera.com.br` no console:
+   - `window.cfGeo` retorna objeto com `country`, `city`, etc.
+2. Aba Network: 1 request pra `geo.panttera.com.br` no boot, ~50-100ms
+3. Pixel Helper / CAPI: eventos começam a sair com geo dinâmico
 
-### Me responde uma das duas:
-- "Worker atualizado, `cfGeo` aparece assim: `{...}`" → eu finalizo derivação automática de currency (BR→BRL, US→USD, PT→EUR) e fechamos
-- "Worker não funciona / quero abordagem diferente" → te mando o plano alternativo
+## Risco
+
+Praticamente zero. Se o Worker cair ou der timeout:
+- App roda igual hoje (sem geo, mas funcional)
+- Sem white screen, sem erro pro usuário
 
