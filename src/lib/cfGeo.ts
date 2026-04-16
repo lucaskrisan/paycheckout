@@ -20,7 +20,10 @@ const GEO_TIMEOUT_MS = 1500;
  */
 export async function bootGeo(): Promise<void> {
   if (typeof window === "undefined") return;
-  if (window.cfGeo) return;
+  if (window.cfGeo) {
+    console.info("[cfGeo] already populated", window.cfGeo);
+    return;
+  }
 
   // Tenta cache primeiro (sessionStorage)
   try {
@@ -29,6 +32,7 @@ export async function bootGeo(): Promise<void> {
       const parsed = JSON.parse(cached) as CfGeo;
       if (parsed && typeof parsed === "object") {
         window.cfGeo = parsed;
+        console.info("[cfGeo] loaded from sessionStorage", parsed);
         return;
       }
     }
@@ -36,6 +40,7 @@ export async function bootGeo(): Promise<void> {
     // sessionStorage indisponível (modo privado, etc.) — segue pro fetch
   }
 
+  console.info("[cfGeo] fetching", GEO_ENDPOINT);
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), GEO_TIMEOUT_MS);
@@ -46,17 +51,24 @@ export async function bootGeo(): Promise<void> {
       cache: "no-store",
     });
     clearTimeout(timer);
-    if (!res.ok) return;
+    if (!res.ok) {
+      console.warn("[cfGeo] non-OK response", res.status);
+      return;
+    }
     const geo = (await res.json()) as CfGeo;
-    if (!geo || typeof geo !== "object") return;
+    if (!geo || typeof geo !== "object") {
+      console.warn("[cfGeo] invalid payload", geo);
+      return;
+    }
     window.cfGeo = geo;
+    console.info("[cfGeo] populated", geo);
     try {
       sessionStorage.setItem(GEO_CACHE_KEY, JSON.stringify(geo));
     } catch {
       // ignora — cache é otimização, não requisito
     }
-  } catch {
-    // Timeout, rede caída, CORS — degradação graciosa
+  } catch (err) {
+    console.warn("[cfGeo] fetch failed", err);
   }
 }
 
