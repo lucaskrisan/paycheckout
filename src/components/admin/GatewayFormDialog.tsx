@@ -59,6 +59,13 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
   const validateApiKey = async (): Promise<boolean> => {
     setValidating(true);
     try {
+      console.log("[validate-gateway] Calling with:", {
+        provider: form.provider,
+        environment: form.environment,
+        has_api_key: !!form.config.api_key,
+        api_key_prefix: form.config.api_key ? String(form.config.api_key).substring(0, 8) : null,
+      });
+
       const { data, error } = await supabase.functions.invoke("validate-gateway", {
         body: {
           provider: form.provider,
@@ -67,13 +74,16 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
         },
       });
 
+      console.log("[validate-gateway] Response:", { data, error });
+
       if (error) {
-        toast.error("Erro ao validar chave. Tente novamente.");
+        console.error("[validate-gateway] Invoke error:", error);
+        toast.error(`Erro ao validar chave: ${error.message || "tente novamente"}`);
         return false;
       }
 
-      if (!data.valid) {
-        toast.error(data.error || "Chave API inválida.");
+      if (!data?.valid) {
+        toast.error(data?.error || "Chave API inválida.");
         return false;
       }
 
@@ -83,9 +93,9 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
 
       setValidated(true);
       return true;
-    } catch (err) {
-      console.error("[validate-gateway]", err);
-      toast.error("Erro ao validar chave.");
+    } catch (err: any) {
+      console.error("[validate-gateway] Exception:", err);
+      toast.error(`Erro ao validar chave: ${err?.message || "erro desconhecido"}`);
       return false;
     } finally {
       setValidating(false);
@@ -152,6 +162,13 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
       updated_at: new Date().toISOString(),
     };
 
+    console.log("[save-gateway] Payload:", {
+      ...payload,
+      config: { ...payload.config, api_key: "***", publishable_key: payload.config.publishable_key ? "***" : undefined },
+      user_id: user?.id,
+      isEditing,
+    });
+
     let error;
     if (isEditing) {
       ({ error } = await supabase.from("payment_gateways").update(payload).eq("id", form.id!));
@@ -161,8 +178,8 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
 
     setSaving(false);
     if (error) {
-      toast.error("Erro ao salvar gateway");
-      console.error(error);
+      console.error("[save-gateway] Supabase error:", error);
+      toast.error(`Erro ao salvar: ${error.message || "tente novamente"}`);
     } else {
       toast.success(isEditing ? "Gateway atualizado! ✓ Chave validada" : "Gateway criado! ✓ Chave validada");
       onSaved();
