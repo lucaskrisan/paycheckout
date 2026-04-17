@@ -174,6 +174,16 @@ export function getZip(fallback = ""): string {
   return getCfGeo()?.postal || fallback;
 }
 
+/**
+ * Retorna o melhor IP do visitante para Meta CAPI.
+ * Prioridade: IPv4 (Meta prefere) → IPv6 → ip genérico.
+ * Vazio se Worker não estiver populado.
+ */
+export function getBestIp(fallback = ""): string {
+  const geo = getCfGeo();
+  return geo?.bestIp || geo?.ipv4 || geo?.ipv6 || geo?.ip || fallback;
+}
+
 /** Versão hash-friendly: lowercase, sem espaços, sem pontuação para Meta CAPI. */
 export function normalizeForHash(value: string): string {
   return value.trim().toLowerCase().replace(/\s+/g, "").replace(/[^\w]/g, "");

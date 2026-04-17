@@ -2,6 +2,9 @@
 
 interface CfGeo {
   ip?: string;
+  ipv4?: string;
+  ipv6?: string;
+  bestIp?: string;
   city?: string;
   region?: string;
   regionCode?: string;
