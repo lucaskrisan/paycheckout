@@ -102,6 +102,40 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
       return;
     }
 
+    // Stripe-specific validation
+    if (form.provider === "stripe") {
+      const sk = String(form.config.api_key || "").trim();
+      const pk = String(form.config.publishable_key || "").trim();
+      if (!sk.startsWith("sk_")) {
+        toast.error('Secret Key inválida. Deve começar com "sk_test_" ou "sk_live_".');
+        return;
+      }
+      if (!pk) {
+        toast.error("Publishable Key é obrigatória para Stripe.");
+        return;
+      }
+      if (!pk.startsWith("pk_")) {
+        toast.error('Publishable Key inválida. Deve começar com "pk_test_" ou "pk_live_".');
+        return;
+      }
+      // Cross-validation: don't mix keys up
+      if (sk.startsWith("pk_")) {
+        toast.error("Você colou uma Publishable Key (pk_) no campo Secret Key.");
+        return;
+      }
+      if (pk.startsWith("sk_")) {
+        toast.error("Você colou uma Secret Key (sk_) no campo Publishable Key.");
+        return;
+      }
+      // Environment match
+      const isTest = sk.startsWith("sk_test_");
+      const pkIsTest = pk.startsWith("pk_test_");
+      if (isTest !== pkIsTest) {
+        toast.error("Secret Key e Publishable Key precisam ser do mesmo ambiente (ambas test ou ambas live).");
+        return;
+      }
+    }
+
     // Validate API key before saving
     const isValid = await validateApiKey();
     if (!isValid) return;
@@ -184,7 +218,9 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
               </div>
 
               <div className="space-y-1.5">
-                <Label>API Key *</Label>
+                <Label>
+                  {form.provider === "stripe" ? "Secret Key (sk_…) *" : "API Key *"}
+                </Label>
                 <Input
                   type="password"
                   value={form.config.api_key ?? ""}
@@ -193,7 +229,7 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
                     form.provider === "asaas" ? "Cole sua API Key do Asaas" :
                     form.provider === "pagarme" ? "Cole sua Secret Key do Pagar.me" :
                     form.provider === "mercadopago" ? "Cole seu Access Token do Mercado Pago" :
-                    "Cole sua Secret Key do Stripe"
+                    "sk_test_… ou sk_live_…"
                   }
                 />
                 <p className="text-xs text-muted-foreground">
@@ -203,9 +239,24 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
                     ? "Encontre em: Pagar.me Dashboard > Configurações > Chaves"
                     : form.provider === "mercadopago"
                     ? "Encontre em: Suas Integrações > Credenciais"
-                    : "Encontre em: Dashboard > Developers > API Keys"}
+                    : "Encontre em: Stripe Dashboard → Developers → API Keys → Secret key"}
                 </p>
               </div>
+
+              {form.provider === "stripe" && (
+                <div className="space-y-1.5">
+                  <Label>Publishable Key (pk_…) *</Label>
+                  <Input
+                    type="text"
+                    value={form.config.publishable_key ?? ""}
+                    onChange={(e) => updateConfig("publishable_key", e.target.value)}
+                    placeholder="pk_test_… ou pk_live_…"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Encontre em: Stripe Dashboard → Developers → API Keys → <strong>Publishable key</strong>. Necessária para renderizar o formulário de cartão no checkout.
+                  </p>
+                </div>
+              )}
             </div>
 
             {form.provider === "asaas" && (

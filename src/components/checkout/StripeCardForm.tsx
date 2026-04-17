@@ -108,11 +108,21 @@ const StripeCardForm = forwardRef<StripeCardFormHandle, StripeCardFormProps>(fun
         });
         if (cancelled) return;
         if (error || !data?.publishable_key) {
-          throw new Error(data?.error || error?.message || "Failed to load Stripe key.");
+          const msg = data?.error || error?.message || "";
+          console.error("[StripeCardForm] get-stripe-publishable-key failed:", { msg, data, error });
+          if (/not configured|not found|publishable/i.test(msg)) {
+            throw new Error(
+              "Stripe não está configurado para este produto. O produtor precisa cadastrar a Publishable Key (pk_…) em Admin → Gateways → Stripe."
+            );
+          }
+          throw new Error(msg || "Falha ao carregar Stripe.");
         }
         setStripePromise(loadStripe(data.publishable_key));
       } catch (err: any) {
-        if (!cancelled) setError(err.message || "Failed to initialize Stripe.");
+        if (!cancelled) {
+          console.error("[StripeCardForm] init error:", err);
+          setError(err.message || "Falha ao inicializar Stripe.");
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -123,15 +133,16 @@ const StripeCardForm = forwardRef<StripeCardFormHandle, StripeCardFormProps>(fun
   if (loading) {
     return (
       <div className="h-11 bg-white border border-[#D5D9D9] rounded-lg flex items-center justify-center text-[#565959] text-sm">
-        <Loader2 className="w-4 h-4 animate-spin mr-2" /> Loading secure card form…
+        <Loader2 className="w-4 h-4 animate-spin mr-2" /> Carregando formulário seguro de cartão…
       </div>
     );
   }
 
   if (error || !stripePromise) {
     return (
-      <div className="bg-[#FFF3F3] border border-[#B12704] text-[#B12704] rounded-lg px-3 py-2 text-sm">
-        {error || "Card form unavailable. Please try again."}
+      <div className="bg-[#FFF3F3] border border-[#B12704] text-[#B12704] rounded-lg px-3 py-3 text-sm space-y-1">
+        <div className="font-semibold">Formulário de cartão indisponível</div>
+        <div className="text-xs leading-relaxed">{error || "Tente novamente em instantes."}</div>
       </div>
     );
   }
