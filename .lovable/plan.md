@@ -1,64 +1,63 @@
 
 
-## Padronizar TODOS os eventos no formato KwaiPay
+## Aplicar Stripe embutido (Payment Intents + Elements) usando o que já existe
 
-Você quer que **todos** os eventos CAPI (não só `Purchase`) sigam o mesmo padrão premium: hashes string, IPv4 real, geo completo, e `custom_data` rico.
+Confirmado: vou usar a infra que já temos (`payment_gateways` BYOK, `process-order-paid.ts`, `stripe-webhook` com HMAC) e só trocar o fluxo hospedado por embutido.
 
-## Eventos que vou padronizar
+## O que vou fazer
 
-Levantamento dos call-sites atuais (`useFacebookPixel.ts` + outros):
+### 1. Instalar dependências
+- `@stripe/stripe-js`
+- `@stripe/react-stripe-js`
 
-| Evento | Quando dispara | `custom_data` específico |
-|---|---|---|
-| `PageView` | Carrega checkout | (sem value/contents) |
-| `ViewContent` | Vê produto no checkout | `content_ids`, `content_name`, `content_type`, `value`, `currency` |
-| `InitiateCheckout` | Começa preencher form | `value`, `currency`, `content_ids`, `num_items`, `contents` |
-| `AddPaymentInfo` | Escolhe método pagamento | `value`, `currency`, `payment_method` |
-| `Purchase` | Pagamento aprovado | `value`, `currency`, `order_id`, `content_ids`, `content_name`, `num_items`, `contents`, `payment_method` |
-| `Lead` | Captura lead (PIX gerado) | `value`, `currency`, `content_ids` |
+### 2. Nova edge: `get-stripe-publishable-key`
+- Recebe `product_id`
+- Lê `payment_gateways.config.publishable_key` do dono do produto (RLS-safe via service role + filtro por `user_id` do produto)
+- Retorna **só** `pk_…` (nunca `sk_`)
 
-**Todos** vão receber automaticamente (via edge function):
-- `user_data` com hashes em **string**
-- `external_id` = CPF hashed (string única)
-- `client_ip_address` = IPv4 real do `getBestIp()`
-- `client_user_agent` real
-- `ct, st, zp, country` hashed (string)
-- `fbc, fbp` quando disponíveis
+### 3. Reescrever `create-stripe-payment` (modo Payment Intent)
+- Substitui `stripe.checkout.sessions.create` por `stripe.paymentIntents.create`:
+  - `amount`, `currency: 'usd'`, `customer` (get-or-create por email)
+  - `payment_method` vindo do frontend, `confirm: true`
+  - `automatic_payment_methods: { enabled: true, allow_redirects: 'never' }`
+  - `setup_future_usage: 'off_session'` (pra 1-clique upsell USD)
+  - `metadata: { product_id, user_id, customer_id, customer_cpf, order_id }`
+- Cria `orders` com `external_id = payment_intent.id`, status `pending`
+- Retorna `{ payment_intent_id, client_secret, order_id, status, requires_action }`
 
-## Execução em 3 frentes
+### 4. Novo componente `src/components/checkout/StripeCardForm.tsx`
+- Wrapper `<Elements stripe={loadStripe(pk)}>` (lazy via `get-stripe-publishable-key`)
+- `<CardElement>` estilizado no padrão Amazon Teal (matching `CreditCardForm`)
+- Ao submit: `stripe.createPaymentMethod({ type:'card', card, billing_details })` → manda `payment_method_id` pro `create-stripe-payment`
+- Se backend devolve `requires_action` → `stripe.confirmCardPayment(client_secret)` (3DS automático)
+- Em sucesso → redireciona pra `/checkout/sucesso` (mesmo fluxo BRL)
 
-### 1. Cloudflare Worker `geo.panttera.com.br` (você cola)
-Já passei o código. Adiciona `ipv4`, `ipv6`, `bestIp` no JSON.
-Pré-requisito: **Network → Pseudo IPv4 → Add header** no painel CF.
+### 5. Ajustar `Checkout.tsx`
+- Condicional: `isUSD ? <StripeCardForm /> : <CreditCardForm />`
+- Remove o `window.location.href = data.url` (não vai mais sair do site)
 
-### 2. App
-**`src/lib/cfGeo.ts`**
-- Tipo `CfGeo` ganha `ipv4`, `ipv6`, `bestIp`
-- Novo helper `getBestIp()` (IPv4 → IPv6 → ip)
-
-**`src/hooks/useFacebookPixel.ts`** (centralizar)
-- Helper interno `buildCapiPayload(eventName, customData)` que sempre injeta:
-  - `client_ip: getBestIp()`
-  - `geo: { city, state, zip, country }` do `window.cfGeo`
-  - `user_agent: navigator.userAgent`
-  - `fbc`, `fbp` dos cookies
-- Cada função (`trackPageView`, `trackViewContent`, `trackInitiateCheckout`, `trackAddPaymentInfo`, `trackPurchase`, `trackLead`) chama esse helper
-- Eventos com carrinho passam `contents` + `num_items`
-- Eventos de pagamento passam `payment_method`
-
-### 3. Edge `supabase/functions/facebook-capi/index.ts`
-Reescrita única que aplica a TODOS os eventos:
-- Hashes viram **string** (remove `[...]`)
-- `external_id` = só CPF hashed (string)
-- `client_ip_address` = `payload.client_ip` (fallback header)
-- `custom_data` aceita opcional `contents`, `num_items`, `payment_method` (passa adiante quando vier)
-- Mantém: validação IP privado, fbc >90 dias, `fire_on_pix`/`fire_on_boleto`, força BRL, dual-log browser+server
+### 6. Webhook (`stripe-webhook`)
+- Já trata `payment_intent.succeeded` ✅
+- Mantém `checkout.session.completed` pra retrocompat (se algum produtor antigo)
+- Nada muda em HMAC/dedup/`process-order-paid.ts`
 
 ## Resultado
 
-Todos os 6 eventos saem no formato KwaiPay. EMQ médio sobe de ~7-8 pra ~9-10 em **toda** a jornada (não só Purchase).
+- Cliente nunca sai de `checkout.panterapay.com.br`
+- 3DS automático via `confirmCardPayment`
+- 1-clique upsell USD funciona (graças ao `setup_future_usage: 'off_session'`)
+- Tracking Meta CAPI completo (Purchase dispara no nosso lado, formato KwaiPay já implementado)
+- Mantém HMAC signature + dedup que já temos
+
+## Pré-requisito pra testar
+
+Você precisa ter num produto USD de teste:
+- `pk_test_…` cadastrado em `payment_gateways.config.publishable_key`
+- `sk_test_…` cadastrado em `payment_gateways.config.secret_key`
+
+Se ainda não tiver `publishable_key` salvo (só tem `secret_key`), eu adapto o cadastro do gateway pra aceitar os dois campos. Me avisa se precisa.
 
 ## Risco
 
-Zero. Mudança é aditiva no edge (Meta aceita string e array). Se o Worker falhar, tudo cai pro comportamento atual.
+Médio-baixo. Tudo aditivo, fluxo BRL não é tocado. Se algo quebrar, rollback é trivial (volta pro `checkout.sessions.create`).
 
