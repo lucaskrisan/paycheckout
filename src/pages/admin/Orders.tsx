@@ -735,6 +735,26 @@ const Orders = () => {
                     {selectedOrder.updated_at && ["paid", "approved", "confirmed"].includes(selectedOrder.status) && (
                       <DetailRow label="Aprovado em" value={format(new Date(selectedOrder.updated_at), "dd/MM/yyyy HH:mm")} />
                     )}
+                    {["paid", "approved", "confirmed"].includes(selectedOrder.status) && (
+                      <div className="pt-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full gap-2 border-primary/30 text-primary hover:bg-primary/10"
+                          disabled={resendingAccess === selectedOrder.id}
+                          onClick={() => handleResendAccess(selectedOrder.id)}
+                        >
+                          {resendingAccess === selectedOrder.id ? (
+                            <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Reenviando...</>
+                          ) : (
+                            <><Send className="w-3.5 h-3.5" /> Reenviar e-mail de acesso</>
+                          )}
+                        </Button>
+                        <p className="text-[10px] text-muted-foreground mt-1.5 text-center">
+                          Reenvia o link da área de membros para o e-mail do cliente.
+                        </p>
+                      </div>
+                    )}
                     {(utmSource || utmCampaign) && (
                       <>
                         <div className="pt-4 pb-1">
