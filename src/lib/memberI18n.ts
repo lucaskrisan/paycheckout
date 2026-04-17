@@ -27,6 +27,21 @@ export interface MemberTranslations {
   restrictedDesc: string;
   backToHome: string;
   loadingContent: string;
+  // Self-service recovery
+  recoverTitle: string;
+  recoverDesc: string;
+  recoverEmailLabel: string;
+  recoverEmailPlaceholder: string;
+  recoverButton: string;
+  recoverSending: string;
+  recoverGenericResponse: string;
+  recoverInvalidEmail: string;
+  portalCtaTitle: string;
+  portalCtaDesc: string;
+  portalCtaButton: string;
+  successCreateAccountTitle: string;
+  successCreateAccountDesc: string;
+  successCreateAccountButton: string;
 
   // Sidebar
   lessonsCount: (done: number, total: number) => string;
@@ -121,6 +136,20 @@ const pt: MemberTranslations = {
   restrictedDesc: "Você precisa de um link de acesso válido para entrar na área de membros.",
   backToHome: "Voltar ao Início",
   loadingContent: "Carregando seu conteúdo...",
+  recoverTitle: "Reenviar meu acesso",
+  recoverDesc: "Digite o e-mail usado na compra e enviaremos seus links de acesso novamente.",
+  recoverEmailLabel: "Seu e-mail",
+  recoverEmailPlaceholder: "voce@email.com",
+  recoverButton: "Reenviar links de acesso",
+  recoverSending: "Enviando...",
+  recoverGenericResponse: "Se encontrarmos uma conta com este e-mail, você receberá os links em instantes. Verifique sua caixa de entrada e o spam.",
+  recoverInvalidEmail: "Digite um e-mail válido.",
+  portalCtaTitle: "🎓 Tem uma conta de aluno?",
+  portalCtaDesc: "Acesse todos os seus cursos com um único login (igual Hotmart e Kiwify).",
+  portalCtaButton: "Entrar no Portal do Aluno",
+  successCreateAccountTitle: "Acesse todos os seus cursos com um único login",
+  successCreateAccountDesc: "Crie sua conta de aluno uma vez e tenha acesso vitalício, igual Hotmart e Kiwify.",
+  successCreateAccountButton: "Criar minha conta de aluno",
 
   lessonsCount: (done, total) => `${done}/${total} aulas`,
   exploreMore: "Explorar mais cursos",
@@ -214,6 +243,20 @@ const en: MemberTranslations = {
   restrictedDesc: "You need a valid access link to enter the member area.",
   backToHome: "Back to Home",
   loadingContent: "Loading your content...",
+  recoverTitle: "Resend my access",
+  recoverDesc: "Enter the e-mail you used at checkout and we'll send your access links again.",
+  recoverEmailLabel: "Your e-mail",
+  recoverEmailPlaceholder: "you@email.com",
+  recoverButton: "Resend access links",
+  recoverSending: "Sending...",
+  recoverGenericResponse: "If we find an account with this e-mail, you'll receive your links shortly. Check your inbox and spam folder.",
+  recoverInvalidEmail: "Please enter a valid e-mail.",
+  portalCtaTitle: "🎓 Have a student account?",
+  portalCtaDesc: "Access all your courses with a single login (just like Hotmart and Kiwify).",
+  portalCtaButton: "Sign in to Student Portal",
+  successCreateAccountTitle: "Access all your courses with one login",
+  successCreateAccountDesc: "Create your student account once and get lifetime access, just like Hotmart and Kiwify.",
+  successCreateAccountButton: "Create my student account",
 
   lessonsCount: (done, total) => `${done}/${total} lessons`,
   exploreMore: "Explore more courses",
