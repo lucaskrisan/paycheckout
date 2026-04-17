@@ -1,63 +1,51 @@
 
 
-## Aplicar Stripe embutido (Payment Intents + Elements) usando o que já existe
+Vou olhar o `GatewayFormDialog.tsx` pra confirmar exatamente o que está renderizando hoje pra Stripe.
+<lov-tool-use id="toolu_vrtx_01NJ77NfNAu52PJLDpuWtBEx" name="code--search_files" integration-id="code" data="{\"query\": \"stripe\", \"include_patterns\": \"src/components/admin/GatewayFormDialog.tsx\", \"case_sensitive\": false}">
+</lov-tool-use>
 
-Confirmado: vou usar a infra que já temos (`payment_gateways` BYOK, `process-order-paid.ts`, `stripe-webhook` com HMAC) e só trocar o fluxo hospedado por embutido.
+<lov-tool-use id="toolu_vrtx_018s9ZLh2fsF5xxkAUfQqyi7" name="code--search_files" integration-id="code" data="{\"query\": \"stripe|publishable|api_key|secret_key\", \"include_patterns\": \"src/components/admin/GatewayFormDialog.tsx\"}">
+</lov-tool-use>
 
-## O que vou fazer
+<lov-tool-use id="toolu_vrtx_019yok18kwxGYbVYXa1QAWuM" name="code--view" integration-id="code" data="{\"file_path\": \"src/components/admin/GatewayFormDialog.tsx\", \"lines\": \"50-220\"}">
+</lov-tool-use>
+Tenho contexto suficiente. O usuário confirmou: o form só tem 1 campo (Secret Key) pra Stripe. Preciso adicionar o campo Publishable Key.
 
-### 1. Instalar dependências
-- `@stripe/stripe-js`
-- `@stripe/react-stripe-js`
+<lov-plan>
 
-### 2. Nova edge: `get-stripe-publishable-key`
-- Recebe `product_id`
-- Lê `payment_gateways.config.publishable_key` do dono do produto (RLS-safe via service role + filtro por `user_id` do produto)
-- Retorna **só** `pk_…` (nunca `sk_`)
+## Adicionar campo "Publishable Key" no cadastro do gateway Stripe
 
-### 3. Reescrever `create-stripe-payment` (modo Payment Intent)
-- Substitui `stripe.checkout.sessions.create` por `stripe.paymentIntents.create`:
-  - `amount`, `currency: 'usd'`, `customer` (get-or-create por email)
-  - `payment_method` vindo do frontend, `confirm: true`
-  - `automatic_payment_methods: { enabled: true, allow_redirects: 'never' }`
-  - `setup_future_usage: 'off_session'` (pra 1-clique upsell USD)
-  - `metadata: { product_id, user_id, customer_id, customer_cpf, order_id }`
-- Cria `orders` com `external_id = payment_intent.id`, status `pending`
-- Retorna `{ payment_intent_id, client_secret, order_id, status, requires_action }`
+### Diagnóstico
+O `GatewayFormDialog.tsx` (linhas 186-208) tem **um único campo "API Key"** que serve pra todos os gateways. Pra Stripe, ele coleta só a `sk_…` (Secret Key) e salva em `config.api_key`. Falta a `pk_…` (Publishable Key) que o frontend Stripe Elements precisa pra renderizar o cartão.
 
-### 4. Novo componente `src/components/checkout/StripeCardForm.tsx`
-- Wrapper `<Elements stripe={loadStripe(pk)}>` (lazy via `get-stripe-publishable-key`)
-- `<CardElement>` estilizado no padrão Amazon Teal (matching `CreditCardForm`)
-- Ao submit: `stripe.createPaymentMethod({ type:'card', card, billing_details })` → manda `payment_method_id` pro `create-stripe-payment`
-- Se backend devolve `requires_action` → `stripe.confirmCardPayment(client_secret)` (3DS automático)
-- Em sucesso → redireciona pra `/checkout/sucesso` (mesmo fluxo BRL)
+### O que vou fazer (3 mudanças cirúrgicas)
 
-### 5. Ajustar `Checkout.tsx`
-- Condicional: `isUSD ? <StripeCardForm /> : <CreditCardForm />`
-- Remove o `window.location.href = data.url` (não vai mais sair do site)
+**1. `GatewayFormDialog.tsx` — adicionar campo condicional pra Stripe**
+- Logo abaixo do campo "API Key" (Secret Key), quando `form.provider === "stripe"`, renderizar:
+  - Novo input **"Publishable Key (pk_…) *"** salvando em `config.publishable_key`
+  - Helper text: "Encontre em: Stripe Dashboard → Developers → API Keys → Publishable key"
+  - Validação: deve começar com `pk_test_` ou `pk_live_`
+- Atualizar título do campo existente pra **"Secret Key (sk_…) *"** quando provider for Stripe (mais claro)
+- Validação no `handleSave`: se `provider === "stripe"`, exigir `config.publishable_key` começando com `pk_`
+- Validação cruzada: alertar se usuário colar `pk_` no campo Secret Key ou `sk_` no campo Publishable
 
-### 6. Webhook (`stripe-webhook`)
-- Já trata `payment_intent.succeeded` ✅
-- Mantém `checkout.session.completed` pra retrocompat (se algum produtor antigo)
-- Nada muda em HMAC/dedup/`process-order-paid.ts`
+**2. `validate-gateway` (edge) — opcional, leve**
+- Aceitar campo extra `publishable_key` no body (só pra Stripe)
+- Verificar que começa com `pk_` e que ambiente bate (`pk_test_` ↔ sandbox, `pk_live_` ↔ produção)
+- Se não bater, retorna erro claro
 
-## Resultado
+**3. `StripeCardForm.tsx` — mensagem de erro mais clara**
+- Quando `get-stripe-publishable-key` retorna 404 (chave não cadastrada), mostrar:
+  > "Stripe não está configurado. O produtor precisa cadastrar a Publishable Key em Admin → Gateways → Stripe."
+- Adicionar `console.error` detalhado pra debug
 
-- Cliente nunca sai de `checkout.panterapay.com.br`
-- 3DS automático via `confirmCardPayment`
-- 1-clique upsell USD funciona (graças ao `setup_future_usage: 'off_session'`)
-- Tracking Meta CAPI completo (Purchase dispara no nosso lado, formato KwaiPay já implementado)
-- Mantém HMAC signature + dedup que já temos
+### Resultado
+Depois de aplicar você vai em **Admin → Gateways → editar Stripe** (ou criar novo) e verá:
+- **Secret Key (sk_…)** ← já existia
+- **Publishable Key (pk_…)** ← novo
 
-## Pré-requisito pra testar
+Cola as duas, salva, recarrega o checkout USD → o campo de cartão Stripe Elements aparece.
 
-Você precisa ter num produto USD de teste:
-- `pk_test_…` cadastrado em `payment_gateways.config.publishable_key`
-- `sk_test_…` cadastrado em `payment_gateways.config.secret_key`
-
-Se ainda não tiver `publishable_key` salvo (só tem `secret_key`), eu adapto o cadastro do gateway pra aceitar os dois campos. Me avisa se precisa.
-
-## Risco
-
-Médio-baixo. Tudo aditivo, fluxo BRL não é tocado. Se algo quebrar, rollback é trivial (volta pro `checkout.sessions.create`).
+### Risco
+Zero. Só adiciona um input + validação. Nada é removido.
 
