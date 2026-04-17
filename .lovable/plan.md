@@ -1,20 +1,76 @@
 
+Problema achado com clareza:
 
-Vou investigar por que o Stripe não está salvando.
-<lov-tool-use id="toolu_vrtx_01LLB51ZEMRke95nPV1Qo7Dw" name="code--view" integration-id="code" data="{\"file_path\": \"src/components/admin/GatewayFormDialog.tsx\"}">
-</lov-tool-use>
+O erro aparece porque o banco está bloqueando o valor `stripe`.
 
-<lov-tool-use id="toolu_vrtx_01NXmE87KV48V8XBj9XoaMs4" name="code--view" integration-id="code" data="{\"file_path\": \"src/components/admin/GatewayFormDialog.tsx\"}">
-</lov-tool-use>
-Let me check the validate-gateway edge function to see if it accepts/validates Stripe properly.
-<lov-tool-use id="toolu_vrtx_01GET1fTfUv4KjK9ooWCq1md" name="code--view" integration-id="code" data="{\"file_path\": \"supabase/functions/validate-gateway/index.ts\"}">
-</lov-tool-use>
-I have enough context. The user is on `/admin/gateway-management` trying to save Stripe and it's not working. I don't have the actual error message. Let me check the database to see if there are any RLS/insert constraints that might block, and check console logs.
-<lov-tool-use id="toolu_vrtx_016zHSaGyLqgLF5Bq7iJK8sj" name="code--read_console_logs" integration-id="code" data="{\"search\": \"stripe\"}">
-</lov-tool-use>
+Hoje a tela já oferece Stripe, o formulário já trata Stripe, e as funções de pagamento também procuram `provider = 'stripe'`. Mas a tabela `payment_gateways` foi criada com uma trava antiga que só aceita:
 
-<lov-tool-use id="toolu_vrtx_01GirxRkLsNgZi6gFyKnp95t" name="code--read_network_requests" integration-id="code" data="{\"search\": \"gateway\"}">
-</lov-tool-use>
-No logs. I need to ask the user what specifically is happening — what error they see — so I can build a precise plan. But I also have a strong hypothesis: the validation likely fails because Stripe rejects test/live key from a CORS preflight or env mismatch. Let me ask focused questions before planning.
-<lov-tool-use id="toolu_vrtx_013NZCHKQbVpBkdYtu7hxCBA" name="questions--ask_questions" requires-approval="true" integration-id="questions" data="{\"questions\": [{\"question\":\"O que exatamente acontece quando você clica em Salvar a Stripe?\",\"header\":\"Sintoma\",\"options\":[{\"label\":\"Aparece um toast de erro vermelho\",\"description\":\"Mostra mensagem de erro na tela (me diga qual texto aparece)\"},{\"label\":\"Nada acontece (botão fica preso)\",\"description\":\"Clico e o botão fica em loading infinito sem resposta\"},{\"label\":\"Salva mas some / não aparece na lista\",\"description\":\"O dialog fecha mas o gateway Stripe não aparece nos cards\"},{\"label\":\"Dá erro de validação de chave\",\"description\":\"Diz que a chave é inválida ou sem permissão\"}]},{\"question\":\"Qual ambiente você selecionou e qual prefixo das chaves?\",\"header\":\"Ambiente\",\"options\":[{\"label\":\"Sandbox + sk_test_/pk_test_\",\"description\":\"Ambiente de testes com chaves de teste\"},{\"label\":\"Produção + sk_live_/pk_live_\",\"description\":\"Ambiente real com chaves live\"},{\"label\":\"Sandbox + sk_live_ (ou misturado)\",\"description\":\"Selecionei sandbox mas colei chave live\"},{\"label\":\"Não sei / não tenho certeza\",\"description\":\"Preciso de ajuda para identificar\"}]}]}">
-</lov-tool-use>
+```text
+'asaas', 'pagarme'
+```
+
+Então quando você clica em salvar, acontece isso:
+
+```text
+UI manda provider = 'stripe'
+→ banco recebe
+→ constraint payment_gateways_provider_check rejeita
+→ aparece: violates check constraint
+```
+
+## Onde está o problema
+
+- `supabase/migrations/20260310024744_a7670909-52ef-446c-bf5f-750077a42e50.sql`
+  - criou `payment_gateways`
+  - `provider text NOT NULL CHECK (provider IN ('asaas', 'pagarme'))`
+
+## Onde o sistema já espera Stripe
+
+- `src/pages/admin/GatewayManagement.tsx`
+- `src/pages/admin/Gateways.tsx`
+- `src/components/admin/GatewayFormDialog.tsx`
+- `supabase/functions/validate-gateway/index.ts`
+- `supabase/functions/get-stripe-publishable-key/index.ts`
+- `supabase/functions/create-stripe-payment/index.ts`
+- `supabase/functions/stripe-webhook/index.ts`
+
+Ou seja: o front e as funções já estão prontos para Stripe, mas o banco ficou para trás.
+
+## Plano para corrigir
+
+### 1. Ajustar o banco
+Criar uma migration para trocar a constraint do campo `provider` e passar a aceitar:
+
+```text
+'asaas', 'pagarme', 'mercadopago', 'stripe'
+```
+
+Isso é a correção principal.
+
+### 2. Conferir compatibilidade
+Depois da migration, revisar se:
+- salvar Stripe cria normalmente
+- editar Stripe continua funcionando
+- lookup do gateway Stripe por `provider = 'stripe'` continua batendo certo nas funções
+
+### 3. Melhorar a mensagem do formulário
+Adicionar tratamento no `GatewayFormDialog.tsx` para mostrar uma mensagem mais humana se o banco rejeitar o provider, em vez de só exibir o erro cru do Postgres.
+
+## Resultado esperado depois
+Depois dessa correção:
+- Stripe vai salvar normalmente
+- Mercado Pago também fica compatível com o schema
+- o checkout Stripe poderá usar o gateway salvo
+- o webhook Stripe continuará conseguindo localizar a configuração
+
+## Detalhe técnico
+Isso não é erro de chave Stripe nem erro de permissão.
+É erro de schema do banco:
+
+```text
+payment_gateways.provider
+```
+
+está com uma regra antiga e não aceita `stripe`.
+
+A correção certa é no banco, não no formulário.
