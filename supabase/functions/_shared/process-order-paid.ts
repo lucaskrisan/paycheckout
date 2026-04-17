@@ -205,6 +205,7 @@ async function sendAccessEmail(
 
     const siteUrl = 'https://app.panttera.com.br';
     const accessUrl = `${siteUrl}/membros?token=${accessToken}`;
+    const portalUrl = `${siteUrl}/minha-conta`;
     const firstName = escapeHtml(customer.name.split(' ')[0]);
     const courseTitle = escapeHtml(course.title);
 
@@ -226,10 +227,18 @@ async function sendAccessEmail(
                 ? `Your access to the course <strong>"${courseTitle}"</strong> is ready! 🚀`
                 : `Seu pagamento foi confirmado e seu acesso ao curso <strong>"${courseTitle}"</strong> está liberado! 🚀`}
             </p>
-            <div style="text-align:center;margin:32px 0;">
+            <div style="text-align:center;margin:32px 0 16px;">
               <a href="${accessUrl}" style="display:inline-block;background:linear-gradient(135deg,#22c55e,#16a34a);color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:8px;font-size:16px;font-weight:600;box-shadow:0 4px 12px rgba(34,197,94,0.4);">
-                ${isEnglish ? 'Access Course' : 'Acessar Curso'}
+                ${isEnglish ? 'Access Course Now' : 'Acessar Curso Agora'}
               </a>
+            </div>
+            <div style="text-align:center;margin:0 0 24px;">
+              <a href="${portalUrl}" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;">
+                ${isEnglish ? '🎓 Create my student account (lifetime access)' : '🎓 Criar minha conta de aluno (acesso vitalício)'}
+              </a>
+              <p style="color:#9ca3af;font-size:11px;line-height:1.5;margin:8px 0 0;">
+                ${isEnglish ? 'Sign in with Google or email and access all your courses with one login.' : 'Entre com Google ou e-mail e acesse todos os seus cursos com um único login.'}
+              </p>
             </div>
             <p style="color:#6b7280;font-size:13px;line-height:1.5;margin:24px 0 0;padding-top:20px;border-top:1px solid #e5e7eb;">
               ${isEnglish ? 'Or copy and paste this link:' : 'Ou copie e cole este link:'}<br>
