@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, lazy, Suspense } from "react";
 import { getStateFromPhone } from "@/lib/dddToState";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Lock, ArrowRight, Loader2, Shield } from "lucide-react";
@@ -7,6 +7,8 @@ import CustomerForm, { type CustomerData, isValidCPF } from "@/components/checko
 import PixPayment from "@/components/checkout/PixPayment";
 import PixModal from "@/components/checkout/PixModal";
 import CreditCardForm, { type CreditCardData } from "@/components/checkout/CreditCardForm";
+import type { StripeCardFormHandle } from "@/components/checkout/StripeCardForm";
+const StripeCardForm = lazy(() => import("@/components/checkout/StripeCardForm"));
 import PaymentTabs from "@/components/checkout/PaymentTabs";
 import CountdownTimer from "@/components/checkout/CountdownTimer";
 import CouponField from "@/components/checkout/CouponField";
