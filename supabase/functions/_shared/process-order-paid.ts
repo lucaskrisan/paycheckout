@@ -115,8 +115,12 @@ async function stepCapiFallback(params: ProcessOrderPaidParams): Promise<void> {
                 value: Number(orderData.amount),
                 currency: 'BRL',
                 content_type: 'product',
+                content_ids: [orderData.product_id],
+                num_items: 1,
                 order_id: orderData.id,
+                payment_method: orderData.payment_method,
               },
+              payment_method: orderData.payment_method,
               log_browser: true,
             }),
           }
