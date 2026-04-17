@@ -302,8 +302,12 @@ Deno.serve(async (req) => {
                   value: finalPrice,
                   currency: 'BRL',
                   content_type: 'product',
+                  content_ids: [upsell_product_id],
+                  num_items: 1,
                   order_id: upsellOrder.id,
+                  payment_method: 'credit_card',
                 },
+                payment_method: 'credit_card',
                 log_browser: false,
               }),
             }

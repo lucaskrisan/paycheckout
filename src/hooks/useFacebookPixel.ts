@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { getCfGeo, getCountry as getGeoCountry, getCity, getState, getZip } from "@/lib/cfGeo";
+import { getCfGeo, getCountry as getGeoCountry, getCity, getState, getZip, getBestIp } from "@/lib/cfGeo";
 
 declare global {
   interface Window {
@@ -146,6 +146,21 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     const visitorId = getVisitorId();
     const fbp = ensureFbp();
     const geo = buildGeoPayload();
+    const clientIp = getBestIp();
+
+    // Enrich custom_data with `contents` + `num_items` when content_ids present
+    let enrichedCustomData = customData;
+    if (customData && Array.isArray((customData as any).content_ids) && (customData as any).content_ids.length > 0) {
+      const ids = (customData as any).content_ids as string[];
+      const value = Number((customData as any).value) || 0;
+      const numItems = (customData as any).num_items ?? ids.length;
+      const itemPrice = ids.length > 0 ? Number((value / ids.length).toFixed(2)) : 0;
+      enrichedCustomData = {
+        ...customData,
+        num_items: numItems,
+        contents: (customData as any).contents ?? ids.map((id) => ({ id, quantity: 1, item_price: itemPrice })),
+      };
+    }
 
     supabase.functions.invoke("facebook-capi", {
       body: {
@@ -154,13 +169,15 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
         event_id: eventId,
         event_source_url: window.location.href,
         customer: customerRef.current,
-        custom_data: customData,
+        custom_data: enrichedCustomData,
         fbc: getCookie("_fbc") || null,
         fbp: fbp,
         visitor_id: visitorId,
         user_agent: navigator.userAgent,
+        client_ip: clientIp || undefined,
         log_browser: true,
         geo,
+        payment_method: (enrichedCustomData as any)?.payment_method,
       },
     }).catch((err) => console.warn("[CAPI] non-blocking error:", err));
   }, [productId]);
