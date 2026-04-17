@@ -218,7 +218,9 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
               </div>
 
               <div className="space-y-1.5">
-                <Label>API Key *</Label>
+                <Label>
+                  {form.provider === "stripe" ? "Secret Key (sk_…) *" : "API Key *"}
+                </Label>
                 <Input
                   type="password"
                   value={form.config.api_key ?? ""}
@@ -227,7 +229,7 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
                     form.provider === "asaas" ? "Cole sua API Key do Asaas" :
                     form.provider === "pagarme" ? "Cole sua Secret Key do Pagar.me" :
                     form.provider === "mercadopago" ? "Cole seu Access Token do Mercado Pago" :
-                    "Cole sua Secret Key do Stripe"
+                    "sk_test_… ou sk_live_…"
                   }
                 />
                 <p className="text-xs text-muted-foreground">
@@ -237,9 +239,24 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
                     ? "Encontre em: Pagar.me Dashboard > Configurações > Chaves"
                     : form.provider === "mercadopago"
                     ? "Encontre em: Suas Integrações > Credenciais"
-                    : "Encontre em: Dashboard > Developers > API Keys"}
+                    : "Encontre em: Stripe Dashboard → Developers → API Keys → Secret key"}
                 </p>
               </div>
+
+              {form.provider === "stripe" && (
+                <div className="space-y-1.5">
+                  <Label>Publishable Key (pk_…) *</Label>
+                  <Input
+                    type="text"
+                    value={form.config.publishable_key ?? ""}
+                    onChange={(e) => updateConfig("publishable_key", e.target.value)}
+                    placeholder="pk_test_… ou pk_live_…"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Encontre em: Stripe Dashboard → Developers → API Keys → <strong>Publishable key</strong>. Necessária para renderizar o formulário de cartão no checkout.
+                  </p>
+                </div>
+              )}
             </div>
 
             {form.provider === "asaas" && (
