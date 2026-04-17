@@ -162,6 +162,13 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
       updated_at: new Date().toISOString(),
     };
 
+    console.log("[save-gateway] Payload:", {
+      ...payload,
+      config: { ...payload.config, api_key: "***", publishable_key: payload.config.publishable_key ? "***" : undefined },
+      user_id: user?.id,
+      isEditing,
+    });
+
     let error;
     if (isEditing) {
       ({ error } = await supabase.from("payment_gateways").update(payload).eq("id", form.id!));
@@ -171,8 +178,8 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
 
     setSaving(false);
     if (error) {
-      toast.error("Erro ao salvar gateway");
-      console.error(error);
+      console.error("[save-gateway] Supabase error:", error);
+      toast.error(`Erro ao salvar: ${error.message || "tente novamente"}`);
     } else {
       toast.success(isEditing ? "Gateway atualizado! ✓ Chave validada" : "Gateway criado! ✓ Chave validada");
       onSaved();
