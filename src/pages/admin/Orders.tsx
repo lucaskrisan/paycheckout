@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, Download, Mail, Loader2, Package, ShoppingBag, Zap, TrendingUp, DollarSign } from "lucide-react";
+import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, Download, Mail, Loader2, Package, ShoppingBag, Zap, TrendingUp, DollarSign, Send } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { EmailPreviewModal } from "@/components/admin/EmailPreviewModal";
@@ -124,6 +124,7 @@ const Orders = () => {
   const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState<"approved" | "all">("approved");
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
+  const [resendingAccess, setResendingAccess] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [detailTab, setDetailTab] = useState<"sale" | "customer" | "values" | "products">("sale");
   const [emailPreview, setEmailPreview] = useState<{
@@ -182,7 +183,21 @@ const Orders = () => {
     toast.success(`Lembrete enviado para ${data.email}! ✉️`);
   };
 
-  useEffect(() => {
+  const handleResendAccess = async (orderId: string) => {
+    setResendingAccess(orderId);
+    try {
+      const { data, error } = await supabase.functions.invoke("resend-access-link", {
+        body: { order_id: orderId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`E-mail de acesso reenviado para ${data.sent_to} (${data.links_count} curso${data.links_count !== 1 ? "s" : ""}) ✉️`);
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao reenviar acesso");
+    } finally {
+      setResendingAccess(null);
+    }
+  };
     if (!user?.id) return;
     const load = async () => {
       setLoading(true);
