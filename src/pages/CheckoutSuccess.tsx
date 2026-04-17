@@ -285,9 +285,25 @@ const CheckoutSuccess = () => {
           </motion.div>
         )}
 
-        <div className="pt-4">
+        {/* Portal CTA — lifetime access (Hotmart/Kiwify model) */}
+        <div className="bg-card border-2 border-primary/30 rounded-xl p-5 text-left">
+          <p className="text-sm font-bold text-foreground mb-1">
+            🎓 {t.successCreateAccountTitle}
+          </p>
+          <p className="text-xs text-muted-foreground mb-3">
+            {t.successCreateAccountDesc}
+          </p>
+          <Link to="/minha-conta">
+            <Button className="w-full gap-2">
+              {t.successCreateAccountButton}
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </Link>
+        </div>
+
+        <div className="pt-2">
           <Link to="/">
-            <Button variant="outline" className="gap-2">
+            <Button variant="ghost" size="sm" className="gap-2">
               {isEN ? "Back to home" : "Voltar ao início"}
               <ArrowRight className="w-4 h-4" />
             </Button>
