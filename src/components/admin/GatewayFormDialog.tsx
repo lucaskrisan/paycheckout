@@ -102,6 +102,40 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
       return;
     }
 
+    // Stripe-specific validation
+    if (form.provider === "stripe") {
+      const sk = String(form.config.api_key || "").trim();
+      const pk = String(form.config.publishable_key || "").trim();
+      if (!sk.startsWith("sk_")) {
+        toast.error('Secret Key inválida. Deve começar com "sk_test_" ou "sk_live_".');
+        return;
+      }
+      if (!pk) {
+        toast.error("Publishable Key é obrigatória para Stripe.");
+        return;
+      }
+      if (!pk.startsWith("pk_")) {
+        toast.error('Publishable Key inválida. Deve começar com "pk_test_" ou "pk_live_".');
+        return;
+      }
+      // Cross-validation: don't mix keys up
+      if (sk.startsWith("pk_")) {
+        toast.error("Você colou uma Publishable Key (pk_) no campo Secret Key.");
+        return;
+      }
+      if (pk.startsWith("sk_")) {
+        toast.error("Você colou uma Secret Key (sk_) no campo Publishable Key.");
+        return;
+      }
+      // Environment match
+      const isTest = sk.startsWith("sk_test_");
+      const pkIsTest = pk.startsWith("pk_test_");
+      if (isTest !== pkIsTest) {
+        toast.error("Secret Key e Publishable Key precisam ser do mesmo ambiente (ambas test ou ambas live).");
+        return;
+      }
+    }
+
     // Validate API key before saving
     const isValid = await validateApiKey();
     if (!isValid) return;
