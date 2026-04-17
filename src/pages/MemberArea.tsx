@@ -1,9 +1,9 @@
 import { useEffect, useState, useMemo, lazy, Suspense } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, NavigateFunction } from "react-router-dom";
 import { createClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
-import { List, Loader2, Lock, PlayCircle } from "lucide-react";
+import { List, Loader2, PlayCircle, Mail, ArrowRight, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import MemberInstallBanner from "@/components/member/MemberInstallBanner";
@@ -14,6 +14,115 @@ import MemberSidebarContent from "@/components/member/MemberSidebarContent";
 import MemberCatalogPanel from "@/components/member/MemberCatalogPanel";
 import MemberLessonViewer from "@/components/member/MemberLessonViewer";
 import { getMemberTranslations, langFromCurrency, type MemberLang, type MemberTranslations } from "@/lib/memberI18n";
+
+// ─── Restricted Access self-service recovery screen ──────────────────────────
+const RestrictedAccessRecovery = ({
+  navigate,
+  t,
+  lang,
+}: {
+  navigate: NavigateFunction;
+  t: MemberTranslations;
+  lang: MemberLang;
+}) => {
+  const [email, setEmail] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const handleRecover = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = email.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      toast.error(t.recoverInvalidEmail);
+      return;
+    }
+    setSending(true);
+    try {
+      await supabase.functions.invoke("recover-member-access", {
+        body: { email: trimmed, lang },
+      });
+    } catch (err) {
+      console.error("recover error", err);
+    } finally {
+      setSent(true);
+      toast.success(t.recoverGenericResponse);
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "hsl(220 20% 6%)" }}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-md w-full p-8 sm:p-10 rounded-3xl border"
+        style={{ background: "hsl(220 18% 10%)", borderColor: "hsl(220 15% 16%)" }}
+      >
+        <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-[hsl(145,65%,42%)] to-[hsl(160,70%,36%)] flex items-center justify-center">
+          <Mail className="w-8 h-8 text-white" />
+        </div>
+        <h1 className="text-2xl font-bold text-white text-center mb-2">{t.recoverTitle}</h1>
+        <p className="text-[hsl(220,10%,60%)] text-sm text-center mb-6">{t.recoverDesc}</p>
+
+        {sent ? (
+          <div className="text-center py-4">
+            <p className="text-[hsl(145,65%,55%)] text-sm leading-relaxed">{t.recoverGenericResponse}</p>
+          </div>
+        ) : (
+          <form onSubmit={handleRecover} className="space-y-3">
+            <label className="block text-xs font-medium text-[hsl(220,10%,70%)]">{t.recoverEmailLabel}</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={t.recoverEmailPlaceholder}
+              autoFocus
+              className="w-full px-4 py-3 rounded-xl text-sm text-white placeholder:text-[hsl(220,10%,40%)] outline-none transition-all focus:ring-2 focus:ring-[hsl(145,65%,42%)]"
+              style={{ background: "hsl(220 18% 14%)", border: "1px solid hsl(220 15% 18%)" }}
+            />
+            <button
+              type="submit"
+              disabled={sending}
+              className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold transition-all disabled:opacity-60"
+              style={{ backgroundImage: "linear-gradient(135deg, hsl(145,65%,42%), hsl(160,70%,36%))", color: "white" }}
+            >
+              {sending ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> {t.recoverSending}</>
+              ) : (
+                <><Mail className="w-4 h-4" /> {t.recoverButton}</>
+              )}
+            </button>
+          </form>
+        )}
+
+        {/* Portal CTA — Hotmart/Kiwify model */}
+        <div className="mt-6 pt-6 border-t" style={{ borderColor: "hsl(220 15% 16%)" }}>
+          <div className="flex items-start gap-3 mb-3">
+            <GraduationCap className="w-5 h-5 text-[hsl(145,65%,55%)] mt-0.5 shrink-0" />
+            <div>
+              <p className="text-white text-sm font-semibold">{t.portalCtaTitle}</p>
+              <p className="text-[hsl(220,10%,55%)] text-xs mt-1">{t.portalCtaDesc}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate("/minha-conta")}
+            className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold transition-all hover:bg-[hsl(220,16%,18%)]"
+            style={{ background: "hsl(220 18% 14%)", color: "white", border: "1px solid hsl(220 15% 18%)" }}
+          >
+            {t.portalCtaButton} <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+
+        <button
+          onClick={() => navigate("/")}
+          className="w-full mt-4 text-xs text-[hsl(220,10%,50%)] hover:text-[hsl(220,10%,70%)] transition-colors"
+        >
+          {t.backToHome}
+        </button>
+      </motion.div>
+    </div>
+  );
+};
 
 interface Lesson { id: string; title: string; content_type: string; content: string | null; file_url: string | null; sort_order: number; }
 interface Module { id: string; title: string; description: string | null; sort_order: number; lessons: Lesson[]; }
@@ -160,23 +269,7 @@ const MemberArea = () => {
     </div>
   );
 
-  if (!token || !access || !course) return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "hsl(220 20% 6%)" }}>
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="max-w-md w-full text-center p-10 rounded-3xl border"
-        style={{ background: "hsl(220 18% 10%)", borderColor: "hsl(220 15% 16%)" }}
-      >
-        <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-[hsl(220,10%,25%)] to-[hsl(220,10%,18%)] flex items-center justify-center">
-          <Lock className="w-10 h-10 text-[hsl(220,10%,45%)]" />
-        </div>
-        <h1 className="text-2xl font-bold text-white mb-3">{t.restrictedAccess}</h1>
-        <p className="text-[hsl(220,10%,55%)] mb-6">{t.restrictedDesc}</p>
-        <button onClick={() => navigate("/")} className="px-6 py-3 rounded-xl text-sm font-medium transition-all" style={{ background: "hsl(220 18% 14%)", color: "hsl(0 0% 70%)" }}>
-          {t.backToHome}
-        </button>
-      </motion.div>
-    </div>
-  );
+  if (!token || !access || !course) return <RestrictedAccessRecovery navigate={navigate} t={t} lang={lang} />;
 
   // Navigation helpers
   const allLessons = modules.flatMap((m) => m.lessons);
