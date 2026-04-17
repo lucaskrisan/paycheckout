@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, Download, Mail, Loader2, Package, ShoppingBag, Zap, TrendingUp, DollarSign } from "lucide-react";
+import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, Download, Mail, Loader2, Package, ShoppingBag, Zap, TrendingUp, DollarSign, Send } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { EmailPreviewModal } from "@/components/admin/EmailPreviewModal";
@@ -124,6 +124,7 @@ const Orders = () => {
   const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState<"approved" | "all">("approved");
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
+  const [resendingAccess, setResendingAccess] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [detailTab, setDetailTab] = useState<"sale" | "customer" | "values" | "products">("sale");
   const [emailPreview, setEmailPreview] = useState<{
@@ -180,6 +181,22 @@ const Orders = () => {
     if (error) throw error;
     if (data?.error) throw new Error(data.error);
     toast.success(`Lembrete enviado para ${data.email}! ✉️`);
+  };
+
+  const handleResendAccess = async (orderId: string) => {
+    setResendingAccess(orderId);
+    try {
+      const { data, error } = await supabase.functions.invoke("resend-access-link", {
+        body: { order_id: orderId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`E-mail de acesso reenviado para ${data.sent_to} (${data.links_count} curso${data.links_count !== 1 ? "s" : ""}) ✉️`);
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao reenviar acesso");
+    } finally {
+      setResendingAccess(null);
+    }
   };
 
   useEffect(() => {
@@ -717,6 +734,26 @@ const Orders = () => {
                     <DetailRow label="Criado em" value={format(new Date(selectedOrder.created_at), "dd/MM/yyyy HH:mm")} />
                     {selectedOrder.updated_at && ["paid", "approved", "confirmed"].includes(selectedOrder.status) && (
                       <DetailRow label="Aprovado em" value={format(new Date(selectedOrder.updated_at), "dd/MM/yyyy HH:mm")} />
+                    )}
+                    {["paid", "approved", "confirmed"].includes(selectedOrder.status) && (
+                      <div className="pt-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full gap-2 border-primary/30 text-primary hover:bg-primary/10"
+                          disabled={resendingAccess === selectedOrder.id}
+                          onClick={() => handleResendAccess(selectedOrder.id)}
+                        >
+                          {resendingAccess === selectedOrder.id ? (
+                            <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Reenviando...</>
+                          ) : (
+                            <><Send className="w-3.5 h-3.5" /> Reenviar e-mail de acesso</>
+                          )}
+                        </Button>
+                        <p className="text-[10px] text-muted-foreground mt-1.5 text-center">
+                          Reenvia o link da área de membros para o e-mail do cliente.
+                        </p>
+                      </div>
                     )}
                     {(utmSource || utmCampaign) && (
                       <>
