@@ -179,7 +179,12 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
     setSaving(false);
     if (error) {
       console.error("[save-gateway] Supabase error:", error);
-      toast.error(`Erro ao salvar: ${error.message || "tente novamente"}`);
+      const msg = error.message || "";
+      if (msg.includes("payment_gateways_provider_check") || msg.includes("violates check constraint")) {
+        toast.error("Provedor não permitido pelo banco. Atualize a página e tente novamente — o schema acabou de ser corrigido.");
+      } else {
+        toast.error(`Erro ao salvar: ${msg || "tente novamente"}`);
+      }
     } else {
       toast.success(isEditing ? "Gateway atualizado! ✓ Chave validada" : "Gateway criado! ✓ Chave validada");
       onSaved();
