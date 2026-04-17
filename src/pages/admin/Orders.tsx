@@ -198,6 +198,8 @@ const Orders = () => {
       setResendingAccess(null);
     }
   };
+
+  useEffect(() => {
     if (!user?.id) return;
     const load = async () => {
       setLoading(true);
