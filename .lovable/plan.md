@@ -1,26 +1,20 @@
 
-O usuário quer validação: "Hotmart e Kiwify fazem assim? Esse plano está correto?"
+O usuário confirmou que o problema do seletor de moeda era cache. Agora quer validação simples: "tem algum erro? eu ou qualquer produtor com Stripe pode vender em USD?"
 
-Resposta honesta baseada em como Hotmart e Kiwify realmente funcionam:
+Não é tarefa de implementação — é pedido de auditoria/veredito. Não preciso de plano de mudança. Vou responder direto com diagnóstico técnico baseado no que já investiguei nos turnos anteriores:
 
-**Como Hotmart faz:**
-- Aluno compra → recebe e-mail com link para a "Área de Membros Hotmart" (klickart/sparkle)
-- Aluno faz LOGIN com e-mail + senha (ou Google) — não usa token na URL
-- Acesso é vitalício enquanto tiver login
-- Tem botão "Esqueci minha senha" e "Reenviar acesso"
-- Painel central: minhasvendas.hotmart.com mostra TODOS os produtos comprados
+1. Schema USD: OK (currency aceita BRL/USD)
+2. ProductEdit.tsx: chama sync-product-stripe ao salvar produto USD
+3. sync-product-stripe: exige gateway Stripe ativo do produtor (multi-tenant)
+4. get-stripe-publishable-key: busca pk do produtor ou fallback super_admin
+5. StripeCardForm: carrega Stripe.js com pk do produtor
+6. Checkout USD: usa create-stripe-payment com chave do produtor
 
-**Como Kiwify faz:**
-- Igual: aluno cria senha no primeiro acesso
-- Login em dashboard.kiwify.com.br/area-de-membros
-- Acesso vitalício, mostra todos os cursos comprados
-- Self-service para recuperar senha
+Pré-requisitos para qualquer produtor vender USD:
+- Gateway stripe ativo em payment_gateways (active=true, provider='stripe')
+- config.api_key (sk_live_... ou sk_test_...)
+- config.publishable_key (pk_live_... ou pk_test_...)
+- Produto com currency='USD' salvo (gera stripe_product_id e stripe_price_id automaticamente)
+- KYC aprovado (verification)
 
-**Diferença com PanteraPay hoje:**
-- Hoje usamos token na URL (mais frágil — link some, expira, perde no PWA)
-- Hotmart/Kiwify usam login (mais robusto — funciona sempre)
-
-**Conclusão honesta:**
-O plano de 4 camadas vai NA DIREÇÃO CERTA mas a **Camada 1 (Portal do Aluno com login)** é exatamente o modelo Hotmart/Kiwify — e deveria ser a PRINCIPAL, não uma das 4. O resto vira complemento de transição.
-
-Vou refinar o plano deixando isso claro: priorizar Camada 1 como solução-padrão (igual mercado), e as outras 3 como rede de segurança.
+Vou dar veredito direto sem propor mudança. Resposta curta em "baby mode".
