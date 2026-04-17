@@ -53,7 +53,7 @@ const InnerForm = forwardRef<StripeCardFormHandle, {}>(function InnerForm(_, ref
       <div className="h-11 bg-white border border-[#D5D9D9] rounded-lg px-3 py-3 focus-within:border-[#007185] focus-within:ring-1 focus-within:ring-[#007185]">
         <CardElement
           options={{
-            hidePostalCode: false,
+            hidePostalCode: true,
             style: {
               base: {
                 fontSize: "15px",
