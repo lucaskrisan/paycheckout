@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, lazy, Suspense } from "react";
 import { getStateFromPhone } from "@/lib/dddToState";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Lock, ArrowRight, Loader2, Shield } from "lucide-react";
@@ -7,6 +7,8 @@ import CustomerForm, { type CustomerData, isValidCPF } from "@/components/checko
 import PixPayment from "@/components/checkout/PixPayment";
 import PixModal from "@/components/checkout/PixModal";
 import CreditCardForm, { type CreditCardData } from "@/components/checkout/CreditCardForm";
+import type { StripeCardFormHandle } from "@/components/checkout/StripeCardForm";
+const StripeCardForm = lazy(() => import("@/components/checkout/StripeCardForm"));
 import PaymentTabs from "@/components/checkout/PaymentTabs";
 import CountdownTimer from "@/components/checkout/CountdownTimer";
 import CouponField from "@/components/checkout/CouponField";
@@ -73,6 +75,7 @@ const Checkout = () => {
 
   const [customer, setCustomer] = useState<CustomerData>({ name: prefill.name, email: prefill.email, phone: prefill.phone, cpf: prefill.cpf });
   const [creditCard, setCreditCard] = useState<CreditCardData>({ number: "", name: "", expiry: "", cvv: "", installments: "1" });
+  const stripeCardRef = useRef<StripeCardFormHandle>(null);
 
   const { markPurchased, markStep } = useAbandonedCart({ productId: productId || "", customer, paymentMethod, productOwnerId: product?.user_id, productPrice: product?.price });
 
@@ -271,7 +274,14 @@ const Checkout = () => {
 
     try {
       if (isUSD) {
-        // USD → Stripe
+        // ─── USD → Stripe (Embedded Payment Intents + Elements) ─────────
+        if (!stripeCardRef.current) throw new Error(t.paymentError || "Card form not ready.");
+        // 1) Tokenize the card in the browser (PCI-safe iframe)
+        const paymentMethodId = await stripeCardRef.current.tokenize({
+          name: customer.name,
+          email: customer.email,
+        });
+        // 2) Create + confirm PaymentIntent server-side
         const { data, error } = await supabase.functions.invoke("create-stripe-payment", {
           body: {
             amount: finalAmount, product_id: product.id, currency: "usd",
@@ -279,6 +289,7 @@ const Checkout = () => {
             bump_product_ids: bumpProductIds, checkout_url: window.location.href, utms,
             customer_country: selectedCountry,
             geo: geoPayload,
+            payment_method_id: paymentMethodId,
             customer: { name: customer.name, email: customer.email, phone: customer.phone || undefined },
           },
         });
@@ -288,16 +299,23 @@ const Checkout = () => {
           throw new Error(msg);
         }
         if (data?.error) throw new Error(data.error);
-        if (data?.url) {
-          window.location.href = data.url;
+
+        // 3) Handle 3DS / next_action if needed
+        let finalStatus = data?.status as string | undefined;
+        if (data?.requires_action && data?.client_secret) {
+          const ok = await stripeCardRef.current.confirmAction(data.client_secret);
+          if (!ok) throw new Error(t.paymentError || "3D Secure verification failed.");
+          finalStatus = "succeeded";
+        }
+
+        if (finalStatus === "succeeded") {
+          const paymentId = data?.payment_intent_id || data?.payment_id;
+          toast.success(t.paymentSuccess);
+          trackPurchase(finalAmount, "USD", paymentId);
+          await markPurchased();
+          navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product.id}${data.order_id ? `&order_id=${data.order_id}` : ''}&lang=en`);
         } else {
-          const paymentId = data?.payment_id || data?.id;
-          if (paymentId) {
-            toast.success(t.paymentSuccess);
-            trackPurchase(finalAmount, "USD", paymentId);
-            await markPurchased();
-            navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product.id}${data.order_id ? `&order_id=${data.order_id}` : ''}${isUSD ? '&lang=en' : ''}`);
-          } else throw new Error("Payment processing failed");
+          throw new Error(t.paymentError || "Payment was not completed.");
         }
       } else if (paymentMethod === "pix") {
         const customerState = getStateFromPhone(customer.phone);
@@ -392,6 +410,10 @@ const Checkout = () => {
               )}
               {!isUSD && paymentMethod === "pix" ? (
                 <PixPayment totalAmount={finalAmount} qrCodeData={pixData?.qrCodeUrl} pixCode={pixData?.pixCode} />
+              ) : isUSD ? (
+                <Suspense fallback={<div className="h-11 bg-white border border-[#D5D9D9] rounded-lg flex items-center justify-center text-[#565959] text-sm"><Loader2 className="w-4 h-4 animate-spin mr-2" /> Loading…</div>}>
+                  <StripeCardForm ref={stripeCardRef} productId={product.id} />
+                </Suspense>
               ) : (
                 <CreditCardForm data={creditCard} onChange={setCreditCard} totalAmount={finalAmount} isUSD={isUSD} />
               )}

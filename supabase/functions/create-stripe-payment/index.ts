@@ -39,7 +39,18 @@ Deno.serve(async (req) => {
     let STRIPE_SECRET_KEY: string | null = null;
 
     const body = await req.json();
-    const { customer, product_id, coupon_id, config_id, bump_product_ids, checkout_url, utms, customer_country } = body;
+    const {
+      customer,
+      product_id,
+      coupon_id,
+      config_id,
+      bump_product_ids,
+      checkout_url,
+      utms,
+      customer_country,
+      payment_method_id, // NEW: stripe PM token from frontend Elements
+      payment_intent_id, // NEW: when retrying after 3DS
+    } = body;
     const amount = Math.round(Number(body.amount) * 100) / 100;
     const amountCents = Math.round(amount * 100);
 
@@ -57,7 +68,7 @@ Deno.serve(async (req) => {
     if (product_id) {
       const { data: prod } = await supabaseAdmin
         .from('products')
-        .select('name, user_id, price, show_coupon, currency, stripe_product_id, stripe_price_id')
+        .select('name, user_id, price, show_coupon, currency')
         .eq('id', product_id)
         .maybeSingle();
       if (prod) {
@@ -66,7 +77,6 @@ Deno.serve(async (req) => {
         productCurrency = (prod as any).currency === 'USD' ? 'usd' : 'brl';
         let serverPrice = prod.price;
 
-        // Check if a config with custom price was used
         if (config_id) {
           const { data: config } = await supabaseAdmin
             .from('checkout_builder_configs')
@@ -79,7 +89,6 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Apply coupon if provided and allowed
         let couponDiscount = 0;
         if (coupon_id && prod.show_coupon !== false) {
           const { data: couponData } = await supabaseAdmin
@@ -101,7 +110,6 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Calculate bump total server-side
         let bumpTotal = 0;
         if (bump_product_ids && Array.isArray(bump_product_ids) && bump_product_ids.length > 0) {
           const { data: bumpProducts } = await supabaseAdmin
@@ -125,7 +133,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Anti-fraud: check blacklist
+    // Anti-fraud: blacklist
     {
       const cleanCpfCheck = customer.cpf?.replace(/\D/g, '') || '';
       const checks = [];
@@ -133,7 +141,7 @@ Deno.serve(async (req) => {
       if (cleanCpfCheck) checks.push(supabaseAdmin.from('fraud_blacklist').select('id').eq('type', 'cpf').eq('value', cleanCpfCheck).maybeSingle());
       const results = await Promise.all(checks);
       if (results.some(r => r.data)) {
-        console.warn(`[create-stripe-payment] Blacklisted customer blocked: ${customer.email}`);
+        console.warn(`[create-stripe-payment] Blacklisted: ${customer.email}`);
         return new Response(
           JSON.stringify({ error: 'Unable to process this payment. Please contact support.' }),
           { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -141,8 +149,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Anti-fraud: detect duplicate purchase
-    if (product_id && customer.email) {
+    // Anti-fraud: duplicate purchase (skip when retrying via payment_intent_id)
+    if (!payment_intent_id && product_id && customer.email) {
       const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       const { data: recentOrder } = await supabaseAdmin
         .from('orders')
@@ -158,7 +166,6 @@ Deno.serve(async (req) => {
           .select('email')
           .eq('id', recentOrder[0].customer_id)
           .maybeSingle();
-
         if (recentCustomer?.email?.toLowerCase() === customer.email.toLowerCase()) {
           console.warn(`[create-stripe-payment] Duplicate purchase blocked: ${customer.email}`);
           return new Response(
@@ -169,7 +176,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Check if producer is blocked
+    // Producer blocked check
     if (productOwnerId) {
       const { data: billingAccount } = await supabaseAdmin
         .from('billing_accounts')
@@ -184,7 +191,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Resolve Stripe key from producer's gateway config
+    // Resolve Stripe secret key
     if (productOwnerId) {
       const { data: gw } = await supabaseAdmin
         .from('payment_gateways')
@@ -193,11 +200,11 @@ Deno.serve(async (req) => {
         .eq('provider', 'stripe')
         .eq('active', true)
         .maybeSingle();
-      if (gw?.config && typeof gw.config === 'object' && (gw.config as any).api_key) {
-        STRIPE_SECRET_KEY = (gw.config as any).api_key;
+      if (gw?.config && typeof gw.config === 'object') {
+        const cfg = gw.config as any;
+        STRIPE_SECRET_KEY = cfg.secret_key || cfg.api_key || cfg.sk || null;
       }
     }
-    // Fallback to global env key ONLY for super_admin producers
     if (!STRIPE_SECRET_KEY && productOwnerId) {
       const { data: ownerRoles } = await supabaseAdmin
         .from('user_roles')
@@ -216,7 +223,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Upsert customer in local DB
+    // Upsert local customer
     const cleanCpf = customer.cpf?.replace(/\D/g, '') || '';
     const { data: existingCustomer } = await supabaseAdmin
       .from('customers')
@@ -249,10 +256,9 @@ Deno.serve(async (req) => {
     const feePercent = Number(platformSettings?.platform_fee_percent || 0);
     const feeAmount = Math.round(amount * feePercent) / 100;
 
-    // Initialize Stripe SDK
     const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: '2025-08-27.basil' });
 
-    // Find or create Stripe customer
+    // Get or create Stripe customer
     const customers = await stripe.customers.list({ email: customer.email, limit: 1 });
     let stripeCustomerId: string;
     if (customers.data.length > 0) {
@@ -265,50 +271,39 @@ Deno.serve(async (req) => {
       stripeCustomerId = stripeCustomer.id;
     }
 
-    // Build the origin URL for success/cancel
-    const origin = checkout_url
-      ? new URL(checkout_url).origin
-      : (req.headers.get('origin') || 'https://app.panttera.com.br');
+    // ─── Retry path: confirm an existing PaymentIntent (after 3DS) ───
+    if (payment_intent_id) {
+      const pi = await stripe.paymentIntents.retrieve(payment_intent_id);
+      console.log(`[create-stripe-payment] Retrieved PI ${pi.id} status=${pi.status}`);
+      return new Response(
+        JSON.stringify({
+          payment_intent_id: pi.id,
+          client_secret: pi.client_secret,
+          status: pi.status,
+          requires_action: pi.status === 'requires_action',
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    // Map country code to Stripe locale
-    const countryToLocale: Record<string, string> = {
-      BR: 'pt-BR', PT: 'pt-BR', MZ: 'pt-BR', AO: 'pt-BR', CV: 'pt-BR', ST: 'pt-BR',
-      US: 'en', GB: 'en', AU: 'en', CA: 'en', IE: 'en', NZ: 'en', JM: 'en', TT: 'en', BB: 'en', BS: 'en', GY: 'en', BZ: 'en', PR: 'en', VI: 'en',
-      MX: 'es', CO: 'es', AR: 'es', PE: 'es', CL: 'es', EC: 'es', VE: 'es', UY: 'es', PY: 'es', BO: 'es', CR: 'es', PA: 'es', DO: 'es', GT: 'es', HN: 'es', SV: 'es', NI: 'es', CU: 'es', ES: 'es',
-      FR: 'fr', BE: 'fr', CH: 'fr', LU: 'fr', MC: 'fr', SN: 'fr', CI: 'fr', CM: 'fr', MG: 'fr', HT: 'fr', GF: 'fr', GP: 'fr', MQ: 'fr', RE: 'fr',
-      DE: 'de', AT: 'de', LI: 'de',
-      IT: 'it', SM: 'it', VA: 'it',
-      JP: 'ja', KR: 'ko', CN: 'zh', TW: 'zh-TW', HK: 'zh-HK',
-      NL: 'nl', SR: 'nl',
-      PL: 'pl', CZ: 'cs', SK: 'sk', HU: 'hu', RO: 'ro', BG: 'bg', HR: 'hr',
-      SE: 'sv', NO: 'nb', DK: 'da', FI: 'fi', IS: 'fi',
-      TR: 'tr', ID: 'id', TH: 'th', VN: 'vi', PH: 'fil',
-      IN: 'hi', BD: 'bn', PK: 'ur',
-      IL: 'he', SA: 'ar', AE: 'ar', EG: 'ar', JO: 'ar', KW: 'ar', QA: 'ar', BH: 'ar', OM: 'ar', LB: 'ar', MA: 'ar', DZ: 'ar', TN: 'ar',
-      UA: 'uk', GE: 'ka', AM: 'hy', KZ: 'kk',
-      GR: 'el', EE: 'et', LV: 'lv', LT: 'lt',
-      RU: 'ru', BY: 'ru', KG: 'ru', TJ: 'ru', UZ: 'uz',
-      MY: 'ms', SG: 'en', NG: 'en', GH: 'en', KE: 'en', ZA: 'en',
-    };
-    const stripeLocale = customer_country && countryToLocale[customer_country] ? countryToLocale[customer_country] : 'auto';
+    // Require payment_method_id for new charges (embedded Elements flow)
+    if (!payment_method_id) {
+      return new Response(
+        JSON.stringify({ error: 'payment_method_id is required.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    // Create Stripe Checkout Session
-    const session = await stripe.checkout.sessions.create({
+    // Create PaymentIntent with confirm=true
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amountCents,
+      currency: productCurrency,
       customer: stripeCustomerId,
-      locale: stripeLocale as any,
-      line_items: [
-        {
-          price_data: {
-            currency: productCurrency,
-            product_data: { name: productName },
-            unit_amount: amountCents,
-          },
-          quantity: 1,
-        },
-      ],
-      mode: 'payment',
-      success_url: `${origin}/checkout/sucesso?product=${encodeURIComponent(productName)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product_id || ''}&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: checkout_url || `${origin}/checkout/${product_id || ''}`,
+      payment_method: payment_method_id,
+      confirm: true,
+      automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
+      setup_future_usage: 'off_session',
+      description: productName,
       metadata: {
         product_id: product_id || '',
         customer_id: customerId,
@@ -319,17 +314,20 @@ Deno.serve(async (req) => {
       },
     });
 
-    // Save order with session ID as external_id
-    await supabaseAdmin
+    console.log(`[create-stripe-payment] PI created: ${paymentIntent.id} status=${paymentIntent.status}`);
+
+    // Save order with PI id as external_id
+    const initialStatus = paymentIntent.status === 'succeeded' ? 'paid' : 'pending';
+    const { data: orderRow } = await supabaseAdmin
       .from('orders')
       .insert({
         amount,
         payment_method: 'credit_card',
-        status: 'pending',
+        status: initialStatus,
         product_id: product_id || null,
         customer_id: customerId,
         user_id: productOwnerId,
-        external_id: session.id,
+        external_id: paymentIntent.id,
         customer_city: body.geo?.customer_city || null,
         customer_zip: body.geo?.customer_zip || null,
         customer_country: body.geo?.customer_country || null,
@@ -342,19 +340,29 @@ Deno.serve(async (req) => {
           bump_product_ids: (bump_product_ids && bump_product_ids.length > 0) ? bump_product_ids : null,
           ...(utms || {}),
         },
-      });
-
-    console.log(`[create-stripe-payment] Checkout session created: ${session.id}`);
+      })
+      .select('id')
+      .single();
 
     return new Response(
-      JSON.stringify({ url: session.url }),
+      JSON.stringify({
+        payment_intent_id: paymentIntent.id,
+        client_secret: paymentIntent.client_secret,
+        status: paymentIntent.status,
+        requires_action: paymentIntent.status === 'requires_action',
+        order_id: orderRow?.id,
+        payment_id: paymentIntent.status === 'succeeded' ? paymentIntent.id : undefined,
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-  } catch (error) {
-    console.error('[create-stripe-payment] Error:', error);
+  } catch (error: any) {
+    // Stripe card errors → 400 with friendly message
+    const msg = error?.raw?.message || error?.message || 'Payment failed';
+    console.error('[create-stripe-payment] Error:', msg);
+    const status = error?.statusCode && error.statusCode >= 400 && error.statusCode < 500 ? 400 : 500;
     return new Response(
-      JSON.stringify({ error: (error as Error).message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: msg }),
+      { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
