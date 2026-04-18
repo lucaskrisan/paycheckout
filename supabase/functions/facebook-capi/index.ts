@@ -285,6 +285,34 @@ Deno.serve(async (req) => {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 10000);
 
+        // ── DEBUG: log payload sent to Meta (hashes truncated for privacy) ──
+        const mask = (h?: string) => (h ? `${h.slice(0, 8)}…${h.slice(-4)}` : undefined);
+        const debugPayload = {
+          pixel_id: pixel.pixel_id,
+          event_name: event.event_name,
+          event_id: event.event_id,
+          event_time: event.event_time,
+          event_source_url: event.event_source_url,
+          action_source: event.action_source,
+          user_data: {
+            em: mask(event.user_data.em),
+            ph: mask(event.user_data.ph),
+            fn: mask(event.user_data.fn),
+            ln: mask(event.user_data.ln),
+            external_id: mask(event.user_data.external_id),
+            ct: mask(event.user_data.ct),
+            st: mask(event.user_data.st),
+            zp: mask(event.user_data.zp),
+            country: mask(event.user_data.country),
+            client_ip_address: event.user_data.client_ip_address,
+            client_user_agent: event.user_data.client_user_agent?.slice(0, 60) + '…',
+            fbc: event.user_data.fbc,
+            fbp: event.user_data.fbp,
+          },
+          custom_data: event.custom_data,
+        };
+        console.log(`[facebook-capi][PAYLOAD→META] ${JSON.stringify(debugPayload)}`);
+
         const response = await fetch(
           `https://graph.facebook.com/v22.0/${pixel.pixel_id}/events`,
           {
@@ -300,7 +328,7 @@ Deno.serve(async (req) => {
         clearTimeout(timeout);
 
         const data = await response.json();
-        console.log(`[facebook-capi] Pixel ${pixel.pixel_id}:`, JSON.stringify(data));
+        console.log(`[facebook-capi][META←RESPONSE] Pixel ${pixel.pixel_id}:`, JSON.stringify(data));
         results.push({ pixel_id: pixel.pixel_id, success: response.ok, data });
       } catch (err) {
         console.error(`[facebook-capi] Pixel ${pixel.pixel_id} error:`, err);
