@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/useAuth";
-import { lovable } from "@/integrations/lovable";
+
 import panteraMascot from "@/assets/pantera-mascot.png";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -58,7 +58,7 @@ const Login = () => {
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
+  
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const { signIn, signUp, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -144,17 +144,6 @@ const Login = () => {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setGoogleLoading(true);
-    const { error } = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: getAuthOrigin(),
-      extraParams: { prompt: "select_account" },
-    });
-    if (error) {
-      toast.error("Erro ao entrar com Google");
-      setGoogleLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-background">
