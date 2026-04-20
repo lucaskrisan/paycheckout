@@ -691,10 +691,12 @@ Views:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 13.1 Progressive Web App
-  • Manifest gerado dinamicamente (Edge Function: pwa-manifest)
-  • Service Worker com cache strategy (vite-plugin-pwa)
-  • Instalação como app nativo (banner InstallPrompt)
-  • Ícones 192x192 e 512x512
+  • Manifest dinâmico via Edge Function pwa-manifest (puxa branding por user)
+  • Link rel="manifest" no index.html aponta para a edge function
+  • Service Worker do OneSignal (OneSignalSDKWorker.js) — único SW ativo
+  • Instalação nativa via BeforeInstallPromptEvent (componente InstallPrompt)
+  • Ícones default 192x192 e 512x512 em /public (fallback quando user não subiu)
+  • Customização por produtor em /admin/pwa (nome, cores, ícones)
 
 13.2 Push Notifications
   • Via OneSignal
