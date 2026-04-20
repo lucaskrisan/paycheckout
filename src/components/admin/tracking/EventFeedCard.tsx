@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
 import { Eye, ShoppingCart, UserCheck, CreditCard, Zap, MousePointerClick, TrendingUp, BookOpen } from "lucide-react";
 import { format } from "date-fns";
-import NinaWatermark from "./NinaWatermark";
 
 const EVENT_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
   PageView: { label: "PageView", color: "#818cf8", icon: Eye },

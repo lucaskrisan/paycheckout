@@ -3,7 +3,7 @@ import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Activity, Users, DollarSign, Target, TrendingUp, TrendingDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { subHours, subDays, startOfDay } from "date-fns";
+import { subDays, startOfDay } from "date-fns";
 import { useCheckoutPresence } from "@/hooks/useCheckoutPresence";
 import NinaWatermark from "./NinaWatermark";
 
