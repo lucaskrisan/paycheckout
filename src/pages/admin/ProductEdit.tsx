@@ -356,22 +356,48 @@ const ProductEdit = () => {
       await supabase.from("product_pixels").delete().eq("product_id", productId);
       // Insert all
       const validPixels = pixels.filter((p) => p.pixel_id.trim());
+      let insertedRows: Array<{ id: string; capi_token: string | null }> = [];
       if (validPixels.length > 0) {
-        const { error } = await supabase.from("product_pixels").insert(
-          validPixels.map((p) => ({
-            product_id: productId,
-            platform: p.platform,
-            pixel_id: p.pixel_id.trim(),
-            domain: p.domain.trim() || null,
-            fire_on_pix: p.fire_on_pix,
-            fire_on_boleto: p.fire_on_boleto,
-            capi_token: p.capi_token.trim() || null,
-            user_id: user?.id,
-          }))
-        );
+        const { data: inserted, error } = await supabase
+          .from("product_pixels")
+          .insert(
+            validPixels.map((p) => ({
+              product_id: productId,
+              platform: p.platform,
+              pixel_id: p.pixel_id.trim(),
+              domain: p.domain.trim() || null,
+              fire_on_pix: p.fire_on_pix,
+              fire_on_boleto: p.fire_on_boleto,
+              capi_token: p.capi_token.trim() || null,
+              user_id: user?.id,
+            }))
+          )
+          .select("id, capi_token");
         if (error) throw error;
+        insertedRows = inserted ?? [];
       }
       toast.success("Pixels salvos!");
+
+      // Verificação imediata para cada pixel com token (em background)
+      const tokensToCheck = insertedRows.filter((r) => r.capi_token);
+      if (tokensToCheck.length > 0) {
+        toast.info(`Verificando ${tokensToCheck.length} token(s)...`);
+        Promise.all(
+          tokensToCheck.map((r) =>
+            supabase.functions.invoke("pixel-token-health", {
+              body: { pixel_row_id: r.id },
+            })
+          )
+        )
+          .then(() => {
+            toast.success("Verificação de tokens concluída");
+            loadPixels();
+          })
+          .catch(() => {
+            // silencioso — cron diário pega depois
+          });
+      }
+
       loadPixels();
     } catch (err) {
       toast.error("Erro ao salvar pixels");
