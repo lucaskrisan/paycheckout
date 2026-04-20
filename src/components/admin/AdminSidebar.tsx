@@ -29,6 +29,7 @@ import {
   Tag,
   ClipboardList,
   Sparkles,
+  Target,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -82,6 +83,11 @@ const analiseItems = [
   { title: "Analytics", url: "/admin/analytics", icon: Activity },
   { title: "Métricas", url: "/admin/metrics", icon: TrendingUp },
   { title: "Financeiro", url: "/admin/financeiro", icon: Wallet },
+];
+
+// Item exclusivo super_admin dentro de Análise
+const analiseSuperAdminOnly = [
+  { title: "Pixel", url: "/admin/pixel", icon: Target },
 ];
 
 // 5. CONFIGURAÇÕES — collapsible, menos frequente
@@ -217,7 +223,18 @@ export function AdminSidebar() {
         {/* 4. ANÁLISE */}
         <SidebarGroup>
           <SidebarGroupLabel>{renderSectionLabel("Análise")}</SidebarGroupLabel>
-          <SidebarGroupContent>{renderItems(analiseItems)}</SidebarGroupContent>
+          <SidebarGroupContent>
+            {renderItems(
+              isSuperAdmin
+                ? [
+                    analiseItems[0],
+                    analiseItems[1],
+                    ...analiseSuperAdminOnly,
+                    analiseItems[2],
+                  ]
+                : analiseItems
+            )}
+          </SidebarGroupContent>
         </SidebarGroup>
 
         {/* 5. CONFIGURAÇÕES (collapsible) */}
