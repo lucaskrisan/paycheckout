@@ -82,6 +82,44 @@ function buildEmailHtml(
   `;
 }
 
+function buildEmailText(
+  cart: any,
+  product: any,
+  finalUrl: string,
+  companyName: string,
+  config: ProducerConfig,
+  isSecondReminder: boolean
+) {
+  const productName = product?.name || "seu produto";
+  const productPrice = cart.product_price || product?.price || 0;
+  const heading = isSecondReminder
+    ? "Última chance! Seu carrinho vai expirar"
+    : config.email_heading;
+  const greeting = `Olá${cart.customer_name ? ` ${cart.customer_name}` : ''},`;
+  const intro = isSecondReminder
+    ? "Este é seu último lembrete! Seu carrinho ainda está esperando, mas não por muito tempo."
+    : "Notamos que você não finalizou sua compra. Seu carrinho ainda está esperando por você!";
+  const footerExtra = isSecondReminder
+    ? " Este é o último lembrete — você não receberá mais mensagens."
+    : "";
+
+  return [
+    heading,
+    "",
+    greeting,
+    "",
+    intro,
+    "",
+    `${productName} — R$ ${Number(productPrice).toFixed(2)}`,
+    "",
+    `${config.email_button_text}: ${finalUrl}`,
+    "",
+    "Se você já finalizou sua compra, por favor ignore este e-mail.",
+    "",
+    `Você recebeu este e-mail porque iniciou uma compra em ${companyName}.${footerExtra}`,
+  ].join("\n");
+}
+
 function buildCheckoutUrl(cart: any, baseUrl: string, channel: string): string {
   let checkoutUrl = cart.checkout_url || cart.page_url || `${baseUrl}/checkout/${cart.product_id}`;
   const params = new URLSearchParams();
@@ -343,6 +381,7 @@ async function processReminders(
         : config.email_subject;
 
       const html = buildEmailHtml(cart, product, finalUrl, companyName, config, isSecond);
+      const text = buildEmailText(cart, product, finalUrl, companyName, config, isSecond);
 
       let emailStatus = "error";
 
@@ -358,6 +397,7 @@ async function processReminders(
             sender_domain: SENDER_DOMAIN,
             subject,
             html,
+            text,
             purpose: "transactional",
             label: reminderLabel,
             idempotency_key: `cart-recovery-${isSecond ? "2nd" : "1st"}-${cart.id}`,
