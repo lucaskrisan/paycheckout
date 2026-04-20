@@ -76,7 +76,6 @@ const MariaAI = lazy(() => import("./pages/admin/MariaAI"));
 const AbandonedCartDetail = lazy(() => import("./pages/admin/AbandonedCartDetail"));
 const CartControl = lazy(() => import("./pages/admin/CartControl"));
 const EmailTemplates = lazy(() => import("./pages/admin/EmailTemplates"));
-const Pixel = lazy(() => import("./pages/admin/Pixel"));
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
     <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -163,7 +162,6 @@ const App = () => (
                 <Route path="verification-review" element={<VerificationReview />} />
                 <Route path="maria-ia" element={<MariaAI />} />
                 <Route path="email-templates" element={<EmailTemplates />} />
-                <Route path="pixel" element={<Pixel />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
