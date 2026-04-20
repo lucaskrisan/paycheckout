@@ -1,82 +1,95 @@
 
 
-# Ajustes finais — Cadastro direto + Verificação automática do pixel órfão
+# Limpeza do painel `/admin/pixel` — corrigida com bug encontrado
 
-## Resposta às suas perguntas
+## 🐛 Bug crítico descoberto na varredura
 
-### 1. Cadastrar direto em Produtos funciona automático?
-**Sim.** Cola Pixel ID + Token na aba Pixels do produto → próximo evento já dispara dual fire (browser + servidor) → painel `/admin/pixel` reflete sozinho. Os 2 crons rodam em background mantendo `token_status` e `last_event_at` atualizados.
+A tabela `pixel_events` **NÃO tem coluna `pixel_id`** — só tem `product_id`. Isso significa que **é tecnicamente impossível** atribuir eventos a um pixel específico quando há 2 pixels no mesmo produto. Os eventos são gravados sem saber pra qual pixel pertencem.
 
-### 2. Por que o pixel órfão tá sem verificação se já tem token?
-Investiguei o banco e descobri 2 problemas:
+**Implicação:** o plano original (de agrupar eventos por `pixel_id` na RPC) **não funciona** sem antes adicionar essa coluna.
 
-**Problema A — Cron de health check nunca rodou ainda.**
-Os 3 pixels existentes estão com `token_status = 'unknown'` e `last_health_check_at = NULL`. Significa que o cron diário foi agendado pra rodar **8h da manhã**, mas como ele acabou de ser criado, ainda não chegou o horário. **Só vai verificar amanhã às 8h.**
+## Estado real do banco hoje
 
-**Problema B — Você tá vendo pixel de outro produtor.**
-Tem 3 pixels no banco:
-- `4374452939493191` (seu pixel órfão, produto `35621f66...`)
-- `25118489994495137` (de outro produtor, em 2 produtos)
+| Pixel | Produto | Token | Último evento |
+|-------|---------|-------|--------------|
+| `25118489994495137` | Produto A | ❌ invalid | 7 dias |
+| `25118489994495137` | Produto B | ❌ invalid | 5 dias |
+| `4374452939493191` | Desafio 14 Dias | ❌ invalid | nunca registrado |
+| `26487693714174431` | Desafio 14 Dias | ❌ invalid | nunca registrado |
 
-A RPC `get_pixel_feedback_metrics` retorna **todos** sem filtrar por dono, então seu painel mostra os 3 misturados.
+**4 de 4 pixels com token inválido** (consequência confirmada da desabilitação da conta Meta). E o `last_event_at` está vazio nos novos porque o backend ainda não atualiza esse campo no insert de eventos.
 
-## Plano dos ajustes
+## Plano corrigido (3 fases)
 
-### Ajuste 1 — Verificação imediata no momento do cadastro
-Quando você (ou qualquer produtor) salva token novo na aba Pixels do produto, em vez de esperar o cron das 8h:
-- Chama na hora a Edge Function `pixel-token-health` filtrada pra aquele pixel específico
-- Em ~2 segundos a coluna `token_status` vira `'healthy'` ou `'invalid'`
-- Card no painel já mostra ✅ ou ❌ imediatamente
+### Fase 1 — Banco: adicionar `pixel_id` em `pixel_events`
 
-**Implementação:**
-- Edge Function `pixel-token-health` ganha parâmetro opcional `pixel_row_id` — se vier, testa só esse, senão testa todos (mantém comportamento do cron)
-- Frontend da aba Pixels (em `ProductEdit.tsx` ou similar) chama `supabase.functions.invoke('pixel-token-health', { body: { pixel_row_id } })` após salvar
+**Migration:**
+1. `ALTER TABLE pixel_events ADD COLUMN pixel_id text` (nullable)
+2. Backfill: para eventos antigos onde o produto tem **só 1 pixel**, popular `pixel_id` com o pixel daquele produto. Onde tem 2+ pixels, deixar `NULL` (ambíguo).
+3. Índice: `CREATE INDEX idx_pixel_events_pixel_id ON pixel_events(pixel_id, created_at DESC)`
+4. Atualizar `get_pixel_feedback_metrics` para agrupar por `pixel_id` em vez de `product_id`. Eventos com `pixel_id NULL` (legacy) ficam num bucket "não atribuído".
+5. Atualizar `get_pixel_feedback_metrics` para calcular `last_event_at` em tempo real via `MAX(pe.created_at)`.
 
-### Ajuste 2 — Botão "Verificar agora" no card do painel
-No `PixelComparisonCard.tsx`, ao lado do badge de saúde, adicionar botão pequeno `[🔄 Verificar agora]` que dispara a mesma função e atualiza o painel. Útil quando você quer testar manualmente sem esperar o cron.
+### Fase 2 — Backend: passar `pixel_id` ao gravar evento
 
-### Ajuste 3 — Filtrar painel pra mostrar só seus pixels
-Atualizar a RPC `get_pixel_feedback_metrics` pra retornar **apenas pixels de produtos cujo dono é super admin** (ou seja, seus produtos). Pixels de produtores comuns continuam funcionando nos painéis deles, só somem do seu painel exclusivo.
+Locais que inserem em `pixel_events`:
+- `facebook-capi/index.ts` — já recebe `pixel_id` no payload, só falta gravar
+- `useFacebookPixel.ts` (frontend) — já tem o `pixel_id` em mãos quando dispara
 
-**Filtro SQL:** `WHERE EXISTS (SELECT 1 FROM user_roles WHERE user_id = p.user_id AND role = 'super_admin')` no JOIN com `products`.
+Adicionar `pixel_id` em ambos os inserts.
 
-**Resultado:** painel passa a mostrar **só seu pixel órfão `4374452939493191`** (1 card) em vez dos 3 atuais.
+### Fase 3 — Frontend: limpar os componentes confusos
 
-### Ajuste 4 — Disparar verificação retroativa dos pixels existentes
-Logo após a migration, chamar a Edge Function uma vez pra processar os 3 pixels já cadastrados, pra eles saírem do estado `unknown` imediatamente sem esperar 8h.
+- **`PixelHealthBanner.tsx`** → vira **"Diagnóstico de saúde geral"** consolidado:
+  ```text
+  🔴 Saúde geral: AÇÃO NECESSÁRIA
+  ❌ 4 de 4 pixels com token inválido
+  ⚠️  1 produto com pixels duplicados
+  📭 12 produtos ativos sem pixel cadastrado
+  ```
+- **`PixelSuggestions.tsx`** → removido (texto vai pro banner consolidado)
+- **`PixelBalanceCard.tsx`** → quando 2+ pixels apontam pro mesmo produto, mostrar aviso amarelo em vez de barras enganosas
+- **`PixelComparisonChart.tsx`** → esconder quando todos os pixels compartilham o mesmo produto (não há comparação válida)
+- **`src/pages/admin/Pixel.tsx`** → reordenar:
+  ```text
+  1. 🩺 Diagnóstico de saúde geral
+  2. ⚙️  Pixels cadastrados (cards individuais)
+  3. 📊 Comparação visual (só se aplicável)
+  4. 📭 Produtos sem pixel
+  5. 📡 Feed ao vivo
+  ```
 
-## Arquivos a editar
+## Outros bugs menores encontrados
 
-**Backend:**
-- **Migration:** atualizar `get_pixel_feedback_metrics` com filtro de super admin
-- **Edge Function** `pixel-token-health/index.ts`: aceitar parâmetro opcional `pixel_row_id`
+- `PixelHealthBanner.tsx` (linha 11): cálculo de "stale" usa `last_event_at` que está sempre `null` para os pixels novos → sempre vai mostrar 0 stale mesmo quando real. Será corrigido na Fase 1 (RPC calcula `last_event_at` em runtime).
+- `PixelComparisonChart.tsx`: trunca o `pixel_id` em 14 chars + `…` (linha 36) — ok, mas com 2 pixels iguais no mesmo produto fica idêntico visualmente. Será resolvido junto com Fase 3.
 
-**Frontend:**
-- `src/components/admin/pixel/PixelComparisonCard.tsx`: adicionar botão "Verificar agora"
-- `src/pages/admin/ProductEdit.tsx` (ou componente da aba Pixels): chamar verificação automática após salvar token
+## Arquivos editados
 
-**Pós-deploy (manual via Edge Function):**
-- Trigger único de `pixel-token-health` sem parâmetro pra testar todos os 3 pixels existentes
+- **Migration:** adicionar coluna `pixel_id`, backfill, índice, atualizar RPC
+- `supabase/functions/facebook-capi/index.ts` — gravar `pixel_id` no insert
+- `src/hooks/useFacebookPixel.ts` — gravar `pixel_id` no insert browser
+- `src/components/admin/pixel/PixelHealthBanner.tsx` — virar diagnóstico consolidado
+- `src/components/admin/pixel/PixelBalanceCard.tsx` — detectar duplicatas
+- `src/components/admin/pixel/PixelComparisonChart.tsx` — esconder se irrelevante
+- `src/pages/admin/Pixel.tsx` — reordenar e remover `PixelSuggestions`
+- `src/components/admin/pixel/PixelSuggestions.tsx` — apagar (consolidado no banner)
 
 ## O que NÃO vou mexer
 
-- ❌ Cron schedule (continua diário 8h pra manutenção contínua)
-- ❌ Cron `pixel-activity-monitor` (continua a cada 30min)
-- ❌ `useFacebookPixel.ts` e `facebook-capi/index.ts`
-- ❌ Painel Tracking dos produtores
+- ❌ Lógica de envio do CAPI pra Meta (`facebook-capi` envia normal pra Meta — só adiciona uma coluna no log local)
+- ❌ Cron `pixel-token-health`
+- ❌ Componentes fora do `/admin/pixel`
 
-## Resultado prático após executar
+## Resultado prático
 
-1. Você abre `/admin/pixel` → vê **só o seu pixel órfão** (1 card limpo, sem confusão)
-2. Em ~5 segundos após executar, o card mostra `Token: ✅ Healthy` (ou ❌ se tiver problema real)
-3. Próxima vez que cadastrar pixel novo em qualquer produto → **verificação acontece na hora do salvar**, sem esperar 24h
-4. Botão `[🔄 Verificar agora]` disponível no painel pra checagem manual a qualquer momento
+- Cada card vai mostrar **eventos reais e separados** do pixel certo (eventos novos a partir do deploy)
+- O painel vai dizer **com clareza** que os 4 tokens estão inválidos por causa da Meta — sem barras enganosas
+- "Último evento" passa a mostrar tempo real
+- Aviso amarelo te alerta sobre o produto com 2 pixels duplicados
+- Topo da página vira **1 card resumo** em vez de 3 componentes soltos
 
 ## Custo
 
-- Lovable AI: R$ 0,00
-- Migrations: 1 (atualiza 1 RPC)
-- Edge Functions: 1 (atualizar `pixel-token-health`)
-- Componentes: 2 edits
-- Tempo: ~4 min
+- 1 migration · 2 edge/hook edits · 4 component edits · 1 component deletion · ~7 min
 
