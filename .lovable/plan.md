@@ -1,121 +1,75 @@
 
 
-# Briefing Completo — Nina Tracking™ Dashboard
+# O que falta — Sprints 2 e 3 do Nina Tracking™
 
-Painel `/admin/tracking` será reconstruído com visual premium assinado pela Nina (branding puro, zero IA). Tudo client-side, zero migrations, zero custo de tokens.
-
----
-
-## Sprint 1 — Esqueleto premium + Branding Nina
-
-### Header Nina Tracking™
-- Avatar circular da Nina (40px, borda dourada com glow sutil)
-- Nome "Nina Tracking™" em SF Pro Display, gradiente teal `#14B8A6` → gold `#D4AF37`
-- Tagline "Inteligência de conversão ao vivo" em cinza claro
-- Badge ● LIVE pulsante verde
-- Período pills (1h / 6h / 24h / 7d) à direita
-- Filtro de produto dropdown
-
-### Hero strip — 4 KPIs reais com watermark `nina ✦`
-1. **Eventos/min** — número grande, seta tendência ↑↓ vs 5min anteriores, sparkline de fundo
-2. **EMQ Score Live** — ring chart 0–10 (verde >8, amarelo 6–8, vermelho <6) — fonte: `emq_snapshots`
-3. **Visitantes Ativos** — count em tempo real com pulse verde — fonte: `useCheckoutPresence`
-4. **Receita Hoje** — R$ formatado, delta % vs ontem em badge — fonte: agregação `orders` paid
-
-Cada card tem `nina ✦` em 10px no canto inferior direito (opacity 30%) — selo de marca.
-
-### Fluxo de Eventos enriquecido
-- Cards com bandeira do país emoji (🇧🇷) + cidade — fonte: `window.cfGeo` via `useGeo()`
-- Nome do cliente + evento colorido + produto + valor
-- Cards entram do topo com animação framer-motion (200ms ease-out)
-- Purchase events: glow dourado + ka-ching automático (`notificationSounds.ts`)
-- Toast Nina no Purchase: "Nina detectou uma venda 🎉 R$ {valor}"
-
-### Smart Alerts (3 regras)
-- 🔴 Queda >50% no volume vs hora anterior
-- 🟡 CAPI offline >5min (sem `pixel_events` server_count recente)
-- 🟢 Tudo operacional
-- Dismissable com X
-
-### Toast de boas-vindas (1ª visita do dia)
-- "Bem-vindo de volta. Hoje já registrei {N} eventos pra você." — Nina
-- Avatar Nina no toast via wrapper `sonner`
-
-### Rodapé com selo Nina
-- Avatar mini + "Nina Tracking™ • Realtime ativo • {N} eventos na última hora"
+Sprint 1 está completo (header, KPIs, alerts, feed enriquecido, toasts Nina). Restam **Sprint 2** (visualização avançada) e **Sprint 3** (skills premium).
 
 ---
 
 ## Sprint 2 — Visualização avançada
 
-5. **Funil Live horizontal** — PageView → ViewContent → InitiateCheckout → AddPaymentInfo → Purchase, com % de conversão entre etapas em pills douradas
-6. **Heatmap 7d × 24h** — "Quando vendemos mais", escala dourada de intensidade, tooltip com count exato
-7. **EMQ ring chart colorido** no hero (refinamento visual)
+### 1. Funil Live horizontal
+- 5 etapas: PageView → ViewContent → InitiateCheckout → AddPaymentInfo → Purchase
+- Barras horizontais com largura proporcional ao volume
+- Pills douradas entre etapas mostrando % de conversão
+- Cores graduais teal → gold do topo ao fundo
+- Watermark `nina ✦` no canto
+- Fonte: agregação de `pixel_events` por `event_name` no período selecionado
+- Componente: `src/components/admin/tracking/LiveFunnel.tsx`
+
+### 2. Heatmap 7d × 24h "Quando vendemos mais"
+- Grid 7 linhas (dias S/T/Q/Q/S/S/D) × 24 colunas (horas 00–23)
+- Escala dourada de intensidade (do bg escuro até gold puro)
+- Tooltip ao hover: "Terça 20h — 12 vendas, R$ 8.450"
+- Fonte: `pixel_events` filtrados por `event_name=Purchase` últimos 7 dias
+- Componente: `src/components/admin/tracking/ConversionHeatmap.tsx`
+
+### 3. EMQ Score ring chart colorido (refinamento)
+- Substitui o número simples atual no card EMQ do hero
+- Ring SVG circular animado 0–10
+- Verde (>8) / amarelo (6–8) / vermelho (<6)
+- Número grande no centro + label "Excelente/Bom/Atenção"
+- Refatorar dentro de `HeroKPIStrip.tsx`
 
 ---
 
-## Sprint 3 — Skills premium (sem IA)
+## Sprint 3 — Skills premium (zero IA)
 
-8. **Modo TV** — botão fullscreen + fonte +30%, ka-ching mais alto, ideal pra monitor de sala
-9. **Comparativo "vs período anterior"** nos KPIs — delta % colorido em todos os cards do hero
+### 4. Modo TV
+- Botão `[📺 TV Mode]` no header (ao lado das pills de período)
+- Ao clicar: `requestFullscreen()` + classe `tv-mode` no root do dashboard
+- CSS: fonte +30%, padding maior, ka-ching com volume +20%
+- Esc sai do modo
+- Ideal pra deixar num monitor da sala da equipe
 
----
-
-## O que foi descartado (decisões finais)
-
-- ❌ Sidebar "Live Feed / Analytics / Ledger / Vault" — features inexistentes
-- ❌ Card "Nina AI Insight" com IA real — Nina vira só branding visual
-- ❌ Botão "Aplicar Estratégia" — risco de mexer em Meta Ads
-- ❌ Rodapé "Node: BRA-01" e versão "v2.4.0-TacticalLive" — marketing falso
-- ❌ Qualquer chamada à edge function `nina-chat` neste painel — zero IA, zero custo
-
----
-
-## Detalhes técnicos
-
-**Arquivo principal:**
-- `src/components/admin/PixelEventsDashboard.tsx` — substitui conteúdo atual
-
-**Componentes novos:**
-- `src/components/admin/tracking/NinaTrackingHeader.tsx` — header com avatar + gradiente
-- `src/components/admin/tracking/NinaWatermark.tsx` — selo `nina ✦` reutilizável
-- `src/components/admin/tracking/NinaToast.tsx` — wrapper `sonner` com avatar custom
-- `src/components/admin/tracking/HeroKPIStrip.tsx` — 4 KPIs
-- `src/components/admin/tracking/LiveFunnel.tsx` — Sprint 2
-- `src/components/admin/tracking/ConversionHeatmap.tsx` — Sprint 2
-- `src/components/admin/tracking/SmartAlertsPanel.tsx` — Sprint 1
-- `src/components/admin/tracking/EventFeedCard.tsx` — card individual com bandeira/glow
-
-**Asset novo:**
-- `src/assets/nina-avatar.png` — foto/ilustração da Nina (já existe na identidade)
-
-**Reutilizado (zero código novo):**
-- `src/lib/notificationSounds.ts` — ka-ching pronto
-- `src/hooks/useGeo.ts` + `window.cfGeo` — geo pronto
-- `src/hooks/useCheckoutPresence.ts` — visitantes ativos
-- `sonner` (já em uso) — toasts
-
-**Banco de dados:**
-- Zero migrations novas
-- Tabelas usadas: `pixel_events`, `emq_snapshots`, `orders`, `products`
-- Realtime via `postgres_changes` (já em uso)
-
-**Rota:** `/admin/tracking` (sem mudança)
-
-**Tema:** Tactical Glassmorphism — bg `#0F172A`, accents teal `#14B8A6` + gold `#D4AF37`
-
-**Custo de IA:** R$ 0,00
+### 5. Comparativo "vs período anterior" nos KPIs
+- Cada um dos 4 cards do hero ganha badge de delta colorido
+- Eventos/min: já tem (vs 5min) — manter
+- EMQ: vs média da semana anterior
+- Visitantes: vs mesma hora ontem
+- Receita: vs ontem (já tem) — manter
+- Verde se ↑, vermelho se ↓, cinza se igual
+- Refatorar dentro de `HeroKPIStrip.tsx`
 
 ---
 
-## Ordem de execução sugerida
+## O que NÃO entra (mantido descartado)
+
+- ❌ Sidebar nova
+- ❌ Card "Nina AI Insight" com IA real
+- ❌ Botão "Aplicar Estratégia"
+- ❌ Rodapé com "Node BRA-01" / versão fake
+
+---
+
+## Ordem sugerida
 
 ```text
-Sprint 1 (1 sessão) — funcional + Nina branding
-  └─ Entrega 80% do visual do mockup Stitch com dados reais
-Sprint 2 (1 sessão) — funil + heatmap + EMQ ring
-Sprint 3 (1 sessão) — modo TV + comparativos
+Sprint 2 (1 sessão) — Funil + Heatmap + EMQ ring
+Sprint 3 (1 sessão) — Modo TV + Comparativos
 ```
 
-**Começamos pelo Sprint 1?**
+**Custo de IA: R$ 0,00 — tudo client-side, zero migrations, zero edge functions.**
+
+**Posso executar o Sprint 2 agora?**
 
