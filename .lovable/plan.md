@@ -1,95 +1,70 @@
 
 
-# Limpeza do painel `/admin/pixel` — corrigida com bug encontrado
+# Painel `/admin/pixel` minimalista — só o essencial
 
-## 🐛 Bug crítico descoberto na varredura
+## O que fica
 
-A tabela `pixel_events` **NÃO tem coluna `pixel_id`** — só tem `product_id`. Isso significa que **é tecnicamente impossível** atribuir eventos a um pixel específico quando há 2 pixels no mesmo produto. Os eventos são gravados sem saber pra qual pixel pertencem.
+```text
+┌─────────────────────────────────────────────────┐
+│ 🩺 Diagnóstico de saúde geral                   │
+│    - X tokens inválidos                         │
+│    - Y produtos com pixels duplicados           │
+└─────────────────────────────────────────────────┘
+┌──────────────────────┬──────────────────────────┐
+│ Card por pixel       │ Card por pixel           │
+│ - ID                 │ - ID                     │
+│ - Produto            │ - Produto                │
+│ - Status do token    │ - Status do token        │
+│ - Eventos REAIS (7d) │ - Eventos REAIS (7d)     │
+│ - Purchases (7d)     │ - Purchases (7d)         │
+│ - [Verificar][Token] │ - [Verificar][Token]     │
+└──────────────────────┴──────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│ 📡 Feed de eventos ao vivo                      │
+└─────────────────────────────────────────────────┘
+```
 
-**Implicação:** o plano original (de agrupar eventos por `pixel_id` na RPC) **não funciona** sem antes adicionar essa coluna.
+## O que sai
 
-## Estado real do banco hoje
+- ❌ "Produtos sem pixel cadastrado" (componente `ProductsWithoutPixel.tsx`)
+- ❌ Linha "Z produtos sem pixel" do banner de saúde geral
+- ❌ Card "Equilíbrio entre pixels" (`PixelBalanceCard.tsx`)
+- ❌ Gráfico "Comparação visual entre pixels" (`PixelComparisonChart.tsx`)
+- ❌ Barra "Learning Phase" dentro dos cards (`PixelLearningProgress.tsx`)
+- ❌ Tabela EMQ vazia (só mostrar quando houver dados reais)
 
-| Pixel | Produto | Token | Último evento |
-|-------|---------|-------|--------------|
-| `25118489994495137` | Produto A | ❌ invalid | 7 dias |
-| `25118489994495137` | Produto B | ❌ invalid | 5 dias |
-| `4374452939493191` | Desafio 14 Dias | ❌ invalid | nunca registrado |
-| `26487693714174431` | Desafio 14 Dias | ❌ invalid | nunca registrado |
+## Correção crítica de dado (mantida do plano anterior)
 
-**4 de 4 pixels com token inválido** (consequência confirmada da desabilitação da conta Meta). E o `last_event_at` está vazio nos novos porque o backend ainda não atualiza esse campo no insert de eventos.
-
-## Plano corrigido (3 fases)
-
-### Fase 1 — Banco: adicionar `pixel_id` em `pixel_events`
-
-**Migration:**
-1. `ALTER TABLE pixel_events ADD COLUMN pixel_id text` (nullable)
-2. Backfill: para eventos antigos onde o produto tem **só 1 pixel**, popular `pixel_id` com o pixel daquele produto. Onde tem 2+ pixels, deixar `NULL` (ambíguo).
-3. Índice: `CREATE INDEX idx_pixel_events_pixel_id ON pixel_events(pixel_id, created_at DESC)`
-4. Atualizar `get_pixel_feedback_metrics` para agrupar por `pixel_id` em vez de `product_id`. Eventos com `pixel_id NULL` (legacy) ficam num bucket "não atribuído".
-5. Atualizar `get_pixel_feedback_metrics` para calcular `last_event_at` em tempo real via `MAX(pe.created_at)`.
-
-### Fase 2 — Backend: passar `pixel_id` ao gravar evento
-
-Locais que inserem em `pixel_events`:
-- `facebook-capi/index.ts` — já recebe `pixel_id` no payload, só falta gravar
-- `useFacebookPixel.ts` (frontend) — já tem o `pixel_id` em mãos quando dispara
-
-Adicionar `pixel_id` em ambos os inserts.
-
-### Fase 3 — Frontend: limpar os componentes confusos
-
-- **`PixelHealthBanner.tsx`** → vira **"Diagnóstico de saúde geral"** consolidado:
-  ```text
-  🔴 Saúde geral: AÇÃO NECESSÁRIA
-  ❌ 4 de 4 pixels com token inválido
-  ⚠️  1 produto com pixels duplicados
-  📭 12 produtos ativos sem pixel cadastrado
-  ```
-- **`PixelSuggestions.tsx`** → removido (texto vai pro banner consolidado)
-- **`PixelBalanceCard.tsx`** → quando 2+ pixels apontam pro mesmo produto, mostrar aviso amarelo em vez de barras enganosas
-- **`PixelComparisonChart.tsx`** → esconder quando todos os pixels compartilham o mesmo produto (não há comparação válida)
-- **`src/pages/admin/Pixel.tsx`** → reordenar:
-  ```text
-  1. 🩺 Diagnóstico de saúde geral
-  2. ⚙️  Pixels cadastrados (cards individuais)
-  3. 📊 Comparação visual (só se aplicável)
-  4. 📭 Produtos sem pixel
-  5. 📡 Feed ao vivo
-  ```
-
-## Outros bugs menores encontrados
-
-- `PixelHealthBanner.tsx` (linha 11): cálculo de "stale" usa `last_event_at` que está sempre `null` para os pixels novos → sempre vai mostrar 0 stale mesmo quando real. Será corrigido na Fase 1 (RPC calcula `last_event_at` em runtime).
-- `PixelComparisonChart.tsx`: trunca o `pixel_id` em 14 chars + `…` (linha 36) — ok, mas com 2 pixels iguais no mesmo produto fica idêntico visualmente. Será resolvido junto com Fase 3.
+Atualizar a RPC `get_pixel_feedback_metrics` com **JOIN estrito** por `pe.pixel_id = pp.pixel_id`. Eventos órfãos legacy (com `pixel_id NULL`) deixam de inflar os cards individuais. O pixel novo `26487693714174431` passa a mostrar **12 eventos reais** em vez dos 73 mil herdados.
 
 ## Arquivos editados
 
-- **Migration:** adicionar coluna `pixel_id`, backfill, índice, atualizar RPC
-- `supabase/functions/facebook-capi/index.ts` — gravar `pixel_id` no insert
-- `src/hooks/useFacebookPixel.ts` — gravar `pixel_id` no insert browser
-- `src/components/admin/pixel/PixelHealthBanner.tsx` — virar diagnóstico consolidado
-- `src/components/admin/pixel/PixelBalanceCard.tsx` — detectar duplicatas
-- `src/components/admin/pixel/PixelComparisonChart.tsx` — esconder se irrelevante
-- `src/pages/admin/Pixel.tsx` — reordenar e remover `PixelSuggestions`
-- `src/components/admin/pixel/PixelSuggestions.tsx` — apagar (consolidado no banner)
+- **1 migration** — RPC com JOIN estrito por `pixel_id`, sem fallback por produto
+- `src/pages/admin/Pixel.tsx` — remover `ProductsWithoutPixel`, `PixelBalanceCard`, `PixelComparisonChart`
+- `src/components/admin/pixel/PixelHealthBanner.tsx` — remover linha "produtos sem pixel"
+- `src/components/admin/pixel/PixelComparisonCard.tsx` — remover Learning Phase + esconder EMQ vazia
+
+## Apagar
+
+- `src/components/admin/pixel/ProductsWithoutPixel.tsx`
+- `src/components/admin/pixel/PixelBalanceCard.tsx`
+- `src/components/admin/pixel/PixelComparisonChart.tsx`
+- `src/components/admin/pixel/PixelLearningProgress.tsx`
 
 ## O que NÃO vou mexer
 
-- ❌ Lógica de envio do CAPI pra Meta (`facebook-capi` envia normal pra Meta — só adiciona uma coluna no log local)
-- ❌ Cron `pixel-token-health`
-- ❌ Componentes fora do `/admin/pixel`
+- ❌ Lógica de disparo CAPI / pixel
+- ❌ Botões Verificar / Token
+- ❌ Feed ao vivo
+- ❌ Cron de health check
 
-## Resultado prático
+## Resultado
 
-- Cada card vai mostrar **eventos reais e separados** do pixel certo (eventos novos a partir do deploy)
-- O painel vai dizer **com clareza** que os 4 tokens estão inválidos por causa da Meta — sem barras enganosas
-- "Último evento" passa a mostrar tempo real
-- Aviso amarelo te alerta sobre o produto com 2 pixels duplicados
-- Topo da página vira **1 card resumo** em vez de 3 componentes soltos
+- 3 seções enxutas: **Diagnóstico → Cards → Feed**
+- Cards mostram **só a verdade** daquele pixel específico
+- Zero ruído visual, zero dado inflado
 
 ## Custo
 
-- 1 migration · 2 edge/hook edits · 4 component edits · 1 component deletion · ~7 min
+- 1 migration · 2 edits · 4 deleções · ~3 min
 
