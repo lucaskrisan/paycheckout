@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, XCircle, HelpCircle, Calendar, Activity, KeyRound } from "lucide-react";
+import { Calendar, Activity, KeyRound } from "lucide-react";
 import type { PixelMetric } from "@/pages/admin/Pixel";
 import PixelEMQTable from "./PixelEMQTable";
 import PixelLearningProgress from "./PixelLearningProgress";
