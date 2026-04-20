@@ -1635,9 +1635,12 @@ export type Database = {
           fire_on_boleto: boolean
           fire_on_pix: boolean
           id: string
+          last_event_at: string | null
+          last_health_check_at: string | null
           pixel_id: string
           platform: string
           product_id: string
+          token_status: string
           user_id: string | null
         }
         Insert: {
@@ -1647,9 +1650,12 @@ export type Database = {
           fire_on_boleto?: boolean
           fire_on_pix?: boolean
           id?: string
+          last_event_at?: string | null
+          last_health_check_at?: string | null
           pixel_id: string
           platform?: string
           product_id: string
+          token_status?: string
           user_id?: string | null
         }
         Update: {
@@ -1659,9 +1665,12 @@ export type Database = {
           fire_on_boleto?: boolean
           fire_on_pix?: boolean
           id?: string
+          last_event_at?: string | null
+          last_health_check_at?: string | null
           pixel_id?: string
           platform?: string
           product_id?: string
+          token_status?: string
           user_id?: string | null
         }
         Relationships: [
@@ -2645,6 +2654,7 @@ export type Database = {
         }
         Returns: Json
       }
+      get_pixel_feedback_metrics: { Args: { p_days?: number }; Returns: Json }
       get_revenue_summary: {
         Args: { p_user_id: string }
         Returns: {
@@ -2710,6 +2720,10 @@ export type Database = {
           p_customer_phone?: string
           p_payment_method?: string
         }
+        Returns: boolean
+      }
+      update_pixel_token: {
+        Args: { p_new_token: string; p_pixel_row_id: string }
         Returns: boolean
       }
       validate_coupon: {
