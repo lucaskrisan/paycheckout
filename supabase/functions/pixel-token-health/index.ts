@@ -1,5 +1,6 @@
 // Edge function: pixel-token-health
 // Cron diário 8h — testa cada token CAPI via Graph API e atualiza token_status
+// Aceita parâmetro opcional `pixel_row_id` para testar apenas um pixel específico
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -15,10 +16,29 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
   );
 
-  const { data: pixels, error } = await supabase
+  // Lê body opcional para verificar pixel específico
+  let pixelRowId: string | null = null;
+  try {
+    if (req.method === "POST") {
+      const body = await req.json().catch(() => ({}));
+      if (body?.pixel_row_id && typeof body.pixel_row_id === "string") {
+        pixelRowId = body.pixel_row_id;
+      }
+    }
+  } catch {
+    // ignora
+  }
+
+  let query = supabase
     .from("product_pixels")
     .select("id, pixel_id, capi_token")
     .not("capi_token", "is", null);
+
+  if (pixelRowId) {
+    query = query.eq("id", pixelRowId);
+  }
+
+  const { data: pixels, error } = await query;
 
   if (error) {
     return new Response(JSON.stringify({ error: error.message }), {
@@ -34,7 +54,6 @@ Deno.serve(async (req) => {
     if (!p.capi_token || !p.pixel_id) continue;
     let status: "healthy" | "invalid" = "invalid";
     try {
-      // Faz uma chamada leve ao Graph API para validar o token
       const url = `https://graph.facebook.com/v22.0/${p.pixel_id}?access_token=${encodeURIComponent(
         p.capi_token
       )}&fields=id,name`;
@@ -55,7 +74,12 @@ Deno.serve(async (req) => {
   }
 
   return new Response(
-    JSON.stringify({ checked: (pixels ?? []).length, healthy, invalid }),
+    JSON.stringify({
+      checked: (pixels ?? []).length,
+      healthy,
+      invalid,
+      mode: pixelRowId ? "single" : "batch",
+    }),
     { headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
 });
