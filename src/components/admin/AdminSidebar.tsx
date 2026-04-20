@@ -85,6 +85,11 @@ const analiseItems = [
   { title: "Financeiro", url: "/admin/financeiro", icon: Wallet },
 ];
 
+// Item exclusivo super_admin dentro de Análise
+const analiseSuperAdminOnly = [
+  { title: "Pixel", url: "/admin/pixel", icon: Target },
+];
+
 // 5. CONFIGURAÇÕES — collapsible, menos frequente
 const configItems = [
   { title: "Gateways", url: "/admin/gateway-management", icon: CreditCard },
