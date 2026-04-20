@@ -12,16 +12,21 @@ const json = (payload: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
+const MAX_ATTEMPTS_PER_CART = 2;
+const RETRY_COOLDOWN_MS = 6 * 60 * 60 * 1000; // 6 hours
+
 /**
  * whatsapp-abandon-cron
  *
- * Called by pg_cron every 15 minutes.
- * Two modes:
- * 1. Standard: Finds abandoned carts older than 30 min with a phone and no email sent
- * 2. Fallback: If email was sent 2h+ ago and NOT opened, tries WhatsApp as 2nd channel
+ * Runs every 15 min. For each abandoned cart:
+ *   - Skip if already recovered (paid).
+ *   - Skip if already attempted MAX_ATTEMPTS_PER_CART times (sent OR failed).
+ *   - Skip if last attempt was < 6h ago (cooldown for retries).
+ *   - Otherwise: build prefilled checkout link and dispatch WhatsApp.
  *
- * FIX v2: Dedup now checks whatsapp_send_log (not email_logs).
- *         Pre-send recovery check prevents messaging paid customers.
+ * The link sent uses the original `checkout_url` + customer prefill query params,
+ * so the customer lands in the checkout with name/email/phone/cpf already filled
+ * and just clicks "Pagar com Pix" to regenerate the QR.
  */
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -34,100 +39,95 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+    const fifteenMinAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
     const twentyFourHAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
 
-    // ── MODE 1: Standard — carts with phone, no email sent yet ──
-    const { data: standardCarts, error: cartError } = await supabase
+    // Pull candidate carts (15min .. 24h old, has phone, not recovered)
+    const { data: carts, error: cartError } = await supabase
       .from("abandoned_carts")
-      .select("id, customer_phone, customer_name, customer_email, product_id, user_id, email_recovery_status, email_recovery_sent_at")
+      .select("id, customer_phone, customer_name, customer_email, customer_cpf, product_id, user_id, checkout_url, page_url, utm_source, utm_medium, utm_campaign, utm_content, utm_term")
       .eq("recovered", false)
       .not("customer_phone", "is", null)
-      .is("email_recovery_sent_at", null)
-      .lt("created_at", thirtyMinAgo)
+      .lt("created_at", fifteenMinAgo)
       .gt("created_at", twentyFourHAgo)
-      .limit(30);
+      .limit(50);
 
     if (cartError) {
-      console.error("Error fetching standard carts:", cartError);
+      console.error("Error fetching carts:", cartError);
       return json({ error: "Failed to fetch carts" }, 500);
     }
 
-    // ── MODE 2: Fallback — email sent 2h+ ago, not opened, has phone ──
-    const { data: fallbackCarts, error: fallbackError } = await supabase
-      .from("abandoned_carts")
-      .select("id, customer_phone, customer_name, customer_email, product_id, user_id, email_recovery_status, email_recovery_sent_at")
-      .eq("recovered", false)
-      .not("customer_phone", "is", null)
-      .eq("email_recovery_status", "sent")
-      .lt("email_recovery_sent_at", twoHoursAgo)
-      .gt("created_at", twentyFourHAgo)
-      .limit(20);
-
-    if (fallbackError) {
-      console.error("Error fetching fallback carts:", fallbackError);
-    }
-
-    // Check which fallback emails were NOT opened (no opened_at in email_logs)
-    const eligibleFallbacks: any[] = [];
-    for (const cart of fallbackCarts || []) {
-      if (!cart.customer_email) continue;
-      const { data: emailLog } = await supabase
-        .from("email_logs")
-        .select("opened_at")
-        .eq("to_email", cart.customer_email)
-        .eq("product_id", cart.product_id)
-        .in("source", ["abandoned_cart_cron", "abandoned_cart_cron_2nd"])
-        .not("opened_at", "is", null)
-        .limit(1);
-
-      // If email was opened, skip — recovery via email is working
-      if (emailLog && emailLog.length > 0) continue;
-      eligibleFallbacks.push(cart);
-    }
-
-    const allCarts = [...(standardCarts || []), ...eligibleFallbacks];
-
-    if (allCarts.length === 0) {
+    if (!carts || carts.length === 0) {
       return json({ processed: 0, reason: "no_carts" });
     }
 
-    // ── FIX: Dedup using whatsapp_send_log (correct table) ──
-    const cartIds = allCarts.map((c) => c.id);
-    const { data: alreadySent } = await supabase
+    // Fetch all attempt logs for these carts in one shot (sent + failed)
+    const cartIds = carts.map((c) => c.id);
+    const { data: logs } = await supabase
       .from("whatsapp_send_log")
-      .select("order_id, customer_phone")
+      .select("order_id, customer_phone, status, created_at")
       .eq("template_category", "abandono")
-      .eq("status", "sent")
+      .in("status", ["sent", "failed"])
       .in("order_id", cartIds);
 
-    const sentCartIds = new Set<string>();
-    const phoneProductSent = new Set<string>();
-    for (const log of alreadySent || []) {
-      if (log.order_id) sentCartIds.add(log.order_id);
+    // Index attempts by cart id and by phone+product
+    const attemptsByCart = new Map<string, { count: number; lastAt: number }>();
+    const attemptsByPhoneProduct = new Map<string, { count: number; lastAt: number }>();
+
+    for (const log of logs || []) {
+      const ts = log.created_at ? new Date(log.created_at).getTime() : 0;
+      if (log.order_id) {
+        const cur = attemptsByCart.get(log.order_id) || { count: 0, lastAt: 0 };
+        cur.count++;
+        cur.lastAt = Math.max(cur.lastAt, ts);
+        attemptsByCart.set(log.order_id, cur);
+      }
       if (log.customer_phone) {
-        // Also build phone-level dedup from the same query
-        const cart = allCarts.find((c) => c.id === log.order_id);
-        if (cart) phoneProductSent.add(`${log.customer_phone}::${cart.product_id}`);
+        const cart = carts.find((c) => c.id === log.order_id);
+        if (cart) {
+          const key = `${log.customer_phone}::${cart.product_id}`;
+          const cur = attemptsByPhoneProduct.get(key) || { count: 0, lastAt: 0 };
+          cur.count++;
+          cur.lastAt = Math.max(cur.lastAt, ts);
+          attemptsByPhoneProduct.set(key, cur);
+        }
       }
     }
 
-    const pendingCarts = allCarts.filter((c) => {
-      if (sentCartIds.has(c.id)) return false;
-      if (phoneProductSent.has(`${c.customer_phone}::${c.product_id}`)) return false;
-      return true;
-    });
-
+    const now = Date.now();
     let dispatched = 0;
-    let fallbackCount = 0;
     let skippedRecovered = 0;
-    const fallbackIds = new Set(eligibleFallbacks.map((c) => c.id));
+    let skippedMaxAttempts = 0;
+    let skippedCooldown = 0;
 
-    for (const cart of pendingCarts) {
+    for (const cart of carts) {
       if (!cart.user_id) continue;
 
-      // ── FIX: Pre-send recovery check — avoid messaging customers who already paid ──
+      // Dedup by cart id
+      const cartAttempts = attemptsByCart.get(cart.id);
+      const phoneKey = `${cart.customer_phone}::${cart.product_id}`;
+      const phoneAttempts = attemptsByPhoneProduct.get(phoneKey);
+
+      const totalAttempts = Math.max(
+        cartAttempts?.count || 0,
+        phoneAttempts?.count || 0,
+      );
+      const lastAt = Math.max(
+        cartAttempts?.lastAt || 0,
+        phoneAttempts?.lastAt || 0,
+      );
+
+      if (totalAttempts >= MAX_ATTEMPTS_PER_CART) {
+        skippedMaxAttempts++;
+        continue;
+      }
+
+      if (lastAt > 0 && now - lastAt < RETRY_COOLDOWN_MS) {
+        skippedCooldown++;
+        continue;
+      }
+
+      // Pre-send recovery check
       const { data: freshCart } = await supabase
         .from("abandoned_carts")
         .select("recovered")
@@ -136,7 +136,6 @@ Deno.serve(async (req) => {
 
       if (!freshCart || freshCart.recovered) {
         skippedRecovered++;
-        console.log(`[wa-cron] Skipped cart ${cart.id} — already recovered`);
         continue;
       }
 
@@ -145,6 +144,33 @@ Deno.serve(async (req) => {
         .select("name, price")
         .eq("id", cart.product_id)
         .maybeSingle();
+
+      // Build prefilled recovery link
+      const baseUrl = cart.checkout_url || cart.page_url || "";
+      let recoveryLink = "";
+      if (baseUrl) {
+        try {
+          const u = new URL(baseUrl);
+          // Strip noisy/sensitive params we'll re-set
+          ["name", "email", "phone", "cpf", "utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]
+            .forEach((k) => u.searchParams.delete(k));
+
+          if (cart.customer_name) u.searchParams.set("name", cart.customer_name);
+          if (cart.customer_email) u.searchParams.set("email", cart.customer_email);
+          if (cart.customer_phone) u.searchParams.set("phone", cart.customer_phone);
+          if (cart.customer_cpf) u.searchParams.set("cpf", cart.customer_cpf);
+          u.searchParams.set("utm_source", "recovery");
+          u.searchParams.set("utm_medium", "whatsapp");
+          u.searchParams.set("utm_campaign", "abandoned_cart");
+          if (cart.utm_content) u.searchParams.set("utm_content", cart.utm_content);
+          if (cart.utm_term) u.searchParams.set("utm_term", cart.utm_term);
+
+          recoveryLink = u.toString();
+        } catch (e) {
+          console.warn(`[wa-cron] Invalid URL for cart ${cart.id}: ${baseUrl}`);
+          recoveryLink = baseUrl;
+        }
+      }
 
       try {
         await supabase.functions.invoke("whatsapp-dispatch", {
@@ -155,27 +181,27 @@ Deno.serve(async (req) => {
             customer_name: cart.customer_name || "Cliente",
             product_name: product?.name || "",
             product_price: product?.price?.toString() || "",
+            access_link: recoveryLink,
             category: "abandono",
           },
         });
 
-        const isFallback = fallbackIds.has(cart.id);
-        if (isFallback) fallbackCount++;
-
-        phoneProductSent.add(`${cart.customer_phone}::${cart.product_id}`);
         dispatched++;
       } catch (err) {
         console.error("Dispatch error for cart:", cart.id, err);
       }
     }
 
-    console.log(`[wa-cron] Processed ${pendingCarts.length}, dispatched ${dispatched}, fallback ${fallbackCount}, skipped_recovered ${skippedRecovered}`);
+    console.log(
+      `[wa-cron] candidates=${carts.length} dispatched=${dispatched} skipped_recovered=${skippedRecovered} skipped_max=${skippedMaxAttempts} skipped_cooldown=${skippedCooldown}`,
+    );
 
     return json({
-      processed: pendingCarts.length,
+      processed: carts.length,
       dispatched,
-      fallback_triggered: fallbackCount,
       skipped_recovered: skippedRecovered,
+      skipped_max_attempts: skippedMaxAttempts,
+      skipped_cooldown: skippedCooldown,
     });
   } catch (err) {
     console.error("whatsapp-abandon-cron error:", err);
