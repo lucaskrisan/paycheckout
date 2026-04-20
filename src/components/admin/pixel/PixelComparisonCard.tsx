@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Activity, KeyRound } from "lucide-react";
+import { Calendar, Activity, KeyRound, RefreshCw } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import type { PixelMetric } from "@/pages/admin/Pixel";
 import PixelEMQTable from "./PixelEMQTable";
 import PixelLearningProgress from "./PixelLearningProgress";
@@ -16,6 +18,7 @@ export default function PixelComparisonCard({
   onUpdated: () => void;
 }) {
   const [tokenOpen, setTokenOpen] = useState(false);
+  const [verifying, setVerifying] = useState(false);
 
   const purchases = pixel.events
     .filter((e) => e.event_name === "Purchase")
@@ -27,12 +30,32 @@ export default function PixelComparisonCard({
   );
   const isMature = ageDays > 14 && purchases >= 50;
 
+  const handleVerifyNow = async () => {
+    if (!pixel.has_token) {
+      toast.error("Cadastre um token CAPI antes de verificar");
+      return;
+    }
+    setVerifying(true);
+    try {
+      const { error } = await supabase.functions.invoke("pixel-token-health", {
+        body: { pixel_row_id: pixel.id },
+      });
+      if (error) throw error;
+      toast.success("Token verificado");
+      onUpdated();
+    } catch (e: any) {
+      toast.error("Erro ao verificar: " + (e?.message ?? "desconhecido"));
+    } finally {
+      setVerifying(false);
+    }
+  };
+
   return (
     <div className="rounded-lg border bg-card p-5 space-y-4">
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             <Badge variant={isMature ? "default" : "secondary"}>
               {isMature ? "Maduro ✅" : "Em treino"}
             </Badge>
@@ -43,10 +66,22 @@ export default function PixelComparisonCard({
             {pixel.product_name || "Produto"} · criado há {ageDays}d
           </p>
         </div>
-        <Button size="sm" variant="outline" onClick={() => setTokenOpen(true)}>
-          <KeyRound className="w-3.5 h-3.5 mr-1" />
-          Token
-        </Button>
+        <div className="flex flex-col gap-1.5 shrink-0">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleVerifyNow}
+            disabled={verifying || !pixel.has_token}
+            title={!pixel.has_token ? "Cadastre um token primeiro" : "Verificar token agora"}
+          >
+            <RefreshCw className={`w-3.5 h-3.5 mr-1 ${verifying ? "animate-spin" : ""}`} />
+            {verifying ? "..." : "Verificar"}
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setTokenOpen(true)}>
+            <KeyRound className="w-3.5 h-3.5 mr-1" />
+            Token
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
