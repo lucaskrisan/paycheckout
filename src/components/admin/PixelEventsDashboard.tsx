@@ -12,6 +12,8 @@ import HeroKPIStrip from "./tracking/HeroKPIStrip";
 import SmartAlertsPanel from "./tracking/SmartAlertsPanel";
 import EventFeedCard from "./tracking/EventFeedCard";
 import NinaWatermark from "./tracking/NinaWatermark";
+import LiveFunnel from "./tracking/LiveFunnel";
+import ConversionHeatmap from "./tracking/ConversionHeatmap";
 import { ninaToast, ninaPurchaseToast } from "./tracking/NinaToast";
 import { playNotificationSound } from "@/lib/notificationSounds";
 import { useGeo } from "@/hooks/useGeo";
@@ -272,7 +274,7 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
   }, [recentEvents]);
 
   return (
-    <div className="space-y-5">
+    <div id="nina-tracking-root" className="space-y-5">
       {/* ── Nina Tracking™ Header ── */}
       <NinaTrackingHeader
         period={period}
@@ -292,6 +294,12 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
 
       {/* ── Smart Alerts ── */}
       <SmartAlertsPanel userId={userId} filterProduct={filterProduct} />
+
+      {/* ── Funil + Heatmap (Sprint 2) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <LiveFunnel eventCounts={eventCounts} />
+        <ConversionHeatmap userId={userId} filterProduct={filterProduct} />
+      </div>
 
       {/* ── Event counters ── */}
       <div className="relative grid grid-cols-2 min-[480px]:grid-cols-3 md:grid-cols-4 xl:grid-cols-7 gap-2 rounded-xl bg-card/50 border border-border/30 p-3">

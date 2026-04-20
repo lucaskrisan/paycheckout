@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { Tv, Minimize2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ninaAvatar from "@/assets/nina-avatar.png";
 
@@ -24,6 +26,35 @@ const NinaTrackingHeader = ({
   onProductChange,
   products,
 }: Props) => {
+  const [tvMode, setTvMode] = useState(false);
+
+  useEffect(() => {
+    const root = document.getElementById("nina-tracking-root");
+    if (!root) return;
+    if (tvMode) root.classList.add("nina-tv-mode");
+    else root.classList.remove("nina-tv-mode");
+
+    const onFsChange = () => {
+      if (!document.fullscreenElement) setTvMode(false);
+    };
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, [tvMode]);
+
+  const toggleTv = async () => {
+    if (!tvMode) {
+      try {
+        await document.documentElement.requestFullscreen();
+        setTvMode(true);
+      } catch {
+        setTvMode(true);
+      }
+    } else {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      setTvMode(false);
+    }
+  };
+
   return (
     <div className="flex items-center justify-between flex-wrap gap-4">
       {/* Brand identity */}
@@ -111,6 +142,20 @@ const NinaTrackingHeader = ({
             </button>
           ))}
         </div>
+
+        {/* TV Mode */}
+        <button
+          onClick={toggleTv}
+          title={tvMode ? "Sair do modo TV" : "Modo TV"}
+          className={`flex items-center gap-1.5 h-8 px-3 rounded-lg text-[11px] font-semibold transition-all border ${
+            tvMode
+              ? "bg-gradient-to-r from-[#14B8A6] to-[#D4AF37] text-white border-transparent shadow-sm"
+              : "bg-muted/60 text-muted-foreground hover:text-foreground border-border/40 hover:border-[#D4AF37]/40"
+          }`}
+        >
+          {tvMode ? <Minimize2 className="w-3.5 h-3.5" /> : <Tv className="w-3.5 h-3.5" />}
+          <span>TV</span>
+        </button>
       </div>
     </div>
   );

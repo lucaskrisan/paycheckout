@@ -2,6 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Nina Tracking™ — TV Mode */
+.nina-tv-mode {
+  font-size: 130%;
+  padding: 1.5rem;
+}
+.nina-tv-mode .text-2xl {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+.nina-tv-mode .text-xl {
+  font-size: 2rem;
+}
+
 /* 3DS Challenge Modal */
 #challengeContainer iframe {
   position: fixed;
