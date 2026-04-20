@@ -1,144 +1,82 @@
 
 
-# Painel "Pixel" — Versão Final + 2 ajustes finais
+# Ajustes finais — Cadastro direto + Verificação automática do pixel órfão
 
-## Os 2 ajustes que faltaram
+## Resposta às suas perguntas
 
-### Ajuste 1 — Botão "Recadastrar token" direto no card
-Quando o cron detectar token inválido (ex: você renovou na BM e esqueceu de atualizar aqui), em vez de você ter que ir no produto → editar → aba pixels → trocar token, aparece **botão direto no card vermelho**:
+### 1. Cadastrar direto em Produtos funciona automático?
+**Sim.** Cola Pixel ID + Token na aba Pixels do produto → próximo evento já dispara dual fire (browser + servidor) → painel `/admin/pixel` reflete sozinho. Os 2 crons rodam em background mantendo `token_status` e `last_event_at` atualizados.
 
-```text
-🔴 Token inválido há 2h
-[Atualizar token agora →]
-```
-Clica → modal pequeno → cola token novo → salvo. **30 segundos resolve.**
+### 2. Por que o pixel órfão tá sem verificação se já tem token?
+Investiguei o banco e descobri 2 problemas:
 
-### Ajuste 2 — Exportar relatório (PDF/CSV)
-Botão `[📥 Exportar]` no canto superior. Gera relatório com snapshot do dia: métricas dos pixels, EMQ por evento, eventos disparados, status do token. Útil pra:
-- Mandar pro gestor de tráfego
-- Anexar em reuniões
-- Histórico mensal de saúde
+**Problema A — Cron de health check nunca rodou ainda.**
+Os 3 pixels existentes estão com `token_status = 'unknown'` e `last_health_check_at = NULL`. Significa que o cron diário foi agendado pra rodar **8h da manhã**, mas como ele acabou de ser criado, ainda não chegou o horário. **Só vai verificar amanhã às 8h.**
 
-## Plano consolidado completo
+**Problema B — Você tá vendo pixel de outro produtor.**
+Tem 3 pixels no banco:
+- `4374452939493191` (seu pixel órfão, produto `35621f66...`)
+- `25118489994495137` (de outro produtor, em 2 produtos)
 
-### Localização no menu (Super Admin only)
-```text
-ANÁLISE
-├── Analytics
-├── Métricas
-├── 🎯 Pixel              ← NOVO
-└── Financeiro
-```
-Rota: `/admin/pixel`
+A RPC `get_pixel_feedback_metrics` retorna **todos** sem filtrar por dono, então seu painel mostra os 3 misturados.
 
-### Layout final da página
-```text
-┌──────────────────────────────────────────────────────┐
-│ 🎯 Pixel — Saúde e Retroalimentação  [📺 TV] [📥 PDF]│
-├──────────────────────────────────────────────────────┤
-│ 🟢 TUDO SAUDÁVEL · 2 pixels · 396 Purchases (7d)     │
-├──────────────────────────────────────────────────────┤
-│ 💡 SUGESTÕES INTELIGENTES                             │
-├──────────────────────────────────────────────────────┤
-│ ⚖️ EQUILÍBRIO ENTRE PIXELS (24h)                      │
-├──────────────────────────────────────────────────────┤
-│ ┌─ PIXEL ÓRFÃO ─┐  ┌─ PIXEL NOVO ─┐                  │
-│ │ Token: ✅      │  │ Token: ✅      │                  │
-│ │ EMQ por evento│  │ EMQ por evento│                  │
-│ │ [Atualizar]   │  │ [Atualizar]   │ ← Ajuste 1       │
-│ └───────────────┘  └───────────────┘                  │
-├──────────────────────────────────────────────────────┤
-│ 📊 COMPARAÇÃO VISUAL (barras lado a lado)            │
-├──────────────────────────────────────────────────────┤
-│ 📦 PRODUTOS SEM PIXEL (12)                            │
-├──────────────────────────────────────────────────────┤
-│ 📡 FEED AO VIVO                                       │
-└──────────────────────────────────────────────────────┘
-```
+## Plano dos ajustes
 
-### Restrição de acesso
-- Sidebar: item visível só se `isSuperAdmin === true`
-- Página: redireciona pra `/admin` se não-super-admin
-- RPC e Edge Functions: validam `is_super_admin(auth.uid())` no backend
+### Ajuste 1 — Verificação imediata no momento do cadastro
+Quando você (ou qualquer produtor) salva token novo na aba Pixels do produto, em vez de esperar o cron das 8h:
+- Chama na hora a Edge Function `pixel-token-health` filtrada pra aquele pixel específico
+- Em ~2 segundos a coluna `token_status` vira `'healthy'` ou `'invalid'`
+- Card no painel já mostra ✅ ou ❌ imediatamente
 
-### Arquivos novos
+**Implementação:**
+- Edge Function `pixel-token-health` ganha parâmetro opcional `pixel_row_id` — se vier, testa só esse, senão testa todos (mantém comportamento do cron)
+- Frontend da aba Pixels (em `ProductEdit.tsx` ou similar) chama `supabase.functions.invoke('pixel-token-health', { body: { pixel_row_id } })` após salvar
 
-**Página:** `src/pages/admin/Pixel.tsx`
+### Ajuste 2 — Botão "Verificar agora" no card do painel
+No `PixelComparisonCard.tsx`, ao lado do badge de saúde, adicionar botão pequeno `[🔄 Verificar agora]` que dispara a mesma função e atualiza o painel. Útil quando você quer testar manualmente sem esperar o cron.
 
-**Componentes (11):**
-- `PixelHealthBanner.tsx` — semáforo verde/vermelho topo
-- `PixelSuggestions.tsx` — sugestões inteligentes
-- `PixelBalanceCard.tsx` — equilíbrio entre pixels (add-on 3)
-- `PixelComparisonCard.tsx` — card individual lado a lado
-- `PixelEMQTable.tsx` — EMQ granular por evento (add-on 2)
-- `PixelHealthBadge.tsx` — badge ✅/❌ token
-- `PixelLearningProgress.tsx` — barra saída learning
-- `PixelComparisonChart.tsx` — barras visuais
-- `ProductsWithoutPixel.tsx` — tabela 12 produtos
-- `PixelEventsFeed.tsx` — feed ao vivo
-- `UpdateTokenDialog.tsx` — modal de atualização de token (ajuste 1)
+### Ajuste 3 — Filtrar painel pra mostrar só seus pixels
+Atualizar a RPC `get_pixel_feedback_metrics` pra retornar **apenas pixels de produtos cujo dono é super admin** (ou seja, seus produtos). Pixels de produtores comuns continuam funcionando nos painéis deles, só somem do seu painel exclusivo.
 
-**Editar:**
-- `AdminSidebar.tsx` — adicionar item "Pixel" abaixo de Métricas
-- `App.tsx` — registrar rota `/admin/pixel`
+**Filtro SQL:** `WHERE EXISTS (SELECT 1 FROM user_roles WHERE user_id = p.user_id AND role = 'super_admin')` no JOIN com `products`.
 
-### Backend
+**Resultado:** painel passa a mostrar **só seu pixel órfão `4374452939493191`** (1 card) em vez dos 3 atuais.
 
-**Migration:**
-- 3 colunas em `product_pixels`: `token_status`, `last_health_check_at`, `last_event_at`
+### Ajuste 4 — Disparar verificação retroativa dos pixels existentes
+Logo após a migration, chamar a Edge Function uma vez pra processar os 3 pixels já cadastrados, pra eles saírem do estado `unknown` imediatamente sem esperar 8h.
 
-**RPCs novas (2):**
-- `get_pixel_feedback_metrics(p_pixel_id, p_product_id, p_days)` — agregação completa server-side
-- `update_pixel_token(p_pixel_id, p_new_token)` — validação super admin + update seguro (ajuste 1)
+## Arquivos a editar
 
-**Edge Functions novas (3):**
-- `pixel-token-health` — cron diário 8h (testa tokens)
-- `pixel-activity-monitor` — cron 30min (detecta pixel parado, add-on 1)
-- `pixel-export-report` — gera PDF/CSV sob demanda (ajuste 2)
+**Backend:**
+- **Migration:** atualizar `get_pixel_feedback_metrics` com filtro de super admin
+- **Edge Function** `pixel-token-health/index.ts`: aceitar parâmetro opcional `pixel_row_id`
 
-**Cron jobs:** 2 novos via `pg_cron` + `pg_net`
+**Frontend:**
+- `src/components/admin/pixel/PixelComparisonCard.tsx`: adicionar botão "Verificar agora"
+- `src/pages/admin/ProductEdit.tsx` (ou componente da aba Pixels): chamar verificação automática após salvar token
 
-### O que NÃO vou mexer
-- ❌ `useFacebookPixel.ts` (já suporta multi-pixel)
-- ❌ `facebook-capi/index.ts` (já suporta multi-pixel)
-- ❌ `/admin/tracking` atual (segue intacto)
-- ❌ ProductEdit > aba Pixels (cadastro continua igual)
+**Pós-deploy (manual via Edge Function):**
+- Trigger único de `pixel-token-health` sem parâmetro pra testar todos os 3 pixels existentes
 
-### Custo
-- Lovable AI: **R$ 0,00**
-- Migrations: 1
-- Edge Functions novas: 3
-- Cron jobs novos: 2
-- Componentes novos: 11
-- Tempo: ~12 min de execução
+## O que NÃO vou mexer
 
-### Sequência após aprovar
-1. Migration (3 colunas + 2 RPCs)
-2. 3 Edge Functions + 2 cron jobs
-3. 11 componentes + página + rota + sidebar
-4. Painel `/admin/pixel` aparece (só pra você)
-5. Mostra inicialmente o pixel órfão com métricas reais + EMQ + status
-6. Quando você criar o pixel novo na BM, me passa ID + token
-7. Cadastro no produto âncora pelo painel ProductEdit normal
-8. Painel automaticamente mostra 2 cards lado a lado
-9. Crons começam a rodar diário + a cada 30min
+- ❌ Cron schedule (continua diário 8h pra manutenção contínua)
+- ❌ Cron `pixel-activity-monitor` (continua a cada 30min)
+- ❌ `useFacebookPixel.ts` e `facebook-capi/index.ts`
+- ❌ Painel Tracking dos produtores
 
-### Recapitulando tudo que o painel terá
-1. Semáforo geral ✅
-2. Sugestões inteligentes ✅
-3. Equilíbrio entre pixels (add-on 3) ✅
-4. Cards comparativos lado a lado ✅
-5. EMQ granular por evento (add-on 2) ✅
-6. Health check de token (cron diário) ✅
-7. Detector de pixel parado (cron 30min, add-on 1) ✅
-8. Barra de progresso learning ✅
-9. Gráfico de barras visual ✅
-10. Lista produtos sem pixel ✅
-11. Feed ao vivo de eventos ✅
-12. Modo TV ✅
-13. Botão atualizar token direto (ajuste 1) ✅
-14. Exportar relatório PDF/CSV (ajuste 2) ✅
-15. Restrito Super Admin ✅
+## Resultado prático após executar
 
-**Sem mais sugestões — esse é o pacote completo. Pode aprovar.**
+1. Você abre `/admin/pixel` → vê **só o seu pixel órfão** (1 card limpo, sem confusão)
+2. Em ~5 segundos após executar, o card mostra `Token: ✅ Healthy` (ou ❌ se tiver problema real)
+3. Próxima vez que cadastrar pixel novo em qualquer produto → **verificação acontece na hora do salvar**, sem esperar 24h
+4. Botão `[🔄 Verificar agora]` disponível no painel pra checagem manual a qualquer momento
+
+## Custo
+
+- Lovable AI: R$ 0,00
+- Migrations: 1 (atualiza 1 RPC)
+- Edge Functions: 1 (atualizar `pixel-token-health`)
+- Componentes: 2 edits
+- Tempo: ~4 min
 
