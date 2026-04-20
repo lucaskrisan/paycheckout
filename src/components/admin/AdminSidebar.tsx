@@ -223,7 +223,18 @@ export function AdminSidebar() {
         {/* 4. ANÁLISE */}
         <SidebarGroup>
           <SidebarGroupLabel>{renderSectionLabel("Análise")}</SidebarGroupLabel>
-          <SidebarGroupContent>{renderItems(analiseItems)}</SidebarGroupContent>
+          <SidebarGroupContent>
+            {renderItems(
+              isSuperAdmin
+                ? [
+                    analiseItems[0],
+                    analiseItems[1],
+                    ...analiseSuperAdminOnly,
+                    analiseItems[2],
+                  ]
+                : analiseItems
+            )}
+          </SidebarGroupContent>
         </SidebarGroup>
 
         {/* 5. CONFIGURAÇÕES (collapsible) */}
