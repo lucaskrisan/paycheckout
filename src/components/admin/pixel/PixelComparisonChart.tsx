@@ -4,7 +4,14 @@ import type { PixelFeedbackResponse } from "@/pages/admin/Pixel";
 const KEY_EVENTS = ["PageView", "ViewContent", "InitiateCheckout", "AddPaymentInfo", "Purchase"];
 
 export default function PixelComparisonChart({ data }: { data: PixelFeedbackResponse }) {
-  const pixels = data.pixels;
+  // Filtra apenas pixels em produtos DISTINTOS (sem duplicação).
+  // Comparar pixels duplicados no mesmo produto não faz sentido — já há aviso no card de balanço.
+  const duplicatedSet = new Set(data.duplicated_product_ids ?? []);
+  const pixels = data.pixels.filter((p) => !duplicatedSet.has(p.product_id));
+
+  if (pixels.length < 2) {
+    return null;
+  }
 
   // Calcula contagens por evento por pixel
   const matrix = pixels.map((p) => {
@@ -12,14 +19,14 @@ export default function PixelComparisonChart({ data }: { data: PixelFeedbackResp
     KEY_EVENTS.forEach((ev) => {
       counts[ev] = p.events.filter((e) => e.event_name === ev).reduce((s, e) => s + e.count, 0);
     });
-    return { pixel_id: p.pixel_id, counts };
+    return { pixel_id: p.pixel_id, product_name: p.product_name, counts };
   });
 
   return (
     <div className="rounded-lg border bg-card p-5">
       <div className="flex items-center gap-2 mb-4">
         <BarChart3 className="w-5 h-5 text-primary" />
-        <h3 className="font-semibold">Comparação visual entre pixels (7d)</h3>
+        <h3 className="font-semibold">Comparação visual entre pixels (janela {data.window_days}d)</h3>
       </div>
       <div className="space-y-4">
         {KEY_EVENTS.map((ev) => {
@@ -31,9 +38,10 @@ export default function PixelComparisonChart({ data }: { data: PixelFeedbackResp
                 {matrix.map((m) => {
                   const pct = (m.counts[ev] / max) * 100;
                   return (
-                    <div key={m.pixel_id} className="flex items-center gap-2 text-xs">
-                      <span className="w-32 font-mono truncate text-muted-foreground">
-                        {m.pixel_id.slice(0, 14)}…
+                    <div key={`${m.pixel_id}-${ev}`} className="flex items-center gap-2 text-xs">
+                      <span className="w-44 truncate text-muted-foreground" title={`${m.pixel_id} · ${m.product_name ?? ""}`}>
+                        <span className="font-mono">{m.pixel_id.slice(0, 10)}…</span>{" "}
+                        <span className="opacity-70">{m.product_name}</span>
                       </span>
                       <div className="flex-1 h-4 rounded bg-muted overflow-hidden">
                         <div
