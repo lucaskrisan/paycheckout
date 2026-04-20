@@ -137,28 +137,37 @@ Deno.serve(async (req) => {
 
     const customerName = customer?.name || null;
 
-    // Dashboard log: server event
-    await supabase.from('pixel_events').insert({
-      product_id,
-      event_name,
-      source: 'server',
-      event_id: event_id || null,
-      user_id: productOwnerId,
-      customer_name: customerName,
-      visitor_id: visitor_id || null,
-    });
+    // Para atribuição correta no painel, gravamos um log de evento por pixel.
+    // Se não houver pixels CAPI configurados, gravamos ainda assim com pixel_id=null
+    // (mantém o histórico do produto).
+    const allPixels = pixels && pixels.length > 0 ? pixels : [{ pixel_id: null }];
 
-    // Dashboard log: dual (browser + server)
-    if (log_browser) {
+    for (const px of allPixels) {
+      // Server-side log
       await supabase.from('pixel_events').insert({
         product_id,
+        pixel_id: px.pixel_id,
         event_name,
-        source: 'browser',
+        source: 'server',
         event_id: event_id || null,
         user_id: productOwnerId,
         customer_name: customerName,
         visitor_id: visitor_id || null,
       });
+
+      // Browser-side log (quando o frontend também disparou via fbq)
+      if (log_browser) {
+        await supabase.from('pixel_events').insert({
+          product_id,
+          pixel_id: px.pixel_id,
+          event_name,
+          source: 'browser',
+          event_id: event_id || null,
+          user_id: productOwnerId,
+          customer_name: customerName,
+          visitor_id: visitor_id || null,
+        });
+      }
     }
 
     if (!pixels || pixels.length === 0) {

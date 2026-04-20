@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Tv, Download, RefreshCw, Target } from "lucide-react";
 import { toast } from "sonner";
 import PixelHealthBanner from "@/components/admin/pixel/PixelHealthBanner";
-import PixelSuggestions from "@/components/admin/pixel/PixelSuggestions";
 import PixelBalanceCard from "@/components/admin/pixel/PixelBalanceCard";
 import PixelComparisonCard from "@/components/admin/pixel/PixelComparisonCard";
 import PixelComparisonChart from "@/components/admin/pixel/PixelComparisonChart";
@@ -25,6 +24,7 @@ export interface PixelMetric {
   last_health_check_at: string | null;
   last_event_at: string | null;
   created_at: string;
+  is_duplicated_on_product?: boolean;
   events: Array<{ event_name: string; source: string; count: number }>;
   emq_by_event: Array<{
     event_name: string;
@@ -41,6 +41,7 @@ export interface PixelFeedbackResponse {
   generated_at: string;
   window_days: number;
   pixels: PixelMetric[];
+  duplicated_product_ids: string[];
   products_without_pixel: Array<{ id: string; name: string }>;
   total_events: number;
   total_purchase_events: number;
@@ -111,6 +112,13 @@ export default function Pixel() {
 
   if (!data) return null;
 
+  const hasDuplicates = (data.duplicated_product_ids?.length ?? 0) > 0;
+  // Comparação visual só faz sentido se houver pixels em produtos distintos
+  const distinctProductPixels = data.pixels.filter(
+    (p) => !data.duplicated_product_ids?.includes(p.product_id)
+  );
+  const showComparison = distinctProductPixels.length >= 2;
+
   return (
     <div className={tvMode ? "fixed inset-0 z-50 bg-background overflow-auto p-8" : "space-y-6"}>
       {/* Header */}
@@ -152,16 +160,10 @@ export default function Pixel() {
         </div>
       </div>
 
-      {/* Semáforo */}
+      {/* 1. Diagnóstico de saúde geral (consolidado) */}
       <PixelHealthBanner data={data} />
 
-      {/* Sugestões */}
-      <PixelSuggestions data={data} />
-
-      {/* Equilíbrio */}
-      <PixelBalanceCard data={data} />
-
-      {/* Cards comparativos */}
+      {/* 2. Pixels cadastrados */}
       <div>
         <h2 className="text-lg font-semibold mb-3">Pixels cadastrados ({data.pixels.length})</h2>
         {data.pixels.length === 0 ? (
@@ -177,13 +179,16 @@ export default function Pixel() {
         )}
       </div>
 
-      {/* Comparação visual */}
-      {data.pixels.length >= 2 && <PixelComparisonChart data={data} />}
+      {/* 3. Aviso de pixels duplicados (se aplicável) */}
+      {hasDuplicates && <PixelBalanceCard data={data} />}
 
-      {/* Produtos sem pixel */}
+      {/* 4. Comparação visual (somente entre pixels de produtos distintos) */}
+      {showComparison && <PixelComparisonChart data={data} />}
+
+      {/* 5. Produtos sem pixel */}
       <ProductsWithoutPixel data={data} />
 
-      {/* Feed ao vivo */}
+      {/* 6. Feed ao vivo */}
       <PixelEventsFeed />
     </div>
   );
