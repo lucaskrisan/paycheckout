@@ -1526,6 +1526,7 @@ export type Database = {
           event_id: string | null
           event_name: string
           id: string
+          pixel_id: string | null
           product_id: string
           source: string
           user_id: string | null
@@ -1537,6 +1538,7 @@ export type Database = {
           event_id?: string | null
           event_name: string
           id?: string
+          pixel_id?: string | null
           product_id: string
           source?: string
           user_id?: string | null
@@ -1548,6 +1550,7 @@ export type Database = {
           event_id?: string | null
           event_name?: string
           id?: string
+          pixel_id?: string | null
           product_id?: string
           source?: string
           user_id?: string | null
