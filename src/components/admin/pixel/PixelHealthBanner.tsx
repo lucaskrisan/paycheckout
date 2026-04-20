@@ -10,7 +10,6 @@ export default function PixelHealthBanner({ data }: { data: PixelFeedbackRespons
   const invalidTokens = data.pixels.filter((p) => p.token_status === "invalid").length;
   const noToken = data.pixels.filter((p) => !p.has_token).length;
   const duplicatedCount = data.duplicated_product_ids?.length ?? 0;
-  const productsMissing = data.products_without_pixel.length;
 
   // Pixels sem evento recente (>1h) — usa last_event_at calculado em tempo real
   const stale = data.pixels.filter((p) => {
@@ -26,7 +25,7 @@ export default function PixelHealthBanner({ data }: { data: PixelFeedbackRespons
   if (invalidTokens > 0) {
     level = "danger";
     title = "🔴 Saúde geral: AÇÃO NECESSÁRIA";
-  } else if (noToken > 0 || duplicatedCount > 0 || stale > 0 || productsMissing > 0) {
+  } else if (noToken > 0 || duplicatedCount > 0 || stale > 0) {
     level = "warn";
     title = "🟡 Saúde geral: ATENÇÃO";
   } else if (total === 0) {
@@ -63,13 +62,6 @@ export default function PixelHealthBanner({ data }: { data: PixelFeedbackRespons
       icon: "📭",
       text: `${stale} ${stale === 1 ? "pixel sem eventos recentes" : "pixels sem eventos recentes"} (>1h)`,
       severity: "warn",
-    });
-  }
-  if (productsMissing > 0) {
-    issues.push({
-      icon: "📭",
-      text: `${productsMissing} ${productsMissing === 1 ? "produto ativo sem pixel cadastrado" : "produtos ativos sem pixel cadastrado"} — você está perdendo dados`,
-      severity: "info",
     });
   }
   if (issues.length === 0) {

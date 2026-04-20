@@ -6,7 +6,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { PixelMetric } from "@/pages/admin/Pixel";
 import PixelEMQTable from "./PixelEMQTable";
-import PixelLearningProgress from "./PixelLearningProgress";
 import PixelHealthBadge from "./PixelHealthBadge";
 import UpdateTokenDialog from "./UpdateTokenDialog";
 
@@ -100,11 +99,8 @@ export default function PixelComparisonCard({
         </div>
       </div>
 
-      {/* Learning */}
-      {!isMature && <PixelLearningProgress purchases={purchases} />}
-
-      {/* EMQ */}
-      <PixelEMQTable rows={pixel.emq_by_event} />
+      {/* EMQ — só mostra quando há dados reais */}
+      {pixel.emq_by_event.length > 0 && <PixelEMQTable rows={pixel.emq_by_event} />}
 
       <UpdateTokenDialog
         open={tokenOpen}

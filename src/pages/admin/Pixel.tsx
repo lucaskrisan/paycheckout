@@ -6,10 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Tv, Download, RefreshCw, Target } from "lucide-react";
 import { toast } from "sonner";
 import PixelHealthBanner from "@/components/admin/pixel/PixelHealthBanner";
-import PixelBalanceCard from "@/components/admin/pixel/PixelBalanceCard";
 import PixelComparisonCard from "@/components/admin/pixel/PixelComparisonCard";
-import PixelComparisonChart from "@/components/admin/pixel/PixelComparisonChart";
-import ProductsWithoutPixel from "@/components/admin/pixel/ProductsWithoutPixel";
 import PixelEventsFeed from "@/components/admin/pixel/PixelEventsFeed";
 
 export interface PixelMetric {
@@ -112,13 +109,6 @@ export default function Pixel() {
 
   if (!data) return null;
 
-  const hasDuplicates = (data.duplicated_product_ids?.length ?? 0) > 0;
-  // Comparação visual só faz sentido se houver pixels em produtos distintos
-  const distinctProductPixels = data.pixels.filter(
-    (p) => !data.duplicated_product_ids?.includes(p.product_id)
-  );
-  const showComparison = distinctProductPixels.length >= 2;
-
   return (
     <div className={tvMode ? "fixed inset-0 z-50 bg-background overflow-auto p-8" : "space-y-6"}>
       {/* Header */}
@@ -160,7 +150,7 @@ export default function Pixel() {
         </div>
       </div>
 
-      {/* 1. Diagnóstico de saúde geral (consolidado) */}
+      {/* 1. Diagnóstico de saúde geral */}
       <PixelHealthBanner data={data} />
 
       {/* 2. Pixels cadastrados */}
@@ -179,16 +169,7 @@ export default function Pixel() {
         )}
       </div>
 
-      {/* 3. Aviso de pixels duplicados (se aplicável) */}
-      {hasDuplicates && <PixelBalanceCard data={data} />}
-
-      {/* 4. Comparação visual (somente entre pixels de produtos distintos) */}
-      {showComparison && <PixelComparisonChart data={data} />}
-
-      {/* 5. Produtos sem pixel */}
-      <ProductsWithoutPixel data={data} />
-
-      {/* 6. Feed ao vivo */}
+      {/* 3. Feed ao vivo */}
       <PixelEventsFeed />
     </div>
   );
