@@ -1,70 +1,56 @@
 
 
-# Painel `/admin/pixel` minimalista — só o essencial
+# Remover painel `/admin/pixel` — manter só o disparo automático
 
-## O que fica
+## O que você quer
 
-```text
-┌─────────────────────────────────────────────────┐
-│ 🩺 Diagnóstico de saúde geral                   │
-│    - X tokens inválidos                         │
-│    - Y produtos com pixels duplicados           │
-└─────────────────────────────────────────────────┘
-┌──────────────────────┬──────────────────────────┐
-│ Card por pixel       │ Card por pixel           │
-│ - ID                 │ - ID                     │
-│ - Produto            │ - Produto                │
-│ - Status do token    │ - Status do token        │
-│ - Eventos REAIS (7d) │ - Eventos REAIS (7d)     │
-│ - Purchases (7d)     │ - Purchases (7d)         │
-│ - [Verificar][Token] │ - [Verificar][Token]     │
-└──────────────────────┴──────────────────────────┘
-┌─────────────────────────────────────────────────┐
-│ 📡 Feed de eventos ao vivo                      │
-└─────────────────────────────────────────────────┘
-```
+- Remover **completamente** a página "Pixel — Saúde e Retroalimentação" do menu/admin
+- Continuar adicionando pixels normalmente em **Configurações do produto → aba Pixel**
+- Os pixels seguem disparando automaticamente (browser + CAPI) sem nenhum painel monitorando
 
-## O que sai
+## Boa notícia: o disparo já funciona sozinho ✅
 
-- ❌ "Produtos sem pixel cadastrado" (componente `ProductsWithoutPixel.tsx`)
-- ❌ Linha "Z produtos sem pixel" do banner de saúde geral
-- ❌ Card "Equilíbrio entre pixels" (`PixelBalanceCard.tsx`)
-- ❌ Gráfico "Comparação visual entre pixels" (`PixelComparisonChart.tsx`)
-- ❌ Barra "Learning Phase" dentro dos cards (`PixelLearningProgress.tsx`)
-- ❌ Tabela EMQ vazia (só mostrar quando houver dados reais)
+O `useFacebookPixel.ts` no checkout já faz exatamente o que você quer:
+- Lê todos os pixels cadastrados em `product_pixels` para aquele produto
+- Inicializa `fbq("init", pixelId)` para **cada um deles** em loop
+- Dispara browser + CAPI em paralelo, deduplicados por `event_id`
 
-## Correção crítica de dado (mantida do plano anterior)
+Ou seja, **não precisa mexer em lógica nenhuma de disparo**. É só apagar o painel de monitoramento.
 
-Atualizar a RPC `get_pixel_feedback_metrics` com **JOIN estrito** por `pe.pixel_id = pp.pixel_id`. Eventos órfãos legacy (com `pixel_id NULL`) deixam de inflar os cards individuais. O pixel novo `26487693714174431` passa a mostrar **12 eventos reais** em vez dos 73 mil herdados.
+## O que vou apagar
 
-## Arquivos editados
+### Arquivos
+- `src/pages/admin/Pixel.tsx` (a página inteira)
+- `src/components/admin/pixel/PixelHealthBanner.tsx`
+- `src/components/admin/pixel/PixelComparisonCard.tsx`
+- `src/components/admin/pixel/PixelEventsFeed.tsx`
+- `src/components/admin/pixel/PixelEMQTable.tsx`
+- `src/components/admin/pixel/PixelHealthBadge.tsx`
+- `src/components/admin/pixel/UpdateTokenDialog.tsx`
+- Pasta inteira `src/components/admin/pixel/` se ficar vazia
 
-- **1 migration** — RPC com JOIN estrito por `pixel_id`, sem fallback por produto
-- `src/pages/admin/Pixel.tsx` — remover `ProductsWithoutPixel`, `PixelBalanceCard`, `PixelComparisonChart`
-- `src/components/admin/pixel/PixelHealthBanner.tsx` — remover linha "produtos sem pixel"
-- `src/components/admin/pixel/PixelComparisonCard.tsx` — remover Learning Phase + esconder EMQ vazia
-
-## Apagar
-
-- `src/components/admin/pixel/ProductsWithoutPixel.tsx`
-- `src/components/admin/pixel/PixelBalanceCard.tsx`
-- `src/components/admin/pixel/PixelComparisonChart.tsx`
-- `src/components/admin/pixel/PixelLearningProgress.tsx`
+### Referências a remover
+- `src/App.tsx` (linha 79) → remover `const Pixel = lazy(...)` e a `<Route>` correspondente
+- `src/components/admin/AdminSidebar.tsx` (linha 88-91) → remover item "Pixel" do menu
 
 ## O que NÃO vou mexer
 
-- ❌ Lógica de disparo CAPI / pixel
-- ❌ Botões Verificar / Token
-- ❌ Feed ao vivo
-- ❌ Cron de health check
+- ✅ `src/hooks/useFacebookPixel.ts` — segue disparando todos os pixels normalmente
+- ✅ `supabase/functions/facebook-capi/index.ts` — segue enviando pra Meta normalmente
+- ✅ Tabela `product_pixels` — onde os pixels são cadastrados (continua funcionando)
+- ✅ `src/pages/admin/ProductEdit.tsx` aba Pixel — onde você adiciona/remove pixels do produto
+- ✅ `src/pages/admin/Tracking.tsx` — outro painel de tracking, mais geral, fora desse escopo
+- ✅ Tabelas `pixel_events`, `emq_snapshots` — ficam no banco (apenas param de ser consultadas)
+- ✅ Cron de `pixel-token-health` — opcional manter (roda silencioso, não atrapalha)
 
-## Resultado
+## Resultado prático
 
-- 3 seções enxutas: **Diagnóstico → Cards → Feed**
-- Cards mostram **só a verdade** daquele pixel específico
-- Zero ruído visual, zero dado inflado
+- Menu lateral fica mais limpo (item "Pixel" some)
+- Adicionar pixel = abrir produto → aba Pixel → colar ID + token → salvar → **dispara automaticamente**
+- Zero painel, zero ruído, zero dado confuso
+- Se um dia quiser monitorar, basta usar o **Gerenciador de Eventos do próprio Facebook** (que é a fonte oficial de verdade)
 
 ## Custo
 
-- 1 migration · 2 edits · 4 deleções · ~3 min
+- 7 deleções · 2 edits leves · ~2 min
 
