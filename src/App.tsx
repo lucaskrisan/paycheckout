@@ -17,6 +17,7 @@ import NotFound from "./pages/NotFound";
 // Lazy-loaded — checkout flow
 const Checkout = lazy(() => import("./pages/Checkout"));
 const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
+const Receipt = lazy(() => import("./pages/Receipt"));
 
 // Lazy-loaded — member / customer
 const MemberArea = lazy(() => import("./pages/MemberArea"));
@@ -105,6 +106,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/checkout/sucesso" element={<CheckoutSuccess />} />
+              <Route path="/recibo/:orderId" element={<Receipt />} />
               <Route path="/checkout/:productId" element={<Checkout />} />
               <Route path="/membros" element={<MemberArea />} />
               <Route path="/minha-conta" element={<CustomerPortal />} />
