@@ -143,7 +143,7 @@ const ProductEdit = () => {
         id: p.id,
         platform: p.platform,
         pixel_id: p.pixel_id,
-        domain: p.domain || "",
+        domain: p.domain || "app.panttera.com.br",
         fire_on_pix: p.fire_on_pix,
         fire_on_boleto: p.fire_on_boleto,
         capi_token: p.capi_token || "",
@@ -332,7 +332,7 @@ const ProductEdit = () => {
 
   const addPixel = () => {
     if (pixels.length >= 50) { toast.error("Máximo de 50 pixels"); return; }
-    setPixels((prev) => [...prev, { platform: activePixelPlatform.toLowerCase(), pixel_id: "", domain: "", fire_on_pix: false, fire_on_boleto: false, capi_token: "" }]);
+    setPixels((prev) => [...prev, { platform: activePixelPlatform.toLowerCase(), pixel_id: "", domain: "app.panttera.com.br", fire_on_pix: false, fire_on_boleto: false, capi_token: "" }]);
   };
 
   const updatePixel = (index: number, field: keyof PixelEntry, value: any) => {
@@ -365,7 +365,7 @@ const ProductEdit = () => {
               product_id: productId,
               platform: p.platform,
               pixel_id: p.pixel_id.trim(),
-              domain: p.domain.trim() || null,
+              domain: p.domain.trim() || "app.panttera.com.br",
               fire_on_pix: p.fire_on_pix,
               fire_on_boleto: p.fire_on_boleto,
               capi_token: p.capi_token.trim() || null,
@@ -1205,7 +1205,7 @@ const ProductEdit = () => {
                                 </span>
                               </Label>
                               <div className="flex items-center gap-2">
-                                <Select value={px.domain || "app.panttera.com.br"} onValueChange={(v) => updatePixel(idx, "domain", v)}>
+                                <Select value={px.domain} onValueChange={(v) => updatePixel(idx, "domain", v)}>
                                   <SelectTrigger className="flex-1"><SelectValue placeholder="Selecione um domínio" /></SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="app.panttera.com.br">app.panttera.com.br (padrão)</SelectItem>
