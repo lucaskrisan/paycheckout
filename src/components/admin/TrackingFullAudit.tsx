@@ -20,9 +20,10 @@ interface AuditCheck {
 
 interface Props {
   userId: string;
+  productId?: string;
 }
 
-export default function TrackingFullAudit({ userId }: Props) {
+export default function TrackingFullAudit({ userId, productId }: Props) {
   const [running, setRunning] = useState(false);
   const [checks, setChecks] = useState<AuditCheck[] | null>(null);
 
