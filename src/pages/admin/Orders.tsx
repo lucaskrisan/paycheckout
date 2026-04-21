@@ -120,6 +120,7 @@ const Orders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [serverTotals, setServerTotals] = useState<{ revenue: number; count: number } | null>(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState<"approved" | "all">("approved");
@@ -203,14 +204,22 @@ const Orders = () => {
     if (!user?.id) return;
     const load = async () => {
       setLoading(true);
-      let ordersQuery = supabase.from("orders").select("*, customers(name, email, phone, cpf), products(name)").order("created_at", { ascending: false }).limit(1000);
+      let ordersQuery = supabase.from("orders").select("*, customers(name, email, phone, cpf), products(name)").order("created_at", { ascending: false }).limit(5000);
       if (!isSuperAdmin) ordersQuery = ordersQuery.eq("user_id", user.id);
-      const [ordersRes, productsRes] = await Promise.all([
+      const [ordersRes, productsRes, revenueRes] = await Promise.all([
         ordersQuery,
         supabase.from("products").select("id, name").eq("user_id", user.id),
+        supabase.rpc("get_revenue_summary", { p_user_id: user.id }),
       ]);
       setOrders((ordersRes.data as any) || []);
       setProducts(productsRes.data || []);
+      const rev = Array.isArray(revenueRes.data) ? revenueRes.data[0] : null;
+      if (rev) {
+        setServerTotals({
+          revenue: Number(rev.total_revenue ?? 0),
+          count: Number(rev.paid_count ?? 0),
+        });
+      }
       setLoading(false);
     };
     load();
@@ -329,7 +338,10 @@ const Orders = () => {
             <span className="text-sm text-muted-foreground">Vendas encontradas</span>
           </div>
           <p className="text-3xl font-bold text-foreground tracking-tight">
-            {filtered.length.toLocaleString("pt-BR")}
+            {(serverTotals && !hasActiveFilters && !search && activeTab === "approved"
+              ? serverTotals.count
+              : filtered.length
+            ).toLocaleString("pt-BR")}
           </p>
         </div>
         <div className="relative overflow-hidden rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm p-5 group hover:border-primary/30 transition-all">
@@ -341,7 +353,10 @@ const Orders = () => {
             <span className="text-sm text-muted-foreground">Valor líquido</span>
           </div>
           <p className="text-3xl font-bold text-foreground tracking-tight">
-            R$ {totalAmount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+            R$ {(serverTotals && !hasActiveFilters && !search && activeTab === "approved"
+              ? serverTotals.revenue
+              : totalAmount
+            ).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
           </p>
         </div>
       </div>
