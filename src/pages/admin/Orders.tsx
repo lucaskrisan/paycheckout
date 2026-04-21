@@ -367,7 +367,7 @@ const Orders = () => {
           <p className="text-3xl font-bold text-foreground tracking-tight">
             {(serverTotals && !hasActiveFilters && !search && activeTab === "approved"
               ? serverTotals.count
-              : filtered.length
+              : totalFilteredCount
             ).toLocaleString("pt-BR")}
           </p>
         </div>
