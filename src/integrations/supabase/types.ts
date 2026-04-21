@@ -2682,6 +2682,21 @@ export type Database = {
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       is_verified_producer: { Args: { _user_id: string }; Returns: boolean }
+      list_orders_paginated: {
+        Args: {
+          p_is_super_admin?: boolean
+          p_page?: number
+          p_page_size?: number
+          p_payment_methods?: string
+          p_period?: string
+          p_product_id?: string
+          p_sale_type?: string
+          p_search?: string
+          p_status_filter?: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       move_to_dlq: {
         Args: {
           dlq_name: string
