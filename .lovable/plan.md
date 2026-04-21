@@ -1,108 +1,113 @@
 
 
-# Conformidade Meta Ads — verificação honesta item por item
+## Recibo do Cliente padrão CartPanda + Logo Panttera + Imagem do Produto + Prova de E-mail
 
-## Resposta direta
+### Onde fica
+A tela continua sendo `/recibo/:orderId` — o link público que o cliente recebe no e-mail de confirmação. **Nada muda na rota**, só o visual e a estrutura do conteúdo.
 
-**Sim, as 4 mudanças propostas estão 100% dentro das diretrizes oficiais do Meta.** Nenhuma viola a Política de Dados Comerciais, Política de Pixel/CAPI ou Termos de Uso da Conversions API. Vou justificar cada uma com a regra Meta correspondente.
+### Layout final
 
-## Verificação por mudança
+```text
+┌─────────────────────────────────────────┐
+│            🐆 Logo Panttera              │
+│                                          │
+│         Pedido #ABC12345                 │
+│        Obrigado, V******a                │
+│                                          │
+│              ✅ (verde)                   │
+│      Seu pedido foi Confirmado           │
+│  Aparecerá na fatura como PANTTERA       │
+│                                          │
+│       [ Gerenciar meu pedido ]           │
+├─────────────────────────────────────────┤
+│ Detalhes do pedido                       │
+│ ┌──────┐                                 │
+│ │ IMG  │  Nome do Produto                │
+│ │ 64px │  1× R$ 197,00                   │
+│ └──────┘  [⬇ Acessar produto]            │
+│                                          │
+│ ✉️ Enviamos seu acesso para               │
+│ ver*****@gmail.com em 21/04 às 14:17.    │
+│ ✓ Entregue · Verifique a caixa de        │
+│ entrada ou pasta de spam.                │
+├─────────────────────────────────────────┤
+│ Subtotal                      R$ 197,00  │
+│ Total                  4× R$ 54,75       │
+├─────────────────────────────────────────┤
+│ Informações do cliente                   │
+│ E-mail: ver*****@gmail.com               │
+│ Pagamento: 💳 Visa final 3418            │
+├─────────────────────────────────────────┤
+│ ▸ Detalhes técnicos e selo de            │
+│   autenticidade  (colapsado)             │
+├─────────────────────────────────────────┤
+│ Documento eletrônico válido —            │
+│ MP 2.200-2/2001 · Recibo nº XXXX         │
+└─────────────────────────────────────────┘
+```
 
-### 1. Unificar seletor de produto no painel
-**Mudança interna do admin.** Não toca em payload enviado ao Meta. Conformidade: **N/A** (não é dado enviado).
+### Mudanças no `src/pages/Receipt.tsx` (único arquivo frontend)
 
-### 2. Anexar UTMs ao `custom_data` do CAPI
+**1. Header com logo Panttera**
+- Importar `pantera-mascot.png` de `@/assets/`
+- Logo centralizado 64×64px no topo
+- "Pedido #XXXX" pequeno cinza
+- "Obrigado, V******a" grande em bold (nome mascarado por LGPD)
+- Ícone verde ✅ + "Seu pedido foi Confirmado" como heading
+- Subtexto: "Aparecerá na fatura como PANTTERA"
+- Botão azul "Gerenciar meu pedido" → `/minha-conta`
 
-**Regra Meta:** `custom_data` aceita campos livres não-PII (Personally Identifiable Information). UTMs são parâmetros de tráfego, **não são PII**, e Meta inclusive recomenda enviar para enriquecer atribuição.
+**2. Card do produto COM IMAGEM (estilo CartPanda)**
+- Layout horizontal: thumbnail 64×64px à esquerda + info à direita
+- Thumbnail com `rounded-lg` + `object-cover` + borda sutil
+- Fallback: se não tiver imagem, mostrar ícone 📦 em placeholder cinza
+- Nome do produto em bold + linha "1× R$ 197,00"
+- Botão "Acessar produto" abaixo (quando houver área de membros)
 
-**Documentação oficial:** Meta CAPI > Custom Data Parameters permite qualquer campo customizado desde que **não seja PII bruta**. UTMs (`utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`) são valores neutros de tráfego.
+**3. Prova de envio do e-mail integrada (texto humano)**
+- Logo abaixo do card do produto, no mesmo bloco:
+  > "✉️ Enviamos seu acesso para **ver\*\*\*\*@gmail.com** em 21/04/2026 às 14:17. ✓ Entregue. Se não encontrar, verifique a pasta de spam ou promoções."
+- Status visual sutil: ✓ Entregue (verde) / ✓ Aberto (azul) quando o Resend confirmar
 
-**Risco de restrição:** Zero. É prática recomendada.
+**4. Resumo financeiro tabular**
+- Subtotal, Envio (se houver), Total
+- Mostrar parcelamento quando aplicável ("4× R$ 54,75")
+- **Remover** "Taxa da plataforma" e "Líquido ao vendedor"
 
-### 3. `window.pcTrack()` para SPAs
+**5. Informações do cliente (mínimo)**
+- E-mail mascarado
+- Método de pagamento (bandeira + final do cartão, ou "PIX")
+- **Remover** cidade/estado/CEP (redundante)
 
-**Regra Meta:** proibido chamar `fbq('init', PIXEL_ID)` mais de uma vez na mesma sessão (gera duplicação de PageView e penaliza atribuição). **Permitido** chamar `fbq('track', 'EventName')` quantas vezes precisar, desde que cada disparo represente um evento real.
+**6. Detalhes técnicos colapsáveis** (`<details>` HTML nativo)
+- Label clicável: "▸ Ver detalhes técnicos e selo de autenticidade"
+- Conteúdo escondido por padrão:
+  - Hash SHA-256 de autenticidade
+  - IP do pagador, dispositivo
+  - Ref. gateway, ID interno do pedido
+  - CPF/CNPJ do vendedor
+  - IDs Resend dos e-mails enviados (auditoria)
+- CSS `@media print` força `details[open]` ao imprimir/salvar PDF
 
-**Como respeito a regra:** o guard `__pcTrackingFired` é mantido **apenas para `fbq('init')`**. O helper `pcTrack()` chama somente `fbq('track', ...)` — exatamente o padrão que Meta documenta para SPAs.
+**7. Footer reduzido a 1 linha**
+- "Panttera Tecnologia — Documento eletrônico válido conforme MP 2.200-2/2001 · Recibo nº XXXX"
 
-**Risco de restrição:** Zero. É o método oficial recomendado por Meta para Single Page Applications.
+### Mudança mínima no backend `supabase/functions/get-receipt/index.ts`
 
-### 4. Health Check da Landing
-**Edge function que faz `fetch` da URL pública e analisa HTML.** Não envia nada ao Meta. Conformidade: **N/A**.
+- Adicionar `image_url` no SELECT do produto (atualmente já busca `name` e `price` — falta a imagem)
+- Retornar `product.image_url` no payload da response
+- **Nada mais muda no edge function** — `emails_sent` e `authenticity_hash` já existem
 
-## O que JÁ está conforme no seu sistema (verificado no código)
+### O que continua igual
 
-| Item | Conformidade Meta |
-|------|------------------|
-| Deduplicação Pixel + CAPI por `event_id` | ✅ Obrigatório por Meta — você faz |
-| Hash SHA-256 de PII (email, phone, CPF) antes de enviar | ✅ Obrigatório — `facebook-capi/index.ts` faz |
-| `_fbc` cookie com janela de 90 dias | ✅ Padrão Meta — você respeita |
-| `event_source_url` real da página | ✅ Obrigatório — você envia |
-| `client_ip_address` e `client_user_agent` | ✅ Obrigatório para EMQ alto — você envia |
-| `external_id` por CPF hasheado | ✅ Recomendado — você faz |
-| API v22.0 (atual) | ✅ Versão suportada |
-| Token de acesso por produto (não compartilhado) | ✅ Boa prática — você faz |
+- Hash SHA-256 continua gerado e exibido (apenas dentro do colapsável)
+- E-mail e nome mascarados (LGPD)
+- Suporte BRL/USD
+- Botão "Baixar PDF" (imprimir como PDF)
+- Rota `/recibo/:orderId` inalterada
 
-## O que CAUSARIA restrição (e que NÃO vou fazer)
+### Arquivos editados
 
-| Anti-padrão | Por que é problema | No seu sistema? |
-|------------|-------------------|-----------------|
-| Enviar PII em texto puro (sem hash) | Viola Política de Dados Comerciais | ❌ Você hasheia tudo |
-| Disparar evento server-side sem evento browser correspondente (ou vice-versa) sem `event_id` | Quebra deduplicação, infla métricas | ❌ Você deduplica |
-| Disparar `Purchase` antes da liquidação financeira | Viola integridade de dados | ❌ Você só dispara em webhook `paid` |
-| `fbq('init')` duplicado | Infla PageView | ❌ Você bloqueia com guard |
-| Disparar `InitiateCheckout` na landing E no checkout (duplicado) | Infla métricas, quebra otimização | ❌ Você só dispara no checkout (correto) |
-| Enviar dados de menores ou categorias proibidas | Banimento da conta | ❌ Não aplicável ao seu nicho |
-
-## Recomendação técnica para baixar CPA com precisão máxima
-
-Além dos 4 fixes propostos, baseado na documentação Meta, **3 melhorias verificáveis** que aumentam EMQ e qualidade de matching:
-
-### A. Enviar `fbclid` capturado da URL como `fbc` server-side
-Hoje o script lê `_fbc` do cookie. Quando o cookie não existe ainda (primeira visita vinda de ad), Meta recomenda construir `fbc` a partir do `fbclid` da URL no formato `fb.1.{timestamp}.{fbclid}`. Aumenta matching para o primeiro PageView da sessão.
-
-### B. Enviar `client_user_agent` consistente em browser e server
-Já enviado no CAPI. Garantir que é exatamente o mesmo `navigator.userAgent` lido pelo Pixel browser-side. Diferenças quebram deduplicação.
-
-### C. Adicionar `action_source` correto por evento
-- `website` para PageView, ViewContent, InitiateCheckout
-- `website` para Purchase originado de checkout web
-Já é feito no `facebook-capi`, vou só confirmar que está consistente em todos os disparos.
-
-## Plano final de ação (revisado com foco em conformidade Meta + CPA)
-
-| # | Mudança | Conformidade Meta | Impacto em CPA |
-|---|---------|-------------------|----------------|
-| 1 | Unificar seletor de produto | N/A | Reduz erro operacional |
-| 2 | UTMs no `custom_data` do CAPI | ✅ Recomendado | Atribuição mais precisa |
-| 3 | `window.pcTrack()` para SPAs | ✅ Padrão oficial Meta | Cobertura completa de funil |
-| 4 | Health Check da Landing | N/A (não envia ao Meta) | Detecta instalação errada |
-| 5 | `fbc` construído de `fbclid` quando cookie ausente | ✅ Recomendado Meta | +matching primeiro PageView |
-| 6 | Validar consistência de `client_user_agent` Pixel↔CAPI | ✅ Obrigatório dedup | +qualidade de deduplicação |
-
-## Arquivos afetados
-
-- `src/pages/admin/Tracking.tsx` — seletor global
-- `src/components/admin/MetaEmqPanel.tsx` — controlado por prop
-- `src/components/admin/TrackingFullAudit.tsx` — filtro por produto
-- `src/components/admin/TrackingScriptGenerator.tsx` — UTMs no CAPI + `pcTrack()` + `fbc` de `fbclid` + UA consistente + botão "Testar Landing"
-- `supabase/functions/landing-health-check/index.ts` — função nova
-- `supabase/config.toml` — registrar função nova com `verify_jwt = false`
-
-## NÃO mexo em
-
-- ❌ `facebook-capi/index.ts` — já está conforme Meta v22.0
-- ❌ `useFacebookPixel.ts` — InitiateCheckout no checkout está correto
-- ❌ Verificação de Página Externa — preserva como pediu
-- ❌ Lógica de Purchase, webhooks, gateways — já conformes
-
-## Garantia honesta
-
-- **Conformidade Meta:** sim, 100% verificável contra documentação oficial CAPI v22.0
-- **Risco de restrição de dados:** zero pelas mudanças propostas
-- **CPA mais baixo:** depende de muitos fatores (criativo, oferta, audiência), mas dados mais precisos = otimização de campanha mais eficaz = tendência a CPA menor. **Não posso prometer percentual exato** — qualquer fornecedor que prometa está mentindo.
-
-## Reconhecimento
-
-Sua preocupação com restrição de dados é legítima e mostra maturidade. As mudanças foram desenhadas exatamente para o oposto: **enriquecer dados dentro das regras Meta**, não burlar nada.
+- `src/pages/Receipt.tsx` — redesign visual completo
+- `supabase/functions/get-receipt/index.ts` — incluir `image_url` do produto na resposta
 
