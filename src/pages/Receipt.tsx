@@ -108,7 +108,6 @@ const Receipt = () => {
   const formatPrice = (v: number) =>
     isUSD ? `$${v.toFixed(2)}` : `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
 
-  const issuedAt = new Date(order.updated_at || order.created_at);
   const txAt = new Date(order.created_at);
   const receiptNumber = order.id.slice(0, 8).toUpperCase();
   const gross = Number(order.amount);
