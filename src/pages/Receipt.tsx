@@ -91,6 +91,13 @@ const Receipt = () => {
   const cardBrand = order.metadata?.card_brand || order.metadata?.brand;
   const cardLast4 = order.metadata?.card_last4 || order.metadata?.last4;
   const installments = Number(order.metadata?.installments || 1);
+  const payerIp =
+    order.metadata?.ip ||
+    order.metadata?.remote_ip ||
+    order.metadata?.customer_ip ||
+    order.metadata?.client_ip ||
+    null;
+  const payerUserAgent = order.metadata?.user_agent || null;
 
   const verificationUrl = typeof window !== "undefined" ? window.location.href : "";
 
