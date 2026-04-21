@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
         external_id, metadata, platform_fee_amount, user_id, customer_id,
         customer_city, customer_state, customer_country, customer_zip,
         customers(name, email, phone, cpf),
-        products(name, description, currency)
+        products(name, description, currency, image_url)
       `)
       .eq("id", orderId)
       .maybeSingle();

@@ -1,19 +1,13 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Loader2, Printer, ShieldCheck, CheckCircle2, Lock, Mail, MailCheck } from "lucide-react";
+import { Loader2, Printer, CheckCircle2, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import panteraLogo from "@/assets/pantera-mascot.png";
 
 const PAYMENT_LABEL: Record<string, string> = {
   pix: "PIX",
   credit_card: "Cartão de Crédito",
   boleto: "Boleto Bancário",
-};
-
-const EMAIL_TYPE_LABEL: Record<string, string> = {
-  access_link: "E-mail de acesso ao produto",
-  purchase_confirmation: "E-mail de confirmação de compra",
-  order_confirmation: "E-mail de confirmação do pedido",
-  purchase: "E-mail de confirmação de compra",
 };
 
 interface EmailSent {
@@ -43,7 +37,7 @@ interface ReceiptResponse {
     customer_country: string | null;
     customer_zip: string | null;
     customers: { name: string; email: string; phone: string | null; cpf: string | null } | null;
-    products: { name: string; description: string | null; currency: string } | null;
+    products: { name: string; description: string | null; currency: string; image_url: string | null } | null;
   };
   producer: { name: string | null; email: string | null; cpf_cnpj: string | null } | null;
   gateway: { code: string; label: string } | null;
@@ -55,8 +49,16 @@ interface ReceiptResponse {
 const maskEmail = (email: string) => {
   const [user, domain] = email.split("@");
   if (!user || !domain) return email;
-  const visible = user.slice(0, 2);
-  return `${visible}${"*".repeat(Math.max(user.length - 2, 3))}@${domain}`;
+  const visible = user.slice(0, 3);
+  return `${visible}${"*".repeat(Math.max(user.length - 3, 3))}@${domain}`;
+};
+
+const formatDateTime = (iso: string) => {
+  const d = new Date(iso);
+  return `${d.toLocaleDateString("pt-BR")} às ${d.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  })}`;
 };
 
 const Receipt = () => {
@@ -112,7 +114,6 @@ const Receipt = () => {
   const receiptNumber = order.id.slice(0, 8).toUpperCase();
   const gross = Number(order.amount);
   const fee = Number(order.platform_fee_amount || 0);
-  const net = gross - fee;
   const cardBrand = order.metadata?.card_brand || order.metadata?.brand;
   const cardLast4 = order.metadata?.card_last4 || order.metadata?.last4;
   const installments = Number(order.metadata?.installments || 1);
@@ -136,11 +137,19 @@ const Receipt = () => {
   const confirmationEmail = emails_sent?.find((e) =>
     ["purchase_confirmation", "order_confirmation", "purchase"].includes(e.type),
   );
+  // Email used as proof shown in product card (prefer access_link, fallback to confirmation)
+  const proofEmail = accessEmail || confirmationEmail;
+  const customerEmail = order.customers?.email || null;
+  const productImage = order.products?.image_url || null;
+  const statementName = (producer?.name || "PANTTERA")
+    .replace(/\s+/g, "")
+    .toUpperCase()
+    .slice(0, 22);
 
   return (
     <div className="min-h-screen bg-slate-50 print:bg-white py-8 print:py-0">
       {/* Toolbar (hidden on print) */}
-      <div className="max-w-3xl mx-auto px-4 mb-4 flex items-center justify-between print:hidden">
+      <div className="max-w-2xl mx-auto px-4 mb-4 flex items-center justify-between print:hidden">
         <div className="text-sm text-slate-500">
           Recibo nº <strong className="text-slate-900">{receiptNumber}</strong>
         </div>
@@ -149,57 +158,46 @@ const Receipt = () => {
           className="gap-2 bg-slate-900 hover:bg-slate-800 text-white"
         >
           <Printer className="w-4 h-4" />
-          Baixar / Imprimir PDF
+          Baixar PDF
         </Button>
       </div>
 
-      {/* Receipt sheet — clean white, CartPanda-inspired */}
-      <div className="max-w-3xl mx-auto bg-white text-slate-900 shadow-sm print:shadow-none rounded-2xl print:rounded-none border border-slate-200 print:border-0 overflow-hidden">
-        {/* Top — minimal centered header */}
-        <div className="px-6 sm:px-10 pt-10 pb-6 text-center">
+      {/* Receipt sheet */}
+      <div className="max-w-2xl mx-auto bg-white text-slate-900 shadow-sm print:shadow-none rounded-2xl print:rounded-none border border-slate-200 print:border-0 overflow-hidden">
+        {/* Header — Logo + thanks */}
+        <div className="px-6 sm:px-10 pt-10 pb-8 text-center">
+          <div className="flex justify-center mb-6">
+            <img
+              src={panteraLogo}
+              alt="Panttera"
+              className="w-16 h-16 object-contain"
+            />
+          </div>
+
           <p className="text-sm text-slate-500">Pedido #{receiptNumber}</p>
           <h1 className="text-2xl sm:text-3xl font-semibold text-slate-900 mt-1">
             Obrigado, {maskedName}
           </h1>
 
           {/* Confirmation icon */}
-          <div className="flex justify-center mt-8 mb-4">
-            <div className="relative w-20 h-20 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center">
-              <svg
-                className="w-9 h-9 text-slate-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M16 11V7a4 4 0 00-8 0v4M5 9h14l-1 12H6L5 9z"
-                />
-              </svg>
-              <div className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center ring-4 ring-white">
-                <CheckCircle2 className="w-5 h-5 text-white" strokeWidth={2.5} />
-              </div>
+          <div className="flex justify-center mt-7 mb-3">
+            <div className="w-14 h-14 rounded-full bg-emerald-500 flex items-center justify-center ring-8 ring-emerald-50">
+              <CheckCircle2 className="w-8 h-8 text-white" strokeWidth={2.5} />
             </div>
           </div>
 
           <h2 className="text-xl font-semibold text-slate-900">Seu pedido foi confirmado</h2>
           <p className="text-sm text-slate-500 mt-2 max-w-md mx-auto">
-            Seu pedido aparecerá na fatura como{" "}
-            <strong className="text-slate-700 uppercase">
-              {(producer?.name || "PANTTERA").replace(/\s+/g, "").toUpperCase().slice(0, 22)}
-            </strong>
+            Aparecerá na fatura como{" "}
+            <strong className="text-slate-700">{statementName}</strong>
           </p>
 
-          {accessEmail && (
-            <a
-              href="#email-proof"
-              className="inline-flex items-center justify-center gap-2 mt-6 px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition-colors"
-            >
-              Ver acesso enviado
-            </a>
-          )}
+          <a
+            href="https://app.panttera.com.br/minha-conta"
+            className="inline-flex items-center justify-center gap-2 mt-6 px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition-colors print:hidden"
+          >
+            Gerenciar meu pedido
+          </a>
         </div>
 
         <div className="border-t border-slate-100" />
@@ -207,39 +205,61 @@ const Receipt = () => {
         {/* Detalhes do pedido */}
         <div className="px-6 sm:px-10 py-6">
           <h3 className="text-base font-semibold text-slate-900 mb-4">Detalhes do pedido</h3>
+
           <div className="flex items-start gap-4">
+            {/* Product image */}
             <div className="w-16 h-16 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden">
-              <svg
-                className="w-7 h-7 text-slate-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+              {productImage ? (
+                <img
+                  src={productImage}
+                  alt={order.products?.name || "Produto"}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                  }}
                 />
-              </svg>
+              ) : (
+                <Package className="w-7 h-7 text-slate-400" strokeWidth={1.5} />
+              )}
             </div>
+
             <div className="flex-1 min-w-0">
               <p className="font-medium text-slate-900">
                 {order.products?.name || "Produto digital"}
               </p>
-              {order.products?.description && (
-                <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
-                  {order.products.description}
-                </p>
-              )}
+              <p className="text-xs text-slate-500 mt-0.5">1 × {formatPrice(gross)}</p>
             </div>
-            <p className="font-medium text-slate-900 whitespace-nowrap">1 x {formatPrice(gross)}</p>
           </div>
 
-          <p className="text-xs text-slate-500 mt-6 leading-relaxed">
-            Também enviamos para a sua caixa de entrada, assim você pode acessar a qualquer
-            momento. Se não encontrar, verifique sua pasta de spam ou promoções!
-          </p>
+          {/* Prova de envio do e-mail (texto humano) */}
+          {proofEmail ? (
+            <div className="mt-5 rounded-lg bg-emerald-50/60 border border-emerald-100 px-4 py-3">
+              <p className="text-sm text-slate-700 leading-relaxed">
+                <span className="mr-1.5">✉️</span>
+                Enviamos seu acesso para{" "}
+                <strong className="text-slate-900">{maskEmail(proofEmail.to_email)}</strong> em{" "}
+                <strong className="text-slate-900">{formatDateTime(proofEmail.sent_at)}</strong>.
+              </p>
+              <p className="text-xs text-slate-500 mt-1.5 flex items-center gap-1.5">
+                {proofEmail.opened_at ? (
+                  <span className="text-blue-700 font-medium">✓ Aberto pelo cliente</span>
+                ) : proofEmail.delivered_at ? (
+                  <span className="text-emerald-700 font-medium">✓ Entregue</span>
+                ) : (
+                  <span className="text-emerald-700 font-medium">✓ Enviado</span>
+                )}
+                <span className="text-slate-400">·</span>
+                <span>Verifique a caixa de entrada ou pasta de spam.</span>
+              </p>
+            </div>
+          ) : customerEmail ? (
+            <p className="mt-5 text-sm text-slate-600 leading-relaxed">
+              <span className="mr-1.5">✉️</span>
+              Enviamos seu acesso para{" "}
+              <strong className="text-slate-900">{maskEmail(customerEmail)}</strong>. Se não
+              encontrar, verifique a caixa de entrada ou pasta de spam.
+            </p>
+          ) : null}
         </div>
 
         <div className="border-t border-slate-100" />
@@ -249,31 +269,19 @@ const Receipt = () => {
           <dl className="space-y-2.5 text-sm">
             <div className="flex justify-between">
               <dt className="text-slate-500">Subtotal</dt>
-              <dd className="text-slate-500">1 Item(s)</dd>
               <dd className="text-slate-900 font-medium tabular-nums">{formatPrice(gross)}</dd>
             </div>
-            <div className="flex justify-between">
-              <dt className="text-slate-500">Envio</dt>
-              <dd className="text-slate-500">Entrega digital</dd>
-              <dd className="text-slate-900 font-medium tabular-nums">{formatPrice(0)}</dd>
-            </div>
-            {fee > 0 && (
-              <div className="flex justify-between text-xs">
-                <dt className="text-slate-400">Taxa da plataforma</dt>
-                <dd className="text-slate-400">Líquido ao vendedor: {formatPrice(net)}</dd>
-                <dd className="text-slate-400 tabular-nums">− {formatPrice(fee)}</dd>
-              </div>
-            )}
             <div className="flex justify-between pt-3 border-t border-slate-100">
               <dt className="text-slate-900 font-semibold">Total</dt>
-              <dd></dd>
-              <dd className="text-slate-900 font-semibold tabular-nums">
+              <dd className="text-right">
                 {installments > 1 && (
-                  <span className="text-slate-500 font-normal mr-2">
-                    {installments}x {formatPrice(gross / installments)}
-                  </span>
+                  <div className="text-xs text-slate-500 font-normal mb-0.5">
+                    {installments}× {formatPrice(gross / installments)}
+                  </div>
                 )}
-                {formatPrice(gross)}
+                <span className="text-slate-900 font-semibold tabular-nums">
+                  {formatPrice(gross)}
+                </span>
               </dd>
             </div>
           </dl>
@@ -282,19 +290,19 @@ const Receipt = () => {
         <div className="border-t border-slate-100" />
 
         {/* Informações do cliente */}
-        <div className="px-6 sm:px-10 py-6 space-y-5">
+        <div className="px-6 sm:px-10 py-6 space-y-4">
           <h3 className="text-base font-semibold text-slate-900">Informações do cliente</h3>
 
           <div>
-            <p className="text-sm font-medium text-slate-900 mb-1">Endereço de e-mail</p>
-            <p className="text-sm text-slate-500">
-              {order.customers?.email ? maskEmail(order.customers.email) : "—"}
+            <p className="text-xs text-slate-500 mb-0.5">E-mail</p>
+            <p className="text-sm text-slate-900">
+              {customerEmail ? maskEmail(customerEmail) : "—"}
             </p>
           </div>
 
           <div>
-            <p className="text-sm font-medium text-slate-900 mb-1">Método de pagamento</p>
-            <p className="text-sm text-slate-500 inline-flex items-center gap-2">
+            <p className="text-xs text-slate-500 mb-0.5">Pagamento</p>
+            <p className="text-sm text-slate-900 inline-flex items-center gap-2">
               {order.payment_method === "pix" && (
                 <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-cyan-50 border border-cyan-200 text-cyan-700 text-xs font-medium">
                   <span className="w-1.5 h-1.5 rounded-full bg-cyan-500" />
@@ -307,171 +315,166 @@ const Receipt = () => {
                 </span>
               )}
               {order.payment_method === "credit_card" && cardLast4
-                ? `${String(cardBrand || "cartão").toLowerCase()} terminando em ${cardLast4}`
-                : `${PAYMENT_LABEL[order.payment_method] || order.payment_method} — ${formatPrice(gross)}`}
+                ? `final ${cardLast4}`
+                : order.payment_method !== "credit_card" &&
+                  (PAYMENT_LABEL[order.payment_method] || order.payment_method)}
             </p>
           </div>
-
-          {(order.customer_city || order.customer_state || order.customer_zip) && (
-            <div>
-              <p className="text-sm font-medium text-slate-900 mb-1">Localização</p>
-              <p className="text-sm text-slate-500">
-                {[order.customer_city, order.customer_state, order.customer_country]
-                  .filter(Boolean)
-                  .join(" / ")}
-                {order.customer_zip && ` — CEP ${order.customer_zip}`}
-              </p>
-            </div>
-          )}
         </div>
 
-        {/* Prova de envio do e-mail de acesso */}
-        {(accessEmail || confirmationEmail) && (
-          <>
-            <div className="border-t border-slate-100" />
-            <div id="email-proof" className="px-6 sm:px-10 py-6 space-y-4">
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-semibold text-slate-900">
-                  Comprovação de envio de e-mails
-                </h3>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold uppercase tracking-wider">
-                  Auditoria
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 -mt-2">
-                Registro técnico oficial do disparo automático para o cliente após a confirmação do
-                pagamento.
-              </p>
-
-              <div className="space-y-3">
-                {accessEmail && (
-                  <EmailProofRow email={accessEmail} icon="access" />
-                )}
-                {confirmationEmail && (
-                  <EmailProofRow email={confirmationEmail} icon="confirmation" />
-                )}
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Detalhes técnicos da transação (collapsed style) */}
+        {/* Detalhes técnicos colapsáveis */}
         <div className="border-t border-slate-100" />
-        <div className="px-6 sm:px-10 py-6 space-y-4">
-          <h3 className="text-base font-semibold text-slate-900">Detalhes da transação</h3>
+        <div className="px-6 sm:px-10 py-5">
+          <details className="group receipt-details">
+            <summary className="flex items-center justify-between cursor-pointer list-none text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
+              <span className="flex items-center gap-2">
+                <svg
+                  className="w-4 h-4 transition-transform group-open:rotate-90"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  strokeWidth="2"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+                Ver detalhes técnicos e selo de autenticidade
+              </span>
+            </summary>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
-            <div>
-              <p className="text-xs text-slate-500">Data e hora</p>
-              <p className="text-slate-900">
-                {txAt.toLocaleDateString("pt-BR")} às{" "}
-                {txAt.toLocaleTimeString("pt-BR", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                })}
-              </p>
-              <p className="text-[10px] text-slate-400 font-mono">{txAt.toISOString()} UTC</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500">Status</p>
-              <p className="text-emerald-700 font-semibold">✓ Aprovado e liquidado</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500">Vendedor</p>
-              <p className="text-slate-900">{producer?.name || "—"}</p>
-              {producer?.cpf_cnpj && (
-                <p className="text-[11px] text-slate-500">CPF/CNPJ: {producer.cpf_cnpj}</p>
+            <div className="mt-5 space-y-5">
+              {/* Transaction details */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                <div>
+                  <p className="text-xs text-slate-500">Data e hora</p>
+                  <p className="text-slate-900">
+                    {txAt.toLocaleDateString("pt-BR")} às{" "}
+                    {txAt.toLocaleTimeString("pt-BR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                    })}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Status</p>
+                  <p className="text-emerald-700 font-semibold">✓ Aprovado e liquidado</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Vendedor</p>
+                  <p className="text-slate-900">{producer?.name || "—"}</p>
+                  {producer?.cpf_cnpj && (
+                    <p className="text-[11px] text-slate-500">CPF/CNPJ: {producer.cpf_cnpj}</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">Moeda</p>
+                  <p className="text-slate-900">{order.products?.currency || "BRL"}</p>
+                </div>
+                {fee > 0 && (
+                  <div>
+                    <p className="text-xs text-slate-500">Taxa da plataforma</p>
+                    <p className="text-slate-900 tabular-nums">{formatPrice(fee)}</p>
+                  </div>
+                )}
+                <div className="sm:col-span-2">
+                  <p className="text-xs text-slate-500">ID interno (Panttera)</p>
+                  <p className="text-slate-700 font-mono text-xs break-all">{order.id}</p>
+                </div>
+                {order.external_id && (
+                  <div className="sm:col-span-2">
+                    <p className="text-xs text-slate-500">Referência no gateway</p>
+                    <p className="text-slate-700 font-mono text-xs break-all">
+                      {order.external_id}
+                    </p>
+                  </div>
+                )}
+                {gateway && (
+                  <div className="sm:col-span-2">
+                    <p className="text-xs text-slate-500">Adquirente</p>
+                    <p className="text-slate-700 text-xs">{gateway.label}</p>
+                  </div>
+                )}
+                {payerIp && (
+                  <div>
+                    <p className="text-xs text-slate-500">IP do pagador</p>
+                    <p className="text-slate-700 font-mono text-xs">{payerIp}</p>
+                  </div>
+                )}
+                {payerUserAgent && (
+                  <div className="sm:col-span-2">
+                    <p className="text-xs text-slate-500">Dispositivo</p>
+                    <p className="text-slate-700 font-mono text-[10px] break-all">
+                      {payerUserAgent}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Email audit trail */}
+              {(accessEmail || confirmationEmail) && (
+                <div className="rounded-lg border border-slate-200 bg-slate-50/50 p-4 space-y-2">
+                  <p className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    Comprovação de envio (auditoria)
+                  </p>
+                  {[accessEmail, confirmationEmail].filter(Boolean).map((e) => (
+                    <div key={e!.type} className="text-xs text-slate-600">
+                      <p>
+                        <strong className="text-slate-900">
+                          {e!.type === "access_link"
+                            ? "Acesso ao produto"
+                            : "Confirmação de compra"}
+                        </strong>{" "}
+                        → {maskEmail(e!.to_email)} em {formatDateTime(e!.sent_at)}
+                      </p>
+                      {e!.resend_id && (
+                        <p className="font-mono text-[10px] text-slate-500 break-all">
+                          Resend ID: {e!.resend_id}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
               )}
-            </div>
-            <div>
-              <p className="text-xs text-slate-500">Moeda</p>
-              <p className="text-slate-900">{order.products?.currency || "BRL"}</p>
-            </div>
-            <div className="sm:col-span-2">
-              <p className="text-xs text-slate-500">ID interno (Panttera)</p>
-              <p className="text-slate-700 font-mono text-xs break-all">{order.id}</p>
-            </div>
-            {order.external_id && (
-              <div className="sm:col-span-2">
-                <p className="text-xs text-slate-500">Referência no gateway</p>
-                <p className="text-slate-700 font-mono text-xs break-all">{order.external_id}</p>
+
+              {/* Authenticity seal */}
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-4 space-y-2">
+                <p className="text-xs font-bold text-emerald-900 uppercase tracking-wider">
+                  Selo de autenticidade
+                </p>
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  Documento protegido por hash criptográfico SHA-256. Qualquer alteração
+                  invalidará a verificação pública.
+                </p>
+                <Field label="Hash SHA-256" value={authenticity_hash} mono />
+                <Field label="URL de verificação" value={verificationUrl} mono />
+                <Field
+                  label="Verificado em"
+                  value={new Date(verified_at).toLocaleString("pt-BR")}
+                  mono
+                />
               </div>
-            )}
-            {gateway && (
-              <div className="sm:col-span-2">
-                <p className="text-xs text-slate-500">Adquirente</p>
-                <p className="text-slate-700 text-xs">{gateway.label}</p>
-              </div>
-            )}
-          </div>
+            </div>
+          </details>
         </div>
 
-        {/* Selo de autenticidade — diferencial Panttera, mas em estilo clean */}
+        {/* Legal footer — single line */}
         <div className="border-t border-slate-100" />
-        <div className="px-6 sm:px-10 py-6">
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-5 space-y-3">
-            <div className="flex items-center gap-2">
-              <Lock className="w-4 h-4 text-emerald-700" />
-              <p className="text-xs font-bold text-emerald-900 uppercase tracking-wider">
-                Selo de autenticidade digital
-              </p>
-            </div>
-            <p className="text-[11px] text-slate-600 leading-relaxed">
-              Este documento foi gerado eletronicamente e seu conteúdo está protegido por hash
-              criptográfico SHA-256. Qualquer alteração no documento original invalidará a
-              verificação pública.
-            </p>
-            <div className="grid grid-cols-1 gap-2 pt-1">
-              <Field label="Hash SHA-256" value={authenticity_hash} mono />
-              <Field label="Verificação pública" value={verificationUrl} mono />
-              <Field
-                label="Verificado em"
-                value={`${new Date(verified_at).toLocaleString("pt-BR")}`}
-                mono
-              />
-              {payerIp && <Field label="IP do pagador" value={payerIp} mono />}
-              {payerUserAgent && <Field label="Dispositivo" value={payerUserAgent} mono />}
-            </div>
-          </div>
-        </div>
-
-        {/* Legal footer */}
-        <div className="border-t border-slate-100" />
-        <div className="px-6 sm:px-10 py-6">
-          <div className="flex items-start gap-2">
-            <ShieldCheck className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
-            <div className="text-[11px] text-slate-500 leading-relaxed space-y-2">
-              <p>
-                <strong className="text-slate-700">Natureza:</strong> Comprovante eletrônico de
-                transação financeira emitido pela Panttera Tecnologia em sua qualidade de
-                plataforma processadora de pagamentos digitais.
-              </p>
-              <p>
-                <strong className="text-slate-700">Validade jurídica:</strong> Documento eletrônico
-                válido nos termos da MP 2.200-2/2001, da Lei 14.063/2020 e do Marco Civil da
-                Internet (Lei 12.965/2014).
-              </p>
-              <p>
-                <strong className="text-slate-700">Contestações:</strong> Em caso de dúvida, entre
-                em contato com <strong>contato@panttera.com.br</strong> informando o recibo{" "}
-                <strong>#{receiptNumber}</strong>.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Print footer */}
-        <div className="px-6 sm:px-10 py-3 bg-slate-50 border-t border-slate-200 text-center text-[10px] text-slate-400">
-          Panttera Tecnologia · panttera.com.br · Recibo nº {receiptNumber}
+        <div className="px-6 sm:px-10 py-4 bg-slate-50/50 text-center">
+          <p className="text-[11px] text-slate-500 leading-relaxed">
+            <strong className="text-slate-700">Panttera Tecnologia</strong> · Documento eletrônico
+            válido conforme MP 2.200-2/2001 · Recibo nº{" "}
+            <strong className="text-slate-700">{receiptNumber}</strong>
+          </p>
         </div>
       </div>
 
-      {/* Print styles */}
+      {/* Print styles — force details open when printing */}
       <style>{`
         @media print {
           body { background: white; }
           @page { margin: 12mm; size: A4; }
+          .receipt-details > div { display: block !important; }
+          .receipt-details > summary { display: none; }
         }
       `}</style>
     </div>
@@ -484,101 +487,5 @@ const Field = ({ label, value, mono }: { label: string; value: string; mono?: bo
     <p className={`text-[10px] text-slate-700 break-all ${mono ? "font-mono" : ""}`}>{value}</p>
   </div>
 );
-
-const EmailProofRow = ({ email, icon }: { email: EmailSent; icon: "access" | "confirmation" }) => {
-  const sentAt = new Date(email.sent_at);
-  const deliveredAt = email.delivered_at ? new Date(email.delivered_at) : null;
-  const openedAt = email.opened_at ? new Date(email.opened_at) : null;
-
-  const isOk = ["sent", "delivered", "opened", "clicked"].includes(email.status);
-  const Icon = icon === "access" ? MailCheck : Mail;
-  const accentColor = icon === "access" ? "emerald" : "blue";
-
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-      <div
-        className={`px-4 py-3 flex items-center gap-3 border-b border-slate-100 ${
-          accentColor === "emerald" ? "bg-emerald-50/60" : "bg-blue-50/60"
-        }`}
-      >
-        <div
-          className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-            accentColor === "emerald"
-              ? "bg-emerald-100 text-emerald-700"
-              : "bg-blue-100 text-blue-700"
-          }`}
-        >
-          <Icon className="w-5 h-5" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-slate-900">
-            {EMAIL_TYPE_LABEL[email.type] || email.type}
-          </p>
-          <p className="text-xs text-slate-500 truncate">{email.subject}</p>
-        </div>
-        <span
-          className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider whitespace-nowrap ${
-            isOk
-              ? "bg-emerald-100 text-emerald-700"
-              : "bg-amber-100 text-amber-800"
-          }`}
-        >
-          {isOk ? "✓ Enviado" : email.status}
-        </span>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 px-4 py-3 text-xs">
-        <div>
-          <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">
-            Destinatário
-          </p>
-          <p className="text-slate-700">{maskEmail(email.to_email)}</p>
-        </div>
-        <div>
-          <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">
-            Disparado em
-          </p>
-          <p className="text-slate-700">
-            {sentAt.toLocaleDateString("pt-BR")} às{" "}
-            {sentAt.toLocaleTimeString("pt-BR", {
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-            })}
-          </p>
-        </div>
-        {deliveredAt && (
-          <div>
-            <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">
-              Entregue em
-            </p>
-            <p className="text-emerald-700 font-medium">
-              {deliveredAt.toLocaleDateString("pt-BR")} às{" "}
-              {deliveredAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-            </p>
-          </div>
-        )}
-        {openedAt && (
-          <div>
-            <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">
-              Aberto em
-            </p>
-            <p className="text-emerald-700 font-medium">
-              {openedAt.toLocaleDateString("pt-BR")} às{" "}
-              {openedAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-            </p>
-          </div>
-        )}
-        {email.resend_id && (
-          <div className="sm:col-span-2">
-            <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">
-              ID do provedor (Resend)
-            </p>
-            <p className="text-slate-600 font-mono text-[10px] break-all">{email.resend_id}</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
 
 export default Receipt;
