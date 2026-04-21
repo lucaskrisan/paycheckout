@@ -63,6 +63,7 @@ const Tracking = () => {
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
 
   const [selectedProduct, setSelectedProduct] = useState<string>("");
+  const [globalProduct, setGlobalProduct] = useState<string>("");
   const [diagLoading, setDiagLoading] = useState(false);
   const [diagResults, setDiagResults] = useState<DiagResult[] | null>(null);
   const [diagSummary, setDiagSummary] = useState<DiagSummary | null>(null);
@@ -102,7 +103,10 @@ const Tracking = () => {
           new Map(fbPixels.map((p) => [p.product_id, { id: p.product_id, name: p.product_name }])).values()
         );
         setProducts(uniqueProds);
-        if (uniqueProds.length > 0) setSelectedProduct(uniqueProds[0].id);
+        if (uniqueProds.length > 0) {
+          setSelectedProduct(uniqueProds[0].id);
+          setGlobalProduct(uniqueProds[0].id);
+        }
       }
       if (domainRes.data) setDomains(domainRes.data as any);
       setLoading(false);
