@@ -95,3 +95,5 @@ project_id = "vipltojtcrqatwvzobro"
     verify_jwt = false
   [functions.landing-health-check]
     verify_jwt = false
+  [functions.get-receipt]
+    verify_jwt = false
