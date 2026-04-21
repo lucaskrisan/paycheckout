@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, Download, Mail, Loader2, Package, ShoppingBag, Zap, TrendingUp, DollarSign, Send } from "lucide-react";
+import { Search, SlidersHorizontal, ChevronLeft, ChevronRight, Download, Mail, Loader2, Package, ShoppingBag, Zap, TrendingUp, DollarSign, Send, Receipt as ReceiptIcon, Copy, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { EmailPreviewModal } from "@/components/admin/EmailPreviewModal";
@@ -736,7 +736,7 @@ const Orders = () => {
                       <DetailRow label="Aprovado em" value={format(new Date(selectedOrder.updated_at), "dd/MM/yyyy HH:mm")} />
                     )}
                     {["paid", "approved", "confirmed"].includes(selectedOrder.status) && (
-                      <div className="pt-4">
+                      <div className="pt-4 space-y-2">
                         <Button
                           variant="outline"
                           size="sm"
@@ -750,9 +750,40 @@ const Orders = () => {
                             <><Send className="w-3.5 h-3.5" /> Reenviar e-mail de acesso</>
                           )}
                         </Button>
-                        <p className="text-[10px] text-muted-foreground mt-1.5 text-center">
+                        <p className="text-[10px] text-muted-foreground text-center">
                           Reenvia o link da área de membros para o e-mail do cliente.
                         </p>
+
+                        <div className="pt-2 border-t border-border/50 mt-2">
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 gap-2"
+                              onClick={() => window.open(`/recibo/${selectedOrder.id}`, "_blank")}
+                            >
+                              <ReceiptIcon className="w-3.5 h-3.5" />
+                              Abrir recibo
+                              <ExternalLink className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-2"
+                              onClick={() => {
+                                const url = `${window.location.origin}/recibo/${selectedOrder.id}`;
+                                navigator.clipboard.writeText(url);
+                                toast.success("Link do recibo copiado!");
+                              }}
+                              title="Copiar link público"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground mt-1.5 text-center">
+                            Recibo oficial Panttera — envie ao cliente ou ao gateway como comprovante.
+                          </p>
+                        </div>
                       </div>
                     )}
                     {(utmSource || utmCampaign) && (
