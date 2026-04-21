@@ -282,6 +282,43 @@ const Tracking = () => {
         ))}
       </div>
 
+      {/* ── Global Product Selector (controla TODOS os blocos abaixo) ── */}
+      {products.length > 0 && (
+        <div className="rounded-lg bg-gradient-to-r from-violet-500/10 via-cyan-500/10 to-emerald-500/10 border border-violet-500/20 p-3 flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Activity className="w-4 h-4 text-violet-400" />
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Auditando produto</p>
+              <p className="text-xs font-bold text-slate-100">
+                {products.find((p) => p.id === globalProduct)?.name || "Selecione abaixo"}
+              </p>
+            </div>
+          </div>
+          <div className="flex-1 min-w-[180px]">
+            <Select
+              value={globalProduct}
+              onValueChange={(v) => {
+                setGlobalProduct(v);
+                setSelectedProduct(v);
+                autoRanRef.current = false;
+              }}
+            >
+              <SelectTrigger className="bg-slate-900/60 border-slate-700/50 text-slate-200 text-xs h-9">
+                <SelectValue placeholder="Trocar produto" />
+              </SelectTrigger>
+              <SelectContent>
+                {products.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Badge variant="outline" className="text-[10px] bg-slate-900/40 border-slate-700/40 text-slate-400">
+            Diagnóstico · EMQ · Varredura · Script — todos seguem este produto
+          </Badge>
+        </div>
+      )}
+
       {/* ── Diagnostic Alert Banner ── */}
       {alertIssues.length > 0 && (
         <div className="rounded-lg border overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300"
@@ -342,8 +379,8 @@ const Tracking = () => {
 
         {/* ═══ TAB: Auditoria ═══ */}
         <TabsContent value="audit" className="space-y-5 mt-0">
-          {user && <TrackingFullAudit userId={user.id} />}
-          <MetaEmqPanel products={products} />
+          {user && <TrackingFullAudit userId={user.id} productId={globalProduct} />}
+          <MetaEmqPanel products={products} selectedProductId={globalProduct} onProductChange={setGlobalProduct} />
 
           {/* Diagnostics */}
           <div className="rounded-lg bg-slate-800/50 border border-slate-700/30 overflow-hidden">
@@ -488,7 +525,13 @@ const Tracking = () => {
 
         {/* ═══ TAB: Integração ═══ */}
         <TabsContent value="integration" className="space-y-5 mt-0">
-          <TrackingScriptGenerator pixels={pixels} products={products} checkoutBaseUrl="https://app.panttera.com.br" />
+          <TrackingScriptGenerator
+            pixels={pixels}
+            products={products}
+            checkoutBaseUrl="https://app.panttera.com.br"
+            selectedProductId={globalProduct}
+            onProductChange={setGlobalProduct}
+          />
         </TabsContent>
 
         {/* ═══ TAB: Configuração ═══ */}
