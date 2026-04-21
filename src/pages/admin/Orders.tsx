@@ -303,10 +303,33 @@ const Orders = () => {
     return badges;
   };
 
-  const handleExport = () => {
-    if (filtered.length === 0) { toast.error("Nenhuma venda para exportar"); return; }
+  const handleExport = async () => {
+    if (totalFilteredCount === 0) { toast.error("Nenhuma venda para exportar"); return; }
+    toast.info("Preparando exportação...");
+    const statusFilter = filterStatuses.size > 0
+      ? Array.from(filterStatuses).join(",")
+      : (activeTab === "approved" ? "approved" : "all");
+    const PAGE_SIZE = 500;
+    const pages = Math.ceil(totalFilteredCount / PAGE_SIZE);
+    const all: Order[] = [];
+    for (let p = 1; p <= pages; p++) {
+      const { data, error } = await supabase.rpc("list_orders_paginated", {
+        p_user_id: user!.id,
+        p_is_super_admin: !!isSuperAdmin,
+        p_page: p,
+        p_page_size: PAGE_SIZE,
+        p_search: searchDebounced || null,
+        p_status_filter: statusFilter,
+        p_period: filterPeriod,
+        p_product_id: filterProduct === "all" ? null : filterProduct,
+        p_payment_methods: filterMethods.size > 0 ? Array.from(filterMethods).join(",") : null,
+        p_sale_type: filterSaleType,
+      });
+      if (error) { toast.error("Erro ao exportar: " + error.message); return; }
+      all.push(...((data as any)?.rows || []));
+    }
     const header = "Data,Produto,Cliente,Email,Status,Método,Valor,Order Bumps,UTM Source\n";
-    const csv = filtered.map(o => {
+    const csv = all.map(o => {
       const bumpNames = getBumpIds(o).map(id => productMap[id] || id.slice(0, 8)).join("; ");
       return `"${format(new Date(o.created_at), "dd/MM/yyyy HH:mm")}","${o.products?.name || ""}","${o.customers?.name || ""}","${o.customers?.email || ""}","${getStatus(o.status).label}","${PAYMENT_LABEL[o.payment_method] || o.payment_method}","${Number(o.amount).toFixed(2)}","${bumpNames}","${o.metadata?.utm_source || ""}"`;
     }).join("\n");
@@ -314,7 +337,7 @@ const Orders = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = `vendas-${format(new Date(), "yyyy-MM-dd")}.csv`; a.click();
     URL.revokeObjectURL(url);
-    toast.success("Exportação concluída!");
+    toast.success(`Exportação concluída! ${all.length} vendas`);
   };
 
   return (
