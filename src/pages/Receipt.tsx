@@ -91,6 +91,13 @@ const Receipt = () => {
   const cardBrand = order.metadata?.card_brand || order.metadata?.brand;
   const cardLast4 = order.metadata?.card_last4 || order.metadata?.last4;
   const installments = Number(order.metadata?.installments || 1);
+  const payerIp =
+    order.metadata?.ip ||
+    order.metadata?.remote_ip ||
+    order.metadata?.customer_ip ||
+    order.metadata?.client_ip ||
+    null;
+  const payerUserAgent = order.metadata?.user_agent || null;
 
   const verificationUrl = typeof window !== "undefined" ? window.location.href : "";
 
@@ -339,6 +346,22 @@ const Receipt = () => {
                   {new Date(verified_at).toLocaleString("pt-BR")} ({verified_at} UTC)
                 </p>
               </div>
+              {payerIp && (
+                <div>
+                  <span className="text-[9px] uppercase tracking-widest text-slate-500 font-bold">
+                    IP do pagador no ato da compra
+                  </span>
+                  <p className="font-mono text-[10px] text-slate-700">{payerIp}</p>
+                </div>
+              )}
+              {payerUserAgent && (
+                <div>
+                  <span className="text-[9px] uppercase tracking-widest text-slate-500 font-bold">
+                    Dispositivo / User-Agent
+                  </span>
+                  <p className="font-mono text-[10px] text-slate-700 break-all">{payerUserAgent}</p>
+                </div>
+              )}
             </div>
           </div>
 
