@@ -219,7 +219,8 @@ Deno.serve(async (req) => {
         }
 
         // Small delay to avoid rate limit
-        await new Promise((r) => setTimeout(r, 250));
+        // Resend free tier ≈ 2 req/s. Wait 1500ms to stay safely under the limit.
+        await new Promise((r) => setTimeout(r, 1500));
       } catch (err: any) {
         failed++;
         results.push({ order_id, status: 'error', reason: String(err?.message || err) });
