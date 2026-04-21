@@ -7,8 +7,13 @@ import {
   scheduleDynamicImportRecoveryReset,
 } from "@/lib/dynamicImportRecovery";
 import { bootGeo } from "@/lib/cfGeo";
+import { cleanupStaleBrowserCaches } from "@/lib/staleCacheCleanup";
 
 scheduleDynamicImportRecoveryReset();
+
+// Limpeza de Service Workers órfãos e caches antigos do navegador.
+// Não bloqueia o boot — roda em background.
+cleanupStaleBrowserCaches();
 
 window.addEventListener("vite:preloadError", (event) => {
   event.preventDefault();
