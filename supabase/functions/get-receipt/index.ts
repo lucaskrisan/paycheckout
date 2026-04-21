@@ -87,14 +87,14 @@ Deno.serve(async (req) => {
     if (order.user_id) {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name, cpf_cnpj")
+        .select("full_name, cpf")
         .eq("id", order.user_id)
         .maybeSingle();
       const { data: authUser } = await supabase.auth.admin.getUserById(order.user_id);
       producer = {
         name: profile?.full_name || authUser?.user?.user_metadata?.full_name || null,
         email: authUser?.user?.email || null,
-        cpf_cnpj: (profile as any)?.cpf_cnpj || null,
+        cpf_cnpj: (profile as any)?.cpf || null,
       };
     }
 
