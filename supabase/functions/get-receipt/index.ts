@@ -101,6 +101,58 @@ Deno.serve(async (req) => {
     const gateway = detectGateway(order.metadata, order.external_id);
     const gatewayLabel = gateway ? GATEWAY_LABELS[gateway] || gateway : null;
 
+    // E-mails relacionados ao pedido (prova de envio do acesso e da confirmação)
+    const customerEmail = (order as any).customers?.email || null;
+    let emailsSent: Array<{
+      type: string;
+      subject: string;
+      to_email: string;
+      sent_at: string;
+      status: string;
+      delivered_at: string | null;
+      opened_at: string | null;
+      resend_id: string | null;
+    }> = [];
+
+    if (customerEmail) {
+      const { data: logs } = await supabase
+        .from("email_logs")
+        .select("email_type, subject, to_email, created_at, status, delivered_at, opened_at, resend_id, order_id, customer_id")
+        .or(
+          [
+            `order_id.eq.${order.id}`,
+            (order as any).customer_id ? `customer_id.eq.${(order as any).customer_id}` : null,
+            `to_email.eq.${customerEmail}`,
+          ]
+            .filter(Boolean)
+            .join(","),
+        )
+        .in("email_type", ["access_link", "purchase_confirmation", "order_confirmation", "purchase"])
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (logs) {
+        // Deduplica por email_type, mantendo o mais recente
+        const seen = new Set<string>();
+        emailsSent = logs
+          .filter((l: any) => {
+            if (seen.has(l.email_type)) return false;
+            seen.add(l.email_type);
+            return true;
+          })
+          .map((l: any) => ({
+            type: l.email_type,
+            subject: l.subject,
+            to_email: l.to_email,
+            sent_at: l.created_at,
+            status: l.status,
+            delivered_at: l.delivered_at,
+            opened_at: l.opened_at,
+            resend_id: l.resend_id,
+          }));
+      }
+    }
+
     // Authenticity hash — anyone can recompute by hashing these fields server-side
     const hashInput = [
       order.id,
@@ -117,6 +169,7 @@ Deno.serve(async (req) => {
         order,
         producer,
         gateway: gateway ? { code: gateway, label: gatewayLabel } : null,
+        emails_sent: emailsSent,
         authenticity_hash: authenticityHash,
         verified_at: new Date().toISOString(),
       }),
