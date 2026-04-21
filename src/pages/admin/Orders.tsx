@@ -338,7 +338,10 @@ const Orders = () => {
             <span className="text-sm text-muted-foreground">Vendas encontradas</span>
           </div>
           <p className="text-3xl font-bold text-foreground tracking-tight">
-            {filtered.length.toLocaleString("pt-BR")}
+            {(serverTotals && !hasActiveFilters && !search && activeTab === "approved"
+              ? serverTotals.count
+              : filtered.length
+            ).toLocaleString("pt-BR")}
           </p>
         </div>
         <div className="relative overflow-hidden rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm p-5 group hover:border-primary/30 transition-all">
@@ -350,7 +353,10 @@ const Orders = () => {
             <span className="text-sm text-muted-foreground">Valor líquido</span>
           </div>
           <p className="text-3xl font-bold text-foreground tracking-tight">
-            R$ {totalAmount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+            R$ {(serverTotals && !hasActiveFilters && !search && activeTab === "approved"
+              ? serverTotals.revenue
+              : totalAmount
+            ).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
           </p>
         </div>
       </div>
