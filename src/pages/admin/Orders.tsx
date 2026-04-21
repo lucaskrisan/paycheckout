@@ -121,7 +121,9 @@ const Orders = () => {
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [serverTotals, setServerTotals] = useState<{ revenue: number; count: number } | null>(null);
+  const [pageTotals, setPageTotals] = useState<{ count: number; amount: number }>({ count: 0, amount: 0 });
   const [search, setSearch] = useState("");
+  const [searchDebounced, setSearchDebounced] = useState("");
   const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState<"approved" | "all">("approved");
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
@@ -200,18 +202,20 @@ const Orders = () => {
     }
   };
 
+  // Debounce search to avoid flooding the RPC
+  useEffect(() => {
+    const t = setTimeout(() => setSearchDebounced(search), 350);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  // Load products list once + revenue totals (header cards when no filter active)
   useEffect(() => {
     if (!user?.id) return;
-    const load = async () => {
-      setLoading(true);
-      let ordersQuery = supabase.from("orders").select("*, customers(name, email, phone, cpf), products(name)").order("created_at", { ascending: false }).limit(5000);
-      if (!isSuperAdmin) ordersQuery = ordersQuery.eq("user_id", user.id);
-      const [ordersRes, productsRes, revenueRes] = await Promise.all([
-        ordersQuery,
+    (async () => {
+      const [productsRes, revenueRes] = await Promise.all([
         supabase.from("products").select("id, name").eq("user_id", user.id),
         supabase.rpc("get_revenue_summary", { p_user_id: user.id }),
       ]);
-      setOrders((ordersRes.data as any) || []);
       setProducts(productsRes.data || []);
       const rev = Array.isArray(revenueRes.data) ? revenueRes.data[0] : null;
       if (rev) {
@@ -220,10 +224,50 @@ const Orders = () => {
           count: Number(rev.paid_count ?? 0),
         });
       }
-      setLoading(false);
-    };
-    load();
+    })();
   }, [user?.id]);
+
+  // Server-side paginated orders fetch
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const statusFilter = filterStatuses.size > 0
+        ? Array.from(filterStatuses).join(",")
+        : (activeTab === "approved" ? "approved" : "all");
+
+      const { data, error } = await supabase.rpc("list_orders_paginated", {
+        p_user_id: user.id,
+        p_is_super_admin: !!isSuperAdmin,
+        p_page: page,
+        p_page_size: ITEMS_PER_PAGE,
+        p_search: searchDebounced || null,
+        p_status_filter: statusFilter,
+        p_period: filterPeriod,
+        p_product_id: filterProduct === "all" ? null : filterProduct,
+        p_payment_methods: filterMethods.size > 0 ? Array.from(filterMethods).join(",") : null,
+        p_sale_type: filterSaleType,
+      });
+
+      if (cancelled) return;
+
+      if (error) {
+        toast.error("Erro ao carregar vendas: " + error.message);
+        setOrders([]);
+        setPageTotals({ count: 0, amount: 0 });
+      } else {
+        const payload = (data as any) || {};
+        setOrders((payload.rows as Order[]) || []);
+        setPageTotals({
+          count: Number(payload.total_count ?? 0),
+          amount: Number(payload.total_amount ?? 0),
+        });
+      }
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id, isSuperAdmin, page, searchDebounced, activeTab, filterPeriod, filterProduct, filterMethods, filterStatuses, filterSaleType]);
 
   const toggleFilter = (set: Set<string>, value: string) => {
     const next = new Set(set);
@@ -239,54 +283,14 @@ const Orders = () => {
 
   const hasActiveFilters = filterPeriod !== "all" || filterCurrency !== "all" || filterType !== "all" || filterSaleType !== "all" || filterProduct !== "all" || filterOffer !== "all" || filterAffiliate !== "" || filterUtmParams !== "" || filterMethods.size > 0 || filterStatuses.size > 0 || filterSubscriptions.size > 0;
 
-  const filtered = useMemo(() => {
-    let result = orders;
-    if (filterStatuses.size > 0) {
-      const expanded = new Set(filterStatuses);
-      if (expanded.has("paid")) { expanded.add("approved"); expanded.add("confirmed"); }
-      if (expanded.has("refused")) { expanded.add("failed"); }
-      result = result.filter(o => expanded.has(o.status));
-    } else if (activeTab === "approved") {
-      result = result.filter(o => ["paid", "approved", "confirmed"].includes(o.status));
-    }
-    if (search) {
-      const s = search.toLowerCase();
-      result = result.filter(o => o.id.toLowerCase().includes(s) || o.customers?.name?.toLowerCase().includes(s) || o.customers?.email?.toLowerCase().includes(s) || o.products?.name?.toLowerCase().includes(s));
-    }
-    if (filterPeriod !== "all") {
-      const now = new Date();
-      let from: Date;
-      switch (filterPeriod) {
-        case "today": from = new Date(now.setHours(0, 0, 0, 0)); break;
-        case "7d": from = new Date(Date.now() - 7 * 86400000); break;
-        case "30d": from = new Date(Date.now() - 30 * 86400000); break;
-        case "90d": from = new Date(Date.now() - 90 * 86400000); break;
-        default: from = new Date(0);
-      }
-      result = result.filter(o => new Date(o.created_at) >= from);
-    }
-    if (filterProduct !== "all") result = result.filter(o => o.product_id === filterProduct);
-    if (filterMethods.size > 0) result = result.filter(o => filterMethods.has(o.payment_method));
-    if (filterSaleType !== "all") {
-      result = result.filter(o => {
-        const hasBumps = getBumpIds(o).length > 0;
-        const isUpsell = isUpsellOrder(o);
-        switch (filterSaleType) {
-          case "front": return !hasBumps && !isUpsell;
-          case "with_bumps": return hasBumps;
-          case "upsell": return isUpsell;
-          default: return true;
-        }
-      });
-    }
-    return result;
-  }, [orders, search, activeTab, filterPeriod, filterProduct, filterMethods, filterStatuses, filterType, filterSubscriptions, filterSaleType]);
+  // Server already paginated/filtered — orders IS the current page
+  const paginated = orders;
+  const totalPages = Math.max(1, Math.ceil(pageTotals.count / ITEMS_PER_PAGE));
+  const totalAmount = pageTotals.amount;
+  const totalFilteredCount = pageTotals.count;
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
-  const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
-  const totalAmount = filtered.reduce((sum, o) => sum + Number(o.amount), 0);
-
-  useEffect(() => { setPage(1); }, [search, activeTab, filterPeriod, filterProduct, filterMethods, filterStatuses, filterType, filterSubscriptions, filterCurrency, filterSaleType]);
+  // Reset to page 1 when filters change
+  useEffect(() => { setPage(1); }, [searchDebounced, activeTab, filterPeriod, filterProduct, filterMethods, filterStatuses, filterType, filterSubscriptions, filterCurrency, filterSaleType]);
 
   const getStatus = (status: string) => STATUS_MAP[status] || { label: status, variant: "default" as const };
 
@@ -299,10 +303,33 @@ const Orders = () => {
     return badges;
   };
 
-  const handleExport = () => {
-    if (filtered.length === 0) { toast.error("Nenhuma venda para exportar"); return; }
+  const handleExport = async () => {
+    if (totalFilteredCount === 0) { toast.error("Nenhuma venda para exportar"); return; }
+    toast.info("Preparando exportação...");
+    const statusFilter = filterStatuses.size > 0
+      ? Array.from(filterStatuses).join(",")
+      : (activeTab === "approved" ? "approved" : "all");
+    const PAGE_SIZE = 500;
+    const pages = Math.ceil(totalFilteredCount / PAGE_SIZE);
+    const all: Order[] = [];
+    for (let p = 1; p <= pages; p++) {
+      const { data, error } = await supabase.rpc("list_orders_paginated", {
+        p_user_id: user!.id,
+        p_is_super_admin: !!isSuperAdmin,
+        p_page: p,
+        p_page_size: PAGE_SIZE,
+        p_search: searchDebounced || null,
+        p_status_filter: statusFilter,
+        p_period: filterPeriod,
+        p_product_id: filterProduct === "all" ? null : filterProduct,
+        p_payment_methods: filterMethods.size > 0 ? Array.from(filterMethods).join(",") : null,
+        p_sale_type: filterSaleType,
+      });
+      if (error) { toast.error("Erro ao exportar: " + error.message); return; }
+      all.push(...((data as any)?.rows || []));
+    }
     const header = "Data,Produto,Cliente,Email,Status,Método,Valor,Order Bumps,UTM Source\n";
-    const csv = filtered.map(o => {
+    const csv = all.map(o => {
       const bumpNames = getBumpIds(o).map(id => productMap[id] || id.slice(0, 8)).join("; ");
       return `"${format(new Date(o.created_at), "dd/MM/yyyy HH:mm")}","${o.products?.name || ""}","${o.customers?.name || ""}","${o.customers?.email || ""}","${getStatus(o.status).label}","${PAYMENT_LABEL[o.payment_method] || o.payment_method}","${Number(o.amount).toFixed(2)}","${bumpNames}","${o.metadata?.utm_source || ""}"`;
     }).join("\n");
@@ -310,7 +337,7 @@ const Orders = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = `vendas-${format(new Date(), "yyyy-MM-dd")}.csv`; a.click();
     URL.revokeObjectURL(url);
-    toast.success("Exportação concluída!");
+    toast.success(`Exportação concluída! ${all.length} vendas`);
   };
 
   return (
@@ -340,7 +367,7 @@ const Orders = () => {
           <p className="text-3xl font-bold text-foreground tracking-tight">
             {(serverTotals && !hasActiveFilters && !search && activeTab === "approved"
               ? serverTotals.count
-              : filtered.length
+              : totalFilteredCount
             ).toLocaleString("pt-BR")}
           </p>
         </div>
