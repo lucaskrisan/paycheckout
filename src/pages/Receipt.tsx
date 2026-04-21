@@ -188,8 +188,8 @@ const Receipt = () => {
 
           <h2 className="text-xl font-semibold text-slate-900">Seu pedido foi confirmado</h2>
           <p className="text-sm text-slate-500 mt-2 max-w-md mx-auto">
-            Aparecerá na fatura como{" "}
-            <strong className="text-slate-700">{statementName}</strong>
+            A cobrança aparecerá na fatura do seu cartão como{" "}
+            <strong className="text-slate-700">PANTERAPAY</strong>
           </p>
 
           <a
