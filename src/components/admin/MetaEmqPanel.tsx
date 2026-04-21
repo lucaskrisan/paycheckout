@@ -14,6 +14,8 @@ import { toast } from "sonner";
 
 interface Props {
   products: { id: string; name: string }[];
+  selectedProductId?: string;
+  onProductChange?: (id: string) => void;
 }
 
 interface EventEmq {
@@ -90,8 +92,10 @@ function trendArrow(current: number, previous: number) {
   return <Minus className="w-3 h-3 text-slate-500" />;
 }
 
-export default function MetaEmqPanel({ products }: Props) {
-  const [selectedProduct, setSelectedProduct] = useState(products[0]?.id || "");
+export default function MetaEmqPanel({ products, selectedProductId, onProductChange }: Props) {
+  const [internalSelected, setInternalSelected] = useState(products[0]?.id || "");
+  const selectedProduct = selectedProductId ?? internalSelected;
+  const setSelectedProduct = onProductChange ?? setInternalSelected;
   const [loading, setLoading] = useState(false);
   const [snapshotLoading, setSnapshotLoading] = useState(false);
   const [data, setData] = useState<EmqData | null>(null);

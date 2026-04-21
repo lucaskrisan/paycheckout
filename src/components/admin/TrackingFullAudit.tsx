@@ -20,9 +20,10 @@ interface AuditCheck {
 
 interface Props {
   userId: string;
+  productId?: string;
 }
 
-export default function TrackingFullAudit({ userId }: Props) {
+export default function TrackingFullAudit({ userId, productId }: Props) {
   const [running, setRunning] = useState(false);
   const [checks, setChecks] = useState<AuditCheck[] | null>(null);
 
@@ -33,10 +34,12 @@ export default function TrackingFullAudit({ userId }: Props) {
 
     try {
       // ═══ 1. PIXELS & CAPI CONFIG ═══
-      const { data: pixels } = await supabase
+      const pixelQuery = supabase
         .from("product_pixels")
         .select("id, pixel_id, platform, domain, capi_token, product_id, products(name)")
         .eq("user_id", userId);
+      if (productId) pixelQuery.eq("product_id", productId);
+      const { data: pixels } = await pixelQuery;
 
       const fbPixels = (pixels || []).filter((p: any) => p.platform === "facebook");
 
@@ -100,12 +103,14 @@ export default function TrackingFullAudit({ userId }: Props) {
 
       // ═══ 3. RECENT EVENTS (last 24h) ═══
       const since24h = subHours(new Date(), 24).toISOString();
-      const { data: recentEvents, count: totalCount } = await supabase
+      const eventsQuery = supabase
         .from("pixel_events" as any)
         .select("event_name, source, event_id, visitor_id", { count: "exact" })
         .eq("user_id", userId)
         .gte("created_at", since24h)
         .limit(1000);
+      if (productId) eventsQuery.eq("product_id", productId);
+      const { data: recentEvents, count: totalCount } = await eventsQuery;
 
       const events = (recentEvents as any[]) || [];
       const eventCount = totalCount || events.length;
@@ -236,7 +241,7 @@ export default function TrackingFullAudit({ userId }: Props) {
     if (errors > 0) toast.error(`Varredura: ${errors} erro(s), ${warnings} aviso(s), ${passed} OK`);
     else if (warnings > 0) toast.warning(`Varredura: ${warnings} aviso(s), ${passed} OK — funcional mas pode melhorar`);
     else toast.success(`Varredura: ${passed} verificações OK — rastreamento perfeito! 🎯`);
-  }, [userId]);
+  }, [userId, productId]);
 
   const statusIcon = (status: string) => {
     switch (status) {
