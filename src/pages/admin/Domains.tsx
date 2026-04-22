@@ -10,6 +10,7 @@ import {
   RefreshCw, Copy, ExternalLink, ChevronRight, X, Rocket,
   Settings, ShieldCheck,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 
 /* ───────── Tutorial Steps ───────── */
