@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Globe, Plus, Trash2, CheckCircle, AlertCircle, Loader2,
   RefreshCw, Copy, ExternalLink, ChevronRight, X, Rocket,
-  Settings, ShieldCheck,
+  Settings, ShieldCheck, Activity, Wifi, WifiOff,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
