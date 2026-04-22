@@ -66,6 +66,8 @@ const Domains = () => {
   const [newHostname, setNewHostname] = useState("");
   const [addingCustom, setAddingCustom] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState<string | null>(null);
+  const [healthChecking, setHealthChecking] = useState<string | null>(null);
+  const [healthByDomain, setHealthByDomain] = useState<Record<string, { ok: boolean; status_code: number | null; latency_ms: number | null; diagnosis: string; hint: string | null; checked_at: string }>>({});
 
   /* ── Tutorial ── */
   const [showTutorial, setShowTutorial] = useState(() => {
