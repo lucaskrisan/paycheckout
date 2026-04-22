@@ -275,6 +275,19 @@ const ProductEdit = () => {
       supabase.from("facebook_domains").select("*").eq("user_id", user.id).then(({ data }) => {
         setFbDomains((data || []) as any);
       });
+
+      // Buscar domínio customizado ativo do usuário
+      supabase
+        .from("custom_domains" as any)
+        .select("hostname")
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+        .then(({ data }: any) => {
+          if (data?.hostname) setActiveCustomDomain(data.hostname);
+        });
     }
 
 
@@ -523,7 +536,8 @@ const ProductEdit = () => {
   }
 
   const defaultCheckout = checkouts.find((c: any) => c.is_default) || checkouts[0] || null;
-  const checkoutLink = isNew ? "" : `${getPublicUrl()}/checkout/${productId}${defaultCheckout?.id ? `?config=${defaultCheckout.id}` : ""}`;
+  const checkoutBaseUrl = activeCustomDomain ? `https://${activeCustomDomain}` : getPublicUrl();
+  const checkoutLink = isNew ? "" : `${checkoutBaseUrl}/checkout/${productId}${defaultCheckout?.id ? `?config=${defaultCheckout.id}` : ""}`;
 
   return (
     <div className="space-y-0 -m-6">
@@ -1403,8 +1417,8 @@ const ProductEdit = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1.5">
-                            <Input value={`${getPublicUrl()}/checkout/${productId}?config=${co.id}`} readOnly className="h-7 text-[10px] bg-muted/50 max-w-[180px]" />
-                            <button onClick={() => { navigator.clipboard.writeText(`${getPublicUrl()}/checkout/${productId}?config=${co.id}`); toast.success("Link copiado!"); }} className="text-muted-foreground hover:text-primary transition-colors shrink-0">
+                            <Input value={`${checkoutBaseUrl}/checkout/${productId}?config=${co.id}`} readOnly className="h-7 text-[10px] bg-muted/50 max-w-[180px]" />
+                            <button onClick={() => { navigator.clipboard.writeText(`${checkoutBaseUrl}/checkout/${productId}?config=${co.id}`); toast.success("Link copiado!"); }} className="text-muted-foreground hover:text-primary transition-colors shrink-0">
                               <LinkIcon className="w-3.5 h-3.5" />
                             </button>
                           </div>
