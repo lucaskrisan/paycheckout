@@ -89,9 +89,10 @@ const Domains = () => {
 
   const addCustomDomain = async () => {
     if (!newHostname || !user) return;
-    const clean = newHostname.replace(/^https?:\/\//, "").replace(/\/.*$/, "").toLowerCase().trim();
-    if (!clean.includes(".")) {
-      toast.error("Digite um domínio válido (ex: pay.seusite.com)");
+    const clean = newHostname.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "").toLowerCase().trim();
+    // Aceita tanto domínio raiz (seusite.com) quanto subdomínio (pay.seusite.com)
+    if (!/^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/.test(clean)) {
+      toast.error("Digite um domínio válido (ex: seusite.com ou pay.seusite.com)");
       return;
     }
     setAddingCustom(true);
