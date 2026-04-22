@@ -343,12 +343,79 @@ const Domains = () => {
                               </a>
                             </Button>
                           )}
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" title="Ver instruções de DNS">
+                                <Settings className="w-4 h-4 text-muted-foreground" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent align="end" className="w-80">
+                              {(() => {
+                                const parts = String(d.hostname).split(".");
+                                const subdomain = parts.length > 2 ? parts[0] : "@";
+                                const rootDomain = parts.length > 2 ? parts.slice(1).join(".") : d.hostname;
+                                return (
+                                  <div className="space-y-3">
+                                    <div>
+                                      <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                        <Settings className="w-4 h-4 text-primary" /> Configuração de DNS
+                                      </p>
+                                      <p className="text-xs text-muted-foreground mt-1">
+                                        Adicione este registro no painel DNS de <span className="font-mono text-foreground">{rootDomain}</span>
+                                      </p>
+                                    </div>
+                                    <div className="bg-muted/50 rounded-lg p-3 border border-border/50 space-y-2">
+                                      <div className="flex items-center justify-between gap-2">
+                                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Tipo</span>
+                                        <div className="flex items-center gap-1">
+                                          <p className="font-mono text-xs font-bold text-foreground">CNAME</p>
+                                          <button onClick={() => copyToClipboard("CNAME")} className="text-muted-foreground hover:text-primary">
+                                            <Copy className="w-3 h-3" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center justify-between gap-2">
+                                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Nome / Host</span>
+                                        <div className="flex items-center gap-1">
+                                          <p className="font-mono text-xs font-bold text-primary">{subdomain}</p>
+                                          <button onClick={() => copyToClipboard(subdomain)} className="text-muted-foreground hover:text-primary">
+                                            <Copy className="w-3 h-3" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center justify-between gap-2">
+                                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Valor</span>
+                                        <div className="flex items-center gap-1">
+                                          <p className="font-mono text-xs font-bold text-primary">app.panttera.com.br</p>
+                                          <button onClick={() => copyToClipboard("app.panttera.com.br")} className="text-muted-foreground hover:text-primary">
+                                            <Copy className="w-3 h-3" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center justify-between gap-2">
+                                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">TTL</span>
+                                        <p className="font-mono text-xs font-bold text-foreground">Auto / 3600</p>
+                                      </div>
+                                      <div className="flex items-center justify-between gap-2">
+                                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Proxy</span>
+                                        <p className="font-mono text-xs font-bold text-foreground">DNS only</p>
+                                      </div>
+                                    </div>
+                                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                      Salve no seu provedor (Registro.br, GoDaddy, etc), aguarde 5–30 min e clique no <RefreshCw className="w-3 h-3 inline" /> para verificar.
+                                    </p>
+                                  </div>
+                                );
+                              })()}
+                            </PopoverContent>
+                          </Popover>
                           <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => checkStatus(d.id)}
                             disabled={checkingStatus === d.id}
                             className="h-8 w-8"
+                            title="Verificar status"
                           >
                             {checkingStatus === d.id ? (
                               <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
