@@ -25,6 +25,7 @@ import { ShieldAlert } from "lucide-react";
 
 const PUBLISHED_URL = "https://app.panttera.com.br";
 const getPublicUrl = () => (window.location.hostname.includes("lovable") ? PUBLISHED_URL : window.location.origin);
+const buildCheckoutUrl = (base: string, productId: string) => `${base}/checkout/${productId}`;
 
 interface Product {
   id: string;
@@ -44,6 +45,7 @@ const Products = () => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
+  const [activeCustomDomain, setActiveCustomDomain] = useState<string | null>(null);
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -73,7 +75,20 @@ const Products = () => {
     if (!user) return;
     const { data } = await supabase.from("products").select("id, name, price, active, is_subscription, moderation_status, rejection_reason, currency").eq("user_id", user.id).order("created_at", { ascending: false });
     setProducts((data || []) as any);
+
+    // Buscar domínio customizado ativo do usuário
+    const { data: domainData } = await supabase
+      .from("custom_domains" as any)
+      .select("hostname")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if ((domainData as any)?.hostname) setActiveCustomDomain((domainData as any).hostname);
   };
+
+  const checkoutBaseUrl = activeCustomDomain ? `https://${activeCustomDomain}` : getPublicUrl();
 
   const handleDelete = async (id: string) => {
     if (!confirm("Tem certeza que deseja excluir este produto e todos os dados relacionados?")) return;
