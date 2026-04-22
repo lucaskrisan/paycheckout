@@ -302,7 +302,7 @@ Deno.serve(async (req) => {
       event_name,
       event_time: Math.floor(Date.now() / 1000),
       event_id: event_id || `${event_name}_${Date.now()}`,
-      event_source_url: buildEventSourceUrl(metaDomain, event_source_url, event_name, product_id, (custom_data as any)?.order_id),
+      event_source_url: '', // resolved per-pixel inside the loop
       action_source: 'website',
       user_data: userData,
       custom_data: cd,
