@@ -150,20 +150,19 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // Product owner + meta_domain for event_source_url resolution
+    // Product owner for logging/attribution
     const { data: productData } = await supabase
       .from('products')
-      .select('user_id, meta_domain')
+      .select('user_id')
       .eq('id', product_id)
       .single();
 
     const productOwnerId = productData?.user_id || null;
-    const metaDomain: string | null = (productData as any)?.meta_domain || null;
 
-    // Pixels with CAPI tokens
+    // Pixels with CAPI tokens — `domain` per pixel drives event_source_url
     const { data: pixels } = await supabase
       .from('product_pixels')
-      .select('pixel_id, capi_token, fire_on_pix, fire_on_boleto')
+      .select('pixel_id, capi_token, fire_on_pix, fire_on_boleto, domain')
       .eq('product_id', product_id)
       .eq('platform', 'facebook')
       .not('capi_token', 'is', null);
