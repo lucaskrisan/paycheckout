@@ -93,7 +93,6 @@ const ProductEdit = () => {
   const [showUpsellDialog, setShowUpsellDialog] = useState(false);
   const [moderationStatus, setModerationStatus] = useState<string>("approved");
   const [rejectionReason, setRejectionReason] = useState<string>("");
-  const [activeCustomDomain, setActiveCustomDomain] = useState<string | null>(null);
   const CATEGORIES = [
     "Saúde e Esportes", "Finanças e Investimentos", "Relacionamentos", "Negócios e Carreira",
     "Espiritualidade", "Sexualidade", "Entretenimento", "Culinária e Gastronomia", "Idiomas",
