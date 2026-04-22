@@ -1,92 +1,149 @@
 
+## Plano definitivo para resolver os links do checkout
 
-## Plano: ativar checkouts em domínio próprio dos produtores (Paola e demais)
+### Resposta curta e sincera
+Sim: eu consigo te dizer com clareza o melhor caminho.
+E também preciso ser sincero em um ponto:
 
-### Onde estamos
-- Origem de fallback no Cloudflare: `worker-fallback.panttera.com.br` ✅ Ativo
-- Infra de Custom Hostnames pronta no Cloudflare for SaaS ✅
-- App já sabe usar o domínio do dono do produto pra checkout e Meta CAPI ✅
+- O problema principal do `522` não está no React nem na página do checkout.
+- O repositório já tem o fluxo de domínio customizado pronto:
+  - `/admin/domains` cadastra `custom_domains`
+  - `cloudflare-add-hostname` e `cloudflare-check-status` falam com a Cloudflare
+  - `Products.tsx` e `ProductEdit.tsx` já geram os links com o domínio ativo do produtor
+- O que **não aparece neste projeto** é o código do suposto `worker-fallback`.
+  Então hoje eu **não consigo confirmar pelo código do projeto** que esse Worker existe de verdade e está correto. Ele parece estar fora do repositório, configurado direto na Cloudflare.
 
-Falta só: **cadastrar os domínios dos produtores e apontar o DNS deles**.
+### Melhor opção recomendada
+A melhor opção escalável para você e para todos os produtores é esta:
 
-### Estratégia: subdomínio dedicado, nunca raiz
-
-Para cada produtor, usar **um subdomínio só pro checkout**, ex:
-
-```text
-pay.paolasemfiltro.com
-pay.luanypersico.com
-pay.paolasinfitro.com
-pay.dominiodequalqueroutroprodutor.com
-```
-
-Por que subdomínio e não raiz:
-- a raiz (ex: `paolasemfiltro.com`) hospeda landing pages tipo `/10habitos`, `/detox`
-- se a raiz vier pro Panttera, essas landings quebram (404)
-- subdomínio `pay.` isola o checkout e não toca em nada do site atual
-
-### Passo a passo por produtor (ex: Paola)
-
-**Passo 1 — Cadastrar o hostname no Cloudflare (Panttera)**
-- Painel Cloudflare > Custom Hostnames
-- Botão **Adicionar nome de host personalizado**
-- Digitar exatamente: `pay.paolasemfiltro.com`
-- Confirmar
-- Repetir para `pay.luanypersico.com` e `pay.paolasinfitro.com`
-
-**Passo 2 — Cadastrar no painel Panttera**
-- `/admin/domains`
-- Adicionar o mesmo hostname (`pay.paolasemfiltro.com`) vinculado ao usuário da Paola
-- Status inicial: pendente
-
-**Passo 3 — Configurar o DNS no provedor da Paola** (Registro.br, GoDaddy, etc)
-
-Para cada domínio, criar **1 CNAME**:
+## Opção recomendada: Worker real na Cloudflare como origem de fallback
+Criar/ajustar um **Cloudflare Worker de verdade** para receber qualquer hostname customizado ativo e encaminhar para:
 
 ```text
-Tipo:   CNAME
-Nome:   pay
-Valor:  fallback.panttera.com.br
-Proxy:  DNS only (nuvem cinza)
-TTL:    Auto
+https://app.panttera.com.br
 ```
 
-**Passo 4 — Validar**
-- Aguardar 5–30 min de propagação
-- No `/admin/domains`, clicar no botão de refresh
-- Status muda pra `active` → checkout dela já passa a usar `pay.paolasemfiltro.com`
+fazendo:
+1. reescrita do `Host`
+2. preservação de path e query string
+3. encaminhamento de `/checkout/...`, `/checkout/sucesso`, `/recibo/...` e assets
+4. fallback seguro para qualquer produtor ativo
 
-### Como qualquer produtor novo faz isso sozinho
+### Por que essa é a melhor opção
+Porque ela:
+- escala para muitos produtores
+- não depende de apontar produtor direto para IP da plataforma
+- evita bloqueio por hostname desconhecido
+- mantém `app.panttera.com.br` como origem canônica de auth
+- combina com o que o código já faz hoje (`getAuthOrigin()`)
 
-Mesmo fluxo, 3 perguntas:
-1. Qual seu domínio? → ex: `meudominio.com`
-2. Qual subdomínio quer pro checkout? → sugerir `pay` (padrão)
-3. Mostrar o CNAME pra ele copiar e colar no DNS dele
+## O que precisa ser feito agora
 
-Tudo isso já é suportado pelo `/admin/domains` que existe. Só precisa garantir que o fluxo apresentado pra ele seja:
-- pedir subdomínio (não raiz)
-- mostrar o CNAME pra `fallback.panttera.com.br`
-- mostrar status (pendente / ativo)
+### Etapa 1 — Corrigir a infraestrutura externa primeiro
+Antes de mexer no app, ajustar a camada da Cloudflare for SaaS:
 
-### O que muda no código (mínimo)
+1. Confirmar que o Fallback Origin ativo aponta para o Worker
+2. Confirmar que o hostname `fallback.panttera.com.br` chega nesse Worker
+3. Confirmar que o Worker aceita requisições com:
+   - `Host: checkout.paolasemfiltro.com`
+   - `Host: pay.outroprodutor.com`
+4. Confirmar que ele responde sem 403/522
 
-Nenhuma mudança obrigatória de funcionalidade — a infra já existe. Mas para deixar o fluxo do produtor leigo à prova de erro, sugiro 2 melhorias pequenas:
+### Etapa 2 — Worker esperado
+O Worker deve fazer isso:
 
-1. **No `/admin/domains`**, ao adicionar domínio:
-   - Bloquear cadastro de domínio raiz (sem subdomínio) com aviso claro: "Use um subdomínio dedicado, ex: pay.seudominio.com"
-   - Mostrar instrução do CNAME pronto pra copiar (Tipo, Nome, Valor, Proxy)
+```text
+request em:
+https://checkout.paolasemfiltro.com/checkout/ID?config=XYZ
 
-2. **Tooltip/explicação** mostrando exatamente o que o produtor precisa colar no DNS dele.
+vira fetch interno para:
+https://app.panttera.com.br/checkout/ID?config=XYZ
+```
 
-### O que NÃO muda
-- Landing pages dos produtores → intactas
-- `app.panttera.com.br` continua sendo o domínio canônico de auth
-- Meta CAPI já usa o domínio ativo do dono do produto (`facebook-capi/index.ts` já faz isso)
-- Nenhum produtor existente precisa refazer nada
+Mantendo:
+- método
+- headers úteis
+- body
+- query params
 
-### Próximo passo concreto
-1. Você cadastra `pay.paolasemfiltro.com`, `pay.luanypersico.com`, `pay.paolasinfitro.com` na Cloudflare (eu te guio campo por campo)
-2. Você (ou ela) coloca o CNAME no DNS de cada domínio
-3. Validar status `active` no painel
-4. Depois disso, melhorar o fluxo no `/admin/domains` pra qualquer produtor novo se autogerenciar
+E adicionando headers de proxy como:
+- `x-forwarded-host`
+- `x-original-host`
 
+### Etapa 3 — Validar rotas obrigatórias
+Depois do Worker ativo, validar estes cenários:
+
+1. `https://dominio-do-produtor/checkout/:productId`
+2. `https://dominio-do-produtor/checkout/:productId?config=...`
+3. `https://dominio-do-produtor/checkout/sucesso`
+4. `https://dominio-do-produtor/recibo/:orderId`
+5. carregamento dos arquivos JS/CSS da SPA
+6. login/oauth continuando canônico em `app.panttera.com.br`
+
+## Ajustes pequenos no app depois da correção principal
+Depois que o Worker estiver certo, fazer pequenos reforços no projeto:
+
+### 1. Melhorar o diagnóstico em `/admin/domains`
+Mostrar melhor diferença entre:
+- DNS ok
+- SSL ok
+- domínio ativo na Cloudflare
+- link realmente acessível
+
+Hoje o painel consegue ver status do custom hostname, mas isso **não garante** que o fallback final esteja servindo a página.
+
+### 2. Criar uma verificação “link funcionando”
+Adicionar uma checagem real de disponibilidade do domínio, além do status da Cloudflare, para evitar falso positivo de “ativo”.
+
+### 3. Padronizar o fluxo de novos produtores
+Manter:
+- produtor aponta CNAME do subdomínio para `fallback.panttera.com.br`
+- Panttera cadastra hostname
+- sistema verifica DNS + disponibilidade real
+
+## O que eu já consegui concluir com segurança
+Pelo código atual:
+
+- o sistema de domínio customizado já existe
+- os links do produto já trocam para o domínio ativo do produtor
+- a autenticação já foi protegida para continuar no domínio canônico
+- o gargalo atual é a camada externa do fallback, não o checkout em si
+
+## O que eu faria na execução, em ordem
+1. Verificar a configuração externa do fallback
+2. Criar ou corrigir o Worker real da Cloudflare
+3. Fazer o Worker encaminhar para `app.panttera.com.br`
+4. Testar o hostname da Paola
+5. Testar um segundo hostname para garantir escalabilidade
+6. Só depois ajustar `/admin/domains` com diagnóstico mais inteligente
+
+## Resultado esperado
+Depois disso, qualquer produtor poderá usar algo como:
+
+```text
+pay.produtor.com
+checkout.produtor.com
+comprar.produtor.com
+```
+
+apontando por CNAME para:
+
+```text
+fallback.panttera.com.br
+```
+
+e o checkout abrirá normalmente sem quebrar auth, sem 522 e sem depender de gambiarra por produtor.
+
+## Limite honesto
+Se você me aprovar para execução, eu consigo cuidar da parte do projeto e te orientar no desenho correto da infraestrutura.
+Mas se o Worker/fallback estiver 100% fora deste ambiente e sem acesso operacional à conta onde ele vive, eu posso chegar até o ponto de te entregar exatamente o que precisa ser configurado — e aí a aplicação final dessa parte externa depende do acesso à Cloudflare.
+
+## Decisão técnica final
+A solução certa não é trocar o checkout do app.
+A solução certa é:
+
+```text
+Cloudflare for SaaS + Fallback Origin + Worker real fazendo proxy para app.panttera.com.br
+```
+
+Essa é a arquitetura mais segura, escalável e compatível com o que seu projeto já construiu.
