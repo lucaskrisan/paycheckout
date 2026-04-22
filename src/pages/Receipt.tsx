@@ -335,7 +335,9 @@ const Receipt = () => {
                     </span>
                   </dd>
                 </div>
-          </dl>
+              </dl>
+            );
+          })()}
         </div>
 
         <div className="border-t border-slate-100" />
