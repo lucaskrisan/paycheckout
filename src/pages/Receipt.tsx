@@ -310,34 +310,25 @@ const Receipt = () => {
 
         {/* Resumo financeiro */}
         <div className="px-6 sm:px-10 py-6">
-          {(() => {
-            const itemsTotal =
-              data.items_total && data.items_total > 0 ? data.items_total : gross;
-            const grandTotal = itemsTotal; // soma de todos os itens (principal + bumps + upsells)
-            return (
-              <dl className="space-y-2.5 text-sm">
-                <div className="flex justify-between">
-                  <dt className="text-slate-500">Subtotal</dt>
-                  <dd className="text-slate-900 font-medium tabular-nums">
-                    {formatPrice(itemsTotal)}
-                  </dd>
-                </div>
-                <div className="flex justify-between pt-3 border-t border-slate-100">
-                  <dt className="text-slate-900 font-semibold">Total</dt>
-                  <dd className="text-right">
-                    {installments > 1 && (
-                      <div className="text-xs text-slate-500 font-normal mb-0.5">
-                        {installments}× {formatPrice(grandTotal / installments)}
-                      </div>
-                    )}
-                    <span className="text-slate-900 font-semibold tabular-nums">
-                      {formatPrice(grandTotal)}
-                    </span>
-                  </dd>
-                </div>
-              </dl>
-            );
-          })()}
+          <dl className="space-y-2.5 text-sm">
+            <div className="flex justify-between">
+              <dt className="text-slate-500">Subtotal</dt>
+              <dd className="text-slate-900 font-medium tabular-nums">{formatPrice(gross)}</dd>
+            </div>
+            <div className="flex justify-between pt-3 border-t border-slate-100">
+              <dt className="text-slate-900 font-semibold">Total</dt>
+              <dd className="text-right">
+                {installments > 1 && (
+                  <div className="text-xs text-slate-500 font-normal mb-0.5">
+                    {installments}× {formatPrice(gross / installments)}
+                  </div>
+                )}
+                <span className="text-slate-900 font-semibold tabular-nums">
+                  {formatPrice(gross)}
+                </span>
+              </dd>
+            </div>
+          </dl>
         </div>
 
         <div className="border-t border-slate-100" />
