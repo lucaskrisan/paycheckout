@@ -1,73 +1,92 @@
 
-## Plano: ajustar a Origem de Fallback sem excluir nada
 
-### Resposta curta
-Não, por enquanto **não** precisa excluir e criar de novo.
+## Plano: ativar checkouts em domínio próprio dos produtores (Paola e demais)
 
-Pelo print, o que apareceu foi só a **caixa de confirmação** do Cloudflare. Isso normalmente significa:
-1. você clicou em **Atualizar**
-2. o Cloudflare abriu o pop-up
-3. ainda falta clicar em **Confirmar**
+### Onde estamos
+- Origem de fallback no Cloudflare: `worker-fallback.panttera.com.br` ✅ Ativo
+- Infra de Custom Hostnames pronta no Cloudflare for SaaS ✅
+- App já sabe usar o domínio do dono do produto pra checkout e Meta CAPI ✅
 
-### O que fazer agora
-**Objetivo:** o texto final precisa ficar exatamente assim:
-```text
-worker-fallback.panttera.com.br
-```
+Falta só: **cadastrar os domínios dos produtores e apontar o DNS deles**.
 
-### Passo a passo bem simples
+### Estratégia: subdomínio dedicado, nunca raiz
 
-**1.** Na tela de Origem de fallback, clique em **Editar**
-
-**2.** Apague tudo do campo
-
-**3.** Digite exatamente:
-```text
-worker-fallback.panttera.com.br
-```
-
-**4.** Clique em **Atualizar**
-
-**5.** Vai abrir a janelinha preta de confirmação
-
-**6.** Nessa janelinha, clique em **Confirmar**
-
-### O que conferir antes de confirmar
-Na mensagem da janelinha, a troca precisa ser algo assim:
+Para cada produtor, usar **um subdomínio só pro checkout**, ex:
 
 ```text
-de: fallback.panttera.com.br
-para: worker-fallback.panttera.com.br
+pay.paolasemfiltro.com
+pay.luanypersico.com
+pay.paolasinfitro.com
+pay.dominiodequalqueroutroprodutor.com
 ```
 
-Se aparecer:
+Por que subdomínio e não raiz:
+- a raiz (ex: `paolasemfiltro.com`) hospeda landing pages tipo `/10habitos`, `/detox`
+- se a raiz vier pro Panttera, essas landings quebram (404)
+- subdomínio `pay.` isola o checkout e não toca em nada do site atual
+
+### Passo a passo por produtor (ex: Paola)
+
+**Passo 1 — Cadastrar o hostname no Cloudflare (Panttera)**
+- Painel Cloudflare > Custom Hostnames
+- Botão **Adicionar nome de host personalizado**
+- Digitar exatamente: `pay.paolasemfiltro.com`
+- Confirmar
+- Repetir para `pay.luanypersico.com` e `pay.paolasinfitro.com`
+
+**Passo 2 — Cadastrar no painel Panttera**
+- `/admin/domains`
+- Adicionar o mesmo hostname (`pay.paolasemfiltro.com`) vinculado ao usuário da Paola
+- Status inicial: pendente
+
+**Passo 3 — Configurar o DNS no provedor da Paola** (Registro.br, GoDaddy, etc)
+
+Para cada domínio, criar **1 CNAME**:
 
 ```text
-de: fallback.panttera.com.br
-para: fallback.panttera.com.br
+Tipo:   CNAME
+Nome:   pay
+Valor:  fallback.panttera.com.br
+Proxy:  DNS only (nuvem cinza)
+TTL:    Auto
 ```
 
-então o Cloudflare **não entendeu a mudança**, e você precisa voltar e digitar de novo com calma.
+**Passo 4 — Validar**
+- Aguardar 5–30 min de propagação
+- No `/admin/domains`, clicar no botão de refresh
+- Status muda pra `active` → checkout dela já passa a usar `pay.paolasemfiltro.com`
 
-### Importante
-Não use a opção **Excluir** agora.
+### Como qualquer produtor novo faz isso sozinho
 
-Excluir só faria sentido se:
-- você clica em **Confirmar**
-- atualiza a página depois
-- e mesmo assim continua exatamente igual, sem salvar a troca
+Mesmo fluxo, 3 perguntas:
+1. Qual seu domínio? → ex: `meudominio.com`
+2. Qual subdomínio quer pro checkout? → sugerir `pay` (padrão)
+3. Mostrar o CNAME pra ele copiar e colar no DNS dele
 
-### Se der certo
-Depois de confirmar, a Origem de fallback deve passar a mostrar:
-```text
-worker-fallback.panttera.com.br
-```
+Tudo isso já é suportado pelo `/admin/domains` que existe. Só precisa garantir que o fluxo apresentado pra ele seja:
+- pedir subdomínio (não raiz)
+- mostrar o CNAME pra `fallback.panttera.com.br`
+- mostrar status (pendente / ativo)
 
-### Plano B, se continuar igual mesmo após confirmar
-Se você já clicou em **Confirmar** e mesmo assim ele insiste em voltar sozinho, aí o próximo passo é:
-1. recarregar a página
-2. tentar de novo uma vez
-3. só depois considerar excluir e recriar
+### O que muda no código (mínimo)
 
-### Detalhe técnico
-A infraestrutura correta depende da Origem de Fallback apontando para o subdomínio do Worker, não para o fallback direto. Excluir agora não resolve a causa principal se o campo apenas não foi confirmado ou não registrou a edição.
+Nenhuma mudança obrigatória de funcionalidade — a infra já existe. Mas para deixar o fluxo do produtor leigo à prova de erro, sugiro 2 melhorias pequenas:
+
+1. **No `/admin/domains`**, ao adicionar domínio:
+   - Bloquear cadastro de domínio raiz (sem subdomínio) com aviso claro: "Use um subdomínio dedicado, ex: pay.seudominio.com"
+   - Mostrar instrução do CNAME pronto pra copiar (Tipo, Nome, Valor, Proxy)
+
+2. **Tooltip/explicação** mostrando exatamente o que o produtor precisa colar no DNS dele.
+
+### O que NÃO muda
+- Landing pages dos produtores → intactas
+- `app.panttera.com.br` continua sendo o domínio canônico de auth
+- Meta CAPI já usa o domínio ativo do dono do produto (`facebook-capi/index.ts` já faz isso)
+- Nenhum produtor existente precisa refazer nada
+
+### Próximo passo concreto
+1. Você cadastra `pay.paolasemfiltro.com`, `pay.luanypersico.com`, `pay.paolasinfitro.com` na Cloudflare (eu te guio campo por campo)
+2. Você (ou ela) coloca o CNAME no DNS de cada domínio
+3. Validar status `active` no painel
+4. Depois disso, melhorar o fluxo no `/admin/domains` pra qualquer produtor novo se autogerenciar
+
