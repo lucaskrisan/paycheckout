@@ -167,6 +167,30 @@ const Domains = () => {
     setCheckingStatus(null);
   };
 
+  const runHealthCheck = async (id: string) => {
+    setHealthChecking(id);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke("domain-health-check", {
+        body: { id },
+        headers: { Authorization: `Bearer ${session.session?.access_token}` },
+      });
+      if (res.error || res.data?.error) {
+        toast.error(res.data?.error || "Erro ao testar link");
+      } else if (res.data) {
+        setHealthByDomain((prev) => ({ ...prev, [id]: res.data }));
+        if (res.data.ok) {
+          toast.success(`Link funcionando! ${res.data.latency_ms}ms`);
+        } else {
+          toast.warning(res.data.diagnosis || "Link não está respondendo corretamente");
+        }
+      }
+    } catch {
+      toast.error("Erro ao testar link");
+    }
+    setHealthChecking(null);
+  };
+
   const dismissTutorial = () => {
     setShowTutorial(false);
     localStorage.setItem("panttera_domain_tutorial_dismissed", "true");
