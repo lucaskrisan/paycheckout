@@ -150,20 +150,19 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // Product owner + meta_domain for event_source_url resolution
+    // Product owner for logging/attribution
     const { data: productData } = await supabase
       .from('products')
-      .select('user_id, meta_domain')
+      .select('user_id')
       .eq('id', product_id)
       .single();
 
     const productOwnerId = productData?.user_id || null;
-    const metaDomain: string | null = (productData as any)?.meta_domain || null;
 
-    // Pixels with CAPI tokens
+    // Pixels with CAPI tokens — `domain` per pixel drives event_source_url
     const { data: pixels } = await supabase
       .from('product_pixels')
-      .select('pixel_id, capi_token, fire_on_pix, fire_on_boleto')
+      .select('pixel_id, capi_token, fire_on_pix, fire_on_boleto, domain')
       .eq('product_id', product_id)
       .eq('platform', 'facebook')
       .not('capi_token', 'is', null);
@@ -303,7 +302,7 @@ Deno.serve(async (req) => {
       event_name,
       event_time: Math.floor(Date.now() / 1000),
       event_id: event_id || `${event_name}_${Date.now()}`,
-      event_source_url: buildEventSourceUrl(metaDomain, event_source_url, event_name, product_id, (custom_data as any)?.order_id),
+      event_source_url: '', // resolved per-pixel inside the loop
       action_source: 'website',
       user_data: userData,
       custom_data: cd,
@@ -322,6 +321,16 @@ Deno.serve(async (req) => {
         console.log(`[facebook-capi] Skipping pixel ${pixel.pixel_id} — fire_on_boleto disabled`);
         continue;
       }
+
+      // Resolve event_source_url using THIS pixel's verified domain
+      const resolvedUrl = buildEventSourceUrl(
+        (pixel as any).domain,
+        event_source_url,
+        event_name,
+        product_id,
+        (custom_data as any)?.order_id
+      );
+      event.event_source_url = resolvedUrl;
 
       try {
         const controller = new AbortController();
