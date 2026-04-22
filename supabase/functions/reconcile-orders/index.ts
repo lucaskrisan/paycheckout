@@ -6,7 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-async function resolvePagarmeApiKey(supabase: ReturnType<typeof createClient>, userId: string | null) {
+// deno-lint-ignore no-explicit-any
+async function resolvePagarmeApiKey(supabase: any, userId: string | null) {
   if (!userId) {
     return Deno.env.get('PAGARME_API_KEY') || null;
   }
@@ -20,7 +21,7 @@ async function resolvePagarmeApiKey(supabase: ReturnType<typeof createClient>, u
     .maybeSingle();
 
   if (gateway?.config && typeof gateway.config === 'object' && 'api_key' in gateway.config) {
-    const apiKey = gateway.config.api_key;
+    const apiKey = (gateway.config as any).api_key;
     if (typeof apiKey === 'string' && apiKey.length > 0) {
       return apiKey;
     }
