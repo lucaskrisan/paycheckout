@@ -1,36 +1,62 @@
 
 
-## Correção emergencial: destravar o preview
+## Plano: migrar domínios raiz para subdomínios `pay.*`
 
-### O problema (em baby mode)
-O preview está quebrado porque o `package.json` está com `vite ^8.0.9` (versão inexistente/instável) e faltam dependências do Radix. Isso quebrou o servidor que carrega os arquivos do app — por isso aparece "Failed to fetch dynamically imported module: AdminLayout.tsx".
+### Problema
+Os 3 domínios foram cadastrados na raiz (`paolasemfiltro.com` etc), mas todos têm landing pages ativas. Se ficarem ativos assim, o tráfego das landings é roteado para a Panttera e quebra (`/10habitos`, `/detox`, etc → 404).
 
-### O que vou fazer (mínimo necessário, sem riscos)
+### Solução
+Substituir os 3 cadastros raiz por subdomínios dedicados `pay.*`, isolando o checkout do resto do site.
 
-**1. Reverter `vite` para versão estável**
-- Em `package.json`, voltar `vite` para `^5.4.10` (versão estável e compatível com `@vitejs/plugin-react-swc` que o projeto já usa).
+```text
+ANTES (quebra landings)              DEPOIS (isolado, seguro)
+──────────────────────────           ─────────────────────────
+paolasemfiltro.com         ❌  →    pay.paolasemfiltro.com   ✅
+luanypersico.com           ❌  →    pay.luanypersico.com     ✅
+paolasinfitro.com          ❌  →    pay.paolasinfitro.com    ✅
 
-**2. Garantir Radix Dialog instalado**
-- Adicionar `@radix-ui/react-dialog` em versão estável (`^1.1.2`) — usado por `sheet.tsx`, `dialog.tsx` e `command.tsx`.
+Landings continuam:
+paolasemfiltro.com/10habitos   (intacto)
+paolasemfiltro.com/detox       (intacto)
+```
 
-**3. Reverter o "patch manual" no sheet.tsx**
-- Remover o `// @ts-nocheck` e o `className?: string` que foram adicionados como gambiarra. Voltar ao código original do shadcn (a tipagem do Radix já cobre `className` quando o pacote está instalado de verdade).
+### Etapas
 
-### O que NÃO vou tocar
-- Nenhum arquivo de feature (checkout, pixels, webhooks, área de membros).
-- Nenhuma migração de banco.
-- Nenhuma Edge Function.
-- Nada do plano dos pixels — fica intacto, esperando.
+**1. Limpar registros antigos (raiz)**
+- Remover os 3 hostnames raiz do Cloudflare for SaaS (chamada `cloudflare-remove-hostname`)
+- Deletar os 3 registros correspondentes da tabela `custom_domains`
 
-### Arquivos que vão mudar
-- `package.json` (apenas linhas de `vite` e `@radix-ui/react-dialog`)
-- `src/components/ui/sheet.tsx` (reverter para versão limpa do shadcn)
+**2. Cadastrar os 3 novos subdomínios**
+- Para cada um (`pay.paolasemfiltro.com`, `pay.luanypersico.com`, `pay.paolasinfitro.com`):
+  - Criar custom hostname na Cloudflare (`cloudflare-add-hostname`)
+  - Inserir em `custom_domains` vinculado ao seu `user_id` de admin
+  - Status inicial: `pending_validation`
 
-### Validação após o fix
-- Preview carrega sem o erro de "Failed to fetch dynamically imported module"
-- `/admin` abre normal
-- Sem erro de Vite no console sobre `@radix-ui/react-dialog`
+**3. Te entregar a configuração de DNS**
+Você (ou quem cuida do DNS) precisa adicionar **1 registro CNAME por domínio** no provedor onde os domínios estão (Registro.br, GoDaddy, Cloudflare, etc):
 
-### Depois disso
-Confirmamos que voltou ao normal e você decide se quer seguir com o plano dos pixels (que continua intacto e aprovado mentalmente, só esperando execução).
+```text
+Tipo:   CNAME
+Nome:   pay
+Valor:  customers.pantera-saas.workers.dev
+Proxy:  desligado (DNS only)
+TTL:    Auto / 3600
+```
+
+(o destino exato vem da Cloudflare — vou te passar os 3 valores certinhos depois de criar)
+
+**4. Validar**
+- Após você apontar o DNS, abrir `/admin/domains` e clicar no 🔄 de cada domínio
+- Cloudflare valida (5–30 min) → status muda pra `active`
+- A partir daí, links de checkout e Meta CAPI passam a usar `pay.seudominio.com` automaticamente
+
+### O que NÃO muda
+- Suas landing pages (`paolasemfiltro.com/10habitos` etc) — totalmente intactas
+- A lógica de seleção do domínio no app (já pega o ativo mais recente)
+- Edge functions de Meta CAPI (já usam o domínio do dono do produto)
+
+### Detalhes técnicos
+- Operações na tabela `custom_domains` via insert tool (DELETE + INSERT)
+- Chamadas às edge functions `cloudflare-remove-hostname` e `cloudflare-add-hostname` já existentes
+- Não há mudança de código — é só operação de dados + Cloudflare
 
