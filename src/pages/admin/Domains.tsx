@@ -340,6 +340,12 @@ const Domains = () => {
                     <p className="text-[11px] text-muted-foreground mt-0.5">Use um <span className="font-semibold text-foreground">subdomínio dedicado</span> (ex: <span className="font-mono">pay</span>) — nunca o domínio raiz, senão suas landing pages quebram.</p>
                   </div>
                 </div>
+                <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/30 rounded-md p-2">
+                  <AlertCircle className="w-3.5 h-3.5 text-amber-400 mt-0.5 shrink-0" />
+                  <p className="text-[11px] text-amber-200/90 leading-relaxed">
+                    <span className="font-semibold">Você só precisa criar 1 (um) registro CNAME no DNS do <em>seu</em> domínio</span>, com o valor <span className="font-mono">fallback.panttera.com.br</span>. Não tente criar, editar ou apagar registros chamados <span className="font-mono">worker-fallback.panttera.com.br</span> — esse é interno da infraestrutura da Panttera e fica fora da sua conta.
+                  </p>
+                </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   <div className="bg-background/60 rounded p-2 border border-border/40">
                     <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Tipo</p>
