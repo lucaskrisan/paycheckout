@@ -264,11 +264,18 @@ const Receipt = () => {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-500 mt-0.5">1 × {formatPrice(it.amount)}</p>
+                      {it.kind === "main" && (
+                        <p className="text-xs text-slate-500 mt-0.5">Quantidade: 1</p>
+                      )}
+                      {it.kind !== "main" && (
+                        <p className="text-xs text-slate-500 mt-0.5">Item adicional incluso</p>
+                      )}
                     </div>
-                    <p className="text-sm font-medium text-slate-900 tabular-nums shrink-0">
-                      {formatPrice(it.amount)}
-                    </p>
+                    {it.kind === "main" && (
+                      <p className="text-sm font-medium text-slate-900 tabular-nums shrink-0">
+                        {formatPrice(gross)}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
