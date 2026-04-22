@@ -24,7 +24,7 @@ const TUTORIAL_STEPS = [
   {
     title: "Configure o DNS",
     description:
-      'No painel DNS do seu domínio, crie um registro CNAME apontando seu subdomínio para app.panttera.com.br. Exemplo:\n\nTipo: CNAME\nNome: pay\nValor: app.panttera.com.br',
+      'No painel DNS do seu domínio, crie um registro CNAME apontando seu subdomínio para fallback.panttera.com.br. Exemplo:\n\nTipo: CNAME\nNome: pay\nValor: fallback.panttera.com.br',
     icon: Settings,
   },
   {
@@ -234,8 +234,8 @@ const Domains = () => {
                           <div>
                             <span className="text-muted-foreground">Valor</span>
                             <div className="flex items-center gap-1">
-                              <p className="font-mono font-bold text-primary text-[11px]">app.panttera.com.br</p>
-                              <button onClick={() => copyToClipboard("app.panttera.com.br")} className="text-muted-foreground hover:text-primary">
+                              <p className="font-mono font-bold text-primary text-[11px]">fallback.panttera.com.br</p>
+                              <button onClick={() => copyToClipboard("fallback.panttera.com.br")} className="text-muted-foreground hover:text-primary">
                                 <Copy className="w-3 h-3" />
                               </button>
                             </div>
@@ -302,10 +302,10 @@ const Domains = () => {
                   <span className="font-semibold text-foreground">Instrução:</span> Aponte seu subdomínio via{" "}
                   <span className="font-mono text-primary">CNAME</span> para{" "}
                   <button
-                    onClick={() => copyToClipboard("app.panttera.com.br")}
+                    onClick={() => copyToClipboard("fallback.panttera.com.br")}
                     className="font-mono text-primary hover:underline inline-flex items-center gap-1"
                   >
-                    app.panttera.com.br <Copy className="w-3 h-3" />
+                    fallback.panttera.com.br <Copy className="w-3 h-3" />
                   </button>
                 </p>
               </div>
@@ -386,8 +386,8 @@ const Domains = () => {
                                       <div className="flex items-center justify-between gap-2">
                                         <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Valor</span>
                                         <div className="flex items-center gap-1">
-                                          <p className="font-mono text-xs font-bold text-primary">app.panttera.com.br</p>
-                                          <button onClick={() => copyToClipboard("app.panttera.com.br")} className="text-muted-foreground hover:text-primary">
+                                          <p className="font-mono text-xs font-bold text-primary">fallback.panttera.com.br</p>
+                                          <button onClick={() => copyToClipboard("fallback.panttera.com.br")} className="text-muted-foreground hover:text-primary">
                                             <Copy className="w-3 h-3" />
                                           </button>
                                         </div>
