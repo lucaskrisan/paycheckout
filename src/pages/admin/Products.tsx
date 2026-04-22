@@ -220,8 +220,6 @@ const Products = () => {
     }
   };
 
-  const checkoutBaseUrl = activeCustomDomain ? `https://${activeCustomDomain}` : getPublicUrl();
-
   const fmt = (v: number, cur?: string) => cur === "USD" ? `$ ${Number(v).toFixed(2)}` : `R$ ${Number(v).toFixed(2).replace(".", ",")}`;
 
   const filtered = products.filter((p) => {
