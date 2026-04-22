@@ -8,15 +8,18 @@ const corsHeaders = {
 /**
  * domain-health-check
  *
- * Faz uma checagem REAL de disponibilidade do domínio customizado do produtor:
- * - Resolve via fetch (HEAD/GET) https://{hostname}/checkout/__health
- * - Mede latência
- * - Verifica se a SPA da Panttera realmente está sendo servida (procura por marcador HTML)
- * - Diagnostica erros típicos: 522 (origem inacessível), 525 (handshake SSL), 530 (1016 - DNS),
- *   403 (Host bloqueado pelo fallback), 404 (rota não roteada), etc.
+ * Faz uma checagem REAL de disponibilidade do domínio customizado do produtor.
  *
- * Esse endpoint é o que o /admin/domains usa pra mostrar o badge
- * "Link funcionando" — independente do status reportado pela Cloudflare.
+ * Arquitetura esperada:
+ *   checkout.cliente.com         → CNAME → fallback.panttera.com.br   (alias público)
+ *   fallback.panttera.com.br     → entrega no Worker
+ *   worker-fallback.panttera.com.br → fallback origin INTERNO do Worker (não mexer)
+ *   Worker                       → reescreve Host para app.panttera.com.br
+ *   app.panttera.com.br          → origem canônica da SPA
+ *
+ * O diagnóstico tenta separar erros do produtor (DNS) de erros internos da
+ * Panttera (Worker / fallback origin / SSL), pra evitar que o usuário fique
+ * tentando "consertar" coisas que não estão na conta DNS dele.
  */
 
 interface HealthResult {
@@ -27,75 +30,95 @@ interface HealthResult {
   served_by_panttera: boolean;
   diagnosis: string;
   hint: string | null;
+  layer: 'dns' | 'ssl' | 'fallback_origin' | 'worker_host' | 'app' | 'unknown';
   checked_at: string;
 }
 
-function diagnose(statusCode: number | null, error: string | null): { diagnosis: string; hint: string | null } {
+function diagnose(
+  statusCode: number | null,
+  error: string | null,
+  servedByPanttera: boolean,
+): { diagnosis: string; hint: string | null; layer: HealthResult['layer'] } {
   if (error) {
     if (/ENOTFOUND|getaddrinfo|dns/i.test(error)) {
       return {
-        diagnosis: 'DNS não resolve',
-        hint: 'O CNAME do subdomínio ainda não está apontando para fallback.panttera.com.br ou ainda está propagando.',
+        diagnosis: 'DNS do seu domínio não resolve',
+        hint: 'O CNAME do seu subdomínio ainda não aponta para fallback.panttera.com.br ou ainda está propagando (até 30 min). Verifique no painel do seu provedor de DNS.',
+        layer: 'dns',
       };
     }
     if (/timeout|timed out/i.test(error)) {
       return {
         diagnosis: 'Timeout ao conectar',
-        hint: 'A origem do fallback (Worker) não respondeu a tempo. Pode ser propagação ou Worker fora do ar.',
+        hint: 'A origem não respondeu a tempo. Pode ser propagação de DNS ou instabilidade momentânea da Cloudflare.',
+        layer: 'fallback_origin',
       };
     }
     if (/certificate|ssl|tls/i.test(error)) {
       return {
         diagnosis: 'Falha de SSL/TLS',
-        hint: 'O certificado SSL ainda não foi emitido pela Cloudflare. Aguarde 5–30 min.',
+        hint: 'O certificado SSL ainda não foi emitido pela Cloudflare. Aguarde 5–30 min e teste novamente.',
+        layer: 'ssl',
       };
     }
-    return { diagnosis: 'Erro de rede', hint: error };
+    return { diagnosis: 'Erro de rede', hint: error, layer: 'unknown' };
   }
 
   if (statusCode === null) {
-    return { diagnosis: 'Sem resposta', hint: 'Não foi possível conectar ao domínio.' };
+    return { diagnosis: 'Sem resposta', hint: 'Não foi possível conectar ao domínio.', layer: 'unknown' };
   }
-  if (statusCode === 200) {
-    return { diagnosis: 'OK', hint: null };
+  if (statusCode === 200 && servedByPanttera) {
+    return { diagnosis: 'OK', hint: null, layer: 'app' };
+  }
+  if (statusCode === 200 && !servedByPanttera) {
+    return {
+      diagnosis: 'Respondeu, mas não é a Panttera',
+      hint: 'A página respondeu 200, mas o conteúdo não é o checkout da Panttera. Verifique se o CNAME do seu subdomínio aponta para fallback.panttera.com.br (e não para outro serviço).',
+      layer: 'worker_host',
+    };
   }
   if (statusCode === 403) {
     return {
       diagnosis: 'Host rejeitado pelo fallback (403)',
-      hint: 'O Worker da Cloudflare não está reescrevendo o Host. Verifique o código do Worker fallback.panttera.com.br.',
+      hint: 'Seu DNS chegou no Worker da Panttera, mas ele está rejeitando o seu hostname. Isso é um problema interno da plataforma (configuração do Worker fallback), não do seu DNS. Avise o suporte.',
+      layer: 'worker_host',
     };
   }
   if (statusCode === 404) {
     return {
       diagnosis: 'Rota não encontrada (404)',
-      hint: 'O fallback respondeu, mas a rota /checkout não foi encontrada na origem.',
+      hint: 'O fallback respondeu, mas a rota não foi encontrada. Tente acessar diretamente um link de checkout (/checkout/ID).',
+      layer: 'app',
     };
   }
   if (statusCode === 522 || statusCode === 523 || statusCode === 524) {
     return {
       diagnosis: `Origem inacessível (${statusCode})`,
-      hint: 'O Custom Hostname Cloudflare está ativo, mas a origem (Worker fallback) não respondeu. Verifique o Worker.',
+      hint: 'O Custom Hostname está ativo na Cloudflare, mas a origem interna (Worker fallback da Panttera) não respondeu. Isso é interno da plataforma — seu DNS está correto. Avise o suporte.',
+      layer: 'fallback_origin',
     };
   }
   if (statusCode === 525 || statusCode === 526) {
     return {
       diagnosis: `Falha de handshake SSL (${statusCode})`,
-      hint: 'A Cloudflare não conseguiu negociar SSL com a origem do fallback.',
+      hint: 'A Cloudflare não conseguiu negociar SSL com a origem do fallback. Isso é interno da Panttera.',
+      layer: 'ssl',
     };
   }
   if (statusCode === 530) {
     return {
       diagnosis: 'Erro 1016 (DNS interno)',
-      hint: 'O fallback.panttera.com.br não resolve internamente. Verifique o Worker/CNAME.',
+      hint: 'O fallback interno (worker-fallback.panttera.com.br) não está resolvendo. Isso é da infraestrutura da Panttera, não do seu domínio.',
+      layer: 'fallback_origin',
     };
   }
   if (statusCode >= 500) {
-    return { diagnosis: `Erro do servidor (${statusCode})`, hint: 'Origem retornou erro 5xx.' };
+    return { diagnosis: `Erro do servidor (${statusCode})`, hint: 'Origem retornou erro 5xx.', layer: 'app' };
   }
   if (statusCode >= 400) {
-    return { diagnosis: `Erro do cliente (${statusCode})`, hint: null };
+    return { diagnosis: `Erro do cliente (${statusCode})`, hint: null, layer: 'app' };
   }
-  return { diagnosis: `HTTP ${statusCode}`, hint: null };
+  return { diagnosis: `HTTP ${statusCode}`, hint: null, layer: 'unknown' };
 }
 
 async function probeHostname(hostname: string): Promise<HealthResult> {
@@ -130,7 +153,6 @@ async function probeHostname(hostname: string): Promise<HealthResult> {
   }
 
   const latency = Date.now() - startedAt;
-  const { diagnosis, hint } = diagnose(statusCode, errorMsg);
 
   // Marcadores que indicam que a SPA da Panttera está sendo servida
   const servedByPanttera =
@@ -138,6 +160,8 @@ async function probeHostname(hostname: string): Promise<HealthResult> {
     bodySnippet.includes('paycheckout') ||
     bodySnippet.includes('id="root"') ||
     bodySnippet.includes('vite');
+
+  const { diagnosis, hint, layer } = diagnose(statusCode, errorMsg, servedByPanttera);
 
   return {
     ok: statusCode === 200 && servedByPanttera,
@@ -147,6 +171,7 @@ async function probeHostname(hostname: string): Promise<HealthResult> {
     served_by_panttera: servedByPanttera,
     diagnosis,
     hint,
+    layer,
     checked_at: new Date().toISOString(),
   };
 }
