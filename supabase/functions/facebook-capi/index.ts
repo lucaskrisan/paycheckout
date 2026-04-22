@@ -62,6 +62,38 @@ interface CAPIEvent {
   custom_data?: CAPICustomData;
 }
 
+/**
+ * Resolve the event_source_url to send to Meta CAPI.
+ * Priority: products.meta_domain > orders.event_source_url (rawUrl) > fallback domain
+ * Applies rigid path formats: Purchase → /obrigado/{orderId}, others → /checkout/{productId}
+ */
+function buildEventSourceUrl(
+  metaDomain: string | null | undefined,
+  rawUrl: string | null | undefined,
+  eventName: string,
+  productId: string,
+  orderId?: string | null
+): string {
+  const FALLBACK = 'app.panttera.com.br';
+
+  // Strip protocol and trailing slash from meta_domain if present
+  let domain = (metaDomain || '').trim().replace(/^https?:\/\//i, '').replace(/\/+$/, '');
+
+  // Fall back to origin extracted from raw URL
+  if (!domain && rawUrl) {
+    try { domain = new URL(rawUrl).hostname; } catch { /* ignore */ }
+  }
+
+  if (!domain) domain = FALLBACK;
+
+  const base = `https://${domain}`;
+
+  if (eventName === 'Purchase' && orderId) {
+    return `${base}/obrigado/${orderId}`;
+  }
+  return `${base}/checkout/${productId}`;
+}
+
 async function hashSHA256(value: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(value.trim().toLowerCase());
@@ -118,14 +150,15 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // Product owner — for logging
+    // Product owner + meta_domain for event_source_url resolution
     const { data: productData } = await supabase
       .from('products')
-      .select('user_id')
+      .select('user_id, meta_domain')
       .eq('id', product_id)
       .single();
 
     const productOwnerId = productData?.user_id || null;
+    const metaDomain: string | null = (productData as any)?.meta_domain || null;
 
     // Pixels with CAPI tokens
     const { data: pixels } = await supabase
@@ -270,7 +303,7 @@ Deno.serve(async (req) => {
       event_name,
       event_time: Math.floor(Date.now() / 1000),
       event_id: event_id || `${event_name}_${Date.now()}`,
-      event_source_url: event_source_url || '',
+      event_source_url: buildEventSourceUrl(metaDomain, event_source_url, event_name, product_id, (custom_data as any)?.order_id),
       action_source: 'website',
       user_data: userData,
       custom_data: cd,

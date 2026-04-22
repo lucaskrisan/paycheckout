@@ -167,7 +167,7 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
         product_id: productId,
         event_name: eventName,
         event_id: eventId,
-        event_source_url: window.location.href,
+        event_source_url: window.location.origin + window.location.pathname,
         customer: customerRef.current,
         custom_data: enrichedCustomData,
         fbc: getCookie("_fbc") || null,

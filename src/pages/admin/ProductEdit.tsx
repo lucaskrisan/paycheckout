@@ -102,6 +102,8 @@ const ProductEdit = () => {
     "Moda e Beleza", "Animais e Plantas", "Educacional", "Hobbies", "Internet", "Outros",
   ];
 
+  const [metaDomain, setMetaDomain] = useState("");
+
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -321,6 +323,7 @@ const ProductEdit = () => {
           });
           setModerationStatus((data as any).moderation_status || "approved");
           setRejectionReason((data as any).rejection_reason || "");
+          setMetaDomain((data as any).meta_domain || "");
           setLoading(false);
         });
       loadPixels();
@@ -456,6 +459,7 @@ const ProductEdit = () => {
       delivery_method: form.delivery_method,
       currency: form.currency,
       payment_settings: form.payment_settings,
+      meta_domain: metaDomain.trim().replace(/^https?:\/\//i, '').replace(/\/+$/, '') || null,
       updated_at: new Date().toISOString(),
     };
 
@@ -1157,6 +1161,21 @@ const ProductEdit = () => {
                 </div>
                 <div className="lg:col-span-8">
                   <div className="border border-border rounded-lg p-6 bg-card space-y-4">
+                    {/* Meta Domain for CAPI tracking */}
+                    {activePixelPlatform === "Facebook" && (
+                      <div className="space-y-1.5 p-4 rounded-lg border border-primary/30 bg-primary/5">
+                        <Label className="text-sm font-semibold">Domínio do checkout</Label>
+                        <Input
+                          value={metaDomain}
+                          onChange={(e) => setMetaDomain(e.target.value)}
+                          placeholder="meusite.com.br"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Domínio verificado na Meta que será enviado no payload CAPI como <code>event_source_url</code>. Use seu domínio para melhor atribuição das vendas.
+                        </p>
+                      </div>
+                    )}
+
                     {/* Platform tabs */}
                     <div className="flex flex-wrap gap-2">
                       {["Facebook", "G Ads", "G Analytics", "Taboola", "Outbrain", "TikTok", "Pinterest", "Kwai"].map((px) => (

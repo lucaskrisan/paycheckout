@@ -259,6 +259,8 @@ const Checkout = () => {
     customer_state_geo: geoState || null,
   };
 
+  const eventSourceUrl = window.location.origin + window.location.pathname;
+
   const handleSubmit = async () => {
     if (!customer.name || !customer.email) { toast.error(isUSD ? t.fillRequired : "Preencha todos os campos obrigatórios"); return; }
     if (!isUSD && (!customer.cpf || !customer.phone)) { toast.error("Preencha todos os campos obrigatórios"); return; }
@@ -291,7 +293,8 @@ const Checkout = () => {
           body: {
             amount: finalAmount, product_id: product.id, currency: "usd",
             config_id: requestedConfigId || null, coupon_id: coupon?.id || null,
-            bump_product_ids: bumpProductIds, checkout_url: window.location.href, utms,
+            bump_product_ids: bumpProductIds, checkout_url: window.location.href,
+            event_source_url: eventSourceUrl, utms,
             customer_country: selectedCountry,
             geo: geoPayload,
             payment_method_id: paymentMethodId,
@@ -325,7 +328,7 @@ const Checkout = () => {
       } else if (paymentMethod === "pix") {
         const customerState = getStateFromPhone(customer.phone);
         const { data, error } = await supabase.functions.invoke("create-pix-payment", {
-          body: { amount: finalAmount, product_id: product.id, config_id: requestedConfigId || null, coupon_id: coupon?.id || null, bump_product_ids: bumpProductIds, checkout_url: window.location.href, utms, customer_state: customerState, geo: geoPayload, customer: { name: customer.name, email: customer.email, cpf: customer.cpf, phone: customer.phone } },
+          body: { amount: finalAmount, product_id: product.id, config_id: requestedConfigId || null, coupon_id: coupon?.id || null, bump_product_ids: bumpProductIds, checkout_url: window.location.href, event_source_url: eventSourceUrl, utms, customer_state: customerState, geo: geoPayload, customer: { name: customer.name, email: customer.email, cpf: customer.cpf, phone: customer.phone } },
         });
         if (error) {
           let msg = "Falha ao gerar o PIX";
@@ -341,7 +344,8 @@ const Checkout = () => {
           body: {
             amount: finalAmount, product_id: product.id, payment_method: "credit_card", installments: creditCard.installments,
             is_subscription: product.is_subscription, billing_cycle: product.billing_cycle, config_id: requestedConfigId || null,
-            coupon_id: coupon?.id || null, bump_product_ids: bumpProductIds, checkout_url: window.location.href, utms, customer_state: customerState,
+            coupon_id: coupon?.id || null, bump_product_ids: bumpProductIds, checkout_url: window.location.href,
+            event_source_url: eventSourceUrl, utms, customer_state: customerState,
             geo: geoPayload,
             customer: { name: customer.name, email: customer.email, cpf: customer.cpf, phone: customer.phone, addressNumber: "0",
               creditCard: { holderName: creditCard.name, number: creditCard.number.replace(/\s/g, ""), expiryMonth: expMonth, expiryYear: `20${expYear}`, ccv: creditCard.cvv } },
