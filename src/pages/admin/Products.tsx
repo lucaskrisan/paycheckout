@@ -289,7 +289,7 @@ const Products = () => {
                 </TableCell>
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   <div className="flex items-center gap-1 justify-end">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { navigator.clipboard.writeText(`${getPublicUrl()}/checkout/${p.id}`); toast.success("Link copiado!"); }}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { navigator.clipboard.writeText(`${checkoutBaseUrl}/checkout/${p.id}`); toast.success("Link copiado!"); }}>
                       <Copy className="w-3.5 h-3.5" />
                     </Button>
                     <DropdownMenu>
@@ -300,10 +300,10 @@ const Products = () => {
                         <DropdownMenuItem onClick={() => navigate(`/admin/products/${p.id}/edit`)}>
                           <Pencil className="w-3.5 h-3.5 mr-2" /> Editar
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => window.open(`${getPublicUrl()}/checkout/${p.id}`, "_blank")}>
+                        <DropdownMenuItem onClick={() => window.open(`${checkoutBaseUrl}/checkout/${p.id}`, "_blank")}>
                           <ExternalLink className="w-3.5 h-3.5 mr-2" /> Ver checkout
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => { navigator.clipboard.writeText(`${getPublicUrl()}/checkout/${p.id}`); toast.success("Link copiado!"); }}>
+                        <DropdownMenuItem onClick={() => { navigator.clipboard.writeText(`${checkoutBaseUrl}/checkout/${p.id}`); toast.success("Link copiado!"); }}>
                           <Copy className="w-3.5 h-3.5 mr-2" /> Copiar link
                         </DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDelete(p.id)}>
