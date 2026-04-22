@@ -91,9 +91,18 @@ const Domains = () => {
   const addCustomDomain = async () => {
     if (!newHostname || !user) return;
     const clean = newHostname.replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, "").toLowerCase().trim();
-    // Aceita tanto domínio raiz (seusite.com) quanto subdomínio (pay.seusite.com)
     if (!/^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/.test(clean)) {
-      toast.error("Digite um domínio válido (ex: seusite.com ou pay.seusite.com)");
+      toast.error("Digite um domínio válido (ex: pay.seusite.com)");
+      return;
+    }
+    // Bloquear domínio raiz — exigir subdomínio dedicado pra não quebrar landing pages
+    const parts = clean.split(".");
+    const isRoot = parts.length < 3;
+    // Trata domínios .com.br, .co.uk como raiz quando tem só 3 partes
+    const compoundTlds = ["com.br", "co.uk", "com.au", "co.jp", "com.mx", "org.br", "net.br"];
+    const isCompoundRoot = parts.length === 3 && compoundTlds.includes(parts.slice(-2).join("."));
+    if (isRoot || isCompoundRoot) {
+      toast.error("Use um subdomínio dedicado, ex: pay." + clean + ". Cadastrar a raiz quebra suas landing pages.");
       return;
     }
     setAddingCustom(true);
