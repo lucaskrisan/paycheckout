@@ -1,62 +1,70 @@
 
 
-## Plano: migrar domínios raiz para subdomínios `pay.*`
+# Resposta rápida + plano de validação
 
-### Problema
-Os 3 domínios foram cadastrados na raiz (`paolasemfiltro.com` etc), mas todos têm landing pages ativas. Se ficarem ativos assim, o tráfego das landings é roteado para a Panttera e quebra (`/10habitos`, `/detox`, etc → 404).
+## Sim, funciona pra qualquer produtor — com 2 ressalvas
 
-### Solução
-Substituir os 3 cadastros raiz por subdomínios dedicados `pay.*`, isolando o checkout do resto do site.
+Depois que a Etapa 3 do plano anterior estiver feita (Fallback Origin apontando pro Worker), **qualquer produtor** que cadastrar `checkout.dominio-dele.com` vai funcionar automaticamente, desde que:
 
-```text
-ANTES (quebra landings)              DEPOIS (isolado, seguro)
-──────────────────────────           ─────────────────────────
-paolasemfiltro.com         ❌  →    pay.paolasemfiltro.com   ✅
-luanypersico.com           ❌  →    pay.luanypersico.com     ✅
-paolasinfitro.com          ❌  →    pay.paolasinfitro.com    ✅
+**1. O hostname esteja cadastrado no Cloudflare for SaaS**
+- Feito automaticamente pela edge function `cloudflare-add-hostname` quando o produtor adiciona o domínio em `/admin/domains`
+- Cloudflare emite SSL grátis (Let's Encrypt) em 5-30 min
+- Status precisa ficar **Active**
 
-Landings continuam:
-paolasemfiltro.com/10habitos   (intacto)
-paolasemfiltro.com/detox       (intacto)
-```
+**2. O produtor configure o DNS no provedor dele (Registro.br, GoDaddy, etc)**
+- Tipo: `CNAME`
+- Nome: `checkout`
+- Valor: `customers.pantera-saas.workers.dev` (ou o destino que a Cloudflare informar)
+- Proxy: desligado
 
-### Etapas
-
-**1. Limpar registros antigos (raiz)**
-- Remover os 3 hostnames raiz do Cloudflare for SaaS (chamada `cloudflare-remove-hostname`)
-- Deletar os 3 registros correspondentes da tabela `custom_domains`
-
-**2. Cadastrar os 3 novos subdomínios**
-- Para cada um (`pay.paolasemfiltro.com`, `pay.luanypersico.com`, `pay.paolasinfitro.com`):
-  - Criar custom hostname na Cloudflare (`cloudflare-add-hostname`)
-  - Inserir em `custom_domains` vinculado ao seu `user_id` de admin
-  - Status inicial: `pending_validation`
-
-**3. Te entregar a configuração de DNS**
-Você (ou quem cuida do DNS) precisa adicionar **1 registro CNAME por domínio** no provedor onde os domínios estão (Registro.br, GoDaddy, Cloudflare, etc):
+A partir daí, o fluxo é 100% automático:
 
 ```text
-Tipo:   CNAME
-Nome:   pay
-Valor:  customers.pantera-saas.workers.dev
-Proxy:  desligado (DNS only)
-TTL:    Auto / 3600
+Visitante → checkout.produtor.com
+         ↓ (DNS CNAME)
+    Cloudflare for SaaS (SSL)
+         ↓ (Host customizado)
+    Worker panttera-checkout-fallback
+         ↓ (reescreve Host → app.panttera.com.br)
+    App PanteraPay serve o checkout certo
 ```
 
-(o destino exato vem da Cloudflare — vou te passar os 3 valores certinhos depois de criar)
+## Sobre os eventos do Meta (CAPI) — sim, funciona perfeitamente
 
-**4. Validar**
-- Após você apontar o DNS, abrir `/admin/domains` e clicar no 🔄 de cada domínio
-- Cloudflare valida (5–30 min) → status muda pra `active`
-- A partir daí, links de checkout e Meta CAPI passam a usar `pay.seudominio.com` automaticamente
+Olhei o código de `supabase/functions/facebook-capi/index.ts` e ele já está preparado pra isso:
 
-### O que NÃO muda
-- Suas landing pages (`paolasemfiltro.com/10habitos` etc) — totalmente intactas
-- A lógica de seleção do domínio no app (já pega o ativo mais recente)
-- Edge functions de Meta CAPI (já usam o domínio do dono do produto)
+- Resolve o **domínio ativo do produtor** consultando `custom_domains` (linhas que pegam `ownerDomain`)
+- Monta o `event_source_url` usando esse domínio: `https://checkout.produtor.com/checkout/{productId}` ou `/obrigado/{orderId}` pra Purchase
+- Pixel + CAPI deduplicam pelo `event_id`
+- Hashes (em, ph, fn, ln, ct, st, zp, country, external_id) já no formato KwaiPay premium
 
-### Detalhes técnicos
-- Operações na tabela `custom_domains` via insert tool (DELETE + INSERT)
-- Chamadas às edge functions `cloudflare-remove-hostname` e `cloudflare-add-hostname` já existentes
-- Não há mudança de código — é só operação de dados + Cloudflare
+**Resultado:** EMQ Score ~8+ mantido, atribuição correta no Gerenciador de Anúncios, sem mistura entre produtores.
+
+## Plano de validação pós-Etapa 3
+
+Depois que você fizer a troca da Fallback Origin (plano anterior), eu valido tudo isso pra você:
+
+**Validação 1 — Worker servindo hostname existente**
+- Testar `https://checkout.paolasemfiltro.com` em aba anônima
+- Conferir que carrega o checkout da Paola (não o app principal)
+
+**Validação 2 — Hostnames pendentes destravam**
+- Verificar `checkout.luanypersico.com` e `checkout.paolasinfitro.com`
+- Devem sair de "Pendente" pra "Ativo" sozinhos em até 30 min
+
+**Validação 3 — Meta CAPI usando domínio certo**
+- Disparar um PageView de teste em `checkout.paolasemfiltro.com`
+- Ler logs da edge function `facebook-capi` pra confirmar `event_source_url` = `https://checkout.paolasemfiltro.com/checkout/...`
+- Ler logs do Meta Events Manager pra confirmar recebimento
+
+**Validação 4 — Novo produtor (fluxo completo)**
+- Te oriento como cadastrar 1 domínio novo de teste
+- Acompanho do CNAME até o Active
+- Disparamos 1 evento de teste pra confirmar EMQ
+
+## O que eu preciso de você
+
+Aprovar a continuação. Quando aprovar, eu volto pro modo de execução e:
+1. Te guio nas Etapas 1-5 do plano anterior (criar Worker hostname, trocar Fallback Origin, limpar DNS)
+2. Rodo as 4 validações acima e te entrego os prints/logs de cada uma
 
