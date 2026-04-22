@@ -110,9 +110,9 @@ const AbandonedCarts = () => {
     setLoading(true);
     const { data } = await supabase
       .from("abandoned_carts")
-      .select("*, products(name)")
+      .select("id, customer_name, customer_email, customer_phone, payment_method, recovered, created_at, updated_at, product_id, email_recovery_status, checkout_step, products(name)")
       .order("created_at", { ascending: false })
-      .limit(1000);
+      .limit(500);
     setCarts((data as any) || []);
     setLoading(false);
   };

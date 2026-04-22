@@ -195,6 +195,17 @@ const Checkout = () => {
   useEffect(() => { if (customer.name && customer.email && customer.cpf && customer.phone) { setAdvancedMatching(customer); trackLead(); } }, [customer.name, customer.email, customer.phone, customer.cpf, setAdvancedMatching, trackLead]);
   useEffect(() => { trackAddPaymentInfo(paymentMethod); }, [paymentMethod, trackAddPaymentInfo]);
 
+  const prices = useMemo(() => {
+    if (!product) return { couponDiscount: 0, bumpTotal: 0, pixDiscount: 0, frontEndAmount: 0, finalAmount: 0 };
+    const isUSD = product.currency === "USD";
+    const couponDiscount = coupon ? (coupon.discount_type === "percent" ? Math.round(product.price * (coupon.discount_value / 100) * 100) / 100 : coupon.discount_value) : 0;
+    const bumpTotal = orderBumps.filter((b) => selectedBumps.has(b.id)).reduce((sum, b) => sum + (b.bump_product?.price || 0), 0);
+    const pixDiscount = (!isUSD && paymentMethod === "pix") ? Math.round(product.price * 0.05 * 100) / 100 : 0;
+    const frontEndAmount = Math.round((product.price - pixDiscount - couponDiscount) * 100) / 100;
+    const finalAmount = Math.round((Math.max(frontEndAmount, 0) + bumpTotal) * 100) / 100;
+    return { couponDiscount, bumpTotal, pixDiscount, frontEndAmount, finalAmount };
+  }, [product, coupon, orderBumps, selectedBumps, paymentMethod]);
+
   if (loading) return (
     <div className="min-h-screen bg-[#F2F4F8] flex items-center justify-center">
       <div className="space-y-4 w-full max-w-lg px-4"><Skeleton className="h-8 w-3/4" /><Skeleton className="h-40 w-full" /><Skeleton className="h-40 w-full" /></div>
@@ -228,13 +239,7 @@ const Checkout = () => {
   );
 
   const isUSD = product.currency === "USD";
-  
-
-  const couponDiscount = coupon ? (coupon.discount_type === "percent" ? Math.round(product.price * (coupon.discount_value / 100) * 100) / 100 : coupon.discount_value) : 0;
-  const bumpTotal = orderBumps.filter((b) => selectedBumps.has(b.id)).reduce((sum, b) => sum + (b.bump_product?.price || 0), 0);
-  const pixDiscount = (!isUSD && paymentMethod === "pix") ? Math.round(product.price * 0.05 * 100) / 100 : 0;
-  const frontEndAmount = Math.round((product.price - pixDiscount - couponDiscount) * 100) / 100;
-  const finalAmount = Math.round((Math.max(frontEndAmount, 0) + bumpTotal) * 100) / 100;
+  const { couponDiscount, bumpTotal, pixDiscount, frontEndAmount, finalAmount } = prices;
 
   const getUtms = () => {
     const params = new URLSearchParams(window.location.search);

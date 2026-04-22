@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useEffect, useMemo, useCallback, useState } from "react";
+import { useEffect, useMemo, useCallback, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -150,36 +150,40 @@ const Dashboard = () => {
     }
   }, [fetchMetrics, fetchProducts, fetchWeekdayOrders, user]);
 
-  // Reconcile on mount
+  // Reconcile on mount — depends only on user so timers are not recreated on period changes
   useEffect(() => {
     if (!user) return;
     const doSync = async () => {
       try {
         const { error } = await supabase.functions.invoke("reconcile-orders", { body: { hours_back: 24 * 30 } });
-        if (!error) await loadData(false);
+        if (!error) await loadDataRef.current(false);
       } catch {}
     };
     const timeout = setTimeout(doSync, 3000);
     const interval = setInterval(doSync, 15 * 60 * 1000);
     return () => { clearTimeout(timeout); clearInterval(interval); };
-  }, [user, loadData]);
+  }, [user]);
 
   useEffect(() => { loadData(false); }, [loadData]);
 
-  // Realtime refresh
+  // Always keep ref in sync so reconcile/realtime closures use latest loadData
+  const loadDataRef = useRef(loadData);
+  useEffect(() => { loadDataRef.current = loadData; }, [loadData]);
+
+  // Realtime refresh — depends only on user so the channel is not recreated on period changes
   useEffect(() => {
     if (!user) return;
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
     const debouncedRefresh = () => {
       if (debounceTimer) clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => loadData(false), 2000);
+      debounceTimer = setTimeout(() => loadDataRef.current(false), 2000);
     };
     const channel = supabase
       .channel("dashboard-orders-refresh")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, debouncedRefresh)
       .subscribe();
     return () => { if (debounceTimer) clearTimeout(debounceTimer); supabase.removeChannel(channel); };
-  }, [user, loadData]);
+  }, [user]);
 
   // Derived values from metrics
   const m = metrics;

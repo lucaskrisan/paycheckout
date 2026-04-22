@@ -69,8 +69,9 @@ const Receipt = () => {
 
   useEffect(() => {
     if (!orderId) return;
-    const projectId = (import.meta as any).env.VITE_SUPABASE_PROJECT_ID;
-    fetch(`https://${projectId}.functions.supabase.co/get-receipt?order_id=${orderId}`)
+    const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL as string;
+    const fnBase = supabaseUrl?.replace('.supabase.co', '.functions.supabase.co');
+    fetch(`${fnBase}/get-receipt?order_id=${orderId}`)
       .then(async (r) => {
         const body = await r.json();
         if (!r.ok) throw new Error(body.error || "Erro ao carregar recibo");

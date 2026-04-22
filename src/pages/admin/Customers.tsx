@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
@@ -60,10 +60,10 @@ const Customers = () => {
     setCustomers((data as any) || []);
   };
 
-  const filtered = customers.filter((c) => {
+  const filtered = useMemo(() => customers.filter((c) => {
     const s = search.toLowerCase();
     return c.name.toLowerCase().includes(s) || c.email.toLowerCase().includes(s) || c.cpf?.includes(s);
-  });
+  }), [customers, search]);
 
   const getUtms = (meta: Record<string, any> | null) => {
     if (!meta) return null;
