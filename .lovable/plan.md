@@ -1,43 +1,73 @@
 
+## Plano: ajustar a Origem de Fallback sem excluir nada
 
-## Plano: corrigir Origem de Fallback pro Worker
+### Resposta curta
+Não, por enquanto **não** precisa excluir e criar de novo.
 
-### Problema
-A Origem de Fallback ficou com `fallback.panttera.com.br` (IP direto do Lovable, sem reescrita de Host) em vez de `worker-fallback.panttera.com.br` (Worker que reescreve Host). Resultado: checkouts customizados não funcionam de verdade — vão direto pro Lovable que não reconhece o hostname.
+Pelo print, o que apareceu foi só a **caixa de confirmação** do Cloudflare. Isso normalmente significa:
+1. você clicou em **Atualizar**
+2. o Cloudflare abriu o pop-up
+3. ainda falta clicar em **Confirmar**
 
-### Solução
-Trocar a Origem de Fallback pro hostname correto do Worker.
+### O que fazer agora
+**Objetivo:** o texto final precisa ficar exatamente assim:
+```text
+worker-fallback.panttera.com.br
+```
 
-### Etapas
+### Passo a passo bem simples
 
-**1. Validar antes (eu faço via terminal)**
-- Confirmar que `worker-fallback.panttera.com.br` continua respondendo HTTP 200
-- Confirmar que a reescrita de Host ainda funciona (mesmo SHA256 do `app.panttera.com.br`)
+**1.** Na tela de Origem de fallback, clique em **Editar**
 
-**2. Te guio na troca da Origem de Fallback**
-- Ir em **SSL/TLS → Nomes de host personalizados**
-- Editar **Origem de fallback**
-- Apagar `fallback.panttera.com.br`
-- Digitar **exatamente**: `worker-fallback.panttera.com.br`
-- Atenção: o campo aceita autocompletar pra `fallback` — tem que digitar o nome inteiro e conferir antes de salvar
-- Print da tela de edição **antes** de clicar Atualizar
+**2.** Apague tudo do campo
 
-**3. Validação final (eu faço via terminal)**
-- Aguardar 1-2 min de propagação
-- Testar `curl https://checkout.paolasemfiltro.com` → deve retornar HTML do checkout PanteraPay
-- Conferir que os hostnames pendentes (`luanypersico`, `paolasinfitro`) destravaram
-- Te entregar prints/logs de cada teste
+**3.** Digite exatamente:
+```text
+worker-fallback.panttera.com.br
+```
 
-**4. Limpeza opcional (depois que tudo estiver verde)**
-- Avaliar se removemos o registro `fallback` antigo (A → 185.158.133.1) da DNS, já que ninguém mais usa
-- Decisão fica pra depois — não mexemos agora pra não introduzir variável
+**4.** Clique em **Atualizar**
 
-### O que NÃO muda
-- Registro `app` (CNAME → paycheckout.pages.dev) — intacto, continua servindo `app.panttera.com.br`
-- Registro `ck` (A → 185.158.133.1) — intacto
-- Worker `panttera-checkout-fallback` e sua rota — já configurados corretamente
-- Landing pages dos produtores (`paolasemfiltro.com/10habitos` etc) — intactas
+**5.** Vai abrir a janelinha preta de confirmação
 
-### Risco
-Baixo. Durante 1-2 min de propagação, `checkout.paolasemfiltro.com` pode oscilar. Como hoje ele já não tá servindo o checkout certo (tá indo direto pro Lovable sem reescrita), na prática estamos saindo de "quebrado" pra "funcionando" — não há regressão possível.
+**6.** Nessa janelinha, clique em **Confirmar**
 
+### O que conferir antes de confirmar
+Na mensagem da janelinha, a troca precisa ser algo assim:
+
+```text
+de: fallback.panttera.com.br
+para: worker-fallback.panttera.com.br
+```
+
+Se aparecer:
+
+```text
+de: fallback.panttera.com.br
+para: fallback.panttera.com.br
+```
+
+então o Cloudflare **não entendeu a mudança**, e você precisa voltar e digitar de novo com calma.
+
+### Importante
+Não use a opção **Excluir** agora.
+
+Excluir só faria sentido se:
+- você clica em **Confirmar**
+- atualiza a página depois
+- e mesmo assim continua exatamente igual, sem salvar a troca
+
+### Se der certo
+Depois de confirmar, a Origem de fallback deve passar a mostrar:
+```text
+worker-fallback.panttera.com.br
+```
+
+### Plano B, se continuar igual mesmo após confirmar
+Se você já clicou em **Confirmar** e mesmo assim ele insiste em voltar sozinho, aí o próximo passo é:
+1. recarregar a página
+2. tentar de novo uma vez
+3. só depois considerar excluir e recriar
+
+### Detalhe técnico
+A infraestrutura correta depende da Origem de Fallback apontando para o subdomínio do Worker, não para o fallback direto. Excluir agora não resolve a causa principal se o campo apenas não foi confirmado ou não registrou a edição.
