@@ -5,11 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Globe, Plus, Trash2, CheckCircle, AlertCircle, Loader2,
   RefreshCw, Copy, ExternalLink, ChevronRight, X, Rocket,
-  Monitor, Settings, ArrowRight, ShieldCheck,
+  Settings, ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -61,11 +60,6 @@ const SSL_STATUS_MAP: Record<string, { label: string; color: string }> = {
 const Domains = () => {
   const { user } = useAuth();
 
-  /* ── Pixel domains (facebook_domains) ── */
-  const [fbDomains, setFbDomains] = useState<any[]>([]);
-  const [newFbDomain, setNewFbDomain] = useState("");
-  const [addingFb, setAddingFb] = useState(false);
-
   /* ── Custom checkout domains ── */
   const [customDomains, setCustomDomains] = useState<any[]>([]);
   const [newHostname, setNewHostname] = useState("");
@@ -79,46 +73,8 @@ const Domains = () => {
   const [tutorialStep, setTutorialStep] = useState(0);
 
   useEffect(() => {
-    if (user) {
-      loadFbDomains();
-      loadCustomDomains();
-    }
+    if (user) loadCustomDomains();
   }, [user]);
-
-  /* ── Facebook Domains ── */
-  const loadFbDomains = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from("facebook_domains")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-    if (data) setFbDomains(data);
-  };
-
-  const addFbDomain = async () => {
-    if (!newFbDomain || !user) return;
-    setAddingFb(true);
-    const { error } = await supabase.from("facebook_domains").insert({
-      domain: newFbDomain,
-      user_id: user.id,
-      verified: false,
-    });
-    if (error) {
-      toast.error("Erro ao adicionar domínio");
-    } else {
-      toast.success("Domínio adicionado");
-      setNewFbDomain("");
-      loadFbDomains();
-    }
-    setAddingFb(false);
-  };
-
-  const removeFbDomain = async (id: string) => {
-    await supabase.from("facebook_domains").delete().eq("id", id);
-    toast.success("Domínio removido");
-    loadFbDomains();
-  };
 
   /* ── Custom Domains (Cloudflare for SaaS) ── */
   const loadCustomDomains = async () => {
@@ -213,22 +169,11 @@ const Domains = () => {
       <div>
         <h1 className="font-display text-2xl font-bold text-foreground">Domínios</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Gerencie domínios para rastreamento (Pixel) e checkout personalizado
+          Configure um domínio próprio para seu checkout. Seus eventos de rastreamento (Meta, TikTok) serão enviados automaticamente por esse domínio.
         </p>
       </div>
 
-      <Tabs defaultValue="custom" className="w-full">
-        <TabsList className="bg-muted/30 border border-border/50">
-          <TabsTrigger value="custom" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary gap-2">
-            <Rocket className="w-4 h-4" /> Checkout Customizado
-          </TabsTrigger>
-          <TabsTrigger value="pixel" className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary gap-2">
-            <Monitor className="w-4 h-4" /> Domínios de Pixel
-          </TabsTrigger>
-        </TabsList>
-
-        {/* ═══════ TAB: Custom Domains ═══════ */}
-        <TabsContent value="custom" className="space-y-4 mt-4">
+      <div className="space-y-4">
           {/* Tutorial */}
           {showTutorial && (
             <Card className="border-primary/30 bg-primary/5">
@@ -438,63 +383,7 @@ const Domains = () => {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        {/* ═══════ TAB: Pixel Domains ═══════ */}
-        <TabsContent value="pixel" className="space-y-4 mt-4">
-          <Card className="border-border/50">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-display flex items-center gap-2">
-                <Monitor className="w-4 h-4" /> Domínios de Rastreamento (Pixel)
-              </CardTitle>
-              <p className="text-xs text-muted-foreground">
-                Domínios associados ao seu Pixel do Facebook/TikTok para rastreamento CAPI
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {fbDomains.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">Nenhum domínio encontrado</p>
-              ) : (
-                <div className="space-y-3">
-                  {fbDomains.map((d) => (
-                    <div key={d.id} className="flex items-center justify-between bg-muted/30 rounded-lg px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <Globe className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-sm font-medium text-foreground">{d.domain}</span>
-                        {d.verified ? (
-                          <Badge variant="default" className="text-[10px] gap-1">
-                            <CheckCircle className="w-3 h-3" /> Verificado
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary" className="text-[10px] gap-1">
-                            <AlertCircle className="w-3 h-3" /> Pendente
-                          </Badge>
-                        )}
-                      </div>
-                      <Button variant="ghost" size="icon" onClick={() => removeFbDomain(d.id)}>
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="flex gap-2 pt-2">
-                <Input
-                  placeholder="ex: checkout.meusite.com.br"
-                  value={newFbDomain}
-                  onChange={(e) => setNewFbDomain(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && addFbDomain()}
-                  className="flex-1"
-                />
-                <Button onClick={addFbDomain} disabled={addingFb || !newFbDomain} size="sm">
-                  <Plus className="w-4 h-4 mr-1" /> Adicionar Domínio
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      </div>
     </div>
   );
 };

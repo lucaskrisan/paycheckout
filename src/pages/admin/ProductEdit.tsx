@@ -17,7 +17,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import FacebookDomainManager from "@/components/admin/FacebookDomainManager";
 import OrderBumpDialog from "@/components/admin/OrderBumpDialog";
 import UpsellOfferDialog from "@/components/admin/UpsellOfferDialog";
 
@@ -71,7 +70,7 @@ const ProductEdit = () => {
   const [pixels, setPixels] = useState<PixelEntry[]>([]);
   const [activePixelPlatform, setActivePixelPlatform] = useState("Facebook");
   const [savingPixels, setSavingPixels] = useState(false);
-  const [showDomainManager, setShowDomainManager] = useState(false);
+  const [activeCustomDomain, setActiveCustomDomain] = useState<string | null>(null);
   const [showBumpDialog, setShowBumpDialog] = useState(false);
   const [showPlanDialog, setShowPlanDialog] = useState(false);
   const [planName, setPlanName] = useState("");
@@ -92,7 +91,6 @@ const ProductEdit = () => {
   const [orderBumps, setOrderBumps] = useState<any[]>([]);
   const [upsellOffers, setUpsellOffers] = useState<any[]>([]);
   const [showUpsellDialog, setShowUpsellDialog] = useState(false);
-  const [fbDomains, setFbDomains] = useState<{ id: string; domain: string; verified: boolean }[]>([]);
   const [moderationStatus, setModerationStatus] = useState<string>("approved");
   const [rejectionReason, setRejectionReason] = useState<string>("");
   const [activeCustomDomain, setActiveCustomDomain] = useState<string | null>(null);
@@ -270,13 +268,8 @@ const ProductEdit = () => {
       }
     });
 
-    // Load facebook domains
+    // Load active custom checkout domain
     if (user) {
-      supabase.from("facebook_domains").select("*").eq("user_id", user.id).then(({ data }) => {
-        setFbDomains((data || []) as any);
-      });
-
-      // Buscar domínio customizado ativo do usuário
       supabase
         .from("custom_domains" as any)
         .select("hostname")
@@ -379,7 +372,6 @@ const ProductEdit = () => {
               product_id: productId,
               platform: p.platform,
               pixel_id: p.pixel_id.trim(),
-              domain: p.domain.trim() || "app.panttera.com.br",
               fire_on_pix: p.fire_on_pix,
               fire_on_boleto: p.fire_on_boleto,
               capi_token: p.capi_token.trim() || null,
@@ -1172,6 +1164,21 @@ const ProductEdit = () => {
                 </div>
                 <div className="lg:col-span-8">
                   <div className="border border-border rounded-lg p-6 bg-card space-y-4">
+                    {/* Custom domain status */}
+                    {activePixelPlatform === "Facebook" && (
+                      activeCustomDomain ? (
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary/10 border border-primary/20 text-xs text-primary">
+                          <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
+                          Eventos enviados via <strong>{activeCustomDomain}</strong>
+                        </div>
+                      ) : (
+                        <div className="px-3 py-2 rounded-md bg-amber-500/10 border border-amber-500/20 text-xs text-amber-400">
+                          Nenhum domínio customizado ativo. Configure em{" "}
+                          <a href="/admin/domains" className="underline font-medium">Domínios</a>{" "}
+                          para evitar a restrição do Meta em app.panttera.com.br.
+                        </div>
+                      )
+                    )}
                     {/* Platform tabs */}
                     <div className="flex flex-wrap gap-2">
                       {["Facebook", "G Ads", "G Analytics", "Taboola", "Outbrain", "TikTok", "Pinterest", "Kwai"].map((px) => (
@@ -1200,8 +1207,8 @@ const ProductEdit = () => {
                       if (px.platform !== activePixelPlatform.toLowerCase()) return null;
                       return (
                         <div key={idx} className="space-y-3 border border-border rounded-lg p-4 bg-muted/20">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
+                          <div className="flex items-start gap-3">
+                            <div className="flex-1 space-y-1.5">
                               <Label>Pixel ID</Label>
                               <Input
                                 value={px.pixel_id}
@@ -1209,30 +1216,7 @@ const ProductEdit = () => {
                                 placeholder="Ex: 1234567890"
                               />
                             </div>
-                            <div className="space-y-1.5">
-                              <Label>
-                                Domínio{" "}
-                                <span
-                                  onClick={() => setShowDomainManager(true)}
-                                  className="text-primary text-xs cursor-pointer hover:underline"
-                                >
-                                  (Gerenciar domínios {activePixelPlatform})
-                                </span>
-                              </Label>
-                              <div className="flex items-center gap-2">
-                                <Select value={px.domain} onValueChange={(v) => updatePixel(idx, "domain", v)}>
-                                  <SelectTrigger className="flex-1"><SelectValue placeholder="Selecione um domínio" /></SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="app.panttera.com.br">app.panttera.com.br (padrão)</SelectItem>
-                                    {fbDomains.map((d) => (
-                                      <SelectItem key={d.id} value={d.domain}>{d.domain}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                <button onClick={() => setShowDomainManager(true)} className="text-muted-foreground hover:text-foreground"><Settings2 className="w-4 h-4" /></button>
-                                <button onClick={() => removePixel(idx)} className="text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button>
-                              </div>
-                            </div>
+                            <button onClick={() => removePixel(idx)} className="mt-6 text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button>
                           </div>
                           {px.platform === "facebook" && (
                             <div className="space-y-1.5">
@@ -1650,11 +1634,6 @@ const ProductEdit = () => {
           </TabsContent>
         </Tabs>
       </div>
-      <FacebookDomainManager
-        open={showDomainManager}
-        onClose={() => setShowDomainManager(false)}
-        onDomainsChange={(d) => setFbDomains(d)}
-      />
       {!isNew && productId && (
         <OrderBumpDialog
           open={showBumpDialog}

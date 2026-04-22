@@ -57,7 +57,24 @@ const Products = () => {
   const [newSalesPage, setNewSalesPage] = useState("");
   const [creating, setCreating] = useState(false);
 
-  useEffect(() => { loadProducts(); checkVerification(); }, []);
+  useEffect(() => {
+    loadProducts();
+    checkVerification();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      supabase
+        .from("custom_domains" as any)
+        .select("hostname")
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+        .then(({ data }) => {
+          if ((data as any)?.hostname) setActiveCustomDomain((data as any).hostname);
+        });
+    });
+  }, []);
 
   const checkVerification = async () => {
     if (isSuperAdmin) { setIsVerified(true); return; }
@@ -202,6 +219,8 @@ const Products = () => {
       setCreating(false);
     }
   };
+
+  const checkoutBaseUrl = activeCustomDomain ? `https://${activeCustomDomain}` : getPublicUrl();
 
   const fmt = (v: number, cur?: string) => cur === "USD" ? `$ ${Number(v).toFixed(2)}` : `R$ ${Number(v).toFixed(2).replace(".", ",")}`;
 

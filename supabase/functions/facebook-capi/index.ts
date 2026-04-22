@@ -159,10 +159,24 @@ Deno.serve(async (req) => {
 
     const productOwnerId = productData?.user_id || null;
 
-    // Pixels with CAPI tokens — `domain` per pixel drives event_source_url
+    // Resolve active custom checkout domain for this product owner
+    let ownerDomain: string | null = null;
+    if (productOwnerId) {
+      const { data: cdData } = await supabase
+        .from('custom_domains')
+        .select('hostname')
+        .eq('user_id', productOwnerId)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      ownerDomain = (cdData as any)?.hostname || null;
+    }
+
+    // Pixels with CAPI tokens
     const { data: pixels } = await supabase
       .from('product_pixels')
-      .select('pixel_id, capi_token, fire_on_pix, fire_on_boleto, domain')
+      .select('pixel_id, capi_token, fire_on_pix, fire_on_boleto')
       .eq('product_id', product_id)
       .eq('platform', 'facebook')
       .not('capi_token', 'is', null);
@@ -322,9 +336,9 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Resolve event_source_url using THIS pixel's verified domain
+      // Resolve event_source_url using owner's active custom checkout domain
       const resolvedUrl = buildEventSourceUrl(
-        (pixel as any).domain,
+        ownerDomain,
         event_source_url,
         event_name,
         product_id,
