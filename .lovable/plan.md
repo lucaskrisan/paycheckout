@@ -1,113 +1,36 @@
 
 
-## Recibo do Cliente padrão CartPanda + Logo Panttera + Imagem do Produto + Prova de E-mail
+## Correção emergencial: destravar o preview
 
-### Onde fica
-A tela continua sendo `/recibo/:orderId` — o link público que o cliente recebe no e-mail de confirmação. **Nada muda na rota**, só o visual e a estrutura do conteúdo.
+### O problema (em baby mode)
+O preview está quebrado porque o `package.json` está com `vite ^8.0.9` (versão inexistente/instável) e faltam dependências do Radix. Isso quebrou o servidor que carrega os arquivos do app — por isso aparece "Failed to fetch dynamically imported module: AdminLayout.tsx".
 
-### Layout final
+### O que vou fazer (mínimo necessário, sem riscos)
 
-```text
-┌─────────────────────────────────────────┐
-│            🐆 Logo Panttera              │
-│                                          │
-│         Pedido #ABC12345                 │
-│        Obrigado, V******a                │
-│                                          │
-│              ✅ (verde)                   │
-│      Seu pedido foi Confirmado           │
-│  Aparecerá na fatura como PANTTERA       │
-│                                          │
-│       [ Gerenciar meu pedido ]           │
-├─────────────────────────────────────────┤
-│ Detalhes do pedido                       │
-│ ┌──────┐                                 │
-│ │ IMG  │  Nome do Produto                │
-│ │ 64px │  1× R$ 197,00                   │
-│ └──────┘  [⬇ Acessar produto]            │
-│                                          │
-│ ✉️ Enviamos seu acesso para               │
-│ ver*****@gmail.com em 21/04 às 14:17.    │
-│ ✓ Entregue · Verifique a caixa de        │
-│ entrada ou pasta de spam.                │
-├─────────────────────────────────────────┤
-│ Subtotal                      R$ 197,00  │
-│ Total                  4× R$ 54,75       │
-├─────────────────────────────────────────┤
-│ Informações do cliente                   │
-│ E-mail: ver*****@gmail.com               │
-│ Pagamento: 💳 Visa final 3418            │
-├─────────────────────────────────────────┤
-│ ▸ Detalhes técnicos e selo de            │
-│   autenticidade  (colapsado)             │
-├─────────────────────────────────────────┤
-│ Documento eletrônico válido —            │
-│ MP 2.200-2/2001 · Recibo nº XXXX         │
-└─────────────────────────────────────────┘
-```
+**1. Reverter `vite` para versão estável**
+- Em `package.json`, voltar `vite` para `^5.4.10` (versão estável e compatível com `@vitejs/plugin-react-swc` que o projeto já usa).
 
-### Mudanças no `src/pages/Receipt.tsx` (único arquivo frontend)
+**2. Garantir Radix Dialog instalado**
+- Adicionar `@radix-ui/react-dialog` em versão estável (`^1.1.2`) — usado por `sheet.tsx`, `dialog.tsx` e `command.tsx`.
 
-**1. Header com logo Panttera**
-- Importar `pantera-mascot.png` de `@/assets/`
-- Logo centralizado 64×64px no topo
-- "Pedido #XXXX" pequeno cinza
-- "Obrigado, V******a" grande em bold (nome mascarado por LGPD)
-- Ícone verde ✅ + "Seu pedido foi Confirmado" como heading
-- Subtexto: "Aparecerá na fatura como PANTTERA"
-- Botão azul "Gerenciar meu pedido" → `/minha-conta`
+**3. Reverter o "patch manual" no sheet.tsx**
+- Remover o `// @ts-nocheck` e o `className?: string` que foram adicionados como gambiarra. Voltar ao código original do shadcn (a tipagem do Radix já cobre `className` quando o pacote está instalado de verdade).
 
-**2. Card do produto COM IMAGEM (estilo CartPanda)**
-- Layout horizontal: thumbnail 64×64px à esquerda + info à direita
-- Thumbnail com `rounded-lg` + `object-cover` + borda sutil
-- Fallback: se não tiver imagem, mostrar ícone 📦 em placeholder cinza
-- Nome do produto em bold + linha "1× R$ 197,00"
-- Botão "Acessar produto" abaixo (quando houver área de membros)
+### O que NÃO vou tocar
+- Nenhum arquivo de feature (checkout, pixels, webhooks, área de membros).
+- Nenhuma migração de banco.
+- Nenhuma Edge Function.
+- Nada do plano dos pixels — fica intacto, esperando.
 
-**3. Prova de envio do e-mail integrada (texto humano)**
-- Logo abaixo do card do produto, no mesmo bloco:
-  > "✉️ Enviamos seu acesso para **ver\*\*\*\*@gmail.com** em 21/04/2026 às 14:17. ✓ Entregue. Se não encontrar, verifique a pasta de spam ou promoções."
-- Status visual sutil: ✓ Entregue (verde) / ✓ Aberto (azul) quando o Resend confirmar
+### Arquivos que vão mudar
+- `package.json` (apenas linhas de `vite` e `@radix-ui/react-dialog`)
+- `src/components/ui/sheet.tsx` (reverter para versão limpa do shadcn)
 
-**4. Resumo financeiro tabular**
-- Subtotal, Envio (se houver), Total
-- Mostrar parcelamento quando aplicável ("4× R$ 54,75")
-- **Remover** "Taxa da plataforma" e "Líquido ao vendedor"
+### Validação após o fix
+- Preview carrega sem o erro de "Failed to fetch dynamically imported module"
+- `/admin` abre normal
+- Sem erro de Vite no console sobre `@radix-ui/react-dialog`
 
-**5. Informações do cliente (mínimo)**
-- E-mail mascarado
-- Método de pagamento (bandeira + final do cartão, ou "PIX")
-- **Remover** cidade/estado/CEP (redundante)
-
-**6. Detalhes técnicos colapsáveis** (`<details>` HTML nativo)
-- Label clicável: "▸ Ver detalhes técnicos e selo de autenticidade"
-- Conteúdo escondido por padrão:
-  - Hash SHA-256 de autenticidade
-  - IP do pagador, dispositivo
-  - Ref. gateway, ID interno do pedido
-  - CPF/CNPJ do vendedor
-  - IDs Resend dos e-mails enviados (auditoria)
-- CSS `@media print` força `details[open]` ao imprimir/salvar PDF
-
-**7. Footer reduzido a 1 linha**
-- "Panttera Tecnologia — Documento eletrônico válido conforme MP 2.200-2/2001 · Recibo nº XXXX"
-
-### Mudança mínima no backend `supabase/functions/get-receipt/index.ts`
-
-- Adicionar `image_url` no SELECT do produto (atualmente já busca `name` e `price` — falta a imagem)
-- Retornar `product.image_url` no payload da response
-- **Nada mais muda no edge function** — `emails_sent` e `authenticity_hash` já existem
-
-### O que continua igual
-
-- Hash SHA-256 continua gerado e exibido (apenas dentro do colapsável)
-- E-mail e nome mascarados (LGPD)
-- Suporte BRL/USD
-- Botão "Baixar PDF" (imprimir como PDF)
-- Rota `/recibo/:orderId` inalterada
-
-### Arquivos editados
-
-- `src/pages/Receipt.tsx` — redesign visual completo
-- `supabase/functions/get-receipt/index.ts` — incluir `image_url` do produto na resposta
+### Depois disso
+Confirmamos que voltou ao normal e você decide se quer seguir com o plano dos pixels (que continua intacto e aprovado mentalmente, só esperando execução).
 
