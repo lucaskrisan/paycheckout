@@ -92,3 +92,34 @@ export function validatePhone(input: string): { valid: boolean; error: string } 
   }
   return { valid: true, error: "" };
 }
+
+export function normalizeEmail(input: string): string {
+  return input.trim().toLowerCase();
+}
+
+export function validateEmail(input: string): { valid: boolean; error: string } {
+  const email = normalizeEmail(input);
+  if (!email) return { valid: false, error: "Informe seu e-mail" };
+  if (email.length > 254) return { valid: false, error: "E-mail muito longo" };
+  const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  return isValid ? { valid: true, error: "" } : { valid: false, error: "Informe um e-mail válido" };
+}
+
+export function validateFullName(input: string): { valid: boolean; error: string } {
+  const normalized = input.trim().replace(/\s+/g, " ");
+  if (!normalized) return { valid: false, error: "Informe seu nome completo" };
+  if (normalized.length < 5) return { valid: false, error: "Informe nome e sobrenome" };
+  if (normalized.length > 120) return { valid: false, error: "Nome muito longo" };
+  const parts = normalized.split(" ");
+  if (parts.length < 2 || parts.some((part) => part.length < 2)) {
+    return { valid: false, error: "Informe nome e sobrenome" };
+  }
+  return { valid: true, error: "" };
+}
+
+export function validatePassword(input: string): { valid: boolean; error: string } {
+  const password = input.trim();
+  if (password.length < 6) return { valid: false, error: "A senha deve ter no mínimo 6 caracteres" };
+  if (password.length > 72) return { valid: false, error: "A senha está muito longa" };
+  return { valid: true, error: "" };
+}
