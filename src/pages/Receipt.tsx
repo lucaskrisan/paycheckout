@@ -21,6 +21,15 @@ interface EmailSent {
   resend_id: string | null;
 }
 
+interface ReceiptItem {
+  kind: "main" | "bump" | "upsell";
+  product_id: string | null;
+  name: string;
+  image_url: string | null;
+  amount: number;
+  order_id: string;
+}
+
 interface ReceiptResponse {
   order: {
     id: string;
@@ -41,6 +50,8 @@ interface ReceiptResponse {
   };
   producer: { name: string | null; email: string | null; cpf_cnpj: string | null } | null;
   gateway: { code: string; label: string } | null;
+  items?: ReceiptItem[];
+  items_total?: number;
   emails_sent: EmailSent[];
   authenticity_hash: string;
   verified_at: string;
