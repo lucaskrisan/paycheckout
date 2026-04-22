@@ -218,30 +218,62 @@ const Receipt = () => {
         <div className="px-6 sm:px-10 py-6">
           <h3 className="text-base font-semibold text-slate-900 mb-4">Detalhes do pedido</h3>
 
-          <div className="flex items-start gap-4">
-            {/* Product image */}
-            <div className="w-16 h-16 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden">
-              {productImage ? (
-                <img
-                  src={productImage}
-                  alt={order.products?.name || "Produto"}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).style.display = "none";
-                  }}
-                />
-              ) : (
-                <Package className="w-7 h-7 text-slate-400" strokeWidth={1.5} />
-              )}
-            </div>
-
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-slate-900">
-                {order.products?.name || "Produto digital"}
-              </p>
-              <p className="text-xs text-slate-500 mt-0.5">1 × {formatPrice(gross)}</p>
-            </div>
-          </div>
+          {(() => {
+            const items: ReceiptItem[] =
+              data.items && data.items.length > 0
+                ? data.items
+                : [
+                    {
+                      kind: "main" as const,
+                      product_id: null,
+                      name: order.products?.name || "Produto digital",
+                      image_url: productImage,
+                      amount: gross,
+                      order_id: order.id,
+                    },
+                  ];
+            return (
+              <div className="space-y-3">
+                {items.map((it, i) => (
+                  <div key={`${it.order_id}-${i}`} className="flex items-start gap-4">
+                    <div className="w-14 h-14 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden">
+                      {it.image_url ? (
+                        <img
+                          src={it.image_url}
+                          alt={it.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).style.display = "none";
+                          }}
+                        />
+                      ) : (
+                        <Package className="w-6 h-6 text-slate-400" strokeWidth={1.5} />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-medium text-slate-900">{it.name}</p>
+                        {it.kind === "bump" && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200 text-amber-700 text-[10px] font-semibold uppercase tracking-wide">
+                            Order Bump
+                          </span>
+                        )}
+                        {it.kind === "upsell" && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-violet-50 border border-violet-200 text-violet-700 text-[10px] font-semibold uppercase tracking-wide">
+                            Upsell
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-500 mt-0.5">1 × {formatPrice(it.amount)}</p>
+                    </div>
+                    <p className="text-sm font-medium text-slate-900 tabular-nums shrink-0">
+                      {formatPrice(it.amount)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
 
           {/* Prova de envio do e-mail (texto humano) */}
           {proofEmail ? (
