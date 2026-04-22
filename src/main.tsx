@@ -1,6 +1,6 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
-import "./index.css";
+import globalStyles from "./index.css?inline";
 import {
   isDynamicImportFailure,
   recoverFromDynamicImportFailure,
@@ -8,6 +8,15 @@ import {
 } from "@/lib/dynamicImportRecovery";
 import { bootGeo } from "@/lib/cfGeo";
 import { cleanupStaleBrowserCaches } from "@/lib/staleCacheCleanup";
+
+const STYLE_TAG_ID = "app-global-styles";
+
+if (typeof document !== "undefined" && !document.getElementById(STYLE_TAG_ID)) {
+  const styleTag = document.createElement("style");
+  styleTag.id = STYLE_TAG_ID;
+  styleTag.textContent = globalStyles;
+  document.head.appendChild(styleTag);
+}
 
 scheduleDynamicImportRecoveryReset();
 
