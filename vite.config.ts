@@ -7,9 +7,7 @@ export default defineConfig({
   server: {
     host: "::",
     port: 8080,
-    hmr: {
-      overlay: false,
-    },
+    hmr: false,
   },
   resolve: {
     alias: {
