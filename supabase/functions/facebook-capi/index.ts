@@ -322,6 +322,16 @@ Deno.serve(async (req) => {
         continue;
       }
 
+      // Resolve event_source_url using THIS pixel's verified domain
+      const resolvedUrl = buildEventSourceUrl(
+        (pixel as any).domain,
+        event_source_url,
+        event_name,
+        product_id,
+        (custom_data as any)?.order_id
+      );
+      event.event_source_url = resolvedUrl;
+
       try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 10000);
