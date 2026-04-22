@@ -374,30 +374,71 @@ const Domains = () => {
                   {customDomains.map((d: any) => {
                     const statusInfo = STATUS_MAP[d.status] || { label: d.status, color: "bg-muted text-muted-foreground" };
                     const sslInfo = d.ssl_status ? SSL_STATUS_MAP[d.ssl_status] : null;
+                    const health = healthByDomain[d.id];
                     return (
-                      <div key={d.id} className="flex items-center justify-between bg-muted/30 rounded-lg px-4 py-3">
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <Globe className="w-4 h-4 text-muted-foreground shrink-0" />
-                          <span className="text-sm font-medium text-foreground">{d.hostname}</span>
-                          <Badge variant="outline" className={`text-[10px] gap-1 border ${statusInfo.color}`}>
-                            {d.status === "active" ? <CheckCircle className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
-                            {statusInfo.label}
-                          </Badge>
-                          {sslInfo && (
-                            <Badge variant="outline" className={`text-[10px] gap-1 border ${sslInfo.color}`}>
-                              <ShieldCheck className="w-3 h-3" />
-                              {sslInfo.label}
+                      <div key={d.id} className="flex flex-col gap-2 bg-muted/30 rounded-lg px-4 py-3">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <Globe className="w-4 h-4 text-muted-foreground shrink-0" />
+                            <span className="text-sm font-medium text-foreground">{d.hostname}</span>
+                            <Badge variant="outline" className={`text-[10px] gap-1 border ${statusInfo.color}`}>
+                              {d.status === "active" ? <CheckCircle className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                              {statusInfo.label}
                             </Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {d.status === "active" && (
-                            <Button variant="ghost" size="icon" asChild className="h-8 w-8">
-                              <a href={`https://${d.hostname}`} target="_blank" rel="noopener noreferrer">
-                                <ExternalLink className="w-4 h-4 text-muted-foreground" />
-                              </a>
+                            {sslInfo && (
+                              <Badge variant="outline" className={`text-[10px] gap-1 border ${sslInfo.color}`}>
+                                <ShieldCheck className="w-3 h-3" />
+                                {sslInfo.label}
+                              </Badge>
+                            )}
+                            {health && (
+                              <Badge
+                                variant="outline"
+                                className={`text-[10px] gap-1 border ${
+                                  health.ok
+                                    ? "bg-green-500/20 text-green-400 border-green-500/30"
+                                    : "bg-red-500/20 text-red-400 border-red-500/30"
+                                }`}
+                                title={health.hint || health.diagnosis}
+                              >
+                                {health.ok ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+                                {health.ok
+                                  ? `Link ok · ${health.latency_ms}ms`
+                                  : `Link: ${health.diagnosis}`}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {d.status === "active" && (
+                              <Button variant="ghost" size="icon" asChild className="h-8 w-8">
+                                <a href={`https://${d.hostname}`} target="_blank" rel="noopener noreferrer">
+                                  <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                                </a>
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => runHealthCheck(d.id)}
+                              disabled={healthChecking === d.id}
+                              className="h-8 w-8"
+                              title="Testar link real (verifica se o checkout está respondendo)"
+                            >
+                              {healthChecking === d.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                              ) : (
+                                <Activity className="w-4 h-4 text-muted-foreground" />
+                              )}
                             </Button>
-                          )}
+                          </div>
+                        </div>
+                        {health && !health.ok && health.hint && (
+                          <p className="text-[11px] text-muted-foreground pl-7">
+                            <span className="text-red-400 font-semibold">Diagnóstico:</span> {health.hint}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-1 self-end -mt-1">
+
                           <Popover>
                             <PopoverTrigger asChild>
                               <Button variant="ghost" size="icon" className="h-8 w-8" title="Ver instruções de DNS">
