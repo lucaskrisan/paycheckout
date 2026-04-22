@@ -101,6 +101,75 @@ Deno.serve(async (req) => {
     const gateway = detectGateway(order.metadata, order.external_id);
     const gatewayLabel = gateway ? GATEWAY_LABELS[gateway] || gateway : null;
 
+    // Build full item list: main product + order bumps + linked upsells
+    const items: Array<{
+      kind: "main" | "bump" | "upsell";
+      product_id: string | null;
+      name: string;
+      image_url: string | null;
+      amount: number;
+      order_id: string;
+    }> = [];
+
+    if ((order as any).products) {
+      items.push({
+        kind: "main",
+        product_id: (order as any).product_id || null,
+        name: (order as any).products.name,
+        image_url: (order as any).products.image_url || null,
+        amount: Number(order.amount),
+        order_id: order.id,
+      });
+    }
+
+    // Order bumps: fetch product details for each bump_product_id
+    const bumpIds: string[] = Array.isArray((order as any).metadata?.bump_product_ids)
+      ? (order as any).metadata.bump_product_ids.filter((x: any) => typeof x === "string")
+      : [];
+    if (bumpIds.length > 0) {
+      const { data: bumpProducts } = await supabase
+        .from("products")
+        .select("id, name, image_url, price")
+        .in("id", bumpIds);
+      if (bumpProducts) {
+        // Preserve order from metadata
+        for (const id of bumpIds) {
+          const p = bumpProducts.find((bp: any) => bp.id === id);
+          if (p) {
+            items.push({
+              kind: "bump",
+              product_id: p.id,
+              name: p.name,
+              image_url: p.image_url || null,
+              amount: Number(p.price || 0),
+              order_id: order.id,
+            });
+          }
+        }
+      }
+    }
+
+    // Upsells: child orders that reference this one via metadata.upsell_from_order_id
+    const { data: upsellOrders } = await supabase
+      .from("orders")
+      .select("id, amount, product_id, products(name, image_url)")
+      .contains("metadata", { upsell_from_order_id: order.id })
+      .in("status", ["paid", "approved", "confirmed"]);
+    if (upsellOrders) {
+      for (const u of upsellOrders as any[]) {
+        items.push({
+          kind: "upsell",
+          product_id: u.product_id,
+          name: u.products?.name || "Upsell",
+          image_url: u.products?.image_url || null,
+          amount: Number(u.amount),
+          order_id: u.id,
+        });
+      }
+    }
+
+    const itemsTotal = items.reduce((sum, it) => sum + it.amount, 0);
+
     // E-mails relacionados ao pedido (prova de envio do acesso e da confirmação)
     const customerEmail = (order as any).customers?.email || null;
     let emailsSent: Array<{
