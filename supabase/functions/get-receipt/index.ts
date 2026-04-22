@@ -238,6 +238,8 @@ Deno.serve(async (req) => {
         order,
         producer,
         gateway: gateway ? { code: gateway, label: gatewayLabel } : null,
+        items,
+        items_total: itemsTotal,
         emails_sent: emailsSent,
         authenticity_hash: authenticityHash,
         verified_at: new Date().toISOString(),
