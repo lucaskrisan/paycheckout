@@ -70,8 +70,14 @@ const CardPreview3D = ({
           <div className={`cp3d-highlight ${highlightClass}`} aria-hidden />
           <div className="cp3d-header">
             <span className="cp3d-brand">{brandLabel}</span>
-            <span className="cp3d-chip" aria-hidden>
-              <span /><span /><span /><span />
+            <span className="cp3d-brand-logo" aria-label={brandTitle || undefined}>
+              {brandIcon ? (
+                <Icon icon={brandIcon} className="cp3d-brand-icon" />
+              ) : (
+                <span className="cp3d-chip" aria-hidden>
+                  <span /><span /><span /><span />
+                </span>
+              )}
             </span>
           </div>
 
