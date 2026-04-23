@@ -331,11 +331,23 @@ async function stepMemberAccess(params: ProcessOrderPaidParams): Promise<void> {
       return;
     }
 
-    // Find all courses linked to these products
+    // Find all courses linked to these products (via legacy courses.product_id OR course_products)
+    const courseIdsSet = new Set<string>();
+    for (const pid of productIdsForAccess) {
+      const { data: courseIds } = await supabase.rpc('get_courses_for_product', { p_product_id: pid });
+      if (Array.isArray(courseIds)) {
+        for (const cid of courseIds) {
+          if (cid) courseIdsSet.add(cid as string);
+        }
+      }
+    }
+
+    if (courseIdsSet.size === 0) return;
+
     const { data: courses } = await supabase
       .from('courses')
       .select('id, title, product_id')
-      .in('product_id', productIdsForAccess);
+      .in('id', Array.from(courseIdsSet));
 
     if (!courses || courses.length === 0) return;
 
