@@ -41,7 +41,7 @@ const CardPreview3D = ({
   const slots = useMemo(() => {
     const arr: { char: string; filled: boolean }[] = [];
     for (let i = 0; i < 16; i++) {
-      let c = "#";
+      let c = "•";
       if (i < digits.length) {
         const d = digits[i];
         const shouldMask = maskMiddle && i >= 4 && i <= 11;
@@ -88,7 +88,7 @@ const CardPreview3D = ({
                 className={`cp3d-slot ${(i + 1) % 4 === 0 ? "cp3d-gap" : ""}`}
               >
                 <span className={`cp3d-digit ${s.filled ? "is-filled" : ""}`}>
-                  <span className="cp3d-row">#</span>
+                  <span className="cp3d-row cp3d-row-empty">•</span>
                   <span className="cp3d-row">{s.char}</span>
                 </span>
               </span>
@@ -191,10 +191,13 @@ const CardPreview3D = ({
           pointer-events: none;
         }
         .cp3d-highlight.hl-hidden { opacity: 0; }
-        .cp3d-highlight.hl-number { width: calc(100% - 36px); height: 40px; top: 92px; left: 18px; }
-        .cp3d-highlight.hl-holder { width: 60%; height: 48px; top: 162px; left: 18px; }
-        .cp3d-highlight.hl-expire { width: 90px; height: 48px; top: 162px; right: 18px; left: auto; }
-        .cp3d-highlight.hl-cvv    { width: calc(100% - 36px); height: 60px; top: 92px; left: 18px; }
+        /* Coordenadas calibradas com o layout real:
+           header (~46px) + número (30px) começa em ~70px;
+           footer com titular/validade começa em ~150px. */
+        .cp3d-highlight.hl-number { width: calc(100% - 36px); height: 38px; top: 64px; left: 18px; }
+        .cp3d-highlight.hl-holder { width: 58%; height: 44px; top: 148px; left: 18px; }
+        .cp3d-highlight.hl-expire { width: 78px; height: 44px; top: 148px; right: 18px; left: auto; }
+        .cp3d-highlight.hl-cvv    { width: calc(100% - 36px); height: 60px; top: 70px; left: 18px; }
 
         .cp3d-header {
           display: flex;
@@ -353,10 +356,10 @@ const CardPreview3D = ({
           .cp3d-row { height: 26px; min-width: 11px; }
           .cp3d-slot.cp3d-gap { margin-right: 6px; }
           .cp3d-holder, .cp3d-expire { font-size: 13px; }
-          .cp3d-highlight.hl-number { width: calc(100% - 32px); top: 78px; left: 16px; height: 34px; }
-          .cp3d-highlight.hl-holder { top: 138px; left: 16px; height: 42px; }
-          .cp3d-highlight.hl-expire { top: 138px; right: 16px; height: 42px; width: 78px; }
-          .cp3d-highlight.hl-cvv { width: calc(100% - 32px); left: 16px; top: 78px; }
+          .cp3d-highlight.hl-number { width: calc(100% - 32px); top: 56px; left: 16px; height: 34px; }
+          .cp3d-highlight.hl-holder { top: 128px; left: 16px; height: 40px; }
+          .cp3d-highlight.hl-expire { top: 128px; right: 16px; height: 40px; width: 70px; }
+          .cp3d-highlight.hl-cvv { width: calc(100% - 32px); left: 16px; top: 60px; }
         }
         @container (max-width: 320px) {
           .cp3d-number { font-size: 16px; }
