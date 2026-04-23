@@ -213,6 +213,21 @@ const CardPreview3D = ({
           color: hsl(var(--primary));
           font-weight: 700;
         }
+        .cp3d-brand-logo {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 48px;
+          height: 30px;
+        }
+        .cp3d-brand-icon {
+          width: auto;
+          height: 30px;
+          max-width: 64px;
+          background: hsl(var(--background));
+          border-radius: 4px;
+          padding: 2px 4px;
+        }
         .cp3d-chip {
           display: grid;
           grid-template-columns: 1fr 1fr;
