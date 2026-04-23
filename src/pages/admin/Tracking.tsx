@@ -617,7 +617,7 @@ const Tracking = () => {
           <TrackingScriptGenerator
             pixels={pixels}
             products={products}
-            checkoutBaseUrl="https://app.panttera.com.br"
+            checkoutBaseUrl={checkoutBaseUrl}
             selectedProductId={globalProduct}
             onProductChange={(id) => { setGlobalProduct(id); setSelectedProduct(id); }}
           />
