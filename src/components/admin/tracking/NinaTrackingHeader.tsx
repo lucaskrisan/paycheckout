@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Tv, Minimize2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import ninaAvatar from "@/assets/nina-avatar.png";
+import ninaAvatar from "@/assets/pantera-mascot.png";
 
 interface Props {
   period: string;
@@ -62,7 +62,7 @@ const NinaTrackingHeader = ({
         <div className="relative">
           <img
             src={ninaAvatar}
-            alt="Nina"
+            alt="Panttera"
             width={48}
             height={48}
             loading="lazy"
@@ -88,7 +88,7 @@ const NinaTrackingHeader = ({
                 backgroundClip: "text",
               }}
             >
-              Nina Tracking
+              Panttera Tracking
             </span>
             <span className="text-[10px] text-[#D4AF37] font-bold align-top">™</span>
           </h2>
