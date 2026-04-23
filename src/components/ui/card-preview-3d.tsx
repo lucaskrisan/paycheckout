@@ -41,7 +41,7 @@ const CardPreview3D = ({
   const slots = useMemo(() => {
     const arr: { char: string; filled: boolean }[] = [];
     for (let i = 0; i < 16; i++) {
-      let c = "#";
+      let c = "•";
       if (i < digits.length) {
         const d = digits[i];
         const shouldMask = maskMiddle && i >= 4 && i <= 11;
