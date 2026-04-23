@@ -306,164 +306,120 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
       {/* ── Smart Alerts ── */}
       <SmartAlertsPanel userId={userId} filterProduct={filterProduct} />
 
-      {/* ── Funil + Heatmap (Sprint 2) ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <LiveFunnel eventCounts={eventCounts} />
-        <ConversionHeatmap userId={userId} filterProduct={filterProduct} />
-      </div>
-
-      {/* ── Event counters ── */}
-      <div className="relative grid grid-cols-2 min-[480px]:grid-cols-3 md:grid-cols-4 xl:grid-cols-7 gap-2 rounded-xl bg-card/50 border border-border/30 p-3">
-        {ORDERED_EVENT_NAMES.map((name) => {
-          const count = eventCounts[name] || 0;
-          return (
-            <div key={name} className="rounded-lg bg-muted/40 border border-border/20 px-2.5 py-2.5">
-              <div className="flex items-center gap-1.5 mb-1">
-                <Zap className="w-3 h-3 text-muted-foreground shrink-0" />
-                <span className="text-[10px] text-muted-foreground font-medium truncate">{name}</span>
+      {/* ── Layout 3 colunas: Feed | Chart+Heatmap | Funil+Counters ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        {/* COL 1 — Live Feed (38% / 5 cols) */}
+        <div className="lg:col-span-5 rounded-xl bg-card border border-border/20 flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border/20 bg-muted/20">
+            <div className="flex items-center gap-2.5">
+              <div className="relative flex items-center justify-center">
+                <motion.div
+                  className="absolute w-5 h-5 rounded-full bg-emerald-500/20"
+                  animate={{ scale: [1, 1.8, 1], opacity: [0.6, 0, 0.6] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
+                />
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 relative z-10" />
               </div>
-              <span className="text-base font-bold text-foreground font-mono tabular-nums">{count}</span>
-            </div>
-          );
-        })}
-        <NinaWatermark />
-      </div>
-
-      {/* ── Chart ── */}
-      <div className="relative rounded-xl bg-muted/40 border border-border/20 p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-          <p className="text-xs text-muted-foreground font-medium">
-            Sinais · {period === "7d" ? "diário" : "por hora"}
-          </p>
-        </div>
-        <div className="h-[220px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} barCategoryGap="20%">
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
-                stroke="hsl(var(--border))"
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                allowDecimals={false}
-                tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
-                stroke="hsl(var(--border))"
-                tickLine={false}
-                axisLine={false}
-                width={28}
-              />
-              <Tooltip
-                cursor={{ fill: "hsl(var(--muted) / 0.3)" }}
-                contentStyle={{
-                  backgroundColor: "hsl(var(--card))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: 8,
-                  fontSize: 11,
-                  color: "hsl(var(--foreground))",
-                }}
-                labelStyle={{ color: "hsl(var(--muted-foreground))", fontSize: 10 }}
-              />
-              <Bar dataKey="count" radius={[3, 3, 0, 0]}>
-                {chartData.map((entry, i) => (
-                  <Cell
-                    key={i}
-                    fill={entry.count > 0 ? "#22d3ee" : "hsl(var(--muted))"}
-                    fillOpacity={entry.count > 0 ? 0.7 : 0.3}
-                  />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-        <NinaWatermark />
-      </div>
-
-      {/* ── Feed ao Vivo ── */}
-      <div className="rounded-xl bg-card border border-border/20 flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-border/20 bg-muted/20">
-          <div className="flex items-center gap-3">
-            <div className="relative flex items-center justify-center">
-              <motion.div
-                className="absolute w-5 h-5 rounded-full bg-emerald-500/20"
-                animate={{ scale: [1, 1.8, 1], opacity: [0.6, 0, 0.6] }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
-              />
-              <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 relative z-10" />
-            </div>
-            <div className="flex items-center bg-muted/60 rounded-lg p-0.5 border border-border/40">
-              <button
-                onClick={() => setFeedView("feed")}
-                className={`px-3 py-1 text-[11px] font-semibold rounded-md transition-all ${
-                  feedView === "feed"
-                    ? "bg-accent text-accent-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Feed
-              </button>
-              <button
-                onClick={() => setFeedView("journeys")}
-                className={`px-3 py-1 text-[11px] font-semibold rounded-md transition-all ${
-                  feedView === "journeys"
-                    ? "bg-accent text-accent-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Jornadas
-              </button>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">LIVE</span>
+              <div className="flex items-center bg-muted/60 rounded-lg p-0.5 border border-border/40">
+                <button
+                  onClick={() => setFeedView("feed")}
+                  className={`px-2.5 py-0.5 text-[10px] font-semibold rounded-md transition-all ${
+                    feedView === "feed"
+                      ? "bg-accent text-accent-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Feed
+                </button>
+                <button
+                  onClick={() => setFeedView("journeys")}
+                  className={`px-2.5 py-0.5 text-[10px] font-semibold rounded-md transition-all ${
+                    feedView === "journeys"
+                      ? "bg-accent text-accent-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Jornadas
+                </button>
+              </div>
             </div>
             <span className="text-[10px] font-mono text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full">
               {groupedEvents.length} sinais
             </span>
           </div>
+
+          <div className="overflow-y-auto max-h-[640px] min-h-[420px] flex-1">
+            {feedView === "journeys" ? (
+              <CustomerJourneyFeed events={events} products={products} />
+            ) : groupedEvents.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-3">
+                <motion.div
+                  animate={{ opacity: [0.3, 0.7, 0.3] }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                >
+                  <Radio className="w-8 h-8 text-muted-foreground/50" />
+                </motion.div>
+                <p className="text-sm text-muted-foreground font-medium">
+                  Nina aguardando sinais...
+                </p>
+                <p className="text-[11px] text-muted-foreground/70">
+                  Os eventos aparecerão aqui em tempo real
+                </p>
+              </div>
+            ) : (
+              <AnimatePresence mode="popLayout">
+                {groupedEvents.map((g) => (
+                  <EventFeedCard
+                    key={g.event_id}
+                    group={g}
+                    productName={products.find((p) => p.id === g.product_id)?.name}
+                    geo={{ country: geo.country, city: geo.city }}
+                  />
+                ))}
+              </AnimatePresence>
+            )}
+          </div>
+
           {feedView === "feed" && (
-            <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-sm bg-cyan-500/60" /> Pixel
+            <div className="flex items-center gap-3 px-4 py-2 border-t border-border/20 bg-muted/10 text-[9px] text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-sm bg-cyan-500/60" /> Pixel
               </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-sm bg-violet-500/60" /> CAPI
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-sm bg-violet-500/60" /> CAPI
               </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-sm bg-emerald-500/60" /> Ambos
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-sm bg-emerald-500/60" /> DUAL
               </span>
             </div>
           )}
         </div>
 
-        <div className="overflow-y-auto max-h-[420px] min-h-[280px]">
-          {feedView === "journeys" ? (
-            <CustomerJourneyFeed events={events} products={products} />
-          ) : groupedEvents.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3">
-              <motion.div
-                animate={{ opacity: [0.3, 0.7, 0.3] }}
-                transition={{ duration: 3, repeat: Infinity }}
-              >
-                <Radio className="w-8 h-8 text-muted-foreground/50" />
-              </motion.div>
-              <p className="text-sm text-muted-foreground font-medium">
-                Nina aguardando sinais...
-              </p>
-              <p className="text-[11px] text-muted-foreground/70">
-                Os eventos aparecerão aqui em tempo real
-              </p>
-            </div>
-          ) : (
-            <AnimatePresence mode="popLayout">
-              {groupedEvents.map((g) => (
-                <EventFeedCard
-                  key={g.event_id}
-                  group={g}
-                  productName={products.find((p) => p.id === g.product_id)?.name}
-                  geo={{ country: geo.country, city: geo.city }}
-                />
-              ))}
-            </AnimatePresence>
-          )}
+        {/* COL 2 — Chart + Heatmap (38% / 4 cols) */}
+        <div className="lg:col-span-4 flex flex-col gap-4">
+          <PulseChart data={chartData} period={period} />
+          <ConversionHeatmap userId={userId} filterProduct={filterProduct} />
+        </div>
+
+        {/* COL 3 — Funil + Contadores (24% / 3 cols) */}
+        <div className="lg:col-span-3 flex flex-col gap-4">
+          <LiveFunnel eventCounts={eventCounts} />
+          <div className="relative grid grid-cols-2 gap-2 rounded-xl bg-card/50 border border-border/30 p-3">
+            {ORDERED_EVENT_NAMES.map((name) => {
+              const count = eventCounts[name] || 0;
+              return (
+                <div key={name} className="rounded-lg bg-muted/40 border border-border/20 px-2 py-2">
+                  <div className="flex items-center gap-1 mb-0.5">
+                    <Zap className="w-2.5 h-2.5 text-muted-foreground shrink-0" />
+                    <span className="text-[9px] text-muted-foreground font-medium truncate">{name}</span>
+                  </div>
+                  <span className="text-sm font-bold text-foreground font-mono tabular-nums">{count}</span>
+                </div>
+              );
+            })}
+            <NinaWatermark />
+          </div>
         </div>
       </div>
 
