@@ -14,6 +14,7 @@ import EventFeedCard from "./tracking/EventFeedCard";
 import NinaWatermark from "./tracking/NinaWatermark";
 import LiveFunnel from "./tracking/LiveFunnel";
 import ConversionHeatmap from "./tracking/ConversionHeatmap";
+import PulseChart from "./tracking/PulseChart";
 import { ninaToast, ninaPurchaseToast } from "./tracking/NinaToast";
 import { playNotificationSound } from "@/lib/notificationSounds";
 import { useGeo } from "@/hooks/useGeo";
