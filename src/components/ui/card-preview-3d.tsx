@@ -35,6 +35,9 @@ const CardPreview3D = ({
   className = "",
 }: CardPreview3DProps) => {
   const digits = useMemo(() => number.replace(/\D/g, "").slice(0, 16), [number]);
+  const brand = useMemo(() => detectCardBrand(digits), [digits]);
+  const brandIcon = brand !== "unknown" ? BRAND_ICONS[brand] : null;
+  const brandTitle = BRAND_LABEL[brand];
   const slots = useMemo(() => {
     const arr: { char: string; filled: boolean }[] = [];
     for (let i = 0; i < 16; i++) {
