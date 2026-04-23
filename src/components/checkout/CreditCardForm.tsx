@@ -71,9 +71,22 @@ const CreditCardForm = ({ data, onChange, totalAmount, isUSD = false }: CreditCa
 
   return (
     <div className="space-y-3">
+      <div className="mb-4">
+        <CardPreview3D
+          number={data.number}
+          holder={data.name}
+          month={expiryMonth}
+          year={expiryYear}
+          cvv={data.cvv}
+          focus={focus}
+        />
+      </div>
+
       <Input
         value={data.name}
         onChange={(e) => handleChange("name", e.target.value)}
+        onFocus={() => setFocus("holder")}
+        onBlur={() => setFocus(null)}
         placeholder="Nome impresso no cartão"
         autoComplete="cc-name"
         className={inputClass}
@@ -83,6 +96,8 @@ const CreditCardForm = ({ data, onChange, totalAmount, isUSD = false }: CreditCa
         <Input
           value={data.number}
           onChange={(e) => handleChange("number", e.target.value)}
+          onFocus={() => setFocus("number")}
+          onBlur={() => setFocus(null)}
           placeholder="Número do cartão"
           inputMode="numeric"
           autoComplete="cc-number"
@@ -93,7 +108,7 @@ const CreditCardForm = ({ data, onChange, totalAmount, isUSD = false }: CreditCa
 
       <div className="grid grid-cols-3 gap-3">
         <Select value={expiryMonth} onValueChange={(v) => handleExpiryChange("month", v)}>
-          <SelectTrigger className={inputClass}>
+          <SelectTrigger className={inputClass} onFocus={() => setFocus("expire")} onBlur={() => setFocus(null)}>
             <SelectValue placeholder="Mês" />
           </SelectTrigger>
           <SelectContent>
@@ -104,7 +119,7 @@ const CreditCardForm = ({ data, onChange, totalAmount, isUSD = false }: CreditCa
           </SelectContent>
         </Select>
         <Select value={expiryYear} onValueChange={(v) => handleExpiryChange("year", v)}>
-          <SelectTrigger className={inputClass}>
+          <SelectTrigger className={inputClass} onFocus={() => setFocus("expire")} onBlur={() => setFocus(null)}>
             <SelectValue placeholder="Ano" />
           </SelectTrigger>
           <SelectContent>
@@ -118,6 +133,8 @@ const CreditCardForm = ({ data, onChange, totalAmount, isUSD = false }: CreditCa
           <Input
             value={data.cvv}
             onChange={(e) => handleChange("cvv", e.target.value)}
+            onFocus={() => setFocus("cvv")}
+            onBlur={() => setFocus(null)}
             placeholder="CVV"
             inputMode="numeric"
             autoComplete="cc-csc"
