@@ -12,7 +12,7 @@ interface CardPreview3DProps {
   cvv: string;
   focus?: CardPreviewFocus;
   maskMiddle?: boolean; // mask digits 5..12 with *
-  brandLabel?: string;  // small label top-right (default: "Panttera")
+  brandLabel?: string;
   className?: string;
 }
 
@@ -30,8 +30,8 @@ const CardPreview3D = ({
   year,
   cvv,
   focus = null,
-  maskMiddle = true,
-  brandLabel = "Panttera",
+  maskMiddle = false,
+  brandLabel,
   className = "",
 }: CardPreview3DProps) => {
   const digits = useMemo(() => number.replace(/\D/g, "").slice(0, 16), [number]);
@@ -54,6 +54,7 @@ const CardPreview3D = ({
 
   const yy = year ? year.slice(-2) : "";
   const flip = focus === "cvv";
+  const showBrandLabel = Boolean(brandLabel?.trim());
 
   const highlightClass =
     focus === "number" ? "hl-number"
@@ -68,8 +69,8 @@ const CardPreview3D = ({
         {/* FRONT */}
         <div className="cp3d-face cp3d-front">
           <div className={`cp3d-highlight ${highlightClass}`} aria-hidden />
-          <div className="cp3d-header">
-            <span className="cp3d-brand">{brandLabel}</span>
+          <div className={`cp3d-header ${showBrandLabel ? "" : "is-logo-only"}`}>
+            {showBrandLabel ? <span className="cp3d-brand">{brandLabel}</span> : <span aria-hidden />}
             <span className="cp3d-brand-logo" aria-label={brandTitle || undefined}>
               {brandIcon ? (
                 <Icon icon={brandIcon} className="cp3d-brand-icon" />
@@ -194,7 +195,7 @@ const CardPreview3D = ({
         /* Coordenadas calibradas com o layout real:
            header (~46px) + número (30px) começa em ~70px;
            footer com titular/validade começa em ~150px. */
-        .cp3d-highlight.hl-number { width: calc(100% - 36px); height: 38px; top: 64px; left: 18px; }
+        .cp3d-highlight.hl-number { width: calc(100% - 36px); height: 40px; top: 82px; left: 18px; }
         .cp3d-highlight.hl-holder { width: 58%; height: 44px; top: 148px; left: 18px; }
         .cp3d-highlight.hl-expire { width: 78px; height: 44px; top: 148px; right: 18px; left: auto; }
         .cp3d-highlight.hl-cvv    { width: calc(100% - 36px); height: 60px; top: 70px; left: 18px; }
@@ -211,6 +212,9 @@ const CardPreview3D = ({
           text-transform: uppercase;
           font-size: 13px;
           color: hsl(var(--foreground));
+        }
+        .cp3d-header.is-logo-only {
+          justify-content: flex-end;
         }
         .cp3d-brand {
           color: hsl(var(--primary));
@@ -356,7 +360,7 @@ const CardPreview3D = ({
           .cp3d-row { height: 26px; min-width: 11px; }
           .cp3d-slot.cp3d-gap { margin-right: 6px; }
           .cp3d-holder, .cp3d-expire { font-size: 13px; }
-          .cp3d-highlight.hl-number { width: calc(100% - 32px); top: 56px; left: 16px; height: 34px; }
+          .cp3d-highlight.hl-number { width: calc(100% - 32px); top: 68px; left: 16px; height: 34px; }
           .cp3d-highlight.hl-holder { top: 128px; left: 16px; height: 40px; }
           .cp3d-highlight.hl-expire { top: 128px; right: 16px; height: 40px; width: 70px; }
           .cp3d-highlight.hl-cvv { width: calc(100% - 32px); left: 16px; top: 60px; }
