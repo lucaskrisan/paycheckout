@@ -1,4 +1,6 @@
 import { useMemo } from "react";
+import { Icon } from "@iconify/react";
+import { detectCardBrand, BRAND_ICONS, BRAND_LABEL } from "@/lib/cardBrand";
 
 export type CardPreviewFocus = "number" | "holder" | "expire" | "cvv" | null;
 
