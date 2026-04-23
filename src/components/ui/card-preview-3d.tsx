@@ -314,13 +314,28 @@ const CardPreview3D = ({
           letter-spacing: 4px;
         }
 
-        @media (max-width: 480px) {
-          .cp3d-card { height: 210px; }
-          .cp3d-face { padding: 18px 18px 20px; }
-          .cp3d-number { font-size: 19px; }
-          .cp3d-row { min-width: 12px; }
-          .cp3d-highlight.hl-number,
-          .cp3d-highlight.hl-cvv { width: calc(100% - 24px); left: 12px; }
+        /* Container query: react to the wrapper width, not the viewport,
+           so the card fits perfectly inside narrow checkout columns too. */
+        @container (max-width: 380px) {
+          .cp3d-card { height: 200px; }
+          .cp3d-face { padding: 16px 18px 18px; }
+          .cp3d-header { margin-bottom: 20px; font-size: 12px; }
+          .cp3d-chip { width: 28px; height: 21px; }
+          .cp3d-number { font-size: 18px; height: 26px; margin-bottom: 22px; letter-spacing: 0; }
+          .cp3d-digit { height: 26px; line-height: 26px; }
+          .cp3d-digit.is-filled { transform: translateY(-26px); }
+          .cp3d-row { height: 26px; min-width: 11px; }
+          .cp3d-slot.cp3d-gap { margin-right: 6px; }
+          .cp3d-holder, .cp3d-expire { font-size: 13px; }
+          .cp3d-highlight.hl-number { width: calc(100% - 32px); top: 78px; left: 16px; height: 34px; }
+          .cp3d-highlight.hl-holder { top: 138px; left: 16px; height: 42px; }
+          .cp3d-highlight.hl-expire { top: 138px; right: 16px; height: 42px; width: 78px; }
+          .cp3d-highlight.hl-cvv { width: calc(100% - 32px); left: 16px; top: 78px; }
+        }
+        @container (max-width: 320px) {
+          .cp3d-number { font-size: 16px; }
+          .cp3d-row { min-width: 10px; }
+          .cp3d-slot.cp3d-gap { margin-right: 4px; }
         }
       `}</style>
     </div>
