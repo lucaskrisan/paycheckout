@@ -20,6 +20,7 @@ import {
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
+import CardPreview3D, { type CardPreviewFocus } from "@/components/ui/card-preview-3d";
 
 // ── Types ──────────────────────────────────────────
 interface TierRow { key: string; label: string; credit_limit: number; level: number; color: string; }
@@ -81,6 +82,7 @@ const ProducerBilling = () => {
   const [showTierPanel, setShowTierPanel] = useState(false);
   const [cardValidating, setCardValidating] = useState(false);
   const [cardForm, setCardForm] = useState({ number: "", name: "", expiryMonth: "", expiryYear: "", cvv: "", cpf: "" });
+  const [cardFocus, setCardFocus] = useState<CardPreviewFocus>(null);
 
   useEffect(() => { if (user?.id) loadData(); }, [user?.id]);
 
@@ -636,30 +638,43 @@ const ProducerBilling = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
+            <CardPreview3D
+              number={cardForm.number}
+              holder={cardForm.name}
+              month={cardForm.expiryMonth}
+              year={cardForm.expiryYear}
+              cvv={cardForm.cvv}
+              focus={cardFocus}
+            />
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Número do cartão</label>
               <Input value={cardForm.number} onChange={(e) => setCardForm({ ...cardForm, number: formatCardNumber(e.target.value) })}
+                onFocus={() => setCardFocus("number")} onBlur={() => setCardFocus(null)}
                 placeholder="0000 0000 0000 0000" className={`${inputClass} font-mono`} maxLength={19} />
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Nome no cartão</label>
               <Input value={cardForm.name} onChange={(e) => setCardForm({ ...cardForm, name: e.target.value.toUpperCase() })}
+                onFocus={() => setCardFocus("holder")} onBlur={() => setCardFocus(null)}
                 placeholder="COMO ESTÁ NO CARTÃO" className={inputClass} />
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Mês</label>
                 <Input value={cardForm.expiryMonth} onChange={(e) => setCardForm({ ...cardForm, expiryMonth: e.target.value.replace(/\D/g, '').slice(0, 2) })}
+                  onFocus={() => setCardFocus("expire")} onBlur={() => setCardFocus(null)}
                   placeholder="MM" className={inputClass} maxLength={2} />
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Ano</label>
                 <Input value={cardForm.expiryYear} onChange={(e) => setCardForm({ ...cardForm, expiryYear: e.target.value.replace(/\D/g, '').slice(0, 2) })}
+                  onFocus={() => setCardFocus("expire")} onBlur={() => setCardFocus(null)}
                   placeholder="AA" className={inputClass} maxLength={2} />
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">CVV</label>
                 <Input value={cardForm.cvv} onChange={(e) => setCardForm({ ...cardForm, cvv: e.target.value.replace(/\D/g, '').slice(0, 4) })}
+                  onFocus={() => setCardFocus("cvv")} onBlur={() => setCardFocus(null)}
                   placeholder="123" className={inputClass} maxLength={4} />
               </div>
             </div>
