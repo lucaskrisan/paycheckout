@@ -63,6 +63,7 @@ const Tracking = () => {
   const [pixels, setPixels] = useState<PixelSummary[]>([]);
   const [domains, setDomains] = useState<{ id: string; domain: string; verified: boolean }[]>([]);
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
+  const [checkoutBaseUrl, setCheckoutBaseUrl] = useState<string>("https://app.panttera.com.br");
 
   const [selectedProduct, setSelectedProduct] = useState<string>("");
   const [globalProduct, setGlobalProduct] = useState<string>("");
@@ -79,7 +80,7 @@ const Tracking = () => {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const [pixelRes, domainRes] = await Promise.all([
+      const [pixelRes, domainRes, customDomainRes] = await Promise.all([
         supabase
           .from("product_pixels")
           .select("pixel_id, platform, domain, capi_token, product_id, products(name)")
@@ -88,7 +89,18 @@ const Tracking = () => {
           .from("facebook_domains")
           .select("*")
           .eq("user_id", user.id),
+        supabase
+          .from("custom_domains" as any)
+          .select("hostname")
+          .eq("user_id", user.id)
+          .eq("status", "active")
+          .limit(1)
+          .maybeSingle(),
       ]);
+
+      if (customDomainRes.data && (customDomainRes.data as any).hostname) {
+        setCheckoutBaseUrl(`https://${(customDomainRes.data as any).hostname}`);
+      }
 
       if (pixelRes.data) {
         const mapped = pixelRes.data.map((p: any) => ({
@@ -605,7 +617,7 @@ const Tracking = () => {
           <TrackingScriptGenerator
             pixels={pixels}
             products={products}
-            checkoutBaseUrl="https://app.panttera.com.br"
+            checkoutBaseUrl={checkoutBaseUrl}
             selectedProductId={globalProduct}
             onProductChange={(id) => { setGlobalProduct(id); setSelectedProduct(id); }}
           />
