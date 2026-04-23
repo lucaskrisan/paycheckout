@@ -11,7 +11,7 @@ import {
   Activity, XCircle, AlertTriangle, Play, RefreshCw, Search, Link2, FileCode,
   Settings2, Radio,
 } from "lucide-react";
-import TrackingScriptGenerator from "@/components/admin/TrackingScriptGenerator";
+
 import UtmAttributionTable from "@/components/admin/UtmAttributionTable";
 import PixelEventsDashboard from "@/components/admin/PixelEventsDashboard";
 import TrackingFullAudit from "@/components/admin/TrackingFullAudit";
