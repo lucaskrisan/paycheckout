@@ -137,7 +137,7 @@ const CardPreview3D = ({
           <div className="cp3d-cvv-area">
             <span className="cp3d-label">CVV</span>
             <span className="cp3d-cvv-field">
-              {cvv ? "*".repeat(cvv.length) : "•••"}
+              {cvv || "•••"}
             </span>
           </div>
         </div>
