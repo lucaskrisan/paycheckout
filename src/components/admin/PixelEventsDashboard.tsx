@@ -121,7 +121,7 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
 
   useEffect(() => {
     loadEvents();
-  }, [filterProduct, period]);
+  }, [filterProduct, period, userId]);
 
   // Welcome toast (uma vez por dia)
   useEffect(() => {
