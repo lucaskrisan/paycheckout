@@ -290,10 +290,7 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
         products={products}
       />
 
-      {/* ── Ticker Bar (live purchases) ── */}
-      <div className="-mx-1 rounded-md overflow-hidden">
-        <TickerBar userId={userId} filterProduct={filterProduct} />
-      </div>
+      {/* Ticker removido — vendas aparecem no feed e nos KPIs */}
 
       {/* ── Hero KPI Strip ── */}
       <HeroKPIStrip
