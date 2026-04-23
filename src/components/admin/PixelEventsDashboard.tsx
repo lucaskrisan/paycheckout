@@ -18,7 +18,7 @@ import PulseChart from "./tracking/PulseChart";
 import { ninaToast, ninaPurchaseToast } from "./tracking/NinaToast";
 import { playNotificationSound } from "@/lib/notificationSounds";
 import { useGeo } from "@/hooks/useGeo";
-import ninaAvatar from "@/assets/nina-avatar.png";
+import ninaAvatar from "@/assets/pantera-mascot.png";
 
 interface PixelEvent {
   id: string;
@@ -455,7 +455,7 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
         <div className="flex items-center gap-2.5">
           <img
             src={ninaAvatar}
-            alt="Nina"
+            alt="Panttera"
             width={20}
             height={20}
             loading="lazy"
@@ -471,7 +471,7 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
                 backgroundClip: "text",
               }}
             >
-              Nina Tracking™
+              Panttera Tracking™
             </span>
             {" · Realtime ativo · "}
             <span className="font-mono tabular-nums text-foreground">{eventsLastHour}</span>
