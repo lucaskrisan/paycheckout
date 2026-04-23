@@ -21,6 +21,13 @@ export type CardBrand =
   | "aura"
   | "unknown";
 
+/**
+ * Card *issuer* (banco emissor). Independente da bandeira (brand).
+ * Hoje só detectamos Nubank — extender aqui se quisermos pintar Inter,
+ * C6, etc. no futuro.
+ */
+export type CardIssuer = "nubank" | "unknown";
+
 interface BrandRule {
   brand: CardBrand;
   /** Returns true when the (raw, digits-only) number matches this brand. */
@@ -159,3 +166,151 @@ export const BRAND_LABEL: Record<CardBrand, string> = {
   aura: "Aura",
   unknown: "",
 };
+
+/* ------------------------------------------------------------------ */
+/* Issuer detection (Nubank, etc.)                                    */
+/* ------------------------------------------------------------------ */
+
+// BINs públicos mais comuns do Nubank (Mastercard + Elo).
+// Lista conservadora — só prefixos amplamente confirmados.
+const NUBANK_BINS_6: string[] = [
+  // Mastercard Nubank
+  "516292", "533593", "536366", "552461", "545047", "548126",
+  // Elo Nubank
+  "498409", "509048",
+];
+const NUBANK_BINS_4: string[] = ["5162", "5335", "5363", "5524", "5450", "5481", "4984", "5090"];
+
+export function detectCardIssuer(value: string): CardIssuer {
+  const digits = (value || "").replace(/\D/g, "");
+  if (!digits) return "unknown";
+  if (digits.length >= 6) {
+    const six = digits.slice(0, 6);
+    if (NUBANK_BINS_6.some((b) => six === b)) return "nubank";
+  }
+  if (digits.length >= 4) {
+    const four = digits.slice(0, 4);
+    if (NUBANK_BINS_4.includes(four)) return "nubank";
+  }
+  return "unknown";
+}
+
+/* ------------------------------------------------------------------ */
+/* Theme (gradientes por bandeira/issuer)                             */
+/* ------------------------------------------------------------------ */
+
+export interface CardTheme {
+  /** CSS background (gradient) aplicado nas faces do cartão. */
+  background: string;
+  /** Cor do glow superior. */
+  glowTop: string;
+  /** Cor do glow inferior. */
+  glowBottom: string;
+  /** Cor do texto principal. */
+  foreground: string;
+  /** Cor dos labels (titular/validade). */
+  muted: string;
+  /** Etiqueta amigável (mostrada no canto, opcional). */
+  label?: string;
+}
+
+/** Tema padrão (Panttera) — usado quando não há bandeira detectada. */
+export const DEFAULT_CARD_THEME: CardTheme = {
+  background: "linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--background)) 100%)",
+  glowTop: "hsl(var(--primary) / 0.55)",
+  glowBottom: "hsl(var(--accent) / 0.45)",
+  foreground: "hsl(var(--foreground))",
+  muted: "hsl(var(--muted-foreground))",
+};
+
+const BRAND_THEMES: Record<Exclude<CardBrand, "unknown">, CardTheme> = {
+  visa: {
+    background: "linear-gradient(135deg, #1a1f71 0%, #0b1240 60%, #050a2b 100%)",
+    glowTop: "rgba(80, 120, 255, 0.55)",
+    glowBottom: "rgba(20, 40, 120, 0.55)",
+    foreground: "#ffffff",
+    muted: "rgba(255,255,255,0.7)",
+    label: "Visa",
+  },
+  mastercard: {
+    background: "linear-gradient(135deg, #1a1a1a 0%, #4a1a0a 55%, #7a1a05 100%)",
+    glowTop: "rgba(255, 95, 0, 0.55)",
+    glowBottom: "rgba(235, 0, 27, 0.45)",
+    foreground: "#ffffff",
+    muted: "rgba(255,255,255,0.7)",
+    label: "Mastercard",
+  },
+  amex: {
+    background: "linear-gradient(135deg, #006b73 0%, #003a47 60%, #0a1f28 100%)",
+    glowTop: "rgba(0, 165, 180, 0.5)",
+    glowBottom: "rgba(20, 50, 70, 0.55)",
+    foreground: "#ffffff",
+    muted: "rgba(255,255,255,0.7)",
+    label: "Amex",
+  },
+  elo: {
+    background: "linear-gradient(135deg, #000000 0%, #2a1a00 55%, #5a3a00 100%)",
+    glowTop: "rgba(255, 200, 0, 0.45)",
+    glowBottom: "rgba(255, 80, 0, 0.35)",
+    foreground: "#ffffff",
+    muted: "rgba(255,255,255,0.7)",
+    label: "Elo",
+  },
+  hipercard: {
+    background: "linear-gradient(135deg, #b3001b 0%, #6b0010 60%, #2a0008 100%)",
+    glowTop: "rgba(255, 60, 60, 0.55)",
+    glowBottom: "rgba(120, 0, 20, 0.55)",
+    foreground: "#ffffff",
+    muted: "rgba(255,255,255,0.75)",
+    label: "Hipercard",
+  },
+  diners: {
+    background: "linear-gradient(135deg, #1a3a5a 0%, #0a1f33 60%, #050f1f 100%)",
+    glowTop: "rgba(80, 140, 200, 0.5)",
+    glowBottom: "rgba(20, 40, 70, 0.55)",
+    foreground: "#ffffff",
+    muted: "rgba(255,255,255,0.7)",
+    label: "Diners",
+  },
+  discover: {
+    background: "linear-gradient(135deg, #ff6f00 0%, #b34a00 60%, #4a1f00 100%)",
+    glowTop: "rgba(255, 140, 0, 0.55)",
+    glowBottom: "rgba(120, 50, 0, 0.5)",
+    foreground: "#ffffff",
+    muted: "rgba(255,255,255,0.75)",
+    label: "Discover",
+  },
+  jcb: {
+    background: "linear-gradient(135deg, #0b3d91 0%, #6b0f1a 55%, #0b6b3a 100%)",
+    glowTop: "rgba(120, 180, 255, 0.45)",
+    glowBottom: "rgba(255, 80, 80, 0.4)",
+    foreground: "#ffffff",
+    muted: "rgba(255,255,255,0.75)",
+    label: "JCB",
+  },
+  aura: {
+    background: "linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%)",
+    glowTop: "rgba(180, 180, 180, 0.4)",
+    glowBottom: "rgba(80, 80, 80, 0.45)",
+    foreground: "#ffffff",
+    muted: "rgba(255,255,255,0.7)",
+    label: "Aura",
+  },
+};
+
+/** Tema especial para o Nubank (sobrepõe a bandeira). */
+const NUBANK_THEME: CardTheme = {
+  background: "linear-gradient(135deg, #8a05be 0%, #5b0a8a 55%, #2c0a4a 100%)",
+  glowTop: "rgba(170, 60, 230, 0.55)",
+  glowBottom: "rgba(90, 20, 160, 0.5)",
+  foreground: "#ffffff",
+  muted: "rgba(255,255,255,0.78)",
+  label: "Nubank",
+};
+
+/** Resolve o tema final do cartão, priorizando o issuer (Nubank) sobre a bandeira. */
+export function getCardTheme(brand: CardBrand, issuer: CardIssuer): CardTheme {
+  if (issuer === "nubank") return NUBANK_THEME;
+  if (brand === "unknown") return DEFAULT_CARD_THEME;
+  return BRAND_THEMES[brand];
+}
