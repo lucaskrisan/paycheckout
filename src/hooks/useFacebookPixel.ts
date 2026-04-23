@@ -140,6 +140,17 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     return "BRL";
   }, []);
 
+  /** Capture UTM params from current URL for campaign attribution */
+  function captureUtms(): Record<string, string> {
+    const p = new URLSearchParams(window.location.search);
+    const utms: Record<string, string> = {};
+    ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"].forEach((k) => {
+      const v = p.get(k);
+      if (v) utms[k] = v;
+    });
+    return utms;
+  }
+
   /** Send event to CAPI edge function (server-side, non-blocking) */
   const sendCAPI = useCallback((eventName: string, eventId: string, customData?: Record<string, unknown>) => {
     if (!productId) return;
@@ -147,16 +158,17 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     const fbp = ensureFbp();
     const geo = buildGeoPayload();
     const clientIp = getBestIp();
+    const utms = captureUtms();
 
     // Enrich custom_data with `contents` + `num_items` when content_ids present
-    let enrichedCustomData = customData;
+    let enrichedCustomData: Record<string, unknown> = { ...(customData || {}), ...utms };
     if (customData && Array.isArray((customData as any).content_ids) && (customData as any).content_ids.length > 0) {
       const ids = (customData as any).content_ids as string[];
       const value = Number((customData as any).value) || 0;
       const numItems = (customData as any).num_items ?? ids.length;
       const itemPrice = ids.length > 0 ? Number((value / ids.length).toFixed(2)) : 0;
       enrichedCustomData = {
-        ...customData,
+        ...enrichedCustomData,
         num_items: numItems,
         contents: (customData as any).contents ?? ids.map((id) => ({ id, quantity: 1, item_price: itemPrice })),
       };
@@ -369,18 +381,33 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     sendCAPI("AddToCart", eventId, customData);
   }, [productId, sendCAPI, resolveCurrency]);
 
-  const trackPurchase = useCallback((value: number, currency?: string, orderId?: string) => {
+  const trackPurchase = useCallback((
+    value: number,
+    currency?: string,
+    orderId?: string,
+    bumpItems?: Array<{ id: string; price: number; name?: string }>,
+  ) => {
     const dedupKey = orderId ? `Purchase_${orderId}` : "Purchase";
     if (firedEventsRef.current.has(dedupKey)) return;
     firedEventsRef.current.add(dedupKey);
 
     const eventId = orderId || generateEventId("Purchase");
+
+    // Build contents[] with main product + bump products
+    const bumpTotal = (bumpItems || []).reduce((s, b) => s + b.price, 0);
+    const mainPrice = Number(Math.max(0, value - bumpTotal).toFixed(2));
+    const contents: Array<{ id: string; quantity: number; item_price: number }> = [
+      { id: productId!, quantity: 1, item_price: mainPrice },
+      ...(bumpItems || []).map((b) => ({ id: b.id, quantity: 1, item_price: b.price })),
+    ];
+
     const customData: Record<string, unknown> = {
       value,
       currency: resolveCurrency(currency),
       content_type: "product",
-      content_ids: productId ? [productId] : [],
-      num_items: 1,
+      content_ids: contents.map((c) => c.id),
+      contents,
+      num_items: contents.length,
     };
     if (productNameRef.current) customData.content_name = productNameRef.current;
     if (orderId) customData.order_id = orderId;
@@ -389,6 +416,28 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
       window.fbq("track", "Purchase", customData, { eventID: eventId });
     }
     sendCAPI("Purchase", eventId, customData);
+  }, [productId, sendCAPI, resolveCurrency]);
+
+  const trackSubscribe = useCallback((value: number, currency?: string, orderId?: string) => {
+    const dedupKey = orderId ? `Subscribe_${orderId}` : "Subscribe";
+    if (firedEventsRef.current.has(dedupKey)) return;
+    firedEventsRef.current.add(dedupKey);
+
+    const eventId = orderId ? `sub_${orderId}` : generateEventId("Subscribe");
+    const customData: Record<string, unknown> = {
+      value,
+      currency: resolveCurrency(currency),
+      content_type: "product",
+      content_ids: productId ? [productId] : [],
+      predicted_ltv: Number((value * 12).toFixed(2)),
+    };
+    if (productNameRef.current) customData.content_name = productNameRef.current;
+    if (orderId) customData.order_id = orderId;
+
+    if (window.fbq) {
+      window.fbq("track", "Subscribe", customData, { eventID: eventId });
+    }
+    sendCAPI("Subscribe", eventId, customData);
   }, [productId, sendCAPI, resolveCurrency]);
 
   const trackLead = useCallback(() => {
@@ -412,6 +461,7 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
 
   return {
     trackPurchase,
+    trackSubscribe,
     trackAddPaymentInfo,
     trackAddToCart,
     trackAddToCartMain,

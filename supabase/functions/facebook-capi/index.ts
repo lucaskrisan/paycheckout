@@ -64,8 +64,8 @@ interface CAPIEvent {
 
 /**
  * Resolve the event_source_url to send to Meta CAPI.
- * Priority: products.meta_domain > orders.event_source_url (rawUrl) > fallback domain
- * Applies rigid path formats: Purchase → /obrigado/{orderId}, others → /checkout/{productId}
+ * Priority: owner's active custom_domain > origin extracted from rawUrl > fallback app.panttera.com.br
+ * All events use /checkout/{productId} path for consistent attribution.
  */
 function buildEventSourceUrl(
   metaDomain: string | null | undefined,
@@ -88,9 +88,6 @@ function buildEventSourceUrl(
 
   const base = `https://${domain}`;
 
-  if (eventName === 'Purchase' && orderId) {
-    return `${base}/obrigado/${orderId}`;
-  }
   return `${base}/checkout/${productId}`;
 }
 
@@ -285,7 +282,7 @@ Deno.serve(async (req) => {
     }
     if (customer?.phone) {
       const phone = customer.phone.replace(/\D/g, '');
-      const withCountry = phone.startsWith('55') || geoCountry !== 'br' ? phone : `55${phone}`;
+      const withCountry = geoCountry === 'br' && !phone.startsWith('55') ? `55${phone}` : phone;
       userData.ph = await hashSHA256(`+${withCountry}`);
     }
     if (customer?.name) {

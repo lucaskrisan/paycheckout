@@ -56,7 +56,7 @@ const Checkout = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pixData, setPixData] = useState<{ qrCodeUrl?: string; pixCode?: string; orderId?: string } | null>(null);
   const [pixModalOpen, setPixModalOpen] = useState(false);
-  const { trackPurchase, trackAddPaymentInfo, trackAddToCart, trackAddToCartMain, trackLead, setAdvancedMatching } = useFacebookPixel(productId, product?.price, product?.name, product?.currency);
+  const { trackPurchase, trackSubscribe, trackAddPaymentInfo, trackAddToCart, trackAddToCartMain, trackLead, setAdvancedMatching } = useFacebookPixel(productId, product?.price, product?.name, product?.currency);
   const [orderBumps, setOrderBumps] = useState<OrderBump[]>([]);
   const [selectedBumps, setSelectedBumps] = useState<Set<string>>(new Set());
   const [builderLayout, setBuilderLayout] = useState<BuilderComponent[]>([]);
@@ -277,6 +277,9 @@ const Checkout = () => {
     trackAddToCartMain();
     setIsSubmitting(true);
     const bumpProductIds = orderBumps.filter((b) => selectedBumps.has(b.id)).map((b) => b.bump_product.id);
+    const selectedBumpItems = orderBumps
+      .filter((b) => selectedBumps.has(b.id))
+      .map((b) => ({ id: b.bump_product.id, price: b.bump_product.price }));
     const utms = getUtms();
 
     try {
@@ -319,7 +322,8 @@ const Checkout = () => {
         if (finalStatus === "succeeded") {
           const paymentId = data?.payment_intent_id || data?.payment_id;
           toast.success(t.paymentSuccess);
-          trackPurchase(finalAmount, "USD", paymentId);
+          trackPurchase(finalAmount, "USD", paymentId, selectedBumpItems);
+          if (product.is_subscription) trackSubscribe(finalAmount, "USD", paymentId);
           await markPurchased();
           navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product.id}${data.order_id ? `&order_id=${data.order_id}` : ''}&lang=en`);
         } else {
@@ -360,7 +364,8 @@ const Checkout = () => {
         const paymentId = data?.payment_id || data?.subscription_id || data?.id;
         if (paymentId) {
           toast.success("Pagamento processado com sucesso!");
-          trackPurchase(finalAmount, "BRL", paymentId);
+          trackPurchase(finalAmount, "BRL", paymentId, selectedBumpItems);
+          if (product.is_subscription) trackSubscribe(finalAmount, "BRL", paymentId);
           await markPurchased();
           navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product.id}${data.order_id ? `&order_id=${data.order_id}` : ''}${isUSD ? '&lang=en' : ''}`);
         } else throw new Error("Falha ao processar pagamento");
@@ -472,7 +477,10 @@ const Checkout = () => {
         pixCode={pixData?.pixCode}
         externalOrderId={pixData?.orderId}
         onPaymentConfirmed={() => {
-          trackPurchase(finalAmount, "BRL", pixData?.orderId);
+          const pixBumpItems = orderBumps
+            .filter((b) => selectedBumps.has(b.id))
+            .map((b) => ({ id: b.bump_product.id, price: b.bump_product.price }));
+          trackPurchase(finalAmount, "BRL", pixData?.orderId, pixBumpItems);
           markPurchased();
           setTimeout(() => { navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=pix&email=${encodeURIComponent(customer.email)}${isUSD ? '&lang=en' : ''}`); }, 2500);
         }}
