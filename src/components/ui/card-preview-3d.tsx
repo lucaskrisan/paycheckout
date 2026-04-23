@@ -162,8 +162,10 @@ const CardPreview3D = ({
           perspective: 1000px;
           -webkit-perspective: 1000px;
           container-type: inline-size;
-          isolation: isolate;
-          contain: layout paint;
+          /* IMPORTANT: do NOT add isolation/contain/overflow here.
+             Safari iOS collapses the 3D context (preserve-3d) when the
+             ancestor has containment, causing the back face to bleed
+             through mirrored over the front during the flip. */
         }
         .cp3d-card {
           position: relative;
@@ -190,17 +192,18 @@ const CardPreview3D = ({
           overflow: hidden;
           backface-visibility: hidden;
           -webkit-backface-visibility: hidden;
-          transform: translateZ(0.01px);
-          -webkit-transform: translateZ(0.01px);
+          /* translateZ keeps each face on its own GPU layer in Safari iOS */
+          transform: translate3d(0, 0, 0.01px);
+          -webkit-transform: translate3d(0, 0, 0.01px);
           box-shadow:
             0 24px 48px -16px hsl(var(--primary) / 0.35),
             0 2px 0 0 hsl(var(--border)) inset;
           border: 1px solid hsl(var(--border));
-          contain: layout paint;
+          /* No `contain` here — breaks preserve-3d on Safari iOS */
         }
         .cp3d-back {
-          transform: rotateY(180deg) translateZ(0.01px);
-          -webkit-transform: rotateY(180deg) translateZ(0.01px);
+          transform: rotateY(180deg) translate3d(0, 0, 0.01px);
+          -webkit-transform: rotateY(180deg) translate3d(0, 0, 0.01px);
           padding: 24px 0;
         }
         @media (prefers-reduced-motion: reduce) {
