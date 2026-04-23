@@ -67,6 +67,9 @@ const ProductEdit = () => {
   const [dragOver, setDragOver] = useState(false);
   const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState("");
+  const [courseLinkMode, setCourseLinkMode] = useState<"existing" | "new">("existing");
+  const [newCourseTitle, setNewCourseTitle] = useState("");
+  const [linkingCourse, setLinkingCourse] = useState(false);
   const [pixels, setPixels] = useState<PixelEntry[]>([]);
   const [activePixelPlatform, setActivePixelPlatform] = useState("Facebook");
   const [savingPixels, setSavingPixels] = useState(false);
@@ -258,14 +261,27 @@ const ProductEdit = () => {
   };
 
   useEffect(() => {
-    // Load courses
-    supabase.from("courses").select("id, title, product_id").then(({ data }) => {
-      setCourses(data || []);
+    // Load courses owned by this user (or all if super admin context not needed here)
+    const loadCoursesAndLink = async () => {
+      const { data: allCourses } = await supabase.from("courses").select("id, title, product_id");
+      setCourses(allCourses || []);
+
       if (!isNew && productId) {
-        const linked = data?.find((c) => c.product_id === productId);
-        if (linked) setSelectedCourseId(linked.id);
+        // Check both legacy (courses.product_id) and new (course_products) links
+        const legacy = allCourses?.find((c: any) => c.product_id === productId);
+        if (legacy) {
+          setSelectedCourseId(legacy.id);
+        } else {
+          const { data: link } = await supabase
+            .from("course_products" as any)
+            .select("course_id")
+            .eq("product_id", productId)
+            .maybeSingle();
+          if ((link as any)?.course_id) setSelectedCourseId((link as any).course_id);
+        }
       }
-    });
+    };
+    loadCoursesAndLink();
 
     // Load active custom checkout domain
     if (user) {
@@ -866,38 +882,121 @@ const ProductEdit = () => {
                   </div>
                   <div className="lg:col-span-8">
                     <div className="border border-border rounded-lg p-6 bg-card space-y-4">
-                      <div className="space-y-1.5">
-                        <Label>Área de Membros</Label>
-                        <Select value={selectedCourseId} onValueChange={async (v) => {
-                          setSelectedCourseId(v);
-                          if (!isNew && productId) {
-                            if (selectedCourseId) {
-                              await supabase.from("courses").update({ product_id: null }).eq("id", selectedCourseId);
-                            }
-                            if (v) {
-                              await supabase.from("courses").update({ product_id: productId, user_id: user?.id }).eq("id", v);
-                              toast.success("Área de membros vinculada!");
-                            }
-                          }
-                        }}>
-                          <SelectTrigger><SelectValue placeholder="Selecione uma área de membros" /></SelectTrigger>
-                          <SelectContent>
-                            {courses.map((c) => (
-                              <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {!selectedCourseId && (
-                          <p className="text-xs text-destructive mt-1">⚠️ Vincule uma área de membros para que o acesso seja criado automaticamente.</p>
-                        )}
-                      </div>
-                      {selectedCourseId && (
+                      {/* Toggle: Existente vs Nova */}
+                      <div className="flex gap-2 p-1 bg-muted rounded-lg">
                         <button
-                          onClick={() => navigate("/admin/courses")}
-                          className="text-sm text-primary hover:underline flex items-center gap-1"
+                          type="button"
+                          onClick={() => setCourseLinkMode("existing")}
+                          className={`flex-1 px-3 py-1.5 text-sm rounded-md transition-colors ${
+                            courseLinkMode === "existing" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                          }`}
                         >
-                          Abrir editor da área de membros <ExternalLink className="w-3.5 h-3.5" />
+                          Usar área existente
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => setCourseLinkMode("new")}
+                          className={`flex-1 px-3 py-1.5 text-sm rounded-md transition-colors ${
+                            courseLinkMode === "new" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                          }`}
+                        >
+                          Criar nova área
+                        </button>
+                      </div>
+
+                      {courseLinkMode === "existing" ? (
+                        <div className="space-y-1.5">
+                          <Label>Área de Membros</Label>
+                          <div className="flex gap-2">
+                            <Select value={selectedCourseId} onValueChange={(v) => setSelectedCourseId(v)}>
+                              <SelectTrigger><SelectValue placeholder="Selecione uma área de membros" /></SelectTrigger>
+                              <SelectContent>
+                                {courses.map((c) => (
+                                  <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              type="button"
+                              disabled={!selectedCourseId || !productId || isNew || linkingCourse}
+                              onClick={async () => {
+                                if (!selectedCourseId || !productId) return;
+                                setLinkingCourse(true);
+                                try {
+                                  const { error } = await supabase
+                                    .from("course_products" as any)
+                                    .upsert(
+                                      { course_id: selectedCourseId, product_id: productId },
+                                      { onConflict: "course_id,product_id", ignoreDuplicates: true }
+                                    );
+                                  if (error) throw error;
+                                  toast.success("Área vinculada! Os outros produtos continuam com acesso.");
+                                } catch (err: any) {
+                                  toast.error(err?.message || "Erro ao vincular área");
+                                } finally {
+                                  setLinkingCourse(false);
+                                }
+                              }}
+                            >
+                              {linkingCourse ? <Loader2 className="w-4 h-4 animate-spin" /> : "Vincular"}
+                            </Button>
+                          </div>
+                          {!selectedCourseId && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Selecione uma área para liberar acesso automaticamente após a compra. Outros produtos vinculados continuam funcionando normalmente.
+                            </p>
+                          )}
+                          {selectedCourseId && (
+                            <button
+                              type="button"
+                              onClick={() => navigate("/admin/courses")}
+                              className="text-sm text-primary hover:underline flex items-center gap-1 mt-2"
+                            >
+                              Abrir editor da área de membros <ExternalLink className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="space-y-1.5">
+                          <Label>Nome da nova área de membros</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              value={newCourseTitle}
+                              onChange={(e) => setNewCourseTitle(e.target.value)}
+                              placeholder={form.name || "Ex.: Desafio 14 dias"}
+                            />
+                            <Button
+                              type="button"
+                              disabled={!newCourseTitle.trim() || !productId || isNew || linkingCourse || !user}
+                              onClick={async () => {
+                                if (!newCourseTitle.trim() || !productId || !user) return;
+                                setLinkingCourse(true);
+                                try {
+                                  const { data: created, error } = await supabase
+                                    .from("courses")
+                                    .insert({ title: newCourseTitle.trim(), product_id: productId, user_id: user.id })
+                                    .select("id, title, product_id")
+                                    .single();
+                                  if (error) throw error;
+                                  setCourses((prev) => [...prev, { id: created.id, title: created.title }]);
+                                  setSelectedCourseId(created.id);
+                                  setNewCourseTitle("");
+                                  setCourseLinkMode("existing");
+                                  toast.success("Nova área criada e vinculada!");
+                                } catch (err: any) {
+                                  toast.error(err?.message || "Erro ao criar área");
+                                } finally {
+                                  setLinkingCourse(false);
+                                }
+                              }}
+                            >
+                              {linkingCourse ? <Loader2 className="w-4 h-4 animate-spin" /> : "Criar"}
+                            </Button>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Cria uma nova área de membros vazia já vinculada a este produto.
+                          </p>
+                        </div>
                       )}
                     </div>
                   </div>

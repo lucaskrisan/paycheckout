@@ -627,6 +627,42 @@ export type Database = {
           },
         ]
       }
+      course_products: {
+        Row: {
+          course_id: string
+          created_at: string
+          id: string
+          product_id: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          id?: string
+          product_id: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_products_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           ai_reply_enabled: boolean
@@ -2679,6 +2715,10 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: undefined
+      }
+      get_courses_for_product: {
+        Args: { p_product_id: string }
+        Returns: string[]
       }
       get_dashboard_metrics: {
         Args: {
