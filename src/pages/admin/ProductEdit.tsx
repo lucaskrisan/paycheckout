@@ -261,14 +261,27 @@ const ProductEdit = () => {
   };
 
   useEffect(() => {
-    // Load courses
-    supabase.from("courses").select("id, title, product_id").then(({ data }) => {
-      setCourses(data || []);
+    // Load courses owned by this user (or all if super admin context not needed here)
+    const loadCoursesAndLink = async () => {
+      const { data: allCourses } = await supabase.from("courses").select("id, title, product_id");
+      setCourses(allCourses || []);
+
       if (!isNew && productId) {
-        const linked = data?.find((c) => c.product_id === productId);
-        if (linked) setSelectedCourseId(linked.id);
+        // Check both legacy (courses.product_id) and new (course_products) links
+        const legacy = allCourses?.find((c: any) => c.product_id === productId);
+        if (legacy) {
+          setSelectedCourseId(legacy.id);
+        } else {
+          const { data: link } = await supabase
+            .from("course_products" as any)
+            .select("course_id")
+            .eq("product_id", productId)
+            .maybeSingle();
+          if ((link as any)?.course_id) setSelectedCourseId((link as any).course_id);
+        }
       }
-    });
+    };
+    loadCoursesAndLink();
 
     // Load active custom checkout domain
     if (user) {
