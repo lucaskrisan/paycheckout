@@ -144,16 +144,12 @@ const CardPreview3D = ({
 
         {/* BACK */}
         <div className="cp3d-face cp3d-back">
-          <div
-            className={`cp3d-highlight ${focus === "cvv" ? "hl-cvv" : "hl-hidden"}`}
-            aria-hidden
-          />
           <div className="cp3d-magstrip" />
-          <div className="cp3d-cvv-area">
-            <span className="cp3d-label">CVV</span>
-            <span className="cp3d-cvv-field">
-              {cvv || "•••"}
-            </span>
+          <div className="cp3d-cvv-row">
+            <div className="cp3d-cvv-strip">
+              <span className="cp3d-cvv-value">{cvv || "•••"}</span>
+            </div>
+            <span className="cp3d-cvv-tag">CVV</span>
           </div>
         </div>
       </div>
@@ -192,7 +188,7 @@ const CardPreview3D = ({
         }
         .cp3d-back {
           transform: rotateY(180deg);
-          padding: 24px 0 0;
+          padding: 24px 0;
         }
 
         /* Glow rings using brand tokens */
@@ -372,34 +368,43 @@ const CardPreview3D = ({
         .cp3d-magstrip {
           position: relative;
           z-index: 1;
-          height: 44px;
-          width: 100%;
-          background: rgba(0, 0, 0, 0.65);
-        }
-        .cp3d-cvv-area {
-          position: relative;
-          z-index: 1;
-          margin-top: 22px;
-          padding: 0 28px;
-          display: flex;
-          flex-direction: column;
-          align-items: flex-end;
-          gap: 6px;
-        }
-        .cp3d-cvv-field {
-          background: rgba(255, 255, 255, 0.95);
-          color: #111;
-          border: 1px solid rgba(0, 0, 0, 0.1);
-          border-radius: 8px;
+          margin-top: 18px;
           height: 40px;
           width: 100%;
+          background: rgba(0, 0, 0, 0.85);
+        }
+        .cp3d-cvv-row {
+          position: relative;
+          z-index: 1;
+          margin-top: 18px;
+          padding: 0 22px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        .cp3d-cvv-strip {
+          flex: 1;
+          height: 32px;
+          background: rgba(255, 255, 255, 0.92);
+          border-radius: 4px;
           display: flex;
           align-items: center;
           justify-content: flex-end;
-          padding: 0 14px;
+          padding: 0 12px;
+        }
+        .cp3d-cvv-value {
+          color: #111;
           font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-          font-size: 20px;
-          letter-spacing: 4px;
+          font-size: 16px;
+          letter-spacing: 3px;
+          font-weight: 600;
+        }
+        .cp3d-cvv-tag {
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.1em;
+          color: var(--cp3d-fg, hsl(var(--foreground)));
+          opacity: 0.85;
         }
 
         /* Container query: react to the wrapper width, not the viewport,
