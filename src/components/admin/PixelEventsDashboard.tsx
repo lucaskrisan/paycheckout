@@ -54,8 +54,18 @@ const ORDERED_EVENT_NAMES = [
 
 const NINA_WELCOME_KEY = "nina-tracking-welcome-shown";
 
+const FEED_CACHE_KEY = "nina-tracking-feed-cache";
+const FEED_EXPIRY_MS = 10 * 60 * 1000; // 10 min sem atividade expira (a menos que tenha comprado)
+
 const PixelEventsDashboard = ({ products, userId }: Props) => {
-  const [events, setEvents] = useState<PixelEvent[]>([]);
+  const [events, setEvents] = useState<PixelEvent[]>(() => {
+    // Hidrata do sessionStorage para não perder ao trocar de página
+    try {
+      const cached = sessionStorage.getItem(`${FEED_CACHE_KEY}-${userId || "anon"}`);
+      if (cached) return JSON.parse(cached);
+    } catch {}
+    return [];
+  });
   const [eventCounts, setEventCounts] = useState<Record<string, number>>({});
   const [filterProduct, setFilterProduct] = useState("all");
   const [period, setPeriod] = useState("24h");
@@ -122,6 +132,24 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
   useEffect(() => {
     loadEvents();
   }, [filterProduct, period, userId]);
+
+  // Persiste o feed em sessionStorage para sobreviver à navegação entre páginas.
+  // Aplica regra: eventos com Purchase no mesmo visitor_id ficam SEMPRE,
+  // os demais expiram após 10 min sem nova atividade.
+  useEffect(() => {
+    if (!userId || events.length === 0) return;
+    try {
+      const now = Date.now();
+      const visitorsWithPurchase = new Set(
+        events.filter((e) => e.event_name === "Purchase").map((e) => e.visitor_id).filter(Boolean),
+      );
+      const filtered = events.filter((e) => {
+        if (visitorsWithPurchase.has(e.visitor_id)) return true; // venda: persiste
+        return now - new Date(e.created_at).getTime() < FEED_EXPIRY_MS; // resto: 10 min
+      });
+      sessionStorage.setItem(`${FEED_CACHE_KEY}-${userId}`, JSON.stringify(filtered.slice(0, 500)));
+    } catch {}
+  }, [events, userId]);
 
   // Welcome toast (uma vez por dia)
   useEffect(() => {
