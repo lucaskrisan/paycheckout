@@ -191,10 +191,13 @@ const CardPreview3D = ({
           pointer-events: none;
         }
         .cp3d-highlight.hl-hidden { opacity: 0; }
-        .cp3d-highlight.hl-number { width: calc(100% - 36px); height: 40px; top: 92px; left: 18px; }
-        .cp3d-highlight.hl-holder { width: 60%; height: 48px; top: 162px; left: 18px; }
-        .cp3d-highlight.hl-expire { width: 90px; height: 48px; top: 162px; right: 18px; left: auto; }
-        .cp3d-highlight.hl-cvv    { width: calc(100% - 36px); height: 60px; top: 92px; left: 18px; }
+        /* Coordenadas calibradas com o layout real:
+           header (~46px) + número (30px) começa em ~70px;
+           footer com titular/validade começa em ~150px. */
+        .cp3d-highlight.hl-number { width: calc(100% - 36px); height: 38px; top: 64px; left: 18px; }
+        .cp3d-highlight.hl-holder { width: 58%; height: 44px; top: 148px; left: 18px; }
+        .cp3d-highlight.hl-expire { width: 78px; height: 44px; top: 148px; right: 18px; left: auto; }
+        .cp3d-highlight.hl-cvv    { width: calc(100% - 36px); height: 60px; top: 70px; left: 18px; }
 
         .cp3d-header {
           display: flex;
