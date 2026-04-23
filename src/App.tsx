@@ -47,7 +47,6 @@ const Courses = lazy(() => import("./pages/admin/Courses"));
 const Coupons = lazy(() => import("./pages/admin/Coupons"));
 const AbandonedCarts = lazy(() => import("./pages/admin/AbandonedCarts"));
 const Integrations = lazy(() => import("./pages/admin/Integrations"));
-const LandingScript = lazy(() => import("./pages/admin/LandingScript"));
 const GatewayManagement = lazy(() => import("./pages/admin/GatewayManagement"));
 
 const SuperAdminDashboard = lazy(() => import("./pages/admin/SuperAdminDashboard"));
@@ -134,7 +133,6 @@ const App = () => (
                 <Route path="abandoned" element={<AbandonedCarts />} />
                 <Route path="abandoned-carts/:id" element={<AbandonedCartDetail />} />
                 <Route path="integrations" element={<Integrations />} />
-                <Route path="integrations/landing-script" element={<LandingScript />} />
                 <Route path="gateway-management" element={<GatewayManagement />} />
                 
                 <Route path="settings" element={<Settings />} />
