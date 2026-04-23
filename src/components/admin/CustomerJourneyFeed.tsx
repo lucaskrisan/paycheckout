@@ -113,8 +113,12 @@ const CustomerJourneyFeed = ({ events, products }: Props) => {
     });
 
     const now = Date.now();
-    const EXPIRY_MS = 10 * 60 * 1000;
-    const active = result.filter((j) => j.completed || (now - j.lastActivity) < EXPIRY_MS);
+    const EXPIRY_MS = 10 * 60 * 1000; // visitantes sem compra: 10 min
+    const PURCHASE_EXPIRY_MS = 24 * 60 * 60 * 1000; // compras: 24 h
+    const active = result.filter((j) => {
+      const age = now - j.lastActivity;
+      return j.completed ? age < PURCHASE_EXPIRY_MS : age < EXPIRY_MS;
+    });
     return active.sort((a, b) => b.lastActivity - a.lastActivity);
   }, [events, products]);
 
