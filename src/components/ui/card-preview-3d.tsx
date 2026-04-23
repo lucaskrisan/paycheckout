@@ -145,11 +145,11 @@ const CardPreview3D = ({
         {/* BACK */}
         <div className="cp3d-face cp3d-back">
           <div className="cp3d-magstrip" />
-          <div className="cp3d-cvv-row">
-            <div className="cp3d-cvv-strip">
-              <span className="cp3d-cvv-value">{cvv || "•••"}</span>
+          <div className="cp3d-cvv-area">
+            <span className="cp3d-cvv-label">CVV</span>
+            <div className="cp3d-cvv-field">
+              <span className="cp3d-cvv-value">{cvv ? "*".repeat(cvv.length) : ""}</span>
             </div>
-            <span className="cp3d-cvv-tag">CVV</span>
           </div>
         </div>
       </div>
@@ -384,43 +384,47 @@ const CardPreview3D = ({
         .cp3d-magstrip {
           position: relative;
           z-index: 1;
-          margin-top: 18px;
+          margin-top: 0;
           height: 40px;
           width: 100%;
-          background: rgba(0, 0, 0, 0.85);
+          background: #6b7280;
         }
-        .cp3d-cvv-row {
+        .cp3d-cvv-area {
           position: relative;
           z-index: 1;
-          margin-top: 18px;
-          padding: 0 22px;
+          margin-top: 24px;
+          padding: 0 28px;
           display: flex;
-          align-items: center;
-          gap: 12px;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 6px;
         }
-        .cp3d-cvv-strip {
-          flex: 1;
-          height: 32px;
-          background: rgba(255, 255, 255, 0.92);
-          border-radius: 4px;
+        .cp3d-cvv-label {
+          font-size: 13px;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: var(--cp3d-fg, #fff);
+          opacity: 0.95;
+        }
+        .cp3d-cvv-field {
+          background: #fff;
+          border-radius: 10px;
+          height: 42px;
+          width: 100%;
           display: flex;
           align-items: center;
           justify-content: flex-end;
-          padding: 0 12px;
+          padding: 0 14px;
         }
         .cp3d-cvv-value {
-          color: #111;
+          color: #000;
           font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-          font-size: 16px;
-          letter-spacing: 3px;
-          font-weight: 600;
-        }
-        .cp3d-cvv-tag {
-          font-size: 11px;
+          font-size: 22px;
+          line-height: 1;
+          letter-spacing: 4px;
           font-weight: 700;
-          letter-spacing: 0.1em;
-          color: var(--cp3d-fg, hsl(var(--foreground)));
-          opacity: 0.85;
+          min-height: 22px;
         }
 
         /* Container query: react to the wrapper width, not the viewport,
