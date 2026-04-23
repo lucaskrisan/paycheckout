@@ -26,7 +26,16 @@ export type CardBrand =
  * Hoje só detectamos Nubank — extender aqui se quisermos pintar Inter,
  * C6, etc. no futuro.
  */
-export type CardIssuer = "nubank" | "unknown";
+export type CardIssuer =
+  | "nubank"
+  | "inter"
+  | "c6"
+  | "itau"
+  | "bradesco"
+  | "santander"
+  | "picpay"
+  | "mercadopago"
+  | "unknown";
 
 interface BrandRule {
   brand: CardBrand;
@@ -308,9 +317,84 @@ const NUBANK_THEME: CardTheme = {
   label: "Nubank",
 };
 
-/** Resolve o tema final do cartão, priorizando o issuer (Nubank) sobre a bandeira. */
+const ISSUER_THEMES: Record<Exclude<CardIssuer, "unknown">, CardTheme> = {
+  nubank: NUBANK_THEME,
+  inter: {
+    background: "linear-gradient(135deg, #ff7a00 0%, #cc4a00 55%, #4a1a00 100%)",
+    glowTop: "rgba(255, 140, 0, 0.55)",
+    glowBottom: "rgba(180, 60, 0, 0.5)",
+    foreground: "#ffffff",
+    muted: "rgba(255,255,255,0.78)",
+    label: "Inter",
+  },
+  c6: {
+    background: "linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 60%, #000000 100%)",
+    glowTop: "rgba(200, 200, 200, 0.35)",
+    glowBottom: "rgba(80, 80, 80, 0.45)",
+    foreground: "#ffffff",
+    muted: "rgba(255,255,255,0.7)",
+    label: "C6",
+  },
+  itau: {
+    background: "linear-gradient(135deg, #ec7000 0%, #003595 60%, #001a4a 100%)",
+    glowTop: "rgba(255, 140, 0, 0.5)",
+    glowBottom: "rgba(0, 60, 160, 0.55)",
+    foreground: "#ffffff",
+    muted: "rgba(255,255,255,0.78)",
+    label: "Itaú",
+  },
+  bradesco: {
+    background: "linear-gradient(135deg, #cc092f 0%, #7a0518 60%, #2a0008 100%)",
+    glowTop: "rgba(255, 60, 80, 0.55)",
+    glowBottom: "rgba(140, 0, 25, 0.5)",
+    foreground: "#ffffff",
+    muted: "rgba(255,255,255,0.78)",
+    label: "Bradesco",
+  },
+  santander: {
+    background: "linear-gradient(135deg, #ec0000 0%, #8a0000 60%, #2a0000 100%)",
+    glowTop: "rgba(255, 80, 80, 0.55)",
+    glowBottom: "rgba(140, 0, 0, 0.5)",
+    foreground: "#ffffff",
+    muted: "rgba(255,255,255,0.78)",
+    label: "Santander",
+  },
+  picpay: {
+    background: "linear-gradient(135deg, #21c25e 0%, #0f7a3a 60%, #052a14 100%)",
+    glowTop: "rgba(50, 220, 110, 0.55)",
+    glowBottom: "rgba(15, 120, 60, 0.5)",
+    foreground: "#ffffff",
+    muted: "rgba(255,255,255,0.78)",
+    label: "PicPay",
+  },
+  mercadopago: {
+    background: "linear-gradient(135deg, #00b1ea 0%, #006fa3 60%, #002a4a 100%)",
+    glowTop: "rgba(80, 200, 255, 0.55)",
+    glowBottom: "rgba(0, 110, 170, 0.5)",
+    foreground: "#ffffff",
+    muted: "rgba(255,255,255,0.78)",
+    label: "Mercado Pago",
+  },
+};
+
+/** Mapeia o nome do banco (binlist) para um issuer conhecido. */
+export function issuerFromBankName(bankName: string | null | undefined): CardIssuer {
+  if (!bankName) return "unknown";
+  const n = bankName.toLowerCase();
+  if (n.includes("nu pagamentos") || n.includes("nubank") || n.includes("nu financeira")) return "nubank";
+  if (n.includes("banco inter") || /\binter\b/.test(n)) return "inter";
+  if (n.includes("c6")) return "c6";
+  if (n.includes("itau") || n.includes("itaú") || n.includes("itaucard")) return "itau";
+  if (n.includes("bradesco")) return "bradesco";
+  if (n.includes("santander")) return "santander";
+  if (n.includes("picpay")) return "picpay";
+  if (n.includes("mercado pago") || n.includes("mercadopago")) return "mercadopago";
+  return "unknown";
+}
+
+/** Resolve o tema final do cartão, priorizando o issuer (banco) sobre a bandeira. */
 export function getCardTheme(brand: CardBrand, issuer: CardIssuer): CardTheme {
-  if (issuer === "nubank") return NUBANK_THEME;
+  if (issuer !== "unknown") return ISSUER_THEMES[issuer];
   if (brand === "unknown") return DEFAULT_CARD_THEME;
   return BRAND_THEMES[brand];
 }
