@@ -160,16 +160,23 @@ const CardPreview3D = ({
           max-width: 420px;
           margin: 0 auto;
           perspective: 1000px;
+          -webkit-perspective: 1000px;
           container-type: inline-size;
+          isolation: isolate;
         }
         .cp3d-card {
           position: relative;
           width: 100%;
           height: 233px;
           transform-style: preserve-3d;
+          -webkit-transform-style: preserve-3d;
           transition: transform 0.7s cubic-bezier(.4,.2,.2,1);
+          will-change: transform;
         }
-        .cp3d-card.is-flipped { transform: rotateY(180deg); }
+        .cp3d-card.is-flipped {
+          transform: rotateY(180deg);
+          -webkit-transform: rotateY(180deg);
+        }
 
         .cp3d-face {
           position: absolute;
@@ -180,6 +187,9 @@ const CardPreview3D = ({
           color: var(--cp3d-fg, hsl(var(--foreground)));
           overflow: hidden;
           backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+          transform: translateZ(0.01px);
+          -webkit-transform: translateZ(0.01px);
           box-shadow:
             0 24px 48px -16px hsl(var(--primary) / 0.35),
             0 2px 0 0 hsl(var(--border)) inset;
@@ -187,7 +197,8 @@ const CardPreview3D = ({
           transition: background 0.5s ease;
         }
         .cp3d-back {
-          transform: rotateY(180deg);
+          transform: rotateY(180deg) translateZ(0.01px);
+          -webkit-transform: rotateY(180deg) translateZ(0.01px);
           padding: 24px 0;
         }
 
