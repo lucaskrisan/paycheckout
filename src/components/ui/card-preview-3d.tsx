@@ -372,9 +372,9 @@ const CardPreview3D = ({
           gap: 6px;
         }
         .cp3d-cvv-field {
-          background: hsl(var(--background));
-          color: hsl(var(--foreground));
-          border: 1px solid hsl(var(--border));
+          background: rgba(255, 255, 255, 0.95);
+          color: #111;
+          border: 1px solid rgba(0, 0, 0, 0.1);
           border-radius: 8px;
           height: 40px;
           width: 100%;
