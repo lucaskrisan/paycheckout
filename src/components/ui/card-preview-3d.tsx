@@ -356,10 +356,10 @@ const CardPreview3D = ({
           .cp3d-row { height: 26px; min-width: 11px; }
           .cp3d-slot.cp3d-gap { margin-right: 6px; }
           .cp3d-holder, .cp3d-expire { font-size: 13px; }
-          .cp3d-highlight.hl-number { width: calc(100% - 32px); top: 78px; left: 16px; height: 34px; }
-          .cp3d-highlight.hl-holder { top: 138px; left: 16px; height: 42px; }
-          .cp3d-highlight.hl-expire { top: 138px; right: 16px; height: 42px; width: 78px; }
-          .cp3d-highlight.hl-cvv { width: calc(100% - 32px); left: 16px; top: 78px; }
+          .cp3d-highlight.hl-number { width: calc(100% - 32px); top: 56px; left: 16px; height: 34px; }
+          .cp3d-highlight.hl-holder { top: 128px; left: 16px; height: 40px; }
+          .cp3d-highlight.hl-expire { top: 128px; right: 16px; height: 40px; width: 70px; }
+          .cp3d-highlight.hl-cvv { width: calc(100% - 32px); left: 16px; top: 60px; }
         }
         @container (max-width: 320px) {
           .cp3d-number { font-size: 16px; }
