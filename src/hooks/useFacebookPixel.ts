@@ -126,7 +126,164 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
   const productPriceRef = useRef(productPrice);
   const productNameRef = useRef(productName);
   const productCurrencyRef = useRef(productCurrency);
-...
+
+  useEffect(() => {
+    productPriceRef.current = productPrice;
+    productNameRef.current = productName;
+    productCurrencyRef.current = productCurrency;
+  }, [productPrice, productName, productCurrency]);
+
+  /** Resolve event currency: product currency wins; fallback to Cloudflare currency; final fallback BRL */
+  const resolveCurrency = useCallback((override?: string) => {
+    if (override) return override.toUpperCase();
+    if (productCurrencyRef.current) return productCurrencyRef.current.toUpperCase();
+    const geoCurr = getCfGeo()?.currency;
+    if (geoCurr) return geoCurr.toUpperCase();
+    return "BRL";
+  }, []);
+
+  /** Capture UTM params from current URL for campaign attribution */
+  function captureUtms(): Record<string, string> {
+    const p = new URLSearchParams(window.location.search);
+    const utms: Record<string, string> = {};
+    ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"].forEach((k) => {
+      const v = p.get(k);
+      if (v) utms[k] = v;
+    });
+    return utms;
+  }
+
+  /** Capture ctwa_clid (WhatsApp Click-to-Action Click ID) from URL if present */
+  function captureCtwaClid(): string | null {
+    return new URLSearchParams(window.location.search).get("ctwa_clid");
+  }
+
+  /** Send event to CAPI edge function (server-side, non-blocking) */
+  const sendCAPI = useCallback((eventName: string, eventId: string, customData?: Record<string, unknown>) => {
+    if (!productId) return;
+    const visitorId = getVisitorId();
+    const fbp = ensureFbp();
+    const geo = buildGeoPayload();
+    const clientIp = getBestIp();
+    const utms = captureUtms();
+    const ctwaClid = captureCtwaClid();
+    const referrer = document.referrer || undefined;
+
+    // Enrich custom_data with `contents` + `num_items` when content_ids present
+    let enrichedCustomData: Record<string, unknown> = { ...(customData || {}), ...utms };
+    if (customData && Array.isArray((customData as any).content_ids) && (customData as any).content_ids.length > 0) {
+      const ids = (customData as any).content_ids as string[];
+      const value = Number((customData as any).value) || 0;
+      const numItems = (customData as any).num_items ?? ids.length;
+      const itemPrice = ids.length > 0 ? Number((value / ids.length).toFixed(2)) : 0;
+      enrichedCustomData = {
+        ...enrichedCustomData,
+        num_items: numItems,
+        contents: (customData as any).contents ?? ids.map((id) => ({ id, quantity: 1, item_price: itemPrice })),
+      };
+    }
+
+    supabase.functions.invoke("facebook-capi", {
+      body: {
+        product_id: productId,
+        event_name: eventName,
+        event_id: eventId,
+        event_source_url: window.location.origin + window.location.pathname,
+        referrer_url: referrer,
+        customer: customerRef.current,
+        custom_data: enrichedCustomData,
+        fbc: getCookie("_fbc") || null,
+        fbp: fbp,
+        visitor_id: visitorId,
+        user_agent: navigator.userAgent,
+        client_ip: clientIp || undefined,
+        ctwa_clid: ctwaClid || undefined,
+        log_browser: true,
+        geo,
+        payment_method: (enrichedCustomData as any)?.payment_method,
+      },
+    }).catch((err) => console.warn("[CAPI] non-blocking error:", err));
+  }, [productId]);
+
+
+  useEffect(() => {
+    if (!productId || initializedRef.current) return;
+
+    hydrateClickParams();
+
+    let cancelled = false;
+
+    const pvId = generateEventId("PageView");
+    const icId = generateEventId("InitiateCheckout");
+
+    const loadPixels = async () => {
+      const { data } = await supabase
+        .from("public_product_pixels" as any)
+        .select("pixel_id, domain")
+        .eq("product_id", productId)
+        .eq("platform", "facebook");
+
+      if (cancelled) return;
+
+      sendCAPI("PageView", pvId);
+      sendCAPI("InitiateCheckout", icId, {
+        content_type: "product",
+        content_ids: [productId],
+      });
+
+      if (!data || (data as any[]).length === 0) {
+        initializedRef.current = true;
+        return;
+      }
+
+      pixelIdsRef.current = (data as any[]).map((px: any) => px.pixel_id);
+
+      if (!window.fbq) {
+        const script = document.createElement("script");
+        script.innerHTML = `
+          !function(f,b,e,v,n,t,s)
+          {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+          n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+          if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+          n.queue=[];t=b.createElement(e);t.async=!0;
+          t.src=v;s=b.getElementsByTagName(e)[0];
+          s.parentNode.insertBefore(t,s)}(window, document,'script',
+          'https://connect.facebook.net/en_US/fbevents.js');
+        `;
+        document.head.appendChild(script);
+      }
+
+      const waitForFbq = setInterval(() => {
+        if (window.fbq) {
+          clearInterval(waitForFbq);
+
+          (data as any[]).forEach((px: any) => {
+            window.fbq("set", "autoConfig", false, px.pixel_id);
+            window.fbq("init", px.pixel_id);
+          });
+
+          initializedRef.current = true;
+
+          window.fbq("track", "PageView", {}, { eventID: pvId });
+          window.fbq("track", "InitiateCheckout", {
+            content_type: "product",
+            content_ids: [productId],
+          }, { eventID: icId });
+        }
+      }, 100);
+
+      setTimeout(() => {
+        clearInterval(waitForFbq);
+        initializedRef.current = true;
+      }, 5000);
+    };
+
+    loadPixels();
+    return () => {
+      cancelled = true;
+    };
+  }, [productId, sendCAPI]);
+
   /**
    * Set Advanced Matching data. Phone country prefix is dynamic based on
    * Cloudflare-detected country (only forces +55 when country is BR).
@@ -160,6 +317,7 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     const firstName = nameParts[0] || "";
     const lastName = nameParts.slice(1).join(" ") || "";
 
+    // Dynamic country prefix — only force +55 if visitor is BR
     const country = getGeoCountry() || "BR";
     let formattedPhone = normalizedPhone ? `+${normalizedPhone}` : "";
     if (country === "BR" && normalizedPhone && !normalizedPhone.startsWith("55")) {
@@ -173,6 +331,7 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     if (formattedPhone) userData.ph = formattedPhone;
     if (normalizedCpf) userData.external_id = normalizedCpf;
 
+    // Geo advanced matching (browser-side)
     const ct = getCity();
     const st = getState();
     const zp = getZip();
