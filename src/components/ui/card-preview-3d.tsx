@@ -165,14 +165,15 @@ const CardPreview3D = ({
           inset: 0;
           border-radius: 20px;
           padding: 24px 28px 26px;
-          background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--background)) 100%);
-          color: hsl(var(--foreground));
+          background: var(--cp3d-bg, linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--background)) 100%));
+          color: var(--cp3d-fg, hsl(var(--foreground)));
           overflow: hidden;
           backface-visibility: hidden;
           box-shadow:
             0 24px 48px -16px hsl(var(--primary) / 0.35),
             0 2px 0 0 hsl(var(--border)) inset;
           border: 1px solid hsl(var(--border));
+          transition: background 0.5s ease;
         }
         .cp3d-back {
           transform: rotateY(180deg);
@@ -192,23 +193,23 @@ const CardPreview3D = ({
           pointer-events: none;
         }
         .cp3d-face::before {
-          background: hsl(var(--primary) / 0.55);
+          background: var(--cp3d-glow-top, hsl(var(--primary) / 0.55));
           top: -90px;
           left: -60px;
         }
         .cp3d-face::after {
-          background: hsl(var(--accent) / 0.45);
+          background: var(--cp3d-glow-bottom, hsl(var(--accent) / 0.45));
           bottom: -110px;
           right: -80px;
         }
 
         .cp3d-highlight {
           position: absolute;
-          border: 1px solid hsl(var(--foreground) / 0.55);
+          border: 1px solid var(--cp3d-fg, hsl(var(--foreground) / 0.55));
           border-radius: 10px;
           z-index: 2;
           width: 0; height: 0; top: 0; left: 0;
-          box-shadow: 0 0 8px hsl(var(--foreground) / 0.35);
+          box-shadow: 0 0 8px var(--cp3d-fg, hsl(var(--foreground) / 0.35));
           transition: all 0.3s ease;
           pointer-events: none;
         }
@@ -232,14 +233,15 @@ const CardPreview3D = ({
           letter-spacing: 0.05em;
           text-transform: uppercase;
           font-size: 13px;
-          color: hsl(var(--foreground));
+          color: var(--cp3d-fg, hsl(var(--foreground)));
         }
         .cp3d-header.is-logo-only {
           justify-content: flex-end;
         }
         .cp3d-brand {
-          color: hsl(var(--primary));
+          color: var(--cp3d-fg, hsl(var(--primary)));
           font-weight: 700;
+          opacity: 0.95;
         }
         .cp3d-brand-logo {
           display: inline-flex;
@@ -252,9 +254,26 @@ const CardPreview3D = ({
           width: auto;
           height: 30px;
           max-width: 64px;
-          background: hsl(var(--background));
+          background: rgba(255, 255, 255, 0.95);
           border-radius: 4px;
           padding: 2px 4px;
+        }
+        .cp3d-issuer-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 36px;
+          height: 30px;
+          padding: 0 8px;
+          border-radius: 6px;
+          background: #ffffff;
+          color: #8a05be;
+          font-weight: 800;
+          font-size: 16px;
+          font-style: italic;
+          letter-spacing: -0.5px;
+          font-family: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
         }
         .cp3d-chip {
           display: grid;
@@ -280,7 +299,7 @@ const CardPreview3D = ({
           display: flex;
           height: 30px;
           overflow: hidden;
-          color: hsl(var(--foreground));
+          color: var(--cp3d-fg, hsl(var(--foreground)));
           letter-spacing: 0.5px;
         }
         .cp3d-slot { display: inline-flex; }
@@ -315,7 +334,7 @@ const CardPreview3D = ({
           font-size: 10px;
           letter-spacing: 0.08em;
           text-transform: uppercase;
-          color: hsl(var(--muted-foreground));
+          color: var(--cp3d-muted, hsl(var(--muted-foreground)));
           font-weight: 600;
         }
         .cp3d-holder {
@@ -323,7 +342,7 @@ const CardPreview3D = ({
           font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 0.04em;
-          color: hsl(var(--foreground));
+          color: var(--cp3d-fg, hsl(var(--foreground)));
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
@@ -332,7 +351,7 @@ const CardPreview3D = ({
           font-size: 14px;
           font-weight: 600;
           font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-          color: hsl(var(--foreground));
+          color: var(--cp3d-fg, hsl(var(--foreground)));
         }
 
         .cp3d-magstrip {
@@ -340,7 +359,7 @@ const CardPreview3D = ({
           z-index: 1;
           height: 44px;
           width: 100%;
-          background: hsl(var(--foreground) / 0.85);
+          background: rgba(0, 0, 0, 0.65);
         }
         .cp3d-cvv-area {
           position: relative;
