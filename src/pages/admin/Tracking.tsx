@@ -17,6 +17,7 @@ import PixelEventsDashboard from "@/components/admin/PixelEventsDashboard";
 import TrackingFullAudit from "@/components/admin/TrackingFullAudit";
 import TrackingOnboardingGuide from "@/components/admin/TrackingOnboardingGuide";
 import MetaEmqPanel from "@/components/admin/MetaEmqPanel";
+import TestEventsPanel from "@/components/admin/tracking/TestEventsPanel";
 import {
   Select,
   SelectContent,
