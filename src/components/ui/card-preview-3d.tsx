@@ -116,6 +116,7 @@ const CardPreview3D = ({
           max-width: 420px;
           margin: 0 auto;
           perspective: 1000px;
+          container-type: inline-size;
         }
         .cp3d-card {
           position: relative;
