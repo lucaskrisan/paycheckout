@@ -121,6 +121,8 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
   const pixelIdsRef = useRef<string[]>([]);
   const firedEventsRef = useRef<Set<string>>(new Set());
   const customerRef = useRef<CustomerInfo>({});
+  const advancedMatchingSignatureRef = useRef<string | null>(null);
+  const pageViewEnrichSentRef = useRef(false);
   const productPriceRef = useRef(productPrice);
   const productNameRef = useRef(productName);
   const productCurrencyRef = useRef(productCurrency);
@@ -289,32 +291,45 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
   const setAdvancedMatching = useCallback((customer: CustomerInfo) => {
     customerRef.current = customer;
 
-    const enrichId = generateEventId("PageView_enrich");
-    sendCAPI("PageView", enrichId, {
-      content_type: "product",
-      content_ids: productId ? [productId] : [],
-    });
-
     if (!window.fbq || pixelIdsRef.current.length === 0) return;
 
-    const nameParts = normalizeParam(customer.name).split(" ");
+    const normalizedName = normalizeParam(customer.name);
+    const normalizedEmail = normalizeParam(customer.email);
+    const normalizedPhone = digitsOnly(customer.phone);
+    const normalizedCpf = digitsOnly(customer.cpf);
+
+    if (!normalizedName || !normalizedEmail || !normalizedPhone || !normalizedCpf) return;
+
+    const signature = [normalizedName, normalizedEmail, normalizedPhone, normalizedCpf].join("|");
+    if (advancedMatchingSignatureRef.current === signature) return;
+    advancedMatchingSignatureRef.current = signature;
+
+    if (!pageViewEnrichSentRef.current) {
+      pageViewEnrichSentRef.current = true;
+      const enrichId = generateEventId("PageView_enrich");
+      sendCAPI("PageView", enrichId, {
+        content_type: "product",
+        content_ids: productId ? [productId] : [],
+      });
+    }
+
+    const nameParts = normalizedName.split(" ");
     const firstName = nameParts[0] || "";
     const lastName = nameParts.slice(1).join(" ") || "";
-    const phone = digitsOnly(customer.phone);
 
     // Dynamic country prefix — only force +55 if visitor is BR
     const country = getGeoCountry() || "BR";
-    let formattedPhone = phone ? `+${phone}` : "";
-    if (country === "BR" && phone && !phone.startsWith("55")) {
-      formattedPhone = `+55${phone}`;
+    let formattedPhone = normalizedPhone ? `+${normalizedPhone}` : "";
+    if (country === "BR" && normalizedPhone && !normalizedPhone.startsWith("55")) {
+      formattedPhone = `+55${normalizedPhone}`;
     }
 
     const userData: Record<string, string> = {};
-    if (customer.email) userData.em = normalizeParam(customer.email);
+    if (normalizedEmail) userData.em = normalizedEmail;
     if (firstName) userData.fn = firstName;
     if (lastName) userData.ln = lastName;
     if (formattedPhone) userData.ph = formattedPhone;
-    if (customer.cpf) userData.external_id = digitsOnly(customer.cpf);
+    if (normalizedCpf) userData.external_id = normalizedCpf;
 
     // Geo advanced matching (browser-side)
     const ct = getCity();
