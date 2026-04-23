@@ -81,9 +81,16 @@ const LandingScript = () => {
         <div>
           <h1 className="text-xl font-bold text-white">Script de Rastreamento da Landing</h1>
           <p className="text-[11px] text-slate-500">
-            Cole esse script no <code className="text-cyan-400">&lt;head&gt;</code> da sua página de vendas. Ele dispara Pixel + CAPI, captura UTMs e leva tudo pro checkout.
+            É aqui que você copia o script. Cole esse bloco no <code className="text-cyan-400">&lt;head&gt;</code> da sua página de vendas para ligar Pixel + CAPI + UTMs + ida ao checkout.
           </p>
         </div>
+      </div>
+
+      <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/5 p-4">
+        <p className="text-sm font-semibold text-slate-100">Passo único do produtor:</p>
+        <p className="text-[11px] text-slate-400 mt-1">
+          Configure o pixel no produto, abra esta tela, copie o script abaixo e cole na landing page. Só isso.
+        </p>
       </div>
 
       {products.length === 0 ? (

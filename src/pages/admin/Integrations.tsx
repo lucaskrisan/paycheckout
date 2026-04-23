@@ -42,9 +42,10 @@ const Integrations = () => {
           <div>
             <h3 className="text-base font-bold text-foreground">Script de Rastreamento</h3>
             <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-              Cole na sua landing page. Dispara Pixel + CAPI, captura UTMs e propaga tudo até o checkout — sem precisar configurar mais nada.
+              Clique aqui para abrir, copiar e colar na landing page. Esse é o script único que dispara Pixel + CAPI, captura UTMs e propaga tudo até o checkout.
             </p>
           </div>
+          <div className="text-xs font-semibold text-primary">Abrir script para copiar →</div>
         </button>
 
         <button
