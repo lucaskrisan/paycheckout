@@ -285,6 +285,11 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
         products={products}
       />
 
+      {/* ── Ticker Bar (live purchases) ── */}
+      <div className="-mx-1 rounded-md overflow-hidden">
+        <TickerBar userId={userId} filterProduct={filterProduct} />
+      </div>
+
       {/* ── Hero KPI Strip ── */}
       <HeroKPIStrip
         userId={userId}
