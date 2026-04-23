@@ -20,6 +20,7 @@ import {
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
+import CardPreview3D, { type CardPreviewFocus } from "@/components/ui/card-preview-3d";
 
 // ── Types ──────────────────────────────────────────
 interface TierRow { key: string; label: string; credit_limit: number; level: number; color: string; }
