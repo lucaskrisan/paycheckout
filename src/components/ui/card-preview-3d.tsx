@@ -90,7 +90,7 @@ const CardPreview3D = ({
         ["--cp3d-muted" as string]: theme.muted,
       }}
     >
-      <div className={`cp3d-card ${flip ? "is-flipped" : ""}`}>
+      <div className={`cp3d-card ${flip ? "is-flipped is-animating" : ""}`}>
         {/* FRONT */}
         <div className="cp3d-face cp3d-front">
           <div
@@ -163,6 +163,7 @@ const CardPreview3D = ({
           -webkit-perspective: 1000px;
           container-type: inline-size;
           isolation: isolate;
+          contain: layout paint;
         }
         .cp3d-card {
           position: relative;
@@ -170,9 +171,10 @@ const CardPreview3D = ({
           height: 233px;
           transform-style: preserve-3d;
           -webkit-transform-style: preserve-3d;
-          transition: transform 0.7s cubic-bezier(.4,.2,.2,1);
-          will-change: transform;
+          transition: transform 0.55s cubic-bezier(.4,.2,.2,1);
         }
+        /* will-change só durante a animação — evita layer GPU permanente no mobile */
+        .cp3d-card.is-animating { will-change: transform; }
         .cp3d-card.is-flipped {
           transform: rotateY(180deg);
           -webkit-transform: rotateY(180deg);
@@ -194,12 +196,15 @@ const CardPreview3D = ({
             0 24px 48px -16px hsl(var(--primary) / 0.35),
             0 2px 0 0 hsl(var(--border)) inset;
           border: 1px solid hsl(var(--border));
-          transition: background 0.5s ease;
+          contain: layout paint;
         }
         .cp3d-back {
           transform: rotateY(180deg) translateZ(0.01px);
           -webkit-transform: rotateY(180deg) translateZ(0.01px);
           padding: 24px 0;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .cp3d-card { transition: none; }
         }
 
         /* Glow rings using brand tokens */
