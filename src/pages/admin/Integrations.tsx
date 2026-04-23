@@ -31,13 +31,13 @@ const Integrations = () => {
         {/* Script de Rastreamento — entrada principal */}
         <button
           onClick={() => navigate("/admin/integrations/landing-script")}
-          className="group relative flex flex-col items-start justify-between rounded-xl border-2 border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 via-slate-50 to-slate-50 p-6 text-left transition-all hover:border-cyan-500/60 hover:shadow-lg hover:shadow-cyan-500/10 cursor-pointer h-40"
+          className="group relative flex flex-col items-start justify-between rounded-xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 via-card to-card p-6 text-left transition-all hover:border-primary/60 hover:shadow-lg hover:shadow-primary/10 cursor-pointer h-40"
         >
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-cyan-500/15">
-              <Code2 className="w-5 h-5 text-cyan-600" />
+            <div className="p-2 rounded-lg bg-primary/15">
+              <Code2 className="w-5 h-5 text-primary" />
             </div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-cyan-700">Essencial</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-primary">Essencial</span>
           </div>
           <div>
             <h3 className="text-base font-bold text-foreground">Script de Rastreamento</h3>

@@ -370,9 +370,6 @@ const Tracking = () => {
           <TabsTrigger value="events" className="text-xs gap-1.5 data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">
             <Radio className="w-3.5 h-3.5" /> Eventos
           </TabsTrigger>
-          <TabsTrigger value="integration" className="text-xs gap-1.5 data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">
-            <Code2 className="w-3.5 h-3.5" /> Integração
-          </TabsTrigger>
           <TabsTrigger value="config" className="text-xs gap-1.5 data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">
             <Settings2 className="w-3.5 h-3.5" /> Configuração
           </TabsTrigger>
@@ -523,17 +520,6 @@ const Tracking = () => {
         <TabsContent value="events" className="space-y-5 mt-0">
           <PixelEventsDashboard products={products} userId={user?.id} />
           <UtmAttributionTable />
-        </TabsContent>
-
-        {/* ═══ TAB: Integração ═══ */}
-        <TabsContent value="integration" className="space-y-5 mt-0">
-          <TrackingScriptGenerator
-            pixels={pixels}
-            products={products}
-            checkoutBaseUrl="https://app.panttera.com.br"
-            selectedProductId={globalProduct}
-            onProductChange={setGlobalProduct}
-          />
         </TabsContent>
 
         {/* ═══ TAB: Configuração ═══ */}
