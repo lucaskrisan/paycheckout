@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CreditCard, HelpCircle, Lock } from "lucide-react";
+import CardPreview3D, { type CardPreviewFocus } from "@/components/ui/card-preview-3d";
 
 export interface CreditCardData {
   number: string;
