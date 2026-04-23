@@ -1,23 +1,29 @@
 import { motion } from "framer-motion";
-import { Eye, ShoppingCart, UserCheck, CreditCard, Zap, MousePointerClick, TrendingUp, BookOpen } from "lucide-react";
+import { Eye, ShoppingCart, UserCheck, CreditCard, Zap, MousePointerClick, TrendingUp, BookOpen, Trophy } from "lucide-react";
 import { format } from "date-fns";
 
-const EVENT_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
-  PageView: { label: "PageView", color: "#818cf8", icon: Eye },
-  ViewContent: { label: "ViewContent", color: "#fb923c", icon: BookOpen },
-  InitiateCheckout: { label: "Checkout", color: "#fbbf24", icon: ShoppingCart },
-  Lead: { label: "Lead", color: "#60a5fa", icon: UserCheck },
-  AddPaymentInfo: { label: "Payment", color: "#a78bfa", icon: CreditCard },
-  AddToCart: { label: "Add Cart", color: "#f472b6", icon: MousePointerClick },
-  Purchase: { label: "Purchase", color: "#D4AF37", icon: TrendingUp },
+type Tier = "hero" | "mid" | "base";
+
+const EVENT_CONFIG: Record<string, { label: string; color: string; icon: any; tier: Tier }> = {
+  PageView: { label: "PageView", color: "#64748b", icon: Eye, tier: "base" },
+  ViewContent: { label: "ViewContent", color: "#94a3b8", icon: BookOpen, tier: "base" },
+  InitiateCheckout: { label: "Checkout", color: "#fbbf24", icon: ShoppingCart, tier: "mid" },
+  Lead: { label: "Lead", color: "#60a5fa", icon: UserCheck, tier: "mid" },
+  AddPaymentInfo: { label: "Payment", color: "#a78bfa", icon: CreditCard, tier: "mid" },
+  AddToCart: { label: "Add Cart", color: "#f472b6", icon: MousePointerClick, tier: "mid" },
+  Purchase: { label: "COMPRA CONFIRMADA", color: "#D4AF37", icon: Trophy, tier: "hero" },
 };
 
-// Map ISO country code to flag emoji
 function flagFromCountry(code?: string | null) {
   if (!code || code.length !== 2) return "🌐";
   const A = 0x1f1e6;
   const offset = (c: string) => c.toUpperCase().charCodeAt(0) - 65;
   return String.fromCodePoint(A + offset(code[0])) + String.fromCodePoint(A + offset(code[1]));
+}
+
+function formatBRL(v?: number | null) {
+  if (v == null || isNaN(Number(v))) return null;
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(v));
 }
 
 interface Props {
@@ -28,78 +34,176 @@ interface Props {
     customer_name: string | null;
     created_at: string;
     sources: string[];
+    event_value?: number | null;
   };
   productName?: string;
   geo?: { country?: string | null; city?: string | null };
 }
 
 const EventFeedCard = ({ group, productName, geo }: Props) => {
-  const cfg = EVENT_CONFIG[group.event_name] || { label: group.event_name, color: "#94a3b8", icon: Zap };
+  const cfg = EVENT_CONFIG[group.event_name] || { label: group.event_name, color: "#94a3b8", icon: Zap, tier: "base" as Tier };
   const Icon = cfg.icon;
   const hasBrowser = group.sources.includes("browser");
   const hasServer = group.sources.includes("server");
   const isDual = hasBrowser && hasServer;
-  const isPurchase = group.event_name === "Purchase";
+  const isHero = cfg.tier === "hero";
+  const isMid = cfg.tier === "mid";
+  const isBase = cfg.tier === "base";
+  const valueStr = isHero ? formatBRL(group.event_value) : null;
 
+  // ── HERO (Purchase) ──
+  if (isHero) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: 24, scale: 0.96 }}
+        animate={{
+          opacity: 1,
+          x: 0,
+          scale: 1,
+          boxShadow: [
+            "0 0 0 rgba(212,175,55,0)",
+            "0 0 28px rgba(212,175,55,0.35)",
+            "0 0 16px rgba(212,175,55,0.12)",
+          ],
+        }}
+        exit={{ opacity: 0, scale: 0.96 }}
+        transition={{ duration: 0.5, ease: "easeOut", boxShadow: { duration: 0.8 } }}
+        className="relative flex items-center gap-3 px-4 py-3 border-b border-border/40 last:border-b-0 hover:brightness-110 transition-all"
+        style={{
+          background: "linear-gradient(90deg, rgba(212,175,55,0.14) 0%, rgba(212,175,55,0.02) 60%, transparent 100%)",
+          borderLeft: "4px solid #D4AF37",
+        }}
+      >
+        <div className="p-2 rounded-md shrink-0" style={{ backgroundColor: "rgba(212,175,55,0.18)" }}>
+          <Icon className="w-4 h-4" style={{ color: "#D4AF37" }} />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <span
+              className="text-[10px] font-bold tracking-[0.12em] uppercase"
+              style={{ color: "#D4AF37" }}
+            >
+              {cfg.label}
+            </span>
+            {isDual && (
+              <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                ✓ DUAL
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-base shrink-0" aria-hidden>
+              {flagFromCountry(geo?.country)}
+            </span>
+            <span className="text-sm font-bold text-foreground truncate">
+              {group.customer_name || "Cliente"}
+            </span>
+            {geo?.city && (
+              <span className="text-[11px] text-muted-foreground">· {geo.city}</span>
+            )}
+          </div>
+          {productName && (
+            <div className="text-[11px] text-muted-foreground/80 truncate mt-0.5">
+              {productName} · <span className="font-mono">{format(new Date(group.created_at), "HH:mm:ss")}</span>
+            </div>
+          )}
+        </div>
+
+        {valueStr && (
+          <div className="shrink-0 text-right">
+            <div
+              className="text-lg font-bold font-mono tabular-nums"
+              style={{ color: "#D4AF37", textShadow: "0 0 12px rgba(212,175,55,0.4)" }}
+            >
+              {valueStr}
+            </div>
+          </div>
+        )}
+      </motion.div>
+    );
+  }
+
+  // ── MID (Checkout / Lead / Payment / AddToCart) ──
+  if (isMid) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: 12 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.18, ease: "easeOut" }}
+        className="relative flex items-center gap-3 px-4 py-2.5 border-b border-border/30 last:border-b-0 hover:bg-muted/30 transition-all"
+        style={{
+          borderLeft: `2px solid ${cfg.color}`,
+          background: `linear-gradient(90deg, ${cfg.color}0a 0%, transparent 50%)`,
+        }}
+      >
+        <div className="p-1.5 rounded-md shrink-0" style={{ backgroundColor: `${cfg.color}18` }}>
+          <Icon className="w-3.5 h-3.5" style={{ color: cfg.color }} />
+        </div>
+
+        <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
+          <span className="text-sm shrink-0" aria-hidden>
+            {flagFromCountry(geo?.country)}
+          </span>
+          <span className="text-xs font-semibold text-foreground truncate">
+            {group.customer_name || "Visitante"}
+          </span>
+          <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: cfg.color }}>
+            {cfg.label}
+          </span>
+          {productName && (
+            <span className="text-[10px] text-muted-foreground truncate">· {productName}</span>
+          )}
+          {geo?.city && (
+            <span className="text-[10px] text-muted-foreground/70">· {geo.city}</span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          {isDual ? (
+            <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+              DUAL
+            </span>
+          ) : hasBrowser ? (
+            <span className="text-[9px] font-bold text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded">
+              PIXEL
+            </span>
+          ) : (
+            <span className="text-[9px] font-bold text-violet-400 bg-violet-500/10 px-1.5 py-0.5 rounded">
+              CAPI
+            </span>
+          )}
+          <span className="text-[10px] text-muted-foreground font-mono tabular-nums">
+            {format(new Date(group.created_at), "HH:mm:ss")}
+          </span>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // ── BASE (PageView / ViewContent) ──
   return (
     <motion.div
-      initial={{ opacity: 0, y: -8, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.96 }}
-      transition={{ duration: 0.2, ease: "easeOut" }}
-      className={`group relative flex items-center gap-3 px-4 py-2.5 border-b border-border/40 last:border-b-0 hover:bg-muted/30 transition-all ${
-        isPurchase ? "bg-gradient-to-r from-[#D4AF37]/10 to-transparent" : ""
-      }`}
-      style={
-        isPurchase
-          ? { boxShadow: "inset 3px 0 0 #D4AF37" }
-          : undefined
-      }
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 0.85 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="group relative flex items-center gap-2.5 px-4 py-1.5 border-b border-border/20 last:border-b-0 hover:bg-muted/20 hover:opacity-100 transition-all"
     >
-      <div className="p-1.5 rounded-md shrink-0" style={{ backgroundColor: `${cfg.color}18` }}>
-        <Icon className="w-3.5 h-3.5" style={{ color: cfg.color }} />
-      </div>
-
-      <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
-        <span className="text-base shrink-0" aria-hidden>
-          {flagFromCountry(geo?.country)}
-        </span>
-        <span className="text-xs font-semibold text-foreground truncate">
-          {group.customer_name || "Visitante"}
-        </span>
-        <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: cfg.color }}>
-          {cfg.label}
-        </span>
-        {productName && (
-          <span className="text-[10px] text-muted-foreground truncate">
-            · {productName}
-          </span>
-        )}
-        {geo?.city && (
-          <span className="text-[10px] text-muted-foreground/70">
-            · {geo.city}
-          </span>
-        )}
-      </div>
-
-      <div className="flex items-center gap-1.5 shrink-0">
-        {isDual ? (
-          <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-            DUAL
-          </span>
-        ) : hasBrowser ? (
-          <span className="text-[9px] font-bold text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded">
-            PIXEL
-          </span>
-        ) : (
-          <span className="text-[9px] font-bold text-violet-400 bg-violet-500/10 px-1.5 py-0.5 rounded">
-            CAPI
-          </span>
-        )}
-        <span className="text-[10px] text-muted-foreground font-mono tabular-nums">
-          {format(new Date(group.created_at), "HH:mm:ss")}
-        </span>
-      </div>
+      <Icon className="w-3 h-3 shrink-0" style={{ color: cfg.color }} />
+      <span className="text-xs shrink-0 opacity-70" aria-hidden>
+        {flagFromCountry(geo?.country)}
+      </span>
+      <span className="text-[11px] text-muted-foreground truncate flex-1 min-w-0">
+        <span className="font-medium text-foreground/70">{group.customer_name || "Visitante"}</span>
+        <span className="mx-1.5">·</span>
+        <span style={{ color: cfg.color }} className="font-semibold">{cfg.label}</span>
+        {productName && <span className="ml-1.5">· {productName}</span>}
+      </span>
+      <span className="text-[10px] text-muted-foreground/60 font-mono tabular-nums shrink-0">
+        {format(new Date(group.created_at), "HH:mm:ss")}
+      </span>
     </motion.div>
   );
 };

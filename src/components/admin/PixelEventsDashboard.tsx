@@ -29,6 +29,7 @@ interface PixelEvent {
   customer_name: string | null;
   visitor_id: string | null;
   event_id: string | null;
+  event_value: number | null;
 }
 
 interface GroupedEvent {
@@ -39,6 +40,7 @@ interface GroupedEvent {
   created_at: string;
   sources: string[];
   ids: string[];
+  event_value: number | null;
 }
 
 interface Props {
@@ -73,7 +75,7 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
 
     let feedQuery = supabase
       .from("pixel_events")
-      .select("id, product_id, event_name, source, created_at, customer_name, visitor_id, event_id")
+      .select("id, product_id, event_name, source, created_at, customer_name, visitor_id, event_id, event_value")
       .gte("created_at", since)
       .order("created_at", { ascending: false })
       .limit(500);
@@ -246,6 +248,7 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
           if (!g.sources.includes(e.source)) g.sources.push(e.source);
           g.ids.push(e.id);
           if (e.customer_name && !g.customer_name) g.customer_name = e.customer_name;
+          if (e.event_value != null && g.event_value == null) g.event_value = e.event_value;
         } else {
           map.set(e.event_id, {
             event_id: e.event_id,
@@ -255,6 +258,7 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
             created_at: e.created_at,
             sources: [e.source],
             ids: [e.id],
+            event_value: e.event_value,
           });
         }
       } else {
@@ -266,6 +270,7 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
           created_at: e.created_at,
           sources: [e.source],
           ids: [e.id],
+          event_value: e.event_value,
         });
       }
     });
