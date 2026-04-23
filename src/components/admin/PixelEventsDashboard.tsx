@@ -71,18 +71,24 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
     period === "1h" ? 1 : period === "6h" ? 6 : period === "24h" ? 24 : 168;
 
   const loadEvents = async () => {
+    if (!userId) {
+      console.log("[NinaTracking] Aguardando userId...");
+      return;
+    }
     const since = subHours(new Date(), getHoursBack()).toISOString();
 
     let feedQuery = supabase
       .from("pixel_events")
       .select("id, product_id, event_name, source, created_at, customer_name, visitor_id, event_id, event_value")
       .gte("created_at", since)
+      .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(500);
-    if (userId) feedQuery = feedQuery.eq("user_id", userId);
     if (filterProduct !== "all") feedQuery = feedQuery.eq("product_id", filterProduct);
-    const { data: feedData } = await feedQuery;
+    const { data: feedData, error: feedError } = await feedQuery;
+    if (feedError) console.error("[NinaTracking] feed error:", feedError);
     const real = (feedData || []).filter((e) => !e.visitor_id?.startsWith("sim_"));
+    console.log("[NinaTracking] eventos carregados:", real.length, "de", feedData?.length || 0, "userId:", userId);
     setEvents(real as PixelEvent[]);
 
     const counts: Record<string, number> = {};
