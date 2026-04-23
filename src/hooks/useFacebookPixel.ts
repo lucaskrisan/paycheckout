@@ -151,6 +151,11 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     return utms;
   }
 
+  /** Capture ctwa_clid (WhatsApp Click-to-Action Click ID) from URL if present */
+  function captureCtwaClid(): string | null {
+    return new URLSearchParams(window.location.search).get("ctwa_clid");
+  }
+
   /** Send event to CAPI edge function (server-side, non-blocking) */
   const sendCAPI = useCallback((eventName: string, eventId: string, customData?: Record<string, unknown>) => {
     if (!productId) return;
@@ -159,6 +164,8 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     const geo = buildGeoPayload();
     const clientIp = getBestIp();
     const utms = captureUtms();
+    const ctwaClid = captureCtwaClid();
+    const referrer = document.referrer || undefined;
 
     // Enrich custom_data with `contents` + `num_items` when content_ids present
     let enrichedCustomData: Record<string, unknown> = { ...(customData || {}), ...utms };
@@ -180,6 +187,7 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
         event_name: eventName,
         event_id: eventId,
         event_source_url: window.location.origin + window.location.pathname,
+        referrer_url: referrer,
         customer: customerRef.current,
         custom_data: enrichedCustomData,
         fbc: getCookie("_fbc") || null,
@@ -187,6 +195,7 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
         visitor_id: visitorId,
         user_agent: navigator.userAgent,
         client_ip: clientIp || undefined,
+        ctwa_clid: ctwaClid || undefined,
         log_browser: true,
         geo,
         payment_method: (enrichedCustomData as any)?.payment_method,

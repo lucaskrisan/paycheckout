@@ -50,6 +50,7 @@ interface CAPIUserData {
   client_user_agent?: string;
   fbc?: string;
   fbp?: string;
+  ctwa_clid?: string;
 }
 
 interface CAPIEvent {
@@ -57,9 +58,13 @@ interface CAPIEvent {
   event_time: number;
   event_id: string;
   event_source_url: string;
+  referrer_url?: string;
   action_source: string;
   user_data: CAPIUserData;
   custom_data?: CAPICustomData;
+  data_processing_options?: string[];
+  data_processing_options_country?: number;
+  data_processing_options_state?: number;
 }
 
 /**
@@ -123,6 +128,7 @@ Deno.serve(async (req) => {
       event_name,
       event_id,
       event_source_url,
+      referrer_url,
       customer,
       custom_data,
       fbc,
@@ -130,6 +136,7 @@ Deno.serve(async (req) => {
       visitor_id,
       user_agent,
       client_ip,
+      ctwa_clid,
       log_browser,
       payment_method,
       geo,
@@ -250,6 +257,7 @@ Deno.serve(async (req) => {
       }
     }
     if (fbp && typeof fbp === 'string' && fbp.startsWith('fb.')) userData.fbp = fbp;
+    if (ctwa_clid && typeof ctwa_clid === 'string' && ctwa_clid.length > 0) userData.ctwa_clid = ctwa_clid;
 
     // ── GEO (string hash, KwaiPay format) ──
     const geoCity: string | undefined = geo?.city;
@@ -310,14 +318,22 @@ Deno.serve(async (req) => {
     // Propaga payment_method top-level se cd não tiver
     if (!cd.payment_method && payment_method) cd.payment_method = payment_method;
 
+    // data_processing_options: LDU only for US traffic (CCPA); empty array for BR (LGPD handled separately)
+    const isUsTraffic = geoCountry === 'us';
+    const dataProcessingOptions = isUsTraffic
+      ? { data_processing_options: ['LDU'], data_processing_options_country: 1, data_processing_options_state: 0 }
+      : { data_processing_options: [] };
+
     const event: CAPIEvent = {
       event_name,
       event_time: Math.floor(Date.now() / 1000),
       event_id: event_id || `${event_name}_${Date.now()}`,
       event_source_url: '', // resolved per-pixel inside the loop
+      ...(referrer_url ? { referrer_url: String(referrer_url) } : {}),
       action_source: 'website',
       user_data: userData,
       custom_data: cd,
+      ...dataProcessingOptions,
     };
 
     const results: any[] = [];
@@ -383,7 +399,7 @@ Deno.serve(async (req) => {
         if (test_event_code) metaBody.test_event_code = test_event_code;
 
         const response = await fetch(
-          `https://graph.facebook.com/v22.0/${pixel.pixel_id}/events`,
+          `https://graph.facebook.com/v24.0/${pixel.pixel_id}/events`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
