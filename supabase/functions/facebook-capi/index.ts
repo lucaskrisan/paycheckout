@@ -193,6 +193,11 @@ Deno.serve(async (req) => {
     // (mantém o histórico do produto).
     const allPixels = pixels && pixels.length > 0 ? pixels : [{ pixel_id: null }];
 
+    // Capture monetary value for Purchase/Subscribe events (powers live feed R$ display)
+    const eventValue = (event_name === 'Purchase' || event_name === 'Subscribe')
+      ? (Number((custom_data as any)?.value) || null)
+      : null;
+
     for (const px of allPixels) {
       // Server-side log
       await supabase.from('pixel_events').insert({
@@ -204,6 +209,7 @@ Deno.serve(async (req) => {
         user_id: productOwnerId,
         customer_name: customerName,
         visitor_id: visitor_id || null,
+        event_value: eventValue,
       });
 
       // Browser-side log (quando o frontend também disparou via fbq)
@@ -217,6 +223,7 @@ Deno.serve(async (req) => {
           user_id: productOwnerId,
           customer_name: customerName,
           visitor_id: visitor_id || null,
+          event_value: eventValue,
         });
       }
     }
