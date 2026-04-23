@@ -283,6 +283,19 @@ const Tracking = () => {
         ))}
       </div>
 
+      <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/5 p-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-slate-100">O script da landing fica em Integrações.</p>
+          <p className="text-[11px] text-slate-400 mt-1">
+            Esta tela agora é só para auditoria, eventos e configuração. Para copiar o script pronto da landing,
+            abra <span className="text-cyan-400 font-medium">Integrações → Script de Rastreamento</span>.
+          </p>
+        </div>
+        <Button onClick={() => navigate("/admin/integrations/landing-script")} size="sm" className="gap-1.5 shrink-0 text-xs">
+          <Code2 className="w-3.5 h-3.5" /> Abrir script agora
+        </Button>
+      </div>
+
       {/* ── Global Product Selector (controla TODOS os blocos abaixo) ── */}
       {products.length > 0 && (
         <div className="rounded-lg bg-gradient-to-r from-violet-500/10 via-cyan-500/10 to-emerald-500/10 border border-violet-500/20 p-3 flex items-center gap-3 flex-wrap">
