@@ -134,16 +134,17 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
   const setAdvancedMatching = useCallback((customer: CustomerInfo) => {
     customerRef.current = customer;
 
+    if (!window.fbq || pixelIdsRef.current.length === 0) return;
+
     const normalizedName = normalizeParam(customer.name);
     const normalizedEmail = normalizeParam(customer.email);
     const normalizedPhone = digitsOnly(customer.phone);
     const normalizedCpf = digitsOnly(customer.cpf);
-    const signature = [normalizedName, normalizedEmail, normalizedPhone, normalizedCpf].join("|");
 
-    if (!window.fbq || pixelIdsRef.current.length === 0) return;
     if (!normalizedName || !normalizedEmail || !normalizedPhone || !normalizedCpf) return;
-    if (advancedMatchingSignatureRef.current === signature) return;
 
+    const signature = [normalizedName, normalizedEmail, normalizedPhone, normalizedCpf].join("|");
+    if (advancedMatchingSignatureRef.current === signature) return;
     advancedMatchingSignatureRef.current = signature;
 
     if (!pageViewEnrichSentRef.current) {
@@ -159,7 +160,6 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     const firstName = nameParts[0] || "";
     const lastName = nameParts.slice(1).join(" ") || "";
 
-    // Dynamic country prefix — only force +55 if visitor is BR
     const country = getGeoCountry() || "BR";
     let formattedPhone = normalizedPhone ? `+${normalizedPhone}` : "";
     if (country === "BR" && normalizedPhone && !normalizedPhone.startsWith("55")) {
@@ -173,7 +173,6 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     if (formattedPhone) userData.ph = formattedPhone;
     if (normalizedCpf) userData.external_id = normalizedCpf;
 
-    // Geo advanced matching (browser-side)
     const ct = getCity();
     const st = getState();
     const zp = getZip();
