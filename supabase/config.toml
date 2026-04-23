@@ -3,6 +3,8 @@ project_id = "vipltojtcrqatwvzobro"
 [functions]
   [functions.appsell-notify]
     verify_jwt = false
+  [functions.bin-lookup]
+    verify_jwt = false
   [functions.asaas-webhook]
     verify_jwt = false
   [functions.auth-email-hook]
