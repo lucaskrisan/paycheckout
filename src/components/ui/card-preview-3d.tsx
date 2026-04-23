@@ -6,6 +6,7 @@ import {
   getCardTheme,
   BRAND_ICONS,
   BRAND_LABEL,
+  type CardIssuer,
 } from "@/lib/cardBrand";
 
 export type CardPreviewFocus = "number" | "holder" | "expire" | "cvv" | null;
@@ -19,6 +20,8 @@ interface CardPreview3DProps {
   focus?: CardPreviewFocus;
   maskMiddle?: boolean; // mask digits 5..12 with *
   brandLabel?: string;
+  /** Sobrescreve o issuer detectado por BIN local (ex: vindo do binlist). */
+  issuerOverride?: CardIssuer;
   className?: string;
 }
 
@@ -38,11 +41,14 @@ const CardPreview3D = ({
   focus = null,
   maskMiddle = false,
   brandLabel,
+  issuerOverride,
   className = "",
 }: CardPreview3DProps) => {
   const digits = useMemo(() => number.replace(/\D/g, "").slice(0, 16), [number]);
   const brand = useMemo(() => detectCardBrand(digits), [digits]);
-  const issuer = useMemo(() => detectCardIssuer(digits), [digits]);
+  const localIssuer = useMemo(() => detectCardIssuer(digits), [digits]);
+  const issuer: CardIssuer =
+    issuerOverride && issuerOverride !== "unknown" ? issuerOverride : localIssuer;
   const theme = useMemo(() => getCardTheme(brand, issuer), [brand, issuer]);
   const brandIcon = brand !== "unknown" ? BRAND_ICONS[brand] : null;
   const brandTitle = BRAND_LABEL[brand];
@@ -94,8 +100,10 @@ const CardPreview3D = ({
           <div className={`cp3d-header ${showBrandLabel ? "" : "is-logo-only"}`}>
             {showBrandLabel ? <span className="cp3d-brand">{resolvedLabel}</span> : <span aria-hidden />}
             <span className="cp3d-brand-logo" aria-label={brandTitle || undefined}>
-              {issuer === "nubank" ? (
-                <span className="cp3d-issuer-badge">Nu</span>
+              {issuer !== "unknown" ? (
+                <span className="cp3d-issuer-badge">
+                  {issuer === "nubank" ? "Nu" : (theme.label || "•").slice(0, 3)}
+                </span>
               ) : brandIcon ? (
                 <Icon icon={brandIcon} className="cp3d-brand-icon" />
               ) : (
