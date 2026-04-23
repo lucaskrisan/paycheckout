@@ -1,4 +1,6 @@
 import { useMemo } from "react";
+import { Icon } from "@iconify/react";
+import { detectCardBrand, BRAND_ICONS, BRAND_LABEL } from "@/lib/cardBrand";
 
 export type CardPreviewFocus = "number" | "holder" | "expire" | "cvv" | null;
 
@@ -33,6 +35,9 @@ const CardPreview3D = ({
   className = "",
 }: CardPreview3DProps) => {
   const digits = useMemo(() => number.replace(/\D/g, "").slice(0, 16), [number]);
+  const brand = useMemo(() => detectCardBrand(digits), [digits]);
+  const brandIcon = brand !== "unknown" ? BRAND_ICONS[brand] : null;
+  const brandTitle = BRAND_LABEL[brand];
   const slots = useMemo(() => {
     const arr: { char: string; filled: boolean }[] = [];
     for (let i = 0; i < 16; i++) {
@@ -65,8 +70,14 @@ const CardPreview3D = ({
           <div className={`cp3d-highlight ${highlightClass}`} aria-hidden />
           <div className="cp3d-header">
             <span className="cp3d-brand">{brandLabel}</span>
-            <span className="cp3d-chip" aria-hidden>
-              <span /><span /><span /><span />
+            <span className="cp3d-brand-logo" aria-label={brandTitle || undefined}>
+              {brandIcon ? (
+                <Icon icon={brandIcon} className="cp3d-brand-icon" />
+              ) : (
+                <span className="cp3d-chip" aria-hidden>
+                  <span /><span /><span /><span />
+                </span>
+              )}
             </span>
           </div>
 
@@ -201,6 +212,21 @@ const CardPreview3D = ({
         .cp3d-brand {
           color: hsl(var(--primary));
           font-weight: 700;
+        }
+        .cp3d-brand-logo {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 48px;
+          height: 30px;
+        }
+        .cp3d-brand-icon {
+          width: auto;
+          height: 30px;
+          max-width: 64px;
+          background: hsl(var(--background));
+          border-radius: 4px;
+          padding: 2px 4px;
         }
         .cp3d-chip {
           display: grid;
