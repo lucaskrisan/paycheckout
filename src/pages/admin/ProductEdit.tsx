@@ -67,6 +67,9 @@ const ProductEdit = () => {
   const [dragOver, setDragOver] = useState(false);
   const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState("");
+  const [courseLinkMode, setCourseLinkMode] = useState<"existing" | "new">("existing");
+  const [newCourseTitle, setNewCourseTitle] = useState("");
+  const [linkingCourse, setLinkingCourse] = useState(false);
   const [pixels, setPixels] = useState<PixelEntry[]>([]);
   const [activePixelPlatform, setActivePixelPlatform] = useState("Facebook");
   const [savingPixels, setSavingPixels] = useState(false);
