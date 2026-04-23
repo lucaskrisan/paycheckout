@@ -75,7 +75,7 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
 
     let feedQuery = supabase
       .from("pixel_events")
-      .select("id, product_id, event_name, source, created_at, customer_name, visitor_id, event_id")
+      .select("id, product_id, event_name, source, created_at, customer_name, visitor_id, event_id, event_value")
       .gte("created_at", since)
       .order("created_at", { ascending: false })
       .limit(500);
