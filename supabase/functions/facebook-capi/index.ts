@@ -133,6 +133,7 @@ Deno.serve(async (req) => {
       log_browser,
       payment_method,
       geo,
+      test_event_code,
     } = await req.json();
 
     if (!product_id || !event_name) {
@@ -375,15 +376,18 @@ Deno.serve(async (req) => {
         };
         console.log(`[facebook-capi][PAYLOAD→META] ${JSON.stringify(debugPayload)}`);
 
+        const metaBody: Record<string, unknown> = {
+          data: [event],
+          access_token: pixel.capi_token,
+        };
+        if (test_event_code) metaBody.test_event_code = test_event_code;
+
         const response = await fetch(
           `https://graph.facebook.com/v22.0/${pixel.pixel_id}/events`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              data: [event],
-              access_token: pixel.capi_token,
-            }),
+            body: JSON.stringify(metaBody),
             signal: controller.signal,
           }
         );
@@ -391,7 +395,13 @@ Deno.serve(async (req) => {
 
         const data = await response.json();
         console.log(`[facebook-capi][META←RESPONSE] Pixel ${pixel.pixel_id}:`, JSON.stringify(data));
-        results.push({ pixel_id: pixel.pixel_id, success: response.ok, data });
+        results.push({
+          pixel_id: pixel.pixel_id,
+          success: response.ok,
+          http_status: response.status,
+          meta_response: data,
+          ...(test_event_code ? { payload_preview: { ...debugPayload, test_event_code } } : {}),
+        });
       } catch (err) {
         console.error(`[facebook-capi] Pixel ${pixel.pixel_id} error:`, err);
         results.push({ pixel_id: pixel.pixel_id, success: false, error: (err as Error).message });

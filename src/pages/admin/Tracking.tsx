@@ -17,6 +17,7 @@ import PixelEventsDashboard from "@/components/admin/PixelEventsDashboard";
 import TrackingFullAudit from "@/components/admin/TrackingFullAudit";
 import TrackingOnboardingGuide from "@/components/admin/TrackingOnboardingGuide";
 import MetaEmqPanel from "@/components/admin/MetaEmqPanel";
+import TestEventsPanel from "@/components/admin/tracking/TestEventsPanel";
 import {
   Select,
   SelectContent,
@@ -381,6 +382,7 @@ const Tracking = () => {
         <TabsContent value="audit" className="space-y-5 mt-0">
           {user && <TrackingFullAudit userId={user.id} productId={globalProduct} />}
           <MetaEmqPanel products={products} selectedProductId={globalProduct} onProductChange={setGlobalProduct} />
+          <TestEventsPanel products={products} selectedProductId={globalProduct} onProductChange={setGlobalProduct} />
 
           {/* Diagnostics */}
           <div className="rounded-lg bg-slate-800/50 border border-slate-700/30 overflow-hidden">
