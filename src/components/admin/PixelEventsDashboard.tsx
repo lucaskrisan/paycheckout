@@ -7,7 +7,7 @@ import { ptBR } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
 import CustomerJourneyFeed from "./CustomerJourneyFeed";
 import NinaTrackingHeader from "./tracking/NinaTrackingHeader";
-import TickerBar from "./tracking/TickerBar";
+// TickerBar removido
 import HeroKPIStrip from "./tracking/HeroKPIStrip";
 import SmartAlertsPanel from "./tracking/SmartAlertsPanel";
 import EventFeedCard from "./tracking/EventFeedCard";
@@ -290,10 +290,7 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
         products={products}
       />
 
-      {/* ── Ticker Bar (live purchases) ── */}
-      <div className="-mx-1 rounded-md overflow-hidden">
-        <TickerBar userId={userId} filterProduct={filterProduct} />
-      </div>
+      {/* Ticker removido — vendas aparecem no feed e nos KPIs */}
 
       {/* ── Hero KPI Strip ── */}
       <HeroKPIStrip
@@ -306,27 +303,33 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
       {/* ── Smart Alerts ── */}
       <SmartAlertsPanel userId={userId} filterProduct={filterProduct} />
 
-      {/* ── Layout 3 colunas: Feed | Chart+Heatmap | Funil+Counters ── */}
+      {/* ── Layout Bloomberg: Feed dominante (7) + Sidebar (5) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* COL 1 — Live Feed (38% / 5 cols) */}
-        <div className="lg:col-span-5 rounded-xl bg-card border border-border/20 flex flex-col overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border/20 bg-muted/20">
-            <div className="flex items-center gap-2.5">
+        {/* ═══ FEED PRINCIPAL (7/12) ═══ */}
+        <section className="lg:col-span-7 rounded-xl bg-[#0d0f1a] border border-white/[0.06] flex flex-col overflow-hidden shadow-[0_1px_0_rgba(255,255,255,0.03)_inset]">
+          {/* Header do feed — refinado, sem barra preta */}
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06] bg-gradient-to-r from-[#14B8A6]/[0.04] via-transparent to-[#D4AF37]/[0.04]">
+            <div className="flex items-center gap-3">
               <div className="relative flex items-center justify-center">
                 <motion.div
-                  className="absolute w-5 h-5 rounded-full bg-emerald-500/20"
-                  animate={{ scale: [1, 1.8, 1], opacity: [0.6, 0, 0.6] }}
+                  className="absolute w-6 h-6 rounded-full bg-emerald-500/20"
+                  animate={{ scale: [1, 1.9, 1], opacity: [0.5, 0, 0.5] }}
                   transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
                 />
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 relative z-10" />
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 relative z-10 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">LIVE</span>
-              <div className="flex items-center bg-muted/60 rounded-lg p-0.5 border border-border/40">
+              <div className="flex flex-col leading-tight">
+                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-400">Live Stream</span>
+                <span className="text-[10px] text-muted-foreground font-mono">
+                  {groupedEvents.length} sinais · {eventsLastHour}/h
+                </span>
+              </div>
+              <div className="ml-1 flex items-center bg-black/40 rounded-md p-0.5 border border-white/[0.06]">
                 <button
                   onClick={() => setFeedView("feed")}
-                  className={`px-2.5 py-0.5 text-[10px] font-semibold rounded-md transition-all ${
+                  className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${
                     feedView === "feed"
-                      ? "bg-accent text-accent-foreground shadow-sm"
+                      ? "bg-gradient-to-r from-[#14B8A6]/30 to-[#D4AF37]/30 text-white shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -334,9 +337,9 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
                 </button>
                 <button
                   onClick={() => setFeedView("journeys")}
-                  className={`px-2.5 py-0.5 text-[10px] font-semibold rounded-md transition-all ${
+                  className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded transition-all ${
                     feedView === "journeys"
-                      ? "bg-accent text-accent-foreground shadow-sm"
+                      ? "bg-gradient-to-r from-[#14B8A6]/30 to-[#D4AF37]/30 text-white shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -344,31 +347,54 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
                 </button>
               </div>
             </div>
-            <span className="text-[10px] font-mono text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full">
-              {groupedEvents.length} sinais
-            </span>
+            <div className="flex items-center gap-3 text-[9px] text-muted-foreground/70 font-mono uppercase tracking-wider">
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400/80" /> Pixel
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-violet-400/80" /> CAPI
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/80" /> Dual
+              </span>
+            </div>
           </div>
 
-          <div className="overflow-y-auto max-h-[640px] min-h-[420px] flex-1">
+          {/* Body do feed — generoso e dominante */}
+          <div className="overflow-y-auto flex-1 max-h-[820px] min-h-[600px] custom-scrollbar">
             {feedView === "journeys" ? (
               <CustomerJourneyFeed events={events} products={products} />
             ) : groupedEvents.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 gap-3">
+              <div className="flex flex-col items-center justify-center py-32 gap-4 px-8">
                 <motion.div
-                  animate={{ opacity: [0.3, 0.7, 0.3] }}
+                  animate={{ scale: [1, 1.05, 1], opacity: [0.4, 0.8, 0.4] }}
                   transition={{ duration: 3, repeat: Infinity }}
+                  className="relative"
                 >
-                  <Radio className="w-8 h-8 text-muted-foreground/50" />
+                  <div className="absolute inset-0 blur-2xl bg-[#14B8A6]/30 rounded-full" />
+                  <Radio className="w-12 h-12 text-[#14B8A6] relative z-10" />
                 </motion.div>
-                <p className="text-sm text-muted-foreground font-medium">
-                  Nina aguardando sinais...
-                </p>
-                <p className="text-[11px] text-muted-foreground/70">
-                  Os eventos aparecerão aqui em tempo real
-                </p>
+                <div className="text-center space-y-1.5">
+                  <p className="text-base font-semibold bg-gradient-to-r from-[#14B8A6] to-[#D4AF37] bg-clip-text text-transparent">
+                    Nina escutando o mercado
+                  </p>
+                  <p className="text-xs text-muted-foreground max-w-sm">
+                    Cada PageView, Checkout e Purchase aparece aqui no instante exato em que acontece.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 mt-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                  <motion.span
+                    className="w-1.5 h-1.5 rounded-full bg-emerald-400"
+                    animate={{ opacity: [1, 0.3, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  />
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-300">
+                    Realtime conectado
+                  </span>
+                </div>
               </div>
             ) : (
-              <AnimatePresence mode="popLayout">
+              <AnimatePresence mode="popLayout" initial={false}>
                 {groupedEvents.map((g) => (
                   <EventFeedCard
                     key={g.event_id}
@@ -380,47 +406,14 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
               </AnimatePresence>
             )}
           </div>
+        </section>
 
-          {feedView === "feed" && (
-            <div className="flex items-center gap-3 px-4 py-2 border-t border-border/20 bg-muted/10 text-[9px] text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-sm bg-cyan-500/60" /> Pixel
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-sm bg-violet-500/60" /> CAPI
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-sm bg-emerald-500/60" /> DUAL
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* COL 2 — Chart + Heatmap (38% / 4 cols) */}
-        <div className="lg:col-span-4 flex flex-col gap-4">
+        {/* ═══ SIDEBAR (5/12) — Pulso + Funil + Heatmap ═══ */}
+        <aside className="lg:col-span-5 flex flex-col gap-4">
           <PulseChart data={chartData} period={period} />
-          <ConversionHeatmap userId={userId} filterProduct={filterProduct} />
-        </div>
-
-        {/* COL 3 — Funil + Contadores (24% / 3 cols) */}
-        <div className="lg:col-span-3 flex flex-col gap-4">
           <LiveFunnel eventCounts={eventCounts} />
-          <div className="relative grid grid-cols-2 gap-2 rounded-xl bg-card/50 border border-border/30 p-3">
-            {ORDERED_EVENT_NAMES.map((name) => {
-              const count = eventCounts[name] || 0;
-              return (
-                <div key={name} className="rounded-lg bg-muted/40 border border-border/20 px-2 py-2">
-                  <div className="flex items-center gap-1 mb-0.5">
-                    <Zap className="w-2.5 h-2.5 text-muted-foreground shrink-0" />
-                    <span className="text-[9px] text-muted-foreground font-medium truncate">{name}</span>
-                  </div>
-                  <span className="text-sm font-bold text-foreground font-mono tabular-nums">{count}</span>
-                </div>
-              );
-            })}
-            <NinaWatermark />
-          </div>
-        </div>
+          <ConversionHeatmap userId={userId} filterProduct={filterProduct} />
+        </aside>
       </div>
 
       {/* ── Nina Footer ── */}
