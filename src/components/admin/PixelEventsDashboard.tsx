@@ -54,8 +54,18 @@ const ORDERED_EVENT_NAMES = [
 
 const NINA_WELCOME_KEY = "nina-tracking-welcome-shown";
 
+const FEED_CACHE_KEY = "nina-tracking-feed-cache";
+const FEED_EXPIRY_MS = 10 * 60 * 1000; // 10 min sem atividade expira (a menos que tenha comprado)
+
 const PixelEventsDashboard = ({ products, userId }: Props) => {
-  const [events, setEvents] = useState<PixelEvent[]>([]);
+  const [events, setEvents] = useState<PixelEvent[]>(() => {
+    // Hidrata do sessionStorage para não perder ao trocar de página
+    try {
+      const cached = sessionStorage.getItem(`${FEED_CACHE_KEY}-${userId || "anon"}`);
+      if (cached) return JSON.parse(cached);
+    } catch {}
+    return [];
+  });
   const [eventCounts, setEventCounts] = useState<Record<string, number>>({});
   const [filterProduct, setFilterProduct] = useState("all");
   const [period, setPeriod] = useState("24h");
