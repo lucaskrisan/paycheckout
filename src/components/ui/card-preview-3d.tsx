@@ -88,7 +88,7 @@ const CardPreview3D = ({
                 className={`cp3d-slot ${(i + 1) % 4 === 0 ? "cp3d-gap" : ""}`}
               >
                 <span className={`cp3d-digit ${s.filled ? "is-filled" : ""}`}>
-                  <span className="cp3d-row">#</span>
+                  <span className="cp3d-row cp3d-row-empty">•</span>
                   <span className="cp3d-row">{s.char}</span>
                 </span>
               </span>
