@@ -133,6 +133,24 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
     loadEvents();
   }, [filterProduct, period, userId]);
 
+  // Persiste o feed em sessionStorage para sobreviver à navegação entre páginas.
+  // Aplica regra: eventos com Purchase no mesmo visitor_id ficam SEMPRE,
+  // os demais expiram após 10 min sem nova atividade.
+  useEffect(() => {
+    if (!userId || events.length === 0) return;
+    try {
+      const now = Date.now();
+      const visitorsWithPurchase = new Set(
+        events.filter((e) => e.event_name === "Purchase").map((e) => e.visitor_id).filter(Boolean),
+      );
+      const filtered = events.filter((e) => {
+        if (visitorsWithPurchase.has(e.visitor_id)) return true; // venda: persiste
+        return now - new Date(e.created_at).getTime() < FEED_EXPIRY_MS; // resto: 10 min
+      });
+      sessionStorage.setItem(`${FEED_CACHE_KEY}-${userId}`, JSON.stringify(filtered.slice(0, 500)));
+    } catch {}
+  }, [events, userId]);
+
   // Welcome toast (uma vez por dia)
   useEffect(() => {
     if (welcomeShownRef.current) return;
