@@ -82,6 +82,7 @@ const ProducerBilling = () => {
   const [showTierPanel, setShowTierPanel] = useState(false);
   const [cardValidating, setCardValidating] = useState(false);
   const [cardForm, setCardForm] = useState({ number: "", name: "", expiryMonth: "", expiryYear: "", cvv: "", cpf: "" });
+  const [cardFocus, setCardFocus] = useState<CardPreviewFocus>(null);
 
   useEffect(() => { if (user?.id) loadData(); }, [user?.id]);
 
