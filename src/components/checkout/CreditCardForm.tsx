@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CreditCard, HelpCircle, Lock } from "lucide-react";
 import CardPreview3D, { type CardPreviewFocus } from "@/components/ui/card-preview-3d";
+import { useBinLookup } from "@/hooks/useBinLookup";
 
 export interface CreditCardData {
   number: string;
@@ -27,6 +28,7 @@ const formatCardNumber = (value: string) => {
 
 const CreditCardForm = ({ data, onChange, totalAmount, isUSD = false }: CreditCardFormProps) => {
   const [focus, setFocus] = useState<CardPreviewFocus>(null);
+  const binResult = useBinLookup(data.number);
   const handleChange = (field: keyof CreditCardData, value: string) => {
     let formatted = value;
     if (field === "number") formatted = formatCardNumber(value);
@@ -79,6 +81,7 @@ const CreditCardForm = ({ data, onChange, totalAmount, isUSD = false }: CreditCa
           year={expiryYear}
           cvv={data.cvv}
           focus={focus}
+          issuerOverride={binResult?.issuer}
         />
       </div>
 
