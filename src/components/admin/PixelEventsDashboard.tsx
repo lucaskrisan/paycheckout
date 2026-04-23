@@ -7,7 +7,7 @@ import { ptBR } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
 import CustomerJourneyFeed from "./CustomerJourneyFeed";
 import NinaTrackingHeader from "./tracking/NinaTrackingHeader";
-import TickerBar from "./tracking/TickerBar";
+// TickerBar removido
 import HeroKPIStrip from "./tracking/HeroKPIStrip";
 import SmartAlertsPanel from "./tracking/SmartAlertsPanel";
 import EventFeedCard from "./tracking/EventFeedCard";
