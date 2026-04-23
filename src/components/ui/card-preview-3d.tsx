@@ -1,6 +1,12 @@
 import { useMemo } from "react";
 import { Icon } from "@iconify/react";
-import { detectCardBrand, BRAND_ICONS, BRAND_LABEL } from "@/lib/cardBrand";
+import {
+  detectCardBrand,
+  detectCardIssuer,
+  getCardTheme,
+  BRAND_ICONS,
+  BRAND_LABEL,
+} from "@/lib/cardBrand";
 
 export type CardPreviewFocus = "number" | "holder" | "expire" | "cvv" | null;
 
@@ -36,6 +42,8 @@ const CardPreview3D = ({
 }: CardPreview3DProps) => {
   const digits = useMemo(() => number.replace(/\D/g, "").slice(0, 16), [number]);
   const brand = useMemo(() => detectCardBrand(digits), [digits]);
+  const issuer = useMemo(() => detectCardIssuer(digits), [digits]);
+  const theme = useMemo(() => getCardTheme(brand, issuer), [brand, issuer]);
   const brandIcon = brand !== "unknown" ? BRAND_ICONS[brand] : null;
   const brandTitle = BRAND_LABEL[brand];
   const slots = useMemo(() => {
@@ -54,7 +62,8 @@ const CardPreview3D = ({
 
   const yy = year ? year.slice(-2) : "";
   const flip = focus === "cvv";
-  const showBrandLabel = Boolean(brandLabel?.trim());
+  const resolvedLabel = brandLabel?.trim() || theme.label || "";
+  const showBrandLabel = Boolean(resolvedLabel);
 
   const highlightClass =
     focus === "number" ? "hl-number"
@@ -70,9 +79,11 @@ const CardPreview3D = ({
         <div className="cp3d-face cp3d-front">
           <div className={`cp3d-highlight ${highlightClass}`} aria-hidden />
           <div className={`cp3d-header ${showBrandLabel ? "" : "is-logo-only"}`}>
-            {showBrandLabel ? <span className="cp3d-brand">{brandLabel}</span> : <span aria-hidden />}
+            {showBrandLabel ? <span className="cp3d-brand">{resolvedLabel}</span> : <span aria-hidden />}
             <span className="cp3d-brand-logo" aria-label={brandTitle || undefined}>
-              {brandIcon ? (
+              {issuer === "nubank" ? (
+                <span className="cp3d-issuer-badge">Nu</span>
+              ) : brandIcon ? (
                 <Icon icon={brandIcon} className="cp3d-brand-icon" />
               ) : (
                 <span className="cp3d-chip" aria-hidden>
