@@ -204,7 +204,19 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
     const hoursBack = period === "1h" ? 1 : period === "6h" ? 6 : period === "24h" ? 24 : 168;
     const buckets = period === "7d" ? 7 : Math.min(hoursBack, 24);
     const now = new Date();
-    const data: { label: string; count: number }[] = [];
+    const data: { label: string; total: number; purchases: number }[] = [];
+    const inBucket = (ds: Date, de: Date) => {
+      let total = 0;
+      let purchases = 0;
+      for (const e of events) {
+        const d = new Date(e.created_at);
+        if (d >= ds && d < de) {
+          total++;
+          if (e.event_name === "Purchase") purchases++;
+        }
+      }
+      return { total, purchases };
+    };
     if (period === "7d") {
       for (let i = buckets - 1; i >= 0; i--) {
         const ds = new Date(now);
@@ -212,25 +224,13 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
         ds.setHours(0, 0, 0, 0);
         const de = new Date(ds);
         de.setDate(de.getDate() + 1);
-        data.push({
-          label: format(ds, "dd/MM", { locale: ptBR }),
-          count: events.filter((e) => {
-            const d = new Date(e.created_at);
-            return d >= ds && d < de;
-          }).length,
-        });
+        data.push({ label: format(ds, "dd/MM", { locale: ptBR }), ...inBucket(ds, de) });
       }
     } else {
       for (let i = buckets - 1; i >= 0; i--) {
         const hs = startOfHour(subHours(now, i));
         const he = startOfHour(subHours(now, i - 1));
-        data.push({
-          label: format(hs, "HH:mm"),
-          count: events.filter((e) => {
-            const d = new Date(e.created_at);
-            return d >= hs && d < he;
-          }).length,
-        });
+        data.push({ label: format(hs, "HH:mm"), ...inBucket(hs, he) });
       }
     }
     return data;
