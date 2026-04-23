@@ -248,6 +248,7 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
           if (!g.sources.includes(e.source)) g.sources.push(e.source);
           g.ids.push(e.id);
           if (e.customer_name && !g.customer_name) g.customer_name = e.customer_name;
+          if (e.event_value != null && g.event_value == null) g.event_value = e.event_value;
         } else {
           map.set(e.event_id, {
             event_id: e.event_id,
@@ -257,6 +258,7 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
             created_at: e.created_at,
             sources: [e.source],
             ids: [e.id],
+            event_value: e.event_value,
           });
         }
       } else {
@@ -268,6 +270,7 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
           created_at: e.created_at,
           sources: [e.source],
           ids: [e.id],
+          event_value: e.event_value,
         });
       }
     });
