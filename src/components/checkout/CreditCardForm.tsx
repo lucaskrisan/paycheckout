@@ -26,6 +26,7 @@ const formatCardNumber = (value: string) => {
 
 
 const CreditCardForm = ({ data, onChange, totalAmount, isUSD = false }: CreditCardFormProps) => {
+  const [focus, setFocus] = useState<CardPreviewFocus>(null);
   const handleChange = (field: keyof CreditCardData, value: string) => {
     let formatted = value;
     if (field === "number") formatted = formatCardNumber(value);
