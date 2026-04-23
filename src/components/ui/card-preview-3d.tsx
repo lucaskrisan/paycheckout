@@ -87,7 +87,10 @@ const CardPreview3D = ({
       <div className={`cp3d-card ${flip ? "is-flipped" : ""}`}>
         {/* FRONT */}
         <div className="cp3d-face cp3d-front">
-          <div className={`cp3d-highlight ${highlightClass}`} aria-hidden />
+          <div
+            className={`cp3d-highlight ${focus === "cvv" ? "hl-hidden" : highlightClass}`}
+            aria-hidden
+          />
           <div className={`cp3d-header ${showBrandLabel ? "" : "is-logo-only"}`}>
             {showBrandLabel ? <span className="cp3d-brand">{resolvedLabel}</span> : <span aria-hidden />}
             <span className="cp3d-brand-logo" aria-label={brandTitle || undefined}>
@@ -133,6 +136,10 @@ const CardPreview3D = ({
 
         {/* BACK */}
         <div className="cp3d-face cp3d-back">
+          <div
+            className={`cp3d-highlight ${focus === "cvv" ? "hl-cvv" : "hl-hidden"}`}
+            aria-hidden
+          />
           <div className="cp3d-magstrip" />
           <div className="cp3d-cvv-area">
             <span className="cp3d-label">CVV</span>
