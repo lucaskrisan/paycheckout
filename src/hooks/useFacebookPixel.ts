@@ -316,12 +316,13 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     const nameParts = normalizedName.split(" ");
     const firstName = nameParts[0] || "";
     const lastName = nameParts.slice(1).join(" ") || "";
+    const phone = normalizedPhone;
 
     // Dynamic country prefix — only force +55 if visitor is BR
     const country = getGeoCountry() || "BR";
-    let formattedPhone = normalizedPhone ? `+${normalizedPhone}` : "";
-    if (country === "BR" && normalizedPhone && !normalizedPhone.startsWith("55")) {
-      formattedPhone = `+55${normalizedPhone}`;
+    let formattedPhone = phone ? `+${phone}` : "";
+    if (country === "BR" && phone && !phone.startsWith("55")) {
+      formattedPhone = `+55${phone}`;
     }
 
     const userData: Record<string, string> = {};
