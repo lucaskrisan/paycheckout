@@ -199,7 +199,7 @@ const CardPreview3D = ({
             0 24px 48px -16px hsl(var(--primary) / 0.35),
             0 2px 0 0 hsl(var(--border)) inset;
           border: 1px solid hsl(var(--border));
-          /* No `contain` here — breaks preserve-3d on Safari iOS */
+          /* No containment here - breaks preserve-3d on Safari iOS */
         }
         .cp3d-back {
           transform: rotateY(180deg) translate3d(0, 0, 0.01px);
