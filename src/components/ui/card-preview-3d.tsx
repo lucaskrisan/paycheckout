@@ -188,7 +188,7 @@ const CardPreview3D = ({
         }
         .cp3d-back {
           transform: rotateY(180deg);
-          padding: 24px 0 0;
+          padding: 24px 0;
         }
 
         /* Glow rings using brand tokens */
