@@ -289,6 +289,39 @@ export type Database = {
         }
         Relationships: []
       }
+      bin_cache: {
+        Row: {
+          bank_name: string | null
+          bin: string
+          brand: string | null
+          country_alpha2: string | null
+          created_at: string
+          raw: Json | null
+          scheme: string | null
+          updated_at: string
+        }
+        Insert: {
+          bank_name?: string | null
+          bin: string
+          brand?: string | null
+          country_alpha2?: string | null
+          created_at?: string
+          raw?: Json | null
+          scheme?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bank_name?: string | null
+          bin?: string
+          brand?: string | null
+          country_alpha2?: string | null
+          created_at?: string
+          raw?: Json | null
+          scheme?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cart_recovery_settings: {
         Row: {
           created_at: string
