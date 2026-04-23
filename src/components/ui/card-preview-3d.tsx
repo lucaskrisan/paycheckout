@@ -73,7 +73,17 @@ const CardPreview3D = ({
     : "hl-hidden";
 
   return (
-    <div className={`cp3d-wrap ${className}`}>
+    <div
+      className={`cp3d-wrap ${className}`}
+      style={{
+        // Tema dinâmico por bandeira/issuer (CSS vars locais)
+        ["--cp3d-bg" as string]: theme.background,
+        ["--cp3d-glow-top" as string]: theme.glowTop,
+        ["--cp3d-glow-bottom" as string]: theme.glowBottom,
+        ["--cp3d-fg" as string]: theme.foreground,
+        ["--cp3d-muted" as string]: theme.muted,
+      }}
+    >
       <div className={`cp3d-card ${flip ? "is-flipped" : ""}`}>
         {/* FRONT */}
         <div className="cp3d-face cp3d-front">
