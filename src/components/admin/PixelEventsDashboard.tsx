@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { useEffect, useState, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Zap, Radio } from "lucide-react";
+import { Radio } from "lucide-react";
 import { format, subHours, startOfHour, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
