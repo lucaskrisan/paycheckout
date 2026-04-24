@@ -33,6 +33,7 @@ export default function PwaInstallBanner({ userId, collapsed }: Props) {
     useState<BeforeInstallPromptEvent | null>(null);
   const [visible, setVisible] = useState(false);
   const [iosOpen, setIosOpen] = useState(false);
+  const [desktopOpen, setDesktopOpen] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
