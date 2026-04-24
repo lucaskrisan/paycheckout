@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { CookieConsent } from "@/components/ui/cookie-consent";
 import { Loader2 } from "lucide-react";
 
 // Eagerly loaded — landing & critical auth paths
@@ -168,6 +169,8 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
+          {/* Global LGPD/GDPR consent banner — covers checkout, member area, admin, and all routes */}
+          <CookieConsent />
           </ErrorBoundary>
         </AuthProvider>
       </BrowserRouter>

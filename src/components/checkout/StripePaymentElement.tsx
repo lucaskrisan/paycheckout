@@ -141,6 +141,9 @@ const StripePaymentElement = forwardRef<StripePaymentElementHandle, StripePaymen
     }, [productId]);
 
     // Elements options for deferred intent (no client_secret needed upfront)
+    // NOTE: paymentMethodCreation "manual" is intentionally NOT set — it disables
+    // Apple Pay / Google Pay native wallets in PaymentElement. Default ("automatic")
+    // preserves wallet support and the standard confirmPayment flow.
     const elementsOptions = useMemo(() => ({
       mode: "payment" as const,
       amount: amountCents,
@@ -153,7 +156,6 @@ const StripePaymentElement = forwardRef<StripePaymentElementHandle, StripePaymen
           fontFamily: "Arial, sans-serif",
         },
       },
-      paymentMethodCreation: "manual" as const,
     }), [amountCents, currency]);
 
     if (loading) {
