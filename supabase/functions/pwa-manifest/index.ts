@@ -5,6 +5,32 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+const DEFAULT_APP_ORIGIN = 'https://app.panttera.com.br';
+
+function resolveAppOrigin(req: Request) {
+  const candidates = [req.headers.get('origin'), req.headers.get('referer')];
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+
+    try {
+      return new URL(candidate).origin;
+    } catch {
+      // ignore invalid header values
+    }
+  }
+
+  return DEFAULT_APP_ORIGIN;
+}
+
+function toAbsoluteUrl(value: string, appOrigin: string) {
+  try {
+    return new URL(value, appOrigin).toString();
+  } catch {
+    return new URL('/', appOrigin).toString();
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -13,6 +39,7 @@ Deno.serve(async (req) => {
   try {
     const url = new URL(req.url);
     const userId = url.searchParams.get('user_id');
+    const appOrigin = resolveAppOrigin(req);
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -36,10 +63,11 @@ Deno.serve(async (req) => {
     const description = settings?.description || 'Plataforma completa de vendas';
     const themeColor = settings?.theme_color || '#10b981';
     const bgColor = settings?.background_color || '#050505';
-    const icon192 = settings?.icon_192_url || '/pwa-192x192.png';
-    const icon512 = settings?.icon_512_url || '/pwa-512x512.png';
+    const icon192 = toAbsoluteUrl(settings?.icon_192_url || '/pwa-192x192.png', appOrigin);
+    const icon512 = toAbsoluteUrl(settings?.icon_512_url || '/pwa-512x512.png', appOrigin);
 
     const manifest = {
+      id: `${appOrigin}/admin`,
       name: appName,
       short_name: shortName,
       description,
@@ -47,8 +75,8 @@ Deno.serve(async (req) => {
       background_color: bgColor,
       display: 'standalone',
       orientation: 'portrait',
-      scope: '/',
-      start_url: '/',
+      scope: `${appOrigin}/`,
+      start_url: `${appOrigin}/admin`,
       icons: [
         {
           src: icon192,
