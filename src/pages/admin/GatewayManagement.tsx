@@ -58,7 +58,7 @@ const GatewayManagement = () => {
   useEffect(() => { loadGateways(); }, []);
 
   const loadGateways = async () => {
-    let query = supabase.from("payment_gateways").select("id, name, provider, active, environment, payment_methods, created_at, updated_at, user_id").order("created_at");
+    let query = supabase.from("payment_gateways").select("id, name, provider, active, environment, payment_methods, config, created_at, updated_at, user_id").order("created_at");
     // Producers only see their own gateways; super admin sees all in the platform section
     if (user?.id) {
       query = query.eq("user_id", user.id);
@@ -69,7 +69,7 @@ const GatewayManagement = () => {
     setGateways(data.map((g: any) => ({
       id: g.id, provider: g.provider, name: g.name, environment: g.environment,
       active: g.active, payment_methods: (g.payment_methods as string[]) || [],
-      config: {},
+      config: (g.config as Record<string, any>) || {},
       user_id: g.user_id,
     })));
     setLoading(false);
