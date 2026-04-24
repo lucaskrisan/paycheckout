@@ -13,6 +13,13 @@ import DashboardStateMap from "@/components/admin/dashboard/DashboardStateMap";
 import DashboardApprovalCard from "@/components/admin/dashboard/DashboardApprovalCard";
 import DashboardWeekdayChart from "@/components/admin/dashboard/DashboardWeekdayChart";
 
+interface CurrencyBreakdown {
+  approved_count: number;
+  approved_amount: number;
+  pending_count: number;
+  pending_amount: number;
+}
+
 interface DashboardMetrics {
   total_bruto: number;
   total_taxas: number;
@@ -37,6 +44,7 @@ interface DashboardMetrics {
   sales_by_state: Record<string, { count: number; revenue: number }>;
   chart_hourly: { hour: number; total: number }[];
   chart_daily: { date: string; total: number }[];
+  by_currency: Record<string, CurrencyBreakdown>;
 }
 
 const emptyMetrics: DashboardMetrics = {
@@ -46,6 +54,7 @@ const emptyMetrics: DashboardMetrics = {
   paid_sales_count: 0, paid_revenue: 0, organic_sales_count: 0, organic_revenue: 0,
   abandoned_total: 0, abandoned_recovered: 0,
   sales_by_state: {}, chart_hourly: [], chart_daily: [],
+  by_currency: {},
 };
 
 const Dashboard = () => {
