@@ -9,8 +9,8 @@ export const ninaToast = (message: string, opts?: { duration?: number }) => {
   toast(
     <div className="flex items-center gap-3">
       <img
-        src={ninaAvatar}
-        alt="Nina"
+        src={pantteraAvatar}
+        alt="Panttera"
         width={32}
         height={32}
         loading="lazy"
@@ -18,7 +18,7 @@ export const ninaToast = (message: string, opts?: { duration?: number }) => {
       />
       <div className="flex flex-col">
         <span className="text-[10px] font-semibold tracking-wider uppercase text-[#D4AF37]">
-          Nina
+          Panttera
         </span>
         <span className="text-sm text-foreground">{message}</span>
       </div>
@@ -32,5 +32,5 @@ export const ninaPurchaseToast = (amount: number, currency = "BRL") => {
     style: "currency",
     currency,
   }).format(amount);
-  ninaToast(`Detectei uma venda 🎉 ${formatted}`, { duration: 6000 });
+  ninaToast(`Nova venda detectada 🎉 ${formatted}`, { duration: 6000 });
 };
