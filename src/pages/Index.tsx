@@ -97,7 +97,7 @@ const Index = () => {
         <CTASection />
       </main>
       <LandingFooter />
-      <CookieConsent />
+      {/* CookieConsent is mounted globally in App.tsx */}
     </div>
   );
 };
