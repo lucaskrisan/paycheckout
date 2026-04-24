@@ -12,6 +12,7 @@ interface Props {
   label: string;
   value: string;
   sub?: string;
+  sub2?: string;
   onClick?: () => void;
   accent?: boolean;
   tooltip?: string;
@@ -19,7 +20,7 @@ interface Props {
   dimmed?: boolean;
 }
 
-const DashboardMetricCard = memo(function DashboardMetricCard({ label, value, sub, onClick, accent, tooltip, dimmed }: Props) {
+const DashboardMetricCard = memo(function DashboardMetricCard({ label, value, sub, sub2, onClick, accent, tooltip, dimmed }: Props) {
   return (
     <Card
       className={`border border-white/[0.06] bg-card/70 backdrop-blur-md shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04),0_2px_12px_-4px_rgba(0,0,0,0.4)] h-full transition-all duration-200 ${onClick ? "cursor-pointer hover:bg-accent/50 hover:border-white/[0.1]" : ""} ${dimmed ? "opacity-50" : ""}`}
@@ -46,6 +47,7 @@ const DashboardMetricCard = memo(function DashboardMetricCard({ label, value, su
           {value}
         </p>
         {sub && <p className="text-[11px] text-muted-foreground/60 mt-1">{sub}</p>}
+        {sub2 && <p className="text-[10px] text-muted-foreground/50 mt-0.5 tabular-nums">{sub2}</p>}
       </CardContent>
     </Card>
   );
