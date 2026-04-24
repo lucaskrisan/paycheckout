@@ -22,7 +22,23 @@ scheduleDynamicImportRecoveryReset();
 
 // Limpeza de Service Workers órfãos e caches antigos do navegador.
 // Não bloqueia o boot — roda em background.
-cleanupStaleBrowserCaches();
+cleanupStaleBrowserCaches().then(() => {
+  // Registra o SW mínimo do PWA (necessário para `beforeinstallprompt`).
+  // Guardado para não rodar em iframe de preview do Lovable (causa stale builds).
+  const isInIframe = (() => {
+    try { return window.self !== window.top; } catch { return true; }
+  })();
+  const isPreviewHost =
+    window.location.hostname.includes("id-preview--") ||
+    window.location.hostname.includes("lovableproject.com") ||
+    window.location.hostname.includes("lovable.app");
+
+  if (!isInIframe && !isPreviewHost && "serviceWorker" in navigator) {
+    navigator.serviceWorker
+      .register("/pwa-sw.js", { scope: "/" })
+      .catch((err) => console.warn("[pwa-sw] register failed:", err));
+  }
+});
 
 window.addEventListener("vite:preloadError", (event) => {
   event.preventDefault();

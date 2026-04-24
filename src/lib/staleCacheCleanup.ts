@@ -17,6 +17,7 @@
 const ALLOWED_SW_PATHS = [
   "/OneSignalSDKWorker.js",
   "/OneSignalSDKUpdaterWorker.js",
+  "/pwa-sw.js",
 ];
 
 const ALLOWED_CACHE_PREFIXES = ["onesignal", "OneSignal"];
