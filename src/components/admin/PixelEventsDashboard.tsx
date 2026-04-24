@@ -7,11 +7,11 @@ import { ptBR } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
 import CustomerJourneyFeed from "./CustomerJourneyFeed";
 import NinaTrackingHeader from "./tracking/NinaTrackingHeader";
-// TickerBar removido
+import TickerBar from "./tracking/TickerBar";
 import HeroKPIStrip from "./tracking/HeroKPIStrip";
 import SmartAlertsPanel from "./tracking/SmartAlertsPanel";
 import EventFeedCard from "./tracking/EventFeedCard";
-import NinaWatermark from "./tracking/NinaWatermark";
+import EventsPerMin from "./tracking/EventsPerMin";
 import LiveFunnel from "./tracking/LiveFunnel";
 import ConversionHeatmap from "./tracking/ConversionHeatmap";
 import PulseChart from "./tracking/PulseChart";
