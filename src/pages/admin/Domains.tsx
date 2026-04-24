@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Globe, Plus, Trash2, CheckCircle, AlertCircle, Loader2,
   RefreshCw, Copy, ExternalLink, ChevronRight, X, Rocket,
-  Settings, ShieldCheck, Activity, Wifi, WifiOff,
+  Settings, ShieldCheck, Activity, Wifi, WifiOff, Apple,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
@@ -68,6 +68,30 @@ const Domains = () => {
   const [checkingStatus, setCheckingStatus] = useState<string | null>(null);
   const [healthChecking, setHealthChecking] = useState<string | null>(null);
   const [healthByDomain, setHealthByDomain] = useState<Record<string, { ok: boolean; status_code: number | null; latency_ms: number | null; diagnosis: string; hint: string | null; checked_at: string }>>({});
+  const [registeringPmd, setRegisteringPmd] = useState<string | null>(null);
+
+  const registerApplePay = async (id: string) => {
+    setRegisteringPmd(id);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke("stripe-register-domain", {
+        body: { domain_id: id },
+        headers: { Authorization: `Bearer ${session.session?.access_token}` },
+      });
+      if (res.error || res.data?.error) {
+        toast.error(res.data?.error || "Erro ao registrar Apple Pay");
+      } else if (res.data?.status === "not_applicable") {
+        toast.info("Stripe não está configurado para esta conta — Apple Pay não se aplica.");
+        loadCustomDomains();
+      } else {
+        toast.success(`Apple Pay: ${res.data?.apple_pay || "registrado"} · Google Pay: ${res.data?.google_pay || "—"}`);
+        loadCustomDomains();
+      }
+    } catch {
+      toast.error("Erro ao registrar Apple Pay");
+    }
+    setRegisteringPmd(null);
+  };
 
   /* ── Tutorial ── */
   const [showTutorial, setShowTutorial] = useState(() => {
