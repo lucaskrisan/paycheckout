@@ -355,8 +355,9 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
               </div>
               <div className="flex flex-col leading-tight">
                 <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-400">Live Stream</span>
-                <span className="text-[10px] text-muted-foreground font-mono">
-                  {groupedEvents.length} sinais · {eventsLastHour}/h
+                <span className="text-[10px] text-muted-foreground font-mono inline-flex items-center gap-1.5">
+                  {groupedEvents.length} sinais ·{" "}
+                  <EventsPerMin timestamps={recentTimestamps} />
                 </span>
               </div>
               <div className="ml-1 flex items-center bg-black/40 rounded-md p-0.5 border border-white/[0.06]">
