@@ -179,4 +179,11 @@ const App = () => (
   </QueryClientProvider>
 );
 
+function GlobalCookieBanner() {
+  const { pathname } = useLocation();
+  // Checkout routes mount their own localized cookie banner — skip the global PT one there.
+  if (pathname.startsWith("/checkout/") && pathname !== "/checkout/sucesso") return null;
+  return <CookieConsent />;
+}
+
 export default App;
