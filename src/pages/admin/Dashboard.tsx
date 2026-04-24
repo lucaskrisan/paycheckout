@@ -16,8 +16,20 @@ import DashboardWeekdayChart from "@/components/admin/dashboard/DashboardWeekday
 interface CurrencyBreakdown {
   approved_count: number;
   approved_amount: number;
+  fees_amount: number;
+  net_amount: number;
   pending_count: number;
   pending_amount: number;
+  refunded_count: number;
+  refunded_amount: number;
+  chargeback_count: number;
+  chargeback_amount: number;
+  ads_count: number;
+  ads_revenue: number;
+  organic_count: number;
+  organic_revenue: number;
+  total_count: number;
+  avg_ticket: number;
 }
 
 interface DashboardMetrics {
