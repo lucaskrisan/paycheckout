@@ -11,8 +11,11 @@ const SOUND_FILES: Record<string, string> = {
 // Web Audio fallback for sounds without MP3 files
 const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
 let audioCtx: AudioContext | null = null;
-function getCtx() {
+
+function getCtx(): AudioContext {
   if (!audioCtx) audioCtx = new AudioContext();
+  // Resume if browser suspended it due to autoplay policy
+  if (audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
 }
 
