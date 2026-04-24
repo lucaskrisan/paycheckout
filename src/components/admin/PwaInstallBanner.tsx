@@ -58,10 +58,12 @@ export default function PwaInstallBanner({ userId, collapsed }: Props) {
   }, [userId]);
 
   const handleInstall = useCallback(async () => {
+    // iOS: não há API de install — mostrar tooltip de atalho
     if (isIOS()) {
       setIosOpen(true);
       return;
     }
+    // Desktop/Android com evento capturado: abre popup nativo do Chrome
     if (deferredPrompt) {
       try {
         await deferredPrompt.prompt();
@@ -73,9 +75,10 @@ export default function PwaInstallBanner({ userId, collapsed }: Props) {
         console.error("[PwaInstallBanner] prompt error:", err);
       }
       setDeferredPrompt(null);
-    } else {
-      setIosOpen(true);
+      return;
     }
+    // Desktop sem evento: instruir via menu do navegador
+    setDesktopOpen(true);
   }, [deferredPrompt]);
 
   if (!visible) return null;
