@@ -74,7 +74,27 @@ const Checkout = () => {
     return { name: params.get("name") || "", email: params.get("email") || "", phone: params.get("phone") || "", cpf: params.get("cpf") || "" };
   }, [location.search]);
 
+  const cartId = useMemo(() => new URLSearchParams(location.search).get("cart_id"), [location.search]);
+
   const [customer, setCustomer] = useState<CustomerData>({ name: prefill.name, email: prefill.email, phone: prefill.phone, cpf: prefill.cpf });
+
+  // Prefill form from abandoned cart recovery link (?cart_id=uuid)
+  useEffect(() => {
+    if (!cartId) return;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase.rpc("get_abandoned_cart_prefill", { p_cart_id: cartId });
+      if (cancelled || error || !data || !Array.isArray(data) || data.length === 0) return;
+      const cart = data[0] as { customer_name: string | null; customer_email: string | null; customer_phone: string | null; customer_cpf: string | null };
+      setCustomer((prev) => ({
+        name: prev.name || cart.customer_name || "",
+        email: prev.email || cart.customer_email || "",
+        phone: prev.phone || cart.customer_phone || "",
+        cpf: prev.cpf || cart.customer_cpf || "",
+      }));
+    })();
+    return () => { cancelled = true; };
+  }, [cartId]);
   const [creditCard, setCreditCard] = useState<CreditCardData>({ number: "", name: "", expiry: "", cvv: "", installments: "1" });
   const stripePaymentRef = useRef<StripePaymentElementHandle>(null);
 
