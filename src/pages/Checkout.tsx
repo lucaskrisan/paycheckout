@@ -101,7 +101,7 @@ const Checkout = () => {
   const t = useMemo(() => getCheckoutTranslations(selectedCountry), [selectedCountry]);
 
   // Local currency conversion for non-USD countries
-  const { formatLocal } = useLocalCurrency(0, selectedCountry);
+  const { formatLocal, localCurrency } = useLocalCurrency(0, selectedCountry);
 
 
   useEffect(() => {
@@ -434,14 +434,7 @@ const Checkout = () => {
 
             <CheckoutBuilderRenderer components={sortedLayout} zone="right" productName={product.name} excludeTypes={["form", "button", "countdown", "facebook"]} />
 
-            <PriceSummary originalPrice={product.price} pixDiscount={pixDiscount} couponDiscount={couponDiscount} bumpTotal={bumpTotal} finalAmount={finalAmount} paymentMethod={paymentMethod} couponCode={coupon?.code} isUSD={isUSD} />
-
-            {/* Local currency hint for international buyers */}
-            {isUSD && formatLocal(finalAmount) && (
-              <div className="text-center text-sm text-[#565959] bg-[#F7FAFA] border border-[#D5D9D9] rounded-lg py-2 px-3">
-                ≈ {formatLocal(finalAmount)} <span className="text-xs opacity-70">({t.yourCountry.toLowerCase()})</span>
-              </div>
-            )}
+            <PriceSummary originalPrice={product.price} pixDiscount={pixDiscount} couponDiscount={couponDiscount} bumpTotal={bumpTotal} finalAmount={finalAmount} paymentMethod={paymentMethod} couponCode={coupon?.code} isUSD={isUSD} formatLocal={isUSD ? formatLocal : undefined} localCurrency={localCurrency} />
 
             <button
               onClick={handleSubmit}
@@ -450,12 +443,23 @@ const Checkout = () => {
               style={{ backgroundColor: isSubmitting ? "#E8D38A" : "#FFD814", border: "1px solid #FCD200", color: "#0F1111", boxShadow: isSubmitting ? "none" : "0 3px 8px rgba(255,216,20,0.35), 0 1px 2px rgba(0,0,0,0.08)" }}
             >
               {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : (
-                <span className="flex items-center justify-center gap-2">
-                  <Lock className="w-4 h-4" />
-                  {isUSD
-                    ? t.payButton(finalAmount.toFixed(2))
-                    : product.is_subscription ? "Assinar agora" : paymentMethod === "pix" ? `Pagar ${finalAmount.toFixed(2).replace(".", ",")} com PIX` : submitLabel || "Finalizar compra"}
-                  <ArrowRight className="w-5 h-5" />
+                <span className="flex flex-col items-center justify-center gap-0.5">
+                  <span className="flex items-center gap-2">
+                    <Lock className="w-4 h-4" />
+                    {isUSD ? (
+                      formatLocal(finalAmount)
+                        ? `Pay ${formatLocal(finalAmount)}`
+                        : t.payButton(finalAmount.toFixed(2))
+                    ) : (
+                      product.is_subscription ? "Assinar agora" : paymentMethod === "pix" ? `Pagar ${finalAmount.toFixed(2).replace(".", ",")} com PIX` : submitLabel || "Finalizar compra"
+                    )}
+                    <ArrowRight className="w-5 h-5" />
+                  </span>
+                  {isUSD && formatLocal(finalAmount) && (
+                    <span className="text-[10px] font-medium opacity-70 normal-case">
+                      charged ${finalAmount.toFixed(2)} USD via Stripe
+                    </span>
+                  )}
                 </span>
               )}
             </button>
