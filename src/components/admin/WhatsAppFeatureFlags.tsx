@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, MessageSquare, ShoppingCart, CreditCard, QrCode, Send, UserPlus, Shield, Users } from "lucide-react";
+import { Loader2, MessageSquare, ShoppingCart, CreditCard, QrCode, Send, UserPlus, Shield, Users, AlertTriangle } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -139,6 +139,28 @@ const WhatsAppFeatureFlags = () => {
         <p className="text-sm text-muted-foreground mb-4">
           Ative ou desative cada automação para o produtor selecionado. As mensagens só serão enviadas se o produtor tiver WhatsApp conectado e um template ativo na categoria correspondente.
         </p>
+
+        {!loading && (() => {
+          const enabledCount = Object.values(flags).filter(Boolean).length;
+          const total = FEATURES.length;
+          if (enabledCount === 0 && selectedTenant) {
+            return (
+              <div className="flex items-start gap-3 p-3 mb-4 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-800 dark:text-amber-300">
+                  Nenhuma automação ativa para este produtor. Ative ao menos uma para começar a enviar mensagens.
+                </p>
+              </div>
+            );
+          }
+          return (
+            <div className="flex items-center gap-2 mb-4 text-xs">
+              <Badge variant="outline" className="border-emerald-300 text-emerald-700 dark:text-emerald-300">
+                {enabledCount} de {total} ativas
+              </Badge>
+            </div>
+          );
+        })()}
 
         {loading ? (
           <div className="flex justify-center py-6">
