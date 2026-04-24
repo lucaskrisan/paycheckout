@@ -91,7 +91,7 @@ const UtmifyIntegration = () => {
     setTesting(false);
   };
 
-  if (loading) return null;
+  // Render immediately — loading only affects background data hydration, not the card visibility
 
   return (
     <IntegrationCard
@@ -126,6 +126,7 @@ const UtmifyIntegration = () => {
       statusEvents={UTMIFY_EVENTS}
       onTestConnection={handleTestConnection}
       testing={testing}
+      loading={loading}
     />
   );
 };

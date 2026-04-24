@@ -93,7 +93,7 @@ const AppSellIntegration = () => {
     setTesting(false);
   };
 
-  if (loading) return null;
+  // Render immediately — loading only affects background data hydration, not the card visibility
 
   return (
     <IntegrationCard
@@ -128,6 +128,7 @@ const AppSellIntegration = () => {
       statusEvents={APPSELL_EVENTS}
       onTestConnection={handleTestConnection}
       testing={testing}
+      loading={loading}
     />
   );
 };
