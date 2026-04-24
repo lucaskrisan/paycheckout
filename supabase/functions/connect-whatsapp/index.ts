@@ -28,27 +28,44 @@ const extractErrorMessage = (payload: any) => {
   return "Erro desconhecido";
 };
 
-const cleanupInstance = async (baseUrl: string, apikey: string, instanceId: string) => {
+const fetchWithTimeout = async (url: string, init: RequestInit = {}, ms = 10_000) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), ms);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
+const deleteInstance = async (baseUrl: string, apikey: string, instanceId: string) => {
   const requests: Array<{ url: string; init: RequestInit }> = [
     { url: `${baseUrl}/instance/logout/${instanceId}`, init: { method: "DELETE", headers: { apikey } } },
     { url: `${baseUrl}/instance/delete/${instanceId}`, init: { method: "DELETE", headers: { apikey } } },
-    { url: `${baseUrl}/instance/delete`, init: { method: "DELETE", headers: { apikey, "Content-Type": "application/json" }, body: JSON.stringify({ instanceName: instanceId }) } },
   ];
-
-  let cleaned = false;
-  for (const request of requests) {
+  for (const r of requests) {
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 10_000);
-      const response = await fetch(request.url, { ...request.init, signal: controller.signal });
-      clearTimeout(timeout);
-      await readResponseBody(response);
-      if (response.ok || response.status === 404) cleaned = true;
+      const res = await fetchWithTimeout(r.url, r.init, 8_000);
+      await readResponseBody(res);
     } catch (error) {
-      console.warn("cleanup instance failed:", error);
+      console.warn(`[connect-whatsapp] cleanup ${r.url} failed:`, error);
     }
   }
-  return cleaned;
+};
+
+const extractQrCode = (payload: any): string | null => {
+  const raw =
+    payload?.qrcode?.base64 ??
+    payload?.qrcode ??
+    payload?.base64 ??
+    payload?.data?.qrcode?.base64 ??
+    payload?.data?.qrcode ??
+    null;
+  return typeof raw === "string" ? raw.replace(/\s/g, "") : null;
+};
+
+const extractState = (payload: any): string | null => {
+  return payload?.instance?.state ?? payload?.state ?? null;
 };
 
 Deno.serve(async (req) => {
@@ -68,7 +85,6 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    // ✅ Use getUser() instead of getClaims()
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user?.id) {
       return json({ error: "Token inválido" }, 401);
@@ -86,29 +102,105 @@ Deno.serve(async (req) => {
 
     const { data: existingSession, error: sessionError } = await serviceClient
       .from("whatsapp_sessions")
-      .select("instance_id")
+      .select("instance_id, status")
       .eq("tenant_id", userId)
       .maybeSingle();
 
     if (sessionError) throw sessionError;
 
-    if (existingSession?.instance_id) {
-      await cleanupInstance(EVOLUTION_API_URL, EVOLUTION_API_KEY, existingSession.instance_id);
+    // 🧹 STEP 1: Cleanup orphan instances on Evolution that belong to nobody
+    // (instances created in past attempts but never persisted in DB)
+    try {
+      const listRes = await fetchWithTimeout(
+        `${EVOLUTION_API_URL}/instance/fetchInstances`,
+        { headers: { apikey: EVOLUTION_API_KEY } },
+        8_000
+      );
+      const listPayload = await readResponseBody(listRes);
+      const instances = Array.isArray(listPayload)
+        ? listPayload
+        : Array.isArray(listPayload?.instances)
+          ? listPayload.instances
+          : [];
+
+      // Find this user's instances by prefix; keep only the one in DB (if any)
+      const myInstances = instances
+        .map((i: any) => i?.name ?? i?.instance?.instanceName)
+        .filter((n: string | undefined): n is string => typeof n === "string" && n.startsWith("pantera_"));
+
+      const dbInstance = existingSession?.instance_id ?? null;
+
+      // Get all DB instance_ids for ALL users so we don't delete other producers' instances
+      const { data: allDbSessions } = await serviceClient
+        .from("whatsapp_sessions")
+        .select("instance_id");
+      const allDbInstanceIds = new Set(
+        (allDbSessions ?? []).map((s) => s.instance_id).filter(Boolean)
+      );
+
+      // Delete only orphans (not in any DB session)
+      for (const inst of myInstances) {
+        if (inst === dbInstance) continue;
+        if (allDbInstanceIds.has(inst)) continue;
+        console.log(`[connect-whatsapp] Cleaning up orphan instance: ${inst}`);
+        await deleteInstance(EVOLUTION_API_URL, EVOLUTION_API_KEY, inst);
+      }
+    } catch (err) {
+      console.warn("[connect-whatsapp] Orphan cleanup failed (non-blocking):", err);
     }
 
+    // 🔄 STEP 2: If existing session has an instance, try to fetch a FRESH QR for it
+    // (avoids creating endless new instances when QR expires)
+    if (existingSession?.instance_id) {
+      try {
+        const stateRes = await fetchWithTimeout(
+          `${EVOLUTION_API_URL}/instance/connectionState/${existingSession.instance_id}`,
+          { headers: { apikey: EVOLUTION_API_KEY } },
+          8_000
+        );
+        const stateData = await readResponseBody(stateRes);
+        const state = extractState(stateData);
+
+        // If instance still exists and is not yet open, reuse it with fresh QR
+        if (stateRes.ok && state && state !== "open") {
+          const connectRes = await fetchWithTimeout(
+            `${EVOLUTION_API_URL}/instance/connect/${existingSession.instance_id}`,
+            { headers: { apikey: EVOLUTION_API_KEY } },
+            10_000
+          );
+          const connectData = await readResponseBody(connectRes);
+          const freshQr = extractQrCode(connectData);
+
+          if (connectRes.ok && freshQr) {
+            console.log(`[connect-whatsapp] Reusing instance ${existingSession.instance_id} with fresh QR`);
+            return json({ qrcode: freshQr, instance_id: existingSession.instance_id, reused: true });
+          }
+        }
+
+        // If instance is already open, no need to create a new one
+        if (state === "open") {
+          return json({ error: "WhatsApp já está conectado", state: "open", instance_id: existingSession.instance_id }, 409);
+        }
+      } catch (err) {
+        console.warn("[connect-whatsapp] Reuse attempt failed, will create new instance:", err);
+      }
+
+      // Reuse failed → delete the stale instance before creating new
+      await deleteInstance(EVOLUTION_API_URL, EVOLUTION_API_KEY, existingSession.instance_id);
+    }
+
+    // 🆕 STEP 3: Create brand new instance
     const instanceId = `pantera_${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`;
 
-    // Create instance with 10s timeout
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10_000);
-
-    const evoRes = await fetch(`${EVOLUTION_API_URL}/instance/create`, {
-      method: "POST",
-      headers: { apikey: EVOLUTION_API_KEY, "Content-Type": "application/json" },
-      body: JSON.stringify({ instanceName: instanceId, qrcode: true, integration: "WHATSAPP-BAILEYS" }),
-      signal: controller.signal,
-    });
-    clearTimeout(timeout);
+    const evoRes = await fetchWithTimeout(
+      `${EVOLUTION_API_URL}/instance/create`,
+      {
+        method: "POST",
+        headers: { apikey: EVOLUTION_API_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ instanceName: instanceId, qrcode: true, integration: "WHATSAPP-BAILEYS" }),
+      },
+      10_000
+    );
 
     const evoData = await readResponseBody(evoRes);
 
@@ -120,8 +212,7 @@ Deno.serve(async (req) => {
       return json({ error: "Falha ao criar instância", details: extractErrorMessage(evoData) }, 500);
     }
 
-    const rawQr = evoData?.qrcode?.base64 ?? evoData?.qrcode ?? evoData?.base64 ?? evoData?.data?.qrcode?.base64 ?? evoData?.data?.qrcode ?? null;
-    const qrcode = typeof rawQr === "string" ? rawQr.replace(/\s/g, "") : null;
+    const qrcode = extractQrCode(evoData);
 
     if (!qrcode) {
       console.error("Evolution API returned no QR code:", evoData);
@@ -131,20 +222,20 @@ Deno.serve(async (req) => {
     // ✅ Auto-register webhook URL on Evolution API
     const webhookUrl = `${SUPABASE_URL}/functions/v1/whatsapp-webhook`;
     try {
-      const whController = new AbortController();
-      const whTimeout = setTimeout(() => whController.abort(), 10_000);
-      await fetch(`${EVOLUTION_API_URL}/webhook/set/${instanceId}`, {
-        method: "POST",
-        headers: { apikey: EVOLUTION_API_KEY, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: webhookUrl,
-          webhook_by_events: false,
-          webhook_base64: false,
-          events: ["CONNECTION_UPDATE", "MESSAGES_UPSERT", "MESSAGES_UPDATE"],
-        }),
-        signal: whController.signal,
-      });
-      clearTimeout(whTimeout);
+      await fetchWithTimeout(
+        `${EVOLUTION_API_URL}/webhook/set/${instanceId}`,
+        {
+          method: "POST",
+          headers: { apikey: EVOLUTION_API_KEY, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            url: webhookUrl,
+            webhook_by_events: false,
+            webhook_base64: false,
+            events: ["CONNECTION_UPDATE", "MESSAGES_UPSERT", "MESSAGES_UPDATE"],
+          }),
+        },
+        10_000
+      );
       console.log(`[connect-whatsapp] Webhook auto-registered: ${webhookUrl}`);
     } catch (whErr) {
       console.warn("[connect-whatsapp] Webhook registration failed (non-blocking):", whErr);
