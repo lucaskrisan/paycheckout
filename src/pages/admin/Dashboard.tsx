@@ -12,6 +12,7 @@ import DashboardMetricCard from "@/components/admin/dashboard/DashboardMetricCar
 import DashboardStateMap from "@/components/admin/dashboard/DashboardStateMap";
 import DashboardApprovalCard from "@/components/admin/dashboard/DashboardApprovalCard";
 import DashboardWeekdayChart from "@/components/admin/dashboard/DashboardWeekdayChart";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface CurrencyBreakdown {
   approved_count: number;
@@ -75,6 +76,7 @@ const Dashboard = () => {
   const [metrics, setMetrics] = useState<DashboardMetrics>(emptyMetrics);
   const [period, setPeriod] = useState<Period>("today");
   const [refreshing, setRefreshing] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("all");
   const [currency, setCurrency] = useState<Currency>("ALL");
@@ -203,6 +205,7 @@ const Dashboard = () => {
       console.error("[dashboard] loadData error:", error);
     } finally {
       if (isRefresh) setRefreshing(false);
+      setInitialLoading(false);
     }
   }, [fetchMetrics, fetchProducts, fetchWeekdayOrders, fetchChartOverride, user]);
 
