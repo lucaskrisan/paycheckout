@@ -101,7 +101,7 @@ const Checkout = () => {
   const t = useMemo(() => getCheckoutTranslations(selectedCountry), [selectedCountry]);
 
   // Local currency conversion for non-USD countries
-  const { formatLocal, localCurrency } = useLocalCurrency(0, selectedCountry);
+  const { formatLocal } = useLocalCurrency(0, selectedCountry);
 
 
   useEffect(() => {
@@ -434,7 +434,7 @@ const Checkout = () => {
 
             <CheckoutBuilderRenderer components={sortedLayout} zone="right" productName={product.name} excludeTypes={["form", "button", "countdown", "facebook"]} />
 
-            <PriceSummary originalPrice={product.price} pixDiscount={pixDiscount} couponDiscount={couponDiscount} bumpTotal={bumpTotal} finalAmount={finalAmount} paymentMethod={paymentMethod} couponCode={coupon?.code} isUSD={isUSD} formatLocal={isUSD ? formatLocal : undefined} localCurrency={localCurrency} />
+            <PriceSummary originalPrice={product.price} pixDiscount={pixDiscount} couponDiscount={couponDiscount} bumpTotal={bumpTotal} finalAmount={finalAmount} paymentMethod={paymentMethod} couponCode={coupon?.code} isUSD={isUSD} formatLocal={isUSD ? formatLocal : undefined} />
 
             <button
               onClick={handleSubmit}

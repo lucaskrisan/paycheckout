@@ -25,7 +25,6 @@ const PriceSummary = ({
   couponCode,
   isUSD = false,
   formatLocal,
-  localCurrency,
 }: PriceSummaryProps) => {
   const fmt = (v: number) =>
     isUSD ? `$ ${v.toFixed(2)}` : `R$ ${v.toFixed(2).replace(".", ",")}`;
