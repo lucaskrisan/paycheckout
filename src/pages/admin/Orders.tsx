@@ -927,7 +927,8 @@ const Orders = () => {
                       <DetailRow label="Cupom" value="Aplicado ✅" />
                     )}
                   </div>
-                )}
+                  );
+                })()}
               </div>
             );
           })()}
