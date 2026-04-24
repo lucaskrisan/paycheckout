@@ -78,6 +78,11 @@ const Dashboard = () => {
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("all");
   const [currency, setCurrency] = useState<Currency>("ALL");
+  /** When currency=ALL, the chart still needs ONE currency to display.
+   *  Defaults to dominant currency, user can toggle. */
+  const [chartCurrency, setChartCurrency] = useState<"BRL" | "USD">("BRL");
+  /** Holds chart data for the chartCurrency when in ALL mode (separate fetch). */
+  const [chartOverride, setChartOverride] = useState<{ chart_hourly: any[]; chart_daily: any[] } | null>(null);
 
   // For DashboardWeekdayChart we still need raw orders for weekday grouping
   const [weekdayOrders, setWeekdayOrders] = useState<any[]>([]);
@@ -135,6 +140,31 @@ const Dashboard = () => {
     setMetrics(data || emptyMetrics);
   }, [user, period, selectedProductId, isSuperAdmin, getDateRange, currency]);
 
+  /** When in ALL mode, fetch a chart-only snapshot for the chosen chartCurrency
+   *  so the area chart never mixes currencies on the same axis. */
+  const fetchChartOverride = useCallback(async () => {
+    if (currency !== "ALL" || !user) {
+      setChartOverride(null);
+      return;
+    }
+    const { from, to } = getDateRange(period);
+    const productId = selectedProductId === "all" ? null : selectedProductId;
+    const { data, error } = await supabase.rpc("get_dashboard_metrics", {
+      p_user_id: user.id,
+      p_date_from: from,
+      p_date_to: to,
+      p_product_id: productId,
+      p_is_super_admin: isSuperAdmin,
+      p_currency: chartCurrency,
+    });
+    if (!error && data) {
+      setChartOverride({
+        chart_hourly: data.chart_hourly || [],
+        chart_daily: data.chart_daily || [],
+      });
+    }
+  }, [user, period, selectedProductId, isSuperAdmin, getDateRange, currency, chartCurrency]);
+
   const fetchProducts = useCallback(async () => {
     if (!user) return;
     const { data } = await supabase.from("products").select("id, name").eq("user_id", user.id);
@@ -164,13 +194,13 @@ const Dashboard = () => {
     if (!user) return;
     if (isRefresh) setRefreshing(true);
     try {
-      await Promise.all([fetchMetrics(), fetchProducts(), fetchWeekdayOrders()]);
+      await Promise.all([fetchMetrics(), fetchProducts(), fetchWeekdayOrders(), fetchChartOverride()]);
     } catch (error) {
       console.error("[dashboard] loadData error:", error);
     } finally {
       if (isRefresh) setRefreshing(false);
     }
-  }, [fetchMetrics, fetchProducts, fetchWeekdayOrders, user]);
+  }, [fetchMetrics, fetchProducts, fetchWeekdayOrders, fetchChartOverride, user]);
 
   // Reconcile on mount — depends only on user so timers are not recreated on period changes
   useEffect(() => {
@@ -218,20 +248,23 @@ const Dashboard = () => {
   const isHourly = period === "today" || period === "yesterday";
 
   const chartData = useMemo(() => {
+    // In ALL mode, use the override fetch (already filtered by chartCurrency)
+    // so the chart shows ONLY one currency at a time — never mixed.
+    const source = currency === "ALL" && chartOverride ? chartOverride : m;
     if (isHourly) {
-      return (m.chart_hourly || []).map((h) => ({
+      return (source.chart_hourly || []).map((h: any) => ({
         name: `${String(h.hour).padStart(2, "0")}:00`,
         total: Number(h.total),
       }));
     }
-    return (m.chart_daily || []).map((d) => {
+    return (source.chart_daily || []).map((d: any) => {
       const dt = new Date(d.date);
       return {
         name: dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
         total: Number(d.total),
       };
     });
-  }, [m.chart_hourly, m.chart_daily, isHourly]);
+  }, [m.chart_hourly, m.chart_daily, isHourly, currency, chartOverride]);
 
   const salesByState = m.sales_by_state || {};
 
@@ -253,21 +286,73 @@ const Dashboard = () => {
   const hasMultipleCurrencies = !!(brl?.approved_count && usd?.approved_count);
   const showAllMode = currency === "ALL" && hasMultipleCurrencies;
 
+  // Detect dominant currency (heuristic: USD volume *5 vs BRL volume).
+  // Used both for the chart default and to choose which currency is the "main" KPI.
+  const dominantCurrency: "BRL" | "USD" = useMemo(() => {
+    if (!hasMultipleCurrencies || !brl || !usd) return "BRL";
+    const brlVol = Number(brl.approved_amount || 0);
+    const usdVolEquivalent = Number(usd.approved_amount || 0) * 5;
+    return usdVolEquivalent > brlVol ? "USD" : "BRL";
+  }, [hasMultipleCurrencies, brl?.approved_amount, usd?.approved_amount]);
+
+  const secondaryCurrency: "BRL" | "USD" = dominantCurrency === "BRL" ? "USD" : "BRL";
+  const primaryBreakdown = dominantCurrency === "BRL" ? brl : usd;
+  const secondaryBreakdown = dominantCurrency === "BRL" ? usd : brl;
+
   // Helper: returns a discreet secondary line in the OTHER currency when in "ALL" mode.
-  // `field` is the key inside CurrencyBreakdown to read.
+  // Adds a leading colored dot (•) so users notice cross-currency activity at a glance.
   const subFor = useCallback(
     (field: keyof CurrencyBreakdown, prefix?: string) => {
-      if (!showAllMode || !usd) return undefined;
-      const val = Number(usd[field] || 0);
+      if (!showAllMode || !secondaryBreakdown) return undefined;
+      const val = Number(secondaryBreakdown[field] || 0);
       if (!val) return undefined;
-      const formatted = new Intl.NumberFormat("en-US", {
+      const locale = secondaryCurrency === "USD" ? "en-US" : "pt-BR";
+      const formatted = new Intl.NumberFormat(locale, {
         style: "currency",
-        currency: "USD",
+        currency: secondaryCurrency,
       }).format(val);
-      return prefix ? `${prefix} ${formatted}` : `+ ${formatted} USD`;
+      return prefix ? `• ${prefix} ${formatted}` : `• + ${formatted}`;
     },
-    [showAllMode, usd]
+    [showAllMode, secondaryBreakdown, secondaryCurrency]
   );
+
+  // Get primary KPI value: in ALL mode use the dominant-currency breakdown
+  // so cards never mix currencies; in single-currency mode falls back to total.
+  const pri = useCallback(
+    (field: keyof CurrencyBreakdown, fallback: number) => {
+      if (showAllMode && primaryBreakdown) return Number(primaryBreakdown[field] || 0);
+      return fallback;
+    },
+    [showAllMode, primaryBreakdown]
+  );
+
+  // Format using the dominant currency in ALL mode, otherwise the selected one.
+  const fmtPrimary = useCallback(
+    (v: number) => {
+      const c: "BRL" | "USD" = showAllMode ? dominantCurrency : (currency === "ALL" ? "BRL" : (currency as "BRL" | "USD"));
+      const locale = c === "USD" ? "en-US" : "pt-BR";
+      return new Intl.NumberFormat(locale, { style: "currency", currency: c }).format(v || 0);
+    },
+    [currency, showAllMode, dominantCurrency]
+  );
+
+  // Auto-pick chartCurrency to match dominant currency (user can still override).
+  useEffect(() => {
+    if (!showAllMode) return;
+    setChartCurrency((prev) => (prev === dominantCurrency ? prev : dominantCurrency));
+  }, [showAllMode, dominantCurrency]);
+
+  // Dedicated formatter for the chart — respects the chartCurrency in ALL mode
+  // and the global currency otherwise.
+  const chartFmt = useCallback(
+    (v: number) => {
+      const c: "BRL" | "USD" = currency === "ALL" ? chartCurrency : (currency as "BRL" | "USD");
+      const locale = c === "USD" ? "en-US" : "pt-BR";
+      return new Intl.NumberFormat(locale, { style: "currency", currency: c }).format(v || 0);
+    },
+    [currency, chartCurrency]
+  );
+  const chartPrefix = (currency === "ALL" ? chartCurrency : currency) === "USD" ? "$" : "R$";
 
   return (
     <div className="space-y-3">
@@ -286,39 +371,44 @@ const Dashboard = () => {
 
       <GatewayAlerts />
 
-      {/* ROW 1 — Hero revenue + compact stats */}
+      {/* ROW 1 — Hero revenue + compact stats.
+          In ALL mode, primary KPIs reflect the dominant currency (no money math mixing). */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <DashboardHeroCard
           label="Receita Líquida"
-          value={totalLiquido}
-          fmt={fmt}
+          value={pri("net_amount", totalLiquido)}
+          fmt={fmtPrimary}
           variant="revenue"
-          sublabel={m.total_taxas > 0 ? `Bruto ${fmt(m.total_bruto)}` : undefined}
+          sublabel={
+            (showAllMode ? Number(primaryBreakdown?.fees_amount || 0) : m.total_taxas) > 0
+              ? `Bruto ${fmtPrimary(pri("approved_amount", m.total_bruto))}`
+              : undefined
+          }
           sublabel2={subFor("net_amount")}
           tooltip="Receita aprovada menos taxas da plataforma"
         />
         <DashboardMetricCard
           label="Vendas Aprovadas"
-          value={String(m.count_approved)}
+          value={String(showAllMode ? (primaryBreakdown?.approved_count || 0) + (secondaryBreakdown?.approved_count || 0) : m.count_approved)}
           sub={m.count_total > 0 ? `${((m.count_approved / m.count_total) * 100).toFixed(0)}% aprovação` : undefined}
-          sub2={showAllMode && usd?.approved_count ? `+ ${usd.approved_count} em USD` : undefined}
+          sub2={showAllMode && secondaryBreakdown?.approved_count
+            ? `• ${primaryBreakdown?.approved_count || 0} ${dominantCurrency} · ${secondaryBreakdown.approved_count} ${secondaryCurrency}`
+            : undefined}
           accent
-          tooltip="Total de vendas com pagamento confirmado"
+          tooltip="Total de vendas com pagamento confirmado (todas as moedas)"
         />
         <DashboardMetricCard
           label="Vendas Pendentes"
-          value={fmt(m.total_pendente)}
+          value={fmtPrimary(pri("pending_amount", m.total_pendente))}
           sub={`${m.count_pending} pedidos`}
           sub2={subFor("pending_amount")}
           tooltip="Pedidos aguardando confirmação de pagamento"
         />
         <DashboardMetricCard
           label="Ticket Médio"
-          value={fmt(avgTicket)}
+          value={fmtPrimary(pri("avg_ticket", avgTicket))}
           sub="Valor médio por venda"
-          sub2={showAllMode && usd?.avg_ticket
-            ? `USD ${new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(usd.avg_ticket))}`
-            : undefined}
+          sub2={subFor("avg_ticket")}
           tooltip="Valor médio por venda aprovada"
         />
       </div>
@@ -326,45 +416,54 @@ const Dashboard = () => {
       {/* ROW 2 — Chart + metrics */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
         <div className="lg:col-span-7">
-          <DashboardChart data={chartData} fmt={fmt} title={isHourly ? "Vendas" : "Receita Diária"} subtitle={isHourly ? "Receita no período selecionado" : undefined} />
+          <DashboardChart
+            data={chartData}
+            fmt={chartFmt}
+            currencyPrefix={chartPrefix}
+            title={isHourly ? "Vendas" : "Receita Diária"}
+            subtitle={isHourly ? "Receita no período selecionado" : undefined}
+            currencyToggle={showAllMode ? { value: chartCurrency, onChange: setChartCurrency } : undefined}
+          />
         </div>
         <div className="lg:col-span-5 grid grid-cols-2 gap-3">
           <DashboardMetricCard
             label="Total de Pedidos"
             value={String(m.count_total)}
             sub={`${m.count_approved} aprovados · ${m.count_pending} pendentes`}
-            sub2={showAllMode && usd?.total_count ? `+ ${usd.total_count} em USD` : undefined}
-            tooltip="Número total de pedidos no período selecionado"
+            sub2={showAllMode && secondaryBreakdown?.total_count
+              ? `• ${primaryBreakdown?.total_count || 0} ${dominantCurrency} · ${secondaryBreakdown.total_count} ${secondaryCurrency}`
+              : undefined}
+            tooltip="Número total de pedidos no período (todas as moedas)"
           />
           <DashboardMetricCard
             label="Vendas via Ads"
             value={String(m.paid_sales_count)}
-            sub={fmt(m.paid_revenue)}
+            sub={fmtPrimary(pri("ads_revenue", m.paid_revenue))}
             sub2={subFor("ads_revenue")}
             tooltip="Vendas com UTM identificado (tráfego pago)"
           />
           <DashboardMetricCard
             label="Vendas Orgânicas"
             value={String(m.organic_sales_count)}
-            sub={fmt(m.organic_revenue)}
+            sub={fmtPrimary(pri("organic_revenue", m.organic_revenue))}
             sub2={subFor("organic_revenue")}
             tooltip="Vendas sem UTM (tráfego orgânico/direto)"
           />
           <DashboardMetricCard
             label="Reembolsos"
-            value={fmt(m.total_refunded)}
+            value={fmtPrimary(pri("refunded_amount", m.total_refunded))}
             sub={`${m.count_refunded} pedidos`}
             sub2={subFor("refunded_amount")}
             tooltip="Valor total de reembolsos processados"
-            dimmed={m.total_refunded === 0 && !(showAllMode && usd?.refunded_amount)}
+            dimmed={m.total_refunded === 0 && !(showAllMode && secondaryBreakdown?.refunded_amount)}
           />
           <DashboardMetricCard
             label="Chargeback"
-            value={fmt(m.total_chargeback)}
+            value={fmtPrimary(pri("chargeback_amount", m.total_chargeback))}
             sub={`${m.count_chargedback} pedidos`}
             sub2={subFor("chargeback_amount")}
             tooltip="Valor total de chargebacks"
-            dimmed={m.total_chargeback === 0 && !(showAllMode && usd?.chargeback_amount)}
+            dimmed={m.total_chargeback === 0 && !(showAllMode && secondaryBreakdown?.chargeback_amount)}
           />
         </div>
       </div>

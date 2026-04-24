@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 interface Props {
-  totalRevenue: number;
+  paidCount: number;
   isDark: boolean;
   toggleTheme: () => void;
   user: any;
@@ -20,7 +20,7 @@ interface Props {
   isVerified?: boolean;
 }
 
-const AdminHeader = memo(function AdminHeader({ totalRevenue, isDark, toggleTheme, user, signOut, isVerified }: Props) {
+const AdminHeader = memo(function AdminHeader({ paidCount, isDark, toggleTheme, user, signOut, isVerified }: Props) {
   const navigate = useNavigate();
 
   const handleSignOut = useCallback(async () => {
@@ -31,7 +31,7 @@ const AdminHeader = memo(function AdminHeader({ totalRevenue, isDark, toggleThem
   return (
     <>
       <div className="h-11 bg-primary flex items-center justify-between px-4 gap-3">
-        <HeaderGamification totalRevenue={totalRevenue} />
+        <HeaderGamification paidCount={paidCount} />
         <div className="flex items-center gap-2">
           <button
             onClick={toggleTheme}
