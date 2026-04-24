@@ -10,15 +10,10 @@ const salesMilestones = [
   { threshold: 10, label: "10" },
   { threshold: 50, label: "50" },
   { threshold: 100, label: "100" },
-  { threshold: 250, label: "250" },
   { threshold: 500, label: "500" },
   { threshold: 1000, label: "1K" },
-  { threshold: 2500, label: "2,5K" },
   { threshold: 5000, label: "5K" },
   { threshold: 10000, label: "10K" },
-  { threshold: 25000, label: "25K" },
-  { threshold: 50000, label: "50K" },
-  { threshold: 100000, label: "100K" },
 ];
 
 function formatCount(v: number) {
