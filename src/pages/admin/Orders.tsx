@@ -342,7 +342,8 @@ const Orders = () => {
     const header = "Data,Produto,Cliente,Email,Status,Método,Valor,Order Bumps,UTM Source\n";
     const csv = all.map(o => {
       const bumpNames = getBumpIds(o).map(id => productMap[id] || id.slice(0, 8)).join("; ");
-      return `"${format(new Date(o.created_at), "dd/MM/yyyy HH:mm")}","${o.products?.name || ""}","${o.customers?.name || ""}","${o.customers?.email || ""}","${getStatus(o.status).label}","${PAYMENT_LABEL[o.payment_method] || o.payment_method}","${Number(o.amount).toFixed(2)}","${bumpNames}","${o.metadata?.utm_source || ""}"`;
+      const cur = (o.products?.currency || "BRL").toUpperCase();
+      return `"${format(new Date(o.created_at), "dd/MM/yyyy HH:mm")}","${o.products?.name || ""}","${o.customers?.name || ""}","${o.customers?.email || ""}","${getStatus(o.status).label}","${PAYMENT_LABEL[o.payment_method] || o.payment_method}","${cur}","${Number(o.amount).toFixed(2)}","${bumpNames}","${o.metadata?.utm_source || ""}"`;
     }).join("\n");
     const blob = new Blob([header + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
