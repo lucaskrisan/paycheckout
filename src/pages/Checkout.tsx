@@ -331,7 +331,22 @@ const Checkout = () => {
         if (!data?.client_secret) throw new Error("Failed to initialize payment.");
 
         // 2) Confirm payment client-side via PaymentElement (handles 3DS, Apple Pay, etc.)
-        const result = await stripePaymentRef.current.confirmPayment(data.client_secret);
+        let result;
+        try {
+          result = await stripePaymentRef.current.confirmPayment(data.client_secret);
+        } catch (confirmErr: any) {
+          // Mark the pre-created order as failed so the producer doesn't see it stuck on "pending"
+          if (data?.order_id) {
+            supabase.functions.invoke("mark-stripe-order-failed", {
+              body: {
+                order_id: data.order_id,
+                payment_intent_id: data.payment_intent_id,
+                reason: confirmErr?.message || "card_declined",
+              },
+            }).catch(() => {});
+          }
+          throw confirmErr;
+        }
 
         // 3) Payment succeeded
         const paymentId = result.paymentIntentId || data?.payment_intent_id;

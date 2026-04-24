@@ -25,8 +25,18 @@ interface Order {
   metadata: any;
   platform_fee_amount?: number;
   customers: { name: string; email: string; phone?: string; cpf?: string } | null;
-  products: { name: string } | null;
+  products: { name: string; currency?: string } | null;
 }
+
+/** Format an amount in the product's currency. Defaults to BRL. */
+const formatMoney = (amount: number | string | null | undefined, currency?: string | null) => {
+  const value = Number(amount ?? 0);
+  const cur = (currency || "BRL").toUpperCase();
+  if (cur === "USD") {
+    return `$ ${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  return `R$ ${value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
 
 const ITEMS_PER_PAGE = 20;
 
@@ -88,6 +98,7 @@ const SALE_TYPE_OPTIONS = [
 const CURRENCY_OPTIONS = [
   { value: "all", label: "Todas" },
   { value: "BRL", label: "BRL" },
+  { value: "USD", label: "USD" },
 ];
 
 const PAYMENT_LABEL: Record<string, string> = {
@@ -331,7 +342,8 @@ const Orders = () => {
     const header = "Data,Produto,Cliente,Email,Status,Método,Valor,Order Bumps,UTM Source\n";
     const csv = all.map(o => {
       const bumpNames = getBumpIds(o).map(id => productMap[id] || id.slice(0, 8)).join("; ");
-      return `"${format(new Date(o.created_at), "dd/MM/yyyy HH:mm")}","${o.products?.name || ""}","${o.customers?.name || ""}","${o.customers?.email || ""}","${getStatus(o.status).label}","${PAYMENT_LABEL[o.payment_method] || o.payment_method}","${Number(o.amount).toFixed(2)}","${bumpNames}","${o.metadata?.utm_source || ""}"`;
+      const cur = (o.products?.currency || "BRL").toUpperCase();
+      return `"${format(new Date(o.created_at), "dd/MM/yyyy HH:mm")}","${o.products?.name || ""}","${o.customers?.name || ""}","${o.customers?.email || ""}","${getStatus(o.status).label}","${PAYMENT_LABEL[o.payment_method] || o.payment_method}","${cur}","${Number(o.amount).toFixed(2)}","${bumpNames}","${o.metadata?.utm_source || ""}"`;
     }).join("\n");
     const blob = new Blob([header + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -515,7 +527,7 @@ const Orders = () => {
                         )}
                       </td>
                       <td className="py-4 px-5 text-right font-semibold whitespace-nowrap text-sm tabular-nums">
-                        <span className="text-foreground">R$ {Number(order.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                        <span className="text-foreground">{formatMoney(order.amount, order.products?.currency)}</span>
                       </td>
                     </tr>
                   );
@@ -855,7 +867,7 @@ const Orders = () => {
                         </div>
                       </div>
                       <p className="text-sm font-medium text-foreground">{selectedOrder.products?.name || "—"}</p>
-                      <p className="text-xs text-muted-foreground mt-1">R$ {Number(selectedOrder.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{formatMoney(selectedOrder.amount, selectedOrder.products?.currency)}</p>
                     </div>
 
                     {bumpIds.length > 0 && (
@@ -900,21 +912,24 @@ const Orders = () => {
                   </div>
                 )}
 
-                {detailTab === "values" && (
+                {detailTab === "values" && (() => {
+                  const cur = selectedOrder.products?.currency;
+                  return (
                   <div className="space-y-0">
-                    <DetailRow label="Valor bruto" value={`R$ ${Number(selectedOrder.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
-                    <DetailRow label="Taxa plataforma" value={`R$ ${Number(selectedOrder.platform_fee_amount || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
+                    <DetailRow label="Valor bruto" value={formatMoney(selectedOrder.amount, cur)} />
+                    <DetailRow label="Taxa plataforma" value={formatMoney(selectedOrder.platform_fee_amount || 0, cur)} />
                     <div className="flex items-start justify-between py-3 border-b border-primary/20">
                       <span className="text-xs text-primary uppercase tracking-wider font-bold">Valor líquido</span>
                       <span className="text-sm text-primary font-bold">
-                        R$ {(Number(selectedOrder.amount) - Number(selectedOrder.platform_fee_amount || 0)).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                        {formatMoney(Number(selectedOrder.amount) - Number(selectedOrder.platform_fee_amount || 0), cur)}
                       </span>
                     </div>
                     {meta.coupon_id && meta.coupon_id !== "<nil>" && (
                       <DetailRow label="Cupom" value="Aplicado ✅" />
                     )}
                   </div>
-                )}
+                  );
+                })()}
               </div>
             );
           })()}
