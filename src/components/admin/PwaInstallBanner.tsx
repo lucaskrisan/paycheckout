@@ -126,7 +126,15 @@ export default function PwaInstallBanner({ userId, collapsed }: Props) {
         Gerencie suas vendas de qualquer lugar
       </p>
 
-      <Popover open={iosOpen} onOpenChange={setIosOpen}>
+      <Popover
+        open={iosOpen || desktopOpen}
+        onOpenChange={(o) => {
+          if (!o) {
+            setIosOpen(false);
+            setDesktopOpen(false);
+          }
+        }}
+      >
         <PopoverTrigger asChild>
           <Button
             size="sm"
@@ -139,14 +147,30 @@ export default function PwaInstallBanner({ userId, collapsed }: Props) {
           </Button>
         </PopoverTrigger>
         <PopoverContent side="right" align="end" className="w-64 text-xs leading-relaxed">
-          <p className="font-semibold text-foreground mb-2 flex items-center gap-1.5">
-            <Share className="w-3.5 h-3.5 text-primary" />
-            Instalar no iPhone
-          </p>
-          <p className="text-muted-foreground">
-            Toque em <strong className="text-foreground">Compartilhar</strong>{" "}
-            → <strong className="text-foreground">Adicionar à Tela de Início</strong>.
-          </p>
+          {iosOpen ? (
+            <>
+              <p className="font-semibold text-foreground mb-2 flex items-center gap-1.5">
+                <Share className="w-3.5 h-3.5 text-primary" />
+                Instalar no iPhone
+              </p>
+              <p className="text-muted-foreground">
+                Toque em <strong className="text-foreground">Compartilhar</strong>{" "}
+                → <strong className="text-foreground">Adicionar à Tela de Início</strong>.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="font-semibold text-foreground mb-2 flex items-center gap-1.5">
+                <Download className="w-3.5 h-3.5 text-primary" />
+                Instalar no Desktop
+              </p>
+              <p className="text-muted-foreground">
+                No Chrome/Edge, clique no ícone{" "}
+                <strong className="text-foreground">Instalar</strong> na barra de endereço,
+                ou acesse <strong className="text-foreground">Menu → Instalar App</strong>.
+              </p>
+            </>
+          )}
         </PopoverContent>
       </Popover>
     </div>
