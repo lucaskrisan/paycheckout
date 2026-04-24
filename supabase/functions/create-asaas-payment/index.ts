@@ -502,25 +502,34 @@ Deno.serve(async (req) => {
         );
       }
 
-      // After creating subscription, check if the first payment was immediately confirmed
-      // Asaas may charge the card right away when nextDueDate = today
+      // After creating subscription, poll briefly for the first payment status.
+      // Asaas may charge the card immediately when nextDueDate = today, but the
+      // payment record can take a moment to appear. We retry with short backoff
+      // instead of a fixed 2s wait — succeeds faster in the common case and
+      // doesn't mask the webhook as the source of truth for late confirmations.
       let firstPaymentStatus = 'PENDING';
       let firstPaymentId = subData.id;
-      try {
-        // Small delay to allow Asaas to process the first charge
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        const paymentsRes = await fetch(`${baseUrl}/subscriptions/${subData.id}/payments?limit=1`, {
-          headers: { 'access_token': ASAAS_API_KEY },
-        });
-        const paymentsData = await paymentsRes.json();
-        const firstPayment = paymentsData?.data?.[0];
-        if (firstPayment) {
-          firstPaymentId = firstPayment.id;
-          firstPaymentStatus = firstPayment.status;
-          console.log('[create-asaas-payment] First payment:', firstPayment.id, 'status:', firstPayment.status);
+      const pollDelays = [250, 500, 1000]; // ~1.75s worst case
+      for (let attempt = 0; attempt < pollDelays.length; attempt++) {
+        try {
+          await new Promise((resolve) => setTimeout(resolve, pollDelays[attempt]));
+          const paymentsRes = await fetch(`${baseUrl}/subscriptions/${subData.id}/payments?limit=1`, {
+            headers: { 'access_token': ASAAS_API_KEY },
+          });
+          const paymentsData = await paymentsRes.json();
+          const firstPayment = paymentsData?.data?.[0];
+          if (firstPayment) {
+            firstPaymentId = firstPayment.id;
+            firstPaymentStatus = firstPayment.status;
+            console.log(`[create-asaas-payment] First payment (attempt ${attempt + 1}):`, firstPayment.id, 'status:', firstPayment.status);
+            // If already settled or definitively pending, stop polling
+            if (['CONFIRMED', 'RECEIVED', 'OVERDUE', 'REFUNDED'].includes(firstPayment.status)) break;
+            // PENDING after first attempt is fine — webhook will confirm later
+            if (attempt >= 1) break;
+          }
+        } catch (checkErr) {
+          console.error(`[create-asaas-payment] Error checking first payment attempt ${attempt + 1} (non-blocking):`, checkErr);
         }
-      } catch (checkErr) {
-        console.error('[create-asaas-payment] Error checking first payment (non-blocking):', checkErr);
       }
 
       // Map Asaas payment status to internal status
