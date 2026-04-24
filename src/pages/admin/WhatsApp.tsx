@@ -51,8 +51,11 @@ const WhatsApp = () => {
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [testOpen, setTestOpen] = useState(false);
+  const [qrAge, setQrAge] = useState(0);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const statusPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const qrRefreshRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const qrAgeRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Initial load + periodic status check
   useEffect(() => {
@@ -98,15 +101,38 @@ const WhatsApp = () => {
       clearInterval(pollingRef.current);
       pollingRef.current = null;
     }
+    if (qrRefreshRef.current) {
+      clearInterval(qrRefreshRef.current);
+      qrRefreshRef.current = null;
+    }
+    if (qrAgeRef.current) {
+      clearInterval(qrAgeRef.current);
+      qrAgeRef.current = null;
+    }
+    setQrAge(0);
   }, []);
 
   useEffect(() => () => stopPolling(), [stopPolling]);
 
+  const refreshQrCode = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke("connect-whatsapp");
+      if (error) throw error;
+      if (data?.qrcode) {
+        setQrcode(data.qrcode);
+        setQrAge(0);
+      }
+    } catch (err) {
+      console.error("QR refresh error:", err);
+    }
+  }, []);
+
   const startPolling = useCallback(() => {
     stopPolling();
     let attempts = 0;
-    const maxAttempts = 60;
+    const maxAttempts = 80; // ~4 min at 3s
 
+    // Status poll every 3s
     pollingRef.current = setInterval(async () => {
       attempts++;
       if (attempts > maxAttempts) {
@@ -140,7 +166,17 @@ const WhatsApp = () => {
         console.error("Polling error:", err);
       }
     }, 3000);
-  }, [stopPolling]);
+
+    // QR auto-refresh every 30s (Evolution QRs expire ~60s)
+    qrRefreshRef.current = setInterval(() => {
+      refreshQrCode();
+    }, 30_000);
+
+    // QR age counter (UI countdown)
+    qrAgeRef.current = setInterval(() => {
+      setQrAge((a) => a + 1);
+    }, 1000);
+  }, [stopPolling, refreshQrCode]);
 
   const handleConnect = async () => {
     setLoading(true);
@@ -332,9 +368,14 @@ const WhatsApp = () => {
             </div>
           ) : status === "connecting" && qrSrc ? (
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                Escaneie o QR Code no seu WhatsApp...
+              <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  Escaneie o QR Code no seu WhatsApp...
+                </div>
+                <span className="text-xs tabular-nums">
+                  QR renova em {Math.max(0, 30 - qrAge)}s
+                </span>
               </div>
               <div className="flex justify-center p-4 bg-white rounded-xl border max-w-xs mx-auto">
                 <img
@@ -346,6 +387,12 @@ const WhatsApp = () => {
               <p className="text-xs text-center text-muted-foreground">
                 Abra o WhatsApp → Menu (⋮) → Aparelhos conectados → Conectar aparelho
               </p>
+              <div className="flex justify-center">
+                <Button onClick={refreshQrCode} variant="ghost" size="sm" className="gap-2 text-xs">
+                  <RotateCw className="w-3 h-3" />
+                  Gerar novo QR Code agora
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="space-y-4">
