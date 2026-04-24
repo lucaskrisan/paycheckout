@@ -37,6 +37,52 @@ async function sendPushNotification(title: string, message: string, targetUserId
   }
 }
 
+/**
+ * Verify MercadoPago webhook signature.
+ * Format: x-signature header has "ts=<timestamp>,v1=<hash>"
+ *         x-request-id header is required
+ *         manifest = `id:<data.id>;request-id:<x-request-id>;ts:<ts>;`
+ *         hash = HMAC-SHA256(manifest, secret)
+ * Docs: https://www.mercadopago.com.br/developers/en/docs/your-integrations/notifications/webhooks
+ */
+async function verifyMpSignature(
+  signatureHeader: string | null,
+  requestId: string | null,
+  dataId: string | null,
+  secret: string
+): Promise<boolean> {
+  if (!signatureHeader || !requestId || !dataId) return false;
+
+  // Parse "ts=...,v1=..."
+  const parts = signatureHeader.split(',').reduce<Record<string, string>>((acc, part) => {
+    const [k, v] = part.split('=').map((s) => s.trim());
+    if (k && v) acc[k] = v;
+    return acc;
+  }, {});
+  const ts = parts['ts'];
+  const v1 = parts['v1'];
+  if (!ts || !v1) return false;
+
+  const manifest = `id:${dataId};request-id:${requestId};ts:${ts};`;
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const sigBytes = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(manifest));
+  const computed = Array.from(new Uint8Array(sigBytes))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+
+  // Constant-time compare
+  if (computed.length !== v1.length) return false;
+  let diff = 0;
+  for (let i = 0; i < computed.length; i++) diff |= computed.charCodeAt(i) ^ v1.charCodeAt(i);
+  return diff === 0;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -52,6 +98,41 @@ Deno.serve(async (req) => {
     const action = body.action || '';
     const topic = body.topic || '';
     const dataId = body.data?.id || body.id;
+
+    // --- Signature verification ---
+    const MP_WEBHOOK_SECRET = Deno.env.get('MERCADOPAGO_WEBHOOK_SECRET');
+    const sigHeader = req.headers.get('x-signature');
+    const reqIdHeader = req.headers.get('x-request-id');
+
+    if (MP_WEBHOOK_SECRET) {
+      const valid = await verifyMpSignature(sigHeader, reqIdHeader, dataId ? String(dataId) : null, MP_WEBHOOK_SECRET);
+      if (!valid) {
+        console.error('[mp-webhook] BLOCKED: invalid or missing x-signature', {
+          hasSig: !!sigHeader,
+          hasReqId: !!reqIdHeader,
+          hasDataId: !!dataId,
+        });
+        try {
+          const supabaseLog = createClient(
+            Deno.env.get('SUPABASE_URL')!,
+            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+          );
+          await supabaseLog.from('webhook_events').insert({
+            id: `mp_blocked_${Date.now()}`,
+            gateway: 'mercadopago',
+            blocked: true,
+            block_reason: sigHeader ? 'invalid_signature' : 'missing_signature',
+          });
+        } catch {}
+        return new Response(JSON.stringify({ error: 'Invalid signature' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      console.log('[mp-webhook] Signature verified ✅');
+    } else {
+      console.warn('[mp-webhook] No MERCADOPAGO_WEBHOOK_SECRET configured — accepting without verification (configure secret to enable HMAC validation)');
+    }
 
     // Only process payment events
     if (!action.startsWith('payment.') && topic !== 'payment') {
