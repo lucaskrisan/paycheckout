@@ -98,6 +98,7 @@ const SALE_TYPE_OPTIONS = [
 const CURRENCY_OPTIONS = [
   { value: "all", label: "Todas" },
   { value: "BRL", label: "BRL" },
+  { value: "USD", label: "USD" },
 ];
 
 const PAYMENT_LABEL: Record<string, string> = {
