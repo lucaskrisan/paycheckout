@@ -277,7 +277,7 @@ const Products = () => {
           </TableHeader>
           <TableBody>
             {filtered.map((p) => (
-              <TableRow key={p.id} className="hover:bg-muted/30 cursor-pointer" onClick={() => navigate(`/admin/products/${p.id}/edit`)}>
+              <TableRow key={p.id} className="cursor-pointer border-l-2 border-l-transparent hover:bg-muted/50 hover:border-l-primary/40 transition-colors" onClick={() => navigate(`/admin/products/${p.id}/edit`)}>
                 <TableCell className="font-medium text-sm text-foreground">
                   <div className="flex items-center gap-2">
                     {p.name}
@@ -288,7 +288,7 @@ const Products = () => {
                     )}
                   </div>
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">{fmt(p.price, p.currency)}</TableCell>
+                <TableCell className="text-sm text-muted-foreground tabular-nums">{fmt(p.price, p.currency)}</TableCell>
                 <TableCell>
                   {(p as any).moderation_status === "pending_review" ? (
                     <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">

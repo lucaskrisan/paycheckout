@@ -42,7 +42,7 @@ const DashboardMetricCard = memo(function DashboardMetricCard({ label, value, su
             </TooltipProvider>
           )}
         </div>
-        <p className={`text-xl font-bold tracking-tight ${accent ? "text-primary" : "text-foreground"}`}>
+        <p className={`text-xl font-bold tracking-tight tabular-nums ${accent ? "text-primary" : "text-foreground"}`}>
           {value}
         </p>
         {sub && <p className="text-[11px] text-muted-foreground/60 mt-1">{sub}</p>}
