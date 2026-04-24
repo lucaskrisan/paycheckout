@@ -73,6 +73,8 @@ project_id = "vipltojtcrqatwvzobro"
     verify_jwt = false
   [functions.stripe-webhook]
     verify_jwt = false
+  [functions.stripe-register-domain]
+    verify_jwt = false
   [functions.test-push]
     verify_jwt = false
   [functions.verify-turnstile]

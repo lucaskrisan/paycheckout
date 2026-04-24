@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Globe, Plus, Trash2, CheckCircle, AlertCircle, Loader2,
   RefreshCw, Copy, ExternalLink, ChevronRight, X, Rocket,
-  Settings, ShieldCheck, Activity, Wifi, WifiOff,
+  Settings, ShieldCheck, Activity, Wifi, WifiOff, Apple,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
@@ -68,6 +68,30 @@ const Domains = () => {
   const [checkingStatus, setCheckingStatus] = useState<string | null>(null);
   const [healthChecking, setHealthChecking] = useState<string | null>(null);
   const [healthByDomain, setHealthByDomain] = useState<Record<string, { ok: boolean; status_code: number | null; latency_ms: number | null; diagnosis: string; hint: string | null; checked_at: string }>>({});
+  const [registeringPmd, setRegisteringPmd] = useState<string | null>(null);
+
+  const registerApplePay = async (id: string) => {
+    setRegisteringPmd(id);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke("stripe-register-domain", {
+        body: { domain_id: id },
+        headers: { Authorization: `Bearer ${session.session?.access_token}` },
+      });
+      if (res.error || res.data?.error) {
+        toast.error(res.data?.error || "Erro ao registrar Apple Pay");
+      } else if (res.data?.status === "not_applicable") {
+        toast.info("Stripe não está configurado para esta conta — Apple Pay não se aplica.");
+        loadCustomDomains();
+      } else {
+        toast.success(`Apple Pay: ${res.data?.apple_pay || "registrado"} · Google Pay: ${res.data?.google_pay || "—"}`);
+        loadCustomDomains();
+      }
+    } catch {
+      toast.error("Erro ao registrar Apple Pay");
+    }
+    setRegisteringPmd(null);
+  };
 
   /* ── Tutorial ── */
   const [showTutorial, setShowTutorial] = useState(() => {
@@ -415,11 +439,45 @@ const Domains = () => {
                             )}
                           </div>
                           <div className="flex items-center gap-1">
+                            {d.status === "active" && (() => {
+                              const apStatus = d.stripe_apple_pay_status as string | null;
+                              const apMap: Record<string, { label: string; color: string }> = {
+                                active: { label: "Apple Pay ativo", color: "bg-green-500/20 text-green-400 border-green-500/30" },
+                                pending: { label: "Apple Pay pendente", color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
+                                inactive: { label: "Apple Pay inativo", color: "bg-red-500/20 text-red-400 border-red-500/30" },
+                                not_applicable: { label: "Sem Stripe", color: "bg-muted text-muted-foreground border-border" },
+                              };
+                              const info = apStatus ? apMap[apStatus] : apMap.pending;
+                              return (
+                                <Badge variant="outline" className={`text-[10px] gap-1 border ${info.color}`} title="Status do registro de domínio Apple Pay / Google Pay no Stripe">
+                                  <Apple className="w-3 h-3" />
+                                  {info.label}
+                                </Badge>
+                              );
+                            })()}
+                          </div>
+                          <div className="flex items-center gap-1">
                             {d.status === "active" && (
                               <Button variant="ghost" size="icon" asChild className="h-8 w-8">
                                 <a href={`https://${d.hostname}`} target="_blank" rel="noopener noreferrer">
                                   <ExternalLink className="w-4 h-4 text-muted-foreground" />
                                 </a>
+                              </Button>
+                            )}
+                            {d.status === "active" && d.stripe_apple_pay_status !== "not_applicable" && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => registerApplePay(d.id)}
+                                disabled={registeringPmd === d.id}
+                                className="h-8 w-8"
+                                title="Re-validar registro Apple Pay / Google Pay no Stripe"
+                              >
+                                {registeringPmd === d.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                                ) : (
+                                  <Apple className="w-4 h-4 text-muted-foreground" />
+                                )}
                               </Button>
                             )}
                             <Button
