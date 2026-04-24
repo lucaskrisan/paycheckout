@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { subHours } from "date-fns";
 
@@ -9,10 +9,8 @@ interface PurchaseTick {
   customer_name: string | null;
   created_at: string;
   product_id: string;
-  // Reservado para quando event_value chegar via backend (Claude Code).
-  // Por enquanto, sempre indefinido — o componente esconde o campo de valor.
   event_value?: number | null;
-  state?: string | null;
+  customer_country?: string | null;
 }
 
 interface Props {
@@ -20,7 +18,25 @@ interface Props {
   filterProduct: string;
 }
 
-const flagFromCountry = "🇧🇷";
+function flagFromCountry(code?: string | null) {
+  if (!code || code.length !== 2) return "🌐";
+  const A = 0x1f1e6;
+  const offset = (c: string) => c.toUpperCase().charCodeAt(0) - 65;
+  return String.fromCodePoint(A + offset(code[0])) + String.fromCodePoint(A + offset(code[1]));
+}
+
+function formatMoney(v?: number | null) {
+  if (v == null || isNaN(Number(v))) return null;
+  // Heurística: valores baixos (< 50) provavelmente USD, demais BRL.
+  // Quando event_currency for adicionado, trocar para currency real.
+  const n = Number(v);
+  const isUsdLike = n > 0 && n < 50;
+  return new Intl.NumberFormat(isUsdLike ? "en-US" : "pt-BR", {
+    style: "currency",
+    currency: isUsdLike ? "USD" : "BRL",
+    minimumFractionDigits: 2,
+  }).format(n);
+}
 
 const TickerBar = ({ userId, filterProduct }: Props) => {
   const [ticks, setTicks] = useState<PurchaseTick[]>([]);
@@ -32,7 +48,7 @@ const TickerBar = ({ userId, filterProduct }: Props) => {
       const since = subHours(new Date(), 6).toISOString();
       let q = supabase
         .from("pixel_events")
-        .select("id, customer_name, created_at, product_id")
+        .select("id, customer_name, created_at, product_id, event_value")
         .eq("event_name", "Purchase")
         .gte("created_at", since)
         .order("created_at", { ascending: false })
@@ -94,7 +110,6 @@ const TickerBar = ({ userId, filterProduct }: Props) => {
     );
   }
 
-  // Duplicate the list so the marquee loop is seamless
   const marqueeItems = [...ticks, ...ticks];
 
   return (
@@ -106,7 +121,6 @@ const TickerBar = ({ userId, filterProduct }: Props) => {
         height: 36,
       }}
     >
-      {/* Edge fades */}
       <div
         className="pointer-events-none absolute inset-y-0 left-0 w-16 z-10"
         style={{ background: "linear-gradient(90deg, #050608, transparent)" }}
@@ -143,14 +157,8 @@ const TickerBar = ({ userId, filterProduct }: Props) => {
 
 const TickItem = ({ tick }: { tick: PurchaseTick }) => {
   const name = tick.customer_name?.split(" ")[0] || "Visitante";
-  const hasValue = typeof tick.event_value === "number" && tick.event_value > 0;
-  const formatted = hasValue
-    ? new Intl.NumberFormat("pt-BR", {
-        style: "currency",
-        currency: "BRL",
-        minimumFractionDigits: 2,
-      }).format(tick.event_value as number)
-    : null;
+  const formatted = formatMoney(tick.event_value);
+  const flag = flagFromCountry(tick.customer_country);
 
   return (
     <div className="flex items-center gap-2 px-5 text-[11px] font-mono">
@@ -166,7 +174,7 @@ const TickItem = ({ tick }: { tick: PurchaseTick }) => {
         </span>
       )}
       <span className="text-foreground/90 font-semibold">{name}</span>
-      <span className="text-muted-foreground/70">{flagFromCountry}</span>
+      <span className="text-muted-foreground/70">{flag}</span>
       <span className="text-muted-foreground/50 mx-2">⟫</span>
     </div>
   );
