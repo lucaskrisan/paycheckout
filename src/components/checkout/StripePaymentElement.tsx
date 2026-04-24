@@ -178,6 +178,13 @@ const StripePaymentElement = forwardRef<StripePaymentElementHandle, StripePaymen
     return (
       <Elements stripe={stripePromise} options={elementsOptions} key={`${amountCents}-${currency}`}>
         <InnerForm ref={innerRef} />
+        {/* Hide Stripe's "Powered by Stripe" badge / developer link inside PaymentElement */}
+        <style>{`
+          .StripeElement a[href*="stripe.com"],
+          .StripeElement [class*="PoweredBy"],
+          iframe[name^="__privateStripe"] + a,
+          .__PrivateStripeElement + a { display: none !important; }
+        `}</style>
       </Elements>
     );
   }
