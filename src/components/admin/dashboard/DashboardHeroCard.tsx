@@ -98,7 +98,7 @@ const variantIcons = {
   neutral: Zap,
 };
 
-const DashboardHeroCard = memo(function DashboardHeroCard({ label, value, fmt, sublabel, variant = "neutral", tooltip, sparklineData }: Props) {
+const DashboardHeroCard = memo(function DashboardHeroCard({ label, value, fmt, sublabel, sublabel2, variant = "neutral", tooltip, sparklineData }: Props) {
   const animatedValue = useAnimatedNumber(value);
   const Icon = variantIcons[variant] || Zap;
 
@@ -135,8 +135,11 @@ const DashboardHeroCard = memo(function DashboardHeroCard({ label, value, fmt, s
         <div className="mt-3"><MiniSparkline data={sparklineData} color="rgba(255,255,255,0.7)" /></div>
       )}
 
-      {sublabel && (
-        <p className="text-[11px] mt-2 text-white/60">{sublabel}</p>
+      {(sublabel || sublabel2) && (
+        <div className="mt-2 space-y-0.5">
+          {sublabel && <p className="text-[11px] text-white/60">{sublabel}</p>}
+          {sublabel2 && <p className="text-[11px] text-white/50 tabular-nums">{sublabel2}</p>}
+        </div>
       )}
     </div>
   );
