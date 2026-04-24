@@ -60,6 +60,8 @@ const ProductEdit = () => {
   const { user } = useAuth();
   const isNew = productId === "new";
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Track original price+name to avoid unnecessary Stripe syncs (e.g. image-only saves)
+  const stripeLastSyncedRef = useRef<{ name: string; price: string } | null>(null);
 
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
@@ -312,6 +314,7 @@ const ProductEdit = () => {
             navigate("/admin/products");
             return;
           }
+          stripeLastSyncedRef.current = { name: data.name, price: String(data.price) };
           setForm({
             name: data.name,
             description: data.description || "",
@@ -506,16 +509,22 @@ const ProductEdit = () => {
       }
     }
 
-    // Auto-sync to Stripe for USD products
-    if (form.currency === "USD" && savedProductId) {
+    // Auto-sync to Stripe only when price or name changed (not on image/description saves)
+    const priceOrNameChanged =
+      isNew ||
+      stripeLastSyncedRef.current?.name !== form.name ||
+      stripeLastSyncedRef.current?.price !== form.price;
+
+    if (form.currency === "USD" && savedProductId && priceOrNameChanged) {
       try {
         const { error: syncError } = await supabase.functions.invoke("sync-product-stripe", {
           body: { product_id: savedProductId },
         });
         if (syncError) {
           console.error("Stripe sync error:", syncError);
-          toast.error("Produto salvo, mas falha ao sincronizar com Stripe. Verifique o gateway.");
+          toast.warning("Produto salvo. Configure o gateway Stripe para sincronizar o catálogo.");
         } else {
+          stripeLastSyncedRef.current = { name: form.name, price: form.price };
           toast.success("Produto sincronizado com Stripe ✓");
         }
       } catch (e) {
