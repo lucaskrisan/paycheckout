@@ -430,38 +430,40 @@ const Dashboard = () => {
             label="Total de Pedidos"
             value={String(m.count_total)}
             sub={`${m.count_approved} aprovados · ${m.count_pending} pendentes`}
-            sub2={showAllMode && usd?.total_count ? `+ ${usd.total_count} em USD` : undefined}
-            tooltip="Número total de pedidos no período selecionado"
+            sub2={showAllMode && secondaryBreakdown?.total_count
+              ? `• ${primaryBreakdown?.total_count || 0} ${dominantCurrency} · ${secondaryBreakdown.total_count} ${secondaryCurrency}`
+              : undefined}
+            tooltip="Número total de pedidos no período (todas as moedas)"
           />
           <DashboardMetricCard
             label="Vendas via Ads"
             value={String(m.paid_sales_count)}
-            sub={fmt(m.paid_revenue)}
+            sub={fmtPrimary(pri("ads_revenue", m.paid_revenue))}
             sub2={subFor("ads_revenue")}
             tooltip="Vendas com UTM identificado (tráfego pago)"
           />
           <DashboardMetricCard
             label="Vendas Orgânicas"
             value={String(m.organic_sales_count)}
-            sub={fmt(m.organic_revenue)}
+            sub={fmtPrimary(pri("organic_revenue", m.organic_revenue))}
             sub2={subFor("organic_revenue")}
             tooltip="Vendas sem UTM (tráfego orgânico/direto)"
           />
           <DashboardMetricCard
             label="Reembolsos"
-            value={fmt(m.total_refunded)}
+            value={fmtPrimary(pri("refunded_amount", m.total_refunded))}
             sub={`${m.count_refunded} pedidos`}
             sub2={subFor("refunded_amount")}
             tooltip="Valor total de reembolsos processados"
-            dimmed={m.total_refunded === 0 && !(showAllMode && usd?.refunded_amount)}
+            dimmed={m.total_refunded === 0 && !(showAllMode && secondaryBreakdown?.refunded_amount)}
           />
           <DashboardMetricCard
             label="Chargeback"
-            value={fmt(m.total_chargeback)}
+            value={fmtPrimary(pri("chargeback_amount", m.total_chargeback))}
             sub={`${m.count_chargedback} pedidos`}
             sub2={subFor("chargeback_amount")}
             tooltip="Valor total de chargebacks"
-            dimmed={m.total_chargeback === 0 && !(showAllMode && usd?.chargeback_amount)}
+            dimmed={m.total_chargeback === 0 && !(showAllMode && secondaryBreakdown?.chargeback_amount)}
           />
         </div>
       </div>
