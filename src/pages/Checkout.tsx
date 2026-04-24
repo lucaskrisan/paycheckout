@@ -520,6 +520,8 @@ const Checkout = () => {
           setTimeout(() => { navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=pix&email=${encodeURIComponent(customer.email)}${isUSD ? '&lang=en' : ''}`); }, 2500);
         }}
       />
+      {/* Localized cookie banner — language matches the buyer's selected country */}
+      <CookieConsent lang={getCheckoutLang(selectedCountry)} />
     </div>
   );
 };
