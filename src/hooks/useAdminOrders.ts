@@ -41,10 +41,11 @@ export function useAdminOrders(userId: string | undefined, userEmail: string | u
     load();
   }, [userId, fetchRevenue]);
 
-  // Realtime order updates — only play sound + refresh aggregated total
+  // Realtime order updates — refresh count for everyone, sound only for non-super-admin
   useEffect(() => {
     if (!userId) return;
-    if (SUPER_ADMIN_EMAILS.has(userEmail ?? "")) return;
+
+    const isSuperAdmin = SUPER_ADMIN_EMAILS.has(userEmail ?? "");
 
     const channel = supabase
       .channel(`admin-orders-sound-${userId}`)
@@ -59,11 +60,12 @@ export function useAdminOrders(userId: string | undefined, userEmail: string | u
             (payload?.eventType === "INSERT" && PAID_STATUSES.has(newStatus)) ||
             (payload?.eventType === "UPDATE" && PAID_STATUSES.has(newStatus) && !PAID_STATUSES.has(oldStatus));
 
-          if (becamePaid && playApprovedSaleSoundRef.current) {
+          // Sound is muted for super admins (they see ALL orders globally)
+          if (becamePaid && playApprovedSaleSoundRef.current && !isSuperAdmin) {
             playNotificationSound(notificationSoundRef.current);
           }
 
-          // Refresh aggregated revenue via server-side RPC instead of fetching all rows
+          // Always refresh aggregated count so gamification stays live
           if (payload?.eventType === "INSERT" || payload?.eventType === "UPDATE") {
             fetchRevenue();
           }
@@ -71,8 +73,12 @@ export function useAdminOrders(userId: string | undefined, userEmail: string | u
       )
       .subscribe();
 
+    // Lightweight polling as fallback (every 60s) so the bar never goes stale
+    const pollId = setInterval(fetchRevenue, 60_000);
+
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(pollId);
     };
   }, [userId, userEmail, fetchRevenue]);
 
