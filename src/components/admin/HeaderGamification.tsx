@@ -2,63 +2,63 @@ import { useMemo } from "react";
 import { motion } from "framer-motion";
 
 interface Props {
-  totalRevenue: number;
+  /** Number of approved/paid orders — currency-agnostic */
+  paidCount: number;
 }
 
-const revenueMilestones = [
-  { threshold: 1000, label: "R$ 1K" },
-  { threshold: 5000, label: "R$ 5K" },
-  { threshold: 10000, label: "R$ 10K" },
-  { threshold: 50000, label: "R$ 50K" },
-  { threshold: 100000, label: "R$ 100K" },
-  { threshold: 500000, label: "R$ 500K" },
-  { threshold: 1000000, label: "R$ 1M" },
+const salesMilestones = [
+  { threshold: 10, label: "10" },
+  { threshold: 50, label: "50" },
+  { threshold: 100, label: "100" },
+  { threshold: 500, label: "500" },
+  { threshold: 1000, label: "1K" },
+  { threshold: 5000, label: "5K" },
+  { threshold: 10000, label: "10K" },
 ];
 
-function formatRevenue(v: number) {
-  if (v >= 1000000) return `R$ ${(v / 1000000).toFixed(1).replace(".", ",")}M`;
-  if (v >= 1000) return `R$ ${(v / 1000).toFixed(1).replace(".", ",")}K`;
-  return `R$ ${v.toFixed(0)}`;
+function formatCount(v: number) {
+  if (v >= 1000) return `${(v / 1000).toFixed(1).replace(".", ",")}K`;
+  return String(v);
 }
 
-// Medal color based on revenue
-function getMedal(revenue: number): { emoji: string; color: string } {
-  if (revenue >= 500000) return { emoji: "🏆", color: "text-yellow-400" };
-  if (revenue >= 100000) return { emoji: "🥇", color: "text-yellow-400" };
-  if (revenue >= 50000) return { emoji: "🥈", color: "text-gray-300" };
-  if (revenue >= 10000) return { emoji: "🥉", color: "text-amber-600" };
+// Medal color based on number of approved sales
+function getMedal(count: number): { emoji: string; color: string } {
+  if (count >= 5000) return { emoji: "🏆", color: "text-yellow-400" };
+  if (count >= 1000) return { emoji: "🥇", color: "text-yellow-400" };
+  if (count >= 500) return { emoji: "🥈", color: "text-gray-300" };
+  if (count >= 100) return { emoji: "🥉", color: "text-amber-600" };
   return { emoji: "🎖️", color: "text-amber-400" };
 }
 
-export default function HeaderGamification({ totalRevenue }: Props) {
-  const nextRevMilestone = useMemo(() => {
-    return revenueMilestones.find((m) => m.threshold > totalRevenue) || revenueMilestones[revenueMilestones.length - 1];
-  }, [totalRevenue]);
+export default function HeaderGamification({ paidCount }: Props) {
+  const nextMilestone = useMemo(() => {
+    return salesMilestones.find((m) => m.threshold > paidCount) || salesMilestones[salesMilestones.length - 1];
+  }, [paidCount]);
 
-  const revProgress = useMemo(() => {
-    if (!nextRevMilestone || totalRevenue >= nextRevMilestone.threshold) return 100;
-    const prevIdx = revenueMilestones.findIndex((m) => m.threshold === nextRevMilestone.threshold) - 1;
-    const prev = prevIdx >= 0 ? revenueMilestones[prevIdx].threshold : 0;
-    const range = nextRevMilestone.threshold - prev;
-    return Math.min(((totalRevenue - prev) / range) * 100, 100);
-  }, [totalRevenue, nextRevMilestone]);
+  const progress = useMemo(() => {
+    if (!nextMilestone || paidCount >= nextMilestone.threshold) return 100;
+    const prevIdx = salesMilestones.findIndex((m) => m.threshold === nextMilestone.threshold) - 1;
+    const prev = prevIdx >= 0 ? salesMilestones[prevIdx].threshold : 0;
+    const range = nextMilestone.threshold - prev;
+    return Math.min(((paidCount - prev) / range) * 100, 100);
+  }, [paidCount, nextMilestone]);
 
-  const medal = getMedal(totalRevenue);
+  const medal = getMedal(paidCount);
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2" title={`${paidCount} vendas aprovadas (todas as moedas)`}>
       <span className="text-lg">{medal.emoji}</span>
       <div className="flex items-center gap-2 min-w-[160px]">
         <div className="w-24 h-2 bg-white/20 rounded-full overflow-hidden">
           <motion.div
             className="h-full bg-white rounded-full"
             initial={{ width: 0 }}
-            animate={{ width: `${revProgress}%` }}
+            animate={{ width: `${progress}%` }}
             transition={{ duration: 1, ease: "easeOut" }}
           />
         </div>
         <span className="text-xs font-semibold text-white whitespace-nowrap">
-          {formatRevenue(totalRevenue)} / {nextRevMilestone?.label || "🏆"}
+          {formatCount(paidCount)} / {nextMilestone?.label || "🏆"} vendas
         </span>
       </div>
     </div>
