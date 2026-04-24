@@ -28,10 +28,41 @@ interface Props {
   collapsed?: boolean;
 }
 
+/* ── Conteúdos dos popovers (isolados) ───────────────── */
+
+const IOSInstructions = () => (
+  <>
+    <p className="font-semibold text-foreground mb-2 flex items-center gap-1.5">
+      <Share className="w-3.5 h-3.5 text-primary" />
+      Instalar no iPhone
+    </p>
+    <p className="text-muted-foreground">
+      Toque em <strong className="text-foreground">Compartilhar</strong>{" "}
+      → <strong className="text-foreground">Adicionar à Tela de Início</strong>.
+    </p>
+  </>
+);
+
+const DesktopInstructions = () => (
+  <>
+    <p className="font-semibold text-foreground mb-2 flex items-center gap-1.5">
+      <Download className="w-3.5 h-3.5 text-primary" />
+      Instalar no Desktop
+    </p>
+    <p className="text-muted-foreground">
+      No Chrome/Edge, clique no ícone{" "}
+      <strong className="text-foreground">Instalar</strong> na barra de endereço,
+      ou acesse <strong className="text-foreground">Menu → Instalar App</strong>.
+    </p>
+  </>
+);
+
 export default function PwaInstallBanner({ userId, collapsed }: Props) {
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [visible, setVisible] = useState(false);
+
+  // Fluxos completamente independentes
   const [iosOpen, setIosOpen] = useState(false);
   const [desktopOpen, setDesktopOpen] = useState(false);
 
@@ -59,12 +90,14 @@ export default function PwaInstallBanner({ userId, collapsed }: Props) {
   }, [userId]);
 
   const handleInstall = useCallback(async () => {
-    // iOS: não há API de install — mostrar tooltip de atalho
+    // Fluxo iOS — tooltip de atalho (único caminho possível no Safari)
     if (isIOS()) {
+      setDesktopOpen(false);
       setIosOpen(true);
       return;
     }
-    // Desktop/Android com evento capturado: abre popup nativo do Chrome
+
+    // Fluxo Desktop/Android — tenta popup nativo se o evento foi capturado
     if (deferredPrompt) {
       try {
         await deferredPrompt.prompt();
@@ -78,16 +111,23 @@ export default function PwaInstallBanner({ userId, collapsed }: Props) {
       setDeferredPrompt(null);
       return;
     }
-    // Desktop sem evento: instruir via menu do navegador
+
+    // Fluxo Desktop sem evento (preview ou navegador sem suporte):
+    // mostra tooltip com instruções via barra de endereço
+    setIosOpen(false);
     setDesktopOpen(true);
   }, [deferredPrompt]);
 
   if (!visible) return null;
 
-  // Collapsed: apenas um ícone clicável
+  // Versão colapsada (apenas ícone)
   if (collapsed) {
+    const Content = isIOS() ? IOSInstructions : DesktopInstructions;
+    const open = isIOS() ? iosOpen : desktopOpen;
+    const setOpen = isIOS() ? setIosOpen : setDesktopOpen;
+
     return (
-      <Popover open={iosOpen} onOpenChange={setIosOpen}>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button
             onClick={handleInstall}
@@ -98,14 +138,7 @@ export default function PwaInstallBanner({ userId, collapsed }: Props) {
           </button>
         </PopoverTrigger>
         <PopoverContent side="right" align="end" className="w-64 text-xs leading-relaxed">
-          <p className="font-semibold text-foreground mb-2 flex items-center gap-1.5">
-            <Share className="w-3.5 h-3.5 text-primary" />
-            Instalar no iPhone
-          </p>
-          <p className="text-muted-foreground">
-            Toque em <strong className="text-foreground">Compartilhar</strong>{" "}
-            → <strong className="text-foreground">Adicionar à Tela de Início</strong>.
-          </p>
+          <Content />
         </PopoverContent>
       </Popover>
     );
@@ -126,15 +159,19 @@ export default function PwaInstallBanner({ userId, collapsed }: Props) {
         Gerencie suas vendas de qualquer lugar
       </p>
 
-      <Popover
-        open={iosOpen || desktopOpen}
-        onOpenChange={(o) => {
-          if (!o) {
-            setIosOpen(false);
-            setDesktopOpen(false);
-          }
-        }}
-      >
+      {/* Popover iOS — isolado */}
+      <Popover open={iosOpen} onOpenChange={setIosOpen}>
+        <PopoverTrigger asChild>
+          {/* trigger invisível — controlado via state */}
+          <span className="hidden" aria-hidden />
+        </PopoverTrigger>
+        <PopoverContent side="right" align="end" className="w-64 text-xs leading-relaxed">
+          <IOSInstructions />
+        </PopoverContent>
+      </Popover>
+
+      {/* Popover Desktop — isolado */}
+      <Popover open={desktopOpen} onOpenChange={setDesktopOpen}>
         <PopoverTrigger asChild>
           <Button
             size="sm"
@@ -147,30 +184,7 @@ export default function PwaInstallBanner({ userId, collapsed }: Props) {
           </Button>
         </PopoverTrigger>
         <PopoverContent side="right" align="end" className="w-64 text-xs leading-relaxed">
-          {iosOpen ? (
-            <>
-              <p className="font-semibold text-foreground mb-2 flex items-center gap-1.5">
-                <Share className="w-3.5 h-3.5 text-primary" />
-                Instalar no iPhone
-              </p>
-              <p className="text-muted-foreground">
-                Toque em <strong className="text-foreground">Compartilhar</strong>{" "}
-                → <strong className="text-foreground">Adicionar à Tela de Início</strong>.
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="font-semibold text-foreground mb-2 flex items-center gap-1.5">
-                <Download className="w-3.5 h-3.5 text-primary" />
-                Instalar no Desktop
-              </p>
-              <p className="text-muted-foreground">
-                No Chrome/Edge, clique no ícone{" "}
-                <strong className="text-foreground">Instalar</strong> na barra de endereço,
-                ou acesse <strong className="text-foreground">Menu → Instalar App</strong>.
-              </p>
-            </>
-          )}
+          <DesktopInstructions />
         </PopoverContent>
       </Popover>
     </div>
