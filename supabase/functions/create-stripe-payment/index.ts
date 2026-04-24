@@ -288,21 +288,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Require payment_method_id for new charges (embedded Elements flow)
-    if (!payment_method_id) {
-      return new Response(
-        JSON.stringify({ error: 'payment_method_id is required.' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // ─── PaymentElement flow: create PI without confirming ───
+    // When payment_method_id is provided, use legacy confirm=true flow
+    // When absent, create unconfirmed PI for client-side PaymentElement confirmation
+    const usePaymentElement = !payment_method_id;
 
-    // Create PaymentIntent with confirm=true
-    const paymentIntent = await stripe.paymentIntents.create({
+    const piCreateParams: any = {
       amount: amountCents,
       currency: productCurrency,
       customer: stripeCustomerId,
-      payment_method: payment_method_id,
-      confirm: true,
       automatic_payment_methods: { enabled: true, allow_redirects: 'as_needed' },
       ...(productIsSubscription ? { setup_future_usage: 'off_session' } : {}),
       description: productName,
@@ -314,7 +308,15 @@ Deno.serve(async (req) => {
         customer_country: customer_country || '',
         ...(utms || {}),
       },
-    });
+    };
+
+    if (!usePaymentElement) {
+      // Legacy CardElement flow: confirm immediately
+      piCreateParams.payment_method = payment_method_id;
+      piCreateParams.confirm = true;
+    }
+
+    const paymentIntent = await stripe.paymentIntents.create(piCreateParams);
 
     console.log(`[create-stripe-payment] PI created: ${paymentIntent.id} status=${paymentIntent.status}`);
 
