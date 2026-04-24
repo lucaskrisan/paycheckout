@@ -75,8 +75,13 @@ const DashboardHeaderBar = memo(function DashboardHeaderBar({
         {/* Currency Selector */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-9 w-9 border border-white/[0.06] bg-card/70 backdrop-blur-sm">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 px-2.5 gap-1.5 border border-white/[0.06] bg-card/70 backdrop-blur-sm text-sm font-medium"
+            >
               <DollarSign className="w-4 h-4" />
+              <span className="font-mono text-xs">{activeCurrency.symbol}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-[220px]">
