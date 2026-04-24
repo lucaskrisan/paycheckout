@@ -101,15 +101,38 @@ const WhatsApp = () => {
       clearInterval(pollingRef.current);
       pollingRef.current = null;
     }
+    if (qrRefreshRef.current) {
+      clearInterval(qrRefreshRef.current);
+      qrRefreshRef.current = null;
+    }
+    if (qrAgeRef.current) {
+      clearInterval(qrAgeRef.current);
+      qrAgeRef.current = null;
+    }
+    setQrAge(0);
   }, []);
 
   useEffect(() => () => stopPolling(), [stopPolling]);
 
+  const refreshQrCode = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke("connect-whatsapp");
+      if (error) throw error;
+      if (data?.qrcode) {
+        setQrcode(data.qrcode);
+        setQrAge(0);
+      }
+    } catch (err) {
+      console.error("QR refresh error:", err);
+    }
+  }, []);
+
   const startPolling = useCallback(() => {
     stopPolling();
     let attempts = 0;
-    const maxAttempts = 60;
+    const maxAttempts = 80; // ~4 min at 3s
 
+    // Status poll every 3s
     pollingRef.current = setInterval(async () => {
       attempts++;
       if (attempts > maxAttempts) {
@@ -143,7 +166,17 @@ const WhatsApp = () => {
         console.error("Polling error:", err);
       }
     }, 3000);
-  }, [stopPolling]);
+
+    // QR auto-refresh every 30s (Evolution QRs expire ~60s)
+    qrRefreshRef.current = setInterval(() => {
+      refreshQrCode();
+    }, 30_000);
+
+    // QR age counter (UI countdown)
+    qrAgeRef.current = setInterval(() => {
+      setQrAge((a) => a + 1);
+    }, 1000);
+  }, [stopPolling, refreshQrCode]);
 
   const handleConnect = async () => {
     setLoading(true);
