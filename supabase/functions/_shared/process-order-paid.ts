@@ -357,7 +357,9 @@ async function stepMemberAccess(params: ProcessOrderPaidParams): Promise<void> {
       .from('products')
       .select('id, is_subscription, billing_cycle')
       .in('id', uniqueProductIds);
-    const productMap = new Map((productsData || []).map((p: any) => [p.id, p]));
+    const productMap = new Map<string, { id: string; is_subscription: boolean; billing_cycle: string }>(
+      (productsData || []).map((p: any) => [p.id as string, p])
+    );
 
     for (const course of courses) {
       const product = productMap.get(course.product_id) || null;
