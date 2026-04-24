@@ -283,7 +283,7 @@ const Dashboard = () => {
                 <div className="text-right">
                   <p className="text-xs text-muted-foreground">{data.approved_count} aprovados</p>
                   {data.pending_count > 0 && (
-                    <p className="text-xs text-amber-500 mt-0.5">
+                    <p className="text-xs text-warning mt-0.5">
                       {data.pending_count} pendentes ({symbol}
                       {Number(data.pending_amount).toFixed(2)})
                     </p>
