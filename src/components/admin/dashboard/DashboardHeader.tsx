@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export type Period = "today" | "yesterday" | "7days" | "month" | "lastMonth" | "total";
-export type Currency = "BRL" | "USD" | "EUR";
+export type Currency = "ALL" | "BRL" | "USD";
 
 export const periodLabels: Record<Period, string> = {
   today: "Hoje",
@@ -28,9 +28,9 @@ export const periodLabels: Record<Period, string> = {
 };
 
 const currencyOptions: { value: Currency; label: string; symbol: string }[] = [
+  { value: "ALL", label: "Todas as moedas", symbol: "∑" },
   { value: "BRL", label: "Real Brasileiro (BRL)", symbol: "R$" },
   { value: "USD", label: "US Dollar (USD)", symbol: "$" },
-  { value: "EUR", label: "Euro (EUR)", symbol: "€" },
 ];
 
 interface Props {
