@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import ninaAvatar from "@/assets/nina-avatar.png";
+import pantteraAvatar from "@/assets/pantera-mascot.png";
 
 /**
  * Wrappers de toast assinados pela Nina (branding puro, sem IA).
