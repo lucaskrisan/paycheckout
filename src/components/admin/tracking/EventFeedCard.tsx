@@ -57,44 +57,65 @@ const EventFeedCard = ({ group, productName, geo }: Props) => {
   const isBase = cfg.tier === "base";
   const valueStr = isHero ? formatBRL(group.event_value) : null;
 
-  // ── HERO (Purchase) ──
+  // ── HERO (Purchase) — dramatic 72px card with golden irradiating pulse ──
   if (isHero) {
     return (
       <motion.div
-        initial={{ opacity: 0, x: 24, scale: 0.96 }}
-        animate={{
-          opacity: 1,
-          x: 0,
-          scale: 1,
-          boxShadow: [
-            "0 0 0 rgba(212,175,55,0)",
-            "0 0 28px rgba(212,175,55,0.35)",
-            "0 0 16px rgba(212,175,55,0.12)",
-          ],
-        }}
-        exit={{ opacity: 0, scale: 0.96 }}
-        transition={{ duration: 0.5, ease: "easeOut", boxShadow: { duration: 0.8 } }}
-        className="relative flex items-center gap-3 px-4 py-3 border-b border-border/40 last:border-b-0 hover:brightness-110 transition-all"
+        initial={{ opacity: 0, x: 24, scale: 0.95 }}
+        animate={{ opacity: 1, x: 0, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.45, ease: "easeOut" }}
+        className="relative flex items-center gap-3.5 px-4 border-b border-border/40 last:border-b-0 hover:brightness-110 transition-all overflow-hidden"
         style={{
-          background: "linear-gradient(90deg, rgba(212,175,55,0.14) 0%, rgba(212,175,55,0.02) 60%, transparent 100%)",
+          minHeight: 72,
+          background:
+            "linear-gradient(90deg, rgba(212,175,55,0.18) 0%, rgba(212,175,55,0.04) 55%, transparent 100%)",
           borderLeft: "4px solid #D4AF37",
         }}
       >
-        <div className="p-2 rounded-md shrink-0" style={{ backgroundColor: "rgba(212,175,55,0.18)" }}>
-          <Icon className="w-4 h-4" style={{ color: "#D4AF37" }} />
+        {/* Golden irradiating pulse — 1.2s on entry */}
+        <motion.div
+          className="pointer-events-none absolute inset-0"
+          initial={{ opacity: 0.9 }}
+          animate={{ opacity: 0 }}
+          transition={{ duration: 1.2, ease: "easeOut" }}
+          style={{
+            background:
+              "radial-gradient(circle at 8% 50%, rgba(212,175,55,0.55) 0%, rgba(212,175,55,0.18) 22%, transparent 55%)",
+          }}
+          aria-hidden
+        />
+        <motion.div
+          className="pointer-events-none absolute inset-y-0 left-0 w-1"
+          initial={{ boxShadow: "0 0 24px 6px rgba(212,175,55,0.9)" }}
+          animate={{ boxShadow: "0 0 0px 0px rgba(212,175,55,0)" }}
+          transition={{ duration: 1.2, ease: "easeOut" }}
+          aria-hidden
+        />
+
+        <div
+          className="p-2.5 rounded-md shrink-0 relative z-10"
+          style={{ backgroundColor: "rgba(212,175,55,0.22)" }}
+        >
+          <Icon className="w-5 h-5" style={{ color: "#D4AF37" }} />
         </div>
 
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 relative z-10">
           <div className="flex items-center gap-2 mb-0.5">
             <span
-              className="text-[10px] font-bold tracking-[0.12em] uppercase"
+              className="text-[10px] font-bold tracking-[0.14em] uppercase"
               style={{ color: "#D4AF37" }}
             >
               {cfg.label}
             </span>
             {isDual && (
-              <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                ✓ DUAL
+              <span
+                className="inline-flex items-center text-[12px] font-bold leading-none"
+                style={{ color: "#D4AF37", textShadow: "0 0 6px rgba(212,175,55,0.6)" }}
+                title="Confirmado em Pixel + CAPI"
+                aria-label="Dual confirmation"
+              >
+                ✓✓
               </span>
             )}
           </div>
@@ -111,16 +132,21 @@ const EventFeedCard = ({ group, productName, geo }: Props) => {
           </div>
           {productName && (
             <div className="text-[11px] text-muted-foreground/80 truncate mt-0.5">
-              {productName} · <span className="font-mono">{format(new Date(group.created_at), "HH:mm:ss")}</span>
+              {productName} ·{" "}
+              <span className="font-mono">{format(new Date(group.created_at), "HH:mm:ss")}</span>
             </div>
           )}
         </div>
 
         {valueStr && (
-          <div className="shrink-0 text-right">
+          <div className="shrink-0 text-right relative z-10">
             <div
-              className="text-lg font-bold font-mono tabular-nums"
-              style={{ color: "#D4AF37", textShadow: "0 0 12px rgba(212,175,55,0.4)" }}
+              className="font-bold font-mono tabular-nums leading-none"
+              style={{
+                fontSize: 22,
+                color: "#D4AF37",
+                textShadow: "0 0 20px rgba(212,175,55,0.6), 0 0 4px rgba(212,175,55,0.4)",
+              }}
             >
               {valueStr}
             </div>
