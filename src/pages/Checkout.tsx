@@ -397,12 +397,13 @@ const Checkout = () => {
               {isUSD ? (
                 <div className="mb-1 animate-fade-in">
                   <CardPreview3D
-                    number={creditCard.number}
-                    holder={creditCard.name || customer.name}
+                    number=""
+                    holder={customer.name}
                     month=""
                     year=""
                     cvv=""
                     focus={null}
+                    brandLabel="International"
                   />
                 </div>
               ) : product.is_subscription ? (
