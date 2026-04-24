@@ -194,13 +194,13 @@ const Dashboard = () => {
     if (!user) return;
     if (isRefresh) setRefreshing(true);
     try {
-      await Promise.all([fetchMetrics(), fetchProducts(), fetchWeekdayOrders()]);
+      await Promise.all([fetchMetrics(), fetchProducts(), fetchWeekdayOrders(), fetchChartOverride()]);
     } catch (error) {
       console.error("[dashboard] loadData error:", error);
     } finally {
       if (isRefresh) setRefreshing(false);
     }
-  }, [fetchMetrics, fetchProducts, fetchWeekdayOrders, user]);
+  }, [fetchMetrics, fetchProducts, fetchWeekdayOrders, fetchChartOverride, user]);
 
   // Reconcile on mount — depends only on user so timers are not recreated on period changes
   useEffect(() => {
@@ -248,20 +248,23 @@ const Dashboard = () => {
   const isHourly = period === "today" || period === "yesterday";
 
   const chartData = useMemo(() => {
+    // In ALL mode, use the override fetch (already filtered by chartCurrency)
+    // so the chart shows ONLY one currency at a time — never mixed.
+    const source = currency === "ALL" && chartOverride ? chartOverride : m;
     if (isHourly) {
-      return (m.chart_hourly || []).map((h) => ({
+      return (source.chart_hourly || []).map((h: any) => ({
         name: `${String(h.hour).padStart(2, "0")}:00`,
         total: Number(h.total),
       }));
     }
-    return (m.chart_daily || []).map((d) => {
+    return (source.chart_daily || []).map((d: any) => {
       const dt = new Date(d.date);
       return {
         name: dt.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
         total: Number(d.total),
       };
     });
-  }, [m.chart_hourly, m.chart_daily, isHourly]);
+  }, [m.chart_hourly, m.chart_daily, isHourly, currency, chartOverride]);
 
   const salesByState = m.sales_by_state || {};
 
