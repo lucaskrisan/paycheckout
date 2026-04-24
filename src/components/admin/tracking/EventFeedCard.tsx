@@ -194,8 +194,13 @@ const EventFeedCard = ({ group, productName, geo }: Props) => {
 
         <div className="flex items-center gap-1.5 shrink-0">
           {isDual ? (
-            <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
-              DUAL
+            <span
+              className="text-[12px] font-bold leading-none"
+              style={{ color: "#D4AF37", textShadow: "0 0 6px rgba(212,175,55,0.5)" }}
+              title="Confirmado em Pixel + CAPI"
+              aria-label="Dual confirmation"
+            >
+              ✓✓
             </span>
           ) : hasBrowser ? (
             <span className="text-[9px] font-bold text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded">
