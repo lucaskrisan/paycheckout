@@ -3,7 +3,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
 import AdminHeader from "./AdminHeader";
 import AdminAccessRedirect from "./AdminAccessRedirect";
-import PwaInstallBanner from "./PwaInstallBanner";
+
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
 import { useOneSignalInit } from "@/hooks/useOneSignalInit";
@@ -62,7 +62,6 @@ export default function AdminLayout() {
             <Outlet />
           </main>
         </div>
-        <PwaInstallBanner userId={user.id} />
       </div>
     </SidebarProvider>
   );
