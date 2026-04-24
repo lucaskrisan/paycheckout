@@ -23,7 +23,13 @@ function flagFromCountry(code?: string | null) {
 
 function formatBRL(v?: number | null) {
   if (v == null || isNaN(Number(v))) return null;
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(v));
+  const n = Number(v);
+  // Heurística temporária até event_currency existir: valores baixos ~ USD.
+  const isUsdLike = n > 0 && n < 50;
+  return new Intl.NumberFormat(isUsdLike ? "en-US" : "pt-BR", {
+    style: "currency",
+    currency: isUsdLike ? "USD" : "BRL",
+  }).format(n);
 }
 
 interface Props {
