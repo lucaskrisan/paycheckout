@@ -527,7 +527,14 @@ const Orders = () => {
                         )}
                       </td>
                       <td className="py-4 px-5 text-right font-semibold whitespace-nowrap text-sm tabular-nums">
-                        <span className="text-foreground">{formatMoney(order.amount, order.products?.currency)}</span>
+                        <div className="flex items-center justify-end gap-2">
+                          {(order.products?.currency || "BRL").toUpperCase() === "USD" && (
+                            <span className="text-[10px] font-bold tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+                              USD
+                            </span>
+                          )}
+                          <span className="text-foreground">{formatMoney(order.amount, order.products?.currency)}</span>
+                        </div>
                       </td>
                     </tr>
                   );
