@@ -4,15 +4,15 @@ import { useState, useEffect } from "react";
  * Map country codes to their currency codes and symbols.
  */
 const countryToCurrency: Record<string, { code: string; symbol: string; position: "before" | "after" }> = {
-  US: { code: "USD", symbol: "$", position: "before" },
+  US: { code: "USD", symbol: "US$", position: "before" },
   BR: { code: "BRL", symbol: "R$", position: "before" },
-  MX: { code: "MXN", symbol: "$", position: "before" },
-  CO: { code: "COP", symbol: "$", position: "before" },
-  AR: { code: "ARS", symbol: "$", position: "before" },
+  MX: { code: "MXN", symbol: "MX$", position: "before" },
+  CO: { code: "COP", symbol: "COL$", position: "before" },
+  AR: { code: "ARS", symbol: "AR$", position: "before" },
   PE: { code: "PEN", symbol: "S/", position: "before" },
-  CL: { code: "CLP", symbol: "$", position: "before" },
-  EC: { code: "USD", symbol: "$", position: "before" },
-  UY: { code: "UYU", symbol: "$", position: "before" },
+  CL: { code: "CLP", symbol: "CL$", position: "before" },
+  EC: { code: "USD", symbol: "US$", position: "before" },
+  UY: { code: "UYU", symbol: "UY$", position: "before" },
   PY: { code: "PYG", symbol: "₲", position: "before" },
   BO: { code: "BOB", symbol: "Bs", position: "before" },
   CR: { code: "CRC", symbol: "₡", position: "before" },
