@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Eye, ShoppingCart, UserCheck, CreditCard, Zap, MousePointerClick, TrendingUp, BookOpen, Trophy } from "lucide-react";
+import { Eye, ShoppingCart, UserCheck, CreditCard, Zap, MousePointerClick, BookOpen, Trophy, CheckCheck } from "lucide-react";
 import { format } from "date-fns";
 
 type Tier = "hero" | "mid" | "base";
