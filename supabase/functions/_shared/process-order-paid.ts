@@ -351,13 +351,16 @@ async function stepMemberAccess(params: ProcessOrderPaidParams): Promise<void> {
 
     if (!courses || courses.length === 0) return;
 
+    // Batch-fetch product subscription info for all courses (avoids N+1 query)
+    const uniqueProductIds = [...new Set(courses.map((c: any) => c.product_id).filter(Boolean))];
+    const { data: productsData } = await supabase
+      .from('products')
+      .select('id, is_subscription, billing_cycle')
+      .in('id', uniqueProductIds);
+    const productMap = new Map((productsData || []).map((p: any) => [p.id, p]));
+
     for (const course of courses) {
-      // Check subscription
-      const { data: product } = await supabase
-        .from('products')
-        .select('is_subscription, billing_cycle')
-        .eq('id', course.product_id)
-        .maybeSingle();
+      const product = productMap.get(course.product_id) || null;
 
       // Check existing access
       const { data: existingAccess } = await supabase

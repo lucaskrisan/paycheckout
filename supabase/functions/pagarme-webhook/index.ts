@@ -41,8 +41,27 @@ Deno.serve(async (req) => {
         });
       }
       console.log('[pagarme-webhook] Signature verified ✅');
-    } else if (!receivedSig) {
-      console.warn('[pagarme-webhook] No x-hub-signature header — accepting without verification');
+    } else if (PAGARME_WEBHOOK_SECRET && !receivedSig) {
+      // Secret configured but no signature sent — reject to prevent unsigned requests
+      console.error('[pagarme-webhook] BLOCKED: secret configured but x-hub-signature missing');
+      try {
+        const supabaseLog = createClient(
+          Deno.env.get('SUPABASE_URL')!,
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+        );
+        await supabaseLog.from('webhook_events').insert({
+          id: `pagarme_blocked_${Date.now()}`,
+          gateway: 'pagarme',
+          blocked: true,
+          block_reason: 'missing_signature',
+        }).throwOnError().catch(() => {});
+      } catch {}
+      return new Response(JSON.stringify({ error: 'Missing signature' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } else if (!PAGARME_WEBHOOK_SECRET && !receivedSig) {
+      console.warn('[pagarme-webhook] No secret configured — accepting without verification (configure PAGARME_WEBHOOK_SECRET)');
     }
 
     const payload = JSON.parse(rawBody);

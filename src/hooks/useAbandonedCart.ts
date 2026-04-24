@@ -57,7 +57,7 @@ export function useAbandonedCart({ productId, customer, paymentMethod, productOw
       }
 
       if (createdRef.current) return;
-      createdRef.current = true;
+      createdRef.current = true; // Set BEFORE await to prevent race condition
 
       const clientId = crypto.randomUUID();
       const { error } = await supabase

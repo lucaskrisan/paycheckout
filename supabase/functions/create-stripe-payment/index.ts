@@ -54,6 +54,13 @@ Deno.serve(async (req) => {
     const amount = Math.round(Number(body.amount) * 100) / 100;
     const amountCents = Math.round(amount * 100);
 
+    if (Array.isArray(bump_product_ids) && bump_product_ids.length > 50) {
+      return new Response(
+        JSON.stringify({ error: 'Too many bump products (max 50)' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     if (!amount || !customer?.name || !customer?.email) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields: amount, customer (name, email)' }),
