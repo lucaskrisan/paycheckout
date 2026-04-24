@@ -256,6 +256,45 @@ const Dashboard = () => {
 
       <GatewayAlerts />
 
+      {/* Multi-currency breakdown — only shows when "Todas" is active and there are sales in 2+ currencies */}
+      {showBreakdown && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {(["BRL", "USD"] as const).map((c) => {
+            const data = breakdown[c];
+            if (!data) return null;
+            const symbol = c === "BRL" ? "R$" : "$";
+            const flag = c === "BRL" ? "🇧🇷" : "🇺🇸";
+            return (
+              <div
+                key={c}
+                className="rounded-xl border border-white/[0.06] bg-card/70 backdrop-blur-sm p-4 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">{flag}</span>
+                  <div>
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+                      Receita {c}
+                    </p>
+                    <p className="text-2xl font-bold text-foreground tabular-nums">
+                      {fmt(Number(data.approved_amount), c)}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-muted-foreground">{data.approved_count} aprovados</p>
+                  {data.pending_count > 0 && (
+                    <p className="text-xs text-amber-500 mt-0.5">
+                      {data.pending_count} pendentes ({symbol}
+                      {Number(data.pending_amount).toFixed(2)})
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* ROW 1 — Hero revenue + compact stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <DashboardHeroCard
