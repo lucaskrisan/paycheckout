@@ -104,6 +104,35 @@ interface CustomerInfo {
   cpf?: string;
 }
 
+/**
+ * LGPD/GDPR consent gate. Reads the marketing preference written by CookieConsent.
+ * Returns true when:
+ *   - the user explicitly accepted marketing storage, OR
+ *   - no decision has been recorded yet AND the visitor is outside the EU
+ *     (in BR/US default behavior, tracking continues until the user rejects).
+ *
+ * Returns false (blocks all tracking) when the user explicitly rejected marketing.
+ */
+function hasMarketingConsent(): boolean {
+  try {
+    const raw = localStorage.getItem("cookie_consent_prefs");
+    if (raw) {
+      const prefs = JSON.parse(raw);
+      return prefs?.marketing === true;
+    }
+    // No decision yet: check Cloudflare-detected country.
+    // EU visitors require explicit opt-in; non-EU defaults to allow until they reject.
+    const country = (getCfGeo()?.country || "").toUpperCase();
+    const EU = new Set([
+      "AT","BE","BG","HR","CY","CZ","DK","EE","FI","FR","DE","GR","HU","IE",
+      "IT","LV","LT","LU","MT","NL","PL","PT","RO","SK","SI","ES","SE","IS","LI","NO","GB",
+    ]);
+    return !EU.has(country);
+  } catch {
+    return true;
+  }
+}
+
 /** Build the geo payload sent to CAPI from window.cfGeo (Cloudflare Worker). */
 function buildGeoPayload() {
   const geo = getCfGeo();
@@ -208,6 +237,12 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
 
   useEffect(() => {
     if (!productId || initializedRef.current) return;
+
+    // LGPD/GDPR gate: do not load Pixel or fire CAPI without marketing consent.
+    if (!hasMarketingConsent()) {
+      console.log("[useFacebookPixel] Marketing consent not granted — Pixel & CAPI disabled.");
+      return;
+    }
 
     hydrateClickParams();
 

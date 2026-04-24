@@ -2,7 +2,7 @@ import { useEffect, useImperativeHandle, useState, forwardRef, useRef, useMemo }
 import { loadStripe, type Stripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { supabase } from "@/integrations/supabase/client";
-import { Lock, Loader2, ShieldCheck } from "lucide-react";
+import { Loader2, ShieldCheck } from "lucide-react";
 
 export interface StripePaymentElementHandle {
   /**
