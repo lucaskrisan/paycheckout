@@ -243,6 +243,7 @@ const WhatsAppTemplates = () => {
     const { data, error } = await supabase
       .from("whatsapp_templates")
       .select("*")
+      .eq("user_id", user.id)
       .order("updated_at", { ascending: false });
 
     if (error) {
