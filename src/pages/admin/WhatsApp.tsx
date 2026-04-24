@@ -51,8 +51,11 @@ const WhatsApp = () => {
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [testOpen, setTestOpen] = useState(false);
+  const [qrAge, setQrAge] = useState(0);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const statusPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const qrRefreshRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const qrAgeRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Initial load + periodic status check
   useEffect(() => {
