@@ -126,12 +126,13 @@ const Checkout = () => {
         setProduct(p);
         if (p.is_subscription || p.currency === 'USD') setPaymentMethod("credit_card");
         if (p.user_id) {
-          const [{ data: settings }, { data: billingAcc }, { data: ownerRoles }] = await Promise.all([
-            supabase.from("checkout_settings").select("logo_url, primary_color, custom_css, company_name").eq("user_id", p.user_id).maybeSingle(),
+          const [{ data: settingsRows }, { data: billingAcc }, { data: ownerRoles }] = await Promise.all([
+            supabase.rpc("get_checkout_settings", { p_user_id: p.user_id }),
             supabase.from("billing_accounts").select("blocked").eq("user_id", p.user_id).maybeSingle(),
             supabase.from("user_roles").select("role").eq("user_id", p.user_id).eq("role", "super_admin"),
           ]);
-          if (settings) setCheckoutSettings(settings);
+          const settings = Array.isArray(settingsRows) ? settingsRows[0] : settingsRows;
+          if (settings) setCheckoutSettings(settings as any);
           const isSuperAdmin = (ownerRoles as any[])?.length > 0;
           setIsOwnerSuperAdmin(isSuperAdmin);
           if (!isSuperAdmin && (billingAcc as any)?.blocked === true) { setProducerBlocked(true); setLoading(false); return; }
