@@ -7,6 +7,7 @@ import CustomerForm, { type CustomerData, isValidCPF } from "@/components/checko
 import PixPayment from "@/components/checkout/PixPayment";
 import PixModal from "@/components/checkout/PixModal";
 import CreditCardForm, { type CreditCardData } from "@/components/checkout/CreditCardForm";
+import CardPreview3D from "@/components/ui/card-preview-3d";
 import type { StripePaymentElementHandle } from "@/components/checkout/StripePaymentElement";
 const StripePaymentElement = lazy(() => import("@/components/checkout/StripePaymentElement"));
 import PaymentTabs from "@/components/checkout/PaymentTabs";
@@ -394,12 +395,15 @@ const Checkout = () => {
               )}
               <CustomerForm data={customer} onChange={setCustomer} hideDocumentPhone={isUSD} />
               {isUSD ? (
-                <div className="bg-[#F7FAFA] border border-[#D5D9D9] rounded-lg p-3 flex items-center gap-2">
-                  <span className="text-lg">💳</span>
-                  <div>
-                    <p className="text-sm font-bold text-[#0F1111]">{t.creditCard}</p>
-                    <p className="text-xs text-[#565959]">{t.securePayment}</p>
-                  </div>
+                <div className="mb-1 animate-fade-in">
+                  <CardPreview3D
+                    number={creditCard.number}
+                    holder={creditCard.name || customer.name}
+                    month=""
+                    year=""
+                    cvv=""
+                    focus={null}
+                  />
                 </div>
               ) : product.is_subscription ? (
                 <div className="bg-[#F7FAFA] border border-[#D5D9D9] rounded-lg p-3 flex items-center gap-2">
