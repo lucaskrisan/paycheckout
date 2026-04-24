@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
           gateway: 'pagarme',
           blocked: true,
           block_reason: 'missing_signature',
-        }).throwOnError().catch(() => {});
+        });
       } catch {}
       return new Response(JSON.stringify({ error: 'Missing signature' }), {
         status: 401,
