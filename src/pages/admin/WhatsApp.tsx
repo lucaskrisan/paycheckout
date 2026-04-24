@@ -5,12 +5,14 @@ const WhatsAppTemplates = lazy(() => import("@/components/admin/WhatsAppTemplate
 const WhatsAppFeatureFlags = lazy(() => import("@/components/admin/WhatsAppFeatureFlags"));
 const WhatsAppSendLog = lazy(() => import("@/components/admin/WhatsAppSendLog"));
 const WhatsAppStarterTemplates = lazy(() => import("@/components/admin/WhatsAppStarterTemplates"));
+const WhatsAppMetricsCard = lazy(() => import("@/components/admin/WhatsAppMetricsCard"));
+import WhatsAppTestMessageDialog from "@/components/admin/WhatsAppTestMessageDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, MessageSquare, Phone, Power, PowerOff, RefreshCw, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { Loader2, MessageSquare, Phone, Power, PowerOff, RefreshCw, CheckCircle2, XCircle, AlertTriangle, Clock, Send, RotateCw } from "lucide-react";
 import { toast } from "sonner";
 
 const formatPhone = (raw: string) => {
@@ -21,18 +23,38 @@ const formatPhone = (raw: string) => {
   return `+${d}`;
 };
 
+const formatRelative = (iso: string | null) => {
+  if (!iso) return "—";
+  const diff = Date.now() - new Date(iso).getTime();
+  const sec = Math.floor(diff / 1000);
+  if (sec < 60) return `há ${sec}s`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `há ${min} min`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `há ${hr}h`;
+  const days = Math.floor(hr / 24);
+  if (days < 30) return `há ${days} dia${days > 1 ? "s" : ""}`;
+  const months = Math.floor(days / 30);
+  return `há ${months} ${months > 1 ? "meses" : "mês"}`;
+};
+
 const WhatsApp = () => {
   const { user, isSuperAdmin } = useAuth();
   const [loading, setLoading] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
+  const [reconnecting, setReconnecting] = useState(false);
   const [qrcode, setQrcode] = useState<string | null>(null);
   const [status, setStatus] = useState<string>("disconnected");
   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
+  const [instanceId, setInstanceId] = useState<string | null>(null);
+  const [connectedAt, setConnectedAt] = useState<string | null>(null);
+  const [lastChecked, setLastChecked] = useState<Date | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [testOpen, setTestOpen] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const statusPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Initial load + periodic status check (#7)
+  // Initial load + periodic status check
   useEffect(() => {
     if (!user) return;
     const load = async () => {
@@ -44,21 +66,26 @@ const WhatsApp = () => {
       if (data) {
         setStatus(data.status);
         setPhoneNumber(data.phone_number);
+        setInstanceId(data.instance_id);
+        setConnectedAt(data.connected_at);
       }
+      setLastChecked(new Date());
     };
     load();
 
-    // Poll status every 60s to catch unexpected disconnections
     statusPollRef.current = setInterval(async () => {
       const { data } = await supabase
         .from("whatsapp_sessions")
-        .select("status, phone_number")
+        .select("status, phone_number, instance_id, connected_at")
         .eq("tenant_id", user.id)
         .maybeSingle();
       if (data) {
         setStatus(data.status);
         setPhoneNumber(data.phone_number);
+        setInstanceId(data.instance_id);
+        setConnectedAt(data.connected_at);
       }
+      setLastChecked(new Date());
     }, 60_000);
 
     return () => {
@@ -93,10 +120,13 @@ const WhatsApp = () => {
       try {
         const { data, error } = await supabase.functions.invoke("check-whatsapp-status");
         if (error) throw error;
+        setLastChecked(new Date());
 
         if (data?.state === "open") {
           setStatus("connected");
           setPhoneNumber(data.phone_number);
+          if (data.instance_id) setInstanceId(data.instance_id);
+          setConnectedAt(new Date().toISOString());
           setQrcode(null);
           stopPolling();
           toast.success("WhatsApp conectado com sucesso!");
@@ -128,6 +158,7 @@ const WhatsApp = () => {
       if (data?.qrcode) {
         setQrcode(data.qrcode);
         setStatus("connecting");
+        if (data.instance_id) setInstanceId(data.instance_id);
         startPolling();
       } else {
         toast.error("QR Code não retornado. Tente novamente.");
@@ -158,6 +189,8 @@ const WhatsApp = () => {
 
       setStatus("disconnected");
       setPhoneNumber(null);
+      setInstanceId(null);
+      setConnectedAt(null);
       setQrcode(null);
       toast.success("WhatsApp desconectado.");
     } catch (err: any) {
@@ -165,6 +198,37 @@ const WhatsApp = () => {
       toast.error("Erro ao desconectar. Tente novamente.");
     } finally {
       setDisconnecting(false);
+    }
+  };
+
+  const handleReconnect = async () => {
+    setReconnecting(true);
+    setErrorMsg(null);
+    try {
+      await supabase.functions.invoke("disconnect-whatsapp");
+      setStatus("disconnected");
+      setPhoneNumber(null);
+      setQrcode(null);
+
+      const { data, error } = await supabase.functions.invoke("connect-whatsapp");
+      if (error) throw error;
+      if (data?.error) {
+        setErrorMsg(data.details || data.error);
+        toast.error(data.error);
+        return;
+      }
+      if (data?.qrcode) {
+        setQrcode(data.qrcode);
+        setStatus("connecting");
+        if (data.instance_id) setInstanceId(data.instance_id);
+        startPolling();
+        toast.success("Escaneie o novo QR Code para reconectar.");
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.message || "Erro ao reconectar.");
+    } finally {
+      setReconnecting(false);
     }
   };
 
@@ -209,30 +273,62 @@ const WhatsApp = () => {
         <CardContent>
           {status === "connected" ? (
             <div className="space-y-4">
-              <div className="flex items-center gap-3 p-4 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
-                <CheckCircle2 className="w-8 h-8 text-emerald-600 shrink-0" />
-                <div className="min-w-0">
-                  <p className="font-semibold text-emerald-800 dark:text-emerald-300">Conectado</p>
-                  {phoneNumber && (
-                    <p className="text-sm text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5 mt-0.5">
-                      <Phone className="w-3.5 h-3.5" />
-                      {formatPhone(phoneNumber)}
-                    </p>
-                  )}
+              <div className="flex items-start gap-3 p-4 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
+                <CheckCircle2 className="w-8 h-8 text-emerald-600 shrink-0 mt-0.5" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-emerald-800 dark:text-emerald-300">Conectado</p>
+                      {phoneNumber && (
+                        <p className="text-sm text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5 mt-0.5">
+                          <Phone className="w-3.5 h-3.5" />
+                          {formatPhone(phoneNumber)}
+                        </p>
+                      )}
+                    </div>
+                    <Badge variant="outline" className="border-emerald-300 text-emerald-700 dark:text-emerald-300 shrink-0">
+                      Ativo
+                    </Badge>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 pt-3 border-t border-emerald-200/60 dark:border-emerald-800/60">
+                    <div className="flex items-center gap-1.5 text-xs text-emerald-700/80 dark:text-emerald-400/80">
+                      <Clock className="w-3 h-3" />
+                      <span>Conectado {formatRelative(connectedAt)}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-emerald-700/80 dark:text-emerald-400/80">
+                      <RefreshCw className="w-3 h-3" />
+                      <span>Verificado {formatRelative(lastChecked?.toISOString() ?? null)}</span>
+                    </div>
+                    {instanceId && (
+                      <div className="flex items-center gap-1.5 text-xs text-emerald-700/80 dark:text-emerald-400/80 truncate" title={instanceId}>
+                        <span className="font-mono opacity-70">ID:</span>
+                        <span className="font-mono truncate">{instanceId}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <Badge variant="outline" className="ml-auto border-emerald-300 text-emerald-700 dark:text-emerald-300">
-                  Ativo
-                </Badge>
               </div>
-              <Button
-                variant="destructive"
-                onClick={handleDisconnect}
-                disabled={disconnecting}
-                className="gap-2"
-              >
-                {disconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <PowerOff className="w-4 h-4" />}
-                {disconnecting ? "Desconectando..." : "Desconectar WhatsApp"}
-              </Button>
+
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={() => setTestOpen(true)} variant="outline" className="gap-2">
+                  <Send className="w-4 h-4" />
+                  Enviar mensagem de teste
+                </Button>
+                <Button onClick={handleReconnect} disabled={reconnecting} variant="outline" className="gap-2">
+                  {reconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCw className="w-4 h-4" />}
+                  {reconnecting ? "Reconectando..." : "Reconectar"}
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDisconnect}
+                  disabled={disconnecting}
+                  className="gap-2"
+                >
+                  {disconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <PowerOff className="w-4 h-4" />}
+                  {disconnecting ? "Desconectando..." : "Desconectar WhatsApp"}
+                </Button>
+              </div>
             </div>
           ) : status === "connecting" && qrSrc ? (
             <div className="space-y-4">
@@ -271,6 +367,12 @@ const WhatsApp = () => {
         </CardContent>
       </Card>
 
+      {status === "connected" && (
+        <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
+          <WhatsAppMetricsCard />
+        </Suspense>
+      )}
+
       {isSuperAdmin && (
         <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
           <WhatsAppFeatureFlags />
@@ -288,6 +390,8 @@ const WhatsApp = () => {
       <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
         <WhatsAppSendLog />
       </Suspense>
+
+      <WhatsAppTestMessageDialog open={testOpen} onOpenChange={setTestOpen} />
     </div>
   );
 };
