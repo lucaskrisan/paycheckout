@@ -107,7 +107,12 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Verify signature
+    // Verify signature — reject payment events without a secret (fraud prevention)
+    const PAYMENT_EVENT_TYPES = new Set([
+      'payment_intent.succeeded', 'payment_intent.payment_failed',
+      'payment_intent.canceled', 'charge.refunded', 'charge.dispute.created',
+      'checkout.session.completed',
+    ]);
     if (resolvedWebhookSecret) {
       if (!sigHeader) {
         console.warn('[stripe-webhook] No stripe-signature header present');
@@ -119,8 +124,11 @@ Deno.serve(async (req) => {
         return new Response('Invalid signature', { status: 400, headers: corsHeaders });
       }
       console.log('[stripe-webhook] Signature verified ✅');
+    } else if (PAYMENT_EVENT_TYPES.has(event.type)) {
+      console.error('[stripe-webhook] No webhook secret — rejecting payment event to prevent fraud');
+      return new Response('Webhook secret not configured', { status: 401, headers: corsHeaders });
     } else {
-      console.warn('[stripe-webhook] No webhook secret found — skipping signature verification');
+      console.warn('[stripe-webhook] No webhook secret found — allowing non-payment event');
     }
 
     // --- Idempotency ---
@@ -157,6 +165,30 @@ Deno.serve(async (req) => {
       case 'payment_intent.canceled':
         status = 'cancelled';
         break;
+      case 'charge.dispute.created': {
+        // Log dispute and notify producer — no order status change yet
+        const disputeChargeId = obj?.id;
+        const disputeAmount = obj?.amount ? obj.amount / 100 : null;
+        const disputeReason = obj?.reason || 'unknown';
+        console.warn(`[stripe-webhook] DISPUTE created: charge=${disputeChargeId} amount=${disputeAmount} reason=${disputeReason}`);
+        if (producerUserId) {
+          fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/fire-webhooks`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+            },
+            body: JSON.stringify({
+              event: 'payment.disputed',
+              user_id: producerUserId,
+              data: { charge_id: disputeChargeId, amount: disputeAmount, reason: disputeReason },
+            }),
+          }).catch(e => console.error('[stripe-webhook] fire-webhooks dispute error:', e));
+        }
+        return new Response(JSON.stringify({ received: true, type: 'dispute_logged' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
       default:
         console.log('[stripe-webhook] Unhandled event type:', event.type);
         return new Response(JSON.stringify({ received: true }), {

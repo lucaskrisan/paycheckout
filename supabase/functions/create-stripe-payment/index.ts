@@ -65,16 +65,18 @@ Deno.serve(async (req) => {
     let productOwnerId: string | null = null;
     let productName = 'Product';
     let productCurrency = 'usd';
+    let productIsSubscription = false;
     if (product_id) {
       const { data: prod } = await supabaseAdmin
         .from('products')
-        .select('name, user_id, price, show_coupon, currency')
+        .select('name, user_id, price, show_coupon, currency, is_subscription')
         .eq('id', product_id)
         .maybeSingle();
       if (prod) {
         productName = prod.name;
         productOwnerId = prod.user_id;
         productCurrency = (prod as any).currency === 'USD' ? 'usd' : 'brl';
+        productIsSubscription = (prod as any).is_subscription === true;
         let serverPrice = prod.price;
 
         if (config_id) {
@@ -301,8 +303,8 @@ Deno.serve(async (req) => {
       customer: stripeCustomerId,
       payment_method: payment_method_id,
       confirm: true,
-      automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
-      setup_future_usage: 'off_session',
+      automatic_payment_methods: { enabled: true, allow_redirects: 'as_needed' },
+      ...(productIsSubscription ? { setup_future_usage: 'off_session' } : {}),
       description: productName,
       metadata: {
         product_id: product_id || '',

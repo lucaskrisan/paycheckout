@@ -113,7 +113,7 @@ async function stepCapiFallback(params: ProcessOrderPaidParams): Promise<void> {
               },
               custom_data: {
                 value: Number(orderData.amount),
-                currency: 'BRL',
+                currency: (params.currency || 'BRL').toUpperCase(),
                 content_type: 'product',
                 content_ids: [orderData.product_id],
                 num_items: 1,
