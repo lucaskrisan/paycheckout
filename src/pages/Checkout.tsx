@@ -415,7 +415,7 @@ const Checkout = () => {
                 <PixPayment totalAmount={finalAmount} qrCodeData={pixData?.qrCodeUrl} pixCode={pixData?.pixCode} />
               ) : isUSD ? (
                 <Suspense fallback={<div className="h-11 bg-white border border-[#D5D9D9] rounded-lg flex items-center justify-center text-[#565959] text-sm"><Loader2 className="w-4 h-4 animate-spin mr-2" /> Loading…</div>}>
-                  <StripeCardForm ref={stripeCardRef} productId={product.id} />
+                  <StripePaymentElement ref={stripePaymentRef} productId={product.id} amountCents={Math.round(finalAmount * 100)} currency="usd" />
                 </Suspense>
               ) : (
                 <CreditCardForm data={creditCard} onChange={setCreditCard} totalAmount={finalAmount} isUSD={isUSD} />
