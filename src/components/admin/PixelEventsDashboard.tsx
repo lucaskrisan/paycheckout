@@ -431,14 +431,35 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
               </div>
             ) : (
               <AnimatePresence mode="popLayout" initial={false}>
-                {groupedEvents.map((g) => (
-                  <EventFeedCard
-                    key={g.event_id}
-                    group={g}
-                    productName={products.find((p) => p.id === g.product_id)?.name}
-                    geo={{ country: geo.country, city: geo.city }}
-                  />
-                ))}
+                {groupedEvents.map((g, i) => {
+                  // Time separator: when gap > 3 min between consecutive events
+                  const prev = groupedEvents[i - 1];
+                  const showSep =
+                    !!prev &&
+                    new Date(prev.created_at).getTime() - new Date(g.created_at).getTime() >
+                      3 * 60 * 1000;
+                  return (
+                    <div key={g.event_id}>
+                      {showSep && (
+                        <div
+                          className="flex items-center gap-3 px-4 py-1.5 select-none"
+                          aria-hidden
+                        >
+                          <span className="flex-1 h-px bg-gradient-to-r from-transparent via-border/50 to-transparent" />
+                          <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/60">
+                            {format(new Date(g.created_at), "HH:mm")}
+                          </span>
+                          <span className="flex-1 h-px bg-gradient-to-r from-transparent via-border/50 to-transparent" />
+                        </div>
+                      )}
+                      <EventFeedCard
+                        group={g}
+                        productName={products.find((p) => p.id === g.product_id)?.name}
+                        geo={{ country: geo.country, city: geo.city }}
+                      />
+                    </div>
+                  );
+                })}
               </AnimatePresence>
             )}
           </div>
