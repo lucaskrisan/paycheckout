@@ -371,39 +371,44 @@ const Dashboard = () => {
 
       <GatewayAlerts />
 
-      {/* ROW 1 — Hero revenue + compact stats */}
+      {/* ROW 1 — Hero revenue + compact stats.
+          In ALL mode, primary KPIs reflect the dominant currency (no money math mixing). */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <DashboardHeroCard
           label="Receita Líquida"
-          value={totalLiquido}
-          fmt={fmt}
+          value={pri("net_amount", totalLiquido)}
+          fmt={fmtPrimary}
           variant="revenue"
-          sublabel={m.total_taxas > 0 ? `Bruto ${fmt(m.total_bruto)}` : undefined}
+          sublabel={
+            (showAllMode ? Number(primaryBreakdown?.fees_amount || 0) : m.total_taxas) > 0
+              ? `Bruto ${fmtPrimary(pri("approved_amount", m.total_bruto))}`
+              : undefined
+          }
           sublabel2={subFor("net_amount")}
           tooltip="Receita aprovada menos taxas da plataforma"
         />
         <DashboardMetricCard
           label="Vendas Aprovadas"
-          value={String(m.count_approved)}
+          value={String(showAllMode ? (primaryBreakdown?.approved_count || 0) + (secondaryBreakdown?.approved_count || 0) : m.count_approved)}
           sub={m.count_total > 0 ? `${((m.count_approved / m.count_total) * 100).toFixed(0)}% aprovação` : undefined}
-          sub2={showAllMode && usd?.approved_count ? `+ ${usd.approved_count} em USD` : undefined}
+          sub2={showAllMode && secondaryBreakdown?.approved_count
+            ? `• ${primaryBreakdown?.approved_count || 0} ${dominantCurrency} · ${secondaryBreakdown.approved_count} ${secondaryCurrency}`
+            : undefined}
           accent
-          tooltip="Total de vendas com pagamento confirmado"
+          tooltip="Total de vendas com pagamento confirmado (todas as moedas)"
         />
         <DashboardMetricCard
           label="Vendas Pendentes"
-          value={fmt(m.total_pendente)}
+          value={fmtPrimary(pri("pending_amount", m.total_pendente))}
           sub={`${m.count_pending} pedidos`}
           sub2={subFor("pending_amount")}
           tooltip="Pedidos aguardando confirmação de pagamento"
         />
         <DashboardMetricCard
           label="Ticket Médio"
-          value={fmt(avgTicket)}
+          value={fmtPrimary(pri("avg_ticket", avgTicket))}
           sub="Valor médio por venda"
-          sub2={showAllMode && usd?.avg_ticket
-            ? `USD ${new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(usd.avg_ticket))}`
-            : undefined}
+          sub2={subFor("avg_ticket")}
           tooltip="Valor médio por venda aprovada"
         />
       </div>
