@@ -260,6 +260,33 @@ Deno.serve(async (req) => {
 
     const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: '2025-08-27.basil' });
 
+    // ─── Idempotent registration of canonical domain for Apple Pay ───
+    // Each producer's Stripe account must have the checkout domain(s) registered
+    // as a Payment Method Domain to expose Apple Pay / Google Pay in PaymentElement.
+    // We fire-and-forget; failures must NOT block payment creation.
+    try {
+      const reqOrigin = req.headers.get('origin') || req.headers.get('referer') || '';
+      const originHost = reqOrigin ? new URL(reqOrigin).hostname : '';
+      const canonicalHosts = new Set(
+        ['app.panttera.com.br', 'paycheckout.lovable.app', originHost].filter(Boolean)
+      );
+      for (const host of canonicalHosts) {
+        // Skip lovable preview/sandbox subdomains (Stripe rejects *.lovable.app dynamic hosts)
+        if (host.includes('lovable.app') && !host.startsWith('paycheckout')) continue;
+        stripe.paymentMethodDomains
+          .create({ domain_name: host })
+          .then((pmd: any) => console.log(`[create-stripe-payment] PMD ensured for ${host}: ${pmd.id}`))
+          .catch((e: any) => {
+            // resource_already_exists is the happy path
+            if (e?.code !== 'resource_already_exists' && !String(e?.message || '').includes('already')) {
+              console.warn(`[create-stripe-payment] PMD register failed for ${host}:`, e?.message);
+            }
+          });
+      }
+    } catch (e: any) {
+      console.warn('[create-stripe-payment] PMD registration block error (non-fatal):', e?.message);
+    }
+
     // Get or create Stripe customer
     const customers = await stripe.customers.list({ email: customer.email, limit: 1 });
     let stripeCustomerId: string;

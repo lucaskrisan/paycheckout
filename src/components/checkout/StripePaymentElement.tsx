@@ -2,7 +2,7 @@ import { useEffect, useImperativeHandle, useState, forwardRef, useRef, useMemo }
 import { loadStripe, type Stripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { supabase } from "@/integrations/supabase/client";
-import { Lock, Loader2, ShieldCheck } from "lucide-react";
+import { Loader2, ShieldCheck } from "lucide-react";
 
 export interface StripePaymentElementHandle {
   /**
@@ -141,6 +141,9 @@ const StripePaymentElement = forwardRef<StripePaymentElementHandle, StripePaymen
     }, [productId]);
 
     // Elements options for deferred intent (no client_secret needed upfront)
+    // NOTE: paymentMethodCreation "manual" is intentionally NOT set — it disables
+    // Apple Pay / Google Pay native wallets in PaymentElement. Default ("automatic")
+    // preserves wallet support and the standard confirmPayment flow.
     const elementsOptions = useMemo(() => ({
       mode: "payment" as const,
       amount: amountCents,
@@ -153,7 +156,6 @@ const StripePaymentElement = forwardRef<StripePaymentElementHandle, StripePaymen
           fontFamily: "Arial, sans-serif",
         },
       },
-      paymentMethodCreation: "manual" as const,
     }), [amountCents, currency]);
 
     if (loading) {
