@@ -91,6 +91,20 @@ Deno.serve(async (req) => {
       .update({ status: newStatus, ssl_status: newSslStatus, updated_at: new Date().toISOString() })
       .eq('id', id);
 
+    // When domain transitions to active: trigger Stripe Apple Pay domain registration (non-blocking)
+    const wasAlreadyActive = domain.status === 'active';
+    if (newStatus === 'active' && !wasAlreadyActive) {
+      console.log(`[cloudflare-check-status] Domain ${domain.hostname} became active — triggering Stripe PMD registration`);
+      fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/stripe-register-domain`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+        },
+        body: JSON.stringify({ domain_id: id }),
+      }).catch(e => console.error('[cloudflare-check-status] stripe-register-domain error:', e));
+    }
+
     return new Response(
       JSON.stringify({
         status: newStatus,
