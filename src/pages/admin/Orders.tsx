@@ -25,8 +25,18 @@ interface Order {
   metadata: any;
   platform_fee_amount?: number;
   customers: { name: string; email: string; phone?: string; cpf?: string } | null;
-  products: { name: string } | null;
+  products: { name: string; currency?: string } | null;
 }
+
+/** Format an amount in the product's currency. Defaults to BRL. */
+const formatMoney = (amount: number | string | null | undefined, currency?: string | null) => {
+  const value = Number(amount ?? 0);
+  const cur = (currency || "BRL").toUpperCase();
+  if (cur === "USD") {
+    return `$ ${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  return `R$ ${value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
 
 const ITEMS_PER_PAGE = 20;
 
