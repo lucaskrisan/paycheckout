@@ -52,6 +52,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useState } from "react";
+import PwaInstallBanner from "./PwaInstallBanner";
 
 /* ── Seções do menu ────────────────────────────────── */
 
@@ -280,6 +281,7 @@ export function AdminSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
+        <PwaInstallBanner userId={user?.id} collapsed={collapsed} />
         {!collapsed && (
           <Button
             variant="ghost"
