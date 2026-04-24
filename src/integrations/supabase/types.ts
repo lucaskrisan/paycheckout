@@ -2752,16 +2752,28 @@ export type Database = {
         Args: { p_product_id: string }
         Returns: string[]
       }
-      get_dashboard_metrics: {
-        Args: {
-          p_date_from?: string
-          p_date_to?: string
-          p_is_super_admin?: boolean
-          p_product_id?: string
-          p_user_id: string
-        }
-        Returns: Json
-      }
+      get_dashboard_metrics:
+        | {
+            Args: {
+              p_date_from?: string
+              p_date_to?: string
+              p_is_super_admin?: boolean
+              p_product_id?: string
+              p_user_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_currency?: string
+              p_date_from?: string
+              p_date_to?: string
+              p_is_super_admin?: boolean
+              p_product_id?: string
+              p_user_id: string
+            }
+            Returns: Json
+          }
       get_pixel_feedback_metrics: { Args: { p_days?: number }; Returns: Json }
       get_revenue_summary: {
         Args: { p_user_id: string }
