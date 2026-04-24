@@ -12,6 +12,7 @@ import DashboardMetricCard from "@/components/admin/dashboard/DashboardMetricCar
 import DashboardStateMap from "@/components/admin/dashboard/DashboardStateMap";
 import DashboardApprovalCard from "@/components/admin/dashboard/DashboardApprovalCard";
 import DashboardWeekdayChart from "@/components/admin/dashboard/DashboardWeekdayChart";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface CurrencyBreakdown {
   approved_count: number;
@@ -75,6 +76,7 @@ const Dashboard = () => {
   const [metrics, setMetrics] = useState<DashboardMetrics>(emptyMetrics);
   const [period, setPeriod] = useState<Period>("today");
   const [refreshing, setRefreshing] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("all");
   const [currency, setCurrency] = useState<Currency>("ALL");
@@ -203,6 +205,7 @@ const Dashboard = () => {
       console.error("[dashboard] loadData error:", error);
     } finally {
       if (isRefresh) setRefreshing(false);
+      setInitialLoading(false);
     }
   }, [fetchMetrics, fetchProducts, fetchWeekdayOrders, fetchChartOverride, user]);
 
@@ -374,118 +377,143 @@ const Dashboard = () => {
 
       {/* ROW 1 — Hero revenue + compact stats.
           In ALL mode, primary KPIs reflect the dominant currency (no money math mixing). */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <DashboardHeroCard
-          label="Receita Líquida"
-          value={pri("net_amount", totalLiquido)}
-          fmt={fmtPrimary}
-          variant="revenue"
-          sublabel={
-            (showAllMode ? Number(primaryBreakdown?.fees_amount || 0) : m.total_taxas) > 0
-              ? `Bruto ${fmtPrimary(pri("approved_amount", m.total_bruto))}`
-              : undefined
-          }
-          sublabel2={subFor("net_amount")}
-          tooltip="Receita aprovada menos taxas da plataforma"
-        />
-        <DashboardMetricCard
-          label="Vendas Aprovadas"
-          value={String(showAllMode ? (primaryBreakdown?.approved_count || 0) + (secondaryBreakdown?.approved_count || 0) : m.count_approved)}
-          sub={m.count_total > 0 ? `${((m.count_approved / m.count_total) * 100).toFixed(0)}% aprovação` : undefined}
-          sub2={showAllMode && secondaryBreakdown?.approved_count
-            ? `• ${primaryBreakdown?.approved_count || 0} ${dominantCurrency} · ${secondaryBreakdown.approved_count} ${secondaryCurrency}`
-            : undefined}
-          accent
-          tooltip="Total de vendas com pagamento confirmado (todas as moedas)"
-        />
-        <DashboardMetricCard
-          label="Vendas Pendentes"
-          value={fmtPrimary(pri("pending_amount", m.total_pendente))}
-          sub={`${m.count_pending} pedidos`}
-          sub2={subFor("pending_amount")}
-          tooltip="Pedidos aguardando confirmação de pagamento"
-        />
-        <DashboardMetricCard
-          label="Ticket Médio"
-          value={fmtPrimary(pri("avg_ticket", avgTicket))}
-          sub="Valor médio por venda"
-          sub2={subFor("avg_ticket")}
-          tooltip="Valor médio por venda aprovada"
-        />
-      </div>
+      {initialLoading ? (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={`hero-${i}`} className="h-[120px] rounded-xl bg-card/70" />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+            <Skeleton className="lg:col-span-7 h-[320px] rounded-xl bg-card/70" />
+            <div className="lg:col-span-5 grid grid-cols-2 gap-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={`m-${i}`} className="h-[110px] rounded-xl bg-card/70" />
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={`b-${i}`} className="h-[180px] rounded-xl bg-card/70" />
+            ))}
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <DashboardHeroCard
+              label="Receita Líquida"
+              value={pri("net_amount", totalLiquido)}
+              fmt={fmtPrimary}
+              variant="revenue"
+              sublabel={
+                (showAllMode ? Number(primaryBreakdown?.fees_amount || 0) : m.total_taxas) > 0
+                  ? `Bruto ${fmtPrimary(pri("approved_amount", m.total_bruto))}`
+                  : undefined
+              }
+              sublabel2={subFor("net_amount")}
+              tooltip="Receita aprovada menos taxas da plataforma"
+            />
+            <DashboardMetricCard
+              label="Vendas Aprovadas"
+              value={String(showAllMode ? (primaryBreakdown?.approved_count || 0) + (secondaryBreakdown?.approved_count || 0) : m.count_approved)}
+              sub={m.count_total > 0 ? `${((m.count_approved / m.count_total) * 100).toFixed(0)}% aprovação` : undefined}
+              sub2={showAllMode && secondaryBreakdown?.approved_count
+                ? `• ${primaryBreakdown?.approved_count || 0} ${dominantCurrency} · ${secondaryBreakdown.approved_count} ${secondaryCurrency}`
+                : undefined}
+              accent
+              tooltip="Total de vendas com pagamento confirmado (todas as moedas)"
+            />
+            <DashboardMetricCard
+              label="Vendas Pendentes"
+              value={fmtPrimary(pri("pending_amount", m.total_pendente))}
+              sub={`${m.count_pending} pedidos`}
+              sub2={subFor("pending_amount")}
+              tooltip="Pedidos aguardando confirmação de pagamento"
+            />
+            <DashboardMetricCard
+              label="Ticket Médio"
+              value={fmtPrimary(pri("avg_ticket", avgTicket))}
+              sub="Valor médio por venda"
+              sub2={subFor("avg_ticket")}
+              tooltip="Valor médio por venda aprovada"
+            />
+          </div>
 
-      {/* ROW 2 — Chart + metrics */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-        <div className="lg:col-span-7">
-          <DashboardChart
-            data={chartData}
-            fmt={chartFmt}
-            currencyPrefix={chartPrefix}
-            title={isHourly ? "Vendas" : "Receita Diária"}
-            subtitle={isHourly ? "Receita no período selecionado" : undefined}
-            currencyToggle={showAllMode ? { value: chartCurrency, onChange: setChartCurrency } : undefined}
-          />
-        </div>
-        <div className="lg:col-span-5 grid grid-cols-2 gap-3">
-          <DashboardMetricCard
-            label="Total de Pedidos"
-            value={String(m.count_total)}
-            sub={`${m.count_approved} aprovados · ${m.count_pending} pendentes`}
-            sub2={showAllMode && secondaryBreakdown?.total_count
-              ? `• ${primaryBreakdown?.total_count || 0} ${dominantCurrency} · ${secondaryBreakdown.total_count} ${secondaryCurrency}`
-              : undefined}
-            tooltip="Número total de pedidos no período (todas as moedas)"
-          />
-          <DashboardMetricCard
-            label="Vendas via Ads"
-            value={String(m.paid_sales_count)}
-            sub={fmtPrimary(pri("ads_revenue", m.paid_revenue))}
-            sub2={subFor("ads_revenue")}
-            tooltip="Vendas com UTM identificado (tráfego pago)"
-          />
-          <DashboardMetricCard
-            label="Vendas Orgânicas"
-            value={String(m.organic_sales_count)}
-            sub={fmtPrimary(pri("organic_revenue", m.organic_revenue))}
-            sub2={subFor("organic_revenue")}
-            tooltip="Vendas sem UTM (tráfego orgânico/direto)"
-          />
-          <DashboardMetricCard
-            label="Reembolsos"
-            value={fmtPrimary(pri("refunded_amount", m.total_refunded))}
-            sub={`${m.count_refunded} pedidos`}
-            sub2={subFor("refunded_amount")}
-            tooltip="Valor total de reembolsos processados"
-            dimmed={m.total_refunded === 0 && !(showAllMode && secondaryBreakdown?.refunded_amount)}
-          />
-          <DashboardMetricCard
-            label="Chargeback"
-            value={fmtPrimary(pri("chargeback_amount", m.total_chargeback))}
-            sub={`${m.count_chargedback} pedidos`}
-            sub2={subFor("chargeback_amount")}
-            tooltip="Valor total de chargebacks"
-            dimmed={m.total_chargeback === 0 && !(showAllMode && secondaryBreakdown?.chargeback_amount)}
-          />
-        </div>
-      </div>
+          {/* ROW 2 — Chart + metrics */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+            <div className="lg:col-span-7">
+              <DashboardChart
+                data={chartData}
+                fmt={chartFmt}
+                currencyPrefix={chartPrefix}
+                title={isHourly ? "Vendas" : "Receita Diária"}
+                subtitle={isHourly ? "Receita no período selecionado" : undefined}
+                currencyToggle={showAllMode ? { value: chartCurrency, onChange: setChartCurrency } : undefined}
+              />
+            </div>
+            <div className="lg:col-span-5 grid grid-cols-2 gap-3">
+              <DashboardMetricCard
+                label="Total de Pedidos"
+                value={String(m.count_total)}
+                sub={`${m.count_approved} aprovados · ${m.count_pending} pendentes`}
+                sub2={showAllMode && secondaryBreakdown?.total_count
+                  ? `• ${primaryBreakdown?.total_count || 0} ${dominantCurrency} · ${secondaryBreakdown.total_count} ${secondaryCurrency}`
+                  : undefined}
+                tooltip="Número total de pedidos no período (todas as moedas)"
+              />
+              <DashboardMetricCard
+                label="Vendas via Ads"
+                value={String(m.paid_sales_count)}
+                sub={fmtPrimary(pri("ads_revenue", m.paid_revenue))}
+                sub2={subFor("ads_revenue")}
+                tooltip="Vendas com UTM identificado (tráfego pago)"
+              />
+              <DashboardMetricCard
+                label="Vendas Orgânicas"
+                value={String(m.organic_sales_count)}
+                sub={fmtPrimary(pri("organic_revenue", m.organic_revenue))}
+                sub2={subFor("organic_revenue")}
+                tooltip="Vendas sem UTM (tráfego orgânico/direto)"
+              />
+              <DashboardMetricCard
+                label="Reembolsos"
+                value={fmtPrimary(pri("refunded_amount", m.total_refunded))}
+                sub={`${m.count_refunded} pedidos`}
+                sub2={subFor("refunded_amount")}
+                tooltip="Valor total de reembolsos processados"
+                dimmed={m.total_refunded === 0 && !(showAllMode && secondaryBreakdown?.refunded_amount)}
+              />
+              <DashboardMetricCard
+                label="Chargeback"
+                value={fmtPrimary(pri("chargeback_amount", m.total_chargeback))}
+                sub={`${m.count_chargedback} pedidos`}
+                sub2={subFor("chargeback_amount")}
+                tooltip="Valor total de chargebacks"
+                dimmed={m.total_chargeback === 0 && !(showAllMode && secondaryBreakdown?.chargeback_amount)}
+              />
+            </div>
+          </div>
 
-      {/* ROW 3 — Bottom cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <DashboardWeekdayChart orders={weekdayOrders} fmt={fmt} />
-        <DashboardApprovalCard
-          items={[
-            { label: "Cartão", rate: cardApprovalRate },
-            { label: "Pix", rate: pixApprovalRate },
-          ]}
-        />
-        <DashboardMetricCard
-          label="Carrinhos Abandonados"
-          value={String(m.abandoned_total)}
-          sub={`${recoveryRate}% recuperados`}
-          onClick={() => navigate("/admin/abandoned")}
-          tooltip="Total de checkouts iniciados sem finalização"
-        />
-      </div>
+          {/* ROW 3 — Bottom cards */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+            <DashboardWeekdayChart orders={weekdayOrders} fmt={fmt} />
+            <DashboardApprovalCard
+              items={[
+                { label: "Cartão", rate: cardApprovalRate },
+                { label: "Pix", rate: pixApprovalRate },
+              ]}
+            />
+            <DashboardMetricCard
+              label="Carrinhos Abandonados"
+              value={String(m.abandoned_total)}
+              sub={`${recoveryRate}% recuperados`}
+              onClick={() => navigate("/admin/abandoned")}
+              tooltip="Total de checkouts iniciados sem finalização"
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 };

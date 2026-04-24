@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Smartphone, Download, Share } from "lucide-react";
+import { Smartphone, Download, Share, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -69,6 +69,7 @@ export default function PwaInstallBanner({ userId, collapsed }: Props) {
   useEffect(() => {
     if (!userId) return;
     if (isStandalone()) return;
+    if (typeof window !== "undefined" && localStorage.getItem("pwa-banner-dismissed") === "true") return;
 
     setVisible(true);
 
@@ -88,6 +89,13 @@ export default function PwaInstallBanner({ userId, collapsed }: Props) {
       window.removeEventListener("appinstalled", onInstalled);
     };
   }, [userId]);
+
+  const dismissPermanently = useCallback(() => {
+    try {
+      localStorage.setItem("pwa-banner-dismissed", "true");
+    } catch {}
+    setVisible(false);
+  }, []);
 
   const handleInstall = useCallback(async () => {
     // Fluxo iOS — tooltip de atalho (único caminho possível no Safari)
@@ -145,8 +153,16 @@ export default function PwaInstallBanner({ userId, collapsed }: Props) {
   }
 
   return (
-    <div className="mx-2 mb-2 rounded-xl border border-sidebar-border/60 bg-sidebar-accent/30 p-3">
-      <div className="flex items-center gap-2 mb-1">
+    <div className="mx-2 mb-2 rounded-xl border border-sidebar-border/60 bg-sidebar-accent/30 p-3 relative">
+      <button
+        type="button"
+        onClick={dismissPermanently}
+        aria-label="Fechar"
+        className="absolute top-1.5 right-1.5 w-5 h-5 rounded-md flex items-center justify-center text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 transition-colors"
+      >
+        <X className="w-3 h-3" />
+      </button>
+      <div className="flex items-center gap-2 mb-1 pr-5">
         <div className="w-7 h-7 rounded-lg bg-sidebar-primary/15 flex items-center justify-center shrink-0">
           <Smartphone className="w-3.5 h-3.5 text-sidebar-primary" />
         </div>
