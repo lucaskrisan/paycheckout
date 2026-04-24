@@ -368,9 +368,14 @@ const WhatsApp = () => {
             </div>
           ) : status === "connecting" && qrSrc ? (
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                Escaneie o QR Code no seu WhatsApp...
+              <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  Escaneie o QR Code no seu WhatsApp...
+                </div>
+                <span className="text-xs tabular-nums">
+                  QR renova em {Math.max(0, 30 - qrAge)}s
+                </span>
               </div>
               <div className="flex justify-center p-4 bg-white rounded-xl border max-w-xs mx-auto">
                 <img
@@ -382,6 +387,12 @@ const WhatsApp = () => {
               <p className="text-xs text-center text-muted-foreground">
                 Abra o WhatsApp → Menu (⋮) → Aparelhos conectados → Conectar aparelho
               </p>
+              <div className="flex justify-center">
+                <Button onClick={refreshQrCode} variant="ghost" size="sm" className="gap-2 text-xs">
+                  <RotateCw className="w-3 h-3" />
+                  Gerar novo QR Code agora
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="space-y-4">
