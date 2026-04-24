@@ -2722,6 +2722,19 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: undefined
       }
+      get_checkout_settings: {
+        Args: { p_user_id: string }
+        Returns: {
+          company_name: string
+          countdown_minutes: number
+          custom_css: string
+          logo_url: string
+          pix_discount_percent: number
+          primary_color: string
+          show_countdown: boolean
+          user_id: string
+        }[]
+      }
       get_courses_for_product: {
         Args: { p_product_id: string }
         Returns: string[]
