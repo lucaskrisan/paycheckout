@@ -184,11 +184,15 @@ const Dashboard = () => {
     if (selectedProductId !== "all") query = query.eq("product_id", selectedProductId);
     if (from) query = query.gte("created_at", from);
     if (to) query = query.lt("created_at", to);
+    // Filter by currency to avoid mixing BRL+USD amounts in the same chart axis
+    if (currency !== "ALL") {
+      query = (query as any).eq("products.currency", currency);
+    }
     query = query.limit(5000);
 
     const { data } = await query;
     setWeekdayOrders(data || []);
-  }, [user, period, selectedProductId, isSuperAdmin, getDateRange]);
+  }, [user, period, selectedProductId, isSuperAdmin, getDateRange, currency]);
 
   const loadData = useCallback(async (isRefresh = false) => {
     if (!user) return;
@@ -286,14 +290,11 @@ const Dashboard = () => {
   const hasMultipleCurrencies = !!(brl?.approved_count && usd?.approved_count);
   const showAllMode = currency === "ALL" && hasMultipleCurrencies;
 
-  // Detect dominant currency (heuristic: USD volume *5 vs BRL volume).
-  // Used both for the chart default and to choose which currency is the "main" KPI.
+  // Detect dominant currency by approved order count (currency-agnostic, no exchange rate needed).
   const dominantCurrency: "BRL" | "USD" = useMemo(() => {
     if (!hasMultipleCurrencies || !brl || !usd) return "BRL";
-    const brlVol = Number(brl.approved_amount || 0);
-    const usdVolEquivalent = Number(usd.approved_amount || 0) * 5;
-    return usdVolEquivalent > brlVol ? "USD" : "BRL";
-  }, [hasMultipleCurrencies, brl?.approved_amount, usd?.approved_amount]);
+    return Number(usd.approved_count || 0) > Number(brl.approved_count || 0) ? "USD" : "BRL";
+  }, [hasMultipleCurrencies, brl?.approved_count, usd?.approved_count]);
 
   const secondaryCurrency: "BRL" | "USD" = dominantCurrency === "BRL" ? "USD" : "BRL";
   const primaryBreakdown = dominantCurrency === "BRL" ? brl : usd;

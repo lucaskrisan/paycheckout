@@ -3,9 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { playNotificationSound } from "@/lib/notificationSounds";
 
 const PAID_STATUSES = new Set(["paid", "approved"]);
-const SUPER_ADMIN_EMAILS = new Set(["trafegocomkrisan@gmail.com"]);
 
-export function useAdminOrders(userId: string | undefined, userEmail: string | undefined) {
+export function useAdminOrders(userId: string | undefined, isSuperAdmin: boolean = false) {
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [paidCount, setPaidCount] = useState(0);
   const notificationSoundRef = useRef("kaching");
@@ -44,8 +43,6 @@ export function useAdminOrders(userId: string | undefined, userEmail: string | u
   // Realtime order updates — refresh count for everyone, sound only for non-super-admin
   useEffect(() => {
     if (!userId) return;
-
-    const isSuperAdmin = SUPER_ADMIN_EMAILS.has(userEmail ?? "");
 
     const channel = supabase
       .channel(`admin-orders-sound-${userId}`)

@@ -14,12 +14,12 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function AdminLayout() {
-  const { user, isAdmin, loading, signOut, refreshRoles } = useAuth();
+  const { user, isAdmin, isSuperAdmin, loading, signOut, refreshRoles } = useAuth();
   const { isDark, toggle: toggleTheme } = useTheme();
   const [isVerified, setIsVerified] = useState(false);
 
   useOneSignalInit(user?.id ?? undefined);
-  const { totalRevenue } = useAdminOrders(user?.id ?? undefined, user?.email ?? undefined);
+  const { totalRevenue } = useAdminOrders(user?.id ?? undefined, isSuperAdmin);
   useVisitorToasts(user?.id ?? undefined, user?.email ?? undefined);
 
   useEffect(() => {
