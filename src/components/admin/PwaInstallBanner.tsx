@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Smartphone, Download, Share } from "lucide-react";
+import { Smartphone, Download, Share, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -69,6 +69,7 @@ export default function PwaInstallBanner({ userId, collapsed }: Props) {
   useEffect(() => {
     if (!userId) return;
     if (isStandalone()) return;
+    if (typeof window !== "undefined" && localStorage.getItem("pwa-banner-dismissed") === "true") return;
 
     setVisible(true);
 
@@ -88,6 +89,13 @@ export default function PwaInstallBanner({ userId, collapsed }: Props) {
       window.removeEventListener("appinstalled", onInstalled);
     };
   }, [userId]);
+
+  const dismissPermanently = useCallback(() => {
+    try {
+      localStorage.setItem("pwa-banner-dismissed", "true");
+    } catch {}
+    setVisible(false);
+  }, []);
 
   const handleInstall = useCallback(async () => {
     // Fluxo iOS — tooltip de atalho (único caminho possível no Safari)
