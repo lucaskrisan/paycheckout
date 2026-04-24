@@ -519,7 +519,7 @@ const AbandonedCarts = () => {
                 {paginated.map(cart => (
                   <TableRow
                     key={cart.id}
-                    className="cursor-pointer hover:bg-muted/50"
+                    className="cursor-pointer border-l-2 border-l-transparent hover:bg-muted/50 hover:border-l-primary/40 transition-colors"
                     onClick={() => navigate(`/admin/abandoned-carts/${cart.id}`)}
                   >
                     <TableCell className="font-medium text-foreground">

@@ -366,7 +366,7 @@ const Checkout = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "#F2F4F8", fontFamily: "Arial, sans-serif" }}>
+    <div className="min-h-screen" style={{ backgroundColor: "#F2F4F8", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <CountdownTimer minutes={countdownMinutes} isUSD={isUSD} />
       <div className="max-w-[620px] mx-auto px-4 pt-16 pb-8">
         <div className="bg-white rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.05)] overflow-hidden">
@@ -439,8 +439,8 @@ const Checkout = () => {
             <button
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="w-full py-4 rounded-xl text-base font-bold transition-all duration-200 disabled:opacity-50 active:scale-[0.98]"
-              style={{ backgroundColor: isSubmitting ? "#E8D38A" : "#FFD814", border: "1px solid #FCD200", color: "#0F1111", boxShadow: isSubmitting ? "none" : "0 3px 8px rgba(255,216,20,0.35), 0 1px 2px rgba(0,0,0,0.08)" }}
+              className="w-full py-4 rounded-xl text-base transition-all duration-200 disabled:opacity-50 active:scale-[0.98]"
+              style={{ backgroundColor: isSubmitting ? "#E8D38A" : "#FFD814", border: "1px solid #FCD200", color: "#0F1111", boxShadow: isSubmitting ? "none" : "0 3px 8px rgba(255,216,20,0.35), 0 1px 2px rgba(0,0,0,0.08)", fontWeight: 800, letterSpacing: "0.03em" }}
             >
               {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : (
                 <span className="flex flex-col items-center justify-center gap-0.5">
