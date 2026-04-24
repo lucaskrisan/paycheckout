@@ -89,6 +89,20 @@ interface LocalCurrencyResult {
  * Uses the free frankfurter.app API (ECB rates, no key needed).
  * Only fetches if country is NOT USD-based.
  */
+// Fallback rates used instantly while API loads or if API fails
+const FALLBACK_RATES: Record<string, number> = {
+  MXN: 17.5, COP: 4200, ARS: 1050, CLP: 950, PEN: 3.7, UYU: 39,
+  EUR: 0.92, GBP: 0.79, CAD: 1.36, AUD: 1.53, NZD: 1.64,
+  BRL: 5.1, JPY: 151, INR: 83, MYR: 4.7, SGD: 1.34,
+  HKD: 7.82, TWD: 32, KRW: 1350, THB: 36, IDR: 16200,
+  PHP: 57, VND: 25000, PKR: 278, BDT: 110,
+  TRY: 32, ZAR: 18, NGN: 1550, EGP: 49,
+  SAR: 3.75, AED: 3.67, ILS: 3.7,
+  PLN: 4.0, CZK: 23, HUF: 360, RON: 4.6,
+  SEK: 10.5, NOK: 10.6, DKK: 6.9, CHF: 0.9,
+  RUB: 92, UAH: 39,
+};
+
 export function useLocalCurrency(
   usdAmount: number,
   countryCode: string
@@ -101,17 +115,26 @@ export function useLocalCurrency(
   const isUsdCountry = !targetCurrency || targetCurrency === "USD";
 
   useEffect(() => {
+    // Always reset rate when country changes to avoid stale values
+    setRate(null);
+
     if (isUsdCountry || !targetCurrency) return;
+
+    // Show fallback rate immediately so UI converts without waiting for API
+    const fallback = FALLBACK_RATES[targetCurrency];
+    if (fallback) setRate(fallback);
 
     const cacheKey = `fx_rate_${targetCurrency}`;
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
-      const parsed = JSON.parse(cached);
-      // Cache for 1 hour
-      if (Date.now() - parsed.ts < 3600000) {
-        setRate(parsed.rate);
-        return;
-      }
+      try {
+        const parsed = JSON.parse(cached);
+        // Cache for 1 hour
+        if (Date.now() - parsed.ts < 3600000) {
+          setRate(parsed.rate);
+          return;
+        }
+      } catch { /* ignore corrupt cache */ }
     }
 
     let cancelled = false;
@@ -132,7 +155,7 @@ export function useLocalCurrency(
           }
         }
       } catch {
-        // silently fail — USD price is always shown as primary
+        // Fallback already set above — API failure is non-fatal
       }
       if (!cancelled) setLoading(false);
     };
