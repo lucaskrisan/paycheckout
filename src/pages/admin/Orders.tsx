@@ -526,7 +526,7 @@ const Orders = () => {
                         )}
                       </td>
                       <td className="py-4 px-5 text-right font-semibold whitespace-nowrap text-sm tabular-nums">
-                        <span className="text-foreground">R$ {Number(order.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                        <span className="text-foreground">{formatMoney(order.amount, order.products?.currency)}</span>
                       </td>
                     </tr>
                   );
