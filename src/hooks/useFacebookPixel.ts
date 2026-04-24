@@ -190,6 +190,7 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
   /** Send event to CAPI edge function (server-side, non-blocking) */
   const sendCAPI = useCallback((eventName: string, eventId: string, customData?: Record<string, unknown>) => {
     if (!productId) return;
+    if (!hasMarketingConsent()) return;
     const visitorId = getVisitorId();
     const fbp = ensureFbp();
     const geo = buildGeoPayload();
