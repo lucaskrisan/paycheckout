@@ -7,6 +7,7 @@ const SUPER_ADMIN_EMAILS = new Set(["trafegocomkrisan@gmail.com"]);
 
 export function useAdminOrders(userId: string | undefined, userEmail: string | undefined) {
   const [totalRevenue, setTotalRevenue] = useState(0);
+  const [paidCount, setPaidCount] = useState(0);
   const notificationSoundRef = useRef("kaching");
   const playApprovedSaleSoundRef = useRef(true);
 
@@ -15,6 +16,7 @@ export function useAdminOrders(userId: string | undefined, userEmail: string | u
     const { data, error } = await supabase.rpc("get_revenue_summary", { p_user_id: userId });
     if (!error && data && data.length > 0) {
       setTotalRevenue(Number(data[0].total_revenue));
+      setPaidCount(Number(data[0].paid_count) || 0);
     }
   }, [userId]);
 
@@ -74,5 +76,5 @@ export function useAdminOrders(userId: string | undefined, userEmail: string | u
     };
   }, [userId, userEmail, fetchRevenue]);
 
-  return { totalRevenue };
+  return { totalRevenue, paidCount };
 }

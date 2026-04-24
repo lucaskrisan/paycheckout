@@ -19,7 +19,7 @@ export default function AdminLayout() {
   const [isVerified, setIsVerified] = useState(false);
 
   useOneSignalInit(user?.id ?? undefined);
-  const { totalRevenue } = useAdminOrders(user?.id ?? undefined, user?.email ?? undefined);
+  const { paidCount } = useAdminOrders(user?.id ?? undefined, user?.email ?? undefined);
   useVisitorToasts(user?.id ?? undefined, user?.email ?? undefined);
 
   useEffect(() => {
@@ -51,7 +51,7 @@ export default function AdminLayout() {
         <AdminSidebar />
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <AdminHeader
-            totalRevenue={totalRevenue}
+            paidCount={paidCount}
             isDark={isDark}
             toggleTheme={toggleTheme}
             user={user}
