@@ -286,35 +286,61 @@ const Dashboard = () => {
   const hasMultipleCurrencies = !!(brl?.approved_count && usd?.approved_count);
   const showAllMode = currency === "ALL" && hasMultipleCurrencies;
 
+  // Detect dominant currency (heuristic: USD volume *5 vs BRL volume).
+  // Used both for the chart default and to choose which currency is the "main" KPI.
+  const dominantCurrency: "BRL" | "USD" = useMemo(() => {
+    if (!hasMultipleCurrencies || !brl || !usd) return "BRL";
+    const brlVol = Number(brl.approved_amount || 0);
+    const usdVolEquivalent = Number(usd.approved_amount || 0) * 5;
+    return usdVolEquivalent > brlVol ? "USD" : "BRL";
+  }, [hasMultipleCurrencies, brl?.approved_amount, usd?.approved_amount]);
+
+  const secondaryCurrency: "BRL" | "USD" = dominantCurrency === "BRL" ? "USD" : "BRL";
+  const primaryBreakdown = dominantCurrency === "BRL" ? brl : usd;
+  const secondaryBreakdown = dominantCurrency === "BRL" ? usd : brl;
+
   // Helper: returns a discreet secondary line in the OTHER currency when in "ALL" mode.
   // Adds a leading colored dot (•) so users notice cross-currency activity at a glance.
   const subFor = useCallback(
     (field: keyof CurrencyBreakdown, prefix?: string) => {
-      if (!showAllMode || !usd) return undefined;
-      const val = Number(usd[field] || 0);
+      if (!showAllMode || !secondaryBreakdown) return undefined;
+      const val = Number(secondaryBreakdown[field] || 0);
       if (!val) return undefined;
-      const formatted = new Intl.NumberFormat("en-US", {
+      const locale = secondaryCurrency === "USD" ? "en-US" : "pt-BR";
+      const formatted = new Intl.NumberFormat(locale, {
         style: "currency",
-        currency: "USD",
+        currency: secondaryCurrency,
       }).format(val);
-      return prefix ? `• ${prefix} ${formatted}` : `• + ${formatted} USD`;
+      return prefix ? `• ${prefix} ${formatted}` : `• + ${formatted}`;
     },
-    [showAllMode, usd]
+    [showAllMode, secondaryBreakdown, secondaryCurrency]
   );
 
-  // Auto-pick chartCurrency to the dominant currency on first load with mixed currencies.
-  // The user can still override via the toggle in the chart corner.
+  // Get primary KPI value: in ALL mode use the dominant-currency breakdown
+  // so cards never mix currencies; in single-currency mode falls back to total.
+  const pri = useCallback(
+    (field: keyof CurrencyBreakdown, fallback: number) => {
+      if (showAllMode && primaryBreakdown) return Number(primaryBreakdown[field] || 0);
+      return fallback;
+    },
+    [showAllMode, primaryBreakdown]
+  );
+
+  // Format using the dominant currency in ALL mode, otherwise the selected one.
+  const fmtPrimary = useCallback(
+    (v: number) => {
+      const c: "BRL" | "USD" = showAllMode ? dominantCurrency : (currency === "ALL" ? "BRL" : (currency as "BRL" | "USD"));
+      const locale = c === "USD" ? "en-US" : "pt-BR";
+      return new Intl.NumberFormat(locale, { style: "currency", currency: c }).format(v || 0);
+    },
+    [currency, showAllMode, dominantCurrency]
+  );
+
+  // Auto-pick chartCurrency to match dominant currency (user can still override).
   useEffect(() => {
-    if (!hasMultipleCurrencies || !brl || !usd) return;
-    const brlVol = Number(brl.approved_amount || 0);
-    // Naive parity: USD volume is converted at ~5x for "dominance" comparison only.
-    // (Just a heuristic to pick the default — no money math leaks into KPIs.)
-    const usdVolEquivalent = Number(usd.approved_amount || 0) * 5;
-    const dominant: "BRL" | "USD" = usdVolEquivalent > brlVol ? "USD" : "BRL";
-    setChartCurrency((prev) => (prev === dominant ? prev : dominant));
-    // Only re-evaluate when the underlying volumes change.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasMultipleCurrencies, brl?.approved_amount, usd?.approved_amount]);
+    if (!showAllMode) return;
+    setChartCurrency((prev) => (prev === dominantCurrency ? prev : dominantCurrency));
+  }, [showAllMode, dominantCurrency]);
 
   // Dedicated formatter for the chart — respects the chartCurrency in ALL mode
   // and the global currency otherwise.
