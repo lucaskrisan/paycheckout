@@ -324,7 +324,8 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
         products={products}
       />
 
-      {/* Ticker removido — vendas aparecem no feed e nos KPIs */}
+      {/* ── Live Ticker (Purchases) ── */}
+      <TickerBar userId={userId} filterProduct={filterProduct} />
 
       {/* ── Hero KPI Strip ── */}
       <HeroKPIStrip
