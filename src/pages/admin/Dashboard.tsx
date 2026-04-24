@@ -65,7 +65,7 @@ const Dashboard = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("all");
-  const [currency, setCurrency] = useState<Currency>("BRL");
+  const [currency, setCurrency] = useState<Currency>("ALL");
 
   // For DashboardWeekdayChart we still need raw orders for weekday grouping
   const [weekdayOrders, setWeekdayOrders] = useState<any[]>([]);
@@ -112,6 +112,7 @@ const Dashboard = () => {
       p_date_to: to,
       p_product_id: productId,
       p_is_super_admin: isSuperAdmin,
+      p_currency: currency === "ALL" ? null : currency,
     });
 
     if (error) {
@@ -120,7 +121,7 @@ const Dashboard = () => {
     }
 
     setMetrics(data || emptyMetrics);
-  }, [user, period, selectedProductId, isSuperAdmin, getDateRange]);
+  }, [user, period, selectedProductId, isSuperAdmin, getDateRange, currency]);
 
   const fetchProducts = useCallback(async () => {
     if (!user) return;
@@ -222,14 +223,21 @@ const Dashboard = () => {
 
   const salesByState = m.sales_by_state || {};
 
-  const exchangeRates: Record<Currency, number> = { BRL: 1, USD: 0.18, EUR: 0.16 };
-  const currencySymbols: Record<Currency, string> = { BRL: "R$", USD: "$", EUR: "€" };
+  // Real currency formatter — never converts; respects whichever currency is selected.
+  // When "ALL" is active, BRL is used as display default for aggregated totals,
+  // and a per-currency breakdown card is shown separately.
+  const fmt = useCallback(
+    (v: number, forceCurrency?: "BRL" | "USD") => {
+      const c = forceCurrency ?? (currency === "ALL" ? "BRL" : currency);
+      const locale = c === "USD" ? "en-US" : "pt-BR";
+      return new Intl.NumberFormat(locale, { style: "currency", currency: c }).format(v || 0);
+    },
+    [currency]
+  );
 
-  const fmt = (v: number) => {
-    const converted = v * exchangeRates[currency];
-    if (currency === "BRL") return `R$ ${converted.toFixed(2).replace(".", ",")}`;
-    return `${currencySymbols[currency]} ${converted.toFixed(2)}`;
-  };
+  const breakdown = m.by_currency || {};
+  const hasMultipleCurrencies = Object.keys(breakdown).length > 1;
+  const showBreakdown = currency === "ALL" && hasMultipleCurrencies;
 
   return (
     <div className="space-y-3">
