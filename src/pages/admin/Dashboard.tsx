@@ -385,7 +385,14 @@ const Dashboard = () => {
       {/* ROW 2 — Chart + metrics */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
         <div className="lg:col-span-7">
-          <DashboardChart data={chartData} fmt={fmt} title={isHourly ? "Vendas" : "Receita Diária"} subtitle={isHourly ? "Receita no período selecionado" : undefined} />
+          <DashboardChart
+            data={chartData}
+            fmt={chartFmt}
+            currencyPrefix={chartPrefix}
+            title={isHourly ? "Vendas" : "Receita Diária"}
+            subtitle={isHourly ? "Receita no período selecionado" : undefined}
+            currencyToggle={showAllMode ? { value: chartCurrency, onChange: setChartCurrency } : undefined}
+          />
         </div>
         <div className="lg:col-span-5 grid grid-cols-2 gap-3">
           <DashboardMetricCard
