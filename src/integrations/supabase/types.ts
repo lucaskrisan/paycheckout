@@ -715,6 +715,8 @@ export type Database = {
           id: string
           ssl_status: string | null
           status: string
+          stripe_apple_pay_status: string | null
+          stripe_pmd_id: string | null
           updated_at: string
           user_id: string
         }
@@ -725,6 +727,8 @@ export type Database = {
           id?: string
           ssl_status?: string | null
           status?: string
+          stripe_apple_pay_status?: string | null
+          stripe_pmd_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -735,6 +739,8 @@ export type Database = {
           id?: string
           ssl_status?: string | null
           status?: string
+          stripe_apple_pay_status?: string | null
+          stripe_pmd_id?: string | null
           updated_at?: string
           user_id?: string
         }
