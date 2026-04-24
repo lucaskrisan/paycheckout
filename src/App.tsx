@@ -8,6 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { CookieConsent } from "@/components/ui/cookie-consent";
+import { useLocation } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
 // Eagerly loaded — landing & critical auth paths
