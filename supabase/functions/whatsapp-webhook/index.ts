@@ -20,7 +20,15 @@ Deno.serve(async (req) => {
     const apikey = req.headers.get("apikey");
     const expectedKey = Deno.env.get("EVOLUTION_API_KEY");
 
-    if (!apikey || apikey !== expectedKey) {
+    // Constant-time comparison to prevent timing attacks
+    const timingSafeEqual = (a: string, b: string): boolean => {
+      if (a.length !== b.length) return false;
+      let diff = 0;
+      for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+      return diff === 0;
+    };
+
+    if (!apikey || !expectedKey || !timingSafeEqual(apikey, expectedKey)) {
       return json({ error: "Forbidden" }, 403);
     }
 

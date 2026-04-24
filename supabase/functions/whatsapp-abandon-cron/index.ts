@@ -145,20 +145,19 @@ Deno.serve(async (req) => {
         .eq("id", cart.product_id)
         .maybeSingle();
 
-      // Build prefilled recovery link
+      // Build recovery link — PII (name/email/phone/cpf) kept server-side via cart_id token
+      // Only UTMs and cart_id are exposed in URL to avoid PII in browser history/logs
       const baseUrl = cart.checkout_url || cart.page_url || "";
       let recoveryLink = "";
       if (baseUrl) {
         try {
           const u = new URL(baseUrl);
-          // Strip noisy/sensitive params we'll re-set
+          // Strip all sensitive and UTM params
           ["name", "email", "phone", "cpf", "utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"]
             .forEach((k) => u.searchParams.delete(k));
 
-          if (cart.customer_name) u.searchParams.set("name", cart.customer_name);
-          if (cart.customer_email) u.searchParams.set("email", cart.customer_email);
-          if (cart.customer_phone) u.searchParams.set("phone", cart.customer_phone);
-          if (cart.customer_cpf) u.searchParams.set("cpf", cart.customer_cpf);
+          // Use cart_id as opaque token — checkout prefills from DB via this ID
+          u.searchParams.set("cart_id", cart.id);
           u.searchParams.set("utm_source", "recovery");
           u.searchParams.set("utm_medium", "whatsapp");
           u.searchParams.set("utm_campaign", "abandoned_cart");
