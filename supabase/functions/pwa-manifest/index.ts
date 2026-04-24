@@ -48,19 +48,37 @@ Deno.serve(async (req) => {
       display: 'standalone',
       orientation: 'portrait',
       scope: '/',
-      start_url: '/admin',
+      start_url: '/',
       icons: [
         {
           src: icon192,
           sizes: '192x192',
           type: icon192.endsWith('.webp') ? 'image/webp' : 'image/png',
-          purpose: 'any maskable',
+          purpose: 'any',
+        },
+        {
+          src: icon192,
+          sizes: '192x192',
+          type: icon192.endsWith('.webp') ? 'image/webp' : 'image/png',
+          purpose: 'maskable',
         },
         {
           src: icon512,
           sizes: '512x512',
           type: icon512.endsWith('.webp') ? 'image/webp' : 'image/png',
-          purpose: 'any maskable',
+          purpose: 'any',
+        },
+        {
+          src: icon512,
+          sizes: '512x512',
+          type: icon512.endsWith('.webp') ? 'image/webp' : 'image/png',
+          purpose: 'maskable',
+        },
+        {
+          src: '/badge-72x72.png',
+          sizes: '72x72',
+          type: 'image/png',
+          purpose: 'any',
         },
       ],
     };
