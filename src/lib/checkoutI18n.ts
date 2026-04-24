@@ -162,6 +162,10 @@ const countryToLang: Record<string, string> = {
 
 const translations: Record<string, CheckoutTranslations> = { pt, en, es, fr, de, it };
 
+export function getCheckoutLang(countryCode: string): "pt" | "en" | "es" | "fr" | "de" | "it" {
+  return (countryToLang[countryCode] || "en") as any;
+}
+
 export function getCheckoutTranslations(countryCode: string): CheckoutTranslations {
   const lang = countryToLang[countryCode] || "en";
   return translations[lang] || en;

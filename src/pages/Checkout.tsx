@@ -25,7 +25,8 @@ import { useAbandonedCart } from "@/hooks/useAbandonedCart";
 import { useCheckoutPresence } from "@/hooks/useCheckoutPresence";
 import { useGeo } from "@/hooks/useGeo";
 import { useLocalCurrency } from "@/hooks/useLocalCurrency";
-import { getCheckoutTranslations } from "@/lib/checkoutI18n";
+import { getCheckoutTranslations, getCheckoutLang } from "@/lib/checkoutI18n";
+import { CookieConsent } from "@/components/ui/cookie-consent";
 import type { BuilderComponent } from "@/components/checkout-builder/types";
 
 interface Product {
@@ -519,6 +520,8 @@ const Checkout = () => {
           setTimeout(() => { navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=pix&email=${encodeURIComponent(customer.email)}${isUSD ? '&lang=en' : ''}`); }, 2500);
         }}
       />
+      {/* Localized cookie banner — language matches the buyer's selected country */}
+      <CookieConsent lang={getCheckoutLang(selectedCountry)} />
     </div>
   );
 };

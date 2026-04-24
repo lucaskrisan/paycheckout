@@ -8,6 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { CookieConsent } from "@/components/ui/cookie-consent";
+import { useLocation } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
 // Eagerly loaded — landing & critical auth paths
@@ -169,13 +170,20 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
-          {/* Global LGPD/GDPR consent banner — covers checkout, member area, admin, and all routes */}
-          <CookieConsent />
+          {/* Global LGPD/GDPR consent banner — covers member area, admin, and all routes EXCEPT checkout (which mounts its own localized banner) */}
+          <GlobalCookieBanner />
           </ErrorBoundary>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );
+
+function GlobalCookieBanner() {
+  const { pathname } = useLocation();
+  // Checkout routes mount their own localized cookie banner — skip the global PT one there.
+  if (pathname.startsWith("/checkout/") && pathname !== "/checkout/sucesso") return null;
+  return <CookieConsent />;
+}
 
 export default App;
