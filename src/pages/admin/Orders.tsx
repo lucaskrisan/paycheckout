@@ -911,14 +911,16 @@ const Orders = () => {
                   </div>
                 )}
 
-                {detailTab === "values" && (
+                {detailTab === "values" && (() => {
+                  const cur = selectedOrder.products?.currency;
+                  return (
                   <div className="space-y-0">
-                    <DetailRow label="Valor bruto" value={`R$ ${Number(selectedOrder.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
-                    <DetailRow label="Taxa plataforma" value={`R$ ${Number(selectedOrder.platform_fee_amount || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`} />
+                    <DetailRow label="Valor bruto" value={formatMoney(selectedOrder.amount, cur)} />
+                    <DetailRow label="Taxa plataforma" value={formatMoney(selectedOrder.platform_fee_amount || 0, cur)} />
                     <div className="flex items-start justify-between py-3 border-b border-primary/20">
                       <span className="text-xs text-primary uppercase tracking-wider font-bold">Valor líquido</span>
                       <span className="text-sm text-primary font-bold">
-                        R$ {(Number(selectedOrder.amount) - Number(selectedOrder.platform_fee_amount || 0)).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                        {formatMoney(Number(selectedOrder.amount) - Number(selectedOrder.platform_fee_amount || 0), cur)}
                       </span>
                     </div>
                     {meta.coupon_id && meta.coupon_id !== "<nil>" && (
