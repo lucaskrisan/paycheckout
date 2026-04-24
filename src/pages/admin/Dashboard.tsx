@@ -236,8 +236,8 @@ const Dashboard = () => {
   const salesByState = m.sales_by_state || {};
 
   // Real currency formatter — never converts; respects whichever currency is selected.
-  // When "ALL" is active, BRL is used as display default for aggregated totals,
-  // and a per-currency breakdown card is shown separately.
+  // When "ALL" is active, BRL is used as display default for the main number,
+  // and the secondary currency is shown as a discreet sub-line on each card.
   const fmt = useCallback(
     (v: number, forceCurrency?: "BRL" | "USD") => {
       const c = forceCurrency ?? (currency === "ALL" ? "BRL" : currency);
@@ -248,8 +248,26 @@ const Dashboard = () => {
   );
 
   const breakdown = m.by_currency || {};
-  const hasMultipleCurrencies = Object.keys(breakdown).length > 1;
-  const showBreakdown = currency === "ALL" && hasMultipleCurrencies;
+  const brl = breakdown.BRL;
+  const usd = breakdown.USD;
+  const hasMultipleCurrencies = !!(brl?.approved_count && usd?.approved_count);
+  const showAllMode = currency === "ALL" && hasMultipleCurrencies;
+
+  // Helper: returns a discreet secondary line in the OTHER currency when in "ALL" mode.
+  // `field` is the key inside CurrencyBreakdown to read.
+  const subFor = useCallback(
+    (field: keyof CurrencyBreakdown, prefix?: string) => {
+      if (!showAllMode || !usd) return undefined;
+      const val = Number(usd[field] || 0);
+      if (!val) return undefined;
+      const formatted = new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+      }).format(val);
+      return prefix ? `${prefix} ${formatted}` : `+ ${formatted} USD`;
+    },
+    [showAllMode, usd]
+  );
 
   return (
     <div className="space-y-3">
@@ -268,45 +286,6 @@ const Dashboard = () => {
 
       <GatewayAlerts />
 
-      {/* Multi-currency breakdown — only shows when "Todas" is active and there are sales in 2+ currencies */}
-      {showBreakdown && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {(["BRL", "USD"] as const).map((c) => {
-            const data = breakdown[c];
-            if (!data) return null;
-            const symbol = c === "BRL" ? "R$" : "$";
-            const flag = c === "BRL" ? "🇧🇷" : "🇺🇸";
-            return (
-              <div
-                key={c}
-                className="rounded-xl border border-white/[0.06] bg-card/70 backdrop-blur-sm p-4 flex items-center justify-between"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">{flag}</span>
-                  <div>
-                    <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
-                      Receita {c}
-                    </p>
-                    <p className="text-2xl font-bold text-foreground tabular-nums">
-                      {fmt(Number(data.approved_amount), c)}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-muted-foreground">{data.approved_count} aprovados</p>
-                  {data.pending_count > 0 && (
-                    <p className="text-xs mt-0.5" style={{ color: "hsl(var(--status-warning))" }}>
-                      {data.pending_count} pendentes ({symbol}
-                      {Number(data.pending_amount).toFixed(2)})
-                    </p>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
       {/* ROW 1 — Hero revenue + compact stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <DashboardHeroCard
@@ -315,12 +294,14 @@ const Dashboard = () => {
           fmt={fmt}
           variant="revenue"
           sublabel={m.total_taxas > 0 ? `Bruto ${fmt(m.total_bruto)}` : undefined}
+          sublabel2={subFor("net_amount")}
           tooltip="Receita aprovada menos taxas da plataforma"
         />
         <DashboardMetricCard
           label="Vendas Aprovadas"
           value={String(m.count_approved)}
           sub={m.count_total > 0 ? `${((m.count_approved / m.count_total) * 100).toFixed(0)}% aprovação` : undefined}
+          sub2={showAllMode && usd?.approved_count ? `+ ${usd.approved_count} em USD` : undefined}
           accent
           tooltip="Total de vendas com pagamento confirmado"
         />
@@ -328,12 +309,16 @@ const Dashboard = () => {
           label="Vendas Pendentes"
           value={fmt(m.total_pendente)}
           sub={`${m.count_pending} pedidos`}
+          sub2={subFor("pending_amount")}
           tooltip="Pedidos aguardando confirmação de pagamento"
         />
         <DashboardMetricCard
           label="Ticket Médio"
           value={fmt(avgTicket)}
           sub="Valor médio por venda"
+          sub2={showAllMode && usd?.avg_ticket
+            ? `USD ${new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(usd.avg_ticket))}`
+            : undefined}
           tooltip="Valor médio por venda aprovada"
         />
       </div>
@@ -348,33 +333,38 @@ const Dashboard = () => {
             label="Total de Pedidos"
             value={String(m.count_total)}
             sub={`${m.count_approved} aprovados · ${m.count_pending} pendentes`}
+            sub2={showAllMode && usd?.total_count ? `+ ${usd.total_count} em USD` : undefined}
             tooltip="Número total de pedidos no período selecionado"
           />
           <DashboardMetricCard
             label="Vendas via Ads"
             value={String(m.paid_sales_count)}
             sub={fmt(m.paid_revenue)}
+            sub2={subFor("ads_revenue")}
             tooltip="Vendas com UTM identificado (tráfego pago)"
           />
           <DashboardMetricCard
             label="Vendas Orgânicas"
             value={String(m.organic_sales_count)}
             sub={fmt(m.organic_revenue)}
+            sub2={subFor("organic_revenue")}
             tooltip="Vendas sem UTM (tráfego orgânico/direto)"
           />
           <DashboardMetricCard
             label="Reembolsos"
             value={fmt(m.total_refunded)}
             sub={`${m.count_refunded} pedidos`}
+            sub2={subFor("refunded_amount")}
             tooltip="Valor total de reembolsos processados"
-            dimmed={m.total_refunded === 0}
+            dimmed={m.total_refunded === 0 && !(showAllMode && usd?.refunded_amount)}
           />
           <DashboardMetricCard
             label="Chargeback"
             value={fmt(m.total_chargeback)}
             sub={`${m.count_chargedback} pedidos`}
+            sub2={subFor("chargeback_amount")}
             tooltip="Valor total de chargebacks"
-            dimmed={m.total_chargeback === 0}
+            dimmed={m.total_chargeback === 0 && !(showAllMode && usd?.chargeback_amount)}
           />
         </div>
       </div>
