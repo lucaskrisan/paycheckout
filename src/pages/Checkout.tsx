@@ -318,9 +318,6 @@ const Checkout = () => {
         if (product.is_subscription) trackSubscribe(finalAmount, "USD", paymentId);
         await markPurchased();
         navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product.id}${data.order_id ? `&order_id=${data.order_id}` : ''}&lang=en`);
-        } else {
-          throw new Error(t.paymentError || "Payment was not completed.");
-        }
       } else if (paymentMethod === "pix") {
         const customerState = getStateFromPhone(customer.phone);
         const { data, error } = await supabase.functions.invoke("create-pix-payment", {
