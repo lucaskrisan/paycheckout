@@ -12,6 +12,7 @@ interface Props {
   label: string;
   value: string;
   sub?: string;
+  sub2?: string;
   onClick?: () => void;
   accent?: boolean;
   tooltip?: string;
