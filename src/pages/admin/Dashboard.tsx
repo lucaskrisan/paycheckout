@@ -78,6 +78,11 @@ const Dashboard = () => {
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("all");
   const [currency, setCurrency] = useState<Currency>("ALL");
+  /** When currency=ALL, the chart still needs ONE currency to display.
+   *  Defaults to dominant currency, user can toggle. */
+  const [chartCurrency, setChartCurrency] = useState<"BRL" | "USD">("BRL");
+  /** Holds chart data for the chartCurrency when in ALL mode (separate fetch). */
+  const [chartOverride, setChartOverride] = useState<{ chart_hourly: any[]; chart_daily: any[] } | null>(null);
 
   // For DashboardWeekdayChart we still need raw orders for weekday grouping
   const [weekdayOrders, setWeekdayOrders] = useState<any[]>([]);
