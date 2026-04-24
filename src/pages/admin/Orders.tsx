@@ -866,7 +866,7 @@ const Orders = () => {
                         </div>
                       </div>
                       <p className="text-sm font-medium text-foreground">{selectedOrder.products?.name || "—"}</p>
-                      <p className="text-xs text-muted-foreground mt-1">R$ {Number(selectedOrder.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{formatMoney(selectedOrder.amount, selectedOrder.products?.currency)}</p>
                     </div>
 
                     {bumpIds.length > 0 && (
