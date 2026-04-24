@@ -80,7 +80,7 @@ const Tracking = () => {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const [pixelRes, domainRes, customDomainRes] = await Promise.all([
+      const [pixelRes, domainRes, customDomainRes, productsRes] = await Promise.all([
         supabase
           .from("product_pixels")
           .select("pixel_id, platform, domain, capi_token, product_id, products(name)")
@@ -96,6 +96,12 @@ const Tracking = () => {
           .eq("status", "active")
           .limit(1)
           .maybeSingle(),
+        supabase
+          .from("products")
+          .select("id, name")
+          .eq("user_id", user.id)
+          .eq("active", true)
+          .order("created_at", { ascending: false }),
       ]);
 
       if (customDomainRes.data && (customDomainRes.data as any).hostname) {
