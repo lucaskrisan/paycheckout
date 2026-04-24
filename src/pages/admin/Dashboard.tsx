@@ -140,6 +140,31 @@ const Dashboard = () => {
     setMetrics(data || emptyMetrics);
   }, [user, period, selectedProductId, isSuperAdmin, getDateRange, currency]);
 
+  /** When in ALL mode, fetch a chart-only snapshot for the chosen chartCurrency
+   *  so the area chart never mixes currencies on the same axis. */
+  const fetchChartOverride = useCallback(async () => {
+    if (currency !== "ALL" || !user) {
+      setChartOverride(null);
+      return;
+    }
+    const { from, to } = getDateRange(period);
+    const productId = selectedProductId === "all" ? null : selectedProductId;
+    const { data, error } = await supabase.rpc("get_dashboard_metrics", {
+      p_user_id: user.id,
+      p_date_from: from,
+      p_date_to: to,
+      p_product_id: productId,
+      p_is_super_admin: isSuperAdmin,
+      p_currency: chartCurrency,
+    });
+    if (!error && data) {
+      setChartOverride({
+        chart_hourly: data.chart_hourly || [],
+        chart_daily: data.chart_daily || [],
+      });
+    }
+  }, [user, period, selectedProductId, isSuperAdmin, getDateRange, currency, chartCurrency]);
+
   const fetchProducts = useCallback(async () => {
     if (!user) return;
     const { data } = await supabase.from("products").select("id, name").eq("user_id", user.id);
