@@ -287,7 +287,7 @@ const Dashboard = () => {
   const showAllMode = currency === "ALL" && hasMultipleCurrencies;
 
   // Helper: returns a discreet secondary line in the OTHER currency when in "ALL" mode.
-  // `field` is the key inside CurrencyBreakdown to read.
+  // Adds a leading colored dot (•) so users notice cross-currency activity at a glance.
   const subFor = useCallback(
     (field: keyof CurrencyBreakdown, prefix?: string) => {
       if (!showAllMode || !usd) return undefined;
@@ -297,10 +297,36 @@ const Dashboard = () => {
         style: "currency",
         currency: "USD",
       }).format(val);
-      return prefix ? `${prefix} ${formatted}` : `+ ${formatted} USD`;
+      return prefix ? `• ${prefix} ${formatted}` : `• + ${formatted} USD`;
     },
     [showAllMode, usd]
   );
+
+  // Auto-pick chartCurrency to the dominant currency on first load with mixed currencies.
+  // The user can still override via the toggle in the chart corner.
+  useEffect(() => {
+    if (!hasMultipleCurrencies || !brl || !usd) return;
+    const brlVol = Number(brl.approved_amount || 0);
+    // Naive parity: USD volume is converted at ~5x for "dominance" comparison only.
+    // (Just a heuristic to pick the default — no money math leaks into KPIs.)
+    const usdVolEquivalent = Number(usd.approved_amount || 0) * 5;
+    const dominant: "BRL" | "USD" = usdVolEquivalent > brlVol ? "USD" : "BRL";
+    setChartCurrency((prev) => (prev === dominant ? prev : dominant));
+    // Only re-evaluate when the underlying volumes change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasMultipleCurrencies, brl?.approved_amount, usd?.approved_amount]);
+
+  // Dedicated formatter for the chart — respects the chartCurrency in ALL mode
+  // and the global currency otherwise.
+  const chartFmt = useCallback(
+    (v: number) => {
+      const c: "BRL" | "USD" = currency === "ALL" ? chartCurrency : (currency as "BRL" | "USD");
+      const locale = c === "USD" ? "en-US" : "pt-BR";
+      return new Intl.NumberFormat(locale, { style: "currency", currency: c }).format(v || 0);
+    },
+    [currency, chartCurrency]
+  );
+  const chartPrefix = (currency === "ALL" ? chartCurrency : currency) === "USD" ? "$" : "R$";
 
   return (
     <div className="space-y-3">
