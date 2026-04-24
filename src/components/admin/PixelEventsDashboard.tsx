@@ -1,17 +1,17 @@
 // @ts-nocheck
 import { useEffect, useState, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Zap, Radio } from "lucide-react";
+import { Radio } from "lucide-react";
 import { format, subHours, startOfHour, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
 import CustomerJourneyFeed from "./CustomerJourneyFeed";
 import NinaTrackingHeader from "./tracking/NinaTrackingHeader";
-// TickerBar removido
+import TickerBar from "./tracking/TickerBar";
 import HeroKPIStrip from "./tracking/HeroKPIStrip";
 import SmartAlertsPanel from "./tracking/SmartAlertsPanel";
 import EventFeedCard from "./tracking/EventFeedCard";
-import NinaWatermark from "./tracking/NinaWatermark";
+import EventsPerMin from "./tracking/EventsPerMin";
 import LiveFunnel from "./tracking/LiveFunnel";
 import ConversionHeatmap from "./tracking/ConversionHeatmap";
 import PulseChart from "./tracking/PulseChart";
@@ -89,7 +89,7 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
 
     let feedQuery = supabase
       .from("pixel_events")
-      .select("id, product_id, event_name, source, created_at, customer_name, visitor_id, event_id")
+      .select("id, product_id, event_name, source, created_at, customer_name, visitor_id, event_id, event_value")
       .gte("created_at", since)
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
@@ -324,7 +324,8 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
         products={products}
       />
 
-      {/* Ticker removido — vendas aparecem no feed e nos KPIs */}
+      {/* ── Live Ticker (Purchases) ── */}
+      <TickerBar userId={userId} filterProduct={filterProduct} />
 
       {/* ── Hero KPI Strip ── */}
       <HeroKPIStrip
@@ -354,8 +355,9 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
               </div>
               <div className="flex flex-col leading-tight">
                 <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-400">Live Stream</span>
-                <span className="text-[10px] text-muted-foreground font-mono">
-                  {groupedEvents.length} sinais · {eventsLastHour}/h
+                <span className="text-[10px] text-muted-foreground font-mono inline-flex items-center gap-1.5">
+                  {groupedEvents.length} sinais ·{" "}
+                  <EventsPerMin timestamps={recentTimestamps} />
                 </span>
               </div>
               <div className="ml-1 flex items-center bg-black/40 rounded-md p-0.5 border border-white/[0.06]">
@@ -429,14 +431,35 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
               </div>
             ) : (
               <AnimatePresence mode="popLayout" initial={false}>
-                {groupedEvents.map((g) => (
-                  <EventFeedCard
-                    key={g.event_id}
-                    group={g}
-                    productName={products.find((p) => p.id === g.product_id)?.name}
-                    geo={{ country: geo.country, city: geo.city }}
-                  />
-                ))}
+                {groupedEvents.map((g, i) => {
+                  // Time separator: when gap > 3 min between consecutive events
+                  const prev = groupedEvents[i - 1];
+                  const showSep =
+                    !!prev &&
+                    new Date(prev.created_at).getTime() - new Date(g.created_at).getTime() >
+                      3 * 60 * 1000;
+                  return (
+                    <div key={g.event_id}>
+                      {showSep && (
+                        <div
+                          className="flex items-center gap-3 px-4 py-1.5 select-none"
+                          aria-hidden
+                        >
+                          <span className="flex-1 h-px bg-gradient-to-r from-transparent via-border/50 to-transparent" />
+                          <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/60">
+                            {format(new Date(g.created_at), "HH:mm")}
+                          </span>
+                          <span className="flex-1 h-px bg-gradient-to-r from-transparent via-border/50 to-transparent" />
+                        </div>
+                      )}
+                      <EventFeedCard
+                        group={g}
+                        productName={products.find((p) => p.id === g.product_id)?.name}
+                        geo={{ country: geo.country, city: geo.city }}
+                      />
+                    </div>
+                  );
+                })}
               </AnimatePresence>
             )}
           </div>
