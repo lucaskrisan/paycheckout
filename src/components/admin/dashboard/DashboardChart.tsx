@@ -18,6 +18,11 @@ interface Props {
   title?: string;
   subtitle?: string;
   highlightValue?: string;
+  /** When provided, shows a minimal BRL/USD toggle in the corner */
+  currencyToggle?: {
+    value: "BRL" | "USD";
+    onChange: (c: "BRL" | "USD") => void;
+  };
 }
 
 const CustomTooltip = ({ active, payload, label, fmt }: any) => {
@@ -30,7 +35,7 @@ const CustomTooltip = ({ active, payload, label, fmt }: any) => {
   );
 };
 
-const DashboardChart = memo(function DashboardChart({ data, fmt, currencyPrefix = "R$", title = "Receita Diária", subtitle, highlightValue }: Props) {
+const DashboardChart = memo(function DashboardChart({ data, fmt, currencyPrefix = "R$", title = "Receita Diária", subtitle, highlightValue, currencyToggle }: Props) {
   const hasData = data.some(d => d.total > 0);
   const totalRevenue = data.reduce((s, d) => s + d.total, 0);
   const avgPerDay = data.length > 0 ? totalRevenue / data.length : 0;
@@ -47,9 +52,28 @@ const DashboardChart = memo(function DashboardChart({ data, fmt, currencyPrefix 
               {subtitle && <p className="text-[11px] text-muted-foreground">{subtitle}</p>}
             </div>
           </div>
-          {highlightValue && (
-            <p className="text-lg font-bold text-primary">{highlightValue}</p>
-          )}
+          <div className="flex items-center gap-2">
+            {currencyToggle && (
+              <div className="flex items-center rounded-md border border-white/[0.06] bg-background/40 p-0.5">
+                {(["BRL", "USD"] as const).map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => currencyToggle.onChange(c)}
+                    className={`px-2 py-0.5 text-[10px] font-mono rounded-sm transition-colors ${
+                      currencyToggle.value === c
+                        ? "bg-primary/15 text-primary"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+            )}
+            {highlightValue && (
+              <p className="text-lg font-bold text-primary">{highlightValue}</p>
+            )}
+          </div>
         </div>
         <div className="h-[210px]">
           <ResponsiveContainer width="100%" height="100%">
