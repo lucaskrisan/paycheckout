@@ -33,6 +33,7 @@ export default function PwaInstallBanner({ userId, collapsed }: Props) {
     useState<BeforeInstallPromptEvent | null>(null);
   const [visible, setVisible] = useState(false);
   const [iosOpen, setIosOpen] = useState(false);
+  const [desktopOpen, setDesktopOpen] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -58,10 +59,12 @@ export default function PwaInstallBanner({ userId, collapsed }: Props) {
   }, [userId]);
 
   const handleInstall = useCallback(async () => {
+    // iOS: não há API de install — mostrar tooltip de atalho
     if (isIOS()) {
       setIosOpen(true);
       return;
     }
+    // Desktop/Android com evento capturado: abre popup nativo do Chrome
     if (deferredPrompt) {
       try {
         await deferredPrompt.prompt();
@@ -73,9 +76,10 @@ export default function PwaInstallBanner({ userId, collapsed }: Props) {
         console.error("[PwaInstallBanner] prompt error:", err);
       }
       setDeferredPrompt(null);
-    } else {
-      setIosOpen(true);
+      return;
     }
+    // Desktop sem evento: instruir via menu do navegador
+    setDesktopOpen(true);
   }, [deferredPrompt]);
 
   if (!visible) return null;
@@ -122,7 +126,15 @@ export default function PwaInstallBanner({ userId, collapsed }: Props) {
         Gerencie suas vendas de qualquer lugar
       </p>
 
-      <Popover open={iosOpen} onOpenChange={setIosOpen}>
+      <Popover
+        open={iosOpen || desktopOpen}
+        onOpenChange={(o) => {
+          if (!o) {
+            setIosOpen(false);
+            setDesktopOpen(false);
+          }
+        }}
+      >
         <PopoverTrigger asChild>
           <Button
             size="sm"
@@ -135,14 +147,30 @@ export default function PwaInstallBanner({ userId, collapsed }: Props) {
           </Button>
         </PopoverTrigger>
         <PopoverContent side="right" align="end" className="w-64 text-xs leading-relaxed">
-          <p className="font-semibold text-foreground mb-2 flex items-center gap-1.5">
-            <Share className="w-3.5 h-3.5 text-primary" />
-            Instalar no iPhone
-          </p>
-          <p className="text-muted-foreground">
-            Toque em <strong className="text-foreground">Compartilhar</strong>{" "}
-            → <strong className="text-foreground">Adicionar à Tela de Início</strong>.
-          </p>
+          {iosOpen ? (
+            <>
+              <p className="font-semibold text-foreground mb-2 flex items-center gap-1.5">
+                <Share className="w-3.5 h-3.5 text-primary" />
+                Instalar no iPhone
+              </p>
+              <p className="text-muted-foreground">
+                Toque em <strong className="text-foreground">Compartilhar</strong>{" "}
+                → <strong className="text-foreground">Adicionar à Tela de Início</strong>.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="font-semibold text-foreground mb-2 flex items-center gap-1.5">
+                <Download className="w-3.5 h-3.5 text-primary" />
+                Instalar no Desktop
+              </p>
+              <p className="text-muted-foreground">
+                No Chrome/Edge, clique no ícone{" "}
+                <strong className="text-foreground">Instalar</strong> na barra de endereço,
+                ou acesse <strong className="text-foreground">Menu → Instalar App</strong>.
+              </p>
+            </>
+          )}
         </PopoverContent>
       </Popover>
     </div>
