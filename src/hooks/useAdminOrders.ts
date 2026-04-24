@@ -77,7 +77,7 @@ export function useAdminOrders(userId: string | undefined, isSuperAdmin: boolean
       supabase.removeChannel(channel);
       clearInterval(pollId);
     };
-  }, [userId, userEmail, fetchRevenue]);
+  }, [userId, isSuperAdmin, fetchRevenue]);
 
   return { totalRevenue, paidCount };
 }
