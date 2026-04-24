@@ -126,6 +126,7 @@ const UtmifyIntegration = () => {
       statusEvents={UTMIFY_EVENTS}
       onTestConnection={handleTestConnection}
       testing={testing}
+      loading={loading}
     />
   );
 };

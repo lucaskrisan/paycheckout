@@ -128,6 +128,7 @@ const AppSellIntegration = () => {
       statusEvents={APPSELL_EVENTS}
       onTestConnection={handleTestConnection}
       testing={testing}
+      loading={loading}
     />
   );
 };
