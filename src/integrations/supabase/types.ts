@@ -2725,6 +2725,16 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: undefined
       }
+      get_abandoned_cart_prefill: {
+        Args: { p_cart_id: string }
+        Returns: {
+          customer_cpf: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string
+          product_id: string
+        }[]
+      }
       get_checkout_settings: {
         Args: { p_user_id: string }
         Returns: {
