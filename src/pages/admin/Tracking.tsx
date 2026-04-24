@@ -118,16 +118,16 @@ const Tracking = () => {
           has_capi: !!p.capi_token,
         }));
         setPixels(mapped);
-        const fbPixels = mapped.filter((p) => p.platform === "facebook");
-        const uniqueProds = Array.from(
-          new Map(fbPixels.map((p) => [p.product_id, { id: p.product_id, name: p.product_name }])).values()
-        );
-        setProducts(uniqueProds);
-        if (uniqueProds.length > 0) {
-          setSelectedProduct(uniqueProds[0].id);
-          setGlobalProduct(uniqueProds[0].id);
-        }
       }
+
+      // Dropdown shows ALL active products of the user (not only ones with pixel)
+      const allProducts = (productsRes.data || []).map((p: any) => ({ id: p.id, name: p.name }));
+      setProducts(allProducts);
+      if (allProducts.length > 0) {
+        setSelectedProduct(allProducts[0].id);
+        setGlobalProduct(allProducts[0].id);
+      }
+
       if (domainRes.data) setDomains(domainRes.data as any);
       setLoading(false);
     };
