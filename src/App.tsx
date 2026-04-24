@@ -170,8 +170,8 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
-          {/* Global LGPD/GDPR consent banner — covers checkout, member area, admin, and all routes */}
-          <CookieConsent />
+          {/* Global LGPD/GDPR consent banner — covers member area, admin, and all routes EXCEPT checkout (which mounts its own localized banner) */}
+          <GlobalCookieBanner />
           </ErrorBoundary>
         </AuthProvider>
       </BrowserRouter>
