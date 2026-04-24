@@ -32,6 +32,7 @@ interface IntegrationCardProps {
   statusEvents?: { key: string; label: string }[];
   onTestConnection?: () => Promise<void>;
   testing?: boolean;
+  loading?: boolean;
 }
 
 const IntegrationCard = ({
@@ -53,6 +54,7 @@ const IntegrationCard = ({
   statusEvents,
   onTestConnection,
   testing,
+  loading = false,
 }: IntegrationCardProps) => {
   const [open, setOpen] = useState(false);
   const [showToken, setShowToken] = useState(false);
@@ -68,9 +70,13 @@ const IntegrationCard = ({
       >
         <img src={cardLogo || logo} alt={name} className="max-h-20 max-w-[220px] object-contain" />
         <span className={cn(
-          "absolute top-3 right-3 w-3 h-3 rounded-full border-2 border-white shadow-sm",
-          isConnected ? "bg-emerald-500" : "bg-muted-foreground/30"
-        )} title={isConnected ? "Conectado" : "Desconectado"} />
+          "absolute top-3 right-3 w-3 h-3 rounded-full border-2 border-white shadow-sm transition-colors",
+          loading
+            ? "bg-muted-foreground/20 animate-pulse"
+            : isConnected
+              ? "bg-emerald-500 shadow-emerald-500/50"
+              : "bg-muted-foreground/30"
+        )} title={loading ? "Carregando..." : isConnected ? "Conectado" : "Desconectado"} />
       </button>
 
       {/* Config modal */}
