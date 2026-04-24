@@ -10,6 +10,9 @@ interface PriceSummaryProps {
   paymentMethod: "pix" | "credit_card";
   couponCode?: string;
   isUSD?: boolean;
+  /** When provided (USD checkout + non-USD country), formats USD amounts to local currency */
+  formatLocal?: (usdAmount: number) => string | null;
+  localCurrency?: string | null;
 }
 
 const PriceSummary = ({
@@ -21,11 +24,14 @@ const PriceSummary = ({
   paymentMethod,
   couponCode,
   isUSD = false,
+  formatLocal,
 }: PriceSummaryProps) => {
   const fmt = (v: number) =>
     isUSD ? `$ ${v.toFixed(2)}` : `R$ ${v.toFixed(2).replace(".", ",")}`;
 
   const hasDiscount = pixDiscount > 0 || couponDiscount > 0;
+  const localTotal = isUSD && formatLocal ? formatLocal(finalAmount) : null;
+  const localSubtotal = isUSD && formatLocal ? formatLocal(originalPrice) : null;
 
   return (
     <div className="rounded-xl border border-[#D5D9D9] bg-gradient-to-b from-[#FAFCFC] to-white overflow-hidden">
@@ -42,7 +48,7 @@ const PriceSummary = ({
         <div className="flex justify-between text-sm">
           <span className="text-[#565959]">{isUSD ? "Subtotal" : "Subtotal"}</span>
           <span className={hasDiscount ? "line-through text-[#565959]" : "font-semibold text-[#0F1111]"}>
-            {fmt(originalPrice)}
+            {localSubtotal ?? fmt(originalPrice)}
           </span>
         </div>
 
@@ -93,15 +99,26 @@ const PriceSummary = ({
         {/* Divider */}
         <div className="border-t border-dashed border-[#D5D9D9] my-1" />
 
-        {/* Total */}
+        {/* Total — local currency as primary when available */}
         <div className="flex justify-between items-baseline">
           <span className="text-sm font-bold text-[#0F1111]">Total</span>
           <div className="text-right">
-            <span className="text-xl font-extrabold text-[#0F1111]">{fmt(finalAmount)}</span>
-            {!isUSD && paymentMethod === "pix" && pixDiscount > 0 && (
-              <p className="text-[10px] text-[#067D62] font-semibold mt-0.5">
-                Você economiza {fmt(pixDiscount)} com PIX! 🎉
-              </p>
+            {localTotal ? (
+              <>
+                <span className="text-xl font-extrabold text-[#0F1111]">{localTotal}</span>
+                <p className="text-[10px] text-[#565959] mt-0.5">
+                  ≈ {fmt(finalAmount)} · charged in USD
+                </p>
+              </>
+            ) : (
+              <>
+                <span className="text-xl font-extrabold text-[#0F1111]">{fmt(finalAmount)}</span>
+                {!isUSD && paymentMethod === "pix" && pixDiscount > 0 && (
+                  <p className="text-[10px] text-[#067D62] font-semibold mt-0.5">
+                    Você economiza {fmt(pixDiscount)} com PIX! 🎉
+                  </p>
+                )}
+              </>
             )}
           </div>
         </div>
