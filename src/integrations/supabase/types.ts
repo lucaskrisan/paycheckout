@@ -1600,6 +1600,7 @@ export type Database = {
           customer_name: string | null
           event_id: string | null
           event_name: string
+          event_value: number | null
           id: string
           pixel_id: string | null
           product_id: string
@@ -1612,6 +1613,7 @@ export type Database = {
           customer_name?: string | null
           event_id?: string | null
           event_name: string
+          event_value?: number | null
           id?: string
           pixel_id?: string | null
           product_id: string
@@ -1624,6 +1626,7 @@ export type Database = {
           customer_name?: string | null
           event_id?: string | null
           event_name?: string
+          event_value?: number | null
           id?: string
           pixel_id?: string | null
           product_id?: string
