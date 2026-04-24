@@ -7,8 +7,8 @@ import CustomerForm, { type CustomerData, isValidCPF } from "@/components/checko
 import PixPayment from "@/components/checkout/PixPayment";
 import PixModal from "@/components/checkout/PixModal";
 import CreditCardForm, { type CreditCardData } from "@/components/checkout/CreditCardForm";
-import type { StripeCardFormHandle } from "@/components/checkout/StripeCardForm";
-const StripeCardForm = lazy(() => import("@/components/checkout/StripeCardForm"));
+import type { StripePaymentElementHandle } from "@/components/checkout/StripePaymentElement";
+const StripePaymentElement = lazy(() => import("@/components/checkout/StripePaymentElement"));
 import PaymentTabs from "@/components/checkout/PaymentTabs";
 import CountdownTimer from "@/components/checkout/CountdownTimer";
 import CouponField from "@/components/checkout/CouponField";
@@ -75,7 +75,7 @@ const Checkout = () => {
 
   const [customer, setCustomer] = useState<CustomerData>({ name: prefill.name, email: prefill.email, phone: prefill.phone, cpf: prefill.cpf });
   const [creditCard, setCreditCard] = useState<CreditCardData>({ number: "", name: "", expiry: "", cvv: "", installments: "1" });
-  const stripeCardRef = useRef<StripeCardFormHandle>(null);
+  const stripePaymentRef = useRef<StripePaymentElementHandle>(null);
 
   const { markPurchased, markStep } = useAbandonedCart({ productId: productId || "", customer, paymentMethod, productOwnerId: product?.user_id, productPrice: product?.price });
 
@@ -284,14 +284,10 @@ const Checkout = () => {
 
     try {
       if (isUSD) {
-        // ─── USD → Stripe (Embedded Payment Intents + Elements) ─────────
-        if (!stripeCardRef.current) throw new Error(t.paymentError || "Card form not ready.");
-        // 1) Tokenize the card in the browser (PCI-safe iframe)
-        const paymentMethodId = await stripeCardRef.current.tokenize({
-          name: customer.name,
-          email: customer.email,
-        });
-        // 2) Create + confirm PaymentIntent server-side
+        // ─── USD → Stripe PaymentElement (Apple Pay / Google Pay / Cards) ─────────
+        if (!stripePaymentRef.current) throw new Error(t.paymentError || "Payment form not ready.");
+
+        // 1) Create PaymentIntent server-side (unconfirmed, for PaymentElement flow)
         const { data, error } = await supabase.functions.invoke("create-stripe-payment", {
           body: {
             amount: finalAmount, product_id: product.id, currency: "usd",
@@ -300,7 +296,7 @@ const Checkout = () => {
             event_source_url: eventSourceUrl, utms,
             customer_country: selectedCountry,
             geo: geoPayload,
-            payment_method_id: paymentMethodId,
+            // No payment_method_id → triggers deferred/PaymentElement flow
             customer: { name: customer.name, email: customer.email, phone: customer.phone || undefined },
           },
         });
@@ -310,22 +306,18 @@ const Checkout = () => {
           throw new Error(msg);
         }
         if (data?.error) throw new Error(data.error);
+        if (!data?.client_secret) throw new Error("Failed to initialize payment.");
 
-        // 3) Handle 3DS / next_action if needed
-        let finalStatus = data?.status as string | undefined;
-        if (data?.requires_action && data?.client_secret) {
-          const ok = await stripeCardRef.current.confirmAction(data.client_secret);
-          if (!ok) throw new Error(t.paymentError || "3D Secure verification failed.");
-          finalStatus = "succeeded";
-        }
+        // 2) Confirm payment client-side via PaymentElement (handles 3DS, Apple Pay, etc.)
+        const result = await stripePaymentRef.current.confirmPayment(data.client_secret);
 
-        if (finalStatus === "succeeded") {
-          const paymentId = data?.payment_intent_id || data?.payment_id;
-          toast.success(t.paymentSuccess);
-          trackPurchase(finalAmount, "USD", paymentId, selectedBumpItems);
-          if (product.is_subscription) trackSubscribe(finalAmount, "USD", paymentId);
-          await markPurchased();
-          navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product.id}${data.order_id ? `&order_id=${data.order_id}` : ''}&lang=en`);
+        // 3) Payment succeeded
+        const paymentId = result.paymentIntentId || data?.payment_intent_id;
+        toast.success(t.paymentSuccess);
+        trackPurchase(finalAmount, "USD", paymentId, selectedBumpItems);
+        if (product.is_subscription) trackSubscribe(finalAmount, "USD", paymentId);
+        await markPurchased();
+        navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product.id}${data.order_id ? `&order_id=${data.order_id}` : ''}&lang=en`);
         } else {
           throw new Error(t.paymentError || "Payment was not completed.");
         }
