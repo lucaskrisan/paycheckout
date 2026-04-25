@@ -26,6 +26,16 @@ export interface CheckoutTranslations {
   card: { holder: string; expire: string; placeholder: string };
   reservedPrefix: string;
   reservedSuffix: string;
+  trust: {
+    securePayment: string;
+    dataProtected: string;
+    ssl: string;
+    agreePrefix: string;
+    termsOfUse: string;
+    and: string;
+    privacyPolicy: string;
+    agreeSuffix: string;
+  };
 }
 
 const pt: CheckoutTranslations = {
