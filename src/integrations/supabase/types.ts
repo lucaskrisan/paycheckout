@@ -123,6 +123,7 @@ export type Database = {
           active: boolean
           created_at: string
           id: string
+          login_url: string | null
           token: string
           updated_at: string
           user_id: string
@@ -131,6 +132,7 @@ export type Database = {
           active?: boolean
           created_at?: string
           id?: string
+          login_url?: string | null
           token?: string
           updated_at?: string
           user_id: string
@@ -139,6 +141,7 @@ export type Database = {
           active?: boolean
           created_at?: string
           id?: string
+          login_url?: string | null
           token?: string
           updated_at?: string
           user_id?: string
@@ -2735,6 +2738,7 @@ export type Database = {
           product_id: string
         }[]
       }
+      get_appsell_login_url: { Args: { p_product_id: string }; Returns: string }
       get_checkout_settings: {
         Args: { p_user_id: string }
         Returns: {
@@ -2774,6 +2778,13 @@ export type Database = {
             }
             Returns: Json
           }
+      get_order_delivery_links: {
+        Args: { p_order_id: string }
+        Returns: {
+          access_url: string
+          delivery_type: string
+        }[]
+      }
       get_pixel_feedback_metrics: { Args: { p_days?: number }; Returns: Json }
       get_revenue_summary: {
         Args: { p_user_id: string }
