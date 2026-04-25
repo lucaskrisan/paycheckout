@@ -61,6 +61,16 @@ const pt: CheckoutTranslations = {
   card: { holder: "Titular", expire: "Validade", placeholder: "NOME NO CARTÃO" },
   reservedPrefix: "🛒 Seu pedido está reservado por ",
   reservedSuffix: " — Complete o checkout!",
+  trust: {
+    securePayment: "Pagamento seguro",
+    dataProtected: "Dados protegidos",
+    ssl: "SSL 256 bits",
+    agreePrefix: "Ao continuar, você concorda com os ",
+    termsOfUse: "termos de uso",
+    and: " e ",
+    privacyPolicy: "política de privacidade",
+    agreeSuffix: ".",
+  },
 };
 
 const en: CheckoutTranslations = {
@@ -86,6 +96,16 @@ const en: CheckoutTranslations = {
   card: { holder: "Cardholder", expire: "Expires", placeholder: "FULL NAME" },
   reservedPrefix: "🛒 Your order is reserved for ",
   reservedSuffix: " — Complete checkout!",
+  trust: {
+    securePayment: "Secure payment",
+    dataProtected: "Data protected",
+    ssl: "256-bit SSL",
+    agreePrefix: "By continuing, you agree to the ",
+    termsOfUse: "terms of use",
+    and: " and ",
+    privacyPolicy: "privacy policy",
+    agreeSuffix: ".",
+  },
 };
 
 const es: CheckoutTranslations = {
@@ -111,6 +131,16 @@ const es: CheckoutTranslations = {
   card: { holder: "Titular", expire: "Vence", placeholder: "NOMBRE COMPLETO" },
   reservedPrefix: "🛒 Tu pedido está reservado por ",
   reservedSuffix: " — ¡Completa el checkout!",
+  trust: {
+    securePayment: "Pago seguro",
+    dataProtected: "Datos protegidos",
+    ssl: "SSL 256 bits",
+    agreePrefix: "Al continuar, aceptas los ",
+    termsOfUse: "términos de uso",
+    and: " y la ",
+    privacyPolicy: "política de privacidad",
+    agreeSuffix: ".",
+  },
 };
 
 const fr: CheckoutTranslations = {
@@ -136,6 +166,16 @@ const fr: CheckoutTranslations = {
   card: { holder: "Titulaire", expire: "Expire", placeholder: "NOM COMPLET" },
   reservedPrefix: "🛒 Votre commande est réservée pour ",
   reservedSuffix: " — Finalisez le paiement !",
+  trust: {
+    securePayment: "Paiement sécurisé",
+    dataProtected: "Données protégées",
+    ssl: "SSL 256 bits",
+    agreePrefix: "En continuant, vous acceptez les ",
+    termsOfUse: "conditions d'utilisation",
+    and: " et la ",
+    privacyPolicy: "politique de confidentialité",
+    agreeSuffix: ".",
+  },
 };
 
 const de: CheckoutTranslations = {
@@ -161,6 +201,16 @@ const de: CheckoutTranslations = {
   card: { holder: "Karteninhaber", expire: "Gültig bis", placeholder: "VOLLSTÄNDIGER NAME" },
   reservedPrefix: "🛒 Ihre Bestellung ist reserviert für ",
   reservedSuffix: " — Kasse abschließen!",
+  trust: {
+    securePayment: "Sichere Zahlung",
+    dataProtected: "Daten geschützt",
+    ssl: "256-Bit-SSL",
+    agreePrefix: "Indem Sie fortfahren, stimmen Sie den ",
+    termsOfUse: "Nutzungsbedingungen",
+    and: " und der ",
+    privacyPolicy: "Datenschutzerklärung",
+    agreeSuffix: " zu.",
+  },
 };
 
 const it: CheckoutTranslations = {
@@ -186,6 +236,16 @@ const it: CheckoutTranslations = {
   card: { holder: "Intestatario", expire: "Scadenza", placeholder: "NOME COMPLETO" },
   reservedPrefix: "🛒 Il tuo ordine è riservato per ",
   reservedSuffix: " — Completa il checkout!",
+  trust: {
+    securePayment: "Pagamento sicuro",
+    dataProtected: "Dati protetti",
+    ssl: "SSL 256 bit",
+    agreePrefix: "Continuando, accetti i ",
+    termsOfUse: "termini di utilizzo",
+    and: " e l'",
+    privacyPolicy: "informativa sulla privacy",
+    agreeSuffix: ".",
+  },
 };
 
 // Map country code to language
