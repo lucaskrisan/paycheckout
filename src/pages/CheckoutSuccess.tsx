@@ -128,6 +128,18 @@ const CheckoutSuccess = () => {
       if (data?.success) {
         setPurchasedUpsells((prev) => new Set(prev).add(offer.id));
         toast.success(t.upsellSuccess(offer.upsell_product.name));
+
+        // Refresh delivery links so AppSell/Panttera CTAs for the new upsell appear
+        try {
+          const { data: links } = await (supabase.rpc as any)("get_order_delivery_links", { p_order_id: orderId });
+          if (links && links.length > 0) {
+            setDeliveryLinks(links);
+            const appsell = links.find((d: any) => d.delivery_type === "appsell");
+            if (appsell?.access_url) setAppsellLoginUrl(appsell.access_url);
+          }
+        } catch {
+          /* ignore — toast already shown */
+        }
       } else {
         throw new Error(t.upsellError);
       }
@@ -319,9 +331,9 @@ const CheckoutSuccess = () => {
 
         {/* Access CTAs — one per delivery type in the order (main + bumps) */}
         <div className="space-y-3">
-          {deliveryLinks.map((link) => (
+          {deliveryLinks.map((link, idx) => (
             link.delivery_type === "appsell" && link.access_url ? (
-              <div key="appsell" className="bg-card border-2 border-primary/30 rounded-xl p-5 text-left">
+              <div key={`appsell-${idx}`} className="bg-card border-2 border-primary/30 rounded-xl p-5 text-left">
                 <p className="text-sm font-bold text-foreground mb-1">
                   🚀 {isEN ? "Access your purchase" : "Acesse sua compra"}
                 </p>
@@ -338,7 +350,7 @@ const CheckoutSuccess = () => {
                 </a>
               </div>
             ) : link.delivery_type === "panttera" ? (
-              <div key="panttera" className="bg-card border-2 border-primary/30 rounded-xl p-5 text-left">
+              <div key={`panttera-${idx}`} className="bg-card border-2 border-primary/30 rounded-xl p-5 text-left">
                 <p className="text-sm font-bold text-foreground mb-1">
                   🎓 {t.successCreateAccountTitle}
                 </p>
@@ -353,7 +365,7 @@ const CheckoutSuccess = () => {
                 </Link>
               </div>
             ) : link.delivery_type === "email" ? (
-              <div key="email" className="bg-card border border-border rounded-xl p-4">
+              <div key={`email-${idx}`} className="bg-card border border-border rounded-xl p-4">
                 <p className="text-sm text-muted-foreground text-center">
                   {isEN
                     ? "Your access details have been sent to your email."

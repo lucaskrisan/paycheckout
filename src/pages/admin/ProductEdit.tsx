@@ -876,6 +876,16 @@ const ProductEdit = () => {
                       </label>
 
                     </RadioGroup>
+
+                    {form.delivery_method === "appsell" && (
+                      <p className="text-xs text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded-md px-3 py-2">
+                        Configure o link de acesso do AppSell em{" "}
+                        <a href="/admin/integrations" className="underline font-medium">
+                          Integrações → AppSell
+                        </a>
+                        . Sem isso, clientes não terão botão de acesso após a compra.
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
