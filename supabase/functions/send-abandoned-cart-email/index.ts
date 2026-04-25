@@ -238,7 +238,7 @@ Deno.serve(async (req) => {
         resend_id: messageId,
         html_body: html,
         cost_estimate: 0.00115,
-        metadata: { cart_id: cart_id },
+        metadata: { cart_id: cart_id, language: isEnglish ? "en" : "pt-BR" },
       });
     } catch (logErr) {
       console.error("[send-abandoned-cart-email] Failed to log email:", logErr);
