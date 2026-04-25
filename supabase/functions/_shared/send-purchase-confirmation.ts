@@ -194,7 +194,9 @@ export async function sendPurchaseConfirmationEmail(params: PurchaseConfirmation
         resend_id: emailData?.id || null,
         customer_id: customerId,
         product_id: productId,
+        order_id: orderId,
         source,
+        metadata: { currency, language: isEnglish ? 'en' : 'pt-BR' },
       });
     } catch (logErr) {
       console.error(`[${source}] Email log error (non-blocking):`, logErr);
