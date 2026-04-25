@@ -1,6 +1,7 @@
 -- Update platform fee: R$0,99 fixed + 2% of sale amount
--- Remove R$500 free threshold (all sales charged from the first one)
--- Super admin remains exempt
+-- Free until producer reaches R$1,000 in cumulative approved revenue (all-time)
+-- After R$1,000: every sale is charged. No disclosure to producer needed.
+-- Super admin remains exempt.
 
 CREATE OR REPLACE FUNCTION public.accrue_platform_fee()
  RETURNS trigger
@@ -9,14 +10,16 @@ CREATE OR REPLACE FUNCTION public.accrue_platform_fee()
  SET search_path TO 'public'
 AS $function$
 DECLARE
-  _fixed_fee   numeric := 0.99;
-  _pct_fee     numeric;
-  _fee         numeric;
-  _account     billing_accounts%ROWTYPE;
-  _is_super    boolean;
-  _paid_count  integer;
-  _new_tier    text;
-  _supabase_url    text;
+  _fixed_fee        numeric := 0.99;
+  _free_threshold   numeric := 1000.00;
+  _pct_fee          numeric;
+  _fee              numeric;
+  _account          billing_accounts%ROWTYPE;
+  _is_super         boolean;
+  _paid_count       integer;
+  _new_tier         text;
+  _total_revenue    numeric;
+  _supabase_url     text;
   _service_role_key text;
 BEGIN
   -- Only fire on transition to paid/approved
@@ -30,6 +33,18 @@ BEGIN
   ) INTO _is_super;
 
   IF _is_super THEN
+    NEW.platform_fee_amount := 0;
+    RETURN NEW;
+  END IF;
+
+  -- Free period: first R$1,000 of cumulative all-time approved revenue
+  SELECT COALESCE(SUM(amount), 0) INTO _total_revenue
+  FROM public.orders
+  WHERE user_id = NEW.user_id
+    AND status IN ('paid', 'approved')
+    AND id != NEW.id;
+
+  IF (_total_revenue + NEW.amount) <= _free_threshold THEN
     NEW.platform_fee_amount := 0;
     RETURN NEW;
   END IF;
