@@ -17,6 +17,7 @@ import PriceSummary from "@/components/checkout/PriceSummary";
 import OrderBumps from "@/components/checkout/OrderBumps";
 import TrustFooter from "@/components/checkout/TrustFooter";
 import CheckoutBuilderRenderer from "@/components/checkout/CheckoutBuilderRenderer";
+import pagoSeguroStripe from "@/assets/pago-seguro-stripe.png";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -499,6 +500,17 @@ const Checkout = () => {
                 </span>
               )}
             </button>
+
+            {isUSD && (
+              <div className="flex justify-center pt-1">
+                <img
+                  src={pagoSeguroStripe}
+                  alt="Pago seguro con Stripe — Visa, MasterCard, Maestro, American Express"
+                  className="h-12 w-auto opacity-90"
+                  loading="lazy"
+                />
+              </div>
+            )}
 
             <TrustFooter isUSD={isUSD} />
           </div>
