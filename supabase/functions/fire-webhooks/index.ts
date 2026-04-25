@@ -75,6 +75,7 @@ async function deliverWebhook(
 function buildPayload(event: string, order: Record<string, unknown>, eventId: string) {
   const customers = order.customers as Record<string, unknown> | null;
   const products = order.products as Record<string, unknown> | null;
+  const productCurrency = (products?.currency as string | undefined)?.toUpperCase() || 'BRL';
 
   return {
     id: eventId,
@@ -86,7 +87,7 @@ function buildPayload(event: string, order: Record<string, unknown>, eventId: st
       status: order.status,
       payment: {
         amount: order.amount,
-        currency: 'BRL',
+        currency: productCurrency,
         method: order.payment_method,
       },
       customer: customers ? {
@@ -99,6 +100,7 @@ function buildPayload(event: string, order: Record<string, unknown>, eventId: st
         id: products.id,
         name: products.name,
         price: products.price,
+        currency: productCurrency,
       } : null,
       metadata: order.metadata || {},
       created_at: order.created_at,
@@ -182,7 +184,7 @@ Deno.serve(async (req) => {
     // Get full order data FIRST to validate status
     const { data: order } = await supabase
       .from('orders')
-      .select('*, customers(id, name, email, phone, cpf), products(id, name, price, delivery_method)')
+      .select('*, customers(id, name, email, phone, cpf), products(id, name, price, currency, delivery_method)')
       .eq('id', order_id)
       .single();
 

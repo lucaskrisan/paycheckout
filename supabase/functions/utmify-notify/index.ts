@@ -212,15 +212,17 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fetch product
+    // Fetch product (incl. currency for multi-currency support)
     const products: Array<Record<string, unknown>> = [];
+    let productCurrency = 'BRL';
     if (order.product_id) {
       const { data: prod } = await supabase
         .from('products')
-        .select('id, name, price')
+        .select('id, name, price, currency')
         .eq('id', order.product_id)
         .single();
       if (prod) {
+        if (prod.currency) productCurrency = String(prod.currency).toUpperCase();
         products.push({
           id: prod.id,
           name: prod.name,
@@ -273,6 +275,7 @@ Deno.serve(async (req) => {
       platform: 'Panttera',
       paymentMethod: mapPaymentMethod(order.payment_method),
       status: utmifyStatus,
+      currency: productCurrency,
       createdAt,
       approvedDate,
       refundedAt,
@@ -282,7 +285,7 @@ Deno.serve(async (req) => {
       commission,
     };
 
-    console.log('[utmify-notify] Sending to UTMify:', JSON.stringify({ status: utmifyStatus, orderId: order.id }));
+    console.log('[utmify-notify] Sending to UTMify:', JSON.stringify({ status: utmifyStatus, currency: productCurrency, orderId: order.id }));
 
     // Send to UTMify with timeout
     const controller = new AbortController();

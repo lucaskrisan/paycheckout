@@ -457,20 +457,25 @@ async function stepPushNotification(params: ProcessOrderPaidParams): Promise<voi
 
     if (!notifSettings) return;
 
-    const formattedAmount = Number(orderData.amount).toFixed(2).replace('.', ',');
-    const method = orderData.payment_method === 'pix' ? '💠 PIX' : '💳 Cartão';
-
     let productName = 'Produto';
     let customerName = '';
+    // Resolve currency: prefer explicit param, otherwise fetch from product, fallback BRL
+    let resolvedCurrency = (params.currency || '').toUpperCase();
 
     if (orderData.product_id) {
       const { data: prod } = await supabase
         .from('products')
-        .select('name, is_subscription')
+        .select('name, is_subscription, currency')
         .eq('id', orderData.product_id)
         .maybeSingle();
-      if (prod) productName = prod.name;
+      if (prod) {
+        productName = prod.name;
+        if (!resolvedCurrency && prod.currency) {
+          resolvedCurrency = String(prod.currency).toUpperCase();
+        }
+      }
     }
+    if (!resolvedCurrency) resolvedCurrency = 'BRL';
 
     if (orderData.customer_id) {
       const { data: cust } = await supabase
@@ -481,8 +486,19 @@ async function stepPushNotification(params: ProcessOrderPaidParams): Promise<voi
       if (cust) customerName = cust.name;
     }
 
-    const title = '💰 Nova venda confirmada!';
-    const message = `${customerName || 'Cliente'} • ${method} R$ ${formattedAmount}${notifSettings.show_product_name ? ` • ${productName}` : ''}`;
+    // Format amount per currency (USD: $ 9.75 / BRL: R$ 9,75)
+    const isUsd = resolvedCurrency === 'USD';
+    const amountNum = Number(orderData.amount);
+    const formattedAmount = isUsd
+      ? amountNum.toFixed(2)
+      : amountNum.toFixed(2).replace('.', ',');
+    const currencySymbol = isUsd ? 'US$' : 'R$';
+    const method = orderData.payment_method === 'pix'
+      ? '💠 PIX'
+      : (isUsd ? '💳 Card' : '💳 Cartão');
+
+    const title = isUsd ? '💰 New sale confirmed!' : '💰 Nova venda confirmada!';
+    const message = `${customerName || (isUsd ? 'Customer' : 'Cliente')} • ${method} ${currencySymbol} ${formattedAmount}${notifSettings.show_product_name ? ` • ${productName}` : ''}`;
 
     const payload: Record<string, unknown> = {
       app_id: appId,
