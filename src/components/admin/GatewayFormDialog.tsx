@@ -279,6 +279,26 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
                   </p>
                 </div>
               )}
+
+              {form.provider === "stripe" && (
+                <div className="rounded-lg border border-border bg-accent/30 p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-1">
+                      <Label className="text-sm font-semibold text-foreground">Stripe Tax</Label>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Coleta IVA / VAT / GST automaticamente por país (EU, México, Colômbia, Austrália, etc).
+                        Requer <strong>Stripe Tax habilitado</strong> no dashboard do Stripe e registros de imposto configurados.
+                        <br />
+                        <span className="text-[11px]">Custo adicional: +0,5% por transação cobrado pela Stripe.</span>
+                      </p>
+                    </div>
+                    <Switch
+                      checked={form.config.tax_enabled === true}
+                      onCheckedChange={(v) => updateConfig("tax_enabled", v)}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {form.provider === "asaas" && (
