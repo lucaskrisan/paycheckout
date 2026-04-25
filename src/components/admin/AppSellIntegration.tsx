@@ -140,6 +140,21 @@ const AppSellIntegration = () => {
       onTestConnection={handleTestConnection}
       testing={testing}
       loading={loading}
+      extraFields={
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-muted-foreground">Login URL do AppSell</Label>
+          <Input
+            type="url"
+            value={loginUrl}
+            onChange={(e) => setLoginUrl(e.target.value)}
+            placeholder="https://appsell-software.com/login_app/seu-slug"
+            className="text-xs h-9 bg-background border-border/50"
+          />
+          <p className="text-[10px] text-muted-foreground leading-relaxed">
+            Este é o link que seus clientes verão no botão "Acessar agora" após a compra.
+          </p>
+        </div>
+      }
     />
   );
 };
