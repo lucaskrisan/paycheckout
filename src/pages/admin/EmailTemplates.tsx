@@ -24,6 +24,7 @@ interface TemplateInfo {
   id: string;
   name: string;
   category: "auth" | "transactional";
+  language?: "pt-BR" | "en" | "both";
   description: string;
   subject: string;
   previewHtml: string;
@@ -207,13 +208,57 @@ const TEMPLATES: TemplateInfo[] = [
     id: "abandoned-cart",
     name: "Carrinho Abandonado",
     category: "transactional",
-    description: "Enviado para recuperação de carrinhos abandonados no checkout.",
-    subject: "Sua vaga ainda está reservada 🔒",
+    language: "both",
+    description: "Enviado para recuperação de carrinhos abandonados no checkout. Bilíngue: BR para produtos em R$, EN para produtos em USD.",
+    subject: "Você esqueceu algo no carrinho 🛒",
     previewHtml: wrap(`
       <h1>Reservamos sua vaga.</h1>
       <p class="text">Você iniciou uma compra mas não finalizou. O produto ainda está disponível — mas não garantimos por muito tempo.</p>
       <a href="#" class="btn">Garantir Minha Vaga</a>
       <p class="footer">Vagas limitadas. Após o encerramento, o acesso não poderá ser garantido.</p>
+    `),
+  },
+  {
+    id: "purchase-confirmation-en",
+    name: "Order Confirmed (USD)",
+    category: "transactional",
+    language: "en",
+    description: "Sent to customers after a successful USD payment via Stripe. Auto-localized from product currency.",
+    subject: "✅ Order confirmed — \"Your Product\"",
+    previewHtml: wrap(`
+      <h1>✅ Order Confirmed!</h1>
+      <p class="text">Hi <strong>Customer</strong>, your payment was successfully processed.</p>
+      <p class="text"><strong>Product:</strong> Your Product<br/><strong>Amount:</strong> $97.00<br/><strong>Payment:</strong> Credit Card</p>
+      <a href="#" class="btn">🚀 Access your purchase</a>
+      <p class="footer">Save this email — it confirms your purchase.</p>
+    `),
+  },
+  {
+    id: "access-link-en",
+    name: "Access Granted (USD)",
+    category: "transactional",
+    language: "en",
+    description: "Sent to USD course buyers (Stripe) with the member-area access link. Also dispatched on manual resend from the admin panel.",
+    subject: "🎉 Access granted — \"Your Course\"",
+    previewHtml: wrap(`
+      <h1>🎉 Your access is ready!</h1>
+      <p class="text">Hi <strong>Customer</strong>, your access to <strong>"Your Course"</strong> is ready! Click the button below to dive into the content.</p>
+      <a href="#" class="btn">Access Course</a>
+      <p class="footer">Save this email — it contains your access link.</p>
+    `),
+  },
+  {
+    id: "abandoned-cart-en",
+    name: "Cart Recovery (USD)",
+    category: "transactional",
+    language: "en",
+    description: "Sent to USD checkout abandoners. Auto-localized from product currency.",
+    subject: "You left something in your cart 🛒",
+    previewHtml: wrap(`
+      <h1>You left something behind.</h1>
+      <p class="text">Hi Customer, we noticed you didn't finish your purchase. Your cart is still waiting for you!</p>
+      <a href="#" class="btn">Complete purchase →</a>
+      <p class="footer">If you've already completed your purchase, please ignore this email.</p>
     `),
   },
 ];
@@ -455,9 +500,20 @@ export default function EmailTemplates() {
                       )}
                       <CardTitle className="text-sm">{t.name}</CardTitle>
                     </div>
-                    <Badge variant="outline" className="text-[10px] shrink-0">
-                      {t.category === "auth" ? "Auth" : "Transacional"}
-                    </Badge>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {t.language === "en" && (
+                        <Badge variant="outline" className="text-[10px] bg-blue-500/10 text-blue-600 border-blue-500/30">🌎 EN</Badge>
+                      )}
+                      {t.language === "both" && (
+                        <Badge variant="outline" className="text-[10px] bg-purple-500/10 text-purple-600 border-purple-500/30">🌐 BR/EN</Badge>
+                      )}
+                      {(!t.language || t.language === "pt-BR") && t.category === "transactional" && (
+                        <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-600 border-emerald-500/30">🇧🇷 BR</Badge>
+                      )}
+                      <Badge variant="outline" className="text-[10px]">
+                        {t.category === "auth" ? "Auth" : "Transacional"}
+                      </Badge>
+                    </div>
                   </div>
                   <CardDescription className="text-xs mt-1">{t.description}</CardDescription>
                 </CardHeader>
