@@ -35,6 +35,7 @@ interface Product {
   original_price: number | null; image_url: string | null;
   is_subscription: boolean; billing_cycle: string; user_id: string | null; show_coupon?: boolean;
   currency?: string;
+  delivery_method?: string | null;
 }
 
 interface OrderBump {

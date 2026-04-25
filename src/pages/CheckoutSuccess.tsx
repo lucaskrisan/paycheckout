@@ -63,8 +63,10 @@ const CheckoutSuccess = () => {
   // Fetch AppSell login URL when delivery = appsell
   useEffect(() => {
     if (delivery !== "appsell" || !productId) return;
-    supabase.rpc("get_appsell_login_url", { p_product_id: productId })
-      .then(({ data }) => { if (data) setAppsellLoginUrl(data); });
+    (supabase.rpc as any)("get_appsell_login_url", { p_product_id: productId })
+      .then(({ data }: { data: unknown }) => {
+        if (typeof data === "string" && data) setAppsellLoginUrl(data);
+      });
   }, [delivery, productId]);
 
   // Load upsell offers
