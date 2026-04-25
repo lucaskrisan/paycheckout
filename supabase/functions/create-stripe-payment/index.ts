@@ -37,6 +37,7 @@ Deno.serve(async (req) => {
     }
 
     let STRIPE_SECRET_KEY: string | null = null;
+    let stripeTaxEnabled = false;
 
     const body = await req.json();
     const {
@@ -212,6 +213,7 @@ Deno.serve(async (req) => {
       if (gw?.config && typeof gw.config === 'object') {
         const cfg = gw.config as any;
         STRIPE_SECRET_KEY = cfg.secret_key || cfg.api_key || cfg.sk || null;
+        stripeTaxEnabled = cfg.tax_enabled === true;
       }
     }
     if (!STRIPE_SECRET_KEY && productOwnerId) {
@@ -331,7 +333,7 @@ Deno.serve(async (req) => {
       amount: amountCents,
       currency: productCurrency,
       customer: stripeCustomerId,
-      automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
+      automatic_payment_methods: { enabled: true, allow_redirects: 'as_needed' },
       ...(productIsSubscription ? { setup_future_usage: 'off_session' } : {}),
       description: productName,
       metadata: {
@@ -340,9 +342,25 @@ Deno.serve(async (req) => {
         coupon_id: coupon_id || '',
         bump_product_ids: bump_product_ids?.length > 0 ? JSON.stringify(bump_product_ids) : '',
         customer_country: customer_country || '',
+        stripe_tax_enabled: stripeTaxEnabled ? 'true' : 'false',
         ...(utms || {}),
       },
     };
+
+    // Stripe Tax: calculate and collect VAT/IVA/GST automatically
+    // Requires Stripe Tax to be enabled in the producer's Stripe dashboard
+    // and tax registrations configured for each country
+    if (stripeTaxEnabled) {
+      piCreateParams.automatic_tax = { enabled: true };
+      // Pass customer country so Stripe can calculate tax before billing address is entered
+      if (customer_country) {
+        piCreateParams.customer_details = {
+          address: { country: customer_country },
+          address_source: 'shipping',
+        };
+      }
+      console.log(`[create-stripe-payment] Stripe Tax enabled for this PI (country: ${customer_country || 'unknown'})`);
+    }
 
     if (!usePaymentElement) {
       // Legacy CardElement flow: confirm immediately
@@ -390,6 +408,7 @@ Deno.serve(async (req) => {
         requires_action: paymentIntent.status === 'requires_action',
         order_id: orderRow?.id,
         payment_id: paymentIntent.status === 'succeeded' ? paymentIntent.id : undefined,
+        tax_enabled: stripeTaxEnabled,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
