@@ -288,6 +288,13 @@ const it: CheckoutTranslations = {
     privacyPolicy: "informativa sulla privacy",
     agreeSuffix: ".",
   },
+  form: {
+    yourDetails: "I tuoi dati",
+    fullName: "Nome completo",
+    email: "Email",
+    invalidName: "Il nome deve avere almeno 3 caratteri",
+    invalidEmail: "Indirizzo email non valido",
+  },
 };
 
 // Map country code to language
