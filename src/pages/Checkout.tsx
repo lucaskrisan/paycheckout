@@ -101,7 +101,16 @@ const Checkout = () => {
   const [creditCard, setCreditCard] = useState<CreditCardData>({ number: "", name: "", expiry: "", cvv: "", installments: "1" });
   const stripePaymentRef = useRef<StripePaymentElementHandle>(null);
 
-  const { markPurchased, markStep } = useAbandonedCart({ productId: productId || "", customer, paymentMethod, productOwnerId: product?.user_id, productPrice: product?.price });
+  const { markPurchased, markStep } = useAbandonedCart({
+    productId: productId || "",
+    customer,
+    paymentMethod,
+    productOwnerId: product?.user_id,
+    productPrice: product?.price,
+    // Phone field is hidden on USD checkouts, so don't gate cart
+    // creation on a phone the form never asks for.
+    requirePhone: product?.currency !== "USD",
+  });
 
   // Track checkout_step: personal_info when customer fills minimum data
   useEffect(() => {

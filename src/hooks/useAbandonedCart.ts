@@ -9,6 +9,13 @@ interface UseAbandonedCartProps {
   paymentMethod: string;
   productOwnerId?: string | null;
   productPrice?: number | null;
+  /**
+   * Whether the current checkout actually collects a phone number.
+   * - BR / BRL checkouts: true (phone + CPF are mandatory)
+   * - International / USD checkouts: false (form hides phone & CPF)
+   * Used to decide if phone is part of the "minimum data" gate.
+   */
+  requirePhone?: boolean;
 }
 
 function buildPayload(customer: CustomerData, paymentMethod: string, productOwnerId: string | null | undefined) {
@@ -23,22 +30,34 @@ function buildPayload(customer: CustomerData, paymentMethod: string, productOwne
   };
 }
 
-export function useAbandonedCart({ productId, customer, paymentMethod, productOwnerId, productPrice }: UseAbandonedCartProps) {
+export function useAbandonedCart({
+  productId,
+  customer,
+  paymentMethod,
+  productOwnerId,
+  productPrice,
+  requirePhone = true,
+}: UseAbandonedCartProps) {
   const cartIdRef = useRef<string | null>(null);
   const purchasedRef = useRef(false);
   const createdRef = useRef(false);
   const latestRef = useRef({ customer, paymentMethod, productOwnerId, productId, productPrice });
   latestRef.current = { customer, paymentMethod, productOwnerId, productId, productPrice };
 
-  // Minimum data to create a cart: name + valid-looking email.
-  // Phone is NOT required because international (USD) checkouts don't
-  // collect a phone number, which previously caused USD carts to never
-  // be saved and step events ("personal_info", "payment") to be lost.
-  const hasMinimumData = Boolean(
+  // Validation rule applied to this attempt — persisted in
+  // abandoned_carts.notes so we can audit which rule each cart used
+  // (e.g. why a USD cart was created without a phone number).
+  const validationRule = requirePhone ? "phone_required" : "phone_optional_usd";
+
+  // Minimum data to create a cart depends on whether the checkout
+  // actually collects a phone. International (USD) checkouts hide the
+  // phone field, so requiring it would silently drop every USD cart.
+  const phoneOk = customer.phone.replace(/\D/g, "").length >= 8;
+  const baseOk =
     customer.name.trim().length >= 2 &&
     customer.email.trim().length >= 5 &&
-    customer.email.includes("@")
-  );
+    customer.email.includes("@");
+  const hasMinimumData = Boolean(baseOk && (!requirePhone || phoneOk));
 
   const saveCart = useCallback(async () => {
     if (purchasedRef.current || !productId || !productOwnerId || !hasMinimumData) return;
@@ -79,6 +98,7 @@ export function useAbandonedCart({ productId, customer, paymentMethod, productOw
           customer_city: getCity() || null,
           customer_zip: getZip() || null,
           customer_country: getCountry() || null,
+          notes: `validation_rule:${validationRule}`,
           utm_source: params.get("utm_source") || null,
           utm_medium: params.get("utm_medium") || null,
           utm_campaign: params.get("utm_campaign") || null,
@@ -96,7 +116,7 @@ export function useAbandonedCart({ productId, customer, paymentMethod, productOw
       console.error("[abandoned-cart] unexpected error:", e);
       if (!cartIdRef.current) createdRef.current = false;
     }
-  }, [customer.cpf, customer.email, customer.name, customer.phone, hasMinimumData, paymentMethod, productId, productOwnerId]);
+  }, [customer.cpf, customer.email, customer.name, customer.phone, hasMinimumData, paymentMethod, productId, productOwnerId, productPrice, validationRule]);
 
   // --- Create cart when minimum data is first available ---
   useEffect(() => {
