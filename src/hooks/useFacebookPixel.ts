@@ -190,7 +190,9 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
   /** Send event to CAPI edge function (server-side, non-blocking) */
   const sendCAPI = useCallback((eventName: string, eventId: string, customData?: Record<string, unknown>) => {
     if (!productId) return;
-    if (!hasMarketingConsent()) return;
+    // CAPI is server-to-server — does not set browser cookies.
+    // Legal basis: contract performance (order processing), NOT marketing consent.
+    // Consent gate stays only on browser pixel (fbq) initialization below.
     const visitorId = getVisitorId();
     const fbp = ensureFbp();
     const geo = buildGeoPayload();
