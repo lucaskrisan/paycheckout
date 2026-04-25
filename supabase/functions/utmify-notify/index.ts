@@ -275,6 +275,7 @@ Deno.serve(async (req) => {
       platform: 'Panttera',
       paymentMethod: mapPaymentMethod(order.payment_method),
       status: utmifyStatus,
+      currency: productCurrency,
       createdAt,
       approvedDate,
       refundedAt,
@@ -284,7 +285,7 @@ Deno.serve(async (req) => {
       commission,
     };
 
-    console.log('[utmify-notify] Sending to UTMify:', JSON.stringify({ status: utmifyStatus, orderId: order.id }));
+    console.log('[utmify-notify] Sending to UTMify:', JSON.stringify({ status: utmifyStatus, currency: productCurrency, orderId: order.id }));
 
     // Send to UTMify with timeout
     const controller = new AbortController();
