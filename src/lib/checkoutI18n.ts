@@ -36,6 +36,13 @@ export interface CheckoutTranslations {
     privacyPolicy: string;
     agreeSuffix: string;
   };
+  form: {
+    yourDetails: string;
+    fullName: string;
+    email: string;
+    invalidName: string;
+    invalidEmail: string;
+  };
 }
 
 const pt: CheckoutTranslations = {
