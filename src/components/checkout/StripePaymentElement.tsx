@@ -73,6 +73,12 @@ const InnerForm = forwardRef<StripePaymentElementHandle, InnerFormProps>(functio
             defaultCollapsed: false,
           },
           business: { name: "Panttera" },
+          defaultValues: {
+            billingDetails: {
+              email: customerEmail || undefined,
+              name: customerName || undefined,
+            },
+          },
         }}
       />
       {!ready && (
