@@ -13,7 +13,16 @@ interface PriceSummaryProps {
   /** When provided (USD checkout + non-USD country), formats USD amounts to local currency */
   formatLocal?: (usdAmount: number) => string | null;
   localCurrency?: string | null;
+  /** ISO-2 country code — used to show tax disclaimer in tax-collecting countries */
+  selectedCountry?: string;
 }
+
+const TAX_COUNTRIES = new Set([
+  // EU (VAT)
+  "DE","FR","IT","ES","PT","NL","BE","AT","IE","LU","FI","SE","DK","PL","CZ","HU","RO","GR","SK","SI","HR","BG","EE","LV","LT","MT","CY",
+  // Other
+  "GB","MX","CO","AU","NZ","CH","NO","CA",
+]);
 
 const PriceSummary = ({
   originalPrice,
