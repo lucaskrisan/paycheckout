@@ -18,6 +18,7 @@ import OrderBumps from "@/components/checkout/OrderBumps";
 import TrustFooter from "@/components/checkout/TrustFooter";
 import CheckoutBuilderRenderer from "@/components/checkout/CheckoutBuilderRenderer";
 import pagoSeguroStripe from "@/assets/pago-seguro-stripe.png";
+import { Breadcrumb as StepBreadcrumb, type StepBreadcrumbStep } from "@/components/ui/step-breadcrumb";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
