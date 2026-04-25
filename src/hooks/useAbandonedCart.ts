@@ -116,7 +116,7 @@ export function useAbandonedCart({
       console.error("[abandoned-cart] unexpected error:", e);
       if (!cartIdRef.current) createdRef.current = false;
     }
-  }, [customer.cpf, customer.email, customer.name, customer.phone, hasMinimumData, paymentMethod, productId, productOwnerId]);
+  }, [customer.cpf, customer.email, customer.name, customer.phone, hasMinimumData, paymentMethod, productId, productOwnerId, productPrice, validationRule]);
 
   // --- Create cart when minimum data is first available ---
   useEffect(() => {
