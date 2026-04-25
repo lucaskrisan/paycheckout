@@ -184,9 +184,6 @@ const ProducerBilling = () => {
   // ── Derived state ──
   const balance = account?.balance ?? 0;
   const creditLimit = account?.credit_limit ?? 5;
-  const FREE_THRESHOLD = 500;
-  const freeSalesRemaining = totalRevenue < FREE_THRESHOLD ? Math.floor((FREE_THRESHOLD - totalRevenue) / 0.99) : 0;
-  const isInFreeTrial = freeSalesRemaining > 0;
   const hasCard = !!account?.card_last4;
   const currentTierKey = account?.credit_tier ?? "iron";
   const tierMeta = TIER_META[currentTierKey] ?? TIER_META.iron;
@@ -261,26 +258,6 @@ const ProducerBilling = () => {
         </Card>
       </div>
 
-      {/* ── Free Trial Banner ── */}
-      {isInFreeTrial && (
-        <Card className="border-primary/30 bg-primary/5">
-          <CardContent className="pt-5 pb-5">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <Zap className="w-5 h-5 text-primary" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground">🎉 Você está no período gratuito!</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Suas primeiras R$ 500,00 em vendas são <span className="font-semibold text-primary">100% isentas de taxas</span>.
-                  Você ainda tem ~{freeSalesRemaining} vendas grátis restantes.
-                  Após atingir R$ 500 em faturamento, a taxa de R$ 0,99 por venda começa a ser cobrada.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
       {/* ── Main Content + Tier Panel side by side ── */}
       <div className={`grid gap-4 ${showTierPanel ? "grid-cols-1 lg:grid-cols-[1fr_320px]" : "grid-cols-1"}`}>
         {/* Left: Credit Usage + Tabs + History */}
@@ -292,13 +269,11 @@ const ProducerBilling = () => {
                 <div>
                   <p className="text-sm font-semibold text-foreground">Vendas Disponíveis</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {isInFreeTrial
-                      ? `~${freeSalesRemaining} vendas grátis restantes (período gratuito)`
-                      : balance > 0
-                        ? `~${toSales(balance)} vendas com saldo pré-pago`
-                        : usedCredit < toleranceLimit
-                          ? `~${toSales(toleranceLimit - usedCredit)} vendas restantes no limite`
-                          : "Limite atingido — adicione crédito para continuar vendendo"
+                    {balance > 0
+                      ? `~${toSales(balance)} vendas com saldo pré-pago`
+                      : usedCredit < toleranceLimit
+                        ? `~${toSales(toleranceLimit - usedCredit)} vendas restantes no limite`
+                        : "Limite atingido — adicione crédito para continuar vendendo"
                     }
                   </p>
                 </div>
@@ -306,15 +281,11 @@ const ProducerBilling = () => {
                   Limite: {fmt(creditLimit)} ({tierMeta.title})
                 </p>
               </div>
-              {!isInFreeTrial && (
-                <>
-                  <Progress value={usagePercent} className="h-2" />
-                  <div className="flex justify-between mt-2">
-                    <p className="text-xs text-muted-foreground">{fmt(usedCredit)} usado de {fmt(creditLimit)}</p>
-                    <p className="text-xs text-muted-foreground">{usagePercent.toFixed(0)}%</p>
-                  </div>
-                </>
-              )}
+              <Progress value={usagePercent} className="h-2" />
+              <div className="flex justify-between mt-2">
+                <p className="text-xs text-muted-foreground">{fmt(usedCredit)} usado de {fmt(creditLimit)}</p>
+                <p className="text-xs text-muted-foreground">{usagePercent.toFixed(0)}%</p>
+              </div>
             </CardContent>
           </Card>
 
