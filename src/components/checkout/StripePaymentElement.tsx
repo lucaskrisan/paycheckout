@@ -15,9 +15,11 @@ export interface StripePaymentElementHandle {
 
 interface InnerFormProps {
   onReady?: () => void;
+  customerEmail?: string;
+  customerName?: string;
 }
 
-const InnerForm = forwardRef<StripePaymentElementHandle, InnerFormProps>(function InnerForm({ onReady }, ref) {
+const InnerForm = forwardRef<StripePaymentElementHandle, InnerFormProps>(function InnerForm({ onReady, customerEmail, customerName }, ref) {
   const stripe = useStripe();
   const elements = useElements();
   const [ready, setReady] = useState(false);
@@ -71,6 +73,12 @@ const InnerForm = forwardRef<StripePaymentElementHandle, InnerFormProps>(functio
             defaultCollapsed: false,
           },
           business: { name: "Panttera" },
+          defaultValues: {
+            billingDetails: {
+              email: customerEmail || undefined,
+              name: customerName || undefined,
+            },
+          },
         }}
       />
       {!ready && (
@@ -90,10 +98,12 @@ interface StripePaymentElementProps {
   productId: string;
   amountCents: number;
   currency: string;
+  customerEmail?: string;
+  customerName?: string;
 }
 
 const StripePaymentElement = forwardRef<StripePaymentElementHandle, StripePaymentElementProps>(
-  function StripePaymentElement({ productId, amountCents, currency }, ref) {
+  function StripePaymentElement({ productId, amountCents, currency, customerEmail, customerName }, ref) {
     const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -206,7 +216,7 @@ const StripePaymentElement = forwardRef<StripePaymentElementHandle, StripePaymen
 
     return (
       <Elements stripe={stripePromise} options={elementsOptions} key={`${amountCents}-${currency}`}>
-        <InnerForm ref={innerRef} />
+        <InnerForm ref={innerRef} customerEmail={customerEmail} customerName={customerName} />
       </Elements>
     );
   }
