@@ -133,6 +133,12 @@ const PriceSummary = ({
             )}
           </div>
         </div>
+
+        {showTaxNotice && (
+          <p className="text-[10px] text-[#565959] text-center pt-1">
+            * Applicable taxes (VAT/IVA/GST) will be calculated at checkout
+          </p>
+        )}
       </div>
     </div>
   );
