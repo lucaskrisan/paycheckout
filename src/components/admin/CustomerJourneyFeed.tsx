@@ -217,7 +217,7 @@ const CustomerJourneyFeed = ({ events, products }: Props) => {
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
                     {journey.productName && (
-                      <span className="text-[10px] text-muted-foreground truncate">{journey.productName}</span>
+                      <span className="text-[10px] text-muted-foreground truncate" title="Nome ocultado para sua privacidade">{maskProductName(journey.productName)}</span>
                     )}
                     <span className="text-[10px] text-muted-foreground/60">
                       · {format(new Date(journey.lastEvent.created_at), "HH:mm:ss")}
