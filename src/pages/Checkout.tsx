@@ -561,7 +561,7 @@ const Checkout = () => {
               </div>
             )}
 
-            <TrustFooter isUSD={isUSD} />
+            <TrustFooter isUSD={isUSD} t={isUSD ? t.trust : undefined} />
           </div>
         </div>
       </div>
