@@ -24,6 +24,7 @@ interface TemplateInfo {
   id: string;
   name: string;
   category: "auth" | "transactional";
+  language?: "pt-BR" | "en" | "both";
   description: string;
   subject: string;
   previewHtml: string;
@@ -207,13 +208,57 @@ const TEMPLATES: TemplateInfo[] = [
     id: "abandoned-cart",
     name: "Carrinho Abandonado",
     category: "transactional",
-    description: "Enviado para recuperação de carrinhos abandonados no checkout.",
-    subject: "Sua vaga ainda está reservada 🔒",
+    language: "both",
+    description: "Enviado para recuperação de carrinhos abandonados no checkout. Bilíngue: BR para produtos em R$, EN para produtos em USD.",
+    subject: "Você esqueceu algo no carrinho 🛒",
     previewHtml: wrap(`
       <h1>Reservamos sua vaga.</h1>
       <p class="text">Você iniciou uma compra mas não finalizou. O produto ainda está disponível — mas não garantimos por muito tempo.</p>
       <a href="#" class="btn">Garantir Minha Vaga</a>
       <p class="footer">Vagas limitadas. Após o encerramento, o acesso não poderá ser garantido.</p>
+    `),
+  },
+  {
+    id: "purchase-confirmation-en",
+    name: "Order Confirmed (USD)",
+    category: "transactional",
+    language: "en",
+    description: "Sent to customers after a successful USD payment via Stripe. Auto-localized from product currency.",
+    subject: "✅ Order confirmed — \"Your Product\"",
+    previewHtml: wrap(`
+      <h1>✅ Order Confirmed!</h1>
+      <p class="text">Hi <strong>Customer</strong>, your payment was successfully processed.</p>
+      <p class="text"><strong>Product:</strong> Your Product<br/><strong>Amount:</strong> $97.00<br/><strong>Payment:</strong> Credit Card</p>
+      <a href="#" class="btn">🚀 Access your purchase</a>
+      <p class="footer">Save this email — it confirms your purchase.</p>
+    `),
+  },
+  {
+    id: "access-link-en",
+    name: "Access Granted (USD)",
+    category: "transactional",
+    language: "en",
+    description: "Sent to USD course buyers (Stripe) with the member-area access link. Also dispatched on manual resend from the admin panel.",
+    subject: "🎉 Access granted — \"Your Course\"",
+    previewHtml: wrap(`
+      <h1>🎉 Your access is ready!</h1>
+      <p class="text">Hi <strong>Customer</strong>, your access to <strong>"Your Course"</strong> is ready! Click the button below to dive into the content.</p>
+      <a href="#" class="btn">Access Course</a>
+      <p class="footer">Save this email — it contains your access link.</p>
+    `),
+  },
+  {
+    id: "abandoned-cart-en",
+    name: "Cart Recovery (USD)",
+    category: "transactional",
+    language: "en",
+    description: "Sent to USD checkout abandoners. Auto-localized from product currency.",
+    subject: "You left something in your cart 🛒",
+    previewHtml: wrap(`
+      <h1>You left something behind.</h1>
+      <p class="text">Hi Customer, we noticed you didn't finish your purchase. Your cart is still waiting for you!</p>
+      <a href="#" class="btn">Complete purchase →</a>
+      <p class="footer">If you've already completed your purchase, please ignore this email.</p>
     `),
   },
 ];
