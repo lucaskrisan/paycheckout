@@ -216,7 +216,7 @@ const StripePaymentElement = forwardRef<StripePaymentElementHandle, StripePaymen
 
     return (
       <Elements stripe={stripePromise} options={elementsOptions} key={`${amountCents}-${currency}`}>
-        <InnerForm ref={innerRef} />
+        <InnerForm ref={innerRef} customerEmail={customerEmail} customerName={customerName} />
       </Elements>
     );
   }
