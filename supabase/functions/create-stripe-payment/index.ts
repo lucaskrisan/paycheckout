@@ -333,7 +333,7 @@ Deno.serve(async (req) => {
       amount: amountCents,
       currency: productCurrency,
       customer: stripeCustomerId,
-      automatic_payment_methods: { enabled: true, allow_redirects: 'as_needed' },
+      automatic_payment_methods: { enabled: true, allow_redirects: 'always' },
       ...(productIsSubscription ? { setup_future_usage: 'off_session' } : {}),
       description: productName,
       metadata: {
