@@ -98,6 +98,7 @@ export function useAbandonedCart({
           customer_city: getCity() || null,
           customer_zip: getZip() || null,
           customer_country: getCountry() || null,
+          notes: `validation_rule:${validationRule}`,
           utm_source: params.get("utm_source") || null,
           utm_medium: params.get("utm_medium") || null,
           utm_campaign: params.get("utm_campaign") || null,
