@@ -33,6 +33,7 @@ interface IntegrationCardProps {
   onTestConnection?: () => Promise<void>;
   testing?: boolean;
   loading?: boolean;
+  extraFields?: React.ReactNode;
 }
 
 const IntegrationCard = ({
@@ -55,6 +56,7 @@ const IntegrationCard = ({
   onTestConnection,
   testing,
   loading = false,
+  extraFields,
 }: IntegrationCardProps) => {
   const [open, setOpen] = useState(false);
   const [showToken, setShowToken] = useState(false);
@@ -118,6 +120,8 @@ const IntegrationCard = ({
               </div>
               {tokenHint && <div className="text-[10px] text-muted-foreground leading-relaxed">{tokenHint}</div>}
             </div>
+
+            {extraFields}
 
             {/* Toggle + Save */}
             <div className="flex items-center justify-between">
