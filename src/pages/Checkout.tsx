@@ -18,6 +18,7 @@ import OrderBumps from "@/components/checkout/OrderBumps";
 import TrustFooter from "@/components/checkout/TrustFooter";
 import CheckoutBuilderRenderer from "@/components/checkout/CheckoutBuilderRenderer";
 import pagoSeguroStripe from "@/assets/pago-seguro-stripe.png";
+import { Breadcrumb as StepBreadcrumb, type StepBreadcrumbStep } from "@/components/ui/step-breadcrumb";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -402,12 +403,48 @@ const Checkout = () => {
     finally { setIsSubmitting(false); }
   };
 
+  // ─── USD Checkout: dynamic progress steps ──────────────────────────────────
+  // Step 1 (Country) → done assim que houver país selecionado (default já vem)
+  // Step 2 (Details) → done quando nome + email válidos
+  // Step 3 (Payment) → current/done conforme submissão
+  // Step 4 (Confirm) → só fica "complete" no /checkout/sucesso
+  const emailLooksValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((customer.email || "").trim());
+  const detailsDone = !!customer.name?.trim() && emailLooksValid;
+  const paymentInProgress = isSubmitting;
+  const usdSteps: StepBreadcrumbStep[] = [
+    {
+      id: "01",
+      name: "Country",
+      status: selectedCountry ? "complete" : "current",
+    },
+    {
+      id: "02",
+      name: "Details",
+      status: detailsDone ? "complete" : selectedCountry ? "current" : "upcoming",
+    },
+    {
+      id: "03",
+      name: "Payment",
+      status: paymentInProgress ? "current" : detailsDone ? "current" : "upcoming",
+    },
+    {
+      id: "04",
+      name: "Confirmation",
+      status: "upcoming",
+    },
+  ];
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#F2F4F8", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <CountdownTimer minutes={countdownMinutes} isUSD={isUSD} />
       <div className="max-w-[620px] mx-auto px-4 pt-16 pb-8">
         <div className="bg-white rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.05)] overflow-hidden">
           <div className="p-5 sm:p-6 space-y-5">
+            {isUSD && (
+              <div className="pb-1 border-b border-[#EFF1F4] -mx-1">
+                <StepBreadcrumb steps={usdSteps} />
+              </div>
+            )}
             <CheckoutBuilderRenderer components={sortedLayout} zone="top" productName={product.name} />
 
             {product.image_url && (
