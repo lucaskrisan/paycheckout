@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Eye, EyeOff, ExternalLink, Save, ChevronDown, ChevronUp, Zap } from "lucide-react";
+import { Eye, EyeOff, ExternalLink, Save, ChevronDown, ChevronUp, Zap, Check } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
