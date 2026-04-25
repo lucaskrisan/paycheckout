@@ -259,6 +259,12 @@ const Orders = () => {
         p_product_id: filterProduct === "all" ? null : filterProduct,
         p_payment_methods: filterMethods.size > 0 ? Array.from(filterMethods).join(",") : null,
         p_sale_type: filterSaleType,
+        p_currency: filterCurrency === "all" ? null : filterCurrency,
+        p_product_type: filterType,
+        p_subscription_filter: filterSubscriptions.size > 0 ? Array.from(filterSubscriptions).join(",") : null,
+        p_utm_search: filterUtmParams.trim() || null,
+        p_affiliate_search: filterAffiliate.trim() || null,
+        p_offer_filter: filterOffer === "all" ? null : filterOffer,
       });
 
       if (cancelled) return;
