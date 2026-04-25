@@ -468,22 +468,7 @@ const Checkout = () => {
                 </div>
               )}
               <CustomerForm data={customer} onChange={setCustomer} hideDocumentPhone={isUSD} t={isUSD ? t.form : undefined} />
-              {isUSD ? (
-                <div className="mb-1 animate-fade-in">
-                  <CardPreview3D
-                    number=""
-                    holder={customer.name}
-                    month=""
-                    year=""
-                    cvv=""
-                    focus={null}
-                    brandLabel=""
-                    holderLabel={t.card.holder}
-                    expireLabel={t.card.expire}
-                    holderPlaceholder={t.card.placeholder}
-                  />
-                </div>
-              ) : product.is_subscription ? (
+              {isUSD ? null : product.is_subscription ? (
                 <div className="bg-[#F7FAFA] border border-[#D5D9D9] rounded-lg p-3 flex items-center gap-2">
                   <span className="text-lg">🔄</span>
                   <div>
