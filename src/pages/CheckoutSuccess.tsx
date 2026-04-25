@@ -128,6 +128,18 @@ const CheckoutSuccess = () => {
       if (data?.success) {
         setPurchasedUpsells((prev) => new Set(prev).add(offer.id));
         toast.success(t.upsellSuccess(offer.upsell_product.name));
+
+        // Refresh delivery links so AppSell/Panttera CTAs for the new upsell appear
+        try {
+          const { data: links } = await (supabase.rpc as any)("get_order_delivery_links", { p_order_id: orderId });
+          if (links && links.length > 0) {
+            setDeliveryLinks(links);
+            const appsell = links.find((d: any) => d.delivery_type === "appsell");
+            if (appsell?.access_url) setAppsellLoginUrl(appsell.access_url);
+          }
+        } catch {
+          /* ignore — toast already shown */
+        }
       } else {
         throw new Error(t.upsellError);
       }
