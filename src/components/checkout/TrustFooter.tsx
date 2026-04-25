@@ -59,9 +59,9 @@ const TrustFooter = memo(function TrustFooter({ isUSD = false, t }: TrustFooterP
       </div>
       <p className="text-[11px] text-[#565959]">
         {tr.agreePrefix}
-        <a href="/terms" className="underline text-[#007185]">{tr.termsOfUse}</a>
+        <a href="/termos" target="_blank" rel="noopener noreferrer" className="underline text-[#007185]">{tr.termsOfUse}</a>
         {tr.and}
-        <a href="/privacy" className="underline text-[#007185]">{tr.privacyPolicy}</a>
+        <a href="/privacidade" target="_blank" rel="noopener noreferrer" className="underline text-[#007185]">{tr.privacyPolicy}</a>
         {tr.agreeSuffix}
       </p>
     </div>

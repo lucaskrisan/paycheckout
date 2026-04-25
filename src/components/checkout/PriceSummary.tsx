@@ -13,7 +13,16 @@ interface PriceSummaryProps {
   /** When provided (USD checkout + non-USD country), formats USD amounts to local currency */
   formatLocal?: (usdAmount: number) => string | null;
   localCurrency?: string | null;
+  /** ISO-2 country code — used to show tax disclaimer in tax-collecting countries */
+  selectedCountry?: string;
 }
+
+const TAX_COUNTRIES = new Set([
+  // EU (VAT)
+  "DE","FR","IT","ES","PT","NL","BE","AT","IE","LU","FI","SE","DK","PL","CZ","HU","RO","GR","SK","SI","HR","BG","EE","LV","LT","MT","CY",
+  // Other
+  "GB","MX","CO","AU","NZ","CH","NO","CA",
+]);
 
 const PriceSummary = ({
   originalPrice,
@@ -25,6 +34,7 @@ const PriceSummary = ({
   couponCode,
   isUSD = false,
   formatLocal,
+  selectedCountry,
 }: PriceSummaryProps) => {
   const fmt = (v: number) =>
     isUSD ? `$ ${v.toFixed(2)}` : `R$ ${v.toFixed(2).replace(".", ",")}`;
@@ -32,6 +42,7 @@ const PriceSummary = ({
   const hasDiscount = pixDiscount > 0 || couponDiscount > 0;
   const localTotal = isUSD && formatLocal ? formatLocal(finalAmount) : null;
   const localSubtotal = isUSD && formatLocal ? formatLocal(originalPrice) : null;
+  const showTaxNotice = isUSD && !!selectedCountry && TAX_COUNTRIES.has(selectedCountry.toUpperCase());
 
   return (
     <div className="rounded-xl border border-[#D5D9D9] bg-gradient-to-b from-[#FAFCFC] to-white overflow-hidden">
@@ -122,6 +133,12 @@ const PriceSummary = ({
             )}
           </div>
         </div>
+
+        {showTaxNotice && (
+          <p className="text-[10px] text-[#565959] text-center pt-1">
+            * Applicable taxes (VAT/IVA/GST) will be calculated at checkout
+          </p>
+        )}
       </div>
     </div>
   );
