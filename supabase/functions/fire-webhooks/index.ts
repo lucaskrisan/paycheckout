@@ -184,7 +184,7 @@ Deno.serve(async (req) => {
     // Get full order data FIRST to validate status
     const { data: order } = await supabase
       .from('orders')
-      .select('*, customers(id, name, email, phone, cpf), products(id, name, price, delivery_method)')
+      .select('*, customers(id, name, email, phone, cpf), products(id, name, price, currency, delivery_method)')
       .eq('id', order_id)
       .single();
 
