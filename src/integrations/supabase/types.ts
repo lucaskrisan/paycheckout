@@ -2812,16 +2812,22 @@ export type Database = {
       is_verified_producer: { Args: { _user_id: string }; Returns: boolean }
       list_orders_paginated: {
         Args: {
+          p_affiliate_search?: string
+          p_currency?: string
           p_is_super_admin?: boolean
+          p_offer_filter?: string
           p_page?: number
           p_page_size?: number
           p_payment_methods?: string
           p_period?: string
           p_product_id?: string
+          p_product_type?: string
           p_sale_type?: string
           p_search?: string
           p_status_filter?: string
+          p_subscription_filter?: string
           p_user_id: string
+          p_utm_search?: string
         }
         Returns: Json
       }
