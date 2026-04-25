@@ -112,14 +112,7 @@ const CustomerJourneyFeed = ({ events, products }: Props) => {
       };
     });
 
-    const now = Date.now();
-    const EXPIRY_MS = 10 * 60 * 1000; // visitantes sem compra: 10 min
-    const PURCHASE_EXPIRY_MS = 24 * 60 * 60 * 1000; // compras: 24 h
-    const active = result.filter((j) => {
-      const age = now - j.lastActivity;
-      return j.completed ? age < PURCHASE_EXPIRY_MS : age < EXPIRY_MS;
-    });
-    return active.sort((a, b) => b.lastActivity - a.lastActivity);
+    return result.sort((a, b) => b.lastActivity - a.lastActivity);
   }, [events, products]);
 
   if (journeys.length === 0) {
@@ -128,8 +121,8 @@ const CustomerJourneyFeed = ({ events, products }: Props) => {
         <motion.div animate={{ opacity: [0.3, 0.7, 0.3] }} transition={{ duration: 3, repeat: Infinity }}>
           <UserCheck className="w-8 h-8 text-muted-foreground/50" />
         </motion.div>
-        <p className="text-sm text-muted-foreground font-medium">Nenhuma jornada identificada</p>
-        <p className="text-[11px] text-muted-foreground/70">As jornadas aparecem quando clientes preenchem o formulário</p>
+        <p className="text-sm text-muted-foreground font-medium">Nenhuma jornada no período selecionado</p>
+        <p className="text-[11px] text-muted-foreground/70">PageView, ViewContent e checkout aparecem aqui quando chegam com visitor_id</p>
       </div>
     );
   }
