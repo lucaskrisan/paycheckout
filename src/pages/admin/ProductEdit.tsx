@@ -117,7 +117,7 @@ const ProductEdit = () => {
     is_subscription: false,
     billing_cycle: "monthly",
     show_coupon: true,
-    delivery_method: "appsell" as "panttera" | "appsell" | "email",
+    delivery_method: "panttera" as "panttera" | "appsell" | "email",
     currency: "BRL" as "BRL" | "USD",
     payment_settings: {
       payment_method: "all",
@@ -327,7 +327,7 @@ const ProductEdit = () => {
             is_subscription: (data as any).is_subscription || false,
             billing_cycle: (data as any).billing_cycle || "monthly",
             show_coupon: (data as any).show_coupon !== false,
-            delivery_method: (data as any).delivery_method || "appsell",
+            delivery_method: (data as any).delivery_method || "panttera",
             currency: (data as any).currency || "BRL",
             payment_settings: {
               payment_method: "all",
