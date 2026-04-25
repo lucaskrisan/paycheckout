@@ -184,9 +184,6 @@ const ProducerBilling = () => {
   // ── Derived state ──
   const balance = account?.balance ?? 0;
   const creditLimit = account?.credit_limit ?? 5;
-  const FREE_THRESHOLD = 500;
-  const freeSalesRemaining = totalRevenue < FREE_THRESHOLD ? Math.floor((FREE_THRESHOLD - totalRevenue) / 0.99) : 0;
-  const isInFreeTrial = freeSalesRemaining > 0;
   const hasCard = !!account?.card_last4;
   const currentTierKey = account?.credit_tier ?? "iron";
   const tierMeta = TIER_META[currentTierKey] ?? TIER_META.iron;
