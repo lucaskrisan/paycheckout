@@ -121,6 +121,8 @@ const IntegrationCard = ({
               {tokenHint && <div className="text-[10px] text-muted-foreground leading-relaxed">{tokenHint}</div>}
             </div>
 
+            {extraFields}
+
             {/* Toggle + Save */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
