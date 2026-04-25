@@ -69,7 +69,6 @@ export function useAbandonedCart({ productId, customer, paymentMethod, productOw
           product_price: productPrice ?? null,
           page_url: window.location.href,
           checkout_url: window.location.href,
-          event_source_url: window.location.origin + window.location.pathname,
           user_agent: navigator.userAgent,
           checkout_step: "opened",
           customer_city: getCity() || null,
