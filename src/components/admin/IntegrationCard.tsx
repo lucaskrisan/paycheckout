@@ -27,6 +27,7 @@ interface IntegrationCardProps {
   onActiveChange: (val: boolean) => void;
   onSave: () => void;
   saving: boolean;
+  saved?: boolean;
   tokenPlaceholder?: string;
   tokenHint?: React.ReactNode;
   statusEvents?: { key: string; label: string }[];
@@ -50,6 +51,7 @@ const IntegrationCard = ({
   onActiveChange,
   onSave,
   saving,
+  saved = false,
   tokenPlaceholder = "Cole aqui o token da API",
   tokenHint,
   statusEvents,
@@ -131,9 +133,17 @@ const IntegrationCard = ({
                   Ativar integração
                 </Label>
               </div>
-              <Button onClick={onSave} disabled={saving} size="sm" className="gap-1.5 h-8 px-4 text-xs font-semibold">
-                <Save className="w-3.5 h-3.5" />
-                {saving ? "Salvando..." : "Salvar"}
+              <Button
+                onClick={onSave}
+                disabled={saving}
+                size="sm"
+                className={cn(
+                  "gap-1.5 h-8 px-4 text-xs font-semibold transition-colors",
+                  saved && "bg-emerald-500 hover:bg-emerald-500 text-white"
+                )}
+              >
+                {saved ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+                {saving ? "Salvando..." : saved ? "Salvo!" : "Salvar"}
               </Button>
             </div>
 
