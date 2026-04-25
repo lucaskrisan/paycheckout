@@ -144,6 +144,7 @@ const StripePaymentElement = forwardRef<StripePaymentElementHandle, StripePaymen
     // NOTE: paymentMethodCreation "manual" is intentionally NOT set — it disables
     // Apple Pay / Google Pay native wallets in PaymentElement. Default ("automatic")
     // preserves wallet support and the standard confirmPayment flow.
+    // Premium appearance tuned for high conversion (Stripe Link enabled by default)
     const elementsOptions = useMemo(() => ({
       mode: "payment" as const,
       amount: amountCents,
@@ -152,8 +153,36 @@ const StripePaymentElement = forwardRef<StripePaymentElementHandle, StripePaymen
         theme: "stripe" as const,
         variables: {
           colorPrimary: "#007185",
+          colorBackground: "#ffffff",
+          colorText: "#0F1111",
+          colorDanger: "#B12704",
           borderRadius: "8px",
-          fontFamily: "Arial, sans-serif",
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontSizeBase: "15px",
+          spacingUnit: "4px",
+        },
+        rules: {
+          ".Input": {
+            border: "1px solid #D5D9D9",
+            boxShadow: "none",
+            padding: "12px 14px",
+          },
+          ".Input:focus": {
+            border: "1px solid #007185",
+            boxShadow: "0 0 0 3px rgba(0, 113, 133, 0.15)",
+          },
+          ".Label": {
+            fontWeight: "500",
+            color: "#0F1111",
+          },
+          ".Tab": {
+            border: "1px solid #D5D9D9",
+            boxShadow: "none",
+          },
+          ".Tab--selected": {
+            borderColor: "#007185",
+            boxShadow: "0 0 0 1px #007185",
+          },
         },
       },
     }), [amountCents, currency]);
@@ -178,13 +207,6 @@ const StripePaymentElement = forwardRef<StripePaymentElementHandle, StripePaymen
     return (
       <Elements stripe={stripePromise} options={elementsOptions} key={`${amountCents}-${currency}`}>
         <InnerForm ref={innerRef} />
-        {/* Hide Stripe's "Powered by Stripe" badge / developer link inside PaymentElement */}
-        <style>{`
-          .StripeElement a[href*="stripe.com"],
-          .StripeElement [class*="PoweredBy"],
-          iframe[name^="__privateStripe"] + a,
-          .__PrivateStripeElement + a { display: none !important; }
-        `}</style>
       </Elements>
     );
   }
