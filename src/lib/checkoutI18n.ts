@@ -23,6 +23,7 @@ export interface CheckoutTranslations {
   secureCheckout: string;
   guaranteeText: string;
   steps: { country: string; details: string; payment: string; confirmation: string };
+  card: { holder: string; expire: string; placeholder: string };
 }
 
 const pt: CheckoutTranslations = {
