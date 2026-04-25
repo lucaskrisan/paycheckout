@@ -15,9 +15,11 @@ export interface StripePaymentElementHandle {
 
 interface InnerFormProps {
   onReady?: () => void;
+  customerEmail?: string;
+  customerName?: string;
 }
 
-const InnerForm = forwardRef<StripePaymentElementHandle, InnerFormProps>(function InnerForm({ onReady }, ref) {
+const InnerForm = forwardRef<StripePaymentElementHandle, InnerFormProps>(function InnerForm({ onReady, customerEmail, customerName }, ref) {
   const stripe = useStripe();
   const elements = useElements();
   const [ready, setReady] = useState(false);
