@@ -34,6 +34,7 @@ const PriceSummary = ({
   couponCode,
   isUSD = false,
   formatLocal,
+  selectedCountry,
 }: PriceSummaryProps) => {
   const fmt = (v: number) =>
     isUSD ? `$ ${v.toFixed(2)}` : `R$ ${v.toFixed(2).replace(".", ",")}`;
@@ -41,6 +42,7 @@ const PriceSummary = ({
   const hasDiscount = pixDiscount > 0 || couponDiscount > 0;
   const localTotal = isUSD && formatLocal ? formatLocal(finalAmount) : null;
   const localSubtotal = isUSD && formatLocal ? formatLocal(originalPrice) : null;
+  const showTaxNotice = isUSD && !!selectedCountry && TAX_COUNTRIES.has(selectedCountry.toUpperCase());
 
   return (
     <div className="rounded-xl border border-[#D5D9D9] bg-gradient-to-b from-[#FAFCFC] to-white overflow-hidden">
