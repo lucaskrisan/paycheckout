@@ -24,6 +24,7 @@ const AppSellIntegration = () => {
   const [active, setActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [testing, setTesting] = useState(false);
   const [exists, setExists] = useState(false);
 
@@ -64,13 +65,17 @@ const AppSellIntegration = () => {
       updated_at: new Date().toISOString(),
     };
 
+    let success = false;
     if (exists) {
       const { error } = await supabase
         .from("appsell_integrations")
         .update(payload)
         .eq("user_id", user.id);
       if (error) toast.error("Erro ao salvar");
-      else toast.success("Integração AppSell atualizada!");
+      else {
+        toast.success("Integração AppSell atualizada!");
+        success = true;
+      }
     } else {
       const { error } = await supabase
         .from("appsell_integrations")
@@ -79,10 +84,15 @@ const AppSellIntegration = () => {
       else {
         toast.success("Integração AppSell configurada!");
         setExists(true);
+        success = true;
       }
     }
 
     setSaving(false);
+    if (success) {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    }
   };
 
   const handleTestConnection = async () => {
@@ -121,6 +131,7 @@ const AppSellIntegration = () => {
       onActiveChange={setActive}
       onSave={handleSave}
       saving={saving}
+      saved={saved}
       tokenPlaceholder='Cole aqui o token gerado no AppSell'
       tokenHint={
         <>
