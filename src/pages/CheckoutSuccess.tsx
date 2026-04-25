@@ -38,11 +38,13 @@ const CheckoutSuccess = () => {
   const productId = searchParams.get("product_id") || "";
   const orderId = searchParams.get("order_id") || "";
   const lang = (searchParams.get("lang") as MemberLang) || "pt";
+  const delivery = searchParams.get("delivery") || "panttera";
 
   const t = getMemberTranslations(lang);
   const isEN = lang === "en";
 
   const [confetti, setConfetti] = useState<ConfettiPiece[]>([]);
+  const [appsellLoginUrl, setAppsellLoginUrl] = useState<string | null>(null);
   const [upsellOffers, setUpsellOffers] = useState<UpsellOffer[]>([]);
   const [processingUpsell, setProcessingUpsell] = useState<string | null>(null);
   const [purchasedUpsells, setPurchasedUpsells] = useState<Set<string>>(new Set());
@@ -57,6 +59,13 @@ const CheckoutSuccess = () => {
     }));
     setConfetti(pieces);
   }, []);
+
+  // Fetch AppSell login URL when delivery = appsell
+  useEffect(() => {
+    if (delivery !== "appsell" || !productId) return;
+    supabase.rpc("get_appsell_login_url", { p_product_id: productId })
+      .then(({ data }) => { if (data) setAppsellLoginUrl(data); });
+  }, [delivery, productId]);
 
   // Load upsell offers
   useEffect(() => {
@@ -285,21 +294,49 @@ const CheckoutSuccess = () => {
           </motion.div>
         )}
 
-        {/* Portal CTA — lifetime access (Hotmart/Kiwify model) */}
-        <div className="bg-card border-2 border-primary/30 rounded-xl p-5 text-left">
-          <p className="text-sm font-bold text-foreground mb-1">
-            🎓 {t.successCreateAccountTitle}
-          </p>
-          <p className="text-xs text-muted-foreground mb-3">
-            {t.successCreateAccountDesc}
-          </p>
-          <Link to="/minha-conta">
-            <Button className="w-full gap-2">
-              {t.successCreateAccountButton}
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          </Link>
-        </div>
+        {/* Access CTA — varies by delivery method */}
+        {delivery === "appsell" && appsellLoginUrl ? (
+          <div className="bg-card border-2 border-primary/30 rounded-xl p-5 text-left">
+            <p className="text-sm font-bold text-foreground mb-1">
+              🚀 {isEN ? "Access your purchase" : "Acesse sua compra"}
+            </p>
+            <p className="text-xs text-muted-foreground mb-3">
+              {isEN
+                ? "Click below to access the platform and enjoy your content."
+                : "Clique abaixo para acessar a plataforma e aproveitar seu conteúdo."}
+            </p>
+            <a href={appsellLoginUrl} target="_blank" rel="noopener noreferrer">
+              <Button className="w-full gap-2">
+                {isEN ? "Access now" : "Acessar agora"}
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </a>
+          </div>
+        ) : delivery === "email" ? (
+          <div className="bg-card border border-border rounded-xl p-4">
+            <p className="text-sm text-muted-foreground text-center">
+              {isEN
+                ? "Your access details have been sent to your email."
+                : "Os detalhes de acesso foram enviados para o seu e-mail."}
+            </p>
+          </div>
+        ) : (
+          /* panttera member area (default) */
+          <div className="bg-card border-2 border-primary/30 rounded-xl p-5 text-left">
+            <p className="text-sm font-bold text-foreground mb-1">
+              🎓 {t.successCreateAccountTitle}
+            </p>
+            <p className="text-xs text-muted-foreground mb-3">
+              {t.successCreateAccountDesc}
+            </p>
+            <Link to="/minha-conta">
+              <Button className="w-full gap-2">
+                {t.successCreateAccountButton}
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </Link>
+          </div>
+        )}
 
         <div className="pt-2">
           <Link to="/">

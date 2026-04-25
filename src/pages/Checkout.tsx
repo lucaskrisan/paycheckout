@@ -356,7 +356,7 @@ const Checkout = () => {
         trackPurchase(finalAmount, "USD", paymentId, selectedBumpItems);
         if (product.is_subscription) trackSubscribe(finalAmount, "USD", paymentId);
         await markPurchased();
-        navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product.id}${data.order_id ? `&order_id=${data.order_id}` : ''}&lang=en`);
+        navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product.id}${data.order_id ? `&order_id=${data.order_id}` : ''}${product.delivery_method ? `&delivery=${product.delivery_method}` : ""}&lang=en`);
       } else if (paymentMethod === "pix") {
         const customerState = getStateFromPhone(customer.phone);
         const { data, error } = await supabase.functions.invoke("create-pix-payment", {
@@ -395,7 +395,7 @@ const Checkout = () => {
           trackPurchase(finalAmount, "BRL", paymentId, selectedBumpItems);
           if (product.is_subscription) trackSubscribe(finalAmount, "BRL", paymentId);
           await markPurchased();
-          navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product.id}${data.order_id ? `&order_id=${data.order_id}` : ''}${isUSD ? '&lang=en' : ''}`);
+          navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product.id}${data.order_id ? `&order_id=${data.order_id}` : ''}${product.delivery_method ? `&delivery=${product.delivery_method}` : ""}${isUSD ? "&lang=en" : ""}`);
         } else throw new Error("Falha ao processar pagamento");
       }
     } catch (err: any) { console.error("Payment error:", err); toast.error(err.message || (isUSD ? t.paymentError : "Erro ao processar pagamento.")); }
@@ -565,7 +565,7 @@ const Checkout = () => {
             .map((b) => ({ id: b.bump_product.id, price: b.bump_product.price }));
           trackPurchase(finalAmount, "BRL", pixData?.orderId, pixBumpItems);
           markPurchased();
-          setTimeout(() => { navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=pix&email=${encodeURIComponent(customer.email)}${isUSD ? '&lang=en' : ''}`); }, 2500);
+          setTimeout(() => { navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=pix&email=${encodeURIComponent(customer.email)}${product.delivery_method ? `&delivery=${product.delivery_method}` : ""}${isUSD ? "&lang=en" : ""}`); }, 2500);
         }}
       />
     </div>
