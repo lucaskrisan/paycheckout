@@ -30,9 +30,14 @@ export function useAbandonedCart({ productId, customer, paymentMethod, productOw
   const latestRef = useRef({ customer, paymentMethod, productOwnerId, productId, productPrice });
   latestRef.current = { customer, paymentMethod, productOwnerId, productId, productPrice };
 
+  // Minimum data to create a cart: name + valid-looking email.
+  // Phone is NOT required because international (USD) checkouts don't
+  // collect a phone number, which previously caused USD carts to never
+  // be saved and step events ("personal_info", "payment") to be lost.
   const hasMinimumData = Boolean(
+    customer.name.trim().length >= 2 &&
     customer.email.trim().length >= 5 &&
-    customer.phone.trim().length >= 8
+    customer.email.includes("@")
   );
 
   const saveCart = useCallback(async () => {
