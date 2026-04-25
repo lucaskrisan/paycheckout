@@ -7,7 +7,7 @@ import CustomerForm, { type CustomerData, isValidCPF } from "@/components/checko
 import PixPayment from "@/components/checkout/PixPayment";
 import PixModal from "@/components/checkout/PixModal";
 import CreditCardForm, { type CreditCardData } from "@/components/checkout/CreditCardForm";
-import CardPreview3D from "@/components/ui/card-preview-3d";
+
 import type { StripePaymentElementHandle } from "@/components/checkout/StripePaymentElement";
 const StripePaymentElement = lazy(() => import("@/components/checkout/StripePaymentElement"));
 import PaymentTabs from "@/components/checkout/PaymentTabs";
