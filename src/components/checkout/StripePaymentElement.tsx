@@ -98,10 +98,12 @@ interface StripePaymentElementProps {
   productId: string;
   amountCents: number;
   currency: string;
+  customerEmail?: string;
+  customerName?: string;
 }
 
 const StripePaymentElement = forwardRef<StripePaymentElementHandle, StripePaymentElementProps>(
-  function StripePaymentElement({ productId, amountCents, currency }, ref) {
+  function StripePaymentElement({ productId, amountCents, currency, customerEmail, customerName }, ref) {
     const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
