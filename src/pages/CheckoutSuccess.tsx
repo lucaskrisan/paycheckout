@@ -331,9 +331,9 @@ const CheckoutSuccess = () => {
 
         {/* Access CTAs — one per delivery type in the order (main + bumps) */}
         <div className="space-y-3">
-          {deliveryLinks.map((link) => (
+          {deliveryLinks.map((link, idx) => (
             link.delivery_type === "appsell" && link.access_url ? (
-              <div key="appsell" className="bg-card border-2 border-primary/30 rounded-xl p-5 text-left">
+              <div key={`appsell-${idx}`} className="bg-card border-2 border-primary/30 rounded-xl p-5 text-left">
                 <p className="text-sm font-bold text-foreground mb-1">
                   🚀 {isEN ? "Access your purchase" : "Acesse sua compra"}
                 </p>
@@ -350,7 +350,7 @@ const CheckoutSuccess = () => {
                 </a>
               </div>
             ) : link.delivery_type === "panttera" ? (
-              <div key="panttera" className="bg-card border-2 border-primary/30 rounded-xl p-5 text-left">
+              <div key={`panttera-${idx}`} className="bg-card border-2 border-primary/30 rounded-xl p-5 text-left">
                 <p className="text-sm font-bold text-foreground mb-1">
                   🎓 {t.successCreateAccountTitle}
                 </p>
@@ -365,7 +365,7 @@ const CheckoutSuccess = () => {
                 </Link>
               </div>
             ) : link.delivery_type === "email" ? (
-              <div key="email" className="bg-card border border-border rounded-xl p-4">
+              <div key={`email-${idx}`} className="bg-card border border-border rounded-xl p-4">
                 <p className="text-sm text-muted-foreground text-center">
                   {isEN
                     ? "Your access details have been sent to your email."
