@@ -307,7 +307,7 @@ const Orders = () => {
   const totalFilteredCount = pageTotals.count;
 
   // Reset to page 1 when filters change
-  useEffect(() => { setPage(1); }, [searchDebounced, activeTab, filterPeriod, filterProduct, filterMethods, filterStatuses, filterType, filterSubscriptions, filterCurrency, filterSaleType]);
+  useEffect(() => { setPage(1); }, [searchDebounced, activeTab, filterPeriod, filterProduct, filterMethods, filterStatuses, filterType, filterSubscriptions, filterCurrency, filterSaleType, filterUtmParams, filterAffiliate, filterOffer]);
 
   const getStatus = (status: string) => STATUS_MAP[status] || { label: status, variant: "default" as const };
 
