@@ -9,10 +9,19 @@ export interface CustomerData {
   cpf: string;
 }
 
+interface FormTranslations {
+  yourDetails: string;
+  fullName: string;
+  email: string;
+  invalidName: string;
+  invalidEmail: string;
+}
+
 interface CustomerFormProps {
   data: CustomerData;
   onChange: (data: CustomerData) => void;
   hideDocumentPhone?: boolean;
+  t?: FormTranslations;
 }
 
 const formatCPF = (value: string) => {
@@ -90,7 +99,7 @@ const StatusIcon = ({ status }: { status: FieldStatus }) => {
   return null;
 };
 
-const CustomerForm = ({ data, onChange, hideDocumentPhone }: CustomerFormProps) => {
+const CustomerForm = ({ data, onChange, hideDocumentPhone, t }: CustomerFormProps) => {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const handleBlur = useCallback((field: string) => {
@@ -117,7 +126,7 @@ const CustomerForm = ({ data, onChange, hideDocumentPhone }: CustomerFormProps) 
   return (
     <div className="space-y-3">
       <p className="text-xs font-bold text-[#565959] uppercase tracking-wider">
-        {hideDocumentPhone ? "Your details" : "Seus dados"}
+        {t?.yourDetails ?? (hideDocumentPhone ? "Your details" : "Seus dados")}
       </p>
 
       {/* Name */}
@@ -128,14 +137,14 @@ const CustomerForm = ({ data, onChange, hideDocumentPhone }: CustomerFormProps) 
             value={data.name}
             onChange={(e) => handleChange("name", e.target.value)}
             onBlur={() => handleBlur("name")}
-            placeholder={hideDocumentPhone ? "Full name" : "Nome completo"}
+            placeholder={t?.fullName ?? (hideDocumentPhone ? "Full name" : "Nome completo")}
             autoComplete="name"
             className={`${inputBase} ${statusClasses[nameStatus]}`}
           />
           <StatusIcon status={nameStatus} />
         </div>
         {nameStatus === "invalid" && (
-          <p className="text-xs text-red-500 pl-1">{fieldMessages.name.invalid}</p>
+          <p className="text-xs text-red-500 pl-1">{t?.invalidName ?? fieldMessages.name.invalid}</p>
         )}
       </div>
 
@@ -150,13 +159,13 @@ const CustomerForm = ({ data, onChange, hideDocumentPhone }: CustomerFormProps) 
             value={data.email}
             onChange={(e) => handleChange("email", e.target.value)}
             onBlur={() => handleBlur("email")}
-            placeholder={hideDocumentPhone ? "Email" : "E-mail"}
+            placeholder={t?.email ?? (hideDocumentPhone ? "Email" : "E-mail")}
             className={`${inputBase} ${statusClasses[emailStatus]}`}
           />
           <StatusIcon status={emailStatus} />
         </div>
         {emailStatus === "invalid" && (
-          <p className="text-xs text-red-500 pl-1">{fieldMessages.email.invalid}</p>
+          <p className="text-xs text-red-500 pl-1">{t?.invalidEmail ?? fieldMessages.email.invalid}</p>
         )}
       </div>
 

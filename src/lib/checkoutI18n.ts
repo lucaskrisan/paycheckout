@@ -36,6 +36,13 @@ export interface CheckoutTranslations {
     privacyPolicy: string;
     agreeSuffix: string;
   };
+  form: {
+    yourDetails: string;
+    fullName: string;
+    email: string;
+    invalidName: string;
+    invalidEmail: string;
+  };
 }
 
 const pt: CheckoutTranslations = {
@@ -70,6 +77,13 @@ const pt: CheckoutTranslations = {
     and: " e ",
     privacyPolicy: "política de privacidade",
     agreeSuffix: ".",
+  },
+  form: {
+    yourDetails: "Seus dados",
+    fullName: "Nome completo",
+    email: "E-mail",
+    invalidName: "Nome deve ter pelo menos 3 caracteres",
+    invalidEmail: "E-mail inválido",
   },
 };
 
@@ -106,6 +120,13 @@ const en: CheckoutTranslations = {
     privacyPolicy: "privacy policy",
     agreeSuffix: ".",
   },
+  form: {
+    yourDetails: "Your details",
+    fullName: "Full name",
+    email: "Email",
+    invalidName: "Name must be at least 3 characters",
+    invalidEmail: "Invalid email address",
+  },
 };
 
 const es: CheckoutTranslations = {
@@ -140,6 +161,13 @@ const es: CheckoutTranslations = {
     and: " y la ",
     privacyPolicy: "política de privacidad",
     agreeSuffix: ".",
+  },
+  form: {
+    yourDetails: "Tus datos",
+    fullName: "Nombre completo",
+    email: "Correo electrónico",
+    invalidName: "El nombre debe tener al menos 3 caracteres",
+    invalidEmail: "Correo electrónico inválido",
   },
 };
 
@@ -176,6 +204,13 @@ const fr: CheckoutTranslations = {
     privacyPolicy: "politique de confidentialité",
     agreeSuffix: ".",
   },
+  form: {
+    yourDetails: "Vos coordonnées",
+    fullName: "Nom complet",
+    email: "E-mail",
+    invalidName: "Le nom doit contenir au moins 3 caractères",
+    invalidEmail: "Adresse e-mail invalide",
+  },
 };
 
 const de: CheckoutTranslations = {
@@ -211,6 +246,13 @@ const de: CheckoutTranslations = {
     privacyPolicy: "Datenschutzerklärung",
     agreeSuffix: " zu.",
   },
+  form: {
+    yourDetails: "Ihre Angaben",
+    fullName: "Vollständiger Name",
+    email: "E-Mail",
+    invalidName: "Der Name muss mindestens 3 Zeichen lang sein",
+    invalidEmail: "Ungültige E-Mail-Adresse",
+  },
 };
 
 const it: CheckoutTranslations = {
@@ -245,6 +287,13 @@ const it: CheckoutTranslations = {
     and: " e l'",
     privacyPolicy: "informativa sulla privacy",
     agreeSuffix: ".",
+  },
+  form: {
+    yourDetails: "I tuoi dati",
+    fullName: "Nome completo",
+    email: "Email",
+    invalidName: "Il nome deve avere almeno 3 caratteri",
+    invalidEmail: "Indirizzo email non valido",
   },
 };
 

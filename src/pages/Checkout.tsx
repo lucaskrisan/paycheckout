@@ -467,7 +467,7 @@ const Checkout = () => {
                   <CountrySelector selected={selectedCountry} onChange={setSelectedCountry} />
                 </div>
               )}
-              <CustomerForm data={customer} onChange={setCustomer} hideDocumentPhone={isUSD} />
+              <CustomerForm data={customer} onChange={setCustomer} hideDocumentPhone={isUSD} t={isUSD ? t.form : undefined} />
               {isUSD ? (
                 <div className="mb-1 animate-fade-in">
                   <CardPreview3D
