@@ -40,6 +40,24 @@ const EVENT_LABELS: Record<string, string> = {
 
 const JOURNEY_END = "Purchase";
 
+/**
+ * Mask product name to protect producer privacy.
+ * Shows ~50% of each word, replacing the rest with asterisks.
+ * Ex: "O Desafio de 14 Dias Que Arranca Você do Ciclo de Procrastinação"
+ *  -> "O De***** de 14 D*** Que Arr**** V*** do Ci*** de Procr*********"
+ */
+const maskProductName = (name: string): string => {
+  if (!name) return "";
+  return name
+    .split(" ")
+    .map((word) => {
+      if (word.length <= 2) return word;
+      const visible = Math.max(1, Math.ceil(word.length / 2));
+      return word.slice(0, visible) + "*".repeat(word.length - visible);
+    })
+    .join(" ");
+};
+
 const CustomerJourneyFeed = ({ events, products }: Props) => {
   const journeys = useMemo(() => {
     const map = new Map<string, PixelEvent[]>();
