@@ -22,6 +22,10 @@ interface CardPreview3DProps {
   brandLabel?: string;
   /** Sobrescreve o issuer detectado por BIN local (ex: vindo do binlist). */
   issuerOverride?: CardIssuer;
+  /** i18n labels (default em português) */
+  holderLabel?: string;
+  expireLabel?: string;
+  holderPlaceholder?: string;
   className?: string;
 }
 
@@ -42,6 +46,9 @@ const CardPreview3D = ({
   maskMiddle = false,
   brandLabel,
   issuerOverride,
+  holderLabel = "Titular",
+  expireLabel = "Validade",
+  holderPlaceholder = "NOME NO CARTÃO",
   className = "",
 }: CardPreview3DProps) => {
   const digits = useMemo(() => number.replace(/\D/g, "").slice(0, 16), [number]);
@@ -130,11 +137,11 @@ const CardPreview3D = ({
 
           <div className="cp3d-footer">
             <div className="cp3d-block">
-              <span className="cp3d-label">Titular</span>
-              <span className="cp3d-holder">{holder || "NOME NO CARTÃO"}</span>
+              <span className="cp3d-label">{holderLabel}</span>
+              <span className="cp3d-holder">{holder || holderPlaceholder}</span>
             </div>
             <div className="cp3d-block cp3d-expire-block">
-              <span className="cp3d-label">Validade</span>
+              <span className="cp3d-label">{expireLabel}</span>
               <span className="cp3d-expire">
                 {month || "MM"}/{yy || "AA"}
               </span>
