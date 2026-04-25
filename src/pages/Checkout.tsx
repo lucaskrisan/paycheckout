@@ -477,7 +477,10 @@ const Checkout = () => {
                     year=""
                     cvv=""
                     focus={null}
-                    brandLabel="International"
+                    brandLabel=""
+                    holderLabel={t.card.holder}
+                    expireLabel={t.card.expire}
+                    holderPlaceholder={t.card.placeholder}
                   />
                 </div>
               ) : product.is_subscription ? (
