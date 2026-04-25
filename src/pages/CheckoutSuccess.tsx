@@ -44,6 +44,8 @@ const CheckoutSuccess = () => {
   const isEN = lang === "en";
 
   const [confetti, setConfetti] = useState<ConfettiPiece[]>([]);
+  // deliveryLinks: array of { delivery_type, access_url } for all products in the order
+  const [deliveryLinks, setDeliveryLinks] = useState<{ delivery_type: string; access_url: string | null }[]>([]);
   const [appsellLoginUrl, setAppsellLoginUrl] = useState<string | null>(null);
   const [upsellOffers, setUpsellOffers] = useState<UpsellOffer[]>([]);
   const [processingUpsell, setProcessingUpsell] = useState<string | null>(null);
@@ -60,14 +62,33 @@ const CheckoutSuccess = () => {
     setConfetti(pieces);
   }, []);
 
-  // Fetch AppSell login URL when delivery = appsell
+  // Fetch all delivery links for the order (main product + bumps)
   useEffect(() => {
-    if (delivery !== "appsell" || !productId) return;
-    (supabase.rpc as any)("get_appsell_login_url", { p_product_id: productId })
-      .then(({ data }: { data: unknown }) => {
-        if (typeof data === "string" && data) setAppsellLoginUrl(data);
+    if (!orderId) {
+      if (delivery === "appsell" && productId) {
+        (supabase.rpc as any)("get_appsell_login_url", { p_product_id: productId })
+          .then(({ data }: { data: unknown }) => {
+            if (typeof data === "string" && data) {
+              setAppsellLoginUrl(data);
+              setDeliveryLinks([{ delivery_type: "appsell", access_url: data }]);
+            }
+          });
+      } else {
+        setDeliveryLinks([{ delivery_type: delivery, access_url: null }]);
+      }
+      return;
+    }
+    (supabase.rpc as any)("get_order_delivery_links", { p_order_id: orderId })
+      .then(({ data }: { data: any }) => {
+        if (data && data.length > 0) {
+          setDeliveryLinks(data);
+          const appsell = data.find((d: any) => d.delivery_type === "appsell");
+          if (appsell?.access_url) setAppsellLoginUrl(appsell.access_url);
+        } else {
+          setDeliveryLinks([{ delivery_type: delivery, access_url: null }]);
+        }
       });
-  }, [delivery, productId]);
+  }, [orderId, delivery, productId]);
 
   // Load upsell offers
   useEffect(() => {
@@ -296,49 +317,64 @@ const CheckoutSuccess = () => {
           </motion.div>
         )}
 
-        {/* Access CTA — varies by delivery method */}
-        {delivery === "appsell" && appsellLoginUrl ? (
-          <div className="bg-card border-2 border-primary/30 rounded-xl p-5 text-left">
-            <p className="text-sm font-bold text-foreground mb-1">
-              🚀 {isEN ? "Access your purchase" : "Acesse sua compra"}
-            </p>
-            <p className="text-xs text-muted-foreground mb-3">
-              {isEN
-                ? "Click below to access the platform and enjoy your content."
-                : "Clique abaixo para acessar a plataforma e aproveitar seu conteúdo."}
-            </p>
-            <a href={appsellLoginUrl} target="_blank" rel="noopener noreferrer">
-              <Button className="w-full gap-2">
-                {isEN ? "Access now" : "Acessar agora"}
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </a>
-          </div>
-        ) : delivery === "email" ? (
-          <div className="bg-card border border-border rounded-xl p-4">
-            <p className="text-sm text-muted-foreground text-center">
-              {isEN
-                ? "Your access details have been sent to your email."
-                : "Os detalhes de acesso foram enviados para o seu e-mail."}
-            </p>
-          </div>
-        ) : (
-          /* panttera member area (default) */
-          <div className="bg-card border-2 border-primary/30 rounded-xl p-5 text-left">
-            <p className="text-sm font-bold text-foreground mb-1">
-              🎓 {t.successCreateAccountTitle}
-            </p>
-            <p className="text-xs text-muted-foreground mb-3">
-              {t.successCreateAccountDesc}
-            </p>
-            <Link to="/minha-conta">
-              <Button className="w-full gap-2">
-                {t.successCreateAccountButton}
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </Link>
-          </div>
-        )}
+        {/* Access CTAs — one per delivery type in the order (main + bumps) */}
+        <div className="space-y-3">
+          {deliveryLinks.map((link) => (
+            link.delivery_type === "appsell" && link.access_url ? (
+              <div key="appsell" className="bg-card border-2 border-primary/30 rounded-xl p-5 text-left">
+                <p className="text-sm font-bold text-foreground mb-1">
+                  🚀 {isEN ? "Access your purchase" : "Acesse sua compra"}
+                </p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  {isEN
+                    ? "Click below to access the platform and enjoy your content."
+                    : "Clique abaixo para acessar a plataforma e aproveitar seu conteúdo."}
+                </p>
+                <a href={link.access_url} target="_blank" rel="noopener noreferrer">
+                  <Button className="w-full gap-2">
+                    {isEN ? "Access now" : "Acessar agora"}
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </a>
+              </div>
+            ) : link.delivery_type === "panttera" ? (
+              <div key="panttera" className="bg-card border-2 border-primary/30 rounded-xl p-5 text-left">
+                <p className="text-sm font-bold text-foreground mb-1">
+                  🎓 {t.successCreateAccountTitle}
+                </p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  {t.successCreateAccountDesc}
+                </p>
+                <Link to="/minha-conta">
+                  <Button className="w-full gap-2">
+                    {t.successCreateAccountButton}
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+              </div>
+            ) : link.delivery_type === "email" ? (
+              <div key="email" className="bg-card border border-border rounded-xl p-4">
+                <p className="text-sm text-muted-foreground text-center">
+                  {isEN
+                    ? "Your access details have been sent to your email."
+                    : "Os detalhes de acesso foram enviados para o seu e-mail."}
+                </p>
+              </div>
+            ) : null
+          ))}
+          {/* Fallback when deliveryLinks is still loading or empty */}
+          {deliveryLinks.length === 0 && (
+            <div className="bg-card border-2 border-primary/30 rounded-xl p-5 text-left">
+              <p className="text-sm font-bold text-foreground mb-1">🎓 {t.successCreateAccountTitle}</p>
+              <p className="text-xs text-muted-foreground mb-3">{t.successCreateAccountDesc}</p>
+              <Link to="/minha-conta">
+                <Button className="w-full gap-2">
+                  {t.successCreateAccountButton}<ArrowRight className="w-4 h-4" />
+                </Button>
+              </Link>
+            </div>
+          )}
+        </div>
 
         <div className="pt-2">
           <Link to="/">
