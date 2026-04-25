@@ -47,10 +47,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Fetch cart with product
+    // Fetch cart with product (incl. currency for language detection)
     const { data: cart, error: cartError } = await supabaseAdmin
       .from("abandoned_carts")
-      .select("*, products(name, price, image_url, user_id)")
+      .select("*, products(name, price, image_url, user_id, currency)")
       .eq("id", cart_id)
       .single();
 
@@ -143,31 +143,50 @@ Deno.serve(async (req) => {
     const separator = checkoutUrl.includes("?") ? "&" : "?";
     const finalUrl = `${checkoutUrl}${separator}${params}`;
 
-    const productName = product?.name || "seu produto";
+    const productName = product?.name || (product?.currency === "USD" ? "your product" : "seu produto");
     const productPrice = (cart as any).product_price || product?.price || 0;
+    const isEnglish = product?.currency === "USD";
 
-    const subject = "Você esqueceu algo no carrinho 🛒";
+    const formattedPrice = isEnglish
+      ? `$${Number(productPrice).toFixed(2)}`
+      : `R$ ${Number(productPrice).toFixed(2).replace(".", ",")}`;
+
+    const subject = isEnglish
+      ? "You left something in your cart 🛒"
+      : "Você esqueceu algo no carrinho 🛒";
+
+    const greeting = isEnglish
+      ? `Hi${cart.customer_name ? ` ${cart.customer_name}` : ""},`
+      : `Olá${cart.customer_name ? ` ${cart.customer_name}` : ""},`;
+    const intro = isEnglish
+      ? "We noticed you didn't finish your purchase. Your cart is still waiting for you!"
+      : "Notamos que você não finalizou sua compra. Seu carrinho ainda está esperando por você!";
+    const ctaLabel = isEnglish ? "Complete purchase →" : "Finalizar compra →";
+    const ignoreNote = isEnglish
+      ? "If you've already completed your purchase, please ignore this email."
+      : "Se você já finalizou sua compra, por favor ignore este e-mail.";
+    const footerNote = isEnglish
+      ? `You received this email because you started a purchase at ${companyName}.<br/>If you don't want to receive reminders, ignore this message. This is a one-time send — you won't receive another reminder for this product.`
+      : `Você recebeu este e-mail porque iniciou uma compra em ${companyName}.<br/>Se não deseja receber lembretes, ignore esta mensagem. Este é um envio único — você não receberá outro lembrete para este produto.`;
 
     const html = `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <h2 style="color: #333;">${subject}</h2>
-        <p style="color: #666;">Olá${cart.customer_name ? ` ${cart.customer_name}` : ''},</p>
-        <p style="color: #666;">Notamos que você não finalizou sua compra. Seu carrinho ainda está esperando por você!</p>
+        <p style="color: #666;">${greeting}</p>
+        <p style="color: #666;">${intro}</p>
         <div style="background: #f9f9f9; border-radius: 8px; padding: 16px; margin: 20px 0;">
           <p style="font-weight: bold; margin: 0;">${productName}</p>
-          <p style="color: #22c55e; font-size: 18px; margin: 8px 0;">R$ ${Number(productPrice).toFixed(2)}</p>
+          <p style="color: #22c55e; font-size: 18px; margin: 8px 0;">${formattedPrice}</p>
         </div>
         <a href="${finalUrl}" style="display: inline-block; background: #22c55e; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; margin: 16px 0;">
-          Finalizar compra →
+          ${ctaLabel}
         </a>
         <p style="color: #999; font-size: 12px; margin-top: 24px;">
-          Se você já finalizou sua compra, por favor ignore este e-mail.
+          ${ignoreNote}
         </p>
         <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
         <p style="color: #aaa; font-size: 11px; text-align: center;">
-          Você recebeu este e-mail porque iniciou uma compra em ${companyName}.<br/>
-          Se não deseja receber lembretes, ignore esta mensagem.
-          Este é um envio único — você não receberá outro lembrete para este produto.
+          ${footerNote}
         </p>
       </div>
     `;
