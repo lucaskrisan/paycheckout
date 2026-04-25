@@ -24,6 +24,8 @@ export interface CheckoutTranslations {
   guaranteeText: string;
   steps: { country: string; details: string; payment: string; confirmation: string };
   card: { holder: string; expire: string; placeholder: string };
+  reservedPrefix: string;
+  reservedSuffix: string;
 }
 
 const pt: CheckoutTranslations = {
@@ -47,6 +49,8 @@ const pt: CheckoutTranslations = {
   guaranteeText: "Garantia de 7 dias • Compra 100% segura",
   steps: { country: "País", details: "Dados", payment: "Pagamento", confirmation: "Confirmação" },
   card: { holder: "Titular", expire: "Validade", placeholder: "NOME NO CARTÃO" },
+  reservedPrefix: "🛒 Seu pedido está reservado por ",
+  reservedSuffix: " — Complete o checkout!",
 };
 
 const en: CheckoutTranslations = {
@@ -70,6 +74,8 @@ const en: CheckoutTranslations = {
   guaranteeText: "7-day guarantee • 100% secure purchase",
   steps: { country: "Country", details: "Details", payment: "Payment", confirmation: "Confirmation" },
   card: { holder: "Cardholder", expire: "Expires", placeholder: "FULL NAME" },
+  reservedPrefix: "🛒 Your order is reserved for ",
+  reservedSuffix: " — Complete checkout!",
 };
 
 const es: CheckoutTranslations = {
@@ -93,6 +99,8 @@ const es: CheckoutTranslations = {
   guaranteeText: "Garantía de 7 días • Compra 100% segura",
   steps: { country: "País", details: "Datos", payment: "Pago", confirmation: "Confirmación" },
   card: { holder: "Titular", expire: "Vence", placeholder: "NOMBRE COMPLETO" },
+  reservedPrefix: "🛒 Tu pedido está reservado por ",
+  reservedSuffix: " — ¡Completa el checkout!",
 };
 
 const fr: CheckoutTranslations = {
@@ -116,6 +124,8 @@ const fr: CheckoutTranslations = {
   guaranteeText: "Garantie de 7 jours • Achat 100% sécurisé",
   steps: { country: "Pays", details: "Détails", payment: "Paiement", confirmation: "Confirmation" },
   card: { holder: "Titulaire", expire: "Expire", placeholder: "NOM COMPLET" },
+  reservedPrefix: "🛒 Votre commande est réservée pour ",
+  reservedSuffix: " — Finalisez le paiement !",
 };
 
 const de: CheckoutTranslations = {
@@ -139,6 +149,8 @@ const de: CheckoutTranslations = {
   guaranteeText: "7-Tage-Garantie • 100% sicherer Kauf",
   steps: { country: "Land", details: "Daten", payment: "Zahlung", confirmation: "Bestätigung" },
   card: { holder: "Karteninhaber", expire: "Gültig bis", placeholder: "VOLLSTÄNDIGER NAME" },
+  reservedPrefix: "🛒 Ihre Bestellung ist reserviert für ",
+  reservedSuffix: " — Kasse abschließen!",
 };
 
 const it: CheckoutTranslations = {
@@ -162,6 +174,8 @@ const it: CheckoutTranslations = {
   guaranteeText: "Garanzia di 7 giorni • Acquisto 100% sicuro",
   steps: { country: "Paese", details: "Dati", payment: "Pagamento", confirmation: "Conferma" },
   card: { holder: "Intestatario", expire: "Scadenza", placeholder: "NOME COMPLETO" },
+  reservedPrefix: "🛒 Il tuo ordine è riservato per ",
+  reservedSuffix: " — Completa il checkout!",
 };
 
 // Map country code to language
