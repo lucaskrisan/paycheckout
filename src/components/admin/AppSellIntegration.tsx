@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { ExternalLink } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import IntegrationCard from "./IntegrationCard";
 import appsellLogo from "@/assets/appsell-logo.webp";
 import appsellCardLogo from "@/assets/appsell-logo.png";
@@ -18,6 +20,7 @@ const APPSELL_EVENTS = [
 const AppSellIntegration = () => {
   const { user } = useAuth();
   const [token, setToken] = useState("");
+  const [loginUrl, setLoginUrl] = useState("");
   const [active, setActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -38,6 +41,7 @@ const AppSellIntegration = () => {
 
     if (data) {
       setToken(data.token || "");
+      setLoginUrl((data as any).login_url || "");
       setActive(data.active || false);
       setExists(true);
     }
@@ -53,17 +57,24 @@ const AppSellIntegration = () => {
 
     setSaving(true);
 
+    const payload: any = {
+      token: token.trim(),
+      login_url: loginUrl.trim() || null,
+      active,
+      updated_at: new Date().toISOString(),
+    };
+
     if (exists) {
       const { error } = await supabase
         .from("appsell_integrations")
-        .update({ token: token.trim(), active, updated_at: new Date().toISOString() })
+        .update(payload)
         .eq("user_id", user.id);
       if (error) toast.error("Erro ao salvar");
       else toast.success("Integração AppSell atualizada!");
     } else {
       const { error } = await supabase
         .from("appsell_integrations")
-        .insert({ user_id: user.id, token: token.trim(), active });
+        .insert({ user_id: user.id, ...payload });
       if (error) toast.error("Erro ao salvar");
       else {
         toast.success("Integração AppSell configurada!");
