@@ -14,6 +14,7 @@ interface PurchaseConfirmationParams {
   paymentMethod: string;
   currency?: string;
   source: string;
+  deliveryMethod?: string; // 'panttera' | 'appsell' | 'email'
 }
 
 function escapeHtml(str: string): string {
@@ -21,7 +22,7 @@ function escapeHtml(str: string): string {
 }
 
 export async function sendPurchaseConfirmationEmail(params: PurchaseConfirmationParams): Promise<void> {
-  const { supabase, orderId, customerId, productId, userId, amount, paymentMethod, currency = 'BRL', source } = params;
+  const { supabase, orderId, customerId, productId, userId, amount, paymentMethod, currency = 'BRL', source, deliveryMethod = 'appsell' } = params;
 
   try {
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
@@ -42,12 +43,23 @@ export async function sendPurchaseConfirmationEmail(params: PurchaseConfirmation
       return;
     }
 
-    // Fetch product data
+    // Fetch product data + AppSell login URL when applicable
     const { data: product } = await supabase
       .from('products')
       .select('name, image_url')
       .eq('id', productId)
       .maybeSingle();
+
+    let appsellLoginUrl: string | null = null;
+    if (deliveryMethod === 'appsell' && userId) {
+      const { data: appsellData } = await supabase
+        .from('appsell_integrations')
+        .select('login_url')
+        .eq('user_id', userId)
+        .eq('active', true)
+        .maybeSingle();
+      appsellLoginUrl = appsellData?.login_url || null;
+    }
 
     const productName = escapeHtml(product?.name || 'Produto');
     const firstName = escapeHtml(customer.name?.split(' ')[0] || 'Cliente');
@@ -125,6 +137,12 @@ export async function sendPurchaseConfirmationEmail(params: PurchaseConfirmation
               </table>
             </div>
 
+            ${appsellLoginUrl ? `
+            <div style="text-align:center;margin:24px 0 16px;">
+              <a href="${appsellLoginUrl}" style="display:inline-block;background:linear-gradient(135deg,#22c55e,#16a34a);color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:8px;font-size:16px;font-weight:600;box-shadow:0 4px 12px rgba(34,197,94,0.4);">
+                ${isEnglish ? '🚀 Access your purchase' : '🚀 Acessar sua compra'}
+              </a>
+            </div>` : ''}
             <p style="color:#6b7280;font-size:14px;line-height:1.5;margin:0 0 8px;">
               ${isEnglish
                 ? 'If you have any questions, please reply to this email.'
