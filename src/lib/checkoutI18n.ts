@@ -22,6 +22,7 @@ export interface CheckoutTranslations {
   total: string;
   secureCheckout: string;
   guaranteeText: string;
+  steps: { country: string; details: string; payment: string; confirmation: string };
 }
 
 const pt: CheckoutTranslations = {
@@ -43,6 +44,7 @@ const pt: CheckoutTranslations = {
   total: "Total",
   secureCheckout: "Seus dados estão protegidos com criptografia SSL",
   guaranteeText: "Garantia de 7 dias • Compra 100% segura",
+  steps: { country: "País", details: "Dados", payment: "Pagamento", confirmation: "Confirmação" },
 };
 
 const en: CheckoutTranslations = {
@@ -64,6 +66,7 @@ const en: CheckoutTranslations = {
   total: "Total",
   secureCheckout: "Your data is protected with SSL encryption",
   guaranteeText: "7-day guarantee • 100% secure purchase",
+  steps: { country: "Country", details: "Details", payment: "Payment", confirmation: "Confirmation" },
 };
 
 const es: CheckoutTranslations = {
@@ -85,6 +88,7 @@ const es: CheckoutTranslations = {
   total: "Total",
   secureCheckout: "Tus datos están protegidos con encriptación SSL",
   guaranteeText: "Garantía de 7 días • Compra 100% segura",
+  steps: { country: "País", details: "Datos", payment: "Pago", confirmation: "Confirmación" },
 };
 
 const fr: CheckoutTranslations = {
@@ -106,6 +110,7 @@ const fr: CheckoutTranslations = {
   total: "Total",
   secureCheckout: "Vos données sont protégées par le cryptage SSL",
   guaranteeText: "Garantie de 7 jours • Achat 100% sécurisé",
+  steps: { country: "Pays", details: "Détails", payment: "Paiement", confirmation: "Confirmation" },
 };
 
 const de: CheckoutTranslations = {
@@ -127,6 +132,7 @@ const de: CheckoutTranslations = {
   total: "Gesamt",
   secureCheckout: "Ihre Daten sind durch SSL-Verschlüsselung geschützt",
   guaranteeText: "7-Tage-Garantie • 100% sicherer Kauf",
+  steps: { country: "Land", details: "Daten", payment: "Zahlung", confirmation: "Bestätigung" },
 };
 
 const it: CheckoutTranslations = {
@@ -148,6 +154,7 @@ const it: CheckoutTranslations = {
   total: "Totale",
   secureCheckout: "I tuoi dati sono protetti con crittografia SSL",
   guaranteeText: "Garanzia di 7 giorni • Acquisto 100% sicuro",
+  steps: { country: "Paese", details: "Dati", payment: "Pagamento", confirmation: "Conferma" },
 };
 
 // Map country code to language
