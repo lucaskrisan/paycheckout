@@ -24,6 +24,8 @@ export interface CheckoutTranslations {
   guaranteeText: string;
   steps: { country: string; details: string; payment: string; confirmation: string };
   card: { holder: string; expire: string; placeholder: string };
+  reservedPrefix: string;
+  reservedSuffix: string;
 }
 
 const pt: CheckoutTranslations = {
