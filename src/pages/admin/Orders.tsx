@@ -284,7 +284,7 @@ const Orders = () => {
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [user?.id, isSuperAdmin, page, searchDebounced, activeTab, filterPeriod, filterProduct, filterMethods, filterStatuses, filterSaleType]);
+  }, [user?.id, isSuperAdmin, page, searchDebounced, activeTab, filterPeriod, filterProduct, filterMethods, filterStatuses, filterSaleType, filterCurrency, filterType, filterSubscriptions, filterUtmParams, filterAffiliate, filterOffer]);
 
   const toggleFilter = (set: Set<string>, value: string) => {
     const next = new Set(set);
