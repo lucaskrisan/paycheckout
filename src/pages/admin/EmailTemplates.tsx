@@ -500,9 +500,20 @@ export default function EmailTemplates() {
                       )}
                       <CardTitle className="text-sm">{t.name}</CardTitle>
                     </div>
-                    <Badge variant="outline" className="text-[10px] shrink-0">
-                      {t.category === "auth" ? "Auth" : "Transacional"}
-                    </Badge>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {t.language === "en" && (
+                        <Badge variant="outline" className="text-[10px] bg-blue-500/10 text-blue-600 border-blue-500/30">🌎 EN</Badge>
+                      )}
+                      {t.language === "both" && (
+                        <Badge variant="outline" className="text-[10px] bg-purple-500/10 text-purple-600 border-purple-500/30">🌐 BR/EN</Badge>
+                      )}
+                      {(!t.language || t.language === "pt-BR") && t.category === "transactional" && (
+                        <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-600 border-emerald-500/30">🇧🇷 BR</Badge>
+                      )}
+                      <Badge variant="outline" className="text-[10px]">
+                        {t.category === "auth" ? "Auth" : "Transacional"}
+                      </Badge>
+                    </div>
                   </div>
                   <CardDescription className="text-xs mt-1">{t.description}</CardDescription>
                 </CardHeader>
