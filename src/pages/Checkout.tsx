@@ -414,22 +414,22 @@ const Checkout = () => {
   const usdSteps: StepBreadcrumbStep[] = [
     {
       id: "01",
-      name: "Country",
+      name: t.steps.country,
       status: selectedCountry ? "complete" : "current",
     },
     {
       id: "02",
-      name: "Details",
+      name: t.steps.details,
       status: detailsDone ? "complete" : selectedCountry ? "current" : "upcoming",
     },
     {
       id: "03",
-      name: "Payment",
+      name: t.steps.payment,
       status: paymentInProgress ? "current" : detailsDone ? "current" : "upcoming",
     },
     {
       id: "04",
-      name: "Confirmation",
+      name: t.steps.confirmation,
       status: "upcoming",
     },
   ];
