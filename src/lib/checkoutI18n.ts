@@ -78,6 +78,13 @@ const pt: CheckoutTranslations = {
     privacyPolicy: "política de privacidade",
     agreeSuffix: ".",
   },
+  form: {
+    yourDetails: "Seus dados",
+    fullName: "Nome completo",
+    email: "E-mail",
+    invalidName: "Nome deve ter pelo menos 3 caracteres",
+    invalidEmail: "E-mail inválido",
+  },
 };
 
 const en: CheckoutTranslations = {
@@ -112,6 +119,13 @@ const en: CheckoutTranslations = {
     and: " and ",
     privacyPolicy: "privacy policy",
     agreeSuffix: ".",
+  },
+  form: {
+    yourDetails: "Your details",
+    fullName: "Full name",
+    email: "Email",
+    invalidName: "Name must be at least 3 characters",
+    invalidEmail: "Invalid email address",
   },
 };
 
@@ -148,6 +162,13 @@ const es: CheckoutTranslations = {
     privacyPolicy: "política de privacidad",
     agreeSuffix: ".",
   },
+  form: {
+    yourDetails: "Tus datos",
+    fullName: "Nombre completo",
+    email: "Correo electrónico",
+    invalidName: "El nombre debe tener al menos 3 caracteres",
+    invalidEmail: "Correo electrónico inválido",
+  },
 };
 
 const fr: CheckoutTranslations = {
@@ -183,6 +204,13 @@ const fr: CheckoutTranslations = {
     privacyPolicy: "politique de confidentialité",
     agreeSuffix: ".",
   },
+  form: {
+    yourDetails: "Vos coordonnées",
+    fullName: "Nom complet",
+    email: "E-mail",
+    invalidName: "Le nom doit contenir au moins 3 caractères",
+    invalidEmail: "Adresse e-mail invalide",
+  },
 };
 
 const de: CheckoutTranslations = {
@@ -217,6 +245,13 @@ const de: CheckoutTranslations = {
     and: " und der ",
     privacyPolicy: "Datenschutzerklärung",
     agreeSuffix: " zu.",
+  },
+  form: {
+    yourDetails: "Ihre Angaben",
+    fullName: "Vollständiger Name",
+    email: "E-Mail",
+    invalidName: "Der Name muss mindestens 3 Zeichen lang sein",
+    invalidEmail: "Ungültige E-Mail-Adresse",
   },
 };
 
