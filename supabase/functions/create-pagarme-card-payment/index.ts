@@ -72,6 +72,13 @@ Deno.serve(async (req) => {
     } = body;
     const amount = Math.round(Number(body.amount) * 100) / 100;
 
+    if (Array.isArray(bump_product_ids) && bump_product_ids.length > 50) {
+      return new Response(
+        JSON.stringify({ error: 'Too many bump products (max 50)' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     if (!amount || !customer?.name || !customer?.email || !customer?.cpf) {
       return new Response(
         JSON.stringify({ error: 'Campos obrigatórios: nome, email, CPF e valor.' }),

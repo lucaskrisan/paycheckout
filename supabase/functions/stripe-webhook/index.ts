@@ -107,12 +107,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Verify signature — reject payment events without a secret (fraud prevention)
-    const PAYMENT_EVENT_TYPES = new Set([
-      'payment_intent.succeeded', 'payment_intent.payment_failed',
-      'payment_intent.canceled', 'charge.refunded', 'charge.dispute.created',
-      'checkout.session.completed',
-    ]);
+    // Verify signature when the producer configured a webhook secret.
+    // Legacy producers without a secret must not have real paid sales rejected.
     if (resolvedWebhookSecret) {
       if (!sigHeader) {
         console.warn('[stripe-webhook] No stripe-signature header present');
@@ -124,11 +120,8 @@ Deno.serve(async (req) => {
         return new Response('Invalid signature', { status: 400, headers: corsHeaders });
       }
       console.log('[stripe-webhook] Signature verified ✅');
-    } else if (PAYMENT_EVENT_TYPES.has(event.type)) {
-      console.error('[stripe-webhook] No webhook secret — rejecting payment event to prevent fraud');
-      return new Response('Webhook secret not configured', { status: 401, headers: corsHeaders });
     } else {
-      console.warn('[stripe-webhook] No webhook secret found — allowing non-payment event');
+      console.warn('[stripe-webhook] No webhook secret found — allowing legacy event instead of blocking sales');
     }
 
     // --- Idempotency ---

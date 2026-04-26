@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
     if (!p.capi_token || !p.pixel_id) continue;
     let status: "healthy" | "invalid" = "invalid";
     try {
-      const url = `https://graph.facebook.com/v24.0/${p.pixel_id}?access_token=${encodeURIComponent(
+      const url = `https://graph.facebook.com/v22.0/${p.pixel_id}?access_token=${encodeURIComponent(
         p.capi_token
       )}&fields=id,name`;
       const res = await fetch(url);

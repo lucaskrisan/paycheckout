@@ -406,7 +406,7 @@ Deno.serve(async (req) => {
         if (test_event_code) metaBody.test_event_code = test_event_code;
 
         const response = await fetch(
-          `https://graph.facebook.com/v24.0/${pixel.pixel_id}/events`,
+          `https://graph.facebook.com/v22.0/${pixel.pixel_id}/events`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
