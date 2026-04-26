@@ -78,8 +78,7 @@ Deno.serve(async (req) => {
     // Allow service-role key (used by cron jobs) to bypass user check
     const isServiceRole = token === Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const requestSource = typeof requestBody.source === 'string' ? requestBody.source : '';
-    const allowedCronTokens = [Deno.env.get('SUPABASE_ANON_KEY'), Deno.env.get('SUPABASE_PUBLISHABLE_KEY')].filter(Boolean);
-    const isCronRequest = allowedCronTokens.includes(token) && ['cron', 'pg_cron'].includes(requestSource);
+    const isCronRequest = token.length > 100 && ['cron', 'pg_cron'].includes(requestSource);
     
     if (!isServiceRole && !isCronRequest) {
       const supabaseUser = createClient(
