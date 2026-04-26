@@ -229,13 +229,20 @@ const Dashboard = () => {
   const loadDataRef = useRef(loadData);
   useEffect(() => { loadDataRef.current = loadData; }, [loadData]);
 
-  // Realtime refresh — depends only on user so the channel is not recreated on period changes
+  // Auto-refresh every 30s as a safety net in case realtime misses an event
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(() => loadDataRef.current(false), 30 * 1000);
+    return () => clearInterval(interval);
+  }, [user]);
+
+  // Realtime refresh — aggressive: 500ms debounce so new pending PIX appear almost instantly
   useEffect(() => {
     if (!user) return;
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
     const debouncedRefresh = () => {
       if (debounceTimer) clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => loadDataRef.current(false), 2000);
+      debounceTimer = setTimeout(() => loadDataRef.current(false), 500);
     };
     const channel = supabase
       .channel("dashboard-orders-refresh")
