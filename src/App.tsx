@@ -38,10 +38,7 @@ const Disclaimer = lazy(() => import("./pages/Disclaimer"));
 const ProhibitedContent = lazy(() => import("./pages/ProhibitedContent"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
-// Lazy-loaded — admin shell & pages
-const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
-const InstallPrompt = lazy(() => import("./components/InstallPrompt"));
-const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
+// Lazy-loaded — admin pages
 const Orders = lazy(() => import("./pages/admin/Orders"));
 const Products = lazy(() => import("./pages/admin/Products"));
 const ProductEdit = lazy(() => import("./pages/admin/ProductEdit"));
