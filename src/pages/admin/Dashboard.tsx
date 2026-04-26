@@ -70,6 +70,38 @@ const emptyMetrics: DashboardMetrics = {
   by_currency: {},
 };
 
+const BRAZIL_TIME_ZONE = "America/Sao_Paulo";
+const SAO_PAULO_UTC_OFFSET_HOURS = 3;
+
+type SaoPauloDateParts = { year: number; month: number; day: number };
+
+const getSaoPauloDateParts = (date = new Date()): SaoPauloDateParts => {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: BRAZIL_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+
+  const value = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find((part) => part.type === type)?.value);
+  return { year: value("year"), month: value("month"), day: value("day") };
+};
+
+const fromUtcDate = (date: Date): SaoPauloDateParts => ({
+  year: date.getUTCFullYear(),
+  month: date.getUTCMonth() + 1,
+  day: date.getUTCDate(),
+});
+
+const addDays = (date: SaoPauloDateParts, days: number): SaoPauloDateParts =>
+  fromUtcDate(new Date(Date.UTC(date.year, date.month - 1, date.day + days)));
+
+const firstDayOfMonth = (date: SaoPauloDateParts, monthOffset = 0): SaoPauloDateParts =>
+  fromUtcDate(new Date(Date.UTC(date.year, date.month - 1 + monthOffset, 1)));
+
+const startOfSaoPauloDayIso = (date: SaoPauloDateParts): string =>
+  new Date(Date.UTC(date.year, date.month - 1, date.day, SAO_PAULO_UTC_OFFSET_HOURS, 0, 0, 0)).toISOString();
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, isSuperAdmin } = useAuth();
@@ -93,25 +125,21 @@ const Dashboard = () => {
   const liveVisitors = useCheckoutPresence("watch", undefined, ownerProductIds);
 
   const getDateRange = useCallback((p: Period): { from: string | null; to: string | null } => {
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const today = getSaoPauloDateParts();
+    const tomorrow = addDays(today, 1);
+
     switch (p) {
-      case "today": return { from: startOfDay.toISOString(), to: null };
+      case "today": return { from: startOfSaoPauloDayIso(today), to: startOfSaoPauloDayIso(tomorrow) };
       case "yesterday": {
-        const y = new Date(startOfDay);
-        y.setDate(y.getDate() - 1);
-        return { from: y.toISOString(), to: startOfDay.toISOString() };
+        const yesterday = addDays(today, -1);
+        return { from: startOfSaoPauloDayIso(yesterday), to: startOfSaoPauloDayIso(today) };
       }
-      case "7days": {
-        const w = new Date(startOfDay);
-        w.setDate(w.getDate() - 7);
-        return { from: w.toISOString(), to: null };
-      }
-      case "month": return { from: new Date(now.getFullYear(), now.getMonth(), 1).toISOString(), to: null };
+      case "7days": return { from: startOfSaoPauloDayIso(addDays(today, -7)), to: null };
+      case "month": return { from: startOfSaoPauloDayIso(firstDayOfMonth(today)), to: null };
       case "lastMonth": {
         return {
-          from: new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString(),
-          to: new Date(now.getFullYear(), now.getMonth(), 1).toISOString(),
+          from: startOfSaoPauloDayIso(firstDayOfMonth(today, -1)),
+          to: startOfSaoPauloDayIso(firstDayOfMonth(today)),
         };
       }
       case "total": return { from: null, to: null };
