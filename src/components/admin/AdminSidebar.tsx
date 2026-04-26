@@ -125,7 +125,6 @@ const superAdminSeguranca = [
 ];
 
 const superAdminRecursos = [
-  { title: "Suporte Lovable", url: "/admin/suporte-lovable", icon: Sparkles },
   { title: "Roadmap", url: "/admin/roadmap", icon: ClipboardList },
   { title: "Manual Técnico", url: "/admin/manual", icon: BookOpen },
 ];
