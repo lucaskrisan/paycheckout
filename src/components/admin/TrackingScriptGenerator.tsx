@@ -344,7 +344,7 @@ ${pixelInits}
               )}
 
               <div className="bg-slate-900/40 border border-slate-700/20 rounded-md p-3 space-y-1.5">
-                <p className="text-[11px] font-medium text-slate-300">O que o script faz (100% conforme Meta v24.0):</p>
+                <p className="text-[11px] font-medium text-slate-300">O que o script faz (100% conforme Meta v22.0):</p>
                 <ul className="text-[10px] text-slate-500 space-y-0.5 list-disc list-inside">
                   <li>Carrega Meta Pixel + inicializa todos os IDs (sem duplicar init)</li>
                   <li>Dispara <span className="text-slate-400">PageView</span> + <span className="text-slate-400">ViewContent</span> com event_id (deduplicação)</li>

@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
           };
 
           const capiRes = await fetch(
-            `https://graph.facebook.com/v24.0/${pixel.pixel_id}/events`,
+            `https://graph.facebook.com/v22.0/${pixel.pixel_id}/events`,
             {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },

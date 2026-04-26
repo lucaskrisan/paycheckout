@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const META_API = 'https://graph.facebook.com/v24.0';
+const META_API = 'https://graph.facebook.com/v22.0';
 
 // ========== Meta API helpers ==========
 
