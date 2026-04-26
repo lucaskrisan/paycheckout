@@ -15,9 +15,11 @@ import { Loader2 } from "lucide-react";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
-import AdminLayout from "./components/admin/AdminLayout";
-import InstallPrompt from "./components/InstallPrompt";
-import Dashboard from "./pages/admin/Dashboard";
+
+// Lazy-loaded — admin shell must not be pulled into the public landing bundle
+const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
+const InstallPrompt = lazy(() => import("./components/InstallPrompt"));
+const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
 
 // Lazy-loaded — checkout flow
 const Checkout = lazy(() => import("./pages/Checkout"));
