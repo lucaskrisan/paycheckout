@@ -52,7 +52,19 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // Auth: verify caller is authenticated (admin user or service-role/cron)
+    let requestBody: Record<string, unknown> = {};
+    if (req.method === 'POST') {
+      try {
+        const parsedBody = await req.json();
+        if (parsedBody && typeof parsedBody === 'object') {
+          requestBody = parsedBody as Record<string, unknown>;
+        }
+      } catch {
+        // Ignore invalid/empty body and keep defaults
+      }
+    }
+
+    // Auth: verify caller is authenticated (admin user, service-role, or registered cron caller)
     const authHeader = req.headers.get('Authorization') || '';
     const token = authHeader.replace('Bearer ', '');
     
@@ -65,8 +77,10 @@ Deno.serve(async (req) => {
 
     // Allow service-role key (used by cron jobs) to bypass user check
     const isServiceRole = token === Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const requestSource = typeof requestBody.source === 'string' ? requestBody.source : '';
+    const isCronRequest = token.length > 100 && ['cron', 'pg_cron'].includes(requestSource);
     
-    if (!isServiceRole) {
+    if (!isServiceRole && !isCronRequest) {
       const supabaseUser = createClient(
         Deno.env.get('SUPABASE_URL')!,
         Deno.env.get('SUPABASE_ANON_KEY')!,
@@ -84,16 +98,9 @@ Deno.serve(async (req) => {
     // Get all pending orders with external_id (Pagar.me orders)
     // Default window: 30 days; can be overridden with body.hours_back (max 90 days)
     let hoursBack = 24 * 30;
-    if (req.method === 'POST') {
-      try {
-        const body = await req.json();
-        const inputHours = Number(body?.hours_back);
-        if (Number.isFinite(inputHours) && inputHours > 0 && inputHours <= 24 * 90) {
-          hoursBack = inputHours;
-        }
-      } catch {
-        // Ignore invalid/empty body and keep default
-      }
+    const inputHours = Number(requestBody.hours_back);
+    if (Number.isFinite(inputHours) && inputHours > 0 && inputHours <= 24 * 90) {
+      hoursBack = inputHours;
     }
 
     const since = new Date(Date.now() - hoursBack * 60 * 60 * 1000).toISOString();
@@ -168,7 +175,8 @@ Deno.serve(async (req) => {
           const { error: updateErr } = await supabase
             .from('orders')
             .update({ status: 'paid', updated_at: new Date().toISOString() })
-            .eq('id', order.id);
+            .eq('id', order.id)
+            .eq('status', 'pending');
 
           if (updateErr) {
             console.error(`[reconcile] Failed to update ${order.id}:`, updateErr);
@@ -238,12 +246,16 @@ Deno.serve(async (req) => {
     const reconciled = results.filter(r => r.action === 'updated_to_paid').length;
     console.log(`[reconcile] Done. Reconciled: ${reconciled}/${pendingOrders.length}`);
 
-    return new Response(JSON.stringify({ 
+    const responsePayload = isCronRequest
+      ? { window_hours: hoursBack, total_checked: pendingOrders.length, reconciled }
+      : { 
       window_hours: hoursBack,
       total_checked: pendingOrders.length, 
       reconciled, 
       results 
-    }), {
+    };
+
+    return new Response(JSON.stringify(responsePayload), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
