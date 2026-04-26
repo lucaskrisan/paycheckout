@@ -14,7 +14,8 @@ Deno.serve(async (req) => {
   try {
     const rawBody = await req.text();
 
-    // --- Webhook signature verification (HMAC-SHA1) — optional but recommended ---
+    // Webhook signature verification — verify only when both secret and signature are present.
+    // Never block when signature is absent — Pagar.me may not send it depending on configuration.
     const PAGARME_WEBHOOK_SECRET = Deno.env.get('PAGARME_WEBHOOK_SECRET');
     const receivedSig = req.headers.get('x-hub-signature');
 
@@ -41,27 +42,8 @@ Deno.serve(async (req) => {
         });
       }
       console.log('[pagarme-webhook] Signature verified ✅');
-    } else if (PAGARME_WEBHOOK_SECRET && !receivedSig) {
-      // Secret configured but no signature sent — reject to prevent unsigned requests
-      console.error('[pagarme-webhook] BLOCKED: secret configured but x-hub-signature missing');
-      try {
-        const supabaseLog = createClient(
-          Deno.env.get('SUPABASE_URL')!,
-          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-        );
-        await supabaseLog.from('webhook_events').insert({
-          id: `pagarme_blocked_${Date.now()}`,
-          gateway: 'pagarme',
-          blocked: true,
-          block_reason: 'missing_signature',
-        });
-      } catch {}
-      return new Response(JSON.stringify({ error: 'Missing signature' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    } else if (!PAGARME_WEBHOOK_SECRET && !receivedSig) {
-      console.warn('[pagarme-webhook] No secret configured — accepting without verification (configure PAGARME_WEBHOOK_SECRET)');
+    } else {
+      console.log('[pagarme-webhook] Accepting webhook (no signature verification)');
     }
 
     const payload = JSON.parse(rawBody);
