@@ -11,10 +11,13 @@ import { CookieConsent } from "@/components/ui/cookie-consent";
 import { useLocation } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
-// Eagerly loaded — landing & critical auth paths
+// Eagerly loaded — landing, auth, and critical admin shell paths
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+import AdminLayout from "./components/admin/AdminLayout";
+import InstallPrompt from "./components/InstallPrompt";
+import Dashboard from "./pages/admin/Dashboard";
 
 // Lazy-loaded — checkout flow
 const Checkout = lazy(() => import("./pages/Checkout"));
