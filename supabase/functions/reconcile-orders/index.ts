@@ -104,12 +104,18 @@ Deno.serve(async (req) => {
     }
 
     const since = new Date(Date.now() - hoursBack * 60 * 60 * 1000).toISOString();
+    // Only fetch Pagar.me orders. Stripe (pi_*) and other providers are reconciled
+    // by their own webhooks / mark-stripe-order-failed. Querying Pagar.me with a
+    // Stripe payment_intent id always returns 404 and pollutes the logs.
     const { data: pendingOrders, error: fetchErr } = await supabase
       .from('orders')
       .select('id, external_id, amount, product_id, customer_id, user_id, metadata, payment_method')
       .eq('status', 'pending')
       .gte('created_at', since)
-      .not('external_id', 'is', null);
+      .not('external_id', 'is', null)
+      .not('external_id', 'like', 'pi_%')
+      .not('external_id', 'like', 'cs_%')
+      .not('external_id', 'like', 'pay_%'); // pay_* = Asaas
 
     if (fetchErr) {
       console.error('[reconcile] Error fetching pending orders:', fetchErr);
