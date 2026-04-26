@@ -2728,7 +2728,6 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: undefined
       }
-      expire_stale_pending_orders: { Args: never; Returns: Json }
       get_abandoned_cart_prefill: {
         Args: { p_cart_id: string }
         Returns: {
