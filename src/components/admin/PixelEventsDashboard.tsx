@@ -408,6 +408,23 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
           <div className="overflow-y-auto flex-1 max-h-[820px] min-h-[600px] custom-scrollbar">
             {feedView === "journeys" ? (
               <CustomerJourneyFeed events={events} products={products} />
+            ) : initialLoading && groupedEvents.length === 0 ? (
+              <div className="divide-y divide-border/20">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 px-4 py-3 animate-pulse"
+                    style={{ animationDelay: `${i * 80}ms` }}
+                  >
+                    <div className="w-8 h-8 rounded-md bg-muted/40 shrink-0" />
+                    <div className="flex-1 min-w-0 space-y-1.5">
+                      <div className="h-2.5 rounded bg-muted/40 w-1/3" />
+                      <div className="h-2 rounded bg-muted/30 w-2/3" />
+                    </div>
+                    <div className="w-12 h-2.5 rounded bg-muted/30 shrink-0" />
+                  </div>
+                ))}
+              </div>
             ) : groupedEvents.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-32 gap-4 px-8">
                 <motion.div
