@@ -2790,10 +2790,18 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: {
           paid_count: number
+          paid_count_brl: number
+          paid_count_usd: number
           pending_count: number
           total_fees: number
+          total_fees_brl: number
+          total_fees_usd: number
           total_pending: number
+          total_pending_brl: number
+          total_pending_usd: number
           total_revenue: number
+          total_revenue_brl: number
+          total_revenue_usd: number
         }[]
       }
       get_webhook_secret: { Args: { p_webhook_id: string }; Returns: string }
