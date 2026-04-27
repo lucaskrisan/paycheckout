@@ -22,6 +22,19 @@ const PulseChart = ({ data, period, truncated = false }: Props) => {
           <p className="text-xs text-muted-foreground font-medium">
             Pulso de conversão · {period === "7d" ? "diário" : "por hora"}
           </p>
+          {truncated && (
+            <span
+              title="Exibindo os 500 eventos mais recentes do período. Eventos mais antigos foram omitidos."
+              className="ml-1 px-1.5 py-0.5 rounded text-[9px] font-semibold tracking-wide border"
+              style={{
+                color: "#D4AF37",
+                borderColor: "rgba(212,175,55,0.4)",
+                backgroundColor: "rgba(212,175,55,0.08)",
+              }}
+            >
+              AMOSTRA · 500
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
           <span className="flex items-center gap-1.5">
