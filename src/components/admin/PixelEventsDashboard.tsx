@@ -465,7 +465,7 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
 
         {/* ═══ SIDEBAR (5/12) — Pulso + Funil + Heatmap ═══ */}
         <aside className="lg:col-span-5 flex flex-col gap-4">
-          <PulseChart data={chartData} period={period} />
+          <PulseChart data={chartData} period={period} truncated={events.length >= 500} />
           <LiveFunnel eventCounts={eventCounts} />
           <ConversionHeatmap userId={userId} filterProduct={filterProduct} />
         </aside>
