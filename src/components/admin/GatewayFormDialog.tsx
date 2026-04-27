@@ -108,16 +108,18 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
       return;
     }
 
-    const usingGlobalSecret =
-      form.config.credential_source === "global_secret" && !form.config.api_key?.trim();
-
-    if (!usingGlobalSecret && !form.config.api_key?.trim()) {
+    if (!form.config.api_key?.trim()) {
       toast.error("API Key é obrigatória");
       return;
     }
 
-    // Stripe-specific validation (Stripe nunca usa global secret aqui)
-    if (form.provider === "stripe" && !usingGlobalSecret) {
+    // Garante que o gateway sempre use a chave própria (nunca o secret global da plataforma)
+    if (form.config.credential_source) {
+      updateConfig("credential_source", "user_provided");
+    }
+
+    // Stripe-specific validation
+    if (form.provider === "stripe") {
       const sk = String(form.config.api_key || "").trim();
       const pk = String(form.config.publishable_key || "").trim();
       if (!sk.startsWith("sk_")) {
