@@ -42,6 +42,7 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
   }, [gateway]);
 
   const isEditing = !!form.id;
+  const usesGlobalSecret = form.config.credential_source === "global_secret";
 
   const updateConfig = (key: string, value: any) => {
     setForm((f) => ({ ...f, config: { ...f.config, [key]: value } }));
@@ -108,14 +109,9 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
       return;
     }
 
-    if (!form.config.api_key?.trim()) {
+    if (!usesGlobalSecret && !form.config.api_key?.trim()) {
       toast.error("API Key é obrigatória");
       return;
-    }
-
-    // Garante que o gateway sempre use a chave própria (nunca o secret global da plataforma)
-    if (form.config.credential_source) {
-      updateConfig("credential_source", "user_provided");
     }
 
     // Stripe-specific validation
@@ -150,9 +146,11 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
       }
     }
 
-    // Validate API key before saving
-    const isValid = await validateApiKey();
-    if (!isValid) return;
+    // Validate API key before saving. Global secrets are already stored securely in the backend.
+    if (!usesGlobalSecret) {
+      const isValid = await validateApiKey();
+      if (!isValid) return;
+    }
 
     setSaving(true);
 
@@ -162,7 +160,7 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
       environment: form.environment,
       active: form.active,
       payment_methods: form.payment_methods,
-      config: form.config,
+      config: usesGlobalSecret ? { ...form.config, credential_source: "global_secret" } : { ...form.config, credential_source: "user_provided" },
       updated_at: new Date().toISOString(),
     };
 
@@ -190,7 +188,7 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
         toast.error(`Erro ao salvar: ${msg || "tente novamente"}`);
       }
     } else {
-      toast.success(isEditing ? "Gateway atualizado! ✓ Chave validada" : "Gateway criado! ✓ Chave validada");
+      toast.success(isEditing ? "Gateway atualizado!" : "Gateway criado! ✓ Chave validada");
       onSaved();
       onOpenChange(false);
     }
