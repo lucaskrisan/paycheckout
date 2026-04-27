@@ -382,7 +382,7 @@ const Checkout = () => {
         else throw new Error("Falha ao gerar o PIX. Tente novamente.");
       } else {
         const customerState = getStateFromPhone(customer.phone);
-        const { data, error } = await supabase.functions.invoke("create-pagarme-card-payment", {
+        const { data, error } = await supabase.functions.invoke("create-asaas-payment", {
           body: {
             amount: finalAmount, product_id: product.id, payment_method: "credit_card", installments: creditCard.installments,
             is_subscription: product.is_subscription, billing_cycle: product.billing_cycle, config_id: requestedConfigId || null,
