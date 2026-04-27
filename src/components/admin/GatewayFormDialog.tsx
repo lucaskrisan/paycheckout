@@ -42,6 +42,7 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
   }, [gateway]);
 
   const isEditing = !!form.id;
+  const usesGlobalSecret = form.config.credential_source === "global_secret";
 
   const updateConfig = (key: string, value: any) => {
     setForm((f) => ({ ...f, config: { ...f.config, [key]: value } }));
@@ -108,14 +109,9 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
       return;
     }
 
-    if (!form.config.api_key?.trim()) {
+    if (!usesGlobalSecret && !form.config.api_key?.trim()) {
       toast.error("API Key é obrigatória");
       return;
-    }
-
-    // Garante que o gateway sempre use a chave própria (nunca o secret global da plataforma)
-    if (form.config.credential_source) {
-      updateConfig("credential_source", "user_provided");
     }
 
     // Stripe-specific validation
@@ -150,11 +146,17 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
       }
     }
 
-    // Validate API key before saving
-    const isValid = await validateApiKey();
-    if (!isValid) return;
+    // Validate API key before saving. Global secrets are already stored securely in the backend.
+    if (!usesGlobalSecret) {
+      const isValid = await validateApiKey();
+      if (!isValid) return;
+    }
 
     setSaving(true);
+
+    const configPayload: Record<string, any> = usesGlobalSecret
+      ? { ...form.config, credential_source: "global_secret" }
+      : { ...form.config, credential_source: "user_provided" };
 
     const payload = {
       provider: form.provider,
@@ -162,7 +164,7 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
       environment: form.environment,
       active: form.active,
       payment_methods: form.payment_methods,
-      config: form.config,
+      config: configPayload,
       updated_at: new Date().toISOString(),
     };
 
@@ -190,7 +192,7 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
         toast.error(`Erro ao salvar: ${msg || "tente novamente"}`);
       }
     } else {
-      toast.success(isEditing ? "Gateway atualizado! ✓ Chave validada" : "Gateway criado! ✓ Chave validada");
+      toast.success(isEditing ? "Gateway atualizado!" : "Gateway criado! ✓ Chave validada");
       onSaved();
       onOpenChange(false);
     }
@@ -245,18 +247,24 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
 
               <div className="space-y-1.5">
                 <Label>
-                  {form.provider === "stripe" ? "Secret Key (sk_…) *" : "API Key *"}
+                  {form.provider === "stripe" ? "Secret Key (sk_…) *" : usesGlobalSecret ? "API Key" : "API Key *"}
                 </Label>
+                {usesGlobalSecret && (
+                  <div className="flex items-center gap-2 rounded-md border border-border bg-accent/30 px-3 py-2 text-sm text-foreground">
+                    <Badge variant="secondary">Conectado</Badge>
+                    <span className="text-muted-foreground">Chave segura já configurada no backend.</span>
+                  </div>
+                )}
                 <Input
                   type="password"
-                  value={form.config.api_key ?? ""}
+                  value={usesGlobalSecret ? "••••••••••••••••" : form.config.api_key ?? ""}
                   onChange={(e) => {
                     updateConfig("api_key", e.target.value);
-                    // Sempre força chave própria; nunca usa o secret global
                     if (form.config.credential_source === "global_secret") {
                       updateConfig("credential_source", "user_provided");
                     }
                   }}
+                  disabled={usesGlobalSecret}
                   placeholder={
                     form.provider === "asaas" ? "Cole sua API Key do Asaas" :
                     form.provider === "pagarme" ? "Cole sua Secret Key do Pagar.me" :
