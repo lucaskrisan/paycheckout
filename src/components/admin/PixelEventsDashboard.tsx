@@ -71,6 +71,15 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
   const [period, setPeriod] = useState("24h");
   const [feedView, setFeedView] = useState<"feed" | "journeys">("feed");
   const [eventsLastHour, setEventsLastHour] = useState(0);
+  const [initialLoading, setInitialLoading] = useState(() => {
+    // Só mostra skeleton no primeiro mount sem cache
+    try {
+      const cached = sessionStorage.getItem(`${FEED_CACHE_KEY}-${userId || "anon"}`);
+      return !cached;
+    } catch {
+      return true;
+    }
+  });
   const seenEventIdsRef = useRef<Set<string>>(new Set());
   const welcomeShownRef = useRef(false);
   const geo = useGeo();
