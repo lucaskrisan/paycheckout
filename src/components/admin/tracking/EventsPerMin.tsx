@@ -13,7 +13,10 @@ interface Props {
  */
 const EventsPerMin = ({ timestamps }: Props) => {
   const [tick, setTick] = useState(0);
-  const baselineRef = useRef<number | null>(null);
+  // Histórico das últimas N=12 medições (≈60s) para baseline por mediana — mais robusto a outliers
+  // e evita falsos alarmes de "queda" logo após o dashboard abrir (problema do EMA 0.85/0.15).
+  const historyRef = useRef<number[]>([]);
+  const HISTORY_SIZE = 12;
 
   // refresh every 5s so the rolling window slides
   useEffect(() => {
@@ -26,18 +29,24 @@ const EventsPerMin = ({ timestamps }: Props) => {
   const recent = timestamps.filter((t) => now - t <= windowMs).length;
   const rate = Math.round((recent / 5) * 10) / 10; // events per minute, 1 decimal
 
-  // Establish baseline on first non-zero rate (smooth EMA afterwards)
+  // Atualiza histórico de rates (apenas valores positivos contam para o baseline)
   useEffect(() => {
     if (rate <= 0) return;
-    if (baselineRef.current == null) {
-      baselineRef.current = rate;
-    } else {
-      baselineRef.current = baselineRef.current * 0.85 + rate * 0.15;
-    }
-    // tick is in deps to recompute baseline as the window slides
+    const h = historyRef.current;
+    h.push(rate);
+    if (h.length > HISTORY_SIZE) h.shift();
   }, [rate, tick]);
 
-  const baseline = baselineRef.current ?? rate;
+  // Mediana do histórico — baseline estável que ignora picos isolados
+  const baseline = (() => {
+    const h = historyRef.current;
+    if (h.length === 0) return rate;
+    const sorted = [...h].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 === 0
+      ? (sorted[mid - 1] + sorted[mid]) / 2
+      : sorted[mid];
+  })();
   const trendUp = rate >= baseline;
   const color = rate === 0 ? "#64748b" : trendUp ? "#10b981" : "#ef4444";
   const glow =
