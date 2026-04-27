@@ -94,7 +94,13 @@ Deno.serve(async (req) => {
     });
 
     let data = await response.json();
-    if (user && Array.isArray(data?.errors) && data.errors.join(' ').includes('All included players are not subscribed')) {
+    const shouldFallbackToTag = user && (
+      !data?.id ||
+      JSON.stringify(data?.errors || '').includes('All included players are not subscribed') ||
+      JSON.stringify(data?.errors || '').includes('invalid_aliases')
+    );
+
+    if (shouldFallbackToTag) {
       const fallbackPayload = { ...payload };
       delete fallbackPayload.include_aliases;
       fallbackPayload.filters = [{ field: 'tag', key: 'user_id', relation: '=', value: user.id }];
@@ -107,6 +113,7 @@ Deno.serve(async (req) => {
         body: JSON.stringify(fallbackPayload),
       });
       data = await response.json();
+      console.log('[test-push] OneSignal fallback response:', JSON.stringify(data));
     }
     console.log('[test-push] OneSignal response:', JSON.stringify(data));
 
