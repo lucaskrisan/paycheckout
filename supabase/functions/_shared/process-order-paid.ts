@@ -520,7 +520,7 @@ async function stepPushNotification(params: ProcessOrderPaidParams): Promise<voi
     });
 
     let raw = await response.text();
-    if (raw.includes('All included players are not subscribed')) {
+    if (!response.ok || raw.includes('All included players are not subscribed') || raw.includes('invalid_aliases') || raw.includes('"id":""')) {
       const fallbackPayload = { ...payload };
       delete fallbackPayload.include_aliases;
       fallbackPayload.filters = [{ field: 'tag', key: 'user_id', relation: '=', value: orderData.user_id }];
