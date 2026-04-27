@@ -286,6 +286,8 @@ const Orders = () => {
           amount: Number(payload.total_amount ?? 0),
         });
         setPageNetTotal(Number(payload.total_net ?? payload.total_amount ?? 0));
+        setPageNetTotalBrl(Number(payload.total_net_brl ?? 0));
+        setPageNetTotalUsd(Number(payload.total_net_usd ?? 0));
       }
       setLoading(false);
     })();
