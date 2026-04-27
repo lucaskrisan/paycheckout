@@ -66,8 +66,14 @@ const Notifications = () => {
     try {
       const { data, error } = await supabase.functions.invoke('test-push');
       if (error) throw error;
-      if (data?.errors) {
-        toast.error("Nenhum dispositivo inscrito. Aceite as notificações no navegador primeiro.");
+      const errors = data?.onesignal?.errors || data?.errors;
+      if (!data?.success || errors) {
+        const message = Array.isArray(errors) ? errors.join(" ") : "";
+        toast.error(
+          message.includes("not subscribed")
+            ? "Nenhum dispositivo inscrito. Reabra o PWA e permita as notificações."
+            : "Não foi possível entregar o push de teste."
+        );
       } else {
         toast.success("Notificação de teste enviada! 🔔");
       }
