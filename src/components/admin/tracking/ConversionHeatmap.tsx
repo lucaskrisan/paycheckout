@@ -9,7 +9,7 @@ interface Props {
   filterProduct: string;
 }
 
-const DAYS = ["D", "S", "T", "Q", "Q", "S", "S"];
+const DAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const DAY_NAMES = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
 const ConversionHeatmap = ({ userId, filterProduct }: Props) => {
@@ -77,7 +77,7 @@ const ConversionHeatmap = ({ userId, filterProduct }: Props) => {
       <div className="overflow-x-auto">
         <div className="inline-block min-w-full">
           {/* Hour ruler */}
-          <div className="flex pl-6 mb-1">
+          <div className="flex pl-10 mb-1">
             {Array.from({ length: 24 }).map((_, h) => (
               <div
                 key={h}
@@ -90,7 +90,7 @@ const ConversionHeatmap = ({ userId, filterProduct }: Props) => {
 
           {grid.map((row, d) => (
             <div key={d} className="flex items-center mb-0.5">
-              <div className="w-6 text-[10px] text-muted-foreground font-bold text-center">
+              <div className="w-10 text-[10px] text-muted-foreground font-bold text-center">
                 {DAYS[d]}
               </div>
               {row.map((v, h) => {

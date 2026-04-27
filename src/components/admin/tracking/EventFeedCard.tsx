@@ -108,7 +108,7 @@ const EventFeedCard = ({ group, productName, geo }: Props) => {
             >
               {cfg.label}
             </span>
-            {isDual && (
+            {isDual ? (
               <span
                 className="inline-flex items-center text-[12px] font-bold leading-none"
                 style={{ color: "#D4AF37", textShadow: "0 0 6px rgba(212,175,55,0.6)" }}
@@ -116,6 +116,20 @@ const EventFeedCard = ({ group, productName, geo }: Props) => {
                 aria-label="Dual confirmation"
               >
                 ✓✓
+              </span>
+            ) : hasBrowser ? (
+              <span
+                className="text-[9px] font-bold text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded"
+                title="Apenas Pixel — CAPI ainda não recebido"
+              >
+                PIXEL
+              </span>
+            ) : (
+              <span
+                className="text-[9px] font-bold text-violet-400 bg-violet-500/10 px-1.5 py-0.5 rounded"
+                title="Apenas CAPI — sem Pixel correspondente"
+              >
+                CAPI
               </span>
             )}
           </div>
