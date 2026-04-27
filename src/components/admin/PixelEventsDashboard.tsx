@@ -296,6 +296,8 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
           g.ids.push(e.id);
           if (e.customer_name && !g.customer_name) g.customer_name = e.customer_name;
           if (e.event_value != null && g.event_value == null) g.event_value = e.event_value;
+          if (e.customer_country && !g.customer_country) g.customer_country = e.customer_country;
+          if (e.customer_city && !g.customer_city) g.customer_city = e.customer_city;
         } else {
           map.set(e.event_id, {
             event_id: e.event_id,
@@ -306,6 +308,8 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
             sources: [e.source],
             ids: [e.id],
             event_value: e.event_value,
+            customer_country: e.customer_country,
+            customer_city: e.customer_city,
           });
         }
       } else {
@@ -318,6 +322,8 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
           sources: [e.source],
           ids: [e.id],
           event_value: e.event_value,
+          customer_country: e.customer_country,
+          customer_city: e.customer_city,
         });
       }
     });
