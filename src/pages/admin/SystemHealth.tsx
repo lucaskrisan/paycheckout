@@ -119,15 +119,18 @@ const SystemHealth = () => {
     // ═══════════════════════════════════════
     // 1. EDGE FUNCTIONS (todas do projeto)
     // ═══════════════════════════════════════
+    // Health-check payloads: usamos marcadores ("__health_check__") nos campos obrigatórios
+    // para que as funções respondam rápido sem disparar lógica real. Isso evita ruído no
+    // painel de Runtime Errors do Lovable (que loga qualquer 4xx automaticamente).
     const edgeFns = [
-      { name: "create-pix-payment", label: "Criar Pagamento PIX", body: {} },
-      { name: "create-pagarme-card-payment", label: "Criar Pagamento Cartão (Pagar.me)", body: {} },
+      { name: "create-pix-payment", label: "Criar Pagamento PIX", body: { health_check: true, amount: 0, customer: { name: "__health__", email: "health@check.local", cpf: "00000000000" } } },
+      { name: "create-pagarme-card-payment", label: "Criar Pagamento Cartão (Pagar.me)", body: { health_check: true, nome: "__health__", email: "health@check.local", cpf: "00000000000", valor: 0 } },
       { name: "check-order-status", label: "Verificar Status Pedido", body: { external_id: "health-check" } },
       { name: "pagarme-webhook", label: "Webhook Pagar.me", body: { type: "health_check", data: {} } },
-      { name: "send-access-link", label: "Enviar Link de Acesso", body: {} },
-      { name: "facebook-capi", label: "Facebook CAPI", body: {} },
-      { name: "meta-diagnostics", label: "Diagnóstico Meta", body: {} },
-      { name: "test-push", label: "Teste Push Notification", body: {} },
+      { name: "send-access-link", label: "Enviar Link de Acesso", body: { health_check: true, email: "health@check.local", order_id: "health-check" } },
+      { name: "facebook-capi", label: "Facebook CAPI", body: { health_check: true, product_id: "00000000-0000-0000-0000-000000000000", event_name: "HealthCheck" } },
+      { name: "meta-diagnostics", label: "Diagnóstico Meta", body: { health_check: true } },
+      { name: "test-push", label: "Teste Push Notification", body: { health_check: true } },
     ];
     const edgeResults = await Promise.all(edgeFns.map((fn) => checkEdgeFunction(fn.name, fn.label, fn.body)));
     r.push(...edgeResults);

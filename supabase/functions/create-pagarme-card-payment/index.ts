@@ -65,6 +65,12 @@ Deno.serve(async (req) => {
       );
     }
     const body = await req.json();
+    if (body?.health_check === true) {
+      return new Response(JSON.stringify({ ok: true, health_check: true }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     const {
       customer, product_id, installments, is_subscription, billing_cycle,
       coupon_id, config_id, bump_product_ids, checkout_url, utms,

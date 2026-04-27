@@ -11,6 +11,16 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Health-check short-circuit (peek body without consuming stream)
+    let _peek: any = {};
+    try { _peek = await req.clone().json(); } catch {}
+    if (_peek?.health_check === true) {
+      return new Response(JSON.stringify({ ok: true, health_check: true }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {

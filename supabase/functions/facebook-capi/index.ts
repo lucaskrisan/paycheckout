@@ -123,6 +123,13 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const _payload = await req.json();
+    if (_payload?.health_check === true) {
+      return new Response(JSON.stringify({ ok: true, health_check: true }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     const {
       product_id,
       event_name,
@@ -141,7 +148,7 @@ Deno.serve(async (req) => {
       payment_method,
       geo,
       test_event_code,
-    } = await req.json();
+    } = _payload;
 
     if (!product_id || !event_name) {
       return new Response(
