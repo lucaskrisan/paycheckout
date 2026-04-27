@@ -177,6 +177,11 @@ const Gateways = () => {
               R$ {revenue.totalPending.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
             </p>
             <p className="text-[10px] text-muted-foreground mt-1">{revenue.pendingCount} aguardando pagamento</p>
+            {hasUsd && revenue.totalPendingUsd > 0 && (
+              <p className="text-[11px] text-muted-foreground mt-1.5 pt-1.5 border-t border-border/40">
+                + {fmtUsd(revenue.totalPendingUsd)} <span className="opacity-60">em USD</span>
+              </p>
+            )}
           </CardContent>
         </Card>
 
