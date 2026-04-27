@@ -157,6 +157,11 @@ const Gateways = () => {
               R$ {netRevenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
             </p>
             <p className="text-[10px] text-muted-foreground mt-1">Após taxas da plataforma</p>
+            {hasUsd && (
+              <p className="text-[11px] text-muted-foreground mt-1.5 pt-1.5 border-t border-border/40">
+                + {fmtUsd(netRevenueUsd)} <span className="opacity-60">líquido em USD</span>
+              </p>
+            )}
           </CardContent>
         </Card>
 
