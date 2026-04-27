@@ -149,9 +149,11 @@ Deno.serve(async (req) => {
         .eq('provider', 'asaas')
         .eq('active', true)
         .maybeSingle();
+      if (gw?.environment) {
+        environment = gw.environment;
+      }
       if (gw?.config && typeof gw.config === 'object' && (gw.config as any).api_key) {
         ASAAS_API_KEY = (gw.config as any).api_key;
-        environment = gw.environment || 'sandbox';
       }
     }
 
@@ -165,7 +167,7 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (ownerRoles) {
         ASAAS_API_KEY = Deno.env.get('ASAAS_API_KEY') || null;
-        environment = Deno.env.get('ASAAS_ENV') || 'sandbox';
+        environment = Deno.env.get('ASAAS_ENV') || environment;
       }
     }
 
