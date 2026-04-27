@@ -234,8 +234,10 @@ const Orders = () => {
       const rev = Array.isArray(revenueRes.data) ? revenueRes.data[0] : null;
       if (rev) {
         setServerTotals({
-          revenue: Number(rev.total_revenue ?? 0),
-          count: Number(rev.paid_count ?? 0),
+          revenueBrl: Number(rev.total_revenue_brl ?? rev.total_revenue ?? 0),
+          revenueUsd: Number(rev.total_revenue_usd ?? 0),
+          countBrl: Number(rev.paid_count_brl ?? rev.paid_count ?? 0),
+          countUsd: Number(rev.paid_count_usd ?? 0),
         });
       }
     })();
