@@ -107,13 +107,17 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
       toast.error("Nome da conexão é obrigatório");
       return;
     }
-    if (!form.config.api_key?.trim()) {
+
+    const usingGlobalSecret =
+      form.config.credential_source === "global_secret" && !form.config.api_key?.trim();
+
+    if (!usingGlobalSecret && !form.config.api_key?.trim()) {
       toast.error("API Key é obrigatória");
       return;
     }
 
-    // Stripe-specific validation
-    if (form.provider === "stripe") {
+    // Stripe-specific validation (Stripe nunca usa global secret aqui)
+    if (form.provider === "stripe" && !usingGlobalSecret) {
       const sk = String(form.config.api_key || "").trim();
       const pk = String(form.config.publishable_key || "").trim();
       if (!sk.startsWith("sk_")) {
@@ -128,7 +132,6 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
         toast.error('Publishable Key inválida. Deve começar com "pk_test_" ou "pk_live_".');
         return;
       }
-      // Cross-validation: don't mix keys up
       if (sk.startsWith("pk_")) {
         toast.error("Você colou uma Publishable Key (pk_) no campo Secret Key.");
         return;
@@ -137,7 +140,6 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
         toast.error("Você colou uma Secret Key (sk_) no campo Publishable Key.");
         return;
       }
-      // Environment match
       const isTest = sk.startsWith("sk_test_");
       const pkIsTest = pk.startsWith("pk_test_");
       if (isTest !== pkIsTest) {
@@ -146,9 +148,11 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
       }
     }
 
-    // Validate API key before saving
-    const isValid = await validateApiKey();
-    if (!isValid) return;
+    // Validate API key before saving (skip when using global secret fallback)
+    if (!usingGlobalSecret) {
+      const isValid = await validateApiKey();
+      if (!isValid) return;
+    }
 
     setSaving(true);
 
