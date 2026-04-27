@@ -30,6 +30,8 @@ interface PixelEvent {
   visitor_id: string | null;
   event_id: string | null;
   event_value: number | null;
+  customer_country: string | null;
+  customer_city: string | null;
 }
 
 interface GroupedEvent {
@@ -41,6 +43,8 @@ interface GroupedEvent {
   sources: string[];
   ids: string[];
   event_value: number | null;
+  customer_country: string | null;
+  customer_city: string | null;
 }
 
 interface Props {
