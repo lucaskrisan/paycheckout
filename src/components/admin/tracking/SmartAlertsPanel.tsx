@@ -18,7 +18,7 @@ interface Alert {
 }
 
 const SmartAlertsPanel = ({ userId, filterProduct }: Props) => {
-  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [rawAlerts, setRawAlerts] = useState<Alert[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -92,13 +92,15 @@ const SmartAlertsPanel = ({ userId, filterProduct }: Props) => {
         });
       }
 
-      setAlerts(next.filter((a) => !dismissed.has(a.id)));
+      setRawAlerts(next);
     };
 
     evaluate();
     const interval = setInterval(evaluate, 60000);
     return () => clearInterval(interval);
-  }, [userId, filterProduct, dismissed]);
+  }, [userId, filterProduct]);
+
+  const alerts = rawAlerts.filter((a) => !dismissed.has(a.id));
 
   const dismiss = (id: string) => setDismissed((prev) => new Set(prev).add(id));
 
