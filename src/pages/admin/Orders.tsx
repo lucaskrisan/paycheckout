@@ -281,6 +281,7 @@ const Orders = () => {
           count: Number(payload.total_count ?? 0),
           amount: Number(payload.total_amount ?? 0),
         });
+        setPageNetTotal(Number(payload.total_net ?? payload.total_amount ?? 0));
       }
       setLoading(false);
     })();
