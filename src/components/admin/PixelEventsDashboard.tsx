@@ -75,7 +75,6 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
   const welcomeShownRef = useRef(false);
   const geo = useGeo();
 
-  const ownerProductIds = useMemo(() => products.map((p) => p.id), [products]);
 
   const getHoursBack = () =>
     period === "1h" ? 1 : period === "6h" ? 6 : period === "24h" ? 24 : 168;
@@ -331,7 +330,6 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
       <HeroKPIStrip
         userId={userId}
         filterProduct={filterProduct}
-        ownerProductIds={ownerProductIds}
         recentEventsTimestamps={recentTimestamps}
       />
 
