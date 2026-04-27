@@ -46,6 +46,7 @@ const Gateways = () => {
   const { user } = useAuth();
   const [revenue, setRevenue] = useState<RevenueSummary>({
     totalRevenue: 0, totalFees: 0, totalPending: 0, paidCount: 0, pendingCount: 0,
+    totalRevenueUsd: 0, totalFeesUsd: 0, totalPendingUsd: 0, paidCountUsd: 0,
   });
   const [recentPaid, setRecentPaid] = useState<any[]>([]);
   const [gateways, setGateways] = useState<GatewayConfig[]>([]);
