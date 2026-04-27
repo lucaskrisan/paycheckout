@@ -137,6 +137,11 @@ const Gateways = () => {
               R$ {revenue.totalRevenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
             </p>
             <p className="text-[10px] text-muted-foreground mt-1">{revenue.paidCount} vendas aprovadas</p>
+            {hasUsd && (
+              <p className="text-[11px] text-muted-foreground mt-1.5 pt-1.5 border-t border-border/40">
+                + {fmtUsd(revenue.totalRevenueUsd)} <span className="opacity-60">({revenue.paidCountUsd} em USD)</span>
+              </p>
+            )}
           </CardContent>
         </Card>
 
