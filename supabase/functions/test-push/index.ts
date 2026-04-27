@@ -79,6 +79,7 @@ Deno.serve(async (req) => {
 
     // Target only the calling user's devices (not all subscribers)
     if (user) {
+      payload.include_aliases = { external_id: [user.id] };
       payload.filters = [{ field: 'tag', key: 'user_id', relation: '=', value: user.id }];
     } else {
       payload.included_segments = ['Total Subscriptions'];
