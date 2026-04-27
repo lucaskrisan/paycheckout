@@ -154,13 +154,17 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
 
     setSaving(true);
 
+    const configPayload: Record<string, any> = usesGlobalSecret
+      ? { ...form.config, credential_source: "global_secret" }
+      : { ...form.config, credential_source: "user_provided" };
+
     const payload = {
       provider: form.provider,
       name: form.name,
       environment: form.environment,
       active: form.active,
       payment_methods: form.payment_methods,
-      config: usesGlobalSecret ? { ...form.config, credential_source: "global_secret" } : { ...form.config, credential_source: "user_provided" },
+      config: configPayload,
       updated_at: new Date().toISOString(),
     };
 
