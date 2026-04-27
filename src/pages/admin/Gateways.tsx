@@ -78,6 +78,10 @@ const Gateways = () => {
           totalPending: Number(r.total_pending),
           paidCount: Number(r.paid_count),
           pendingCount: Number(r.pending_count),
+          totalRevenueUsd: Number((r as any).total_revenue_usd ?? 0),
+          totalFeesUsd: Number((r as any).total_fees_usd ?? 0),
+          totalPendingUsd: Number((r as any).total_pending_usd ?? 0),
+          paidCountUsd: Number((r as any).paid_count_usd ?? 0),
         });
       }
 
