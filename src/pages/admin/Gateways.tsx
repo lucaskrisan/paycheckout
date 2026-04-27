@@ -35,6 +35,10 @@ interface RevenueSummary {
   totalPending: number;
   paidCount: number;
   pendingCount: number;
+  totalRevenueUsd: number;
+  totalFeesUsd: number;
+  totalPendingUsd: number;
+  paidCountUsd: number;
 }
 
 const Gateways = () => {
@@ -42,6 +46,7 @@ const Gateways = () => {
   const { user } = useAuth();
   const [revenue, setRevenue] = useState<RevenueSummary>({
     totalRevenue: 0, totalFees: 0, totalPending: 0, paidCount: 0, pendingCount: 0,
+    totalRevenueUsd: 0, totalFeesUsd: 0, totalPendingUsd: 0, paidCountUsd: 0,
   });
   const [recentPaid, setRecentPaid] = useState<any[]>([]);
   const [gateways, setGateways] = useState<GatewayConfig[]>([]);
@@ -73,6 +78,10 @@ const Gateways = () => {
           totalPending: Number(r.total_pending),
           paidCount: Number(r.paid_count),
           pendingCount: Number(r.pending_count),
+          totalRevenueUsd: Number((r as any).total_revenue_usd ?? 0),
+          totalFeesUsd: Number((r as any).total_fees_usd ?? 0),
+          totalPendingUsd: Number((r as any).total_pending_usd ?? 0),
+          paidCountUsd: Number((r as any).paid_count_usd ?? 0),
         });
       }
 
@@ -97,6 +106,9 @@ const Gateways = () => {
   }, [loadData]);
 
   const netRevenue = revenue.totalRevenue - revenue.totalFees;
+  const netRevenueUsd = revenue.totalRevenueUsd - revenue.totalFeesUsd;
+  const hasUsd = revenue.totalRevenueUsd > 0 || revenue.paidCountUsd > 0 || revenue.totalPendingUsd > 0;
+  const fmtUsd = (n: number) => `US$ ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const activeGateways = gateways.filter(g => g.active);
 
   return (
@@ -125,6 +137,11 @@ const Gateways = () => {
               R$ {revenue.totalRevenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
             </p>
             <p className="text-[10px] text-muted-foreground mt-1">{revenue.paidCount} vendas aprovadas</p>
+            {hasUsd && (
+              <p className="text-[11px] text-muted-foreground mt-1.5 pt-1.5 border-t border-border/40">
+                + {fmtUsd(revenue.totalRevenueUsd)} <span className="opacity-60">({revenue.paidCountUsd} em USD)</span>
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -140,6 +157,11 @@ const Gateways = () => {
               R$ {netRevenue.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
             </p>
             <p className="text-[10px] text-muted-foreground mt-1">Após taxas da plataforma</p>
+            {hasUsd && (
+              <p className="text-[11px] text-muted-foreground mt-1.5 pt-1.5 border-t border-border/40">
+                + {fmtUsd(netRevenueUsd)} <span className="opacity-60">líquido em USD</span>
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -155,6 +177,11 @@ const Gateways = () => {
               R$ {revenue.totalPending.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
             </p>
             <p className="text-[10px] text-muted-foreground mt-1">{revenue.pendingCount} aguardando pagamento</p>
+            {hasUsd && revenue.totalPendingUsd > 0 && (
+              <p className="text-[11px] text-muted-foreground mt-1.5 pt-1.5 border-t border-border/40">
+                + {fmtUsd(revenue.totalPendingUsd)} <span className="opacity-60">em USD</span>
+              </p>
+            )}
           </CardContent>
         </Card>
 

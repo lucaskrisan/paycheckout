@@ -131,8 +131,10 @@ const Orders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
-  const [serverTotals, setServerTotals] = useState<{ revenue: number; count: number } | null>(null);
+  const [serverTotals, setServerTotals] = useState<{ revenueBrl: number; revenueUsd: number; countBrl: number; countUsd: number } | null>(null);
   const [pageNetTotal, setPageNetTotal] = useState<number>(0);
+  const [pageNetTotalBrl, setPageNetTotalBrl] = useState<number>(0);
+  const [pageNetTotalUsd, setPageNetTotalUsd] = useState<number>(0);
   const [pageTotals, setPageTotals] = useState<{ count: number; amount: number }>({ count: 0, amount: 0 });
   const [search, setSearch] = useState("");
   const [searchDebounced, setSearchDebounced] = useState("");
@@ -232,8 +234,10 @@ const Orders = () => {
       const rev = Array.isArray(revenueRes.data) ? revenueRes.data[0] : null;
       if (rev) {
         setServerTotals({
-          revenue: Number(rev.total_revenue ?? 0),
-          count: Number(rev.paid_count ?? 0),
+          revenueBrl: Number(rev.total_revenue_brl ?? rev.total_revenue ?? 0),
+          revenueUsd: Number(rev.total_revenue_usd ?? 0),
+          countBrl: Number(rev.paid_count_brl ?? rev.paid_count ?? 0),
+          countUsd: Number(rev.paid_count_usd ?? 0),
         });
       }
     })();
@@ -282,6 +286,8 @@ const Orders = () => {
           amount: Number(payload.total_amount ?? 0),
         });
         setPageNetTotal(Number(payload.total_net ?? payload.total_amount ?? 0));
+        setPageNetTotalBrl(Number(payload.total_net_brl ?? 0));
+        setPageNetTotalUsd(Number(payload.total_net_usd ?? 0));
       }
       setLoading(false);
     })();
@@ -381,38 +387,60 @@ const Orders = () => {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="relative overflow-hidden rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm p-5 group hover:border-primary/30 transition-all">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:bg-primary/10 transition-colors" />
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-              <TrendingUp className="w-4 h-4 text-primary" />
+      {(() => {
+        const isHappyPath = !!serverTotals && !hasActiveFilters && !search && activeTab === "approved";
+        const countBrl = isHappyPath ? serverTotals!.countBrl : 0;
+        const countUsd = isHappyPath ? serverTotals!.countUsd : 0;
+        const revBrl = isHappyPath ? serverTotals!.revenueBrl : pageNetTotalBrl;
+        const revUsd = isHappyPath ? serverTotals!.revenueUsd : pageNetTotalUsd;
+        const totalCount = isHappyPath ? (countBrl + countUsd) : totalFilteredCount;
+        const hasUsd = revUsd > 0 || countUsd > 0;
+        const showOnlyBrl = filterCurrency === "BRL" || (!hasUsd && filterCurrency !== "USD");
+        const showOnlyUsd = filterCurrency === "USD";
+        const fmtBrl = (n: number) => `R$ ${n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        const fmtUsd = (n: number) => `US$ ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+        return (
+          <div className="grid grid-cols-2 gap-4">
+            <div className="relative overflow-hidden rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm p-5 group hover:border-primary/30 transition-all">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:bg-primary/10 transition-colors" />
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-primary" />
+                </div>
+                <span className="text-sm text-muted-foreground">Vendas encontradas</span>
+              </div>
+              <p className="text-3xl font-bold text-foreground tracking-tight">
+                {totalCount.toLocaleString("pt-BR")}
+              </p>
+              {isHappyPath && hasUsd && !showOnlyBrl && !showOnlyUsd && (
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  {countBrl.toLocaleString("pt-BR")} em BRL · {countUsd.toLocaleString("pt-BR")} em USD
+                </p>
+              )}
             </div>
-            <span className="text-sm text-muted-foreground">Vendas encontradas</span>
-          </div>
-          <p className="text-3xl font-bold text-foreground tracking-tight">
-            {(serverTotals && !hasActiveFilters && !search && activeTab === "approved"
-              ? serverTotals.count
-              : totalFilteredCount
-            ).toLocaleString("pt-BR")}
-          </p>
-        </div>
-        <div className="relative overflow-hidden rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm p-5 group hover:border-primary/30 transition-all">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:bg-primary/10 transition-colors" />
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-              <DollarSign className="w-4 h-4 text-primary" />
+            <div className="relative overflow-hidden rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm p-5 group hover:border-primary/30 transition-all">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:bg-primary/10 transition-colors" />
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <DollarSign className="w-4 h-4 text-primary" />
+                </div>
+                <span className="text-sm text-muted-foreground">Valor líquido</span>
+              </div>
+              {showOnlyUsd ? (
+                <p className="text-3xl font-bold text-foreground tracking-tight">{fmtUsd(revUsd)}</p>
+              ) : showOnlyBrl ? (
+                <p className="text-3xl font-bold text-foreground tracking-tight">{fmtBrl(revBrl)}</p>
+              ) : (
+                <div className="space-y-0.5">
+                  <p className="text-3xl font-bold text-foreground tracking-tight leading-tight">{fmtBrl(revBrl)}</p>
+                  <p className="text-lg font-semibold text-muted-foreground leading-tight">{fmtUsd(revUsd)}</p>
+                </div>
+              )}
             </div>
-            <span className="text-sm text-muted-foreground">Valor líquido</span>
           </div>
-          <p className="text-3xl font-bold text-foreground tracking-tight">
-            R$ {(serverTotals && !hasActiveFilters && !search && activeTab === "approved"
-              ? serverTotals.revenue
-              : pageNetTotal
-            ).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-          </p>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* Search + Filter + Tabs row */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
