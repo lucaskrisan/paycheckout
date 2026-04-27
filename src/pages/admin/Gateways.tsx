@@ -106,6 +106,9 @@ const Gateways = () => {
   }, [loadData]);
 
   const netRevenue = revenue.totalRevenue - revenue.totalFees;
+  const netRevenueUsd = revenue.totalRevenueUsd - revenue.totalFeesUsd;
+  const hasUsd = revenue.totalRevenueUsd > 0 || revenue.paidCountUsd > 0 || revenue.totalPendingUsd > 0;
+  const fmtUsd = (n: number) => `US$ ${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const activeGateways = gateways.filter(g => g.active);
 
   return (
