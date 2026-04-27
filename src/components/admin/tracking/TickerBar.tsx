@@ -44,6 +44,8 @@ const TickerBar = ({ userId, filterProduct }: Props) => {
 
   // Initial load — last 6h of Purchases
   useEffect(() => {
+    // Reset seen ids when scope changes (user/product filter)
+    seenRef.current = new Set();
     const load = async () => {
       const since = subHours(new Date(), 6).toISOString();
       let q = supabase
