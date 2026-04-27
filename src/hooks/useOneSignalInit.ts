@@ -6,6 +6,13 @@ export function useOneSignalInit(userId: string | undefined) {
     if ((window as any).__oneSignalLoaded) return;
     (window as any).__oneSignalLoaded = true;
 
+    const ensureNotificationPermission = async (OneSignal: any) => {
+      const permission = await OneSignal.Notifications?.permissionNative;
+      if (permission === "default") {
+        await OneSignal.Notifications.requestPermission();
+      }
+    };
+
     const script = document.createElement("script");
     script.src = "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js";
     script.defer = true;
@@ -35,8 +42,12 @@ export function useOneSignalInit(userId: string | undefined) {
               },
             },
           });
+          await ensureNotificationPermission(OneSignal);
+          if (typeof OneSignal.login === "function") {
+            await OneSignal.login(userId);
+          }
           await OneSignal.User.addTag("user_id", userId);
-          console.log("[OneSignal] initialized with user_id tag:", userId);
+          console.log("[OneSignal] initialized with user_id identity:", userId);
         } catch (err) {
           console.error("[OneSignal] init error:", err);
         }

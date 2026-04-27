@@ -79,12 +79,12 @@ Deno.serve(async (req) => {
 
     // Target only the calling user's devices (not all subscribers)
     if (user) {
-      payload.filters = [{ field: 'tag', key: 'user_id', relation: '=', value: user.id }];
+      payload.include_aliases = { external_id: [user.id] };
     } else {
       payload.included_segments = ['Total Subscriptions'];
     }
 
-    const response = await fetch('https://api.onesignal.com/notifications', {
+    let response = await fetch('https://api.onesignal.com/notifications', {
       method: 'POST',
       headers: {
         'Authorization': `Key ${apiKey}`,
@@ -93,7 +93,21 @@ Deno.serve(async (req) => {
       body: JSON.stringify(payload),
     });
 
-    const data = await response.json();
+    let data = await response.json();
+    if (user && Array.isArray(data?.errors) && data.errors.join(' ').includes('All included players are not subscribed')) {
+      const fallbackPayload = { ...payload };
+      delete fallbackPayload.include_aliases;
+      fallbackPayload.filters = [{ field: 'tag', key: 'user_id', relation: '=', value: user.id }];
+      response = await fetch('https://api.onesignal.com/notifications', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Key ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(fallbackPayload),
+      });
+      data = await response.json();
+    }
     console.log('[test-push] OneSignal response:', JSON.stringify(data));
 
     return new Response(JSON.stringify({ success: !!data.id, onesignal: data }), {

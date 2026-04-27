@@ -506,11 +506,11 @@ async function stepPushNotification(params: ProcessOrderPaidParams): Promise<voi
       headings: { en: title },
       contents: { en: message },
       chrome_web_icon: 'https://app.panttera.com.br/pwa-192x192.png',
-      filters: [{ field: 'tag', key: 'user_id', relation: '=', value: orderData.user_id }],
+      include_aliases: { external_id: [orderData.user_id] },
       url: 'https://app.panttera.com.br/admin/orders',
     };
 
-    const response = await fetch('https://api.onesignal.com/notifications', {
+    let response = await fetch('https://api.onesignal.com/notifications', {
       method: 'POST',
       headers: {
         'Authorization': `Key ${apiKey}`,
@@ -519,7 +519,22 @@ async function stepPushNotification(params: ProcessOrderPaidParams): Promise<voi
       body: JSON.stringify(payload),
     });
 
-    const raw = await response.text();
+    let raw = await response.text();
+    if (raw.includes('All included players are not subscribed')) {
+      const fallbackPayload = { ...payload };
+      delete fallbackPayload.include_aliases;
+      fallbackPayload.filters = [{ field: 'tag', key: 'user_id', relation: '=', value: orderData.user_id }];
+      response = await fetch('https://api.onesignal.com/notifications', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Key ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(fallbackPayload),
+      });
+      raw = await response.text();
+    }
+
     console.log(`[${source}] OneSignal response:`, { status: response.status, body: raw });
   } catch (notifErr) {
     console.error(`[${source}] Notification error (non-blocking):`, notifErr);
