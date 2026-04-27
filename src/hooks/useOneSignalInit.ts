@@ -3,56 +3,82 @@ import { useEffect } from "react";
 export function useOneSignalInit(userId: string | undefined) {
   useEffect(() => {
     if (!userId) return;
-    if ((window as any).__oneSignalLoaded) return;
-    (window as any).__oneSignalLoaded = true;
+
+    const win = window as any;
 
     const ensureNotificationPermission = async (OneSignal: any) => {
-      const permission = await OneSignal.Notifications?.permissionNative;
+      const permission = OneSignal.Notifications?.permissionNative ?? Notification.permission;
       if (permission === "default") {
         await OneSignal.Notifications.requestPermission();
       }
     };
 
-    const script = document.createElement("script");
-    script.src = "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js";
-    script.defer = true;
-    script.onload = () => {
-      (window as any).OneSignalDeferred = (window as any).OneSignalDeferred || [];
-      (window as any).OneSignalDeferred.push(async (OneSignal: any) => {
+    const syncOneSignalIdentity = () => {
+      win.OneSignalDeferred = win.OneSignalDeferred || [];
+      win.OneSignalDeferred.push(async (OneSignal: any) => {
         try {
-          await OneSignal.init({
-            appId: "5ba5218a-5026-4270-92ce-d2e0ab5509e0",
-            serviceWorkerParam: { scope: "/" },
-            serviceWorkerPath: "/OneSignalSDKWorker.js",
-            serviceWorkerUpdaterPath: "/OneSignalSDKUpdaterWorker.js",
-            notifyButton: { enable: false },
-            allowLocalhostAsSecureOrigin: true,
-            promptOptions: {
-              slidedown: {
-                prompts: [{
-                  type: "push",
-                  autoPrompt: true,
-                  text: {
-                    actionMessage: "Deseja receber notificações de vendas em tempo real?",
-                    acceptButton: "Permitir",
-                    cancelButton: "Agora não",
-                  },
-                  delay: { pageViews: 1, timeDelay: 2 },
-                }],
+          if (!win.__oneSignalInitialized) {
+            await OneSignal.init({
+              appId: "5ba5218a-5026-4270-92ce-d2e0ab5509e0",
+              serviceWorkerParam: { scope: "/" },
+              serviceWorkerPath: "/OneSignalSDKWorker.js",
+              serviceWorkerUpdaterPath: "/OneSignalSDKUpdaterWorker.js",
+              notifyButton: { enable: false },
+              allowLocalhostAsSecureOrigin: true,
+              promptOptions: {
+                slidedown: {
+                  prompts: [{
+                    type: "push",
+                    autoPrompt: true,
+                    text: {
+                      actionMessage: "Deseja receber notificações de vendas em tempo real?",
+                      acceptButton: "Permitir",
+                      cancelButton: "Agora não",
+                    },
+                    delay: { pageViews: 1, timeDelay: 2 },
+                  }],
+                },
               },
-            },
-          });
+            });
+            win.__oneSignalInitialized = true;
+          }
+
           await ensureNotificationPermission(OneSignal);
+
+          if (typeof OneSignal.User?.PushSubscription?.optIn === "function") {
+            await OneSignal.User.PushSubscription.optIn();
+          }
           if (typeof OneSignal.login === "function") {
             await OneSignal.login(userId);
           }
-          await OneSignal.User.addTag("user_id", userId);
-          console.log("[OneSignal] initialized with user_id identity:", userId);
+          if (typeof OneSignal.User?.addTags === "function") {
+            await OneSignal.User.addTags({ user_id: userId });
+          } else if (typeof OneSignal.User?.addTag === "function") {
+            await OneSignal.User.addTag("user_id", userId);
+          }
+
+          console.log("[OneSignal] synced:", {
+            userId,
+            permission: OneSignal.Notifications?.permissionNative ?? Notification.permission,
+            subscriptionId: OneSignal.User?.PushSubscription?.id ?? null,
+            optedIn: OneSignal.User?.PushSubscription?.optedIn ?? null,
+          });
         } catch (err) {
           console.error("[OneSignal] init error:", err);
         }
       });
     };
+
+    const existingScript = document.querySelector<HTMLScriptElement>('script[src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"]');
+    if (existingScript) {
+      syncOneSignalIdentity();
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js";
+    script.defer = true;
+    script.onload = syncOneSignalIdentity;
     document.head.appendChild(script);
   }, [userId]);
 }
