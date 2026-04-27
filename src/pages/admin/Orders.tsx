@@ -305,7 +305,7 @@ const Orders = () => {
   // Server already paginated/filtered — orders IS the current page
   const paginated = orders;
   const totalPages = Math.max(1, Math.ceil(pageTotals.count / ITEMS_PER_PAGE));
-  const totalAmount = pageTotals.amount;
+  // pageTotals.amount = bruto da página filtrada (mantido para futura referência)
   const totalFilteredCount = pageTotals.count;
 
   // Reset to page 1 when filters change
