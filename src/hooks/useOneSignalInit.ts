@@ -6,13 +6,6 @@ export function useOneSignalInit(userId: string | undefined) {
 
     const win = window as any;
 
-    const ensureNotificationPermission = async (OneSignal: any) => {
-      const permission = OneSignal.Notifications?.permissionNative ?? Notification.permission;
-      if (permission === "default") {
-        await OneSignal.Notifications.requestPermission();
-      }
-    };
-
     const syncOneSignalIdentity = () => {
       win.OneSignalDeferred = win.OneSignalDeferred || [];
       win.OneSignalDeferred.push(async (OneSignal: any) => {
@@ -43,18 +36,20 @@ export function useOneSignalInit(userId: string | undefined) {
             win.__oneSignalInitialized = true;
           }
 
-          await ensureNotificationPermission(OneSignal);
-
-          if (typeof OneSignal.User?.PushSubscription?.optIn === "function") {
-            await OneSignal.User.PushSubscription.optIn();
-          }
-          if (typeof OneSignal.login === "function") {
-            await OneSignal.login(userId);
-          }
+          // Sempre adiciona a tag user_id (método legado que sempre funcionou)
           if (typeof OneSignal.User?.addTags === "function") {
             await OneSignal.User.addTags({ user_id: userId });
           } else if (typeof OneSignal.User?.addTag === "function") {
             await OneSignal.User.addTag("user_id", userId);
+          }
+
+          // Adiciona alias como complemento (não substitui tag)
+          if (typeof OneSignal.login === "function") {
+            try {
+              await OneSignal.login(userId);
+            } catch (e) {
+              console.warn("[OneSignal] login failed (non-fatal):", e);
+            }
           }
 
           console.log("[OneSignal] synced:", {
