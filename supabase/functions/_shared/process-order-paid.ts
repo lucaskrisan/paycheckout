@@ -506,6 +506,7 @@ async function stepPushNotification(params: ProcessOrderPaidParams): Promise<voi
       headings: { en: title },
       contents: { en: message },
       chrome_web_icon: 'https://app.panttera.com.br/pwa-192x192.png',
+      include_aliases: { external_id: [orderData.user_id] },
       filters: [{ field: 'tag', key: 'user_id', relation: '=', value: orderData.user_id }],
       url: 'https://app.panttera.com.br/admin/orders',
     };
