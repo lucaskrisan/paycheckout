@@ -10,9 +10,10 @@ interface DataPoint {
 interface Props {
   data: DataPoint[];
   period: string;
+  truncated?: boolean;
 }
 
-const PulseChart = ({ data, period }: Props) => {
+const PulseChart = ({ data, period, truncated = false }: Props) => {
   return (
     <div className="relative rounded-xl bg-muted/40 border border-border/20 p-5 h-full flex flex-col">
       <div className="flex items-center justify-between mb-4">
