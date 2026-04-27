@@ -9,7 +9,6 @@ import NinaWatermark from "./NinaWatermark";
 interface Props {
   userId?: string;
   filterProduct: string;
-  ownerProductIds: string[];
   recentEventsTimestamps: number[];
 }
 
