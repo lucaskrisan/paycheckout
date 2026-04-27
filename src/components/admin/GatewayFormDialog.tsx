@@ -240,20 +240,58 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
               </div>
 
               <div className="space-y-1.5">
-                <Label>
-                  {form.provider === "stripe" ? "Secret Key (sk_…) *" : "API Key *"}
-                </Label>
-                <Input
-                  type="password"
-                  value={form.config.api_key ?? ""}
-                  onChange={(e) => updateConfig("api_key", e.target.value)}
-                  placeholder={
-                    form.provider === "asaas" ? "Cole sua API Key do Asaas" :
-                    form.provider === "pagarme" ? "Cole sua Secret Key do Pagar.me" :
-                    form.provider === "mercadopago" ? "Cole seu Access Token do Mercado Pago" :
-                    "sk_test_… ou sk_live_…"
-                  }
-                />
+                <div className="flex items-center justify-between">
+                  <Label>
+                    {form.provider === "stripe" ? "Secret Key (sk_…) *" : "API Key *"}
+                  </Label>
+                  {form.config.credential_source === "global_secret" && (
+                    <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold">
+                      ● Conectado via Secret Global
+                    </Badge>
+                  )}
+                </div>
+                {form.config.credential_source === "global_secret" ? (
+                  <div className="space-y-1.5">
+                    <Input
+                      type="text"
+                      value={
+                        form.provider === "asaas"
+                          ? "$aact_***conectado via secret global ASAAS_API_KEY***"
+                          : form.provider === "pagarme"
+                          ? "sk_***conectado via secret global PAGARME_API_KEY***"
+                          : "***conectado via secret global***"
+                      }
+                      readOnly
+                      className="font-mono text-xs bg-emerald-500/5 border-emerald-500/30 text-emerald-300 cursor-not-allowed"
+                    />
+                    <p className="text-xs text-emerald-400/80">
+                      ✓ Esta conta usa a chave master da plataforma (super admin). Para sobrescrever com sua própria chave, cole abaixo:
+                    </p>
+                    <Input
+                      type="password"
+                      value={form.config.api_key ?? ""}
+                      onChange={(e) => {
+                        updateConfig("api_key", e.target.value);
+                        if (e.target.value.trim()) {
+                          updateConfig("credential_source", "user_provided");
+                        }
+                      }}
+                      placeholder="(opcional) Cole para usar sua própria chave"
+                    />
+                  </div>
+                ) : (
+                  <Input
+                    type="password"
+                    value={form.config.api_key ?? ""}
+                    onChange={(e) => updateConfig("api_key", e.target.value)}
+                    placeholder={
+                      form.provider === "asaas" ? "Cole sua API Key do Asaas" :
+                      form.provider === "pagarme" ? "Cole sua Secret Key do Pagar.me" :
+                      form.provider === "mercadopago" ? "Cole seu Access Token do Mercado Pago" :
+                      "sk_test_… ou sk_live_…"
+                    }
+                  />
+                )}
                 <p className="text-xs text-muted-foreground">
                   {form.provider === "asaas"
                     ? "Encontre em: Minha Conta > Integrações > API"
