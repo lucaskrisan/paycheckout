@@ -55,14 +55,16 @@ const GatewayManagement = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingGateway, setEditingGateway] = useState<GatewayConfig | null>(null);
 
-  useEffect(() => { loadGateways(); }, []);
+  useEffect(() => {
+    if (!user?.id) return;
+    loadGateways();
+  }, [user?.id]);
 
   const loadGateways = async () => {
+    if (!user?.id) return;
     let query = supabase.from("payment_gateways").select("id, name, provider, active, environment, payment_methods, config, created_at, updated_at, user_id").order("created_at");
     // Producers only see their own gateways; super admin sees all in the platform section
-    if (user?.id) {
-      query = query.eq("user_id", user.id);
-    }
+    query = query.eq("user_id", user.id);
     const { data, error } = await query;
     if (!data) { if (error) toast.error("Erro ao carregar gateways"); setLoading(false); return; }
 
