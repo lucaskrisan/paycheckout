@@ -132,6 +132,7 @@ const Orders = () => {
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [serverTotals, setServerTotals] = useState<{ revenue: number; count: number } | null>(null);
+  const [pageNetTotal, setPageNetTotal] = useState<number>(0);
   const [pageTotals, setPageTotals] = useState<{ count: number; amount: number }>({ count: 0, amount: 0 });
   const [search, setSearch] = useState("");
   const [searchDebounced, setSearchDebounced] = useState("");
@@ -280,6 +281,7 @@ const Orders = () => {
           count: Number(payload.total_count ?? 0),
           amount: Number(payload.total_amount ?? 0),
         });
+        setPageNetTotal(Number(payload.total_net ?? payload.total_amount ?? 0));
       }
       setLoading(false);
     })();
@@ -303,7 +305,7 @@ const Orders = () => {
   // Server already paginated/filtered — orders IS the current page
   const paginated = orders;
   const totalPages = Math.max(1, Math.ceil(pageTotals.count / ITEMS_PER_PAGE));
-  const totalAmount = pageTotals.amount;
+  // pageTotals.amount = bruto da página filtrada (mantido para futura referência)
   const totalFilteredCount = pageTotals.count;
 
   // Reset to page 1 when filters change
@@ -406,7 +408,7 @@ const Orders = () => {
           <p className="text-3xl font-bold text-foreground tracking-tight">
             R$ {(serverTotals && !hasActiveFilters && !search && activeTab === "approved"
               ? serverTotals.revenue
-              : totalAmount
+              : pageNetTotal
             ).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
           </p>
         </div>
