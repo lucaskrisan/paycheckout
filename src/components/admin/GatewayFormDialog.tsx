@@ -108,16 +108,18 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
       return;
     }
 
-    const usingGlobalSecret =
-      form.config.credential_source === "global_secret" && !form.config.api_key?.trim();
-
-    if (!usingGlobalSecret && !form.config.api_key?.trim()) {
+    if (!form.config.api_key?.trim()) {
       toast.error("API Key é obrigatória");
       return;
     }
 
-    // Stripe-specific validation (Stripe nunca usa global secret aqui)
-    if (form.provider === "stripe" && !usingGlobalSecret) {
+    // Garante que o gateway sempre use a chave própria (nunca o secret global da plataforma)
+    if (form.config.credential_source) {
+      updateConfig("credential_source", "user_provided");
+    }
+
+    // Stripe-specific validation
+    if (form.provider === "stripe") {
       const sk = String(form.config.api_key || "").trim();
       const pk = String(form.config.publishable_key || "").trim();
       if (!sk.startsWith("sk_")) {
@@ -148,11 +150,9 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
       }
     }
 
-    // Validate API key before saving (skip when using global secret fallback)
-    if (!usingGlobalSecret) {
-      const isValid = await validateApiKey();
-      if (!isValid) return;
-    }
+    // Validate API key before saving
+    const isValid = await validateApiKey();
+    if (!isValid) return;
 
     setSaving(true);
 
@@ -244,58 +244,26 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
               </div>
 
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <Label>
-                    {form.provider === "stripe" ? "Secret Key (sk_…) *" : "API Key *"}
-                  </Label>
-                  {form.config.credential_source === "global_secret" && (
-                    <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold">
-                      ● Conectado via Secret Global
-                    </Badge>
-                  )}
-                </div>
-                {form.config.credential_source === "global_secret" ? (
-                  <div className="space-y-1.5">
-                    <Input
-                      type="text"
-                      value={
-                        form.provider === "asaas"
-                          ? "$aact_***conectado via secret global ASAAS_API_KEY***"
-                          : form.provider === "pagarme"
-                          ? "sk_***conectado via secret global PAGARME_API_KEY***"
-                          : "***conectado via secret global***"
-                      }
-                      readOnly
-                      className="font-mono text-xs bg-emerald-500/5 border-emerald-500/30 text-emerald-300 cursor-not-allowed"
-                    />
-                    <p className="text-xs text-emerald-400/80">
-                      ✓ Esta conta usa a chave master da plataforma (super admin). Para sobrescrever com sua própria chave, cole abaixo:
-                    </p>
-                    <Input
-                      type="password"
-                      value={form.config.api_key ?? ""}
-                      onChange={(e) => {
-                        updateConfig("api_key", e.target.value);
-                        if (e.target.value.trim()) {
-                          updateConfig("credential_source", "user_provided");
-                        }
-                      }}
-                      placeholder="(opcional) Cole para usar sua própria chave"
-                    />
-                  </div>
-                ) : (
-                  <Input
-                    type="password"
-                    value={form.config.api_key ?? ""}
-                    onChange={(e) => updateConfig("api_key", e.target.value)}
-                    placeholder={
-                      form.provider === "asaas" ? "Cole sua API Key do Asaas" :
-                      form.provider === "pagarme" ? "Cole sua Secret Key do Pagar.me" :
-                      form.provider === "mercadopago" ? "Cole seu Access Token do Mercado Pago" :
-                      "sk_test_… ou sk_live_…"
+                <Label>
+                  {form.provider === "stripe" ? "Secret Key (sk_…) *" : "API Key *"}
+                </Label>
+                <Input
+                  type="password"
+                  value={form.config.api_key ?? ""}
+                  onChange={(e) => {
+                    updateConfig("api_key", e.target.value);
+                    // Sempre força chave própria; nunca usa o secret global
+                    if (form.config.credential_source === "global_secret") {
+                      updateConfig("credential_source", "user_provided");
                     }
-                  />
-                )}
+                  }}
+                  placeholder={
+                    form.provider === "asaas" ? "Cole sua API Key do Asaas" :
+                    form.provider === "pagarme" ? "Cole sua Secret Key do Pagar.me" :
+                    form.provider === "mercadopago" ? "Cole seu Access Token do Mercado Pago" :
+                    "sk_test_… ou sk_live_…"
+                  }
+                />
                 <p className="text-xs text-muted-foreground">
                   {form.provider === "asaas"
                     ? "Encontre em: Minha Conta > Integrações > API"
