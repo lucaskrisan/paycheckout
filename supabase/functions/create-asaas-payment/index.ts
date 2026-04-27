@@ -335,7 +335,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     const gateway_config = gatewayData?.config as Record<string, any> || {};
-    const environment = gatewayData?.environment || Deno.env.get('ASAAS_ENV') || 'production';
+    const environment = gatewayData?.environment || Deno.env.get('ASAAS_ENV') || 'sandbox';
 
     const baseUrl = environment === 'production'
       ? 'https://api.asaas.com/v3'

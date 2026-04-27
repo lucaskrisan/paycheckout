@@ -165,7 +165,7 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (ownerRoles) {
         ASAAS_API_KEY = Deno.env.get('ASAAS_API_KEY') || null;
-        environment = Deno.env.get('ASAAS_ENV') || 'production';
+        environment = Deno.env.get('ASAAS_ENV') || 'sandbox';
       }
     }
 
