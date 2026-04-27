@@ -9,7 +9,7 @@ interface Props {
   filterProduct: string;
 }
 
-const DAYS = ["D", "S", "T", "Q", "Q", "S", "S"];
+const DAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const DAY_NAMES = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
 const ConversionHeatmap = ({ userId, filterProduct }: Props) => {
