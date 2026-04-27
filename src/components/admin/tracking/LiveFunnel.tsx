@@ -36,20 +36,45 @@ const LiveFunnel = ({ eventCounts }: Props) => {
 
           return (
             <div key={stage.key}>
-              {conversion !== null && (
-                <div className="flex justify-end mb-1 pr-2">
-                  <span
-                    className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                    style={{
-                      color: "#D4AF37",
-                      backgroundColor: "rgba(212, 175, 55, 0.12)",
-                      border: "1px solid rgba(212, 175, 55, 0.3)",
-                    }}
-                  >
-                    {conversion}% →
-                  </span>
-                </div>
-              )}
+              {conversion !== null && (() => {
+                // Drop-off semantic coloring:
+                // <30% = vermelho (queda forte), 30-60% = âmbar (atenção), >60% = verde (saudável)
+                const tone =
+                  conversion < 30
+                    ? { color: "#F87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.35)" }
+                    : conversion < 60
+                    ? { color: "#FBBF24", bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.35)" }
+                    : { color: "#34D399", bg: "rgba(52,211,153,0.12)", border: "rgba(52,211,153,0.35)" };
+                const dropPct = 100 - conversion;
+                return (
+                  <div className="flex justify-end mb-1 pr-2 gap-1.5">
+                    {dropPct > 0 && (
+                      <span
+                        className="text-[10px] font-medium px-2 py-0.5 rounded-full"
+                        style={{
+                          color: "hsl(var(--muted-foreground))",
+                          backgroundColor: "rgba(255,255,255,0.04)",
+                          border: "1px solid rgba(255,255,255,0.08)",
+                        }}
+                        title={`${dropPct}% dos visitantes não avançaram para esta etapa`}
+                      >
+                        −{dropPct}%
+                      </span>
+                    )}
+                    <span
+                      className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                      style={{
+                        color: tone.color,
+                        backgroundColor: tone.bg,
+                        border: `1px solid ${tone.border}`,
+                      }}
+                      title={`Taxa de conversão da etapa anterior para esta`}
+                    >
+                      {conversion}% →
+                    </span>
+                  </div>
+                );
+              })()}
               <div className="flex items-center gap-3">
                 <div className="w-32 shrink-0 text-[11px] text-muted-foreground font-medium truncate">
                   {stage.label}
