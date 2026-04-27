@@ -1600,6 +1600,8 @@ export type Database = {
       pixel_events: {
         Row: {
           created_at: string
+          customer_city: string | null
+          customer_country: string | null
           customer_name: string | null
           event_id: string | null
           event_name: string
@@ -1613,6 +1615,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          customer_city?: string | null
+          customer_country?: string | null
           customer_name?: string | null
           event_id?: string | null
           event_name: string
@@ -1626,6 +1630,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          customer_city?: string | null
+          customer_country?: string | null
           customer_name?: string | null
           event_id?: string | null
           event_name?: string

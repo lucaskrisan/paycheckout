@@ -30,6 +30,8 @@ interface PixelEvent {
   visitor_id: string | null;
   event_id: string | null;
   event_value: number | null;
+  customer_country: string | null;
+  customer_city: string | null;
 }
 
 interface GroupedEvent {
@@ -41,6 +43,8 @@ interface GroupedEvent {
   sources: string[];
   ids: string[];
   event_value: number | null;
+  customer_country: string | null;
+  customer_city: string | null;
 }
 
 interface Props {
@@ -97,7 +101,7 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
 
     let feedQuery = supabase
       .from("pixel_events")
-      .select("id, product_id, event_name, source, created_at, customer_name, visitor_id, event_id, event_value")
+      .select("id, product_id, event_name, source, created_at, customer_name, visitor_id, event_id, event_value, customer_country, customer_city")
       .gte("created_at", since)
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
@@ -292,6 +296,8 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
           g.ids.push(e.id);
           if (e.customer_name && !g.customer_name) g.customer_name = e.customer_name;
           if (e.event_value != null && g.event_value == null) g.event_value = e.event_value;
+          if (e.customer_country && !g.customer_country) g.customer_country = e.customer_country;
+          if (e.customer_city && !g.customer_city) g.customer_city = e.customer_city;
         } else {
           map.set(e.event_id, {
             event_id: e.event_id,
@@ -302,6 +308,8 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
             sources: [e.source],
             ids: [e.id],
             event_value: e.event_value,
+            customer_country: e.customer_country,
+            customer_city: e.customer_city,
           });
         }
       } else {
@@ -314,6 +322,8 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
           sources: [e.source],
           ids: [e.id],
           event_value: e.event_value,
+          customer_country: e.customer_country,
+          customer_city: e.customer_city,
         });
       }
     });
@@ -480,7 +490,10 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
                       <EventFeedCard
                         group={g}
                         productName={products.find((p) => p.id === g.product_id)?.name}
-                        geo={{ country: geo.country, city: geo.city }}
+                        geo={{
+                          country: g.customer_country || geo.country,
+                          city: g.customer_city || geo.city,
+                        }}
                       />
                     </div>
                   );

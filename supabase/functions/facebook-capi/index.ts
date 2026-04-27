@@ -205,6 +205,11 @@ Deno.serve(async (req) => {
       ? (Number((custom_data as any)?.value) || null)
       : null;
 
+    // Customer geo for live feed flags (fallback ao header cf-ipcountry quando o frontend não envia geo)
+    const cfCountry = req.headers.get('cf-ipcountry') || req.headers.get('x-vercel-ip-country') || null;
+    const customerCountry = (geo?.country || cfCountry || null)?.toString().toUpperCase().slice(0, 2) || null;
+    const customerCity = geo?.city ? String(geo.city).slice(0, 80) : null;
+
     for (const px of allPixels) {
       // Server-side log
       await supabase.from('pixel_events').insert({
@@ -217,6 +222,8 @@ Deno.serve(async (req) => {
         customer_name: customerName,
         visitor_id: visitor_id || null,
         event_value: eventValue,
+        customer_country: customerCountry,
+        customer_city: customerCity,
       });
 
       // Browser-side log (quando o frontend também disparou via fbq)
@@ -231,6 +238,8 @@ Deno.serve(async (req) => {
           customer_name: customerName,
           visitor_id: visitor_id || null,
           event_value: eventValue,
+          customer_country: customerCountry,
+          customer_city: customerCity,
         });
       }
     }
