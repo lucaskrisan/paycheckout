@@ -331,7 +331,6 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
       <HeroKPIStrip
         userId={userId}
         filterProduct={filterProduct}
-        ownerProductIds={ownerProductIds}
         recentEventsTimestamps={recentTimestamps}
       />
 
