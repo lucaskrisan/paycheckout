@@ -30,8 +30,8 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    let notifTitle = '🎉 Ka-ching! Mais uma venda!';
-    let notifBody = 'João Silva • 💠 PIX R$ 197,00 • Curso Premium';
+    let notifTitle = isHealthCheck ? '🛡️ Fiscalização do Sistema' : '🎉 Ka-ching! Mais uma venda!';
+    let notifBody = isHealthCheck ? 'Push notifications operando normalmente ✅' : 'João Silva • 💠 PIX R$ 197,00 • Curso Premium';
     let iconUrl = 'https://app.panttera.com.br/pwa-192x192.png';
     let user: { id: string } | null = null;
 
