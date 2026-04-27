@@ -35,6 +35,10 @@ interface RevenueSummary {
   totalPending: number;
   paidCount: number;
   pendingCount: number;
+  totalRevenueUsd: number;
+  totalFeesUsd: number;
+  totalPendingUsd: number;
+  paidCountUsd: number;
 }
 
 const Gateways = () => {
