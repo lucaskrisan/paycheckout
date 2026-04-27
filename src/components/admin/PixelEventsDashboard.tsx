@@ -490,7 +490,10 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
                       <EventFeedCard
                         group={g}
                         productName={products.find((p) => p.id === g.product_id)?.name}
-                        geo={{ country: geo.country, city: geo.city }}
+                        geo={{
+                          country: g.customer_country || geo.country,
+                          city: g.customer_city || geo.city,
+                        }}
                       />
                     </div>
                   );
