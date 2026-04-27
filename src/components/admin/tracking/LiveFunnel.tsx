@@ -7,8 +7,9 @@ interface Props {
 
 const STAGES = [
   { key: "PageView", label: "PageView", color: "#14B8A6" },
-  { key: "ViewContent", label: "ViewContent", color: "#22C39B" },
-  { key: "InitiateCheckout", label: "InitiateCheckout", color: "#5BB07F" },
+  { key: "ViewContent", label: "ViewContent", color: "#1FBFA0" },
+  { key: "InitiateCheckout", label: "InitiateCheckout", color: "#3DB890" },
+  { key: "Lead", label: "Lead", color: "#60a5fa" },
   { key: "AddPaymentInfo", label: "AddPaymentInfo", color: "#A89A52" },
   { key: "Purchase", label: "Purchase", color: "#D4AF37" },
 ];
