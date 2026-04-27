@@ -79,6 +79,12 @@ Deno.serve(async (req) => {
     // supabaseAdmin already created above for rate limiting
 
     const body = await req.json();
+    if (body?.health_check === true) {
+      return new Response(JSON.stringify({ ok: true, health_check: true }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
     const { customer, product_id, coupon_id, config_id, bump_product_ids, checkout_url, utms } = body;
     // Round amount to 2 decimal places to prevent floating point issues
     const amount = Math.round(Number(body.amount) * 100) / 100;
