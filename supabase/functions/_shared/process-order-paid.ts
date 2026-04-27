@@ -120,6 +120,12 @@ async function stepCapiFallback(params: ProcessOrderPaidParams): Promise<void> {
                 phone: custData.phone,
                 cpf: custData.cpf,
               },
+              geo: {
+                country: (orderData as any).customer_country || null,
+                city: (orderData as any).customer_city || null,
+                state: (orderData as any).customer_state || null,
+                zip: (orderData as any).customer_zip || null,
+              },
               custom_data: {
                 value: Number(orderData.amount),
                 currency: (params.currency || 'BRL').toUpperCase(),
