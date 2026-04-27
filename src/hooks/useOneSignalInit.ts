@@ -35,8 +35,11 @@ export function useOneSignalInit(userId: string | undefined) {
               },
             },
           });
+          if (typeof OneSignal.login === "function") {
+            await OneSignal.login(userId);
+          }
           await OneSignal.User.addTag("user_id", userId);
-          console.log("[OneSignal] initialized with user_id tag:", userId);
+          console.log("[OneSignal] initialized with user_id identity:", userId);
         } catch (err) {
           console.error("[OneSignal] init error:", err);
         }
