@@ -15,6 +15,16 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Peek body for health-check (avoid double-consume by cloning)
+    let bodyJson: any = {};
+    try { bodyJson = await req.clone().json(); } catch {}
+    if (bodyJson?.health_check === true) {
+      return new Response(JSON.stringify({ ok: true, health_check: true }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // --- JWT Authentication ---
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
@@ -39,7 +49,7 @@ Deno.serve(async (req) => {
     }
     // --- End Authentication ---
 
-    const { customer_id, course_id, access_token } = await req.json();
+    const { customer_id, course_id, access_token } = bodyJson;
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
