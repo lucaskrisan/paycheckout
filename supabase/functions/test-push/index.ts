@@ -12,11 +12,7 @@ Deno.serve(async (req) => {
 
   try {
     const requestBody = await req.clone().json().catch(() => ({}));
-    if (requestBody?.health_check === true) {
-      return new Response(JSON.stringify({ ok: true, health_check: true }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    const isHealthCheck = requestBody?.health_check === true;
 
     const appId = Deno.env.get('ONESIGNAL_APP_ID');
     const apiKey = Deno.env.get('ONESIGNAL_REST_API_KEY');
