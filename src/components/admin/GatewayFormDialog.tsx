@@ -150,11 +150,9 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
       }
     }
 
-    // Validate API key before saving (skip when using global secret fallback)
-    if (!usingGlobalSecret) {
-      const isValid = await validateApiKey();
-      if (!isValid) return;
-    }
+    // Validate API key before saving
+    const isValid = await validateApiKey();
+    if (!isValid) return;
 
     setSaving(true);
 
