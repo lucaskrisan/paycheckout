@@ -165,15 +165,7 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (ownerRoles) {
         ASAAS_API_KEY = Deno.env.get('ASAAS_API_KEY') || null;
-        // Resolve environment from any active asaas gateway
-        const { data: gwEnv } = await supabaseAdmin
-          .from('payment_gateways')
-          .select('environment')
-          .eq('provider', 'asaas')
-          .eq('active', true)
-          .limit(1)
-          .maybeSingle();
-        environment = gwEnv?.environment || 'sandbox';
+        environment = Deno.env.get('ASAAS_ENV') || 'production';
       }
     }
 
