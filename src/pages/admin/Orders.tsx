@@ -131,8 +131,10 @@ const Orders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
-  const [serverTotals, setServerTotals] = useState<{ revenue: number; count: number } | null>(null);
+  const [serverTotals, setServerTotals] = useState<{ revenueBrl: number; revenueUsd: number; countBrl: number; countUsd: number } | null>(null);
   const [pageNetTotal, setPageNetTotal] = useState<number>(0);
+  const [pageNetTotalBrl, setPageNetTotalBrl] = useState<number>(0);
+  const [pageNetTotalUsd, setPageNetTotalUsd] = useState<number>(0);
   const [pageTotals, setPageTotals] = useState<{ count: number; amount: number }>({ count: 0, amount: 0 });
   const [search, setSearch] = useState("");
   const [searchDebounced, setSearchDebounced] = useState("");
