@@ -135,6 +135,7 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
     if (filterProduct !== "all") lhQ = lhQ.eq("product_id", filterProduct);
     const { count: lhCount } = await lhQ;
     setEventsLastHour(lhCount || 0);
+    setInitialLoading(false);
   };
 
   useEffect(() => {
