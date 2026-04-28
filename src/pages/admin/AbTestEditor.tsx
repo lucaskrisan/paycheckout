@@ -58,6 +58,7 @@ type PageData = {
   subtitle: string; 
   url: string; 
   mirrorPixelId?: string | null;
+  paused?: boolean;
   stats?: { impressions: number; clicks: number; sales: number; revenue: number };
 };
 type CheckoutData = {
