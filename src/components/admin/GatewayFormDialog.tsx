@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { CreditCard, ShieldCheck, Zap, Info, ExternalLink, Activity } from "lucide-react";
 import type { GatewayConfig } from "@/pages/admin/Gateways";
 
 interface Props {
@@ -200,27 +201,34 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] p-0">
-        <DialogHeader className="p-6 pb-0">
-          <DialogTitle className="font-display">
-            {isEditing ? "Editar" : "Nova Conexão"} - {
-              form.provider === "asaas" ? "Asaas" :
-              form.provider === "pagarme" ? "Pagar.me" :
-              form.provider === "mercadopago" ? "Mercado Pago" : "Stripe"
-            }
-          </DialogTitle>
-          <p className="text-sm text-muted-foreground">
-            {form.provider === "asaas"
-              ? "Aceite pagamentos via Pix e Cartão de Crédito de forma simples e segura."
-              : form.provider === "pagarme"
-              ? "Processamento rápido e confiável de pagamentos com Pix e Cartão."
-              : form.provider === "mercadopago"
-              ? "O gateway mais popular do Brasil. PIX, Cartão e Boleto."
-              : "Gateway global para cartões internacionais e PIX."}
-          </p>
+      <DialogContent className="max-w-2xl max-h-[90vh] p-0 bg-[#0d0f15] border-white/10 shadow-2xl overflow-hidden">
+        <DialogHeader className="p-8 pb-4 border-b border-white/5 bg-gradient-to-br from-primary/10 via-transparent to-transparent">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center shadow-lg">
+              <CreditCard className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <DialogTitle className="text-xl font-bold text-foreground">
+                {isEditing ? "Configurar" : "Nova Conexão"} — {
+                  form.provider === "asaas" ? "Asaas" :
+                  form.provider === "pagarme" ? "Pagar.me" :
+                  form.provider === "mercadopago" ? "Mercado Pago" : "Stripe"
+                }
+              </DialogTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                {form.provider === "asaas"
+                  ? "Aceite pagamentos via Pix e Cartão de Crédito de forma simples e segura."
+                  : form.provider === "pagarme"
+                  ? "Processamento rápido e confiável de pagamentos com Pix e Cartão."
+                  : form.provider === "mercadopago"
+                  ? "O gateway mais popular do Brasil. PIX, Cartão e Boleto."
+                  : "Gateway global para cartões internacionais e PIX."}
+              </p>
+            </div>
+          </div>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[70vh] px-6 pb-6">
+        <ScrollArea className="max-h-[60vh] px-8 py-6">
           <div className="space-y-6 pt-4">
             {/* Basic settings */}
             <div className="space-y-4">
@@ -750,21 +758,51 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
               </div>
             </div>
 
-            <Separator />
+            <Separator className="bg-white/5" />
+            
             {/* Activate */}
-            <div className="flex items-center justify-between p-3 border border-border rounded-lg">
+            <div className="flex items-center justify-between p-4 bg-primary/5 border border-primary/20 rounded-xl">
               <div>
-                <span className="text-sm font-semibold">Ativar Gateway</span>
-                <p className="text-xs text-muted-foreground">Disponibilizar este gateway no checkout</p>
+                <span className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-primary" />
+                  Ativar Gateway
+                </span>
+                <p className="text-xs text-muted-foreground mt-0.5">Disponibilizar este gateway no checkout imediatamente</p>
               </div>
-              <Switch checked={form.active} onCheckedChange={(v) => setForm({ ...form, active: v })} />
+              <Switch 
+                checked={form.active} 
+                onCheckedChange={(v) => setForm({ ...form, active: v })}
+                className="data-[state=checked]:bg-primary"
+              />
             </div>
 
-            <div className="flex gap-3 pt-2">
-              <Button onClick={handleSave} disabled={saving || validating} className="flex-1">
-                {validating ? "Validando chave..." : saving ? "Salvando..." : isEditing ? "Validar e Salvar" : "Validar e Criar Conexão"}
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+              <Button 
+                onClick={handleSave} 
+                disabled={saving || validating} 
+                className="flex-1 bg-primary hover:bg-primary/90 text-white font-bold h-11"
+              >
+                {validating ? (
+                  <span className="flex items-center gap-2">
+                    <Activity className="w-4 h-4 animate-spin" />
+                    Validando...
+                  </span>
+                ) : saving ? (
+                  "Salvando..."
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4" />
+                    {isEditing ? "Validar e Salvar Alterações" : "Validar e Criar Conexão"}
+                  </span>
+                )}
               </Button>
-              <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+              <Button 
+                variant="outline" 
+                onClick={() => onOpenChange(false)}
+                className="border-white/10 hover:bg-white/5 h-11"
+              >
+                Cancelar
+              </Button>
             </div>
           </div>
         </ScrollArea>
