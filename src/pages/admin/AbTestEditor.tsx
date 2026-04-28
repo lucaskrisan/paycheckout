@@ -68,11 +68,7 @@ type CheckoutData = {
   stats?: { impressions: number; clicks: number; sales: number; revenue: number };
 };
 
-type FlowNode =
-  | Node<ConfigData, "config">
-  | Node<AbTestData, "abtest">
-  | Node<PageData, "page">
-  | Node<CheckoutData, "checkout">;
+type FlowNode = Node<any>;
 
 const PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID;
 const REDIRECT_BASE = `https://${PROJECT_ID}.supabase.co/functions/v1/ab-redirect`;
