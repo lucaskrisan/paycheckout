@@ -1,0 +1,533 @@
+import { useState, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
+import { Plus, Trash2, Play, Pause, Copy, MousePointerClick, ShoppingCart, TrendingUp, Trophy, Archive, Beaker, Zap } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
+const PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+const REDIRECT_BASE = `https://${PROJECT_ID}.supabase.co/functions/v1/ab-redirect`;
+
+type Variant = {
+  id: string;
+  test_id: string;
+  label: string;
+  name: string;
+  page_url: string | null;
+  checkout_url: string | null;
+  weight: number;
+  mirror_pixel_id: string | null;
+  impressions: number;
+  clicks: number;
+  sales: number;
+  revenue: number;
+  sort_order: number;
+};
+
+type AbTest = {
+  id: string;
+  name: string;
+  slug: string;
+  status: "draft" | "active" | "paused" | "archived" | "completed";
+  traffic_split: string;
+  sticky_days: number;
+  auto_winner_enabled: boolean;
+  auto_winner_min_clicks: number;
+  auto_winner_min_uplift: number;
+  winner_variant_id: string | null;
+  started_at: string | null;
+  created_at: string;
+  variants: Variant[];
+};
+
+const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
+  draft: { label: "Rascunho", cls: "bg-zinc-700/40 text-zinc-200" },
+  active: { label: "Ativo", cls: "bg-emerald-600/30 text-emerald-300 border border-emerald-500/40" },
+  paused: { label: "Pausado", cls: "bg-amber-600/30 text-amber-200" },
+  archived: { label: "Arquivado", cls: "bg-zinc-800 text-zinc-400" },
+  completed: { label: "Concluído", cls: "bg-blue-600/30 text-blue-200" },
+};
+
+function slugify(s: string): string {
+  return (
+    s
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 40) || `teste-${Math.random().toString(36).slice(2, 8)}`
+  );
+}
+
+function fmtBRL(v: number): string {
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
+}
+
+function conversion(clicks: number, sales: number): number {
+  return clicks > 0 ? (sales / clicks) * 100 : 0;
+}
+
+export default function AbTests() {
+  const qc = useQueryClient();
+  const [showArchived, setShowArchived] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const { data: mirrors = [] } = useQuery({
+    queryKey: ["mirror_pixels_for_ab"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("mirror_pixels" as any).select("id,label,pixel_id").eq("active", true);
+      if (error) throw error;
+      return (data ?? []) as { id: string; label: string; pixel_id: string }[];
+    },
+  });
+
+  const { data: tests = [], isLoading } = useQuery({
+    queryKey: ["ab_tests", showArchived],
+    queryFn: async () => {
+      const { data: rows, error } = await supabase
+        .from("ab_tests" as any)
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      const filtered = (rows as any[]).filter((t) => (showArchived ? t.status === "archived" : t.status !== "archived"));
+      const ids = filtered.map((t) => t.id);
+      if (ids.length === 0) return [] as AbTest[];
+      const { data: vrows, error: verr } = await supabase
+        .from("ab_test_variants" as any)
+        .select("*")
+        .in("test_id", ids)
+        .order("sort_order");
+      if (verr) throw verr;
+      return filtered.map((t) => ({ ...t, variants: (vrows as any[]).filter((v) => v.test_id === t.id) })) as AbTest[];
+    },
+  });
+
+  const createTest = useMutation({
+    mutationFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Não autenticado");
+      const baseName = "Novo Teste A/B";
+      const slug = slugify(`${baseName}-${Math.random().toString(36).slice(2, 6)}`);
+      const { data: test, error } = await supabase
+        .from("ab_tests" as any)
+        .insert({ user_id: user.id, name: baseName, slug })
+        .select()
+        .single();
+      if (error) throw error;
+      const tid = (test as any).id;
+      const { error: verr } = await supabase.from("ab_test_variants" as any).insert([
+        { test_id: tid, label: "A", name: "Variante A", weight: 50, sort_order: 0 },
+        { test_id: tid, label: "B", name: "Variante B", weight: 50, sort_order: 1 },
+      ]);
+      if (verr) throw verr;
+      return tid;
+    },
+    onSuccess: (id) => {
+      qc.invalidateQueries({ queryKey: ["ab_tests"] });
+      setEditingId(id);
+      toast.success("Teste criado! Configure as URLs e clique em Iniciar.");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao criar teste"),
+  });
+
+  const setStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const test = tests.find((t) => t.id === id);
+      if (status === "active" && test) {
+        const missing = test.variants.filter((v) => !v.page_url?.trim() || !v.checkout_url?.trim());
+        if (missing.length) {
+          throw new Error(
+            "Preencha URL da página e do checkout em todas as variantes: " +
+              missing.map((m) => m.label).join(", ")
+          );
+        }
+      }
+      const patch: any = { status };
+      if (status === "active") patch.started_at = new Date().toISOString();
+      const { error } = await supabase.from("ab_tests" as any).update(patch).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["ab_tests"] });
+      toast.success("Status atualizado");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro"),
+  });
+
+  const deleteTest = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("ab_tests" as any).delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["ab_tests"] });
+      toast.success("Teste excluído");
+      setEditingId(null);
+    },
+  });
+
+  const editing = useMemo(() => tests.find((t) => t.id === editingId) ?? null, [tests, editingId]);
+
+  return (
+    <TooltipProvider>
+      <div className="p-6 space-y-6">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-3">
+              <Beaker className="w-7 h-7 text-primary" /> Testes A/B
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Compare páginas e checkouts para descobrir o que mais converte. Distribuição sticky 50/50 com pixel espelho por variante.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowArchived((v) => !v)}>
+              <Archive className="w-4 h-4 mr-2" />
+              {showArchived ? "Ver ativos" : "Arquivados"}
+            </Button>
+            <Button onClick={() => createTest.mutate()} disabled={createTest.isPending}>
+              <Plus className="w-4 h-4 mr-2" /> Novo Teste
+            </Button>
+          </div>
+        </div>
+
+        {isLoading && <div className="text-muted-foreground">Carregando…</div>}
+
+        {!isLoading && tests.length === 0 && (
+          <Card className="p-12 text-center border-dashed">
+            <Beaker className="w-12 h-12 mx-auto text-muted-foreground/40 mb-3" />
+            <h3 className="text-lg font-semibold mb-1">Nenhum teste {showArchived ? "arquivado" : "ativo"}</h3>
+            <p className="text-muted-foreground text-sm">Crie seu primeiro teste para descobrir qual versão converte mais.</p>
+          </Card>
+        )}
+
+        <div className="grid gap-4">
+          {tests.map((t) => {
+            const totalClicks = t.variants.reduce((a, v) => a + v.clicks, 0);
+            const totalSales = t.variants.reduce((a, v) => a + v.sales, 0);
+            const totalRevenue = t.variants.reduce((a, v) => a + Number(v.revenue || 0), 0);
+            const winner = t.winner_variant_id;
+            const sortedByConv = [...t.variants].sort(
+              (a, b) => conversion(b.clicks, b.sales) - conversion(a.clicks, a.sales)
+            );
+            const leader = sortedByConv[0];
+            const linkPage = `${REDIRECT_BASE}/${t.slug}?type=page`;
+            const linkCheckout = `${REDIRECT_BASE}/${t.slug}?type=checkout`;
+            return (
+              <Card
+                key={t.id}
+                className="p-5 cursor-pointer hover:border-primary/40 transition"
+                onClick={() => setEditingId(t.id)}
+              >
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div className="flex-1 min-w-[260px]">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-lg font-bold">{t.name}</h3>
+                      <Badge className={STATUS_LABEL[t.status]?.cls ?? ""}>{STATUS_LABEL[t.status]?.label}</Badge>
+                      {winner && (
+                        <Badge className="bg-yellow-500/30 text-yellow-200 border border-yellow-400/40">
+                          <Trophy className="w-3 h-3 mr-1" /> Vencedor: {t.variants.find((v) => v.id === winner)?.label}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="mt-3 grid gap-2 text-xs">
+                      <LinkRow label="Página" url={linkPage} />
+                      <LinkRow label="Checkout" url={linkCheckout} />
+                    </div>
+                    <div className="mt-2 text-xs text-muted-foreground">{t.variants.length} variantes</div>
+                  </div>
+
+                  <div className="flex items-center gap-5 text-sm">
+                    <Stat icon={MousePointerClick} label="cliques" value={totalClicks.toLocaleString("pt-BR")} />
+                    <Stat icon={ShoppingCart} label="vendas" value={totalSales.toLocaleString("pt-BR")} />
+                    <Stat icon={TrendingUp} label="conv." value={`${conversion(totalClicks, totalSales).toFixed(1)}%`} />
+                    <Stat icon={Trophy} label="receita" value={fmtBRL(totalRevenue)} />
+                  </div>
+
+                  <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                    {t.status === "draft" || t.status === "paused" ? (
+                      <Button size="icon" variant="ghost" className="text-emerald-400" onClick={() => setStatus.mutate({ id: t.id, status: "active" })}>
+                        <Play className="w-4 h-4" />
+                      </Button>
+                    ) : t.status === "active" ? (
+                      <Button size="icon" variant="ghost" className="text-amber-400" onClick={() => setStatus.mutate({ id: t.id, status: "paused" })}>
+                        <Pause className="w-4 h-4" />
+                      </Button>
+                    ) : null}
+                    {t.status !== "archived" && (
+                      <Button size="icon" variant="ghost" onClick={() => setStatus.mutate({ id: t.id, status: "archived" })}>
+                        <Archive className="w-4 h-4" />
+                      </Button>
+                    )}
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="text-red-400"
+                      onClick={() => {
+                        if (confirm(`Excluir o teste "${t.name}"?`)) deleteTest.mutate(t.id);
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Per-variant strip */}
+                {totalClicks > 0 && (
+                  <div className="mt-4 grid grid-cols-2 gap-3">
+                    {t.variants.map((v) => {
+                      const conv = conversion(v.clicks, v.sales);
+                      const isLeader = leader && v.id === leader.id && totalClicks > 0;
+                      return (
+                        <div key={v.id} className={`rounded-lg border p-3 ${isLeader ? "border-emerald-500/50 bg-emerald-500/5" : "border-border/40"}`}>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-bold">{v.label} — {v.name}</span>
+                            {isLeader && <Trophy className="w-3 h-3 text-emerald-400" />}
+                          </div>
+                          <div className="mt-2 flex gap-4 text-xs text-muted-foreground">
+                            <span>{v.clicks} cliques</span>
+                            <span>{v.sales} vendas</span>
+                            <span className="font-semibold text-foreground">{conv.toFixed(1)}%</span>
+                            <span>{fmtBRL(Number(v.revenue || 0))}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </Card>
+            );
+          })}
+        </div>
+
+        <Sheet open={!!editing} onOpenChange={(o) => !o && setEditingId(null)}>
+          <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+            {editing && <TestEditor test={editing} mirrors={mirrors} onClose={() => setEditingId(null)} />}
+          </SheetContent>
+        </Sheet>
+      </div>
+    </TooltipProvider>
+  );
+}
+
+function Stat({ icon: Icon, label, value }: any) {
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      <Icon className="w-4 h-4 text-muted-foreground" />
+      <span className="font-semibold">{value}</span>
+      <span className="text-muted-foreground text-xs">{label}</span>
+    </div>
+  );
+}
+
+function LinkRow({ label, url }: { label: string; url: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-muted-foreground w-16">{label}:</span>
+      <code className="bg-muted/40 px-2 py-1 rounded text-xs flex-1 truncate">{url}</code>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-6 w-6"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigator.clipboard.writeText(url);
+              toast.success("Link copiado");
+            }}
+          >
+            <Copy className="w-3 h-3" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Copiar link</TooltipContent>
+      </Tooltip>
+    </div>
+  );
+}
+
+function TestEditor({
+  test,
+  mirrors,
+  onClose,
+}: {
+  test: AbTest;
+  mirrors: { id: string; label: string; pixel_id: string }[];
+  onClose: () => void;
+}) {
+  const qc = useQueryClient();
+  const [name, setName] = useState(test.name);
+  const [autoWinner, setAutoWinner] = useState(test.auto_winner_enabled);
+  const [minClicks, setMinClicks] = useState(test.auto_winner_min_clicks);
+  const [minUplift, setMinUplift] = useState(test.auto_winner_min_uplift);
+  const [variants, setVariants] = useState(test.variants);
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const { error: terr } = await supabase
+        .from("ab_tests" as any)
+        .update({
+          name: name.trim() || "Teste A/B",
+          auto_winner_enabled: autoWinner,
+          auto_winner_min_clicks: minClicks,
+          auto_winner_min_uplift: minUplift,
+        })
+        .eq("id", test.id);
+      if (terr) throw terr;
+      // Save each variant
+      for (const v of variants) {
+        const { error: verr } = await supabase
+          .from("ab_test_variants" as any)
+          .update({
+            name: v.name,
+            page_url: v.page_url,
+            checkout_url: v.checkout_url,
+            weight: v.weight,
+            mirror_pixel_id: v.mirror_pixel_id,
+          })
+          .eq("id", v.id);
+        if (verr) throw verr;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Salvo");
+      qc.invalidateQueries({ queryKey: ["ab_tests"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao salvar"),
+  });
+
+  const updateVariant = (id: string, patch: Partial<Variant>) =>
+    setVariants((vs) => vs.map((v) => (v.id === id ? { ...v, ...patch } : v)));
+
+  return (
+    <>
+      <SheetHeader>
+        <SheetTitle>
+          <Input value={name} onChange={(e) => setName(e.target.value)} className="text-xl font-bold" />
+        </SheetTitle>
+        <SheetDescription>
+          Configure as URLs de cada variante. O pixel espelho é opcional, mas <strong>recomendado</strong> para ROI máximo: o Meta vai otimizar separadamente cada criativo.
+        </SheetDescription>
+      </SheetHeader>
+
+      <div className="space-y-5 mt-6">
+        {variants.map((v) => (
+          <Card key={v.id} className="p-4 space-y-3 border-border/50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Badge className="bg-primary/20 text-primary border border-primary/40 text-base px-2.5">{v.label}</Badge>
+                <Input
+                  value={v.name}
+                  onChange={(e) => updateVariant(v.id, { name: e.target.value })}
+                  className="font-semibold border-0 bg-transparent focus-visible:ring-1 max-w-[200px]"
+                />
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <Label className="text-muted-foreground">Peso</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={v.weight}
+                  onChange={(e) => updateVariant(v.id, { weight: parseInt(e.target.value || "0", 10) })}
+                  className="w-16 h-7 text-center"
+                />
+                <span className="text-muted-foreground">%</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs">URL da Página de Venda</Label>
+              <Input
+                value={v.page_url ?? ""}
+                onChange={(e) => updateVariant(v.id, { page_url: e.target.value })}
+                placeholder="https://minhapagina.com/oferta-a"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">URL do Checkout</Label>
+              <Input
+                value={v.checkout_url ?? ""}
+                onChange={(e) => updateVariant(v.id, { checkout_url: e.target.value })}
+                placeholder="https://app.panttera.com.br/checkout/PRODUCT_ID"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs flex items-center gap-1.5">
+                <Zap className="w-3 h-3 text-yellow-400" /> Pixel Espelho desta variante
+              </Label>
+              <Select
+                value={v.mirror_pixel_id ?? "none"}
+                onValueChange={(val) => updateVariant(v.id, { mirror_pixel_id: val === "none" ? null : val })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sem pixel específico (usa apenas o pixel global)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sem pixel específico</SelectItem>
+                  {mirrors.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>
+                      {m.label} ({m.pixel_id})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {mirrors.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Nenhum pixel espelho cadastrado. <a href="/admin/pixel-mirrors" className="text-primary underline">Cadastrar →</a>
+                </p>
+              )}
+            </div>
+
+            {(v.clicks > 0 || v.sales > 0) && (
+              <div className="grid grid-cols-4 gap-2 pt-2 border-t border-border/40 text-center">
+                <div><div className="text-base font-bold">{v.clicks}</div><div className="text-xs text-muted-foreground">cliques</div></div>
+                <div><div className="text-base font-bold">{v.sales}</div><div className="text-xs text-muted-foreground">vendas</div></div>
+                <div><div className="text-base font-bold">{conversion(v.clicks, v.sales).toFixed(1)}%</div><div className="text-xs text-muted-foreground">conv.</div></div>
+                <div><div className="text-base font-bold">{fmtBRL(Number(v.revenue || 0))}</div><div className="text-xs text-muted-foreground">receita</div></div>
+              </div>
+            )}
+          </Card>
+        ))}
+
+        <Card className="p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="font-semibold">Vencedor automático</Label>
+              <p className="text-xs text-muted-foreground">
+                Eleger automaticamente a variante vencedora quando houver dados suficientes.
+              </p>
+            </div>
+            <Switch checked={autoWinner} onCheckedChange={setAutoWinner} />
+          </div>
+          {autoWinner && (
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <div>
+                <Label className="text-xs">Cliques mínimos por variante</Label>
+                <Input type="number" min={10} value={minClicks} onChange={(e) => setMinClicks(parseInt(e.target.value || "100", 10))} />
+              </div>
+              <div>
+                <Label className="text-xs">Diferença mínima (%)</Label>
+                <Input type="number" min={5} value={minUplift} onChange={(e) => setMinUplift(parseInt(e.target.value || "20", 10))} />
+              </div>
+            </div>
+          )}
+        </Card>
+
+        <div className="flex justify-end gap-2 pt-2">
+          <Button variant="outline" onClick={onClose}>Fechar</Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending}>Salvar alterações</Button>
+        </div>
+      </div>
+    </>
+  );
+}
