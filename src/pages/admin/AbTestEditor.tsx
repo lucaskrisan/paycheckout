@@ -288,7 +288,7 @@ function EditorInner() {
   // Load existing test if editing
   const { data: existing, isLoading } = useQuery({
     queryKey: ["ab_test_full", testId],
-    enabled: !!testId,
+    enabled: !!testId && testId !== "new",
     queryFn: async () => {
       const { data, error } = await supabase.from("ab_tests" as any).select("*").eq("id", testId).maybeSingle();
       if (error) throw error;
