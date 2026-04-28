@@ -22,6 +22,7 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import IntegrationWebhookGuide from "@/components/admin/IntegrationWebhookGuide";
 
 const AVAILABLE_EVENTS = [
   { value: "payment.approved", label: "Compra aprovada" },
@@ -244,6 +245,10 @@ export default function Webhooks() {
 
   return (
     <div className="space-y-6">
+      <div className="mb-2">
+        <IntegrationWebhookGuide installedProviders={endpoints.length > 0 ? ["generic"] : []} />
+      </div>
+      
       {/* Header */}
       <div className="flex items-center gap-3">
         <Webhook className="w-8 h-8 text-foreground" />

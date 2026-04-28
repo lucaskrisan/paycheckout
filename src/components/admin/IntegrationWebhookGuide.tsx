@@ -318,47 +318,55 @@ const IntegrationWebhookGuide = ({ installedProviders }: Props) => {
       </button>
 
       {expanded && (
-        <div className="px-4 pb-4 space-y-4">
+        <div className="px-4 pb-5 space-y-5">
           {/* Critical warning */}
-          <div className="rounded-md bg-destructive/10 border border-destructive/30 p-3">
-            <p className="text-[11px] text-destructive leading-relaxed flex items-start gap-2">
-              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>
-                <strong>ATENÇÃO:</strong> Sem o webhook configurado corretamente, seus pagamentos <strong>NÃO serão confirmados automaticamente</strong>. 
-                Isso significa que mesmo que o cliente pague, o pedido vai ficar como "Pendente" para sempre.
-              </span>
-            </p>
+          <div className="rounded-xl bg-gradient-to-r from-destructive/10 to-destructive/5 border border-destructive/20 p-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5 text-destructive" />
+              </div>
+              <p className="text-[11px] text-foreground leading-relaxed">
+                <strong className="text-destructive font-bold block mb-1">⚠️ ATENÇÃO CRÍTICA:</strong> 
+                Sem o webhook configurado corretamente, seus pagamentos <strong>NÃO serão confirmados automaticamente</strong>. 
+                O pedido ficará como "Pendente" mesmo após o cliente pagar.
+              </p>
+            </div>
           </div>
 
           {/* What is a webhook */}
-          <div className="rounded-md bg-primary/5 border border-primary/20 p-3">
-            <div className="flex items-start gap-2">
-              <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-primary" />
+          <div className="rounded-xl bg-muted/30 border border-border/40 p-4">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <Info className="w-5 h-5 text-primary" />
+              </div>
               <div className="text-[11px] text-muted-foreground leading-relaxed space-y-1">
-                <p><strong className="text-foreground">O que é um Webhook?</strong></p>
-                <p>É um "endereço de notificação" — uma URL que o gateway (Pagar.me, Asaas, etc.) usa para avisar nosso sistema quando um pagamento é aprovado, recusado ou reembolsado.</p>
-                <p>Sem ele, nosso sistema nunca fica sabendo que o cliente pagou.</p>
+                <p><strong className="text-foreground font-semibold">O que é um Webhook?</strong></p>
+                <p>É o "carteiro" do seu sistema. Uma URL que o gateway usa para avisar em tempo real quando um pagamento é aprovado.</p>
+                <p className="text-[10px] opacity-70 italic">Sem ele, nosso sistema nunca recebe a confirmação de venda.</p>
               </div>
             </div>
           </div>
 
           {/* Overview steps */}
-          <div className="space-y-2">
-            <h3 className="text-xs font-semibold text-foreground">Visão geral — 4 passos para começar a vender:</h3>
-            <div className="grid gap-2">
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold text-foreground flex items-center gap-2">
+              <div className="w-1 h-4 bg-primary rounded-full" />
+              Guia Rápido — 4 passos para vender:
+            </h3>
+            <div className="grid grid-cols-1 gap-2">
               {[
-                { n: "1", text: "Instale o gateway desejado", sub: "Escolha no catálogo abaixo (ex: Pagar.me, Asaas, Mercado Pago ou Stripe)" },
-                { n: "2", text: "Preencha suas credenciais", sub: "Cole a API Key e Secret Key do seu gateway. Essas chaves ficam no painel do gateway." },
-                { n: "3", text: "Configure o Webhook", sub: "Copie a URL abaixo e cole no painel do gateway, na seção de Webhooks. Marque os eventos corretos." },
-                { n: "4", text: "Ative e teste", sub: "Ative o gateway aqui na plataforma e faça uma venda de teste para confirmar que tudo funciona." },
+                { n: "1", text: "Instale o gateway", sub: "Escolha o provedor (ex: Pagar.me, Asaas, Mercado Pago)" },
+                { n: "2", text: "Preencha suas chaves", sub: "Cole a API Key e Secret Key do painel do gateway." },
+                { n: "3", text: "Configure o Webhook", sub: "Cole a URL técnica no painel do gateway e marque os eventos." },
+                { n: "4", text: "Ative e Teste", sub: "Faça uma venda de teste para garantir que tudo está OK." },
               ].map((step) => (
-                <div key={step.n} className="flex items-start gap-2.5 px-1">
-                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 text-primary text-[10px] font-bold shrink-0 mt-0.5">
+                <div key={step.n} className="group flex items-start gap-3 p-2 rounded-lg hover:bg-muted/30 transition-all border border-transparent hover:border-border/40">
+                  <span className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-[11px] font-bold shrink-0 mt-0.5 group-hover:bg-primary group-hover:text-white transition-colors">
                     {step.n}
                   </span>
                   <div>
-                    <span className="text-xs font-medium text-foreground">{step.text}</span>
-                    <p className="text-[10px] text-muted-foreground">{step.sub}</p>
+                    <span className="text-xs font-semibold text-foreground block">{step.text}</span>
+                    <p className="text-[10px] text-muted-foreground leading-tight">{step.sub}</p>
                   </div>
                 </div>
               ))}
@@ -366,9 +374,10 @@ const IntegrationWebhookGuide = ({ installedProviders }: Props) => {
           </div>
 
           {/* Per-gateway detailed guides */}
-          <div className="space-y-2">
-            <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-              🔧 Tutorial detalhado por Gateway
+          <div className="space-y-3 pt-2">
+            <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.1em] flex items-center gap-2">
+              <ChevronRight className="w-3 h-3 text-primary" />
+              Tutorial por Provedor
             </h3>
             {relevantConfigs.map((wh) => (
               <WebhookDetailCard
@@ -445,27 +454,36 @@ const WebhookDetailCard = ({
       {isOpen && (
         <div className="px-3 pb-4 space-y-4">
           {/* Webhook URL - prominent */}
-          <div className="rounded-md bg-primary/5 border border-primary/30 p-3 space-y-2">
-            <p className="text-[11px] font-semibold text-foreground">
-              📋 URL do Webhook do {config.label} — Copie e cole no painel:
-            </p>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 text-[11px] bg-background border border-border rounded px-3 py-2 text-foreground font-mono break-all select-all leading-relaxed">
-                {config.url}
-              </code>
-              <Button
-                variant="default"
-                size="sm"
-                className="h-8 text-[10px] gap-1.5 shrink-0"
-                onClick={() => onCopy(config.url)}
-              >
-                <Copy className="w-3 h-3" />
-                Copiar URL
-              </Button>
+          <div className="rounded-lg bg-background border border-border overflow-hidden shadow-sm">
+            <div className="bg-primary/5 px-4 py-2 border-b border-border flex items-center justify-between">
+              <p className="text-[11px] font-semibold text-foreground flex items-center gap-2">
+                <Copy className="w-3 h-3 text-primary" />
+                URL do Webhook do {config.label}
+              </p>
+              <Badge variant="outline" className="text-[9px] uppercase tracking-wider bg-background">Copie para o painel</Badge>
             </div>
-            <p className="text-[10px] text-destructive font-medium">
-              ⚠️ Cole esta URL no campo "URL" do webhook. NÃO coloque seu e-mail neste campo!
-            </p>
+            <div className="p-4 space-y-3">
+              <div className="flex items-center gap-2 bg-muted/30 p-1.5 rounded-md border border-border/50">
+                <code className="flex-1 text-[11px] px-2 py-1.5 text-foreground font-mono break-all select-all leading-relaxed">
+                  {config.url}
+                </code>
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="h-8 text-[10px] px-3 gap-1.5 shrink-0 shadow-sm"
+                  onClick={() => onCopy(config.url)}
+                >
+                  <Copy className="w-3 h-3" />
+                  Copiar
+                </Button>
+              </div>
+              <div className="flex items-start gap-2 text-destructive bg-destructive/5 p-2 rounded border border-destructive/10">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                <p className="text-[10px] font-medium leading-relaxed">
+                  Cole esta URL no campo "URL" do webhook. <strong>NÃO coloque seu e-mail</strong> neste campo!
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Step by step */}
