@@ -10,7 +10,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Trash2, Play, Pause, Copy, MousePointerClick, ShoppingCart, TrendingUp, Trophy, Archive, Beaker, Zap } from "lucide-react";
+import { Plus, Trash2, Play, Pause, Copy, MousePointerClick, ShoppingCart, TrendingUp, Trophy, Archive, Beaker, Zap, Code2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID;
@@ -180,19 +180,23 @@ export default function AbTests() {
   return (
     <TooltipProvider>
       <div className="p-6 space-y-6">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3">
-              <Beaker className="w-7 h-7 text-primary" /> Testes A/B
+            <h1 className="text-2xl font-bold tracking-normal flex items-center gap-3">
+              Testes A/B
             </h1>
-            <p className="text-muted-foreground mt-1">
-              Compare páginas e checkouts para descobrir o que mais converte. Distribuição sticky 50/50 com pixel espelho por variante.
-            </p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => setShowArchived((v) => !v)}>
               <Archive className="w-4 h-4 mr-2" />
               {showArchived ? "Ver ativos" : "Arquivados"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => toast.info("O script será configurado na próxima tela do fluxo.")}
+            >
+              <Code2 className="w-4 h-4 mr-2" /> Script
             </Button>
             <Button onClick={() => createTest.mutate()} disabled={createTest.isPending}>
               <Plus className="w-4 h-4 mr-2" /> Novo Teste
@@ -203,11 +207,21 @@ export default function AbTests() {
         {isLoading && <div className="text-muted-foreground">Carregando…</div>}
 
         {!isLoading && tests.length === 0 && (
-          <Card className="p-12 text-center border-dashed">
-            <Beaker className="w-12 h-12 mx-auto text-muted-foreground/40 mb-3" />
-            <h3 className="text-lg font-semibold mb-1">Nenhum teste {showArchived ? "arquivado" : "ativo"}</h3>
-            <p className="text-muted-foreground text-sm">Crie seu primeiro teste para descobrir qual versão converte mais.</p>
-          </Card>
+          <div className="min-h-[560px] flex items-center justify-center">
+            <Card className="w-full max-w-md p-10 text-center border-border/60 bg-card/70 shadow-sm">
+              <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-muted/60">
+                <Beaker className="h-7 w-7 text-muted-foreground" />
+              </div>
+              <h3 className="text-xl font-semibold tracking-normal">
+                {showArchived ? "Nenhum teste arquivado" : "Nenhum teste criado"}
+              </h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {showArchived
+                  ? "Os testes arquivados aparecerão aqui."
+                  : "Crie seu primeiro teste A/B para começar a comparar suas páginas."}
+              </p>
+            </Card>
+          </div>
         )}
 
         <div className="grid gap-4">
