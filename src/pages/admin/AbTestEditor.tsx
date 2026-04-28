@@ -363,6 +363,7 @@ function EditorInner() {
   const [testId, setTestId] = useState<string | null>(routeId && routeId !== "new" ? routeId : null);
   const [name, setName] = useState("Novo Teste A/B");
   const [autoWinner, setAutoWinner] = useState(true);
+  const [minClicks, setMinClicks] = useState(100);
   const [stickyDays, setStickyDays] = useState(30);
   const [entryUrl, setEntryUrl] = useState("");
   const [slug, setSlug] = useState<string | null>(null);
