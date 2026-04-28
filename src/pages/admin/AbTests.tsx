@@ -435,7 +435,7 @@ export default function AbTests() {
 
 function ScriptDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   // Script Panttera nativo — captura UTMs/src/sck e propaga para o checkout.
-  const trackingScript = `<script src="https://app.panttera.com.br/tracking.js" data-domain="panttera.com.br" defer></script>`;
+  const trackingScript = `<script src="https://vipltojtcrqatwvzobro.supabase.co/functions/v1/ab-tracking" defer></script>`;
   const fbUtm = `utm_source=FB&utm_campaign={{campaign.name}}|{{campaign.id}}&utm_medium={{adset.name}}|{{adset.id}}&utm_content={{ad.name}}|{{ad.id}}&utm_term={{placement}}`;
 
   const copy = (text: string, label: string) => {
