@@ -238,7 +238,16 @@ Deno.serve(async (req) => {
       const mirrorPixel = variant?.mirror_pixel;
 
       // Record event in DB
-      const eventType = event === "impression" ? "impression" : (event === "click" ? "click" : "sale");
+      const eventTypeMap: Record<string, string> = {
+        'impression': 'impression',
+        'click': 'click',
+        'sale': 'sale',
+        'ViewContent': 'ViewContent',
+        'InitiateCheckout': 'InitiateCheckout',
+        'PageView': 'PageView'
+      };
+      
+      const eventType = eventTypeMap[event] || 'click';
       
       const { error: eventErr } = await supabase.from("ab_test_events").insert({
         test_id: testId,
