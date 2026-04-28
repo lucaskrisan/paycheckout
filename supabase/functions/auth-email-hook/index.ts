@@ -41,6 +41,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 const SITE_NAME = "paycheckout"
 const SENDER_DOMAIN = "notify.app.panttera.com.br"
 const ROOT_DOMAIN = "app.panttera.com.br"
+const SITE_URL = "https://app.panttera.com.br" // URL base para links de sistema
 const FROM_DOMAIN = "app.panttera.com.br" // Domain shown in From address (may be root or sender subdomain)
 
 // Sample data for preview mode ONLY (not used in actual email sending).
