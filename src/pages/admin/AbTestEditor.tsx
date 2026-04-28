@@ -505,10 +505,43 @@ function EditorInner() {
     onError: (e: any) => toast.error(e?.message ?? "Erro ao salvar"),
   });
 
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const validateForStart = (): string | null => {
+    const pageNodes = nodes.filter((n) => n.type === "page") as Node<PageData, "page">[];
+    const checkoutNodes = nodes.filter((n) => n.type === "checkout") as Node<CheckoutData, "checkout">[];
+
+    const pagesMissing = pageNodes
+      .filter((n) => !n.data.url || !n.data.url.trim())
+      .map((n) => n.data.label);
+    if (pagesMissing.length > 0) {
+      return `Configure as URLs das páginas de vendas: ${pagesMissing.map((l) => `${l} (sem URL)`).join(", ")}`;
+    }
+
+    const checkoutsMissing = checkoutNodes
+      .filter((n) => !n.data.productId)
+      .map((n) => n.data.label);
+    if (checkoutsMissing.length > 0) {
+      return `Selecione um produto para os checkouts: ${checkoutsMissing.map((l) => `${l} (sem produto)`).join(", ")}`;
+    }
+
+    return null;
+  };
+
   const toggleStatus = useMutation({
     mutationFn: async () => {
       if (!testId) throw new Error("Salve o teste antes de iniciar");
       const newStatus = status === "active" ? "paused" : "active";
+
+      // Validate before activating
+      if (newStatus === "active") {
+        const err = validateForStart();
+        if (err) {
+          setValidationError(err);
+          throw new Error(err);
+        }
+      }
+
       const patch: any = { status: newStatus };
       if (newStatus === "active" && !status.includes("active")) patch.started_at = new Date().toISOString();
       const { error } = await supabase.from("ab_tests" as any).update(patch).eq("id", testId);
@@ -517,6 +550,7 @@ function EditorInner() {
     },
     onSuccess: (newStatus) => {
       setStatus(newStatus);
+      setValidationError(null);
       toast.success(newStatus === "active" ? "Teste iniciado" : "Teste pausado");
     },
     onError: (e: any) => toast.error(e?.message ?? "Erro ao alterar status"),
@@ -541,6 +575,24 @@ function EditorInner() {
 
   return (
     <div className="h-[calc(100vh-0px)] flex flex-col">
+      {/* Validation banner */}
+      {validationError && (
+        <div className="bg-red-950/60 border-b border-red-500/40 text-red-200 px-4 py-2.5 flex items-center justify-between gap-4 shrink-0">
+          <div className="flex items-center gap-2 text-sm">
+            <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
+            <span>{validationError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setValidationError(null)}
+            className="text-red-300 hover:text-red-100 shrink-0"
+            aria-label="Fechar"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       {/* Top bar */}
       <header className="h-14 border-b border-border/60 bg-background/80 backdrop-blur flex items-center justify-between px-4 shrink-0 gap-4">
         <div className="flex items-center gap-3 min-w-0">
