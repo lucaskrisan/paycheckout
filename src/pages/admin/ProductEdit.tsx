@@ -152,12 +152,20 @@ const ProductEdit = () => {
   const [newCheckoutName, setNewCheckoutName] = useState("");
   const [newCheckoutPrice, setNewCheckoutPrice] = useState("");
   const [newCheckoutDefault, setNewCheckoutDefault] = useState(false);
+  const [newCheckoutWeight, setNewCheckoutWeight] = useState(50);
   const [creatingCheckout, setCreatingCheckout] = useState(false);
   const [editingCheckout, setEditingCheckout] = useState<any>(null);
   const [editCheckoutName, setEditCheckoutName] = useState("");
   const [editCheckoutPrice, setEditCheckoutPrice] = useState("");
+  const [editCheckoutWeight, setEditCheckoutWeight] = useState(50);
   const [savingCheckoutEdit, setSavingCheckoutEdit] = useState(false);
   const [checkouts, setCheckouts] = useState<any[]>([]);
+  const [variantStats, setVariantStats] = useState<Record<string, { visits: number; sales: number; revenue: number }>>({});
+  const [testStartDate, setTestStartDate] = useState<string>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return d.toISOString().split('T')[0];
+  });
   const [orderBumps, setOrderBumps] = useState<any[]>([]);
   const [upsellOffers, setUpsellOffers] = useState<any[]>([]);
   const [showUpsellDialog, setShowUpsellDialog] = useState(false);
@@ -254,7 +262,89 @@ const ProductEdit = () => {
     }
 
     setCheckouts(data || []);
+    if (data && data.length > 0 && data[0].test_started_at) {
+      setTestStartDate(new Date(data[0].test_started_at).toISOString().split('T')[0]);
+    }
   }, [isNew, productId]);
+
+  const loadVariantMetrics = useCallback(async () => {
+    if (isNew || !productId) return;
+    
+    try {
+      const [visitsRes, salesRes] = await Promise.all([
+        supabase.from("pixel_events")
+          .select("metadata")
+          .eq("product_id", productId)
+          .eq("event_name", "ViewContent")
+          .gte("created_at", testStartDate),
+        supabase.from("orders")
+          .select("amount, metadata")
+          .eq("product_id", productId)
+          .eq("status", "paid")
+          .gte("created_at", testStartDate)
+      ]);
+
+      const stats: Record<string, { visits: number; sales: number; revenue: number }> = {};
+      
+      // Initialize stats for each checkout
+      checkouts.forEach(co => {
+        stats[co.id] = { visits: 0, sales: 0, revenue: 0 };
+      });
+
+      visitsRes.data?.forEach((evt: any) => {
+        const configId = evt.metadata?.config_id;
+        if (configId && stats[configId]) {
+          stats[configId].visits++;
+        }
+      });
+
+      salesRes.data?.forEach((order: any) => {
+        const configId = order.metadata?.config_id;
+        if (configId && stats[configId]) {
+          stats[configId].sales++;
+          stats[configId].revenue += Number(order.amount);
+        }
+      });
+
+      setVariantStats(stats);
+    } catch (err) {
+      console.error("Error loading metrics:", err);
+    }
+  }, [productId, isNew, checkouts, testStartDate]);
+
+  useEffect(() => {
+    if (!isNew && productId && checkouts.length > 0) {
+      loadVariantMetrics();
+      const interval = setInterval(loadVariantMetrics, 60000);
+      return () => clearInterval(interval);
+    }
+  }, [productId, isNew, checkouts.length, testStartDate]);
+
+  const declareWinner = async (winner: any) => {
+    if (!confirm(`Isso vai definir "${winner.name}" como padrão e pausar o split de tráfego. Confirmar?`)) return;
+    
+    try {
+      // 1. Set is_default=true on winner, false on others
+      // 2. Set is_split_active=false on all
+      const { error } = await supabase.from("checkout_builder_configs")
+        .update({ 
+          is_default: false,
+          is_split_active: false
+        })
+        .eq("product_id", productId);
+      
+      if (error) throw error;
+
+      await supabase.from("checkout_builder_configs")
+        .update({ is_default: true })
+        .eq("id", winner.id);
+
+      toast.success(`Teste encerrado! "${winner.name}" agora é o checkout padrão.`);
+      loadCheckouts();
+    } catch (err: any) {
+      toast.error("Erro ao declarar vencedor: " + err.message);
+    }
+  };
 
   const openNewCheckoutDialog = () => {
     setNewCheckoutName("");
@@ -309,6 +399,7 @@ const ProductEdit = () => {
         is_default: newCheckoutDefault,
         user_id: authUser.id,
         price: parsedPrice,
+        traffic_weight: newCheckoutWeight,
       } as any);
 
       if (error) throw error;
@@ -1633,6 +1724,7 @@ const ProductEdit = () => {
                                 setEditingCheckout(co);
                                 setEditCheckoutName(co.name);
                                 setEditCheckoutPrice(co.price != null ? String(co.price).replace(".", ",") : "");
+                                setEditCheckoutWeight(co.traffic_weight || 50);
                               }} className="gap-2 text-sm">
                                 <Settings2 className="w-3.5 h-3.5" /> Editar
                               </DropdownMenuItem>
@@ -1685,19 +1777,107 @@ const ProductEdit = () => {
               {/* Analytics Comparativo por Variante */}
               {!isNew && checkouts.length > 0 && (
                 <div className="space-y-4 pt-6">
-                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                    <Shuffle className="w-4 h-4 text-primary" /> Performance por Variante
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {checkouts.map((co) => (
-                      <VariantMetricsCard 
-                        key={co.id} 
-                        co={co} 
-                        productId={productId} 
-                        currency={form.currency} 
-                      />
-                    ))}
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <Shuffle className="w-4 h-4 text-primary" /> Performance por Variante
+                    </h3>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1 bg-muted/50 rounded-md p-1">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-7 text-[10px] px-2"
+                          onClick={() => {
+                            const d = new Date();
+                            d.setDate(d.getDate() - 7);
+                            setTestStartDate(d.toISOString().split('T')[0]);
+                          }}
+                        >7d</Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-7 text-[10px] px-2"
+                          onClick={() => {
+                            const d = new Date();
+                            d.setDate(d.getDate() - 30);
+                            setTestStartDate(d.toISOString().split('T')[0]);
+                          }}
+                        >30d</Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-7 text-[10px] px-2"
+                          onClick={() => setTestStartDate(new Date().toISOString().split('T')[0])}
+                        >Hoje</Button>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Label className="text-[10px] uppercase font-bold text-muted-foreground">Medir desde:</Label>
+                        <Input 
+                          type="date" 
+                          value={testStartDate} 
+                          onChange={(e) => {
+                            setTestStartDate(e.target.value);
+                            // Also update test_started_at in DB for consistency
+                            supabase.from("checkout_builder_configs")
+                              .update({ test_started_at: e.target.value })
+                              .eq("product_id", productId)
+                              .then(() => {});
+                          }}
+                          className="h-8 text-xs w-32" 
+                        />
+                      </div>
+                    </div>
                   </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {(() => {
+                      const totalVisits = Object.values(variantStats).reduce((sum, s) => sum + s.visits, 0);
+                      const leader = checkouts
+                        .filter(co => (variantStats[co.id]?.visits || 0) >= 100)
+                        .sort((a, b) => {
+                          const convA = (variantStats[a.id]?.sales || 0) / (variantStats[a.id]?.visits || 1);
+                          const convB = (variantStats[b.id]?.sales || 0) / (variantStats[b.id]?.visits || 1);
+                          return convB - convA;
+                        })[0];
+
+                      return checkouts.map((co) => (
+                        <VariantMetricsCard 
+                          key={co.id} 
+                          co={co} 
+                          productId={productId} 
+                          currency={form.currency}
+                          metrics={variantStats[co.id] || { visits: 0, sales: 0, revenue: 0 }}
+                          isLeader={leader?.id === co.id}
+                          totalVisits={totalVisits}
+                        />
+                      ));
+                    })()}
+                  </div>
+
+                  {(() => {
+                    const variantsWithData = checkouts.filter(co => (variantStats[co.id]?.visits || 0) >= 100);
+                    const leader = variantsWithData.sort((a, b) => {
+                      const convA = (variantStats[a.id]?.sales || 0) / (variantStats[a.id]?.visits || 1);
+                      const convB = (variantStats[b.id]?.sales || 0) / (variantStats[b.id]?.visits || 1);
+                      return convB - convA;
+                    })[0];
+
+                    if (variantsWithData.length >= 2 && leader) {
+                      return (
+                        <div className="pt-4 flex justify-center">
+                          <Button 
+                            variant="outline" 
+                            className="border-green-500/50 text-green-600 hover:bg-green-500/10 gap-2"
+                            onClick={() => declareWinner(leader)}
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                            Encerrar teste e declarar vencedor: {leader.name}
+                          </Button>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
               )}
 
