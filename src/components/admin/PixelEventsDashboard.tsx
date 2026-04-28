@@ -113,7 +113,7 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
       .gte("created_at", since)
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
-      .limit(500);
+      .limit(1000);
     if (filterProduct !== "all") feedQuery = feedQuery.eq("product_id", filterProduct);
     const { data: feedData, error: feedError } = await feedQuery;
     if (feedError) console.error("[NinaTracking] feed error:", feedError);
@@ -337,7 +337,7 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
     });
     return [...map.values(), ...ungrouped]
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, 50);
+      .slice(0, 100);
   }, [recentEvents]);
 
   return (
