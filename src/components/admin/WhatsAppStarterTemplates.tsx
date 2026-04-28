@@ -27,67 +27,37 @@ interface StarterTemplate {
 
 const STARTER_TEMPLATES: StarterTemplate[] = [
   {
-    name: "Boas-vindas — Compra Aprovada",
-    category: "boas_vindas",
-    body: `🎉 *Parabéns, {nome}!*
-
-Sua compra do *{produto}* foi confirmada com sucesso!
-
-Em breve você receberá o acesso por e-mail. Se tiver dúvidas, estou por aqui! 💬
-
-Obrigado pela confiança! 🙏`,
+    name: "Compra Confirmada",
+    category: "confirmacao",
+    body: "🎉 *{nome}*, seu acesso ao *{produto}* está liberado!\n\nClique no link abaixo para acessar agora:\n👉 {link}\n\nQualquer dúvida é só responder essa mensagem. 🙌",
     icon: UserPlus,
     description: "Enviado automaticamente quando o pagamento é aprovado",
   },
   {
-    name: "Lembrete PIX — Pagamento Pendente",
+    name: "Lembrete PIX",
     category: "lembrete_pix",
-    body: `⏰ Olá, {nome}!
-
-Notamos que o PIX do *{produto}* (R$ {valor}) ainda não foi confirmado.
-
-O código PIX expira em breve. Pague agora para garantir sua vaga! 🚀
-
-Se já pagou, ignore esta mensagem. O sistema confirma automaticamente em alguns minutos.`,
+    body: "⚠️ Oi, *{nome}*! Seu PIX de *R$ {valor}* para o *{produto}* ainda não foi identificado.\n\nSe já pagou, aguarde alguns minutos. Se ainda não pagou, acesse o link abaixo para gerar um novo código:\n👉 {link}\n\nO acesso é liberado automaticamente após a confirmação. 💳",
     icon: QrCode,
     description: "Lembrete automático para PIX pendente após 30 minutos",
   },
   {
-    name: "Carrinho Abandonado — Recuperação",
+    name: "Carrinho Abandonado",
     category: "abandono",
-    body: `👋 Oi, {nome}!
-
-Você deixou o *{produto}* no carrinho. Vai deixar escapar?
-
-🔥 Finalize agora e garanta condições especiais!
-
-Qualquer dúvida, é só responder aqui. Estou à disposição! 😊`,
+    body: "👋 Oi, *{nome}*! Você quase garantiu o *{produto}*.\n\nSua vaga ainda está reservada por tempo limitado. Finalize agora:\n👉 {link}\n\nQualquer dúvida estou aqui! 😊",
     icon: ShoppingCart,
     description: "Recuperação de carrinhos abandonados via WhatsApp",
   },
   {
-    name: "Pós-venda — Acompanhamento",
+    name: "Pós-venda",
     category: "geral",
-    body: `😊 Olá, {nome}!
-
-Já faz alguns dias desde que você adquiriu o *{produto}*. 
-
-Como está sendo sua experiência? Precisa de ajuda com algo?
-
-Estou aqui para te ajudar a aproveitar ao máximo! 💪`,
+    body: "Olá, *{nome}*! Tudo certo com seu acesso ao *{produto}*?\n\nSe tiver qualquer dificuldade para entrar, acesse por aqui:\n👉 {link}\n\nEstamos à disposição! 🚀",
     icon: Package,
     description: "Follow-up enviado 3 dias após a compra",
   },
   {
-    name: "Pedido de Avaliação",
+    name: "Avaliação",
     category: "geral",
-    body: `⭐ Oi, {nome}!
-
-Esperamos que esteja aproveitando o *{produto}*!
-
-Sua opinião é muito importante. Poderia nos dar uma avaliação rápida?
-
-Isso nos ajuda a melhorar cada vez mais! 🙏`,
+    body: "⭐ *{nome}*, o que você achou do *{produto}*?\n\nSua opinião nos ajuda muito a melhorar. Leva menos de 1 minuto:\n👉 {link}\n\nObrigado pela confiança! 🙏",
     icon: Star,
     description: "Solicita avaliação após período de uso do produto",
   },

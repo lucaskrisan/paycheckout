@@ -101,6 +101,9 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       try {
+        const checkoutUrl = (order as any).metadata?.checkout_url 
+          || `https://app.panttera.com.br/checkout/${order.product_id}`;
+
         await supabase.functions.invoke("whatsapp-dispatch", {
           body: {
             tenant_id: order.user_id,
@@ -109,6 +112,7 @@ Deno.serve(async (req) => {
             customer_name: customer.name || "Cliente",
             product_name: product?.name || "",
             product_price: order.amount?.toString() || "",
+            access_link: checkoutUrl,
             category: "lembrete_pix",
           },
         });
