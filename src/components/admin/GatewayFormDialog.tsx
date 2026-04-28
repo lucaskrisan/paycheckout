@@ -758,21 +758,51 @@ const GatewayFormDialog = ({ open, onOpenChange, gateway, onSaved }: Props) => {
               </div>
             </div>
 
-            <Separator />
+            <Separator className="bg-white/5" />
+            
             {/* Activate */}
-            <div className="flex items-center justify-between p-3 border border-border rounded-lg">
+            <div className="flex items-center justify-between p-4 bg-primary/5 border border-primary/20 rounded-xl">
               <div>
-                <span className="text-sm font-semibold">Ativar Gateway</span>
-                <p className="text-xs text-muted-foreground">Disponibilizar este gateway no checkout</p>
+                <span className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-primary" />
+                  Ativar Gateway
+                </span>
+                <p className="text-xs text-muted-foreground mt-0.5">Disponibilizar este gateway no checkout imediatamente</p>
               </div>
-              <Switch checked={form.active} onCheckedChange={(v) => setForm({ ...form, active: v })} />
+              <Switch 
+                checked={form.active} 
+                onCheckedChange={(v) => setForm({ ...form, active: v })}
+                className="data-[state=checked]:bg-primary"
+              />
             </div>
 
-            <div className="flex gap-3 pt-2">
-              <Button onClick={handleSave} disabled={saving || validating} className="flex-1">
-                {validating ? "Validando chave..." : saving ? "Salvando..." : isEditing ? "Validar e Salvar" : "Validar e Criar Conexão"}
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+              <Button 
+                onClick={handleSave} 
+                disabled={saving || validating} 
+                className="flex-1 bg-primary hover:bg-primary/90 text-white font-bold h-11"
+              >
+                {validating ? (
+                  <span className="flex items-center gap-2">
+                    <Activity className="w-4 h-4 animate-spin" />
+                    Validando...
+                  </span>
+                ) : saving ? (
+                  "Salvando..."
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4" />
+                    {isEditing ? "Validar e Salvar Alterações" : "Validar e Criar Conexão"}
+                  </span>
+                )}
               </Button>
-              <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+              <Button 
+                variant="outline" 
+                onClick={() => onOpenChange(false)}
+                className="border-white/10 hover:bg-white/5 h-11"
+              >
+                Cancelar
+              </Button>
             </div>
           </div>
         </ScrollArea>
