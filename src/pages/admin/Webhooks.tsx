@@ -22,6 +22,7 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import IntegrationWebhookGuide from "@/components/admin/IntegrationWebhookGuide";
 
 const AVAILABLE_EVENTS = [
   { value: "payment.approved", label: "Compra aprovada" },
