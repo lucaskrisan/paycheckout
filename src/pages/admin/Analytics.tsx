@@ -41,9 +41,8 @@ const PIE_COLORS = ["hsl(151,100%,45%)", "hsl(220,80%,55%)", "hsl(280,60%,55%)",
 
 const Analytics = () => {
   const { user, isSuperAdmin } = useAuth();
-  const [clarityId, setClarityId] = useState("");
-  const [savedClarityId, setSavedClarityId] = useState("");
-  const [saving, setSaving] = useState(false);
+  // Clarity ID removed per user request
+  const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<any[]>([]);
   const [pixelEvents, setPixelEvents] = useState<any[]>([]);
   const [abandonedCarts, setAbandonedCarts] = useState<any[]>([]);
@@ -90,16 +89,14 @@ const Analytics = () => {
         if (!isSuperAdmin) cartsQuery.eq("user_id", user.id);
         if (dateFrom) cartsQuery.gte("created_at", dateFrom);
 
-        const [settingsRes, ordersRes, eventsRes, cartsRes] = await Promise.all([
-          isSuperAdmin ? supabase.from("platform_settings").select("clarity_project_id").limit(1).single() : Promise.resolve({ data: null }),
+        const [ordersRes, eventsRes, cartsRes] = await Promise.all([
           ordersQuery,
           eventsQuery,
           cartsQuery,
         ]);
-        if (settingsRes.data?.clarity_project_id) {
-          setClarityId(settingsRes.data.clarity_project_id);
-          setSavedClarityId(settingsRes.data.clarity_project_id);
-        }
+        setOrders(ordersRes.data || []);
+        setPixelEvents(eventsRes.data || []);
+        setAbandonedCarts(cartsRes.data || []);
         setOrders(ordersRes.data || []);
         setPixelEvents(eventsRes.data || []);
         setAbandonedCarts(cartsRes.data || []);
@@ -112,23 +109,7 @@ const Analytics = () => {
     load();
   }, [user, period]);
 
-  const saveClarityId = async () => {
-    if (!isSuperAdmin) return;
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from("platform_settings")
-        .update({ clarity_project_id: clarityId })
-        .not("id", "is", null);
-      if (error) throw error;
-      setSavedClarityId(clarityId);
-      toast.success("Clarity ID salvo!");
-    } catch (err: any) {
-      toast.error("Erro: " + err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
+  // saveClarityId removed per user request
 
   const salesByState = useMemo(() => {
     const map: Record<string, { count: number; revenue: number }> = {};
@@ -275,13 +256,7 @@ const Analytics = () => {
         </Card>
       </div>
       
-      {isSuperAdmin && (
-        <Card className="p-6 border-dashed border-2">
-            <h3 className="font-bold mb-2">Configurações Microsoft Clarity (Admin)</h3>
-            <Input value={clarityId} onChange={(e) => setClarityId(e.target.value)} placeholder="ID" className="mb-2" />
-            <Button onClick={saveClarityId}>Salvar Clarity ID</Button>
-        </Card>
-      )}
+      {/* Microsoft Clarity section removed per user request */}
     </div>
   );
 };
