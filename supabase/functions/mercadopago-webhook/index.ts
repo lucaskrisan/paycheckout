@@ -202,8 +202,9 @@ Deno.serve(async (req) => {
     const payment = await mpResponse.json();
     const mpStatus = payment.status; // approved, pending, rejected, cancelled, refunded, charged_back, in_process
     const paymentId = String(payment.id);
+    const orderId = payment.external_reference;
 
-    console.log('[mp-webhook] Payment', paymentId, 'status:', mpStatus);
+    console.log('[mp-webhook] Payment', paymentId, 'status:', mpStatus, 'external_ref:', orderId);
 
     // Map MP status to our internal status
     let status = 'pending';
@@ -214,18 +215,30 @@ Deno.serve(async (req) => {
     else if (mpStatus === 'charged_back') status = 'chargeback';
     else if (mpStatus === 'in_process') status = 'pending';
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    );
+    // Update order
+    let orderUpdate;
+    
+    if (orderId) {
+      // Try by internal ID first (Bug 3)
+      orderUpdate = await supabase
+        .from('orders')
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq('id', orderId)
+        .select('id, amount, payment_method, product_id, customer_id, user_id, metadata')
+        .maybeSingle();
+    }
 
-    // Update order by external_id
-    const { data: orderData, error } = await supabase
-      .from('orders')
-      .update({ status, updated_at: new Date().toISOString() })
-      .eq('external_id', paymentId)
-      .select('id, amount, payment_method, product_id, customer_id, user_id, metadata')
-      .maybeSingle();
+    // Fallback to external_id if no orderId or not found (for old orders)
+    if (!orderUpdate?.data) {
+      orderUpdate = await supabase
+        .from('orders')
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq('external_id', paymentId)
+        .select('id, amount, payment_method, product_id, customer_id, user_id, metadata')
+        .maybeSingle();
+    }
+
+    const { data: orderData, error } = orderUpdate;
 
     if (error) {
       console.error('[mp-webhook] Error updating order:', error);
