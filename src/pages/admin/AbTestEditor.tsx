@@ -809,7 +809,7 @@ function EditorInner() {
       </header>
       <div className="flex-1 flex overflow-hidden">
         <aside className="w-60 border-r border-border/60 bg-background/60 p-4 flex flex-col gap-6">
-          <div className="space-y-4">
+          <div id="tutorial-palette" className="space-y-4">
             <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Paleta</p>
             {PALETTE.map((p) => <PaletteItem key={p.kind} {...p} />)}
           </div>
