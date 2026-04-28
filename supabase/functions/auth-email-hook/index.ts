@@ -229,6 +229,9 @@ async function handleWebhook(req: Request): Promise<Response> {
     token: payload.data.token,
     email: payload.data.email,
     newEmail: payload.data.new_email,
+    unsubscribeUrl: `${SITE_URL}/unsubscribe?email=${encodeURIComponent(payload.data.email)}`,
+    content: payload.data.content || '',
+    subject: payload.data.subject || EMAIL_SUBJECTS[emailType] || 'Notificação',
   }
 
   // Render React Email to HTML and plain text
