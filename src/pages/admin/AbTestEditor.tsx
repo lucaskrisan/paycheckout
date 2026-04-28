@@ -774,6 +774,11 @@ function EditorInner() {
                   <Label className="text-xs">Vencedor automático</Label>
                   <Switch checked={autoWinner} onCheckedChange={setAutoWinner} />
                 </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Janela de Retenção (Dias)</Label>
+                  <Input type="number" value={stickyDays} onChange={(e) => setStickyDays(Number(e.target.value))} />
+                  <p className="text-[10px] text-muted-foreground italic">Quantos dias o visitante ficará "preso" à mesma variante.</p>
+                </div>
               </div>
             )}
             {selectedNode.type === "page" && (
