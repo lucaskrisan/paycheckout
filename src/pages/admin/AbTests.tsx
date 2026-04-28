@@ -294,13 +294,14 @@ export default function AbTests() {
             return (
               <Card
                 key={t.id}
-                className="p-5 cursor-pointer hover:border-primary/40 transition"
+                className="p-5 cursor-pointer hover:border-primary/40 transition bg-card/60"
                 onClick={() => navigate(`/admin/ab-tests/${t.id}`)}
               >
-                <div className="flex items-start justify-between gap-4 flex-wrap">
-                  <div className="flex-1 min-w-[260px]">
+                <div className="flex items-start justify-between gap-4">
+                  {/* Left: name, status, links, variants count, metrics */}
+                  <div className="flex-1 min-w-0 space-y-3">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-lg font-bold">{t.name}</h3>
+                      <h3 className="text-base font-bold">{t.name}</h3>
                       <Badge className={STATUS_LABEL[t.status]?.cls ?? ""}>{STATUS_LABEL[t.status]?.label}</Badge>
                       {winner && (
                         <Badge className="bg-yellow-500/30 text-yellow-200 border border-yellow-400/40">
@@ -308,45 +309,87 @@ export default function AbTests() {
                         </Badge>
                       )}
                     </div>
-                    <div className="mt-3 grid gap-2 text-xs">
-                      <LinkRow label="Página" url={linkPage} />
-                      <LinkRow label="Checkout" url={linkCheckout} />
+
+                    <div className="space-y-1.5 text-xs">
+                      <CompactLinkRow label="Página" url={linkPage} />
+                      <CompactLinkRow label="Checkout" url={linkCheckout} />
+                      <div className="text-xs text-muted-foreground pl-[68px]">{t.variants.length} variantes</div>
                     </div>
-                    <div className="mt-2 text-xs text-muted-foreground">{t.variants.length} variantes</div>
+
+                    <div className="flex items-center gap-5 text-sm pt-1">
+                      <Stat icon={Zap} label="cliques" value={totalClicks.toLocaleString("pt-BR")} />
+                      <Stat icon={ShoppingCart} label="vendas" value={totalSales.toLocaleString("pt-BR")} />
+                      <Stat icon={TrendingUp} label="" value={`${conversion(totalClicks, totalSales).toFixed(0)}%`} />
+                      <Stat icon={Clock} label="" value={t.started_at ? formatDuration(t.started_at) : "-"} />
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-5 text-sm">
-                    <Stat icon={MousePointerClick} label="cliques" value={totalClicks.toLocaleString("pt-BR")} />
-                    <Stat icon={ShoppingCart} label="vendas" value={totalSales.toLocaleString("pt-BR")} />
-                    <Stat icon={TrendingUp} label="conv." value={`${conversion(totalClicks, totalSales).toFixed(1)}%`} />
-                    <Stat icon={Trophy} label="receita" value={fmtBRL(totalRevenue)} />
-                  </div>
-
-                  <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                  {/* Right: action icons */}
+                  <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                     {t.status === "draft" || t.status === "paused" ? (
-                      <Button size="icon" variant="ghost" className="text-emerald-400" onClick={() => setStatus.mutate({ id: t.id, status: "active" })}>
-                        <Play className="w-4 h-4" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button size="icon" variant="ghost" className="h-8 w-8 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10" onClick={() => setStatus.mutate({ id: t.id, status: "active" })}>
+                            <Play className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Iniciar</TooltipContent>
+                      </Tooltip>
                     ) : t.status === "active" ? (
-                      <Button size="icon" variant="ghost" className="text-amber-400" onClick={() => setStatus.mutate({ id: t.id, status: "paused" })}>
-                        <Pause className="w-4 h-4" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button size="icon" variant="ghost" className="h-8 w-8 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10" onClick={() => setStatus.mutate({ id: t.id, status: "paused" })}>
+                            <Pause className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Pausar</TooltipContent>
+                      </Tooltip>
                     ) : null}
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => navigate(`/admin/ab-tests/${t.id}`)}>
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Editar</TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => duplicateTest.mutate(t.id)} disabled={duplicateTest.isPending}>
+                          <Files className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Duplicar</TooltipContent>
+                    </Tooltip>
+
                     {t.status !== "archived" && (
-                      <Button size="icon" variant="ghost" onClick={() => setStatus.mutate({ id: t.id, status: "archived" })}>
-                        <Archive className="w-4 h-4" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setStatus.mutate({ id: t.id, status: "archived" })}>
+                            <Archive className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Arquivar</TooltipContent>
+                      </Tooltip>
                     )}
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="text-red-400"
-                      onClick={() => {
-                        if (confirm(`Excluir o teste "${t.name}"?`)) deleteTest.mutate(t.id);
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                          onClick={() => {
+                            if (confirm(`Excluir o teste "${t.name}"?`)) deleteTest.mutate(t.id);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Excluir</TooltipContent>
+                    </Tooltip>
                   </div>
                 </div>
 
