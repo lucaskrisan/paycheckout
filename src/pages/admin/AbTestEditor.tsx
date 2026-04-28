@@ -83,6 +83,8 @@ function NodeShell({
   children,
   inHandle = true,
   outHandle = true,
+  nodeId?: string,
+  onDelete?: (id: string) => void,
 }: {
   color: string;
   icon: React.ReactNode;
@@ -91,12 +93,22 @@ function NodeShell({
   children?: React.ReactNode;
   inHandle?: boolean;
   outHandle?: boolean;
+  nodeId?: string;
+  onDelete?: (id: string) => void;
 }) {
   return (
     <div
-      className="rounded-xl bg-[#0d0f15]/95 backdrop-blur-sm shadow-xl min-w-[220px] max-w-[260px]"
+      className="rounded-xl bg-[#0d0f15]/95 backdrop-blur-sm shadow-xl min-w-[220px] max-w-[260px] relative group"
       style={{ border: `1.5px solid ${color}`, boxShadow: `0 0 0 1px ${color}22, 0 8px 24px ${color}33` }}
     >
+      {nodeId && nodeId !== "config" && onDelete && (
+        <button 
+          onClick={(e) => { e.stopPropagation(); onDelete(nodeId); }}
+          className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-600 z-50"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      )}
       {inHandle && (
         <Handle type="target" position={Position.Left} style={{ background: color, width: 10, height: 10, border: "2px solid #0d0f15" }} />
       )}
@@ -113,20 +125,6 @@ function NodeShell({
         </div>
       </div>
       {children && <div className="px-3 pb-3 space-y-1.5">{children}</div>}
-      <button 
-        onClick={(e) => {
-          e.stopPropagation();
-          // We'll pass a custom event or use a callback if we had one, 
-          // but since these are functional components inside the same file, 
-          // I'll add a delete button to the shell that triggers a custom event 
-          // or I can modify the nodes to include a delete action.
-          const event = new CustomEvent('delete-node', { detail: { id: title } });
-          window.dispatchEvent(event);
-        }}
-        className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-600"
-      >
-        <X className="h-3.5 w-3.5" />
-      </button>
     </div>
   );
 }
