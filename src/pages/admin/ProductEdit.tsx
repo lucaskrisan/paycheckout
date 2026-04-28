@@ -49,51 +49,36 @@ import { useAuth } from "@/hooks/useAuth";
 
 const PUBLISHED_URL = "https://app.panttera.com.br";
 
-const VariantMetricsCard = ({ co, productId, currency }) => {
-  const [metrics, setMetrics] = useState({ visits: 0, sales: 0, revenue: 0, loading: true });
-
-  useEffect(() => {
-    const loadMetrics = async () => {
-      try {
-        const [visitsRes, salesRes] = await Promise.all([
-          supabase.from("pixel_events")
-            .select("id", { count: "exact", head: true })
-            .eq("product_id", productId)
-            .eq("event_name", "ViewContent")
-            .contains("metadata", { config_id: co.id }),
-          supabase.from("orders")
-            .select("amount")
-            .eq("product_id", productId)
-            .eq("status", "paid")
-            .contains("metadata", { config_id: co.id })
-        ]);
-
-        const sales = salesRes.data || [];
-        const totalRevenue = sales.reduce((sum, order) => sum + Number(order.amount), 0);
-        
-        setMetrics({
-          visits: visitsRes.count || 0,
-          sales: sales.length,
-          revenue: totalRevenue,
-          loading: false
-        });
-      } catch (err) {
-        console.error("Error loading metrics:", err);
-      }
-    };
-    loadMetrics();
-  }, [co.id, productId]);
-
+const VariantMetricsCard = ({ co, productId, currency, metrics, isLeader, totalVisits }) => {
   const conversion = metrics.visits > 0 ? (metrics.sales / metrics.visits) * 100 : 0;
+  const expectedTraffic = totalVisits > 0 ? (metrics.visits / totalVisits) * 100 : 0;
+  const targetTraffic = co.traffic_weight || 50;
 
   return (
-    <div className={`p-4 rounded-xl border ${co.is_default ? 'border-primary/50 bg-primary/5' : 'border-border bg-card'} space-y-3 relative overflow-hidden`}>
+    <div className={`p-4 rounded-xl border transition-all ${
+      co.is_default ? 'border-primary/50 bg-primary/5' : 
+      isLeader ? 'border-green-500/50 bg-green-500/5 shadow-sm' :
+      'border-border bg-card'
+    } space-y-3 relative overflow-hidden`}>
       <div className="flex justify-between items-start">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{co.name}</p>
-          <p className="text-lg font-bold text-foreground">
-            {conversion.toFixed(1)}% <span className="text-[10px] font-medium text-muted-foreground ml-1">conversão</span>
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{co.name}</p>
+            {isLeader && (
+              <span className="text-[9px] font-bold bg-green-500 text-white px-1.5 py-0.5 rounded uppercase flex items-center gap-1">
+                Líder 🏆
+              </span>
+            )}
+          </div>
+          {metrics.visits < 100 ? (
+            <p className="text-[10px] text-amber-500 font-medium mt-1">
+              Aguardando dados ({metrics.visits}/100 visitas)
+            </p>
+          ) : (
+            <p className="text-lg font-bold text-foreground mt-0.5">
+              {conversion.toFixed(1)}% <span className="text-[10px] font-medium text-muted-foreground ml-1">conversão</span>
+            </p>
+          )}
         </div>
         {co.is_default && (
           <span className="text-[9px] font-bold bg-primary text-primary-foreground px-1.5 py-0.5 rounded uppercase">Padrão</span>
@@ -111,11 +96,19 @@ const VariantMetricsCard = ({ co, productId, currency }) => {
         </div>
       </div>
       
-      <div className="pt-1">
-        <p className="text-[9px] text-muted-foreground uppercase font-semibold">Receita</p>
-        <p className="text-sm font-bold text-primary">
-          {currency === "USD" ? "$" : "R$"} {metrics.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-        </p>
+      <div className="pt-1 flex justify-between items-end">
+        <div>
+          <p className="text-[9px] text-muted-foreground uppercase font-semibold">Receita</p>
+          <p className="text-sm font-bold text-primary">
+            {currency === "USD" ? "$" : "R$"} {metrics.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-[8px] text-muted-foreground uppercase font-medium">Split (Exp/Real)</p>
+          <p className="text-[10px] font-bold">
+            {targetTraffic}% / {expectedTraffic.toFixed(0)}%
+          </p>
+        </div>
       </div>
     </div>
   );

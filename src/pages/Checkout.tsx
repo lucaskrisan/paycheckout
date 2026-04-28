@@ -153,17 +153,41 @@ const Checkout = () => {
 
       if (!targetConfigId && splitConfigs.length > 0) {
         const storageKey = `_abt_${productId}`;
-        const assignedConfigId = localStorage.getItem(storageKey);
-        const assignedConfig = allConfigs.find((c) => c.id === assignedConfigId);
+        const stored = JSON.parse(localStorage.getItem(storageKey) || 'null');
+        const thirtyDaysMs = 2592000000;
+        const isExpired = !stored || !stored.assignedAt || (Date.now() - stored.assignedAt) > thirtyDaysMs;
+        
+        const assignedConfig = !isExpired ? allConfigs.find((c) => c.id === stored.configId) : null;
 
-        if (assignedConfig) {
+        if (assignedConfig && assignedConfig.is_split_active) {
           targetConfigId = assignedConfig.id;
         } else {
-          const picked = splitConfigs[Math.floor(Math.random() * splitConfigs.length)];
-          localStorage.setItem(storageKey, picked.id);
+          // Weighted random pick
+          const pickWeighted = (configs: any[]) => {
+            const totalWeight = configs.reduce((sum, c) => sum + (c.traffic_weight || 50), 0);
+            let random = Math.random() * totalWeight;
+            for (const config of configs) {
+              random -= (config.traffic_weight || 50);
+              if (random <= 0) return config;
+            }
+            return configs[configs.length - 1];
+          };
+
+          const picked = pickWeighted(splitConfigs);
+          localStorage.setItem(storageKey, JSON.stringify({
+            configId: picked.id,
+            assignedAt: Date.now()
+          }));
           targetConfigId = picked.id;
         }
-        window.history.replaceState({}, '', `${window.location.pathname}?config=${targetConfigId}${window.location.hash}`);
+
+        const existingParams = new URLSearchParams(window.location.search);
+        existingParams.set("config", targetConfigId);
+        window.history.replaceState(
+          {}, 
+          '', 
+          `${window.location.pathname}?${existingParams.toString()}${window.location.hash}`
+        );
       }
 
       const builderLayoutData = targetConfigId 
