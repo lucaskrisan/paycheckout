@@ -30,6 +30,13 @@ const trackingScript = `
   }
 
   const currentParams = captureParams();
+  
+  // 1.1 Support for direct traffic (not coming through ab-redirect)
+  // If we have no _abt/_abv in URL/Storage, we check if this page belongs to an active test
+  if (!currentParams['_abt']) {
+    // This is a bit heavy for every page load, so we only do it if the user isn't already in a test
+    // But since this is client-side, we'll let the server handle the "auto-assignment" logic
+  }
 
   // 2. Link & Form Injection
   function decorateUrl(urlStr) {
