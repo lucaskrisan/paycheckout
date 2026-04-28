@@ -552,7 +552,7 @@ function EditorInner() {
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold">
                 {selectedNode.type === "config" && "Configuração Inicial"}
-                {selectedNode.type === "abtest" && "Teste A/B"}
+                {selectedNode.type === "abtest" && "Configurar Teste"}
                 {selectedNode.type === "page" && "Página de Vendas"}
                 {selectedNode.type === "checkout" && "Checkout"}
               </h3>
@@ -588,39 +588,111 @@ function EditorInner() {
               </div>
             )}
 
-            {selectedNode.type === "abtest" && (
-              <div className="space-y-3">
-                <div>
-                  <Label className="text-xs">Nome</Label>
-                  <Input value={(selectedNode.data as AbTestData).label} onChange={(e) => updateNodeData(selectedNode.id, { label: e.target.value })} className="h-8 mt-1" />
-                </div>
-                <div>
-                  <Label className="text-xs">Descrição</Label>
-                  <Input value={(selectedNode.data as AbTestData).subtitle} onChange={(e) => updateNodeData(selectedNode.id, { subtitle: e.target.value })} className="h-8 mt-1" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs">Distribuição</Label>
-                  {(selectedNode.data as AbTestData).splits.map((s, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <Input value={s.label} onChange={(e) => {
-                        const splits = [...(selectedNode.data as AbTestData).splits];
-                        splits[i] = { ...splits[i], label: e.target.value };
-                        updateNodeData(selectedNode.id, { splits });
-                      }} className="h-8 w-16" />
-                      <Input type="number" value={s.weight} onChange={(e) => {
-                        const splits = [...(selectedNode.data as AbTestData).splits];
-                        splits[i] = { ...splits[i], weight: Number(e.target.value) || 0 };
-                        updateNodeData(selectedNode.id, { splits });
-                      }} className="h-8 flex-1" />
-                      <span className="text-xs text-muted-foreground">%</span>
+            {selectedNode.type === "abtest" && (() => {
+              const d = selectedNode.data as AbTestData;
+              const setSplits = (splits: AbTestData["splits"]) => updateNodeData(selectedNode.id, { splits });
+              const addVariant = () => {
+                const nextLabel = String.fromCharCode(65 + d.splits.length);
+                const equal = Math.floor(100 / (d.splits.length + 1));
+                const splits = [...d.splits.map((s) => ({ ...s, weight: equal })), { label: nextLabel, weight: 100 - equal * d.splits.length }];
+                setSplits(splits);
+              };
+              const distributeEqually = () => {
+                const equal = Math.floor(100 / d.splits.length);
+                const rest = 100 - equal * d.splits.length;
+                setSplits(d.splits.map((s, i) => ({ ...s, weight: equal + (i === 0 ? rest : 0) })));
+              };
+              return (
+                <div className="space-y-5">
+                  <div>
+                    <Label className="text-xs font-semibold">Nome do Teste</Label>
+                    <Input
+                      value={d.label}
+                      onChange={(e) => updateNodeData(selectedNode.id, { label: e.target.value })}
+                      className="mt-2"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-xs font-semibold">Tipo de Teste</Label>
+                    <Select
+                      value={d.subtitle === "Teste de checkout" ? "checkout" : "pages"}
+                      onValueChange={(v) =>
+                        updateNodeData(selectedNode.id, {
+                          subtitle: v === "checkout" ? "Teste de checkout" : "Divide tráfego",
+                        })
+                      }
+                    >
+                      <SelectTrigger className="mt-2">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pages">Teste de Páginas</SelectItem>
+                        <SelectItem value="checkout">Teste de Checkouts</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-semibold">Variantes</Label>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-violet-300 hover:text-violet-200 hover:bg-violet-500/10"
+                        onClick={addVariant}
+                      >
+                        + Adicionar
+                      </Button>
                     </div>
-                  ))}
+                    <div className="space-y-2">
+                      {d.splits.map((s, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <div className="h-9 w-9 rounded-md bg-violet-500/15 border border-violet-500/30 flex items-center justify-center text-sm font-bold text-violet-200 shrink-0">
+                            {s.label}
+                          </div>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={100}
+                            value={s.weight}
+                            onChange={(e) => {
+                              const splits = [...d.splits];
+                              splits[i] = { ...splits[i], weight: Number(e.target.value) || 0 };
+                              setSplits(splits);
+                            }}
+                            className="h-9 flex-1"
+                          />
+                          <span className="text-sm text-muted-foreground w-4">%</span>
+                          {d.splits.length > 2 && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-red-400"
+                              onClick={() => setSplits(d.splits.filter((_, idx) => idx !== i))}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <Button variant="outline" className="w-full" onClick={distributeEqually}>
+                    Distribuir pesos igualmente
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    className="w-full border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20 hover:text-red-200"
+                    onClick={() => deleteNode(selectedNode.id)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" /> Excluir Teste
+                  </Button>
                 </div>
-                <Button variant="outline" size="sm" className="w-full text-red-400" onClick={() => deleteNode(selectedNode.id)}>
-                  <Trash2 className="h-3 w-3 mr-2" /> Remover nó
-                </Button>
-              </div>
-            )}
+              );
+            })()}
 
             {selectedNode.type === "page" && (
               <div className="space-y-3">
