@@ -83,6 +83,8 @@ function NodeShell({
   children,
   inHandle = true,
   outHandle = true,
+  nodeId,
+  onDelete,
 }: {
   color: string;
   icon: React.ReactNode;
@@ -91,12 +93,22 @@ function NodeShell({
   children?: React.ReactNode;
   inHandle?: boolean;
   outHandle?: boolean;
+  nodeId?: string;
+  onDelete?: (id: string) => void;
 }) {
   return (
     <div
-      className="rounded-xl bg-[#0d0f15]/95 backdrop-blur-sm shadow-xl min-w-[220px] max-w-[260px]"
+      className="rounded-xl bg-[#0d0f15]/95 backdrop-blur-sm shadow-xl min-w-[220px] max-w-[260px] relative group"
       style={{ border: `1.5px solid ${color}`, boxShadow: `0 0 0 1px ${color}22, 0 8px 24px ${color}33` }}
     >
+      {nodeId && nodeId !== "config" && onDelete && (
+        <button 
+          onClick={(e) => { e.stopPropagation(); onDelete(nodeId); }}
+          className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-600 z-50"
+        >
+          <X className="h-3 w-3" />
+        </button>
+      )}
       {inHandle && (
         <Handle type="target" position={Position.Left} style={{ background: color, width: 10, height: 10, border: "2px solid #0d0f15" }} />
       )}
@@ -149,9 +161,22 @@ function ConfigNode({ data }: NodeProps<Node<ConfigData, "config">>) {
   );
 }
 
-function AbTestNode({ data }: NodeProps<Node<AbTestData, "abtest">>) {
+function AbTestNode({ id, data }: NodeProps<Node<AbTestData, "abtest">>) {
+  const reactFlow = useReactFlow();
   return (
-    <NodeShell color="#a855f7" icon={<BarChart3 className="h-4 w-4" />} title={data.label} subtitle={data.subtitle}>
+    <NodeShell 
+      color="#a855f7" 
+      icon={<BarChart3 className="h-4 w-4" />} 
+      title={data.label} 
+      subtitle={data.subtitle}
+      nodeId={id}
+      onDelete={(nodeId) => {
+        const ns = reactFlow.getNodes();
+        const es = reactFlow.getEdges();
+        reactFlow.setNodes(ns.filter(n => n.id !== nodeId));
+        reactFlow.setEdges(es.filter(e => e.source !== nodeId && e.target !== nodeId));
+      }}
+    >
       {data.splits.map((s, i) => (
         <div key={i} className="flex items-center justify-between text-xs px-2 py-1 rounded bg-muted/30">
           <span className="font-semibold">{s.label}</span>
@@ -162,10 +187,23 @@ function AbTestNode({ data }: NodeProps<Node<AbTestData, "abtest">>) {
   );
 }
 
-function PageNode({ data }: NodeProps<Node<PageData, "page">>) {
+function PageNode({ id, data }: NodeProps<Node<PageData, "page">>) {
+  const reactFlow = useReactFlow();
   const hasUrl = !!data.url?.trim();
   return (
-    <NodeShell color="#10b981" icon={<FileText className="h-4 w-4" />} title={data.label} subtitle={data.subtitle}>
+    <NodeShell 
+      color="#10b981" 
+      icon={<FileText className="h-4 w-4" />} 
+      title={data.label} 
+      subtitle={data.subtitle}
+      nodeId={id}
+      onDelete={(nodeId) => {
+        const ns = reactFlow.getNodes();
+        const es = reactFlow.getEdges();
+        reactFlow.setNodes(ns.filter(n => n.id !== nodeId));
+        reactFlow.setEdges(es.filter(e => e.source !== nodeId && e.target !== nodeId));
+      }}
+    >
       {data.stats && (
         <div className="grid grid-cols-2 gap-1.5 mb-2">
           <div className="flex flex-col text-[10px] px-2 py-1 rounded bg-white/5 border border-white/5">
@@ -201,9 +239,22 @@ function PageNode({ data }: NodeProps<Node<PageData, "page">>) {
   );
 }
 
-function CheckoutNode({ data }: NodeProps<Node<CheckoutData, "checkout">>) {
+function CheckoutNode({ id, data }: NodeProps<Node<CheckoutData, "checkout">>) {
+  const reactFlow = useReactFlow();
   return (
-    <NodeShell color="#f97316" icon={<ShoppingCart className="h-4 w-4" />} title={data.label} subtitle={data.subtitle}>
+    <NodeShell 
+      color="#f97316" 
+      icon={<ShoppingCart className="h-4 w-4" />} 
+      title={data.label} 
+      subtitle={data.subtitle}
+      nodeId={id}
+      onDelete={(nodeId) => {
+        const ns = reactFlow.getNodes();
+        const es = reactFlow.getEdges();
+        reactFlow.setNodes(ns.filter(n => n.id !== nodeId));
+        reactFlow.setEdges(es.filter(e => e.source !== nodeId && e.target !== nodeId));
+      }}
+    >
       {data.stats && (
         <div className="grid grid-cols-2 gap-1.5 mb-2">
           <div className="flex flex-col text-[10px] px-2 py-1 rounded bg-white/5 border border-white/5">
