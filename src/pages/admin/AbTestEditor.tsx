@@ -170,6 +170,20 @@ function PageNode({ data }: NodeProps<Node<PageData, "page">>) {
   const hasUrl = !!data.url?.trim();
   return (
     <NodeShell color="#10b981" icon={<FileText className="h-4 w-4" />} title={data.label} subtitle={data.subtitle}>
+      {data.stats && (
+        <div className="grid grid-cols-2 gap-1.5 mb-2">
+          <div className="flex flex-col text-[10px] px-2 py-1 rounded bg-white/5 border border-white/5">
+            <span className="text-muted-foreground">CTR</span>
+            <span className="font-bold text-emerald-400">
+              {data.stats.impressions > 0 ? ((data.stats.clicks / data.stats.impressions) * 100).toFixed(1) : 0}%
+            </span>
+          </div>
+          <div className="flex flex-col text-[10px] px-2 py-1 rounded bg-white/5 border border-white/5">
+            <span className="text-muted-foreground">Cliques</span>
+            <span className="font-bold">{data.stats.clicks}</span>
+          </div>
+        </div>
+      )}
       <div
         className={`flex items-center gap-1.5 text-[11px] px-2 py-1.5 rounded border truncate ${
           hasUrl ? "text-emerald-300 bg-emerald-500/10 border-emerald-500/30" : "text-muted-foreground bg-muted/40 border-border/40"
