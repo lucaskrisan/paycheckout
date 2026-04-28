@@ -714,6 +714,7 @@ function EditorInner() {
           label,
           sort_order: i,
           mirror_pixel_id: page?.data?.mirrorPixelId ?? null,
+          paused: !!page?.data?.paused,
         };
         const found = existing.find((e) => e.sort_order === i);
         if (found) {
