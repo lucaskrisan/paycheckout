@@ -13,7 +13,7 @@ import SmartAlertsPanel from "./tracking/SmartAlertsPanel";
 import EventFeedCard from "./tracking/EventFeedCard";
 import EventsPerMin from "./tracking/EventsPerMin";
 import LiveFunnel from "./tracking/LiveFunnel";
-import ConversionHeatmap from "./tracking/ConversionHeatmap";
+
 import PulseChart from "./tracking/PulseChart";
 import { ninaToast, ninaPurchaseToast } from "./tracking/NinaToast";
 import { playNotificationSound } from "@/lib/notificationSounds";
@@ -503,11 +503,10 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
           </div>
         </section>
 
-        {/* ═══ SIDEBAR (5/12) — Pulso + Funil + Heatmap ═══ */}
+        {/* ═══ SIDEBAR (5/12) — Pulso + Funil ═══ */}
         <aside className="lg:col-span-5 flex flex-col gap-4">
           <PulseChart data={chartData} period={period} truncated={events.length >= 500} />
           <LiveFunnel eventCounts={eventCounts} />
-          <ConversionHeatmap userId={userId} filterProduct={filterProduct} />
         </aside>
       </div>
 
