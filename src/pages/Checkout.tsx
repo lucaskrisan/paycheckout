@@ -419,8 +419,36 @@ const Checkout = () => {
         navigate(`/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product.id}${data.order_id ? `&order_id=${data.order_id}` : ''}${product.delivery_method ? `&delivery=${product.delivery_method}` : ""}&lang=en`);
       } else if (paymentMethod === "pix") {
         const customerState = getStateFromPhone(customer.phone);
-        const { data, error } = await supabase.functions.invoke("create-pix-payment", {
-          body: { amount: finalAmount, product_id: product.id, config_id: requestedConfigId || null, coupon_id: coupon?.id || null, bump_product_ids: bumpProductIds, checkout_url: window.location.href, event_source_url: eventSourceUrl, utms, customer_state: customerState, geo: geoPayload, customer: { name: customer.name, email: customer.email, cpf: customer.cpf, phone: customer.phone } },
+        
+        // Verifica qual gateway o produtor tem ativo para PIX
+        const { data: activeGateways } = await supabase
+          .from('payment_gateways')
+          .select('provider')
+          .eq('user_id', product.user_id)
+          .eq('active', true);
+
+        let functionName = "create-pix-payment"; // Default Pagarme
+        if (activeGateways?.some(g => g.provider === 'mercadopago')) {
+          functionName = "create-mercadopago-payment";
+        } else if (activeGateways?.some(g => g.provider === 'asaas')) {
+          functionName = "create-asaas-payment";
+        }
+
+        const { data, error } = await supabase.functions.invoke(functionName, {
+          body: { 
+            amount: finalAmount, 
+            product_id: product.id, 
+            config_id: requestedConfigId || null, 
+            coupon_id: coupon?.id || null, 
+            bump_product_ids: bumpProductIds, 
+            checkout_url: window.location.href, 
+            event_source_url: eventSourceUrl, 
+            utms, 
+            customer_state: customerState, 
+            geo: geoPayload, 
+            payment_method: 'pix',
+            customer: { name: customer.name, email: customer.email, cpf: customer.cpf, phone: customer.phone } 
+          },
         });
         if (error) {
           let msg = "Falha ao gerar o PIX";
