@@ -272,7 +272,7 @@ function EditorInner() {
   const reactFlow = useReactFlow();
   const wrapperRef = useRef<HTMLDivElement | null>(null);
 
-  const [testId, setTestId] = useState<string | null>(routeId ?? null);
+  const [testId, setTestId] = useState<string | null>(routeId && routeId !== "new" ? routeId : null);
   const [name, setName] = useState("Novo Teste A/B");
   const [autoWinner, setAutoWinner] = useState(true);
   const [stickyDays, setStickyDays] = useState(30);
@@ -288,7 +288,7 @@ function EditorInner() {
   // Load existing test if editing
   const { data: existing, isLoading } = useQuery({
     queryKey: ["ab_test_full", testId],
-    enabled: !!testId,
+    enabled: !!testId && testId !== "new",
     queryFn: async () => {
       const { data, error } = await supabase.from("ab_tests" as any).select("*").eq("id", testId).maybeSingle();
       if (error) throw error;
@@ -296,24 +296,6 @@ function EditorInner() {
     },
   });
 
-  // Loading Skeleton
-  if (isLoading) {
-    return (
-      <div className="h-screen bg-[#0d0f15] flex flex-col items-center justify-center p-8 space-y-6">
-        <div className="flex items-center justify-between w-full max-w-7xl px-4">
-          <div className="flex items-center gap-4">
-            <div className="h-8 w-8 rounded bg-white/5 animate-pulse" />
-            <div className="h-6 w-48 bg-white/5 animate-pulse rounded" />
-          </div>
-          <div className="flex gap-2">
-            <div className="h-9 w-24 bg-white/5 animate-pulse rounded" />
-            <div className="h-9 w-32 bg-primary/20 animate-pulse rounded" />
-          </div>
-        </div>
-        <div className="flex-1 w-full max-w-7xl bg-white/5 animate-pulse rounded-xl" />
-      </div>
-    );
-  }
 
   useEffect(() => {
     if (!existing) return;
@@ -481,7 +463,9 @@ function EditorInner() {
 
       const pageNodes = nodes.filter((n) => n.type === "page") as Node<PageData, "page">[];
       const checkoutNodes = nodes.filter((n) => n.type === "checkout") as Node<CheckoutData, "checkout">[];
-      const variantSlots = Math.max(pageNodes.length, checkoutNodes.length, 2);
+      
+      // Variants are defined by Page nodes. If no page nodes, we'll create at least 2 default ones.
+      const variantSlots = Math.max(pageNodes.length, 2);
 
       const { data: existingVars } = await supabase.from("ab_test_variants" as any).select("id,sort_order").eq("test_id", id);
       const existing = ((existingVars ?? []) as unknown) as { id: string; sort_order: number }[];
@@ -489,10 +473,28 @@ function EditorInner() {
       for (let i = 0; i < variantSlots; i++) {
         const label = String.fromCharCode(65 + i);
         const page = pageNodes[i];
+        
+        // Find if this page is connected to a checkout
+        let checkoutUrl = null;
+        if (page) {
+          const connectedEdge = edges.find(e => e.source === page.id);
+          if (connectedEdge) {
+            const target = nodes.find(n => n.id === connectedEdge.target);
+            if (target && target.type === "checkout") {
+              const d = target.data as CheckoutData;
+              if (d.productId) {
+                // Construct Panttera checkout URL
+                checkoutUrl = `https://checkout.panttera.com.br/pay/${d.productId}`;
+                if (d.offerId) checkoutUrl += `?offer=${d.offerId}`;
+              }
+            }
+          }
+        }
+
         const payload = {
           name: page?.data?.label ?? `Variante ${label}`,
           page_url: page?.data?.url ?? null,
-          checkout_url: null,
+          checkout_url: checkoutUrl,
           weight: Math.round(100 / variantSlots),
           label,
           sort_order: i,
@@ -513,11 +515,11 @@ function EditorInner() {
       return id!;
     },
     onSuccess: (id) => {
-      const isFirstSave = !routeId && !testId;
+      const isFirstSave = (!routeId || routeId === "new") && !testId;
       toast.success(isFirstSave ? "Teste A/B criado com sucesso!" : "Teste salvo");
       qc.invalidateQueries({ queryKey: ["ab_tests"] });
       qc.invalidateQueries({ queryKey: ["ab_test_full", id] });
-      if (!routeId) navigate(`/admin/ab-tests/${id}`, { replace: true });
+      if (!routeId || routeId === "new") navigate(`/admin/ab-tests/${id}`, { replace: true });
     },
     onError: (e: any) => toast.error(e?.message ?? "Erro ao salvar"),
   });
@@ -577,6 +579,24 @@ function EditorInner() {
     return { label: "Rascunho", cls: "bg-zinc-700/40 text-zinc-300 border-zinc-600/40" };
   })();
 
+  if (isLoading) {
+    return (
+      <div className="h-screen bg-[#0d0f15] flex flex-col items-center justify-center p-8 space-y-6">
+        <div className="flex items-center justify-between w-full max-w-7xl px-4">
+          <div className="flex items-center gap-4">
+            <div className="h-8 w-8 rounded bg-white/5 animate-pulse" />
+            <div className="h-6 w-48 bg-white/5 animate-pulse rounded" />
+          </div>
+          <div className="flex gap-2">
+            <div className="h-9 w-24 bg-white/5 animate-pulse rounded" />
+            <div className="h-9 w-32 bg-primary/20 animate-pulse rounded" />
+          </div>
+        </div>
+        <div className="flex-1 w-full max-w-7xl bg-white/5 animate-pulse rounded-xl" />
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen flex flex-col">
       {validationError && (
@@ -634,9 +654,65 @@ function EditorInner() {
             )}
             {selectedNode.type === "page" && (
               <div className="space-y-4">
-                <Label className="text-xs">URL da Página</Label>
-                <Input value={(selectedNode.data as PageData).url || ""} onChange={(e) => updateNodeData(selectedNode.id, { url: e.target.value })} />
-                <Button variant="outline" className="w-full text-red-400 border-red-400/30" onClick={() => deleteNode(selectedNode.id)}>Excluir</Button>
+                <Label className="text-xs font-medium uppercase text-muted-foreground tracking-widest">Configuração da Página</Label>
+                <div className="space-y-2">
+                  <Label className="text-xs">Nome da Variante</Label>
+                  <Input value={selectedNode.data.label} onChange={(e) => updateNodeData(selectedNode.id, { label: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">URL da Página (LP)</Label>
+                  <Input 
+                    placeholder="https://suapagina.com.br"
+                    value={(selectedNode.data as PageData).url || ""} 
+                    onChange={(e) => updateNodeData(selectedNode.id, { url: e.target.value })} 
+                  />
+                  <p className="text-[10px] text-muted-foreground italic">Insira a URL real da sua página de vendas.</p>
+                </div>
+                <Button variant="outline" className="w-full text-red-400 border-red-400/30 hover:bg-red-500/10" onClick={() => deleteNode(selectedNode.id)}>
+                  <Trash2 className="h-4 w-4 mr-2" /> Excluir Página
+                </Button>
+              </div>
+            )}
+            {selectedNode.type === "checkout" && (
+              <div className="space-y-4">
+                <Label className="text-xs font-medium uppercase text-muted-foreground tracking-widest">Configuração do Checkout</Label>
+                <div className="space-y-2">
+                  <Label className="text-xs">Produto / Oferta</Label>
+                  <Select 
+                    value={(selectedNode.data as CheckoutData).productId || ""} 
+                    onValueChange={(v) => updateNodeData(selectedNode.id, { productId: v })}
+                  >
+                    <SelectTrigger className="bg-muted/40 border-border/40">
+                      <SelectValue placeholder="Selecione um produto" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {products.map((p: any) => (
+                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                      ))}
+                      {products.length === 0 && <div className="p-2 text-xs text-muted-foreground text-center">Nenhum produto ativo</div>}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Design / Template</Label>
+                  <Select 
+                    value={(selectedNode.data as CheckoutData).templateId || ""} 
+                    onValueChange={(v) => updateNodeData(selectedNode.id, { templateId: v })}
+                  >
+                    <SelectTrigger className="bg-muted/40 border-border/40">
+                      <SelectValue placeholder="Design Padrão" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="default">Design Padrão Pantera</SelectItem>
+                      {templates.map((t: any) => (
+                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button variant="outline" className="w-full text-red-400 border-red-400/30 hover:bg-red-500/10" onClick={() => deleteNode(selectedNode.id)}>
+                  <Trash2 className="h-4 w-4 mr-2" /> Excluir Checkout
+                </Button>
               </div>
             )}
           </aside>
