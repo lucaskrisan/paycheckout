@@ -909,8 +909,9 @@ function EditorInner() {
                         <span className="text-xs text-muted-foreground">%</span>
                       </div>
                     ))}
-                  </div>
-                </div>
+      </div>
+      <AbTestTutorial open={showTutorial} onOpenChange={setShowTutorial} />
+    </div>
                 <Button variant="outline" className="w-full text-red-400 border-red-400/30 hover:bg-red-500/10" onClick={() => deleteNode(selectedNode.id)}>
                   <Trash2 className="h-4 w-4 mr-2" /> Excluir Teste A/B
                 </Button>
