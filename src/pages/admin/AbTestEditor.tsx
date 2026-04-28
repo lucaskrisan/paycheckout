@@ -385,6 +385,58 @@ function EditorInner() {
       return data ?? [];
     },
   });
+  
+  const { data: mirrorPixels = [] } = useQuery({
+    queryKey: ["mirror_pixels_for_ab"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("mirror_pixels")
+        .select("id, name, pixel_id")
+        .eq("user_id", user.id);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // Fetch full stats for the test to update node data
+  const { data: stats } = useQuery({
+    queryKey: ["ab_test_stats", testId],
+    enabled: !!testId,
+    refetchInterval: 30000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ab_test_variants")
+        .select("label, impressions, clicks, sales, revenue, page_url, checkout_url")
+        .eq("test_id", testId);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  useEffect(() => {
+    if (!stats || stats.length === 0) return;
+    setNodes((ns) =>
+      ns.map((n) => {
+        if (n.type === "page") {
+          const s = stats.find(st => st.page_url === n.data.url && st.label === n.data.label);
+          if (s) return { ...n, data: { ...n.data, stats: { impressions: Number(s.impressions), clicks: Number(s.clicks), sales: Number(s.sales), revenue: Number(s.revenue) } } };
+        }
+        if (n.type === "checkout") {
+          const s = stats.find(st => st.checkout_url && st.checkout_url.includes(n.data.productId || ""));
+          if (s) return { ...n, data: { ...n.data, stats: { impressions: Number(s.impressions), clicks: Number(s.clicks), sales: Number(s.sales), revenue: Number(s.revenue) } } };
+        }
+        if (n.type === "config") {
+          const totalVisits = stats.reduce((acc, curr) => acc + Number(curr.impressions), 0);
+          const totalSales = stats.reduce((acc, curr) => acc + Number(curr.sales), 0);
+          const totalRevenue = stats.reduce((acc, curr) => acc + Number(curr.revenue), 0);
+          return { ...n, data: { ...n.data, impressions: totalVisits, sales: totalSales, revenue: totalRevenue } };
+        }
+        return n;
+      })
+    );
+  }, [stats, setNodes]);
 
   // Drag from palette → drop on canvas
   const onDragOver = useCallback((e: DragEvent) => {
