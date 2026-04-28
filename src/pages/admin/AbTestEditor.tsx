@@ -620,6 +620,7 @@ function EditorInner() {
           .update({
             name: name.trim() || "Novo Teste A/B",
             auto_winner_enabled: autoWinner,
+            auto_winner_min_clicks: minClicks,
             sticky_days: stickyDays,
             graph,
             entry_url: entryUrl,
