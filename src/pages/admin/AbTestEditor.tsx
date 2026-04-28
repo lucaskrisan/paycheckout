@@ -130,9 +130,15 @@ function ConfigNode({ data }: NodeProps<Node<ConfigData, "config">>) {
       subtitle={data.testName}
       inHandle={false}
     >
-      <div className="flex items-center justify-between text-xs px-2 py-1.5 rounded bg-muted/40">
-        <span className="text-muted-foreground">Acessos</span>
-        <span className="font-bold">{data.visits ?? 0}</span>
+      <div className="grid grid-cols-2 gap-1.5 mb-2">
+        <div className="flex flex-col text-[10px] px-2 py-1 rounded bg-muted/40 border border-border/20">
+          <span className="text-muted-foreground">Vistas</span>
+          <span className="font-bold">{data.impressions ?? 0}</span>
+        </div>
+        <div className="flex flex-col text-[10px] px-2 py-1 rounded bg-muted/40 border border-border/20">
+          <span className="text-muted-foreground">Vendas</span>
+          <span className="font-bold text-emerald-400">{data.sales ?? 0}</span>
+        </div>
       </div>
       {!data.entryUrl ? (
         <div className="flex items-center gap-1.5 text-[11px] text-amber-300 px-2 py-1.5 rounded bg-amber-500/10 border border-amber-500/30">
