@@ -357,17 +357,21 @@ const Tracking = () => {
         </div>
       )}
 
-      {/* ── Onboarding Guide ── */}
-      <TrackingOnboardingGuide hasPixels={totalPixels > 0} />
+      {/* ── Onboarding Guide (apenas quando NÃO há pixels ainda) ── */}
+      {totalPixels === 0 && <TrackingOnboardingGuide hasPixels={false} />}
 
       {/* ── Tabs ── */}
-      <Tabs defaultValue="audit" className="space-y-4">
+      <Tabs defaultValue="events" className="space-y-4">
         <TabsList className="bg-slate-800/60 border border-slate-700/30 p-1 gap-1">
+          <TabsTrigger value="events" className="text-xs gap-1.5 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500/20 data-[state=active]:to-cyan-500/20 data-[state=active]:text-white data-[state=active]:border data-[state=active]:border-emerald-500/30 text-slate-400">
+            <span className="relative flex items-center justify-center w-2 h-2">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+            </span>
+            Ao Vivo
+          </TabsTrigger>
           <TabsTrigger value="audit" className="text-xs gap-1.5 data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">
             <Search className="w-3.5 h-3.5" /> Auditoria
-          </TabsTrigger>
-          <TabsTrigger value="events" className="text-xs gap-1.5 data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">
-            <Radio className="w-3.5 h-3.5" /> Eventos
           </TabsTrigger>
           <TabsTrigger value="config" className="text-xs gap-1.5 data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">
             <Settings2 className="w-3.5 h-3.5" /> Configuração
