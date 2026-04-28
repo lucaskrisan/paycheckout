@@ -197,7 +197,7 @@ export default function AbTests() {
             <Button variant="outline" size="sm" onClick={() => setScriptOpen(true)}>
               <Code2 className="w-4 h-4 mr-2" /> Script
             </Button>
-            <Button onClick={() => createTest.mutate()} disabled={createTest.isPending}>
+            <Button onClick={() => navigate("/admin/ab-tests/new")}>
               <Plus className="w-4 h-4 mr-2" /> Novo Teste
             </Button>
           </div>
