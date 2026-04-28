@@ -428,34 +428,32 @@ const WebhookDetailCard = ({
   isInstalled: boolean;
 }) => {
   return (
-    <div className="rounded-md bg-muted/20 border border-border/30 overflow-hidden">
+    <div className={`rounded-xl border transition-all duration-300 ${isOpen ? 'bg-white/5 border-white/20' : 'bg-white/[0.02] border-white/10 hover:border-white/20'}`}>
       <button
         onClick={onToggle}
-        className="w-full px-3 py-2.5 flex items-center gap-3 hover:bg-muted/30 transition-colors"
+        className="w-full px-5 py-4 flex items-center gap-4 hover:bg-white/5 transition-colors"
       >
         <div
-          className="w-7 h-7 rounded-md flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+          className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-lg"
           style={{ backgroundColor: config.color }}
         >
           {config.initials}
         </div>
-        <span className="text-xs font-medium text-foreground text-left flex-1">
-          Como configurar o {config.label}
+        <span className="text-sm font-bold text-foreground text-left flex-1">
+          Configuração: {config.label}
         </span>
         {isInstalled && (
-          <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-green-500/50 text-green-400">
-            Instalado
+          <Badge variant="outline" className="text-[10px] uppercase tracking-wider px-2 py-0 border-emerald-500/50 text-emerald-400 bg-emerald-500/5">
+            ✓ Instalado
           </Badge>
         )}
-        {isOpen ? (
-          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-        ) : (
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
-        )}
+        <div className={`p-1.5 rounded-full transition-all ${isOpen ? 'rotate-180 bg-white/10' : ''}`}>
+          <ChevronDown className="w-4 h-4 text-muted-foreground" />
+        </div>
       </button>
 
       {isOpen && (
-        <div className="px-3 pb-4 space-y-4">
+        <div className="px-5 pb-6 space-y-6 animate-in slide-in-from-top-2 duration-300">
           {/* Webhook URL - prominent */}
           <div className="rounded-lg bg-background border border-border overflow-hidden shadow-sm">
             <div className="bg-primary/5 px-4 py-2 border-b border-border flex items-center justify-between">
