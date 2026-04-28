@@ -14,6 +14,230 @@ export type Database = {
   }
   public: {
     Tables: {
+      ab_test_assignments: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          test_id: string
+          variant_id: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          test_id: string
+          variant_id: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          test_id?: string
+          variant_id?: string
+          visitor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ab_test_assignments_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "ab_tests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ab_test_assignments_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "ab_test_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ab_test_events: {
+        Row: {
+          amount: number | null
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          order_id: string | null
+          test_id: string
+          variant_id: string
+          visitor_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          order_id?: string | null
+          test_id: string
+          variant_id: string
+          visitor_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          order_id?: string | null
+          test_id?: string
+          variant_id?: string
+          visitor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ab_test_events_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "ab_tests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ab_test_events_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "ab_test_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ab_test_variants: {
+        Row: {
+          checkout_url: string | null
+          clicks: number
+          created_at: string
+          id: string
+          impressions: number
+          label: string
+          mirror_pixel_id: string | null
+          name: string
+          page_url: string | null
+          revenue: number
+          sales: number
+          sort_order: number
+          test_id: string
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          checkout_url?: string | null
+          clicks?: number
+          created_at?: string
+          id?: string
+          impressions?: number
+          label: string
+          mirror_pixel_id?: string | null
+          name?: string
+          page_url?: string | null
+          revenue?: number
+          sales?: number
+          sort_order?: number
+          test_id: string
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          checkout_url?: string | null
+          clicks?: number
+          created_at?: string
+          id?: string
+          impressions?: number
+          label?: string
+          mirror_pixel_id?: string | null
+          name?: string
+          page_url?: string | null
+          revenue?: number
+          sales?: number
+          sort_order?: number
+          test_id?: string
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ab_test_variants_mirror_pixel_id_fkey"
+            columns: ["mirror_pixel_id"]
+            isOneToOne: false
+            referencedRelation: "mirror_pixels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ab_test_variants_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "ab_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ab_tests: {
+        Row: {
+          auto_winner_enabled: boolean
+          auto_winner_min_clicks: number
+          auto_winner_min_uplift: number
+          created_at: string
+          ended_at: string | null
+          id: string
+          name: string
+          slug: string
+          started_at: string | null
+          status: string
+          sticky_days: number
+          traffic_split: string
+          updated_at: string
+          user_id: string
+          winner_variant_id: string | null
+        }
+        Insert: {
+          auto_winner_enabled?: boolean
+          auto_winner_min_clicks?: number
+          auto_winner_min_uplift?: number
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          name?: string
+          slug: string
+          started_at?: string | null
+          status?: string
+          sticky_days?: number
+          traffic_split?: string
+          updated_at?: string
+          user_id: string
+          winner_variant_id?: string | null
+        }
+        Update: {
+          auto_winner_enabled?: boolean
+          auto_winner_min_clicks?: number
+          auto_winner_min_uplift?: number
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          name?: string
+          slug?: string
+          started_at?: string | null
+          status?: string
+          sticky_days?: number
+          traffic_split?: string
+          updated_at?: string
+          user_id?: string
+          winner_variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ab_tests_winner_variant_fk"
+            columns: ["winner_variant_id"]
+            isOneToOne: false
+            referencedRelation: "ab_test_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       abandoned_carts: {
         Row: {
           checkout_step: string | null
@@ -2758,6 +2982,19 @@ export type Database = {
       }
     }
     Functions: {
+      ab_evaluate_winner: { Args: { p_test_id: string }; Returns: string }
+      ab_pick_variant: {
+        Args: {
+          p_link_type?: string
+          p_test_slug: string
+          p_visitor_id: string
+        }
+        Returns: Json
+      }
+      ab_record_conversion: {
+        Args: { p_amount: number; p_order_id: string; p_visitor_id: string }
+        Returns: boolean
+      }
       add_billing_credit: {
         Args: { p_amount: number; p_description: string; p_user_id: string }
         Returns: undefined
