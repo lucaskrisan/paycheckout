@@ -747,9 +747,34 @@ function EditorInner() {
         </div>
       </header>
       <div className="flex-1 flex overflow-hidden">
-        <aside className="w-60 border-r border-border/60 bg-background/60 p-4 space-y-4">
-          <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Paleta</p>
-          {PALETTE.map((p) => <PaletteItem key={p.kind} {...p} />)}
+        <aside className="w-60 border-r border-border/60 bg-background/60 p-4 flex flex-col gap-6">
+          <div className="space-y-4">
+            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Paleta</p>
+            {PALETTE.map((p) => <PaletteItem key={p.kind} {...p} />)}
+          </div>
+
+          <div className="space-y-4 pt-6 border-t border-border/40">
+            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Resumo Geral</p>
+            <div className="grid grid-cols-1 gap-2">
+              <div className="p-3 rounded-lg bg-white/5 border border-border/20">
+                <p className="text-[10px] text-muted-foreground uppercase">Visitantes</p>
+                <p className="text-xl font-bold">{(nodes.find(n => n.id === 'config')?.data as ConfigData)?.impressions ?? 0}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+                <p className="text-[10px] text-emerald-400/70 uppercase font-bold tracking-tight">Vendas Totais</p>
+                <p className="text-xl font-bold text-emerald-400">{(nodes.find(n => n.id === 'config')?.data as ConfigData)?.sales ?? 0}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-violet-500/5 border border-violet-500/20">
+                <p className="text-[10px] text-violet-400/70 uppercase font-bold tracking-tight">Conversão</p>
+                <p className="text-xl font-bold text-violet-400">
+                  {(() => {
+                    const c = nodes.find(n => n.id === 'config')?.data as ConfigData;
+                    return c?.impressions > 0 ? ((c.sales / c.impressions) * 100).toFixed(1) : "0.0";
+                  })()}%
+                </p>
+              </div>
+            </div>
+          </div>
         </aside>
         <div ref={wrapperRef} className="flex-1 relative bg-[#0a0c12]">
           <ReactFlow 
