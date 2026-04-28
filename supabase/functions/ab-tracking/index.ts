@@ -233,7 +233,7 @@ Deno.serve(async (req) => {
       const eventType = event === "impression" ? "impression" : (event === "click" ? "click" : "sale");
       
       const { error: eventErr } = await supabase.from("ab_test_events").insert({
-        test_id: test.id,
+        test_id: testId,
         variant_id: variantId,
         visitor_id: visitorId,
         event_type: eventType,
