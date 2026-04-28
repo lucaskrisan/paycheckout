@@ -863,6 +863,13 @@ function EditorInner() {
                   <Label className="text-xs">Vencedor automático</Label>
                   <Switch checked={autoWinner} onCheckedChange={setAutoWinner} />
                 </div>
+                {autoWinner && (
+                  <div className="space-y-2">
+                    <Label className="text-xs">Min. Cliques para Decisão</Label>
+                    <Input type="number" value={minClicks} onChange={(e) => setMinClicks(Number(e.target.value))} />
+                    <p className="text-[10px] text-muted-foreground italic">O teste precisa de pelo menos este número de cliques para escolher o vencedor.</p>
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label className="text-xs">Janela de Retenção (Dias)</Label>
                   <Input type="number" value={stickyDays} onChange={(e) => setStickyDays(Number(e.target.value))} />
