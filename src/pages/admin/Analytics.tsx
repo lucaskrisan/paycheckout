@@ -269,151 +269,106 @@ const Analytics = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <Card className="border-border bg-card">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-full bg-primary/10">
-              <TrendingUp className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Faturamento</p>
-              <p className="text-lg font-bold text-foreground">{fmt(totalRevenue)}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border bg-card">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-full bg-primary/10">
-              <ShoppingCart className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Vendas Aprovadas</p>
-              <p className="text-lg font-bold text-foreground">{paidOrders.length}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border bg-card">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-full bg-primary/10">
-              <Eye className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Visitantes</p>
-              <p className="text-lg font-bold text-foreground">{deviceData.uniqueVisitors}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border bg-card">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-full bg-primary/10">
-              <Activity className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Conversão</p>
-              <p className="text-lg font-bold text-foreground">
-                {deviceData.uniqueVisitors > 0
-                  ? ((paidOrders.length / deviceData.uniqueVisitors) * 100).toFixed(1)
-                  : "0"}%
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        {[
+          { label: "Faturamento", value: fmt(totalRevenue), icon: TrendingUp, color: "primary" },
+          { label: "Vendas", value: paidOrders.length, icon: ShoppingCart, color: "primary" },
+          { label: "Visitantes", value: deviceData.uniqueVisitors, icon: Eye, color: "primary" },
+          { label: "Conversão", value: `${deviceData.uniqueVisitors > 0 ? ((paidOrders.length / deviceData.uniqueVisitors) * 100).toFixed(1) : "0"}%`, icon: Activity, color: "primary" },
+        ].map((kpi, i) => (
+          <Card key={i} className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/50 transition-all shadow-sm">
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className={`p-3 rounded-xl bg-${kpi.color}/10`}>
+                <kpi.icon className={`w-5 h-5 text-${kpi.color}`} />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">{kpi.label}</p>
+                <p className="text-xl font-bold text-foreground">{kpi.value}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Abandonment KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <Card className="border-border bg-card">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-full bg-destructive/10">
-              <XCircle className="w-4 h-4 text-destructive" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Abandonos</p>
-              <p className="text-lg font-bold text-foreground">{cartMetrics.abandoned}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border bg-card">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-full bg-emerald-500/10">
-              <CheckCircle className="w-4 h-4 text-emerald-500" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Recuperados</p>
-              <p className="text-lg font-bold text-foreground">{cartMetrics.recovered}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border bg-card">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-full bg-primary/10">
-              <TrendingUp className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Taxa Recuperação</p>
-              <p className="text-lg font-bold text-foreground">{cartMetrics.recoveryRate}%</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border bg-card">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-full bg-yellow-500/10">
-              <AlertTriangle className="w-4 h-4 text-yellow-500" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Pendentes</p>
-              <p className="text-lg font-bold text-foreground">{pendingOrders.length}</p>
-              <p className="text-[10px] text-muted-foreground">{fmt(totalPending)}</p>
-            </div>
-          </CardContent>
-        </Card>
+        {[
+          { label: "Abandonos", value: cartMetrics.abandoned, icon: XCircle, color: "destructive" },
+          { label: "Recuperados", value: cartMetrics.recovered, icon: CheckCircle, color: "emerald-500" },
+          { label: "Taxa Recup.", value: `${cartMetrics.recoveryRate}%`, icon: TrendingUp, color: "primary" },
+          { label: "Pendentes", value: pendingOrders.length, icon: AlertTriangle, color: "yellow-500" },
+        ].map((kpi, i) => (
+          <Card key={i} className="bg-card/50 backdrop-blur-sm border-border/50 shadow-sm">
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className={`p-3 rounded-xl bg-${kpi.color}/10`}>
+                <kpi.icon className={`w-5 h-5 text-${kpi.color}`} />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">{kpi.label}</p>
+                <p className="text-xl font-bold text-foreground">{kpi.value}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Revenue Chart + Full Funnel */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Revenue Chart */}
-        <Card className="border-border bg-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-primary" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="col-span-1 lg:col-span-2 bg-card/50 backdrop-blur-sm border-border/50 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-primary" />
               Faturamento por dia
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[260px]">
+            <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={revenueByDay}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="name" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
-                  <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} axisLine={false} tickLine={false} />
                   <ReTooltip
-                    contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
-                    labelStyle={{ color: "hsl(var(--foreground))" }}
+                    contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)" }}
                     formatter={(value: number) => [fmt(value), "Receita"]}
                   />
-                  <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="total" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} barSize={40} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
 
-        {/* Full Conversion Funnel */}
-        <Card className="border-border bg-card">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
-              <ArrowDown className="w-4 h-4 text-primary" />
-              Funil Completo: Visitante → Aprovado
+        {/* Funnel */}
+        <Card className="col-span-1 bg-card/50 backdrop-blur-sm border-border/50 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <ArrowDown className="w-5 h-5 text-primary" />
+              Funil de Conversão
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {funnelData.map((step, i) => {
-                const Icon = step.icon;
-                const prevCount = i > 0 ? funnelData[i - 1].count : step.count;
-                const dropRate = prevCount > 0 && i > 0 ? ((1 - step.count / prevCount) * 100).toFixed(0) : null;
-                const convFromFirst = funnelData[0].count > 0 ? ((step.count / funnelData[0].count) * 100).toFixed(1) : "0";
-                return (
-                  <div key={step.key} className="space-y-1">
+          <CardContent className="space-y-6">
+            {funnelData.map((step, i) => {
+              const convFromFirst = funnelData[0].count > 0 ? ((step.count / funnelData[0].count) * 100).toFixed(1) : "0";
+              const width = funnelMax > 0 ? `${(step.count / funnelMax) * 100}%` : "0%";
+              return (
+                <div key={step.key} className="space-y-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="flex items-center gap-2 text-foreground font-medium">
+                      <step.icon className="w-4 h-4" style={{ color: step.color }} />
+                      {step.label}
+                    </span>
+                    <span className="font-bold text-primary">{step.count}</span>
+                  </div>
+                  <div className="h-2 w-full bg-secondary/50 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-500" style={{ width, backgroundColor: step.color }} />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">Conversão desde início: {convFromFirst}%</p>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Icon className="w-4 h-4" style={{ color: step.color }} />
