@@ -93,7 +93,7 @@ const TechnicalManual = () => {
 
 1.3 Modelo de Negócio
   Monetização via take-rate: taxa percentual (padrão 4.99%) + taxa fixa
-  (R$ 0,49) sobre cada venda aprovada. Créditos pré-pagos com tiers:
+  (R$ 0,99) sobre cada venda aprovada. Créditos pré-pagos com tiers:
   • Iron: R$ 5 (padrão)
   • Bronze: R$ 50
   • Silver: R$ 500
