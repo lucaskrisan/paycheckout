@@ -211,6 +211,31 @@ const ProducerBilling = () => {
         </Button>
       </div>
 
+      {/* ── Platform Fees Info ── */}
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-background to-background border border-primary/20 p-8 shadow-2xl group hover:border-primary/40 transition-all duration-500">
+        <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
+          <Zap className="w-48 h-48 text-primary" />
+        </div>
+        <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shrink-0 shadow-[0_0_30px_rgba(var(--primary),0.3)] transform group-hover:scale-110 transition-transform duration-500">
+            <Globe className="w-10 h-10 text-white" />
+          </div>
+          <div className="space-y-3 flex-1 text-center md:text-left">
+            <h3 className="text-2xl font-black text-foreground tracking-tight">Taxas da Plataforma</h3>
+            <p className="text-base text-muted-foreground leading-relaxed max-w-2xl font-medium">
+              Nossa taxa é transparente e focada no seu crescimento. Cobramos apenas <span className="text-primary font-bold">R$ 0,49 fixo + 3%</span> sobre cada venda aprovada. 
+              Sem mensalidades, sem custos ocultos e sem surpresas.
+            </p>
+          </div>
+          <Button variant="outline" className="border-primary/30 hover:bg-primary/10 hover:border-primary/60 px-6 h-12 rounded-xl font-bold transition-all" asChild>
+            <a href="https://ajuda.plataforma.com" target="_blank" rel="noreferrer">
+              Ver mais detalhes
+              <ExternalLink className="ml-2 w-4 h-4" />
+            </a>
+          </Button>
+        </div>
+      </section>
+
       {/* ── Summary Cards ── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Taxas a Pagar */}
