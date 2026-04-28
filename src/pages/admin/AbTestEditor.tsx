@@ -495,11 +495,11 @@ function EditorInner() {
       return id!;
     },
     onSuccess: (id) => {
-      const isFirstSave = !routeId && !testId;
+      const isFirstSave = (!routeId || routeId === "new") && !testId;
       toast.success(isFirstSave ? "Teste A/B criado com sucesso!" : "Teste salvo");
       qc.invalidateQueries({ queryKey: ["ab_tests"] });
       qc.invalidateQueries({ queryKey: ["ab_test_full", id] });
-      if (!routeId) navigate(`/admin/ab-tests/${id}`, { replace: true });
+      if (!routeId || routeId === "new") navigate(`/admin/ab-tests/${id}`, { replace: true });
     },
     onError: (e: any) => toast.error(e?.message ?? "Erro ao salvar"),
   });
