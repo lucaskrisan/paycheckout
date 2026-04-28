@@ -1018,6 +1018,14 @@ function EditorInner() {
               <div className="space-y-4">
                 <Label className="text-xs font-medium uppercase text-muted-foreground tracking-widest">Configuração do Checkout</Label>
                 <div className="space-y-2">
+                  <Label className="text-xs">Título / Label do Checkout</Label>
+                  <Input 
+                    value={selectedNode.data.label} 
+                    onChange={(e) => updateNodeData(selectedNode.id, { label: e.target.value })} 
+                  />
+                  <p className="text-[10px] text-muted-foreground italic">Ex: Checkout com Order Bump (R$ 67)</p>
+                </div>
+                <div className="space-y-2">
                   <Label className="text-xs">Produto Principal</Label>
                   <Select 
                     value={(selectedNode.data as CheckoutData).productId || ""} 
