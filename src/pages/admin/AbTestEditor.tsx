@@ -846,7 +846,7 @@ function EditorInner() {
                 <Button variant="outline" className="w-full text-red-400 border-red-400/30 hover:bg-red-500/10" onClick={() => deleteNode(selectedNode.id)}>
                   <Trash2 className="h-4 w-4 mr-2" /> Excluir Teste A/B
                 </Button>
-              </div>
+            )}
             {selectedNode.type === "page" && (
               <div className="space-y-4">
                 <div className="space-y-2">
