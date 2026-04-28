@@ -147,26 +147,61 @@ Deno.serve(async (req) => {
   // Handle event logging
   if (req.method === "POST") {
     try {
-      const { event, slug, visitorId, metadata } = await req.json();
+      const { event, slug: providedSlug, visitorId: providedVisitorId, metadata } = await req.json();
       
-      if (!slug || !visitorId) {
-        return new Response("Missing slug or visitorId", { status: 400, headers: corsHeaders });
-      }
-
       const supabase = createClient(
         Deno.env.get("SUPABASE_URL")!,
         Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
       );
 
-      // Find test and assignment to get the current variant
-      const { data: test } = await supabase
-        .from("ab_tests")
-        .select("id")
-        .eq("slug", slug)
-        .eq("status", "active")
-        .maybeSingle();
+      let slug = providedSlug;
+      let visitorId = providedVisitorId;
+      let testId = null;
 
-      if (!test) return new Response("Test not found or inactive", { status: 404, headers: corsHeaders });
+      if (!slug || !visitorId) {
+        // AUTO-DETECTION: Traffic arrived directly at the LP
+        // We find if there's an active test that includes this exact page_url
+        const pageUrl = new URL(metadata?.url || req.headers.get("referer") || "").origin + new URL(metadata?.url || req.headers.get("referer") || "").pathname;
+        
+        const { data: variantByUrl } = await supabase
+          .from("ab_test_variants")
+          .select("test_id, id, test:ab_tests(slug, status)")
+          .eq("page_url", pageUrl)
+          .eq("test:ab_tests.status", "active")
+          .limit(1)
+          .maybeSingle();
+
+        if (variantByUrl && (variantByUrl as any).test?.status === 'active') {
+          slug = (variantByUrl as any).test.slug;
+          testId = variantByUrl.test_id;
+          visitorId = providedVisitorId || crypto.randomUUID(); // Assign new ID if missing
+          
+          // Force assignment so it's sticky even if they refresh without the slug
+          await supabase.from("ab_test_assignments").upsert({
+            test_id: testId,
+            visitor_id: visitorId,
+            variant_id: variantByUrl.id,
+            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          }, { onConflict: 'test_id,visitor_id' });
+          
+          console.log(`[ab-tracking] Auto-assigned visitor ${visitorId} to test ${slug} (direct traffic)`);
+        } else {
+          return new Response("No active test for this URL", { status: 200, headers: corsHeaders });
+        }
+      }
+
+      // Find test to verify it's active (if not already found)
+      if (!testId) {
+        const { data: test } = await supabase
+          .from("ab_tests")
+          .select("id")
+          .eq("slug", slug)
+          .eq("status", "active")
+          .maybeSingle();
+
+        if (!test) return new Response("Test not found or inactive", { status: 404, headers: corsHeaders });
+        testId = test.id;
+      }
 
       const { data: variantData, error: variantErr } = await supabase
         .from("ab_test_assignments")
