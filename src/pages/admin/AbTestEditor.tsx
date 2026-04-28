@@ -275,6 +275,7 @@ function EditorInner() {
   const [stickyDays, setStickyDays] = useState(30);
   const [entryUrl, setEntryUrl] = useState("");
   const [slug, setSlug] = useState<string | null>(null);
+  const [status, setStatus] = useState<string>("draft");
 
   const initial = useMemo(() => buildInitialGraph("Novo Teste A/B"), []);
   const [nodes, setNodes, onNodesChange] = useNodesState<FlowNode>(initial.nodes);
