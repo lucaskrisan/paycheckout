@@ -48,7 +48,7 @@ import {
 
 type NodeKind = "config" | "abtest" | "page" | "checkout";
 
-type ConfigData = { kind: "config"; label: string; testName: string; entryUrl: string; visits: number; impressions?: number; sales?: number; revenue?: number };
+type ConfigData = { kind: "config"; label: string; testName: string; entryUrl: string; visits: number; stickyDays?: number; impressions?: number; sales?: number; revenue?: number };
 type AbTestData = { kind: "abtest"; label: string; subtitle: string; splits: { label: string; weight: number }[] };
 type PageData = { 
   kind: "page"; 
