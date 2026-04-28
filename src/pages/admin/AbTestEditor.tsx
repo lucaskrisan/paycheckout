@@ -815,9 +815,41 @@ function EditorInner() {
                 </div>
               </div>
             )}
+            {selectedNode.type === "abtest" && (
+              <div className="space-y-4">
+                <Label className="text-xs font-medium uppercase text-muted-foreground tracking-widest">Configuração do Teste</Label>
+                <div className="space-y-2">
+                  <Label className="text-xs">Título do Teste</Label>
+                  <Input value={selectedNode.data.label} onChange={(e) => updateNodeData(selectedNode.id, { label: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Distribuição de Tráfego</Label>
+                  <div className="space-y-2">
+                    {selectedNode.data.splits.map((s: any, i: number) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <Input value={s.label} className="w-12 h-8 text-center" readOnly />
+                        <Input 
+                          type="number" 
+                          value={s.weight} 
+                          onChange={(e) => {
+                            const newSplits = [...selectedNode.data.splits];
+                            newSplits[i] = { ...s, weight: Number(e.target.value) };
+                            updateNodeData(selectedNode.id, { splits: newSplits });
+                          }}
+                          className="flex-1 h-8"
+                        />
+                        <span className="text-xs text-muted-foreground">%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <Button variant="outline" className="w-full text-red-400 border-red-400/30 hover:bg-red-500/10" onClick={() => deleteNode(selectedNode.id)}>
+                  <Trash2 className="h-4 w-4 mr-2" /> Excluir Teste A/B
+                </Button>
+              </div>
+            )}
             {selectedNode.type === "page" && (
               <div className="space-y-4">
-                <Label className="text-xs font-medium uppercase text-muted-foreground tracking-widest">Configuração da Página</Label>
                 <div className="space-y-2">
                   <Label className="text-xs">Nome da Variante</Label>
                   <Input value={selectedNode.data.label} onChange={(e) => updateNodeData(selectedNode.id, { label: e.target.value })} />
