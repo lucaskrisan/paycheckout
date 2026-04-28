@@ -289,9 +289,7 @@ const IntegrationWebhookGuide = ({ installedProviders }: Props) => {
     toast.success("URL copiada para a área de transferência!");
   };
 
-  const relevantConfigs = hasAnyGateway
-    ? webhookConfigs.filter(w => installedProviders.includes(w.provider))
-    : webhookConfigs;
+  const relevantConfigs = webhookConfigs;
 
   return (
     <div className="rounded-xl bg-card/40 backdrop-blur-md border border-white/10 shadow-xl overflow-hidden mb-8 group/guide">
