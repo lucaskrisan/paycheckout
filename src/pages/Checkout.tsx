@@ -174,20 +174,20 @@ const Checkout = () => {
       else if ((productRes.data as any).moderation_status && (productRes.data as any).moderation_status !== "approved") { setNotFound(true); }
       else {
         const p = productRes.data as any;
-        const configPrice = (builderRes.data as any)?.price;
+        const configPrice = (builderLayoutData as any)?.price;
         if (configPrice != null && configPrice > 0) p.price = Number(configPrice);
         setProduct(p);
 
-        if (requestedConfigId && productId) {
+        if (targetConfigId && productId) {
           supabase.from("pixel_events").insert({
             product_id: productId,
             event_name: "ViewContent",
             source: "browser",
             visitor_id: localStorage.getItem("_vid") || null,
-            event_id: `view_${requestedConfigId}_${Date.now()}`,
+            event_id: `view_${targetConfigId}_${Date.now()}`,
             user_id: p.user_id,
-            metadata: { config_id: requestedConfigId }
-          }).catch(() => {});
+            metadata: { config_id: targetConfigId }
+          } as any).then(() => {}).catch(() => {});
         }
         if (p.is_subscription || p.currency === 'USD') setPaymentMethod("credit_card");
         if (p.user_id) {
