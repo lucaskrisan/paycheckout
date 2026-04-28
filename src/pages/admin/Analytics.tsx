@@ -46,7 +46,6 @@ const Analytics = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [pixelEvents, setPixelEvents] = useState<any[]>([]);
   const [abandonedCarts, setAbandonedCarts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState("30days");
 
   const getDateFrom = (p: string) => {
@@ -94,9 +93,6 @@ const Analytics = () => {
           eventsQuery,
           cartsQuery,
         ]);
-        setOrders(ordersRes.data || []);
-        setPixelEvents(eventsRes.data || []);
-        setAbandonedCarts(cartsRes.data || []);
         setOrders(ordersRes.data || []);
         setPixelEvents(eventsRes.data || []);
         setAbandonedCarts(cartsRes.data || []);
