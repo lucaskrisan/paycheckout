@@ -797,6 +797,24 @@ function EditorInner() {
                   />
                   <p className="text-[10px] text-muted-foreground italic">Insira a URL real da sua página de vendas.</p>
                 </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Pixel Espelho (Opcional)</Label>
+                  <Select 
+                    value={(selectedNode.data as PageData).mirrorPixelId || "none"} 
+                    onValueChange={(v) => updateNodeData(selectedNode.id, { mirrorPixelId: v === "none" ? null : v })}
+                  >
+                    <SelectTrigger className="bg-muted/40 border-border/40">
+                      <SelectValue placeholder="Nenhum pixel espelho" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Nenhum pixel espelho</SelectItem>
+                      {mirrorPixels.map((p: any) => (
+                        <SelectItem key={p.id} value={p.id}>{p.name} ({p.pixel_id})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] text-muted-foreground italic">Escolha um pixel espelho para segmentar o rastreamento desta variante.</p>
+                </div>
                 <Button variant="outline" className="w-full text-red-400 border-red-400/30 hover:bg-red-500/10" onClick={() => deleteNode(selectedNode.id)}>
                   <Trash2 className="h-4 w-4 mr-2" /> Excluir Página
                 </Button>
