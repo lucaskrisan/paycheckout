@@ -1336,6 +1336,51 @@ export type Database = {
           },
         ]
       }
+      mirror_pixels: {
+        Row: {
+          active: boolean
+          capi_token: string
+          created_at: string
+          event_source_url_override: string | null
+          fire_on_events: string[]
+          id: string
+          label: string
+          last_event_at: string | null
+          last_meta_response: Json | null
+          pixel_id: string
+          total_events_sent: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          capi_token: string
+          created_at?: string
+          event_source_url_override?: string | null
+          fire_on_events?: string[]
+          id?: string
+          label?: string
+          last_event_at?: string | null
+          last_meta_response?: Json | null
+          pixel_id: string
+          total_events_sent?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          capi_token?: string
+          created_at?: string
+          event_source_url_override?: string | null
+          fire_on_events?: string[]
+          id?: string
+          label?: string
+          last_event_at?: string | null
+          last_meta_response?: Json | null
+          pixel_id?: string
+          total_events_sent?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notification_settings: {
         Row: {
           created_at: string
