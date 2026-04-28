@@ -348,22 +348,25 @@ const IntegrationWebhookGuide = ({ installedProviders }: Props) => {
           </div>
 
           {/* Overview steps */}
-          <div className="space-y-2">
-            <h3 className="text-xs font-semibold text-foreground">Visão geral — 4 passos para começar a vender:</h3>
-            <div className="grid gap-2">
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold text-foreground flex items-center gap-2">
+              <div className="w-1 h-4 bg-primary rounded-full" />
+              Guia Rápido — 4 passos para vender:
+            </h3>
+            <div className="grid grid-cols-1 gap-2">
               {[
-                { n: "1", text: "Instale o gateway desejado", sub: "Escolha no catálogo abaixo (ex: Pagar.me, Asaas, Mercado Pago ou Stripe)" },
-                { n: "2", text: "Preencha suas credenciais", sub: "Cole a API Key e Secret Key do seu gateway. Essas chaves ficam no painel do gateway." },
-                { n: "3", text: "Configure o Webhook", sub: "Copie a URL abaixo e cole no painel do gateway, na seção de Webhooks. Marque os eventos corretos." },
-                { n: "4", text: "Ative e teste", sub: "Ative o gateway aqui na plataforma e faça uma venda de teste para confirmar que tudo funciona." },
+                { n: "1", text: "Instale o gateway", sub: "Escolha o provedor (ex: Pagar.me, Asaas, Mercado Pago)" },
+                { n: "2", text: "Preencha suas chaves", sub: "Cole a API Key e Secret Key do painel do gateway." },
+                { n: "3", text: "Configure o Webhook", sub: "Cole a URL técnica no painel do gateway e marque os eventos." },
+                { n: "4", text: "Ative e Teste", sub: "Faça uma venda de teste para garantir que tudo está OK." },
               ].map((step) => (
-                <div key={step.n} className="flex items-start gap-2.5 px-1">
-                  <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 text-primary text-[10px] font-bold shrink-0 mt-0.5">
+                <div key={step.n} className="group flex items-start gap-3 p-2 rounded-lg hover:bg-muted/30 transition-all border border-transparent hover:border-border/40">
+                  <span className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-[11px] font-bold shrink-0 mt-0.5 group-hover:bg-primary group-hover:text-white transition-colors">
                     {step.n}
                   </span>
                   <div>
-                    <span className="text-xs font-medium text-foreground">{step.text}</span>
-                    <p className="text-[10px] text-muted-foreground">{step.sub}</p>
+                    <span className="text-xs font-semibold text-foreground block">{step.text}</span>
+                    <p className="text-[10px] text-muted-foreground leading-tight">{step.sub}</p>
                   </div>
                 </div>
               ))}
