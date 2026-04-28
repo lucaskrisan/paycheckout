@@ -396,6 +396,9 @@ const Tracking = () => {
           <TabsTrigger value="script" className="text-xs gap-1.5 data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">
             <Code2 className="w-3.5 h-3.5" /> Script
           </TabsTrigger>
+          <TabsTrigger value="attribution" className="text-xs gap-1.5 data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">
+            <TrendingUp className="w-3.5 h-3.5" /> Atribuição
+          </TabsTrigger>
         </TabsList>
 
         {/* ═══ TAB: Auditoria ═══ */}
@@ -542,7 +545,6 @@ const Tracking = () => {
         {/* ═══ TAB: Eventos ═══ */}
         <TabsContent value="events" className="space-y-5 mt-0">
           <PixelEventsDashboard products={products} userId={user?.id} />
-          <UtmAttributionTable />
         </TabsContent>
 
         {/* ═══ TAB: Configuração ═══ */}
