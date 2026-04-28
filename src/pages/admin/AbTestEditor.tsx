@@ -43,6 +43,7 @@ import {
   Pause,
   Copy,
   HelpCircle,
+  RefreshCw,
 } from "lucide-react";
 import { AbTestTutorial } from "@/components/admin/AbTestTutorial";
 
