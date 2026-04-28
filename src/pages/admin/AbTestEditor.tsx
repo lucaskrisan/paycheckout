@@ -601,6 +601,7 @@ function EditorInner() {
             name: name.trim() || "Novo Teste A/B",
             slug: theSlug,
             auto_winner_enabled: autoWinner,
+            auto_winner_min_clicks: minClicks,
             sticky_days: stickyDays,
             graph,
             entry_url: generatedEntry,
