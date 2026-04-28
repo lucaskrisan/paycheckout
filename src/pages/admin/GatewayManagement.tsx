@@ -221,7 +221,7 @@ const GatewayManagement = () => {
             Gateways de Pagamento
           </h1>
           <p className="text-sm text-muted-foreground mt-2 max-w-xl">
-            Conecte e gerencie seus processadores de pagamento. Cada venda confirmada garante a automação completa do seu negócio.
+            Conecte e gerencie seus processadores de pagamento como Mercado Pago, Asaas e outros. Cada venda confirmada garante a automação completa do seu negócio.
           </p>
         </div>
         <div className="flex items-center gap-3 bg-card/40 backdrop-blur-sm border border-white/10 p-4 rounded-2xl">

@@ -358,7 +358,7 @@ const IntegrationWebhookGuide = ({ installedProviders }: Props) => {
             </h3>
             <div className="grid grid-cols-1 gap-2">
               {[
-                { n: "1", text: "Instale o gateway", sub: "Escolha o provedor (ex: Pagar.me, Asaas, Mercado Pago)" },
+                { n: "1", text: "Instale o gateway", sub: "Escolha o provedor (ex: Mercado Pago, Pagar.me, Asaas)" },
                 { n: "2", text: "Preencha suas chaves", sub: "Cole a API Key e Secret Key do painel do gateway." },
                 { n: "3", text: "Configure o Webhook", sub: "Cole a URL técnica no painel do gateway e marque os eventos." },
                 { n: "4", text: "Ative e Teste", sub: "Faça uma venda de teste para garantir que tudo está OK." },
