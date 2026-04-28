@@ -674,8 +674,16 @@ async function stepAbConversion(params: ProcessOrderPaidParams): Promise<void> {
   const { supabase, orderData, source } = params;
   try {
     const meta = (orderData.metadata ?? {}) as Record<string, unknown>;
-    const visitorId = (meta.ab_visitor_id as string) || (meta._abv as string);
-    if (!visitorId) return;
+    // Accept standard ab_visitor_id, _abv, or persistent vid/vid_fbp
+    const visitorId = (meta.ab_visitor_id as string) || 
+                      (meta._abv as string) || 
+                      (meta.vid as string) || 
+                      (meta.visitor_id as string);
+                      
+    if (!visitorId) {
+      console.log(`[${source}] A/B conversion skipped: no visitorId in metadata`);
+      return;
+    }
 
     const { error } = await supabase.rpc('ab_record_conversion', {
       p_visitor_id: visitorId,
