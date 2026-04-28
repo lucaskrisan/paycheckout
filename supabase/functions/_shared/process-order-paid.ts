@@ -566,6 +566,19 @@ async function stepWhatsAppDispatch(params: ProcessOrderPaidParams): Promise<voi
       .maybeSingle();
 
     if (custWa?.phone) {
+      // Find the most recent access token for this customer to build the access link
+      const { data: accessRecord } = await supabase
+        .from('member_access')
+        .select('access_token')
+        .eq('customer_id', orderData.customer_id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const accessLink = accessRecord?.access_token
+        ? `https://app.panttera.com.br/membros?token=${accessRecord.access_token}`
+        : null;
+
       fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/whatsapp-dispatch`, {
         method: 'POST',
         headers: {
@@ -579,6 +592,7 @@ async function stepWhatsAppDispatch(params: ProcessOrderPaidParams): Promise<voi
           customer_name: custWa.name,
           product_name: prodWa?.name || '',
           product_price: String(orderData.amount),
+          access_link: accessLink || '',
           category: 'confirmacao',
         }),
       }).catch(e => console.error(`[${source}] whatsapp-dispatch error:`, e));

@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
       .eq("feature", category)
       .maybeSingle();
 
-    if (!flag?.enabled) {
+    if (flag !== null && flag.enabled === false) {
       return json({ skipped: true, reason: "feature_disabled" });
     }
 
@@ -127,6 +127,11 @@ Deno.serve(async (req) => {
     let cleanNumber = customer_phone.replace(/\D/g, "");
     if (!cleanNumber.startsWith("55")) {
       cleanNumber = `55${cleanNumber}`;
+    }
+
+    // Fix for 11 digit mobile numbers (adding the 9 if missing)
+    if (cleanNumber.length === 12 && cleanNumber[4] !== "9") {
+      cleanNumber = cleanNumber.slice(0, 4) + "9" + cleanNumber.slice(4);
     }
 
     const whatsappNumber = `${cleanNumber}@s.whatsapp.net`;

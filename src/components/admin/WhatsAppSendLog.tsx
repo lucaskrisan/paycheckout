@@ -222,10 +222,17 @@ const WhatsAppSendLog = () => {
                             Enviado
                           </Badge>
                         ) : (
-                          <Badge variant="destructive" className="gap-1 text-[10px]" title={log.error_message || ""}>
-                            <XCircle className="h-3 w-3" />
-                            Falhou
-                          </Badge>
+                          <div className="flex flex-col gap-0.5">
+                            <Badge variant="destructive" className="gap-1 text-[10px] w-fit" title={log.error_message || ""}>
+                              <XCircle className="h-3 w-3" />
+                              Falhou
+                            </Badge>
+                            {log.error_message && (
+                              <p className="text-[10px] text-red-400/80 mt-0.5 max-w-[200px] truncate" title={log.error_message}>
+                                {log.error_message}
+                              </p>
+                            )}
+                          </div>
                         )}
                       </TableCell>
                       <TableCell>
