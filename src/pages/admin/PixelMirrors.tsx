@@ -1,19 +1,18 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
-import { Plus, Trash2, Activity, Shield, Zap, Info } from "lucide-react";
+import { Plus, Trash2, Activity, Shield, Zap, Info, Clock, Facebook, Settings2, X, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { PixelMirrorWorkflow } from "@/components/admin/PixelMirrorWorkflow";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const ALL_EVENTS = ["Purchase", "InitiateCheckout", "AddPaymentInfo", "Lead", "ViewContent", "PageView"];
 
@@ -94,165 +93,173 @@ export default function PixelMirrors() {
   };
 
   return (
-    <div className="space-y-6 p-6 max-w-6xl mx-auto">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Zap className="h-8 w-8 text-primary" />
-            Pixels Espelho (CAPI-only)
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Migração de pixels sem expor o domínio à categorização do Meta.
-          </p>
-        </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-2" /> Novo Pixel Espelho</Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Cadastrar Pixel Espelho</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-2">
-              <div>
-                <Label>Rótulo (interno)</Label>
-                <Input value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} placeholder="Ex: Pixel BM Novo Procrastinação" />
-              </div>
-              <div>
-                <Label>Pixel ID *</Label>
-                <Input value={form.pixel_id} onChange={(e) => setForm({ ...form, pixel_id: e.target.value })} placeholder="123456789012345" />
-              </div>
-              <div>
-                <Label>Token CAPI *</Label>
-                <Input type="password" value={form.capi_token} onChange={(e) => setForm({ ...form, capi_token: e.target.value })} placeholder="EAAxxxxxx..." />
-              </div>
-              <div>
-                <Label>event_source_url override (opcional)</Label>
-                <Input value={form.event_source_url_override} onChange={(e) => setForm({ ...form, event_source_url_override: e.target.value })} placeholder="https://app.panttera.com.br/" />
-                <p className="text-xs text-muted-foreground mt-1">Se vazio, usa o do evento original.</p>
-              </div>
-              <div>
-                <Label>Eventos a espelhar</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {ALL_EVENTS.map((ev) => (
-                    <Badge
-                      key={ev}
-                      variant={form.fire_on_events.includes(ev) ? "default" : "outline"}
-                      className="cursor-pointer"
-                      onClick={() => toggleEvent(ev)}
-                    >
-                      {ev}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-              <Button onClick={() => createMutation.mutate()} disabled={createMutation.isPending}>
-                {createMutation.isPending ? "Salvando..." : "Criar"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <Alert>
-        <Info className="h-4 w-4" />
-        <AlertTitle>Como funciona</AlertTitle>
-        <AlertDescription className="space-y-1 mt-2">
-          <p>• Todo evento que a plataforma envia ao Meta CAPI é <strong>duplicado</strong> para os pixels espelho ativos abaixo.</p>
-          <p>• Os pixels espelho recebem <strong>apenas via servidor</strong> (CAPI puro). O fbevents.js nunca dispara para eles no browser.</p>
-          <p>• Como o Meta nunca recebe um <em>pageload</em> destes pixels, ele <strong>não consegue crawlear o domínio</strong> para categorizar como "Financeiro".</p>
-          <p>• Use isso para migrar de pixels antigos sem perder tracking. EMQ esperado: 6-8/10 (com email/phone hasheados que já temos).</p>
-        </AlertDescription>
-      </Alert>
-
-      <PixelMirrorWorkflow />
-
-      {isLoading && <p className="text-muted-foreground">Carregando...</p>}
-
-      <div className="grid gap-4">
-        {mirrors?.map((m) => (
-          <Card key={m.id}>
-            <CardHeader>
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <CardTitle className="flex items-center gap-2">
-                    <Shield className="h-5 w-5 text-primary" />
-                    {m.label}
-                    {m.active ? (
-                      <Badge variant="default">Ativo</Badge>
-                    ) : (
-                      <Badge variant="secondary">Pausado</Badge>
-                    )}
-                  </CardTitle>
-                  <CardDescription className="mt-1 font-mono">Pixel: {m.pixel_id}</CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Switch
-                    checked={m.active}
-                    onCheckedChange={(v) => toggleMutation.mutate({ id: m.id, active: v })}
-                  />
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => {
-                      if (confirm("Remover este pixel espelho?")) deleteMutation.mutate(m.id);
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex flex-wrap gap-1">
-                {(m.fire_on_events as string[]).map((ev) => (
-                  <Badge key={ev} variant="outline" className="text-xs">{ev}</Badge>
-                ))}
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-                <div className="flex items-center gap-2">
-                  <Activity className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Eventos enviados:</span>
-                  <strong>{m.total_events_sent || 0}</strong>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Último evento: </span>
-                  <strong>
-                    {m.last_event_at
-                      ? format(new Date(m.last_event_at), "dd/MM HH:mm", { locale: ptBR })
-                      : "—"}
-                  </strong>
-                </div>
-                {m.event_source_url_override && (
-                  <div className="col-span-full text-xs text-muted-foreground truncate">
-                    URL override: <code>{m.event_source_url_override}</code>
+    <TooltipProvider>
+      <div className="p-6 space-y-6">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold tracking-normal">Pixels Espelho</h1>
+            <p className="text-sm text-muted-foreground mt-1">Duplicação de eventos via CAPI puro para proteção de domínio</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" /> Novo Pixel
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg bg-[#0d0f15] border-border/40">
+                <DialogHeader>
+                  <DialogTitle>Cadastrar Pixel Espelho</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs">Rótulo (identificação interna)</Label>
+                    <Input className="bg-muted/20 border-border/40" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} placeholder="Ex: Pixel Reserva BM02" />
                   </div>
-                )}
-              </div>
-              {m.last_meta_response?.error && (
-                <Alert variant="destructive">
-                  <AlertDescription className="text-xs">
-                    Último erro Meta: {JSON.stringify(m.last_meta_response.error)}
-                  </AlertDescription>
-                </Alert>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs">Pixel ID *</Label>
+                      <Input className="bg-muted/20 border-border/40" value={form.pixel_id} onChange={(e) => setForm({ ...form, pixel_id: e.target.value })} placeholder="123456789..." />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Event Source Override</Label>
+                      <Input className="bg-muted/20 border-border/40" value={form.event_source_url_override} onChange={(e) => setForm({ ...form, event_source_url_override: e.target.value })} placeholder="https://..." />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Token CAPI *</Label>
+                    <Input type="password" className="bg-muted/20 border-border/40" value={form.capi_token} onChange={(e) => setForm({ ...form, capi_token: e.target.value })} placeholder="EAA..." />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Eventos a espelhar</Label>
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      {ALL_EVENTS.map((ev) => (
+                        <Badge
+                          key={ev}
+                          variant={form.fire_on_events.includes(ev) ? "default" : "outline"}
+                          className={`cursor-pointer text-[10px] py-0 h-6 ${form.fire_on_events.includes(ev) ? "bg-violet-600 hover:bg-violet-700" : "opacity-60"}`}
+                          onClick={() => toggleEvent(ev)}
+                        >
+                          {ev}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter className="gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setOpen(false)} className="border-border/40">Cancelar</Button>
+                  <Button size="sm" className="bg-violet-600 hover:bg-violet-700" onClick={() => createMutation.mutate()} disabled={createMutation.isPending}>
+                    {createMutation.isPending ? "Salvando..." : "Criar Pixel"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
 
-        {mirrors?.length === 0 && !isLoading && (
-          <Card>
-            <CardContent className="py-12 text-center text-muted-foreground">
-              <Zap className="h-12 w-12 mx-auto mb-3 opacity-30" />
-              <p>Nenhum pixel espelho cadastrado.</p>
-              <p className="text-xs mt-1">Crie um para começar a migrar tracking sem risco de categorização.</p>
-            </CardContent>
-          </Card>
+        <div className="bg-violet-500/5 border border-violet-500/20 rounded-xl p-4 flex gap-3">
+          <Info className="h-5 w-5 text-violet-400 shrink-0 mt-0.5" />
+          <div className="text-xs text-muted-foreground leading-relaxed">
+            <p className="text-violet-200 font-semibold mb-1">Como funciona a proteção de domínio:</p>
+            O Meta CAPI duplica eventos para estes pixels <strong>exclusivamente via servidor</strong>. Como não há script no navegador, o Facebook não consegue rastrear o domínio nem categorizá-lo, protegendo sua estrutura de bloqueios por "categorização de mercado".
+          </div>
+        </div>
+
+        {isLoading && <div className="text-muted-foreground text-sm animate-pulse">Carregando pixels...</div>}
+
+        {!isLoading && mirrors?.length === 0 && (
+          <div className="min-h-[400px] flex items-center justify-center">
+            <Card className="w-full max-w-md p-10 text-center border-border/60 bg-card/70 shadow-sm">
+              <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-muted/60">
+                <Shield className="h-7 w-7 text-muted-foreground" />
+              </div>
+              <h3 className="text-xl font-semibold tracking-normal">Nenhum pixel espelho</h3>
+              <p className="mt-2 text-sm text-muted-foreground">Adicione seu primeiro pixel para começar a espelhar eventos com segurança.</p>
+            </Card>
+          </div>
         )}
+
+        <div className="grid gap-4">
+          {mirrors?.map((m) => (
+            <Card key={m.id} className="p-5 hover:border-primary/40 transition bg-card/60 group">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0 space-y-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base font-bold">{m.label}</h3>
+                    <Badge className={m.active ? "bg-emerald-600/30 text-emerald-300 border border-emerald-500/40" : "bg-zinc-700/40 text-zinc-300"}>
+                      {m.active ? "Ativo" : "Pausado"}
+                    </Badge>
+                  </div>
+
+                  <div className="space-y-1.5 text-xs">
+                    <div className="flex items-center gap-2 text-muted-foreground font-mono bg-muted/30 px-2 py-1 rounded w-fit">
+                      <Facebook className="w-3 h-3" /> {m.pixel_id}
+                    </div>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {(m.fire_on_events as string[]).map((ev) => (
+                        <span key={ev} className="px-1.5 py-0.5 bg-violet-500/10 text-violet-300 border border-violet-500/20 rounded text-[10px] font-medium">
+                          {ev}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-5 text-sm pt-1">
+                    <div className="flex items-center gap-2">
+                      <Activity className="h-4 w-4 text-violet-400" />
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-muted-foreground uppercase leading-none mb-1">Enviados</span>
+                        <span className="font-bold leading-none">{m.total_events_sent?.toLocaleString("pt-BR") || 0}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-amber-400" />
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-muted-foreground uppercase leading-none mb-1">Último disparo</span>
+                        <span className="font-bold leading-none">
+                          {m.last_event_at ? format(new Date(m.last_event_at), "HH:mm 'de' dd/MM", { locale: ptBR }) : "—"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-3 mr-2 bg-muted/20 px-3 py-1.5 rounded-lg border border-border/40">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">CAPI</span>
+                    <Switch
+                      className="scale-75 data-[state=checked]:bg-emerald-500"
+                      checked={m.active}
+                      onCheckedChange={(v) => toggleMutation.mutate({ id: m.id, active: v })}
+                    />
+                  </div>
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-500/10" onClick={() => {
+                        if (confirm("Remover este pixel espelho?")) deleteMutation.mutate(m.id);
+                      }}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Remover</TooltipContent>
+                  </Tooltip>
+                </div>
+              </div>
+
+              {m.last_meta_response?.error && (
+                <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
+                  <div className="text-[11px] text-red-200">
+                    <span className="font-bold uppercase block mb-0.5">Erro Meta API</span>
+                    {JSON.stringify(m.last_meta_response.error)}
+                  </div>
+                </div>
+              )}
+            </Card>
+          ))}
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
