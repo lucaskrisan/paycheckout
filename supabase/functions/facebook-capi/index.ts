@@ -447,6 +447,31 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ── Fire-and-forget: mirror this event to all active mirror_pixels (CAPI-only) ──
+    // Mirror pixels never touch the browser, so Meta cannot crawl/categorize the source domain.
+    // Used to migrate away from pixels in dead/inaccessible BMs without losing tracking.
+    try {
+      const mirrorUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/capi-mirror-forward`;
+      fetch(mirrorUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''}`,
+        },
+        body: JSON.stringify({
+          event_name: event.event_name,
+          event_time: event.event_time,
+          event_id: event.event_id,
+          event_source_url: event.event_source_url,
+          action_source: event.action_source,
+          user_data: event.user_data,
+          custom_data: event.custom_data,
+        }),
+      }).catch((e) => console.warn('[facebook-capi] mirror dispatch failed:', e));
+    } catch (e) {
+      console.warn('[facebook-capi] mirror skipped:', e);
+    }
+
     return new Response(
       JSON.stringify({ success: true, results }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
