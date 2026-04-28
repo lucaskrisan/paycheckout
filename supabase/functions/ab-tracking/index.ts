@@ -105,6 +105,14 @@ const trackingScript = `
   // Auto-track impression on load
   if (currentParams['_abt'] && currentParams['_abv']) {
     trackEvent('impression');
+    
+    // Also track ViewContent if on a landing page
+    if (window.location.pathname.length > 1) {
+      trackEvent('ViewContent', { 
+        content_type: 'product',
+        content_name: document.title 
+      });
+    }
   }
 
   // Initial injection
@@ -230,7 +238,16 @@ Deno.serve(async (req) => {
       const mirrorPixel = variant?.mirror_pixel;
 
       // Record event in DB
-      const eventType = event === "impression" ? "impression" : (event === "click" ? "click" : "sale");
+      const eventTypeMap: Record<string, string> = {
+        'impression': 'impression',
+        'click': 'click',
+        'sale': 'sale',
+        'ViewContent': 'ViewContent',
+        'InitiateCheckout': 'InitiateCheckout',
+        'PageView': 'PageView'
+      };
+      
+      const eventType = eventTypeMap[event] || 'click';
       
       const { error: eventErr } = await supabase.from("ab_test_events").insert({
         test_id: testId,
@@ -243,7 +260,13 @@ Deno.serve(async (req) => {
       if (eventErr) throw eventErr;
 
       // Update aggregate counters
-      const updateField = eventType === "impression" ? "impressions" : (eventType === "click" ? "clicks" : "sales");
+      const updateFieldMap: Record<string, string> = {
+        'impression': 'impressions',
+        'click': 'clicks',
+        'sale': 'sales',
+        'ViewContent': 'impressions' // ViewContent counts as page impression for A/B
+      };
+      const updateField = updateFieldMap[eventType] || 'clicks';
       await supabase.rpc('increment_ab_variant_stat', {
         p_variant_id: variantId,
         p_field: updateField
@@ -256,10 +279,11 @@ Deno.serve(async (req) => {
         console.log(`[ab-tracking] Mirroring ${event} to Meta CAPI for pixel ${mirrorPixel.pixel_id}`);
         
         // Map A/B events to standard Meta events
-        let metaEventName = 'PageView';
+        let metaEventName = event;
+        // If it's a standard Meta event, we keep it, otherwise map it
         if (event === 'impression') metaEventName = 'PageView';
-        if (event === 'click') metaEventName = 'Lead';
         if (event === 'sale') metaEventName = 'Purchase';
+        if (event === 'click' && !metadata?.event_name) metaEventName = 'Lead';
 
         // Use our existing facebook-capi edge function to handle the heavy lifting
         // This ensures the same high-quality data hashing and formatting.
