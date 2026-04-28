@@ -390,6 +390,7 @@ function EditorInner() {
     if (!existing) return;
     setName(existing.name ?? "Novo Teste A/B");
     setAutoWinner(!!existing.auto_winner_enabled);
+    setMinClicks(existing.auto_winner_min_clicks ?? 100);
     setStickyDays(existing.sticky_days ?? 30);
     setSlug(existing.slug ?? null);
     setStatus(existing.status ?? "draft");
