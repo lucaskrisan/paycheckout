@@ -272,15 +272,15 @@ function CheckoutNode({ id, data }: NodeProps<Node<CheckoutData, "checkout">>) {
         </div>
       )}
       <div className="space-y-1">
-        <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Oferta</div>
+        <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Produto</div>
         <div className="flex items-center gap-1.5 text-[11px] px-2 py-1.5 rounded bg-muted/40 border border-border/40 truncate">
-          {data.productId ? "Oferta selecionada" : "Selecionar oferta"}
+          {data.productId ? "Produto selecionado" : "Selecionar produto"}
         </div>
       </div>
       <div className="space-y-1">
-        <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Design</div>
-        <div className="flex items-center gap-1.5 text-[11px] px-2 py-1.5 rounded bg-muted/40 border border-border/40 truncate">
-          {data.templateId ? "Template customizado" : "Design padrão"}
+        <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Preço / Configuração</div>
+        <div className="flex items-center gap-1.5 text-[11px] px-2 py-1.5 rounded bg-muted/40 border border-border/40 truncate text-orange-300">
+          {data.offerId ? "Preço selecionado" : "Preço Padrão"}
         </div>
       </div>
     </NodeShell>
@@ -429,6 +429,18 @@ function EditorInner() {
         .eq("user_id", user.id)
         .eq("active", true)
         .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const { data: checkoutConfigs = [] } = useQuery({
+    queryKey: ["checkout_configs_for_ab"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("checkout_builder_configs")
+        .select("id, name, price, product_id")
+        .order("name");
       if (error) throw error;
       return data ?? [];
     },
@@ -656,7 +668,11 @@ function EditorInner() {
               if (d.productId) {
                 // Construct Panttera checkout URL
                 checkoutUrl = `https://checkout.panttera.com.br/pay/${d.productId}`;
-                if (d.offerId) checkoutUrl += `?offer=${d.offerId}`;
+                // Use offerId (config) if selected, otherwise fallback to templateId for legacy reasons
+                const configId = d.offerId || d.templateId;
+                if (configId && configId !== "default") {
+                  checkoutUrl += `?config=${configId}`;
+                }
               }
             }
           }
@@ -958,10 +974,12 @@ function EditorInner() {
               <div className="space-y-4">
                 <Label className="text-xs font-medium uppercase text-muted-foreground tracking-widest">Configuração do Checkout</Label>
                 <div className="space-y-2">
-                  <Label className="text-xs">Produto / Oferta</Label>
+                  <Label className="text-xs">Produto Principal</Label>
                   <Select 
                     value={(selectedNode.data as CheckoutData).productId || ""} 
-                    onValueChange={(v) => updateNodeData(selectedNode.id, { productId: v })}
+                    onValueChange={(v) => {
+                      updateNodeData(selectedNode.id, { productId: v, offerId: null });
+                    }}
                   >
                     <SelectTrigger className="bg-muted/40 border-border/40">
                       <SelectValue placeholder="Selecione um produto" />
@@ -974,8 +992,33 @@ function EditorInner() {
                     </SelectContent>
                   </Select>
                 </div>
+
                 <div className="space-y-2">
-                  <Label className="text-xs">Design / Template</Label>
+                  <Label className="text-xs">Preço / Oferta (Configuração)</Label>
+                  <Select 
+                    disabled={!(selectedNode.data as CheckoutData).productId}
+                    value={(selectedNode.data as CheckoutData).offerId || "default"} 
+                    onValueChange={(v) => updateNodeData(selectedNode.id, { offerId: v === "default" ? null : v })}
+                  >
+                    <SelectTrigger className="bg-muted/40 border-border/40 border-orange-500/30">
+                      <SelectValue placeholder="Preço Padrão do Produto" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="default">Preço Padrão do Produto</SelectItem>
+                      {checkoutConfigs
+                        .filter((c: any) => c.product_id === (selectedNode.data as CheckoutData).productId)
+                        .map((c: any) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.name} {c.price ? `- R$ ${c.price}` : ""}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] text-muted-foreground italic">Selecione qual configuração de preço/design usar para este braço do teste.</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs">Template de Design (Opcional)</Label>
                   <Select 
                     value={(selectedNode.data as CheckoutData).templateId || ""} 
                     onValueChange={(v) => updateNodeData(selectedNode.id, { templateId: v })}
