@@ -272,7 +272,7 @@ function EditorInner() {
   const reactFlow = useReactFlow();
   const wrapperRef = useRef<HTMLDivElement | null>(null);
 
-  const [testId, setTestId] = useState<string | null>(routeId ?? null);
+  const [testId, setTestId] = useState<string | null>(routeId && routeId !== "new" ? routeId : null);
   const [name, setName] = useState("Novo Teste A/B");
   const [autoWinner, setAutoWinner] = useState(true);
   const [stickyDays, setStickyDays] = useState(30);
