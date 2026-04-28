@@ -183,11 +183,6 @@ function CheckoutNode({ data }: NodeProps<Node<CheckoutData, "checkout">>) {
           {data.templateId ? "Template customizado" : "Design padrão"}
         </div>
       </div>
-      {!data.productId && (
-        <div className="flex items-center gap-1.5 text-[11px] text-amber-300 px-2 py-1.5 rounded bg-amber-500/10 border border-amber-500/30">
-          <AlertCircle className="h-3 w-3" /> Selecione uma oferta
-        </div>
-      )}
     </NodeShell>
   );
 }
