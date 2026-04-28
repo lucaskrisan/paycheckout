@@ -164,11 +164,6 @@ function PageNode({ data }: NodeProps<Node<PageData, "page">>) {
         <Link2 className="h-3 w-3 shrink-0" />
         <span className="truncate">{hasUrl ? data.url : "Configurar URL"}</span>
       </div>
-      {!hasUrl && (
-        <div className="flex items-center gap-1.5 text-[11px] text-amber-300 px-2 py-1.5 rounded bg-amber-500/10 border border-amber-500/30">
-          <AlertCircle className="h-3 w-3" /> Clique para configurar
-        </div>
-      )}
     </NodeShell>
   );
 }
