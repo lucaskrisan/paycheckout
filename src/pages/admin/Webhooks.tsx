@@ -245,7 +245,9 @@ export default function Webhooks() {
 
   return (
     <div className="space-y-6">
-      <IntegrationWebhookGuide installedProviders={endpoints.length > 0 ? ["generic"] : []} />
+      <div className="mb-2">
+        <IntegrationWebhookGuide installedProviders={endpoints.length > 0 ? ["generic"] : []} />
+      </div>
       
       {/* Header */}
       <div className="flex items-center gap-3">
