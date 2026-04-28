@@ -83,8 +83,8 @@ function NodeShell({
   children,
   inHandle = true,
   outHandle = true,
-  nodeId?: string,
-  onDelete?: (id: string) => void,
+  nodeId,
+  onDelete,
 }: {
   color: string;
   icon: React.ReactNode;
