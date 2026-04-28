@@ -113,6 +113,20 @@ function NodeShell({
         </div>
       </div>
       {children && <div className="px-3 pb-3 space-y-1.5">{children}</div>}
+      <button 
+        onClick={(e) => {
+          e.stopPropagation();
+          // We'll pass a custom event or use a callback if we had one, 
+          // but since these are functional components inside the same file, 
+          // I'll add a delete button to the shell that triggers a custom event 
+          // or I can modify the nodes to include a delete action.
+          const event = new CustomEvent('delete-node', { detail: { id: title } });
+          window.dispatchEvent(event);
+        }}
+        className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-600"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
     </div>
   );
 }
