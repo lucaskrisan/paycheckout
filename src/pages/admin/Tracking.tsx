@@ -275,47 +275,29 @@ const Tracking = () => {
 
   return (
     <div className="space-y-5 -m-6 p-6 min-h-screen bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950">
-      {/* ── Header ── */}
-      <div className="flex items-center gap-3">
-        <Activity className="w-5 h-5 text-cyan-400" />
-        <div>
+      {/* ── Header compacto: título + KPIs inline + seletor de produto ── */}
+      <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex items-center gap-2.5">
+          <Activity className="w-5 h-5 text-cyan-400" />
           <h1 className="text-xl font-bold text-white">Rastreamento</h1>
-          <p className="text-[11px] text-slate-500">Pixels · Conversions API · Diagnóstico</p>
         </div>
-      </div>
 
-      {/* ── Stats ── */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { icon: Code2, label: "Pixels", value: totalPixels, color: "#22d3ee" },
-          { icon: Zap, label: "CAPI ativo", value: capiEnabled, color: "#a78bfa" },
-          { icon: Globe, label: "Domínios", value: domains.length, color: "#34d399" },
-        ].map((card, i) => (
-          <div key={i} className="rounded-lg bg-slate-800/50 border border-slate-700/30 p-4 flex items-center gap-3">
-            <div className="p-2 rounded-md" style={{ backgroundColor: `${card.color}12` }}>
-              <card.icon className="w-4 h-4" style={{ color: card.color }} />
-            </div>
-            <div>
-              <p className="text-xl font-bold text-slate-100 font-mono tabular-nums">{card.value}</p>
-              <p className="text-[10px] text-slate-500 font-medium">{card.label}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+        {/* KPIs inline (pílulas discretas) */}
+        <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+          <span className="px-2 py-0.5 rounded-md bg-slate-800/60 border border-slate-700/40">
+            <span className="font-mono font-semibold text-cyan-300">{totalPixels}</span> Pixels
+          </span>
+          <span className="px-2 py-0.5 rounded-md bg-slate-800/60 border border-slate-700/40">
+            <span className="font-mono font-semibold text-violet-300">{capiEnabled}</span> CAPI
+          </span>
+          <span className="px-2 py-0.5 rounded-md bg-slate-800/60 border border-slate-700/40">
+            <span className="font-mono font-semibold text-emerald-300">{domains.length}</span> Domínios
+          </span>
+        </div>
 
-      {/* ── Global Product Selector (controla TODOS os blocos abaixo) ── */}
-      {products.length > 0 && (
-        <div className="rounded-lg bg-gradient-to-r from-violet-500/10 via-cyan-500/10 to-emerald-500/10 border border-violet-500/20 p-3 flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2">
-            <Activity className="w-4 h-4 text-violet-400" />
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Auditando produto</p>
-              <p className="text-xs font-bold text-slate-100">
-                {products.find((p) => p.id === globalProduct)?.name || "Selecione abaixo"}
-              </p>
-            </div>
-          </div>
-          <div className="flex-1 min-w-[180px]">
+        {/* Seletor de produto à direita */}
+        {products.length > 0 && (
+          <div className="ml-auto min-w-[220px]">
             <Select
               value={globalProduct}
               onValueChange={(v) => {
@@ -324,8 +306,8 @@ const Tracking = () => {
                 autoRanRef.current = false;
               }}
             >
-              <SelectTrigger className="bg-slate-900/60 border-slate-700/50 text-slate-200 text-xs h-9">
-                <SelectValue placeholder="Trocar produto" />
+              <SelectTrigger className="bg-slate-800/60 border-slate-700/50 text-slate-200 text-xs h-9">
+                <SelectValue placeholder="Selecione um produto" />
               </SelectTrigger>
               <SelectContent>
                 {products.map((p) => (
@@ -334,11 +316,8 @@ const Tracking = () => {
               </SelectContent>
             </Select>
           </div>
-          <Badge variant="outline" className="text-[10px] bg-slate-900/40 border-slate-700/40 text-slate-400">
-            Diagnóstico · EMQ · Varredura · Script — todos seguem este produto
-          </Badge>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* ── Diagnostic Alert Banner ── */}
       {alertIssues.length > 0 && (
@@ -378,17 +357,21 @@ const Tracking = () => {
         </div>
       )}
 
-      {/* ── Onboarding Guide ── */}
-      <TrackingOnboardingGuide hasPixels={totalPixels > 0} />
+      {/* ── Onboarding Guide (apenas quando NÃO há pixels ainda) ── */}
+      {totalPixels === 0 && <TrackingOnboardingGuide hasPixels={false} />}
 
       {/* ── Tabs ── */}
-      <Tabs defaultValue="audit" className="space-y-4">
+      <Tabs defaultValue="events" className="space-y-4">
         <TabsList className="bg-slate-800/60 border border-slate-700/30 p-1 gap-1">
+          <TabsTrigger value="events" className="text-xs gap-1.5 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500/20 data-[state=active]:to-cyan-500/20 data-[state=active]:text-white data-[state=active]:border data-[state=active]:border-emerald-500/30 text-slate-400">
+            <span className="relative flex items-center justify-center w-2 h-2">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+            </span>
+            Ao Vivo
+          </TabsTrigger>
           <TabsTrigger value="audit" className="text-xs gap-1.5 data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">
             <Search className="w-3.5 h-3.5" /> Auditoria
-          </TabsTrigger>
-          <TabsTrigger value="events" className="text-xs gap-1.5 data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">
-            <Radio className="w-3.5 h-3.5" /> Eventos
           </TabsTrigger>
           <TabsTrigger value="config" className="text-xs gap-1.5 data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">
             <Settings2 className="w-3.5 h-3.5" /> Configuração
