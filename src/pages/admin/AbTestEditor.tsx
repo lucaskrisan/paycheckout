@@ -993,6 +993,21 @@ function EditorInner() {
                   </Select>
                   <p className="text-[10px] text-muted-foreground italic">Escolha um pixel espelho para segmentar o rastreamento desta variante.</p>
                 </div>
+                <div className={`space-y-2 p-3 rounded border ${(selectedNode.data as PageData).paused ? "bg-amber-500/10 border-amber-500/30" : "bg-muted/20 border-border/40"}`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-xs font-semibold">Pausar esta variante</Label>
+                      <p className="text-[10px] text-muted-foreground">Quando pausada, o servidor não envia mais tráfego para ela.</p>
+                    </div>
+                    <Switch
+                      checked={!!(selectedNode.data as PageData).paused}
+                      onCheckedChange={(v) => updateNodeData(selectedNode.id, { paused: v })}
+                    />
+                  </div>
+                  {(selectedNode.data as PageData).paused && (
+                    <p className="text-[10px] text-amber-300 italic">⏸ Salve o teste para aplicar. 100% do tráfego irá às variantes ativas restantes.</p>
+                  )}
+                </div>
                 <Button variant="outline" className="w-full text-red-400 border-red-400/30 hover:bg-red-500/10" onClick={() => deleteNode(selectedNode.id)}>
                   <Trash2 className="h-4 w-4 mr-2" /> Excluir Página
                 </Button>
