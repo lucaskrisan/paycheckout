@@ -790,6 +790,9 @@ function EditorInner() {
           <Button variant="ghost" size="icon" onClick={() => navigate("/admin/ab-tests")}><ArrowLeft className="h-4 w-4" /></Button>
           <Input value={name} onChange={(e) => setName(e.target.value)} className="h-8 w-64 bg-transparent border-transparent font-bold" />
           <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${statusBadge.cls}`}>{statusBadge.label}</span>
+          <Button variant="ghost" size="icon" onClick={() => setShowTutorial(true)} className="ml-2 text-zinc-500 hover:text-white">
+            <HelpCircle className="h-4 w-4" />
+          </Button>
         </div>
         <div className="flex items-center gap-3">
           {testId && (
