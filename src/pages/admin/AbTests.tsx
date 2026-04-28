@@ -86,7 +86,7 @@ export default function AbTests() {
     queryFn: async () => {
       const { data, error } = await supabase.from("mirror_pixels" as any).select("id,label,pixel_id").eq("active", true);
       if (error) throw error;
-      return (data ?? []) as { id: string; label: string; pixel_id: string }[];
+      return ((data ?? []) as unknown) as { id: string; label: string; pixel_id: string }[];
     },
   });
 
