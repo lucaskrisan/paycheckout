@@ -276,13 +276,13 @@ function CheckoutNode({ id, data }: NodeProps<Node<CheckoutData, "checkout">>) {
       <div className="space-y-1">
         <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Produto</div>
         <div className="flex items-center gap-1.5 text-[11px] px-2 py-1.5 rounded bg-muted/40 border border-border/40 truncate">
-          {data.productId ? "Produto selecionado" : "Selecionar produto"}
+          {data.label}
         </div>
       </div>
       <div className="space-y-1">
-        <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Preço / Configuração</div>
+        <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Configuração</div>
         <div className="flex items-center gap-1.5 text-[11px] px-2 py-1.5 rounded bg-muted/40 border border-border/40 truncate text-orange-300">
-          {data.offerId ? "Preço selecionado" : "Preço Padrão"}
+          {data.offerId ? "Oferta ativa" : "Preço Padrão"}
         </div>
       </div>
     </NodeShell>
@@ -1017,6 +1017,14 @@ function EditorInner() {
             {selectedNode.type === "checkout" && (
               <div className="space-y-4">
                 <Label className="text-xs font-medium uppercase text-muted-foreground tracking-widest">Configuração do Checkout</Label>
+                <div className="space-y-2">
+                  <Label className="text-xs">Título / Label do Checkout</Label>
+                  <Input 
+                    value={selectedNode.data.label} 
+                    onChange={(e) => updateNodeData(selectedNode.id, { label: e.target.value })} 
+                  />
+                  <p className="text-[10px] text-muted-foreground italic">Ex: Checkout com Order Bump (R$ 67)</p>
+                </div>
                 <div className="space-y-2">
                   <Label className="text-xs">Produto Principal</Label>
                   <Select 
