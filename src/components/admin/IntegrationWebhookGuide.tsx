@@ -374,9 +374,10 @@ const IntegrationWebhookGuide = ({ installedProviders }: Props) => {
           </div>
 
           {/* Per-gateway detailed guides */}
-          <div className="space-y-2">
-            <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-              🔧 Tutorial detalhado por Gateway
+          <div className="space-y-3 pt-2">
+            <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.1em] flex items-center gap-2">
+              <ChevronRight className="w-3 h-3 text-primary" />
+              Tutorial por Provedor
             </h3>
             {relevantConfigs.map((wh) => (
               <WebhookDetailCard
