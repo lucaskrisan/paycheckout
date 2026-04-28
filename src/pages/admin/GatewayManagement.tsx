@@ -256,31 +256,6 @@ const GatewayManagement = () => {
         </section>
       )}
 
-      {/* Platform Fees Notice */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-8 shadow-2xl">
-        <div className="absolute top-0 right-0 p-10 opacity-10 pointer-events-none">
-          <Zap className="w-40 h-40 text-primary" />
-        </div>
-        <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
-          <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(var(--primary),0.3)]">
-            <Globe className="w-8 h-8 text-white" />
-          </div>
-          <div className="space-y-2 flex-1 text-center md:text-left">
-            <h3 className="text-xl font-bold text-foreground">Taxas da Plataforma</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
-              Nossa taxa é transparente e focada no seu crescimento. Cobramos apenas <strong>R$ 0,49 fixo + 3%</strong> sobre cada venda aprovada. 
-              Sem mensalidades ou custos ocultos.
-            </p>
-          </div>
-          <Button variant="outline" className="border-primary/30 hover:bg-primary/10" asChild>
-            <a href="https://ajuda.plataforma.com" target="_blank">
-              Ver mais detalhes
-              <ExternalLink className="ml-2 w-4 h-4" />
-            </a>
-          </Button>
-        </div>
-      </section>
-
       {/* Catalog */}
       <section className="space-y-6 pb-12">
         <SectionHeader title="Catálogo de Integrações" icon={LayoutDashboard} />

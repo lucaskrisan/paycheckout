@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table";
 import {
   CreditCard, Loader2, ClipboardCopy, CheckCircle2, Zap, TrendingUp,
-  Wallet, DollarSign, Plus, Receipt,
+  Wallet, DollarSign, Plus, Receipt, ExternalLink, Globe,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
@@ -211,48 +211,91 @@ const ProducerBilling = () => {
         </Button>
       </div>
 
+      {/* ── Platform Fees Info ── */}
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-background to-background border border-primary/20 p-8 shadow-2xl group hover:border-primary/40 transition-all duration-500">
+        <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
+          <Zap className="w-48 h-48 text-primary" />
+        </div>
+        <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shrink-0 shadow-[0_0_30px_rgba(var(--primary),0.3)] transform group-hover:scale-110 transition-transform duration-500">
+            <Globe className="w-10 h-10 text-white" />
+          </div>
+          <div className="space-y-3 flex-1 text-center md:text-left">
+            <h3 className="text-2xl font-black text-foreground tracking-tight">Taxas da Plataforma</h3>
+            <p className="text-base text-muted-foreground leading-relaxed max-w-2xl font-medium">
+              Nossa taxa é transparente e focada no seu crescimento. Cobramos apenas <span className="text-primary font-bold">R$ 0,49 fixo + 3%</span> sobre cada venda aprovada. 
+              Sem mensalidades, sem custos ocultos e sem surpresas.
+            </p>
+          </div>
+          <Button variant="outline" className="border-primary/30 hover:bg-primary/10 hover:border-primary/60 px-6 h-12 rounded-xl font-bold transition-all" asChild>
+            <a href="https://ajuda.plataforma.com" target="_blank" rel="noreferrer">
+              Ver mais detalhes
+              <ExternalLink className="ml-2 w-4 h-4" />
+            </a>
+          </Button>
+        </div>
+      </section>
+
       {/* ── Summary Cards ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Taxas a Pagar */}
-        <Card>
-          <CardContent className="pt-5 pb-5">
+        <Card className="border border-white/10 bg-card/40 backdrop-blur-md hover:border-destructive/30 transition-all duration-300 overflow-hidden relative group">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-destructive/5 blur-3xl -mr-8 -mt-8 group-hover:bg-destructive/10 transition-colors" />
+          <CardContent className="pt-6 pb-6 relative z-10">
             <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground mb-2">Taxas a Pagar</p>
-                <p className="text-2xl font-bold tabular-nums text-foreground">{fmt(Math.max(0, -balance))}</p>
-                <p className="text-xs text-muted-foreground mt-1">Taxas acumuladas no período</p>
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Taxas a Pagar</p>
+                <p className="text-3xl font-black tabular-nums text-foreground">{fmt(Math.max(0, -balance))}</p>
+                <div className="flex items-center gap-1.5 mt-2">
+                  <Badge variant="outline" className="text-[10px] bg-destructive/5 text-destructive border-destructive/20 py-0">Aguardando</Badge>
+                  <span className="text-[10px] text-muted-foreground">Acumuladas no período</span>
+                </div>
               </div>
-              <Receipt className="w-4 h-4 text-muted-foreground" />
+              <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
+                <Receipt className="w-5 h-5 text-destructive" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Crédito Disponível */}
-        <Card>
-          <CardContent className="pt-5 pb-5">
+        <Card className="border border-white/10 bg-card/40 backdrop-blur-md hover:border-primary/30 transition-all duration-300 overflow-hidden relative group">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 blur-3xl -mr-8 -mt-8 group-hover:bg-primary/10 transition-colors" />
+          <CardContent className="pt-6 pb-6 relative z-10">
             <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground mb-2">Crédito Disponível</p>
-                <p className={`text-2xl font-bold tabular-nums ${balance >= 0 ? "text-primary" : "text-destructive"}`}>
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Crédito Disponível</p>
+                <p className={`text-3xl font-black tabular-nums ${balance >= 0 ? "text-primary shadow-[0_0_20px_rgba(var(--primary),0.1)]" : "text-destructive"}`}>
                   {fmt(Math.max(0, balance))}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">Saldo pré-pago via PIX</p>
+                <div className="flex items-center gap-1.5 mt-2">
+                  <Badge variant="outline" className="text-[10px] bg-primary/5 text-primary border-primary/20 py-0">Pré-pago</Badge>
+                  <span className="text-[10px] text-muted-foreground">Saldo via PIX/Cartão</span>
+                </div>
               </div>
-              <Wallet className="w-4 h-4 text-muted-foreground" />
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Wallet className="w-5 h-5 text-primary" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Nível de Crédito */}
-        <Card className="cursor-pointer hover:border-primary/30 transition-colors" onClick={() => setShowTierPanel(!showTierPanel)}>
-          <CardContent className="pt-5 pb-5">
+        <Card className="border border-white/10 bg-card/40 backdrop-blur-md hover:border-amber-500/30 transition-all duration-300 overflow-hidden relative group cursor-pointer" onClick={() => setShowTierPanel(!showTierPanel)}>
+          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 blur-3xl -mr-8 -mt-8 group-hover:bg-amber-500/10 transition-colors" />
+          <CardContent className="pt-6 pb-6 relative z-10">
             <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground mb-2">Nível de Crédito</p>
-                <p className="text-2xl font-bold text-foreground">{tierMeta.title}</p>
-                <p className="text-xs text-muted-foreground mt-1">Limite: {fmt(creditLimit)}</p>
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Nível de Crédito</p>
+                <p className="text-3xl font-black text-foreground">{tierMeta.title}</p>
+                <div className="flex items-center gap-1.5 mt-2">
+                  <Badge variant="outline" className="text-[10px] bg-amber-500/5 text-amber-500 border-amber-500/20 py-0">Limite: {fmt(creditLimit)}</Badge>
+                  <span className="text-[10px] text-muted-foreground">Clique para detalhes</span>
+                </div>
               </div>
-              <TrendingUp className="w-4 h-4 text-muted-foreground" />
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-amber-500" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -263,40 +306,63 @@ const ProducerBilling = () => {
         {/* Left: Credit Usage + Tabs + History */}
         <div className="space-y-6">
           {/* Sales Available Bar */}
-          <Card>
-            <CardContent className="pt-5 pb-5">
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Vendas Disponíveis</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+          <Card className="border border-white/10 bg-card/40 backdrop-blur-md overflow-hidden relative group">
+            <CardContent className="pt-6 pb-6 relative z-10">
+              <div className="flex items-start justify-between mb-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-bold text-foreground flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-primary" />
+                    Vendas Disponíveis
+                  </p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
                     {balance > 0
-                      ? `~${toSales(balance)} vendas com saldo pré-pago`
+                      ? `Você possui aproximadamente ~${toSales(balance)} vendas garantidas com seu saldo pré-pago.`
                       : usedCredit < toleranceLimit
-                        ? `~${toSales(toleranceLimit - usedCredit)} vendas restantes no limite`
-                        : "Limite atingido — adicione crédito para continuar vendendo"
+                        ? `Atenção: ~${toSales(toleranceLimit - usedCredit)} vendas restantes antes do bloqueio do checkout.`
+                        : "Limite crítico atingido — o checkout foi pausado para evitar pendências."
                     }
                   </p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Limite: {fmt(creditLimit)} ({tierMeta.title})
-                </p>
+                <div className="text-right">
+                  <Badge variant="outline" className="text-[10px] border-primary/20 bg-primary/5 text-primary">
+                    {usagePercent.toFixed(0)}% Utilizado
+                  </Badge>
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Limite: {fmt(creditLimit)}
+                  </p>
+                </div>
               </div>
-              <Progress value={usagePercent} className="h-2" />
-              <div className="flex justify-between mt-2">
-                <p className="text-xs text-muted-foreground">{fmt(usedCredit)} usado de {fmt(creditLimit)}</p>
-                <p className="text-xs text-muted-foreground">{usagePercent.toFixed(0)}%</p>
+              
+              <div className="relative h-3 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
+                <div 
+                  className={`absolute top-0 left-0 h-full transition-all duration-1000 ease-out rounded-full ${
+                    usagePercent > 90 ? "bg-destructive shadow-[0_0_10px_rgba(var(--destructive),0.5)]" : 
+                    usagePercent > 70 ? "bg-amber-500 shadow-[0_0_10px_rgba(var(--amber-500),0.3)]" : 
+                    "bg-primary shadow-[0_0_10px_rgba(var(--primary),0.3)]"
+                  }`}
+                  style={{ width: `${usagePercent}%` }}
+                />
+              </div>
+
+              <div className="flex justify-between mt-3 items-center">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                  Uso: <span className="text-foreground">{fmt(usedCredit)}</span>
+                </p>
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                  Capacidade: <span className="text-foreground">{fmt(creditLimit)}</span>
+                </p>
               </div>
             </CardContent>
           </Card>
 
       {/* ── Cartão / PIX Tabs ── */}
       <Tabs defaultValue="card" className="w-full">
-        <TabsList className="w-auto">
-          <TabsTrigger value="card" className="gap-2">
-            <CreditCard className="w-4 h-4" /> Cartão
+        <TabsList className="w-auto bg-white/5 border border-white/10 p-1 rounded-xl mb-6">
+          <TabsTrigger value="card" className="gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300">
+            <CreditCard className="w-4 h-4" /> Cartão de Crédito
           </TabsTrigger>
-          <TabsTrigger value="pix" className="gap-2">
-            <DollarSign className="w-4 h-4" /> PIX
+          <TabsTrigger value="pix" className="gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300">
+            <DollarSign className="w-4 h-4" /> Recarga via PIX
           </TabsTrigger>
         </TabsList>
 
@@ -724,12 +790,25 @@ const ProducerBilling = () => {
             </div>
 
             {/* Benefits box */}
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3.5">
-              <p className="text-xs font-semibold text-primary mb-2">Benefícios do crédito pré-pago:</p>
-              <ul className="space-y-1">
-                <li className="text-xs text-muted-foreground">• Taxas são debitadas automaticamente</li>
-                <li className="text-xs text-muted-foreground">• Evite bloqueios por pendências</li>
-                <li className="text-xs text-muted-foreground">• Sem preocupação com cobranças</li>
+            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 shadow-inner relative overflow-hidden group">
+              <div className="absolute -right-4 -top-4 w-12 h-12 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/20 transition-colors" />
+              <p className="text-xs font-bold text-primary mb-3 flex items-center gap-2">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Vantagens do crédito pré-pago:
+              </p>
+              <ul className="space-y-2">
+                <li className="text-[11px] text-muted-foreground flex items-center gap-2">
+                  <div className="w-1 h-1 rounded-full bg-primary/40" />
+                  Taxas são debitadas automaticamente de cada venda
+                </li>
+                <li className="text-[11px] text-muted-foreground flex items-center gap-2">
+                  <div className="w-1 h-1 rounded-full bg-primary/40" />
+                  Evite bloqueios no checkout por pendências financeiras
+                </li>
+                <li className="text-[11px] text-muted-foreground flex items-center gap-2">
+                  <div className="w-1 h-1 rounded-full bg-primary/40" />
+                  Sem mensalidades ou surpresas na fatura
+                </li>
               </ul>
             </div>
 
