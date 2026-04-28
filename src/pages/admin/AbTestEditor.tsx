@@ -788,13 +788,13 @@ function EditorInner() {
       <header className="h-14 border-b border-border/60 bg-background/80 backdrop-blur flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate("/admin/ab-tests")}><ArrowLeft className="h-4 w-4" /></Button>
-          <Input value={name} onChange={(e) => setName(e.target.value)} className="h-8 w-64 bg-transparent border-transparent font-bold" />
+          <Input id="tutorial-name" value={name} onChange={(e) => setName(e.target.value)} className="h-8 w-64 bg-transparent border-transparent font-bold" />
           <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${statusBadge.cls}`}>{statusBadge.label}</span>
           <Button variant="ghost" size="icon" onClick={() => setShowTutorial(true)} className="ml-2 text-zinc-500 hover:text-white">
             <HelpCircle className="h-4 w-4" />
           </Button>
         </div>
-        <div className="flex items-center gap-3">
+        <div id="tutorial-actions" className="flex items-center gap-3">
           {testId && (
             <Button onClick={() => toggleStatus.mutate()} className={status === "active" ? "bg-amber-600" : "bg-emerald-600"}>
               {status === "active" ? <Pause className="h-4 w-4 mr-2" /> : <Play className="h-4 w-4 mr-2" />}
@@ -809,12 +809,12 @@ function EditorInner() {
       </header>
       <div className="flex-1 flex overflow-hidden">
         <aside className="w-60 border-r border-border/60 bg-background/60 p-4 flex flex-col gap-6">
-          <div className="space-y-4">
+          <div id="tutorial-palette" className="space-y-4">
             <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Paleta</p>
             {PALETTE.map((p) => <PaletteItem key={p.kind} {...p} />)}
           </div>
 
-          <div className="space-y-4 pt-6 border-t border-border/40">
+          <div id="tutorial-stats" className="space-y-4 pt-6 border-t border-border/40">
             <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Resumo Geral</p>
             <div className="grid grid-cols-1 gap-2">
               <div className="p-3 rounded-lg bg-white/5 border border-border/20">
@@ -837,7 +837,7 @@ function EditorInner() {
             </div>
           </div>
         </aside>
-        <div ref={wrapperRef} className="flex-1 relative bg-[#0a0c12]">
+        <div id="tutorial-canvas" ref={wrapperRef} className="flex-1 relative bg-[#0a0c12]">
           <ReactFlow 
             nodes={nodes} 
             edges={edges} 
