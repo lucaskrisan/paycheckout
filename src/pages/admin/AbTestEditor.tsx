@@ -39,6 +39,9 @@ import {
   X,
   GripVertical,
   Trash2,
+  Play,
+  Pause,
+  Copy,
 } from "lucide-react";
 
 // ---------------- Types ----------------
