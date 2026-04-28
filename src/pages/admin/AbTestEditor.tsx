@@ -193,12 +193,13 @@ function AbTestNode({ id, data }: NodeProps<Node<AbTestData, "abtest">>) {
 function PageNode({ id, data }: NodeProps<Node<PageData, "page">>) {
   const reactFlow = useReactFlow();
   const hasUrl = !!data.url?.trim();
+  const isPaused = !!data.paused;
   return (
     <NodeShell 
-      color="#10b981" 
-      icon={<FileText className="h-4 w-4" />} 
+      color={isPaused ? "#71717a" : "#10b981"} 
+      icon={isPaused ? <Pause className="h-4 w-4" /> : <FileText className="h-4 w-4" />} 
       title={data.label} 
-      subtitle={data.subtitle}
+      subtitle={isPaused ? "PAUSADA — sem tráfego" : data.subtitle}
       nodeId={id}
       onDelete={(nodeId) => {
         const ns = reactFlow.getNodes();
