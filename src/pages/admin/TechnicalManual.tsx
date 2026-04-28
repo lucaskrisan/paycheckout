@@ -93,7 +93,7 @@ const TechnicalManual = () => {
 
 1.3 Modelo de Negócio
   Monetização via take-rate: taxa percentual (padrão 4.99%) + taxa fixa
-  (R$ 0,49) sobre cada venda aprovada. Créditos pré-pagos com tiers:
+  (R$ 0,99) sobre cada venda aprovada. Créditos pré-pagos com tiers:
   • Iron: R$ 5 (padrão)
   • Bronze: R$ 50
   • Silver: R$ 500
@@ -380,8 +380,8 @@ ROTAS ESPECIAIS
   • Stripe (cartão, com webhook)
 
   Modalidades:
-  • Split: taxa descontada na hora da venda (3%)
-  • Sob Demanda (Billing): R$ 0,49 fixo + 3% por venda
+  • Split: taxa descontada na hora da venda
+  • Sob Demanda (Billing): R$ 0,99 fixo por venda aprovada
 
   Cada produtor configura suas próprias credenciais.
   Campos: provider, name, environment (sandbox|production), config (JSON), payment_methods (JSON)
