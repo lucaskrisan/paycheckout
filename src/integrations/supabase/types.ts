@@ -1207,6 +1207,24 @@ export type Database = {
         }
         Relationships: []
       }
+      email_unsubscribes: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
       emq_snapshots: {
         Row: {
           browser_count: number | null
@@ -3137,6 +3155,7 @@ export type Database = {
         Args: { p_coupon_id: string }
         Returns: boolean
       }
+      is_email_unsubscribed: { Args: { p_email: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       is_verified_producer: { Args: { _user_id: string }; Returns: boolean }
       list_orders_paginated: {
