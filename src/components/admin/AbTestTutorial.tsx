@@ -1,132 +1,171 @@
-import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
-  BarChart3, 
-  MousePointer2, 
-  Zap, 
-  Settings2, 
   ChevronRight, 
   ChevronLeft,
-  MousePointerSquareDashed,
-  Workflow
+  X
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Step {
   title: string;
   description: string;
-  icon: React.ReactNode;
-  color: string;
+  targetId: string;
+  position: "right" | "left" | "top" | "bottom";
 }
 
 const steps: Step[] = [
   {
-    title: "Bem-vindo ao Editor de Teste A/B",
-    description: "Aqui você constrói seu funil de vendas visualmente. Arraste elementos da paleta para começar a montar sua estratégia.",
-    icon: <Workflow className="h-8 w-8" />,
-    color: "#3b82f6"
+    title: "Sua Caixa de Ferramentas",
+    description: "Aqui estão os componentes que você pode arrastar para o canvas para montar seu funil.",
+    targetId: "tutorial-palette",
+    position: "right"
   },
   {
-    title: "Monte seu Fluxo",
-    description: "Arraste 'Página de Vendas' e 'Checkout' para o canvas. Conecte os blocos clicando e puxando as bolinhas laterais para definir o caminho do seu cliente.",
-    icon: <MousePointerSquareDashed className="h-8 w-8" />,
-    color: "#a855f7"
+    title: "Métricas em Tempo Real",
+    description: "Acompanhe os acessos e vendas totais do seu teste conforme ele escala.",
+    targetId: "tutorial-stats",
+    position: "right"
   },
   {
-    title: "Configure as Variantes",
-    description: "Clique em cada bloco para abrir o painel lateral. Insira a URL real da sua LP e selecione o produto no checkout. Você também pode ativar Pixels Espelho aqui.",
-    icon: <Settings2 className="h-8 w-8" />,
-    color: "#10b981"
+    title: "Nome do Projeto",
+    description: "Dê um nome intuitivo ao seu teste para facilitar a gestão.",
+    targetId: "tutorial-name",
+    position: "bottom"
   },
   {
-    title: "Otimização Inteligente",
-    description: "No bloco inicial, você pode ativar o 'Vencedor Automático'. O sistema monitora as conversões e escolhe a melhor página para você sozinho.",
-    icon: <Zap className="h-8 w-8" />,
-    color: "#f59e0b"
+    title: "Controle de Voo",
+    description: "Inicie ou pause seu teste aqui. Lembre-se de salvar antes de começar!",
+    targetId: "tutorial-actions",
+    position: "bottom"
   },
   {
-    title: "Pronto para Escalar",
-    description: "Salve seu teste para gerar a URL de Entrada. Use essa URL nos seus anúncios e acompanhe as métricas em tempo real na barra lateral.",
-    icon: <BarChart3 className="h-8 w-8" />,
-    color: "#f97316"
+    title: "Área de Desenho",
+    description: "Aqui é onde a mágica acontece. Conecte as páginas aos checkouts para definir o fluxo.",
+    targetId: "tutorial-canvas",
+    position: "left"
   }
 ];
 
 export function AbTestTutorial({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
   const [currentStep, setCurrentStep] = useState(0);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
 
-  const handleNext = () => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      onOpenChange(false);
-    }
-  };
+  useEffect(() => {
+    if (!open) return;
 
-  const handleBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
+    const updatePosition = () => {
+      const step = steps[currentStep];
+      const element = document.getElementById(step.targetId);
+      if (element) {
+        const rect = element.getBoundingClientRect();
+        let top = rect.top;
+        let left = rect.left;
+
+        if (step.position === "right") {
+          left = rect.right + 20;
+          top = rect.top + (rect.height / 2) - 100;
+        } else if (step.position === "bottom") {
+          top = rect.bottom + 20;
+          left = rect.left + (rect.width / 2) - 150;
+        } else if (step.position === "left") {
+          left = rect.left - 320;
+          top = rect.top + (rect.height / 2) - 100;
+        }
+
+        setCoords({ top, left });
+      }
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    return () => window.removeEventListener('resize', updatePosition);
+  }, [open, currentStep]);
+
+  if (!open) return null;
 
   const step = steps[currentStep];
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] bg-[#0d0f15] border-border/40 text-white">
-        <DialogHeader>
-          <div className="flex justify-center mb-6">
-            <div 
-              className="h-20 w-20 rounded-2xl flex items-center justify-center animate-pulse shadow-2xl"
-              style={{ background: `${step.color}22`, color: step.color, border: `1px solid ${step.color}44` }}
-            >
-              {step.icon}
+    <div className="fixed inset-0 z-[100] pointer-events-none">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] pointer-events-auto" onClick={() => onOpenChange(false)} />
+      
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentStep}
+          initial={{ opacity: 0, scale: 0.9, y: 10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: 10 }}
+          className="absolute pointer-events-auto w-[300px] bg-[#1a1d25] border border-violet-500/30 shadow-[0_0_30px_rgba(139,92,246,0.2)] rounded-xl p-5"
+          style={{ top: coords.top, left: coords.left }}
+        >
+          {/* Arrow */}
+          <div 
+            className={`absolute w-3 h-3 bg-[#1a1d25] border-t border-l border-violet-500/30 rotate-[-45deg] ${
+              step.position === "right" ? "-left-1.5 top-1/2 -translate-y-1/2" :
+              step.position === "bottom" ? "-top-1.5 left-1/2 -translate-x-1/2 rotate-[45deg]" :
+              step.position === "left" ? "-right-1.5 top-1/2 -translate-y-1/2 rotate-[135deg]" : ""
+            }`}
+          />
+
+          <div className="flex justify-between items-start mb-3">
+            <h3 className="font-bold text-lg text-white leading-tight">{step.title}</h3>
+            <button onClick={() => onOpenChange(false)} className="text-zinc-500 hover:text-white">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          
+          <p className="text-zinc-400 text-sm leading-relaxed mb-6">
+            {step.description}
+          </p>
+
+          <div className="flex items-center justify-between">
+            <div className="flex gap-1">
+              {steps.map((_, i) => (
+                <div 
+                  key={i} 
+                  className={`h-1 rounded-full transition-all duration-300 ${i === currentStep ? 'w-4 bg-violet-500' : 'w-1 bg-zinc-700'}`}
+                />
+              ))}
+            </div>
+            
+            <div className="flex gap-2">
+              {currentStep > 0 && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={(e) => { e.stopPropagation(); setCurrentStep(prev => prev - 1); }}
+                  className="h-8 text-xs text-zinc-400"
+                >
+                  <ChevronLeft className="h-3 w-3 mr-1" /> Voltar
+                </Button>
+              )}
+              <Button 
+                size="sm" 
+                onClick={(e) => { 
+                  e.stopPropagation();
+                  if (currentStep < steps.length - 1) setCurrentStep(prev => prev + 1);
+                  else onOpenChange(false);
+                }}
+                className="h-8 text-xs bg-violet-600 hover:bg-violet-700 text-white border-0"
+              >
+                {currentStep === steps.length - 1 ? "Entendi!" : "Próximo"}
+                {currentStep < steps.length - 1 && <ChevronRight className="h-3 w-3 ml-1" />}
+              </Button>
             </div>
           </div>
-          <DialogTitle className="text-2xl font-bold text-center mb-2">
-            {step.title}
-          </DialogTitle>
-          <DialogDescription className="text-center text-zinc-400 text-base leading-relaxed">
-            {step.description}
-          </DialogDescription>
-        </DialogHeader>
+        </motion.div>
+      </AnimatePresence>
 
-        <div className="flex items-center justify-center gap-1.5 mt-8">
-          {steps.map((_, i) => (
-            <div 
-              key={i} 
-              className={`h-1.5 rounded-full transition-all duration-300 ${i === currentStep ? 'w-8' : 'w-2 bg-zinc-800'}`}
-              style={{ backgroundColor: i === currentStep ? step.color : undefined }}
-            />
-          ))}
-        </div>
-
-        <div className="flex items-center justify-between mt-10">
-          <Button 
-            variant="ghost" 
-            onClick={handleBack} 
-            disabled={currentStep === 0}
-            className="text-zinc-500 hover:text-white"
-          >
-            {currentStep > 0 && <ChevronLeft className="h-4 w-4 mr-2" />}
-            {currentStep > 0 ? "Anterior" : ""}
-          </Button>
-          <Button 
-            onClick={handleNext}
-            style={{ backgroundColor: step.color }}
-            className="px-8 hover:brightness-110 transition-all text-white border-0"
-          >
-            {currentStep === steps.length - 1 ? "Começar Agora" : "Próximo"}
-            {currentStep < steps.length - 1 && <ChevronRight className="h-4 w-4 ml-2" />}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+      {/* Overlay highlight effect (concept) */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        #${step.targetId} {
+          position: relative;
+          z-index: 101;
+          box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.5), 0 0 20px rgba(139, 92, 246, 0.3);
+          pointer-events: none;
+        }
+      `}} />
+    </div>
   );
 }
