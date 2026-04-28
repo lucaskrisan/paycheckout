@@ -324,14 +324,17 @@ const Checkout = () => {
 
   const getUtms = () => {
     const params = new URLSearchParams(window.location.search);
+    // Prefer visitor ID from URL (A/B test), fallback to persistent browser ID
+    const visitorId = params.get("_abv") || getVisitorId();
+    
     return {
       utm_source: params.get("utm_source") || undefined,
       utm_medium: params.get("utm_medium") || undefined,
       utm_campaign: params.get("utm_campaign") || undefined,
       utm_content: params.get("utm_content") || undefined,
       utm_term: params.get("utm_term") || undefined,
-      // A/B test attribution (set by ab-redirect edge function)
-      ab_visitor_id: params.get("_abv") || undefined,
+      // A/B test attribution
+      ab_visitor_id: visitorId,
       ab_test_slug: params.get("_abt") || undefined,
     };
   };

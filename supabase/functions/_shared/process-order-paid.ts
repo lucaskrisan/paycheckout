@@ -461,7 +461,10 @@ async function stepPushNotification(params: ProcessOrderPaidParams): Promise<voi
       .eq('send_approved', true)
       .maybeSingle();
 
-    if (!notifSettings) return;
+    if (!notifSettings) {
+      console.log(`[${source}] Push skipped: send_approved is false or settings not found for user ${orderData.user_id}`);
+      return;
+    }
 
     let productName = 'Produto';
     let customerName = '';
@@ -634,39 +637,36 @@ async function stepBillingNotification(params: ProcessOrderPaidParams): Promise<
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Main orchestrator — runs ALL post-payment side effects in sequence.
+// Main orchestrator — runs ALL post-payment side effects.
 // Each step is wrapped in its own try/catch so a failure in one step
 // doesn't prevent the others from executing.
 // ═══════════════════════════════════════════════════════════════════════════════
 export async function processOrderPaid(params: ProcessOrderPaidParams): Promise<void> {
   const { source } = params;
-  console.log(`[${source}] processOrderPaid started for order ${params.orderData.id}`);
+  const orderId = params.orderData.id;
+  console.log(`[${source}] processOrderPaid started for order ${orderId}`);
 
-  // Step 1: Purchase confirmation email
-  await stepPurchaseConfirmationEmail(params);
+  const steps = [
+    { name: 'Purchase Email', fn: stepPurchaseConfirmationEmail },
+    { name: 'CAPI Fallback', fn: stepCapiFallback },
+    { name: 'Recover Carts', fn: stepRecoverAbandonedCarts },
+    { name: 'Member Access', fn: stepMemberAccess },
+    { name: 'Push Notification', fn: stepPushNotification },
+    { name: 'WhatsApp Dispatch', fn: stepWhatsAppDispatch },
+    { name: 'Billing Notification', fn: stepBillingNotification },
+    { name: 'A/B Conversion', fn: stepAbConversion },
+  ];
 
-  // Step 2: CAPI Purchase fallback
-  await stepCapiFallback(params);
+  for (const step of steps) {
+    try {
+      console.log(`[${source}][${orderId}] Executing step: ${step.name}`);
+      await step.fn(params);
+    } catch (err) {
+      console.error(`[${source}][${orderId}] Critical error in step ${step.name}:`, err);
+    }
+  }
 
-  // Step 3: Mark abandoned carts as recovered
-  await stepRecoverAbandonedCarts(params);
-
-  // Step 4 & 5: Member access + access email
-  await stepMemberAccess(params);
-
-  // Step 6: Push notification
-  await stepPushNotification(params);
-
-  // Step 7: WhatsApp dispatch
-  await stepWhatsAppDispatch(params);
-
-  // Step 8: Billing low balance notification
-  await stepBillingNotification(params);
-
-  // Step 9: A/B test conversion tracking
-  await stepAbConversion(params);
-
-  console.log(`[${source}] processOrderPaid completed for order ${params.orderData.id}`);
+  console.log(`[${source}] processOrderPaid completed for order ${orderId}`);
 }
 
 // ─── 9. A/B test conversion tracking ────────────────────────────────────────
@@ -674,8 +674,16 @@ async function stepAbConversion(params: ProcessOrderPaidParams): Promise<void> {
   const { supabase, orderData, source } = params;
   try {
     const meta = (orderData.metadata ?? {}) as Record<string, unknown>;
-    const visitorId = (meta.ab_visitor_id as string) || (meta._abv as string);
-    if (!visitorId) return;
+    // Accept standard ab_visitor_id, _abv, or persistent vid/vid_fbp
+    const visitorId = (meta.ab_visitor_id as string) || 
+                      (meta._abv as string) || 
+                      (meta.vid as string) || 
+                      (meta.visitor_id as string);
+                      
+    if (!visitorId) {
+      console.log(`[${source}] A/B conversion skipped: no visitorId in metadata`);
+      return;
+    }
 
     const { error } = await supabase.rpc('ab_record_conversion', {
       p_visitor_id: visitorId,
