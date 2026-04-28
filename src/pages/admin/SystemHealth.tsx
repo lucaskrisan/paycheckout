@@ -406,8 +406,10 @@ const SystemHealth = () => {
     // 8. NOTIFICAÇÕES & EMAIL
     // ═══════════════════════════════════════
     try {
-      const { data: notif } = await supabase.from("notification_settings").select("*").limit(1).maybeSingle();
-      if (notif) {
+      const { data: notif, error } = await supabase.from("notification_settings").select("*").eq("user_id", user?.id).maybeSingle();
+      if (error) {
+        r.push({ name: "Config. Notificações", category: "notifications", status: "error", message: `Erro ao carregar: ${error.message}` });
+      } else if (notif) {
         const features = [
           notif.send_approved ? "Venda aprovada: ✓" : "Venda aprovada: ✗",
           notif.send_pending ? "PIX gerado: ✓" : "PIX gerado: ✗",
@@ -416,7 +418,7 @@ const SystemHealth = () => {
           notif.show_product_name ? "Nome produto: ✓" : "Nome produto: ✗",
           notif.show_utm_campaign ? "UTM: ✓" : "UTM: ✗",
         ];
-        r.push({ name: "Push notifications", category: "notifications", status: "ok", message: features.join(" | ") });
+        r.push({ name: "Push notifications (Config)", category: "notifications", status: "ok", message: features.join(" | ") });
 
         const reports = [
           notif.report_08 ? "08h" : null,
@@ -431,9 +433,11 @@ const SystemHealth = () => {
           message: reports.length > 0 ? `Horários: ${reports.join(", ")}` : "Nenhum relatório agendado",
         });
       } else {
-        r.push({ name: "Notificações", category: "notifications", status: "warning", message: "Não configuradas" });
+        r.push({ name: "Notificações", category: "notifications", status: "warning", message: "Não configuradas para seu usuário" });
       }
-    } catch {}
+    } catch (e: any) {
+      r.push({ name: "Notificações", category: "notifications", status: "error", message: `Falha crítica: ${e.message}` });
+    }
 
     // Email delivery (Resend)
     r.push({
