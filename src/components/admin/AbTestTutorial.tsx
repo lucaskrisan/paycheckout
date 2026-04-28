@@ -28,22 +28,22 @@ const steps: Step[] = [
     position: "right"
   },
   {
-    title: "Nome do Projeto",
-    description: "Dê um nome intuitivo ao seu teste para facilitar a gestão.",
-    targetId: "tutorial-name",
-    position: "bottom"
+    title: "Conecte os Pontos",
+    description: "Para definir o caminho do cliente, clique e arraste das 'bolinhas' coloridas de um bloco até o outro. É assim que você cria o fluxo!",
+    targetId: "tutorial-canvas",
+    position: "left"
+  },
+  {
+    title: "Link de Campanha",
+    description: "O nó azul contém a sua URL de Entrada. Copie esse link e coloque-o nos seus anúncios do Meta ou Google.",
+    targetId: "tutorial-canvas", // Aimed at canvas but will focus contextually
+    position: "left"
   },
   {
     title: "Controle de Voo",
-    description: "Inicie ou pause seu teste aqui. Lembre-se de salvar antes de começar!",
+    description: "Dê um nome ao projeto e inicie o teste aqui. O sistema cuidará da rotação de tráfego sozinho.",
     targetId: "tutorial-actions",
     position: "bottom"
-  },
-  {
-    title: "Área de Desenho",
-    description: "Aqui é onde a mágica acontece. Conecte as páginas aos checkouts para definir o fluxo.",
-    targetId: "tutorial-canvas",
-    position: "left"
   }
 ];
 
