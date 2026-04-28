@@ -661,6 +661,13 @@ function EditorInner() {
             </Button>
           )}
 
+          <span className="hidden sm:inline-block text-xs text-muted-foreground min-w-[88px] text-right">
+            {save.isPending
+              ? "Salvando…"
+              : lastSavedAt
+                ? `Salvo ${lastSavedAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`
+                : testId ? "Rascunho" : "Não salvo"}
+          </span>
           <Button onClick={() => save.mutate()} disabled={save.isPending} className="bg-violet-600 hover:bg-violet-500 text-white">
             <Save className="h-4 w-4 mr-2" /> Salvar
           </Button>
