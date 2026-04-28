@@ -11,7 +11,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Trash2, Play, Pause, Copy, MousePointerClick, ShoppingCart, TrendingUp, Trophy, Archive, Beaker, Zap, Code2, X, Code, Facebook } from "lucide-react";
+import { Plus, Trash2, Play, Pause, Copy, MousePointerClick, ShoppingCart, TrendingUp, Trophy, Archive, Beaker, Zap, Code2, X, Code, Facebook, Pencil, Files, Clock } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
@@ -179,6 +179,62 @@ export default function AbTests() {
     },
   });
 
+  const duplicateTest = useMutation({
+    mutationFn: async (id: string) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Não autenticado");
+      const original = tests.find((t) => t.id === id);
+      if (!original) throw new Error("Teste não encontrado");
+
+      const newName = `${original.name} (cópia)`;
+      const newSlug = slugify(`${newName}-${Math.random().toString(36).slice(2, 6)}`);
+
+      const { data: full } = await supabase
+        .from("ab_tests" as any).select("graph,entry_url,sticky_days,auto_winner_enabled,auto_winner_min_clicks,auto_winner_min_uplift")
+        .eq("id", id).maybeSingle();
+
+      const { data: created, error } = await supabase
+        .from("ab_tests" as any)
+        .insert({
+          user_id: user.id,
+          name: newName,
+          slug: newSlug,
+          status: "draft",
+          graph: (full as any)?.graph ?? null,
+          entry_url: `${REDIRECT_BASE}/${newSlug}?type=page`,
+          sticky_days: (full as any)?.sticky_days ?? 30,
+          auto_winner_enabled: (full as any)?.auto_winner_enabled ?? true,
+          auto_winner_min_clicks: (full as any)?.auto_winner_min_clicks ?? 100,
+          auto_winner_min_uplift: (full as any)?.auto_winner_min_uplift ?? 10,
+        })
+        .select().single();
+      if (error) throw error;
+
+      const newId = (created as any).id;
+      // Clone variants (sem stats)
+      if (original.variants.length > 0) {
+        await supabase.from("ab_test_variants" as any).insert(
+          original.variants.map((v) => ({
+            test_id: newId,
+            label: v.label,
+            name: v.name,
+            page_url: v.page_url,
+            checkout_url: v.checkout_url,
+            weight: v.weight,
+            mirror_pixel_id: v.mirror_pixel_id,
+            sort_order: v.sort_order,
+          }))
+        );
+      }
+      return newId;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["ab_tests"] });
+      toast.success("Teste duplicado");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao duplicar"),
+  });
+
   const editing = useMemo(() => tests.find((t) => t.id === editingId) ?? null, [tests, editingId]);
 
   return (
@@ -238,13 +294,14 @@ export default function AbTests() {
             return (
               <Card
                 key={t.id}
-                className="p-5 cursor-pointer hover:border-primary/40 transition"
+                className="p-5 cursor-pointer hover:border-primary/40 transition bg-card/60"
                 onClick={() => navigate(`/admin/ab-tests/${t.id}`)}
               >
-                <div className="flex items-start justify-between gap-4 flex-wrap">
-                  <div className="flex-1 min-w-[260px]">
+                <div className="flex items-start justify-between gap-4">
+                  {/* Left: name, status, links, variants count, metrics */}
+                  <div className="flex-1 min-w-0 space-y-3">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-lg font-bold">{t.name}</h3>
+                      <h3 className="text-base font-bold">{t.name}</h3>
                       <Badge className={STATUS_LABEL[t.status]?.cls ?? ""}>{STATUS_LABEL[t.status]?.label}</Badge>
                       {winner && (
                         <Badge className="bg-yellow-500/30 text-yellow-200 border border-yellow-400/40">
@@ -252,45 +309,87 @@ export default function AbTests() {
                         </Badge>
                       )}
                     </div>
-                    <div className="mt-3 grid gap-2 text-xs">
-                      <LinkRow label="Página" url={linkPage} />
-                      <LinkRow label="Checkout" url={linkCheckout} />
+
+                    <div className="space-y-1.5 text-xs">
+                      <CompactLinkRow label="Página" url={linkPage} />
+                      <CompactLinkRow label="Checkout" url={linkCheckout} />
+                      <div className="text-xs text-muted-foreground pl-[68px]">{t.variants.length} variantes</div>
                     </div>
-                    <div className="mt-2 text-xs text-muted-foreground">{t.variants.length} variantes</div>
+
+                    <div className="flex items-center gap-5 text-sm pt-1">
+                      <Stat icon={Zap} label="cliques" value={totalClicks.toLocaleString("pt-BR")} />
+                      <Stat icon={ShoppingCart} label="vendas" value={totalSales.toLocaleString("pt-BR")} />
+                      <Stat icon={TrendingUp} label="" value={`${conversion(totalClicks, totalSales).toFixed(0)}%`} />
+                      <Stat icon={Clock} label="" value={t.started_at ? formatDuration(t.started_at) : "-"} />
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-5 text-sm">
-                    <Stat icon={MousePointerClick} label="cliques" value={totalClicks.toLocaleString("pt-BR")} />
-                    <Stat icon={ShoppingCart} label="vendas" value={totalSales.toLocaleString("pt-BR")} />
-                    <Stat icon={TrendingUp} label="conv." value={`${conversion(totalClicks, totalSales).toFixed(1)}%`} />
-                    <Stat icon={Trophy} label="receita" value={fmtBRL(totalRevenue)} />
-                  </div>
-
-                  <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                  {/* Right: action icons */}
+                  <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                     {t.status === "draft" || t.status === "paused" ? (
-                      <Button size="icon" variant="ghost" className="text-emerald-400" onClick={() => setStatus.mutate({ id: t.id, status: "active" })}>
-                        <Play className="w-4 h-4" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button size="icon" variant="ghost" className="h-8 w-8 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10" onClick={() => setStatus.mutate({ id: t.id, status: "active" })}>
+                            <Play className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Iniciar</TooltipContent>
+                      </Tooltip>
                     ) : t.status === "active" ? (
-                      <Button size="icon" variant="ghost" className="text-amber-400" onClick={() => setStatus.mutate({ id: t.id, status: "paused" })}>
-                        <Pause className="w-4 h-4" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button size="icon" variant="ghost" className="h-8 w-8 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10" onClick={() => setStatus.mutate({ id: t.id, status: "paused" })}>
+                            <Pause className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Pausar</TooltipContent>
+                      </Tooltip>
                     ) : null}
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => navigate(`/admin/ab-tests/${t.id}`)}>
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Editar</TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => duplicateTest.mutate(t.id)} disabled={duplicateTest.isPending}>
+                          <Files className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Duplicar</TooltipContent>
+                    </Tooltip>
+
                     {t.status !== "archived" && (
-                      <Button size="icon" variant="ghost" onClick={() => setStatus.mutate({ id: t.id, status: "archived" })}>
-                        <Archive className="w-4 h-4" />
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => setStatus.mutate({ id: t.id, status: "archived" })}>
+                            <Archive className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Arquivar</TooltipContent>
+                      </Tooltip>
                     )}
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="text-red-400"
-                      onClick={() => {
-                        if (confirm(`Excluir o teste "${t.name}"?`)) deleteTest.mutate(t.id);
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                          onClick={() => {
+                            if (confirm(`Excluir o teste "${t.name}"?`)) deleteTest.mutate(t.id);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Excluir</TooltipContent>
+                    </Tooltip>
                   </div>
                 </div>
 
@@ -480,6 +579,40 @@ function LinkRow({ label, url }: { label: string; url: string }) {
       </Tooltip>
     </div>
   );
+}
+
+function CompactLinkRow({ label, url }: { label: string; url: string }) {
+  const display = url.replace(/^https?:\/\//, "");
+  return (
+    <div className="flex items-center gap-2 text-xs">
+      <span className="text-muted-foreground w-[60px] shrink-0">{label}:</span>
+      <div className="inline-flex items-center gap-1.5 bg-muted/40 hover:bg-muted/60 transition-colors px-2.5 py-1 rounded-md max-w-full">
+        <code className="font-mono text-xs truncate">https://{display}</code>
+        <button
+          type="button"
+          className="text-muted-foreground hover:text-foreground shrink-0"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigator.clipboard.writeText(url);
+            toast.success("Link copiado");
+          }}
+          aria-label="Copiar"
+        >
+          <Copy className="w-3 h-3" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function formatDuration(startedAt: string): string {
+  const ms = Date.now() - new Date(startedAt).getTime();
+  const days = Math.floor(ms / 86400000);
+  if (days >= 1) return `${days}d`;
+  const hours = Math.floor(ms / 3600000);
+  if (hours >= 1) return `${hours}h`;
+  const minutes = Math.floor(ms / 60000);
+  return `${Math.max(minutes, 0)}m`;
 }
 
 function TestEditor({
