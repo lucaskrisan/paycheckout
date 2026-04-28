@@ -191,7 +191,7 @@ const webhookConfigs: WebhookConfig[] = [
       },
       {
         title: "5. Selecione os eventos",
-        description: "Marque \"Pagamentos\" (payment) e \"Ordens\" (merchant_order).",
+        description: "Marque as opções: \"Pagamentos\" (payment) e \"Ordens do vendedor\" (merchant_order). Marque tanto em 'Eventos de Webhook' quanto em 'IPN' se disponível.",
       },
       {
         title: "6. Salve as configurações",
