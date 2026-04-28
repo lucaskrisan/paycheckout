@@ -110,6 +110,14 @@ Deno.serve(async (req) => {
     }
 
     if (provider === 'mercadopago') {
+      const isTestToken = api_key.startsWith('TEST-');
+      const isSandbox = environment === 'sandbox';
+      if (isTestToken && !isSandbox) {
+        envWarning = 'Você está usando um token de TESTE em ambiente de Produção. Pagamentos reais vão falhar. Use um token APP_USR-... para produção.';
+      } else if (!isTestToken && isSandbox) {
+        envWarning = 'Você está usando um token de Produção em ambiente Sandbox. Use um token TEST-... para testes.';
+      }
+
       const res = await fetch('https://api.mercadopago.com/v1/payment_methods', {
         headers: { 'Authorization': `Bearer ${api_key}` },
       });
