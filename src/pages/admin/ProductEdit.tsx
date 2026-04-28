@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ArrowLeft, Upload, Loader2, X, Link as LinkIcon, ExternalLink, Settings2, Trash2, MoreVertical, Plus } from "lucide-react";
+import { ArrowLeft, Upload, Loader2, X, Link as LinkIcon, ExternalLink, Settings2, Trash2, MoreVertical, Plus, CheckCircle, Shuffle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,6 +48,78 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
 const PUBLISHED_URL = "https://app.panttera.com.br";
+
+const VariantMetricsCard = ({ co, productId, currency }) => {
+  const [metrics, setMetrics] = useState({ visits: 0, sales: 0, revenue: 0, loading: true });
+
+  useEffect(() => {
+    const loadMetrics = async () => {
+      try {
+        const [visitsRes, salesRes] = await Promise.all([
+          supabase.from("pixel_events")
+            .select("id", { count: "exact", head: true })
+            .eq("product_id", productId)
+            .eq("event_name", "ViewContent")
+            .contains("metadata", { config_id: co.id }),
+          supabase.from("orders")
+            .select("amount")
+            .eq("product_id", productId)
+            .eq("status", "paid")
+            .contains("metadata", { config_id: co.id })
+        ]);
+
+        const sales = salesRes.data || [];
+        const totalRevenue = sales.reduce((sum, order) => sum + Number(order.amount), 0);
+        
+        setMetrics({
+          visits: visitsRes.count || 0,
+          sales: sales.length,
+          revenue: totalRevenue,
+          loading: false
+        });
+      } catch (err) {
+        console.error("Error loading metrics:", err);
+      }
+    };
+    loadMetrics();
+  }, [co.id, productId]);
+
+  const conversion = metrics.visits > 0 ? (metrics.sales / metrics.visits) * 100 : 0;
+
+  return (
+    <div className={`p-4 rounded-xl border ${co.is_default ? 'border-primary/50 bg-primary/5' : 'border-border bg-card'} space-y-3 relative overflow-hidden`}>
+      <div className="flex justify-between items-start">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{co.name}</p>
+          <p className="text-lg font-bold text-foreground">
+            {conversion.toFixed(1)}% <span className="text-[10px] font-medium text-muted-foreground ml-1">conversão</span>
+          </p>
+        </div>
+        {co.is_default && (
+          <span className="text-[9px] font-bold bg-primary text-primary-foreground px-1.5 py-0.5 rounded uppercase">Padrão</span>
+        )}
+      </div>
+      
+      <div className="grid grid-cols-2 gap-2 border-t border-border/50 pt-3">
+        <div>
+          <p className="text-[9px] text-muted-foreground uppercase font-semibold">Visitas</p>
+          <p className="text-sm font-semibold">{metrics.visits}</p>
+        </div>
+        <div>
+          <p className="text-[9px] text-muted-foreground uppercase font-semibold">Vendas</p>
+          <p className="text-sm font-semibold">{metrics.sales}</p>
+        </div>
+      </div>
+      
+      <div className="pt-1">
+        <p className="text-[9px] text-muted-foreground uppercase font-semibold">Receita</p>
+        <p className="text-sm font-bold text-primary">
+          {currency === "USD" ? "$" : "R$"} {metrics.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+        </p>
+      </div>
+    </div>
+  );
+};
 const getPublicUrl = () =>
   window.location.hostname.includes("lovable") ? PUBLISHED_URL : window.location.origin;
 
@@ -553,7 +625,7 @@ const ProductEdit = () => {
 
   const defaultCheckout = checkouts.find((c: any) => c.is_default) || checkouts[0] || null;
   const checkoutBaseUrl = activeCustomDomain ? `https://${activeCustomDomain}` : getPublicUrl();
-  const checkoutLink = isNew ? "" : `${checkoutBaseUrl}/checkout/${productId}${defaultCheckout?.id ? `?config=${defaultCheckout.id}` : ""}`;
+  const checkoutLink = isNew ? "" : `${checkoutBaseUrl}/checkout/${productId}`;
 
   return (
     <div className="space-y-0 -m-6">
@@ -1508,10 +1580,17 @@ const ProductEdit = () => {
                     {checkouts.map((co) => (
                       <TableRow key={co.id}>
                         <TableCell className="text-sm text-foreground">
-                          {co.name}
-                          {co.is_default && (
-                            <span className="ml-2 text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full">Padrão</span>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {co.name}
+                            {co.is_default && (
+                              <span className="text-[10px] font-semibold bg-primary/10 text-primary px-2 py-0.5 rounded-full">Padrão</span>
+                            )}
+                            {co.is_split_active && (
+                              <span className="text-[10px] font-semibold bg-blue-500/10 text-blue-500 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                <Shuffle className="w-2.5 h-2.5" /> Split
+                              </span>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {co.price != null ? `${form.currency === "USD" ? "$" : "R$"} ${Number(co.price).toFixed(2).replace(".", form.currency === "USD" ? "." : ",")}` : `${form.currency === "USD" ? "$" : "R$"} ${Number(form.price).toFixed(2).replace(".", form.currency === "USD" ? "." : ",")} (padrão)`}
@@ -1531,7 +1610,32 @@ const ProductEdit = () => {
                                 <MoreVertical className="w-4 h-4 text-muted-foreground" />
                               </button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-44">
+                            <DropdownMenuContent align="end" className="w-52">
+                              {!co.is_default && (
+                                <DropdownMenuItem onClick={async () => {
+                                  // 1. Remover is_default de todos do produto
+                                  await supabase.from("checkout_builder_configs")
+                                    .update({ is_default: false })
+                                    .eq("product_id", productId);
+                                  // 2. Setar is_default neste
+                                  await supabase.from("checkout_builder_configs")
+                                    .update({ is_default: true })
+                                    .eq("id", co.id);
+                                  toast.success(`"${co.name}" agora é o checkout padrão`);
+                                  loadCheckouts();
+                                }} className="gap-2 text-sm">
+                                  <CheckCircle className="w-3.5 h-3.5" /> Definir como padrão
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem onClick={async () => {
+                                await supabase.from("checkout_builder_configs")
+                                  .update({ is_split_active: !co.is_split_active })
+                                  .eq("id", co.id);
+                                toast.success(co.is_split_active ? "Removido do split de tráfego" : "Incluído no split de tráfego");
+                                loadCheckouts();
+                              }} className="gap-2 text-sm">
+                                <Shuffle className="w-3.5 h-3.5" /> {co.is_split_active ? "Remover do split" : "Incluir no split"}
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => {
                                 setEditingCheckout(co);
                                 setEditCheckoutName(co.name);
@@ -1558,6 +1662,11 @@ const ProductEdit = () => {
                                 <LinkIcon className="w-3.5 h-3.5" /> Duplicar
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={async () => {
+                                if (co.is_default && checkouts.length > 1) {
+                                  toast.error("Defina outro checkout como padrão antes de excluir este.");
+                                  return;
+                                }
+                                if (!confirm(`Excluir "${co.name}"?`)) return;
                                 await supabase.from("checkout_builder_configs").delete().eq("id", co.id);
                                 toast.success("Checkout excluído!");
                                 loadCheckouts();
@@ -1580,7 +1689,26 @@ const ProductEdit = () => {
                 </Table>
               </div>
 
-              <div className="flex items-center justify-center">
+              {/* Analytics Comparativo por Variante */}
+              {!isNew && checkouts.length > 0 && (
+                <div className="space-y-4 pt-6">
+                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <Shuffle className="w-4 h-4 text-primary" /> Performance por Variante
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {checkouts.map((co) => (
+                      <VariantMetricsCard 
+                        key={co.id} 
+                        co={co} 
+                        productId={productId} 
+                        currency={form.currency} 
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-center pt-8">
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <span className="text-primary">ℹ</span> Aprenda mais sobre o{" "}
                   <a href="#" className="text-primary underline">checkout builder</a>

@@ -605,6 +605,7 @@ export type Database = {
           created_at: string
           id: string
           is_default: boolean
+          is_split_active: boolean | null
           layout: Json
           name: string
           price: number | null
@@ -617,6 +618,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_default?: boolean
+          is_split_active?: boolean | null
           layout?: Json
           name?: string
           price?: number | null
@@ -629,6 +631,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_default?: boolean
+          is_split_active?: boolean | null
           layout?: Json
           name?: string
           price?: number | null
