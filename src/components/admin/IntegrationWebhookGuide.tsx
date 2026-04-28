@@ -459,7 +459,7 @@ const WebhookDetailCard = ({
                   {config.url}
                 </code>
                 <Button
-                  variant="primary"
+                  variant="default"
                   size="sm"
                   className="h-8 text-[10px] px-3 gap-1.5 shrink-0 shadow-sm"
                   onClick={() => onCopy(config.url)}
