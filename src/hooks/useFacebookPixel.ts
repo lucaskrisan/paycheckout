@@ -39,15 +39,24 @@ function setCookie(name: string, value: string, days: number) {
 /** Get or create a persistent visitor ID for journey tracking. */
 function getVisitorId(): string {
   const key = "_vid";
-  const urlVid = new URLSearchParams(window.location.search).get("vid");
-  if (urlVid && urlVid.startsWith("v_")) {
+  const params = new URLSearchParams(window.location.search);
+  // Support both 'vid' and A/B test '_abv' param
+  const urlVid = params.get("vid") || params.get("_abv");
+  
+  // UUIDs from A/B tests or v_ prefixed IDs
+  const isValidVid = urlVid && (urlVid.startsWith("v_") || urlVid.match(/^[0-9a-f-]{36}$/i));
+  
+  if (isValidVid) {
     setCookie(key, urlVid, 390);
+    localStorage.setItem(key, urlVid);
     return urlVid;
   }
-  let vid = getCookie(key);
+  
+  let vid = getCookie(key) || localStorage.getItem(key);
   if (!vid) {
     vid = `v_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
     setCookie(key, vid, 390);
+    localStorage.setItem(key, vid);
   }
   return vid;
 }
