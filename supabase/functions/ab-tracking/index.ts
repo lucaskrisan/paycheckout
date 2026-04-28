@@ -282,7 +282,7 @@ Deno.serve(async (req) => {
                 user_agent: req.headers.get("user-agent") || undefined,
                 custom_data: {
                   ...metadata,
-                  ab_test_id: test.id,
+                  ab_test_id: testId,
                   ab_variant_id: variantId
                 }
               })
