@@ -22,7 +22,7 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import IntegrationWebhookGuide from "@/components/admin/IntegrationWebhookGuide";
+// IntegrationWebhookGuide removed and moved to GatewayManagement
 
 const AVAILABLE_EVENTS = [
   { value: "payment.approved", label: "Compra aprovada" },
@@ -245,9 +245,7 @@ export default function Webhooks() {
 
   return (
     <div className="space-y-6">
-      <div className="mb-2">
-        <IntegrationWebhookGuide installedProviders={endpoints.length > 0 ? ["generic"] : []} />
-      </div>
+      {/* Header */}
       
       {/* Header */}
       <div className="flex items-center gap-3">
