@@ -638,7 +638,19 @@ function EditorInner() {
           {PALETTE.map((p) => <PaletteItem key={p.kind} {...p} />)}
         </aside>
         <div ref={wrapperRef} className="flex-1 relative bg-[#0a0c12]">
-          <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={(_, n) => setSelectedNodeId(n.id)} onPaneClick={() => setSelectedNodeId(null)} nodeTypes={nodeTypes as any} fitView proOptions={{ hideAttribution: true }}>
+          <ReactFlow 
+            nodes={nodes} 
+            edges={edges} 
+            onNodesChange={onNodesChange} 
+            onEdgesChange={onEdgesChange} 
+            onConnect={onConnect} 
+            onNodeClick={(_, n) => setSelectedNodeId(n.id)} 
+            onPaneClick={() => setSelectedNodeId(null)} 
+            nodeTypes={nodeTypes as any} 
+            fitView 
+            proOptions={{ hideAttribution: true }}
+            selectNodesOnDrag={false}
+          >
             <Background gap={20} size={1} color="#1e2230" />
             <Controls />
           </ReactFlow>
