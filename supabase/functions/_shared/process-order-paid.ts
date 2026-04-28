@@ -461,7 +461,10 @@ async function stepPushNotification(params: ProcessOrderPaidParams): Promise<voi
       .eq('send_approved', true)
       .maybeSingle();
 
-    if (!notifSettings) return;
+    if (!notifSettings) {
+      console.log(`[${source}] Push skipped: send_approved is false or settings not found for user ${orderData.user_id}`);
+      return;
+    }
 
     let productName = 'Produto';
     let customerName = '';
