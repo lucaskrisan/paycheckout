@@ -223,8 +223,8 @@ const ProducerBilling = () => {
           <div className="space-y-3 flex-1 text-center md:text-left">
             <h3 className="text-2xl font-black text-foreground tracking-tight">Taxas da Plataforma</h3>
             <p className="text-base text-muted-foreground leading-relaxed max-w-2xl font-medium">
-              Nossa taxa é transparente e focada no seu crescimento. Cobramos apenas <span className="text-primary font-bold">R$ 0,49 fixo + 3%</span> sobre cada venda aprovada. 
-              Sem mensalidades, sem custos ocultos e sem surpresas.
+              Nossa taxa é transparente e focada no seu crescimento. Cobramos apenas <span className="text-primary font-bold">R$ 0,99 fixo</span> sobre cada venda aprovada. 
+              Sem porcentagens abusivas, sem mensalidades e sem surpresas.
             </p>
           </div>
           <Button variant="outline" className="border-primary/30 hover:bg-primary/10 hover:border-primary/60 px-6 h-12 rounded-xl font-bold transition-all" asChild>
