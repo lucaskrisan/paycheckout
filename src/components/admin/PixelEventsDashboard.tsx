@@ -60,28 +60,38 @@ const FEED_CACHE_KEY = "nina-tracking-feed-cache";
 const FEED_EXPIRY_MS = 10 * 60 * 1000; // 10 min sem atividade expira (a menos que tenha comprado)
 
 const PixelEventsDashboard = ({ products, userId }: Props) => {
+  const [filterProduct, setFilterProduct] = useState("all");
+  const [period, setPeriod] = useState("24h");
+  const cacheKey = (uid: string | undefined, fp: string) =>
+    `${FEED_CACHE_KEY}-${uid || "anon"}-${fp}`;
   const [events, setEvents] = useState<PixelEvent[]>(() => {
-    // Hidrata do sessionStorage para não perder ao trocar de página
+    // Hidrata do sessionStorage só do MESMO filtro de produto
     try {
-      const cached = sessionStorage.getItem(`${FEED_CACHE_KEY}-${userId || "anon"}`);
+      const cached = sessionStorage.getItem(cacheKey(userId, "all"));
       if (cached) return JSON.parse(cached);
     } catch {}
     return [];
   });
   const [eventCounts, setEventCounts] = useState<Record<string, number>>({});
-  const [filterProduct, setFilterProduct] = useState("all");
-  const [period, setPeriod] = useState("24h");
   const [feedView, setFeedView] = useState<"feed" | "journeys">("feed");
   const [eventsLastHour, setEventsLastHour] = useState(0);
   const [initialLoading, setInitialLoading] = useState(() => {
     // Só mostra skeleton no primeiro mount sem cache
     try {
-      const cached = sessionStorage.getItem(`${FEED_CACHE_KEY}-${userId || "anon"}`);
+      const cached = sessionStorage.getItem(cacheKey(userId, "all"));
       return !cached;
     } catch {
       return true;
     }
   });
+
+  // Quando o filtro de produto mudar, limpa o feed imediatamente para
+  // evitar mostrar eventos do produto anterior enquanto o loadEvents roda.
+  useEffect(() => {
+    setEvents([]);
+    setInitialLoading(true);
+    seenEventIdsRef.current = new Set();
+  }, [filterProduct]);
   const seenEventIdsRef = useRef<Set<string>>(new Set());
   const welcomeShownRef = useRef(false);
   const geo = useGeo();
