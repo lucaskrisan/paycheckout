@@ -42,7 +42,9 @@ import {
   Play,
   Pause,
   Copy,
+  HelpCircle,
 } from "lucide-react";
+import { AbTestTutorial } from "@/components/admin/AbTestTutorial";
 
 // ---------------- Types ----------------
 
@@ -368,6 +370,7 @@ function EditorInner() {
   const [entryUrl, setEntryUrl] = useState("");
   const [slug, setSlug] = useState<string | null>(null);
   const [status, setStatus] = useState<string>("draft");
+  const [showTutorial, setShowTutorial] = useState(!routeId || routeId === "new");
 
   const initial = useMemo(() => buildInitialGraph("Novo Teste A/B"), []);
   const [nodes, setNodes, onNodesChange] = useNodesState<FlowNode>(initial.nodes);
@@ -787,6 +790,9 @@ function EditorInner() {
           <Button variant="ghost" size="icon" onClick={() => navigate("/admin/ab-tests")}><ArrowLeft className="h-4 w-4" /></Button>
           <Input value={name} onChange={(e) => setName(e.target.value)} className="h-8 w-64 bg-transparent border-transparent font-bold" />
           <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${statusBadge.cls}`}>{statusBadge.label}</span>
+          <Button variant="ghost" size="icon" onClick={() => setShowTutorial(true)} className="ml-2 text-zinc-500 hover:text-white">
+            <HelpCircle className="h-4 w-4" />
+          </Button>
         </div>
         <div className="flex items-center gap-3">
           {testId && (
@@ -903,8 +909,9 @@ function EditorInner() {
                         <span className="text-xs text-muted-foreground">%</span>
                       </div>
                     ))}
-                  </div>
-                </div>
+      </div>
+      <AbTestTutorial open={showTutorial} onOpenChange={setShowTutorial} />
+    </div>
                 <Button variant="outline" className="w-full text-red-400 border-red-400/30 hover:bg-red-500/10" onClick={() => deleteNode(selectedNode.id)}>
                   <Trash2 className="h-4 w-4 mr-2" /> Excluir Teste A/B
                 </Button>
