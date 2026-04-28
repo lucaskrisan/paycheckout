@@ -283,6 +283,9 @@ const Checkout = () => {
       utm_campaign: params.get("utm_campaign") || undefined,
       utm_content: params.get("utm_content") || undefined,
       utm_term: params.get("utm_term") || undefined,
+      // A/B test attribution (set by ab-redirect edge function)
+      ab_visitor_id: params.get("_abv") || undefined,
+      ab_test_slug: params.get("_abt") || undefined,
     };
   };
 

@@ -649,5 +649,31 @@ export async function processOrderPaid(params: ProcessOrderPaidParams): Promise<
   // Step 8: Billing low balance notification
   await stepBillingNotification(params);
 
+  // Step 9: A/B test conversion tracking
+  await stepAbConversion(params);
+
   console.log(`[${source}] processOrderPaid completed for order ${params.orderData.id}`);
+}
+
+// ─── 9. A/B test conversion tracking ────────────────────────────────────────
+async function stepAbConversion(params: ProcessOrderPaidParams): Promise<void> {
+  const { supabase, orderData, source } = params;
+  try {
+    const meta = (orderData.metadata ?? {}) as Record<string, unknown>;
+    const visitorId = (meta.ab_visitor_id as string) || (meta._abv as string);
+    if (!visitorId) return;
+
+    const { error } = await supabase.rpc('ab_record_conversion', {
+      p_visitor_id: visitorId,
+      p_order_id: orderData.id,
+      p_amount: orderData.amount,
+    });
+    if (error) {
+      console.warn(`[${source}] ab_record_conversion error:`, error.message);
+    } else {
+      console.log(`[${source}] A/B conversion recorded for visitor ${visitorId}`);
+    }
+  } catch (e) {
+    console.warn(`[${source}] stepAbConversion failed:`, e instanceof Error ? e.message : String(e));
+  }
 }
