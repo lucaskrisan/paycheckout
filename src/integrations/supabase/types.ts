@@ -2810,6 +2810,17 @@ export type Database = {
           total_revenue_usd: number
         }[]
       }
+      get_utm_attribution: {
+        Args: { p_days?: number; p_user_id: string }
+        Returns: {
+          campaign: string
+          count: number
+          currency: string
+          medium: string
+          revenue: number
+          source: string
+        }[]
+      }
       get_webhook_secret: { Args: { p_webhook_id: string }; Returns: string }
       has_role: {
         Args: {
