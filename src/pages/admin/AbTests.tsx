@@ -10,8 +10,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Trash2, Play, Pause, Copy, MousePointerClick, ShoppingCart, TrendingUp, Trophy, Archive, Beaker, Zap, Code2 } from "lucide-react";
+import { Plus, Trash2, Play, Pause, Copy, MousePointerClick, ShoppingCart, TrendingUp, Trophy, Archive, Beaker, Zap, Code2, X, Code, Facebook } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 const PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID;
 const REDIRECT_BASE = `https://${PROJECT_ID}.supabase.co/functions/v1/ab-redirect`;
@@ -80,6 +81,7 @@ export default function AbTests() {
   const qc = useQueryClient();
   const [showArchived, setShowArchived] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [scriptOpen, setScriptOpen] = useState(false);
 
   const { data: mirrors = [] } = useQuery({
     queryKey: ["mirror_pixels_for_ab"],
@@ -180,22 +182,17 @@ export default function AbTests() {
   return (
     <TooltipProvider>
       <div className="p-6 space-y-6">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold tracking-normal flex items-center gap-3">
-              Testes A/B
-            </h1>
+            <h1 className="text-2xl font-bold tracking-normal">Testes A/B</h1>
+            <p className="text-sm text-muted-foreground mt-1">Crie testes para otimizar suas conversões</p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => setShowArchived((v) => !v)}>
               <Archive className="w-4 h-4 mr-2" />
               {showArchived ? "Ver ativos" : "Arquivados"}
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => toast.info("O script será configurado na próxima tela do fluxo.")}
-            >
+            <Button variant="outline" size="sm" onClick={() => setScriptOpen(true)}>
               <Code2 className="w-4 h-4 mr-2" /> Script
             </Button>
             <Button onClick={() => createTest.mutate()} disabled={createTest.isPending}>
@@ -328,8 +325,122 @@ export default function AbTests() {
             {editing && <TestEditor test={editing} mirrors={mirrors} onClose={() => setEditingId(null)} />}
           </SheetContent>
         </Sheet>
+
+        <ScriptDialog open={scriptOpen} onOpenChange={setScriptOpen} />
       </div>
     </TooltipProvider>
+  );
+}
+
+function ScriptDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+  const trackingScript = `<script src="https://legendarytools.b-cdn.net/tracking.js" data-domain="panttera.com.br"></script>`;
+  const fbUtm = `utm_source=FB&utm_campaign={{campaign.name}}|{{campaign.id}}&utm_medium={{adset.name}}|{{adset.id}}&utm_content={{ad.name}}|{{ad.id}}&utm_term={{placement}}`;
+
+  const copy = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} copiado`);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0 bg-[#0f1117] border-border/60">
+        <div className="p-6 space-y-6">
+          {/* Header: Script de Rastreamento */}
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 rounded-lg bg-blue-600/20 flex items-center justify-center shrink-0">
+              <Code className="h-5 w-5 text-blue-400" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-lg font-bold">Script de Rastreamento</h2>
+              <p className="text-sm text-muted-foreground">Instale na sua página de vendas</p>
+            </div>
+          </div>
+
+          <p className="text-sm text-foreground/90">
+            Cole este script na sua página de vendas para que os parâmetros de rastreamento (
+            <code className="bg-muted/60 px-1.5 py-0.5 rounded text-xs font-mono">src</code>,{" "}
+            <code className="bg-muted/60 px-1.5 py-0.5 rounded text-xs font-mono">sck</code>, UTMs) sejam repassados
+            automaticamente para o checkout.
+          </p>
+
+          <div className="relative rounded-lg border border-border/60 bg-muted/30 p-3">
+            <pre className="text-xs font-mono text-foreground/90 overflow-x-auto pr-20 whitespace-nowrap">
+              {trackingScript}
+            </pre>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="absolute top-2 right-2 h-7 px-2 text-xs"
+              onClick={() => copy(trackingScript, "Script")}
+            >
+              <Copy className="w-3 h-3 mr-1" /> Copiar
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            <h4 className="text-sm font-bold">Como funciona:</h4>
+            <ol className="space-y-1.5 text-sm text-foreground/90">
+              <li><span className="text-blue-400 font-semibold">1.</span> Captura UTMs, src e sck da URL ao carregar a página</li>
+              <li><span className="text-blue-400 font-semibold">2.</span> Salva no localStorage por 30 dias (persistência entre páginas)</li>
+              <li><span className="text-blue-400 font-semibold">3.</span> Injeta automaticamente em todos os links e formulários da página</li>
+            </ol>
+          </div>
+
+          <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-3 text-sm">
+            <span className="font-bold text-blue-300">Importante:</span>{" "}
+            <span className="text-foreground/90">
+              Sem este script, os parâmetros de rastreamento podem se perder quando o visitante clica no botão de compra
+              da sua página de vendas.
+            </span>
+          </div>
+
+          <div className="border-t border-border/60" />
+
+          {/* UTM para Facebook Ads */}
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 rounded-lg bg-blue-600/20 flex items-center justify-center shrink-0">
+              <Facebook className="h-5 w-5 text-blue-400" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-lg font-bold">UTM para Facebook Ads</h2>
+              <p className="text-sm text-muted-foreground">Cole na URL de destino do seu anúncio</p>
+            </div>
+          </div>
+
+          <p className="text-sm text-foreground/90">
+            Adicione este parâmetro na URL de destino dos seus anúncios no Facebook para rastrear automaticamente
+            campanha, conjunto de anúncios, anúncio e posicionamento.
+          </p>
+
+          <div className="relative rounded-lg border border-border/60 bg-muted/30 p-3">
+            <pre className="text-xs font-mono text-foreground/90 overflow-x-auto pr-20 whitespace-pre-wrap break-all">
+              {fbUtm}
+            </pre>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="absolute top-2 right-2 h-7 px-2 text-xs"
+              onClick={() => copy(fbUtm, "UTM")}
+            >
+              <Copy className="w-3 h-3 mr-1" /> Copiar
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            <h4 className="text-sm font-bold">Como usar:</h4>
+            <ol className="space-y-1.5 text-sm text-foreground/90">
+              <li>1. No Gerenciador de Anúncios, edite o anúncio e vá em <strong>URL de destino</strong></li>
+              <li>2. No campo <strong>Parâmetros de URL</strong>, cole o código acima</li>
+              <li>
+                3. O Facebook substituirá automaticamente os valores entre{" "}
+                <code className="bg-muted/60 px-1.5 py-0.5 rounded text-xs font-mono">{`{{...}}`}</code> pelos dados reais
+                da campanha
+              </li>
+            </ol>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
