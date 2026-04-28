@@ -837,7 +837,7 @@ function EditorInner() {
             </div>
           </div>
         </aside>
-        <div ref={wrapperRef} className="flex-1 relative bg-[#0a0c12]">
+        <div id="tutorial-canvas" ref={wrapperRef} className="flex-1 relative bg-[#0a0c12]">
           <ReactFlow 
             nodes={nodes} 
             edges={edges} 
