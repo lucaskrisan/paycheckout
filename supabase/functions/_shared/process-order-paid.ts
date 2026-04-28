@@ -634,39 +634,36 @@ async function stepBillingNotification(params: ProcessOrderPaidParams): Promise<
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Main orchestrator — runs ALL post-payment side effects in sequence.
+// Main orchestrator — runs ALL post-payment side effects.
 // Each step is wrapped in its own try/catch so a failure in one step
 // doesn't prevent the others from executing.
 // ═══════════════════════════════════════════════════════════════════════════════
 export async function processOrderPaid(params: ProcessOrderPaidParams): Promise<void> {
   const { source } = params;
-  console.log(`[${source}] processOrderPaid started for order ${params.orderData.id}`);
+  const orderId = params.orderData.id;
+  console.log(`[${source}] processOrderPaid started for order ${orderId}`);
 
-  // Step 1: Purchase confirmation email
-  await stepPurchaseConfirmationEmail(params);
+  const steps = [
+    { name: 'Purchase Email', fn: stepPurchaseConfirmationEmail },
+    { name: 'CAPI Fallback', fn: stepCapiFallback },
+    { name: 'Recover Carts', fn: stepRecoverAbandonedCarts },
+    { name: 'Member Access', fn: stepMemberAccess },
+    { name: 'Push Notification', fn: stepPushNotification },
+    { name: 'WhatsApp Dispatch', fn: stepWhatsAppDispatch },
+    { name: 'Billing Notification', fn: stepBillingNotification },
+    { name: 'A/B Conversion', fn: stepAbConversion },
+  ];
 
-  // Step 2: CAPI Purchase fallback
-  await stepCapiFallback(params);
+  for (const step of steps) {
+    try {
+      console.log(`[${source}][${orderId}] Executing step: ${step.name}`);
+      await step.fn(params);
+    } catch (err) {
+      console.error(`[${source}][${orderId}] Critical error in step ${step.name}:`, err);
+    }
+  }
 
-  // Step 3: Mark abandoned carts as recovered
-  await stepRecoverAbandonedCarts(params);
-
-  // Step 4 & 5: Member access + access email
-  await stepMemberAccess(params);
-
-  // Step 6: Push notification
-  await stepPushNotification(params);
-
-  // Step 7: WhatsApp dispatch
-  await stepWhatsAppDispatch(params);
-
-  // Step 8: Billing low balance notification
-  await stepBillingNotification(params);
-
-  // Step 9: A/B test conversion tracking
-  await stepAbConversion(params);
-
-  console.log(`[${source}] processOrderPaid completed for order ${params.orderData.id}`);
+  console.log(`[${source}] processOrderPaid completed for order ${orderId}`);
 }
 
 // ─── 9. A/B test conversion tracking ────────────────────────────────────────
