@@ -43,6 +43,7 @@ import {
   Pause,
   Copy,
   HelpCircle,
+  RefreshCw,
 } from "lucide-react";
 import { AbTestTutorial } from "@/components/admin/AbTestTutorial";
 
@@ -840,16 +841,25 @@ function EditorInner() {
           </Button>
         </div>
         <div id="tutorial-actions" className="flex items-center gap-3">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => qc.invalidateQueries({ queryKey: ["ab_test_stats"] })}
+            className="text-xs h-8 border-violet-500/30 hover:bg-violet-500/10"
+          >
+            <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+            Atualizar Dados
+          </Button>
           {testId && (
-            <Button onClick={() => toggleStatus.mutate()} className={status === "active" ? "bg-amber-600" : "bg-emerald-600"}>
+            <Button onClick={() => toggleStatus.mutate()} className={status === "active" ? "bg-amber-600" : "bg-emerald-600"} size="sm">
               {status === "active" ? <Pause className="h-4 w-4 mr-2" /> : <Play className="h-4 w-4 mr-2" />}
               {status === "active" ? "Pausar" : "Iniciar"}
             </Button>
           )}
-          <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
+          <span className="text-[10px] text-muted-foreground uppercase tracking-widest hidden sm:inline">
             {save.isPending ? "Salvando…" : lastSavedAt ? `Salvo ${lastSavedAt.toLocaleTimeString()}` : "Rascunho"}
           </span>
-          <Button onClick={() => save.mutate()} disabled={save.isPending} className="bg-violet-600"><Save className="h-4 w-4 mr-2" /> Salvar</Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending} className="bg-violet-600" size="sm"><Save className="h-4 w-4 mr-2" /> Salvar</Button>
         </div>
       </header>
       <div className="flex-1 flex overflow-hidden">
