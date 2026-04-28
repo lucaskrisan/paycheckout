@@ -179,6 +179,62 @@ export default function AbTests() {
     },
   });
 
+  const duplicateTest = useMutation({
+    mutationFn: async (id: string) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Não autenticado");
+      const original = tests.find((t) => t.id === id);
+      if (!original) throw new Error("Teste não encontrado");
+
+      const newName = `${original.name} (cópia)`;
+      const newSlug = slugify(`${newName}-${Math.random().toString(36).slice(2, 6)}`);
+
+      const { data: full } = await supabase
+        .from("ab_tests" as any).select("graph,entry_url,sticky_days,auto_winner_enabled,auto_winner_min_clicks,auto_winner_min_uplift")
+        .eq("id", id).maybeSingle();
+
+      const { data: created, error } = await supabase
+        .from("ab_tests" as any)
+        .insert({
+          user_id: user.id,
+          name: newName,
+          slug: newSlug,
+          status: "draft",
+          graph: (full as any)?.graph ?? null,
+          entry_url: `${REDIRECT_BASE}/${newSlug}?type=page`,
+          sticky_days: (full as any)?.sticky_days ?? 30,
+          auto_winner_enabled: (full as any)?.auto_winner_enabled ?? true,
+          auto_winner_min_clicks: (full as any)?.auto_winner_min_clicks ?? 100,
+          auto_winner_min_uplift: (full as any)?.auto_winner_min_uplift ?? 10,
+        })
+        .select().single();
+      if (error) throw error;
+
+      const newId = (created as any).id;
+      // Clone variants (sem stats)
+      if (original.variants.length > 0) {
+        await supabase.from("ab_test_variants" as any).insert(
+          original.variants.map((v) => ({
+            test_id: newId,
+            label: v.label,
+            name: v.name,
+            page_url: v.page_url,
+            checkout_url: v.checkout_url,
+            weight: v.weight,
+            mirror_pixel_id: v.mirror_pixel_id,
+            sort_order: v.sort_order,
+          }))
+        );
+      }
+      return newId;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["ab_tests"] });
+      toast.success("Teste duplicado");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao duplicar"),
+  });
+
   const editing = useMemo(() => tests.find((t) => t.id === editingId) ?? null, [tests, editingId]);
 
   return (
