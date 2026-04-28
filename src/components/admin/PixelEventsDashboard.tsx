@@ -168,9 +168,9 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
         if (visitorsWithPurchase.has(e.visitor_id)) return true; // venda: persiste
         return now - new Date(e.created_at).getTime() < FEED_EXPIRY_MS; // resto: 10 min
       });
-      sessionStorage.setItem(`${FEED_CACHE_KEY}-${userId}`, JSON.stringify(filtered.slice(0, 500)));
+      sessionStorage.setItem(cacheKey(userId, filterProduct), JSON.stringify(filtered.slice(0, 500)));
     } catch {}
-  }, [events, userId]);
+  }, [events, userId, filterProduct]);
 
   // Welcome toast (uma vez por dia)
   useEffect(() => {
