@@ -217,7 +217,7 @@ Deno.serve(async (req) => {
             )
           )
         `)
-        .eq("test_id", test.id)
+        .eq("test_id", testId)
         .eq("visitor_id", visitorId)
         .maybeSingle();
 
