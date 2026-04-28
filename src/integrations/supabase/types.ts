@@ -118,6 +118,7 @@ export type Database = {
           mirror_pixel_id: string | null
           name: string
           page_url: string | null
+          paused: boolean
           revenue: number
           sales: number
           sort_order: number
@@ -135,6 +136,7 @@ export type Database = {
           mirror_pixel_id?: string | null
           name?: string
           page_url?: string | null
+          paused?: boolean
           revenue?: number
           sales?: number
           sort_order?: number
@@ -152,6 +154,7 @@ export type Database = {
           mirror_pixel_id?: string | null
           name?: string
           page_url?: string | null
+          paused?: boolean
           revenue?: number
           sales?: number
           sort_order?: number
