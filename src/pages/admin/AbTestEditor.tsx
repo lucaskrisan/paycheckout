@@ -387,9 +387,9 @@ function EditorInner() {
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
-      const { data, error } = await supabase
-        .from("mirror_pixels")
-        .select("id, name, pixel_id")
+      const { data, error } = await (supabase
+        .from("mirror_pixels" as any)
+        .select("id, name, pixel_id") as any)
         .eq("user_id", user.id);
       if (error) throw error;
       return data ?? [];
