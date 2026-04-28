@@ -646,10 +646,11 @@ function EditorInner() {
             onConnect={onConnect} 
             onNodeClick={(_, n) => setSelectedNodeId(n.id)} 
             onPaneClick={() => setSelectedNodeId(null)} 
+            onDrop={onDrop}
+            onDragOver={onDragOver}
             nodeTypes={nodeTypes as any} 
             fitView 
             proOptions={{ hideAttribution: true }}
-            selectNodesOnDrag={false}
           >
             <Background gap={20} size={1} color="#1e2230" />
             <Controls />
