@@ -81,6 +81,7 @@ export default function AbTests() {
   const qc = useQueryClient();
   const [showArchived, setShowArchived] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [scriptOpen, setScriptOpen] = useState(false);
 
   const { data: mirrors = [] } = useQuery({
     queryKey: ["mirror_pixels_for_ab"],
