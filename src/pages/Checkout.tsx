@@ -207,7 +207,7 @@ const Checkout = () => {
             product_id: productId,
             event_name: "ViewContent",
             source: "browser",
-            visitor_id: localStorage.getItem("_vid") || null,
+            visitor_id: getVisitorId(),
             event_id: `view_${targetConfigId}_${Date.now()}`,
             user_id: p.user_id,
             metadata: { config_id: targetConfigId }
