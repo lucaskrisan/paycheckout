@@ -299,6 +299,7 @@ function EditorInner() {
     setAutoWinner(!!existing.auto_winner_enabled);
     setStickyDays(existing.sticky_days ?? 30);
     setSlug(existing.slug ?? null);
+    setStatus(existing.status ?? "draft");
     const generated = existing.slug ? `${REDIRECT_BASE}/${existing.slug}?type=page` : "";
     setEntryUrl(existing.entry_url ?? generated);
     const g = existing.graph;
