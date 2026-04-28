@@ -182,22 +182,17 @@ export default function AbTests() {
   return (
     <TooltipProvider>
       <div className="p-6 space-y-6">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold tracking-normal flex items-center gap-3">
-              Testes A/B
-            </h1>
+            <h1 className="text-2xl font-bold tracking-normal">Testes A/B</h1>
+            <p className="text-sm text-muted-foreground mt-1">Crie testes para otimizar suas conversões</p>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => setShowArchived((v) => !v)}>
               <Archive className="w-4 h-4 mr-2" />
               {showArchived ? "Ver ativos" : "Arquivados"}
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => toast.info("O script será configurado na próxima tela do fluxo.")}
-            >
+            <Button variant="outline" size="sm" onClick={() => setScriptOpen(true)}>
               <Code2 className="w-4 h-4 mr-2" /> Script
             </Button>
             <Button onClick={() => createTest.mutate()} disabled={createTest.isPending}>
