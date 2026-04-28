@@ -37,7 +37,7 @@ function setCookie(name: string, value: string, days: number) {
 }
 
 /** Get or create a persistent visitor ID for journey tracking. */
-function getVisitorId(): string {
+export function getVisitorId(): string {
   const key = "_vid";
   const params = new URLSearchParams(window.location.search);
   // Support both 'vid' and A/B test '_abv' param
