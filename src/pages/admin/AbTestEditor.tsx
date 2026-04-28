@@ -446,6 +446,18 @@ function EditorInner() {
     },
   });
 
+  const { data: customDomains = [] } = useQuery({
+    queryKey: ["custom_domains_for_ab"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("custom_domains")
+        .select("hostname")
+        .eq("status", "active");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   const { data: templates = [] } = useQuery({
     queryKey: ["checkout_templates_for_ab"],
     queryFn: async () => {
