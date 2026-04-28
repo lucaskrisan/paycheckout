@@ -814,7 +814,7 @@ function EditorInner() {
             {PALETTE.map((p) => <PaletteItem key={p.kind} {...p} />)}
           </div>
 
-          <div className="space-y-4 pt-6 border-t border-border/40">
+          <div id="tutorial-stats" className="space-y-4 pt-6 border-t border-border/40">
             <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Resumo Geral</p>
             <div className="grid grid-cols-1 gap-2">
               <div className="p-3 rounded-lg bg-white/5 border border-border/20">
