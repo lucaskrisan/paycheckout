@@ -575,6 +575,24 @@ function EditorInner() {
 
   return (
     <div className="h-[calc(100vh-0px)] flex flex-col">
+      {/* Validation banner */}
+      {validationError && (
+        <div className="bg-red-950/60 border-b border-red-500/40 text-red-200 px-4 py-2.5 flex items-center justify-between gap-4 shrink-0">
+          <div className="flex items-center gap-2 text-sm">
+            <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
+            <span>{validationError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setValidationError(null)}
+            className="text-red-300 hover:text-red-100 shrink-0"
+            aria-label="Fechar"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       {/* Top bar */}
       <header className="h-14 border-b border-border/60 bg-background/80 backdrop-blur flex items-center justify-between px-4 shrink-0 gap-4">
         <div className="flex items-center gap-3 min-w-0">
