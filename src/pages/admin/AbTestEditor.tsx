@@ -463,7 +463,9 @@ function EditorInner() {
 
       const pageNodes = nodes.filter((n) => n.type === "page") as Node<PageData, "page">[];
       const checkoutNodes = nodes.filter((n) => n.type === "checkout") as Node<CheckoutData, "checkout">[];
-      const variantSlots = Math.max(pageNodes.length, checkoutNodes.length, 2);
+      
+      // Variants are defined by Page nodes. If no page nodes, we'll create at least 2 default ones.
+      const variantSlots = Math.max(pageNodes.length, 2);
 
       const { data: existingVars } = await supabase.from("ab_test_variants" as any).select("id,sort_order").eq("test_id", id);
       const existing = ((existingVars ?? []) as unknown) as { id: string; sort_order: number }[];
@@ -471,10 +473,28 @@ function EditorInner() {
       for (let i = 0; i < variantSlots; i++) {
         const label = String.fromCharCode(65 + i);
         const page = pageNodes[i];
+        
+        // Find if this page is connected to a checkout
+        let checkoutUrl = null;
+        if (page) {
+          const connectedEdge = edges.find(e => e.source === page.id);
+          if (connectedEdge) {
+            const target = nodes.find(n => n.id === connectedEdge.target);
+            if (target && target.type === "checkout") {
+              const d = target.data as CheckoutData;
+              if (d.productId) {
+                // Construct Panttera checkout URL
+                checkoutUrl = `https://checkout.panttera.com.br/pay/${d.productId}`;
+                if (d.offerId) checkoutUrl += `?offer=${d.offerId}`;
+              }
+            }
+          }
+        }
+
         const payload = {
           name: page?.data?.label ?? `Variante ${label}`,
           page_url: page?.data?.url ?? null,
-          checkout_url: null,
+          checkout_url: checkoutUrl,
           weight: Math.round(100 / variantSlots),
           label,
           sort_order: i,
