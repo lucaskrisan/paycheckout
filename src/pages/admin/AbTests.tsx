@@ -80,6 +80,7 @@ function conversion(clicks: number, sales: number): number {
 
 export default function AbTests() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [showArchived, setShowArchived] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [scriptOpen, setScriptOpen] = useState(false);
