@@ -447,7 +447,15 @@ function EditorInner() {
   });
 
   const { data: templates = [] } = useQuery({
-...
+    queryKey: ["checkout_templates_for_ab"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("checkout_templates")
+        .select("id,name")
+        .eq("published", true)
+        .order("name");
+      if (error) throw error;
+      return data ?? [];
     },
   });
   
