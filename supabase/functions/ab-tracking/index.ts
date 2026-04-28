@@ -279,10 +279,11 @@ Deno.serve(async (req) => {
         console.log(`[ab-tracking] Mirroring ${event} to Meta CAPI for pixel ${mirrorPixel.pixel_id}`);
         
         // Map A/B events to standard Meta events
-        let metaEventName = 'PageView';
+        let metaEventName = event;
+        // If it's a standard Meta event, we keep it, otherwise map it
         if (event === 'impression') metaEventName = 'PageView';
-        if (event === 'click') metaEventName = 'Lead';
         if (event === 'sale') metaEventName = 'Purchase';
+        if (event === 'click' && !metadata?.event_name) metaEventName = 'Lead';
 
         // Use our existing facebook-capi edge function to handle the heavy lifting
         // This ensures the same high-quality data hashing and formatting.
