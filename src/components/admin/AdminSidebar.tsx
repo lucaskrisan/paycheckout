@@ -29,6 +29,7 @@ import {
   Tag,
   ClipboardList,
   Sparkles,
+  Beaker,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -128,6 +129,7 @@ const superAdminRecursos = [
   { title: "Roadmap", url: "/admin/roadmap", icon: ClipboardList },
   { title: "Manual Técnico", url: "/admin/manual", icon: BookOpen },
   { title: "Pixels Espelho", url: "/admin/pixel-mirrors", icon: Zap },
+  { title: "Testes A/B", url: "/admin/ab-tests", icon: Beaker },
 ];
 
 /* ── Componente ────────────────────────────────────── */
