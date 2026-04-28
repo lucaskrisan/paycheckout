@@ -555,17 +555,23 @@ function EditorInner() {
   });
 
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  
+  // No longer using useEffect for automatic save of everything.
+  // We'll save only the graph layout (positions) automatically to keep the UI fluid.
   const isFirstAutosaveRef = useRef(true);
   useEffect(() => {
     if (isFirstAutosaveRef.current) { isFirstAutosaveRef.current = false; return; }
-    if (status === "active") return;
-    const t = setTimeout(() => {
-      if (!save.isPending) {
-        save.mutate(undefined, { onSuccess: () => setLastSavedAt(new Date()) });
-      }
-    }, 1500);
+    if (status === "active" || !testId) return;
+
+    const t = setTimeout(async () => {
+      // Automatic save only for node positions (graph)
+      const graph = { nodes, edges };
+      await supabase.from("ab_tests" as any).update({ graph }).eq("id", testId);
+      setLastSavedAt(new Date());
+    }, 3000);
+    
     return () => clearTimeout(t);
-  }, [nodes, edges, name, autoWinner, stickyDays]);
+  }, [nodes, edges]);
 
   const copyEntryUrl = async () => {
     if (!entryUrl) return;
