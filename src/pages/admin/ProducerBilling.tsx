@@ -237,47 +237,65 @@ const ProducerBilling = () => {
       </section>
 
       {/* ── Summary Cards ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Taxas a Pagar */}
-        <Card>
-          <CardContent className="pt-5 pb-5">
+        <Card className="border border-white/10 bg-card/40 backdrop-blur-md hover:border-destructive/30 transition-all duration-300 overflow-hidden relative group">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-destructive/5 blur-3xl -mr-8 -mt-8 group-hover:bg-destructive/10 transition-colors" />
+          <CardContent className="pt-6 pb-6 relative z-10">
             <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground mb-2">Taxas a Pagar</p>
-                <p className="text-2xl font-bold tabular-nums text-foreground">{fmt(Math.max(0, -balance))}</p>
-                <p className="text-xs text-muted-foreground mt-1">Taxas acumuladas no período</p>
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Taxas a Pagar</p>
+                <p className="text-3xl font-black tabular-nums text-foreground">{fmt(Math.max(0, -balance))}</p>
+                <div className="flex items-center gap-1.5 mt-2">
+                  <Badge variant="outline" className="text-[10px] bg-destructive/5 text-destructive border-destructive/20 py-0">Aguardando</Badge>
+                  <span className="text-[10px] text-muted-foreground">Acumuladas no período</span>
+                </div>
               </div>
-              <Receipt className="w-4 h-4 text-muted-foreground" />
+              <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
+                <Receipt className="w-5 h-5 text-destructive" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Crédito Disponível */}
-        <Card>
-          <CardContent className="pt-5 pb-5">
+        <Card className="border border-white/10 bg-card/40 backdrop-blur-md hover:border-primary/30 transition-all duration-300 overflow-hidden relative group">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 blur-3xl -mr-8 -mt-8 group-hover:bg-primary/10 transition-colors" />
+          <CardContent className="pt-6 pb-6 relative z-10">
             <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground mb-2">Crédito Disponível</p>
-                <p className={`text-2xl font-bold tabular-nums ${balance >= 0 ? "text-primary" : "text-destructive"}`}>
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Crédito Disponível</p>
+                <p className={`text-3xl font-black tabular-nums ${balance >= 0 ? "text-primary shadow-[0_0_20px_rgba(var(--primary),0.1)]" : "text-destructive"}`}>
                   {fmt(Math.max(0, balance))}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">Saldo pré-pago via PIX</p>
+                <div className="flex items-center gap-1.5 mt-2">
+                  <Badge variant="outline" className="text-[10px] bg-primary/5 text-primary border-primary/20 py-0">Pré-pago</Badge>
+                  <span className="text-[10px] text-muted-foreground">Saldo via PIX/Cartão</span>
+                </div>
               </div>
-              <Wallet className="w-4 h-4 text-muted-foreground" />
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Wallet className="w-5 h-5 text-primary" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Nível de Crédito */}
-        <Card className="cursor-pointer hover:border-primary/30 transition-colors" onClick={() => setShowTierPanel(!showTierPanel)}>
-          <CardContent className="pt-5 pb-5">
+        <Card className="border border-white/10 bg-card/40 backdrop-blur-md hover:border-amber-500/30 transition-all duration-300 overflow-hidden relative group cursor-pointer" onClick={() => setShowTierPanel(!showTierPanel)}>
+          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 blur-3xl -mr-8 -mt-8 group-hover:bg-amber-500/10 transition-colors" />
+          <CardContent className="pt-6 pb-6 relative z-10">
             <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground mb-2">Nível de Crédito</p>
-                <p className="text-2xl font-bold text-foreground">{tierMeta.title}</p>
-                <p className="text-xs text-muted-foreground mt-1">Limite: {fmt(creditLimit)}</p>
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Nível de Crédito</p>
+                <p className="text-3xl font-black text-foreground">{tierMeta.title}</p>
+                <div className="flex items-center gap-1.5 mt-2">
+                  <Badge variant="outline" className="text-[10px] bg-amber-500/5 text-amber-500 border-amber-500/20 py-0">Limite: {fmt(creditLimit)}</Badge>
+                  <span className="text-[10px] text-muted-foreground">Clique para detalhes</span>
+                </div>
               </div>
-              <TrendingUp className="w-4 h-4 text-muted-foreground" />
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-amber-500" />
+              </div>
             </div>
           </CardContent>
         </Card>
