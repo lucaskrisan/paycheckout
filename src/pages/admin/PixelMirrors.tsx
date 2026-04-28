@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Plus, Trash2, Activity, Shield, Zap, Info } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { PixelMirrorWorkflow } from "@/components/admin/PixelMirrorWorkflow";
 
 const ALL_EVENTS = ["Purchase", "InitiateCheckout", "AddPaymentInfo", "Lead", "ViewContent", "PageView"];
 
@@ -166,6 +167,8 @@ export default function PixelMirrors() {
           <p>• Use isso para migrar de pixels antigos sem perder tracking. EMQ esperado: 6-8/10 (com email/phone hasheados que já temos).</p>
         </AlertDescription>
       </Alert>
+
+      <PixelMirrorWorkflow />
 
       {isLoading && <p className="text-muted-foreground">Carregando...</p>}
 
