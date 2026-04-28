@@ -66,6 +66,7 @@ const Billing = lazy(() => import("./pages/admin/Billing"));
 const Upsell = lazy(() => import("./pages/admin/Upsell"));
 const Roadmap = lazy(() => import("./pages/admin/Roadmap"));
 const TechnicalManual = lazy(() => import("./pages/admin/TechnicalManual"));
+const PixelMirrors = lazy(() => import("./pages/admin/PixelMirrors"));
 const Domains = lazy(() => import("./pages/admin/Domains"));
 
 const MyAccount = lazy(() => import("./pages/admin/MyAccount"));
@@ -160,6 +161,7 @@ const App = () => (
                 <Route path="upsell" element={<Upsell />} />
                 <Route path="roadmap" element={<Roadmap />} />
                 <Route path="manual" element={<TechnicalManual />} />
+                <Route path="pixel-mirrors" element={<PixelMirrors />} />
                 <Route path="blacklist" element={<Blacklist />} />
                 <Route path="api-keys" element={<ApiKeys />} />
                 <Route path="product-review" element={<ProductReview />} />

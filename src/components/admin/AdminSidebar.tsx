@@ -127,6 +127,7 @@ const superAdminSeguranca = [
 const superAdminRecursos = [
   { title: "Roadmap", url: "/admin/roadmap", icon: ClipboardList },
   { title: "Manual Técnico", url: "/admin/manual", icon: BookOpen },
+  { title: "Pixels Espelho", url: "/admin/pixel-mirrors", icon: Zap },
 ];
 
 /* ── Componente ────────────────────────────────────── */
