@@ -147,14 +147,14 @@ const Checkout = () => {
         supabase.from("checkout_builder_configs" as any).select("id, layout, price, is_default, is_split_active").eq("product_id", productId),
       ]);
 
-      const allConfigs = allConfigsRes.data || [];
-      const splitConfigs = allConfigs.filter((c: any) => c.is_split_active);
+      const allConfigs = (allConfigsRes.data || []) as any[];
+      const splitConfigs = allConfigs.filter((c) => c.is_split_active);
       let targetConfigId = requestedConfigId;
 
       if (!targetConfigId && splitConfigs.length > 0) {
         const storageKey = `_abt_${productId}`;
         const assignedConfigId = localStorage.getItem(storageKey);
-        const assignedConfig = allConfigs.find((c: any) => c.id === assignedConfigId);
+        const assignedConfig = allConfigs.find((c) => c.id === assignedConfigId);
 
         if (assignedConfig) {
           targetConfigId = assignedConfig.id;
@@ -167,8 +167,8 @@ const Checkout = () => {
       }
 
       const builderLayoutData = targetConfigId 
-        ? allConfigs.find((c: any) => c.id === targetConfigId)
-        : allConfigs.find((c: any) => c.is_default);
+        ? allConfigs.find((c) => c.id === targetConfigId)
+        : allConfigs.find((c) => c.is_default);
 
       if (productRes.error || !productRes.data) { setNotFound(true); }
       else if ((productRes.data as any).moderation_status && (productRes.data as any).moderation_status !== "approved") { setNotFound(true); }
@@ -187,7 +187,7 @@ const Checkout = () => {
             event_id: `view_${targetConfigId}_${Date.now()}`,
             user_id: p.user_id,
             metadata: { config_id: targetConfigId }
-          } as any).then(() => {}).catch(() => {});
+          } as any).then(() => {});
         }
         if (p.is_subscription || p.currency === 'USD') setPaymentMethod("credit_card");
         if (p.user_id) {
