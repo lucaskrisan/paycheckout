@@ -113,7 +113,14 @@ ${pixelInits}
 
   // Visitor ID (matching cross-evento)
   var vid=(document.cookie.match(/(^|;\\s*)_vid=([^;]*)/)||[])[2];
-  if(!vid){vid='v_'+Date.now()+'_'+Math.random().toString(36).slice(2,12);document.cookie='_vid='+vid+';max-age=33696000;path=/;SameSite=Lax';}
+  if(!vid){
+    // Also try to read from URL params (vid or _abv from A/B tests)
+    vid = ps.get('vid') || ps.get('_abv');
+    if(!vid || (!vid.startsWith('v_') && !vid.match(/^[0-9a-f-]{36}$/i))) {
+      vid='v_'+Date.now()+'_'+Math.random().toString(36).slice(2,12);
+    }
+    document.cookie='_vid='+vid+';max-age=33696000;path=/;SameSite=Lax';
+  }
 
   // === Captura UTMs (compartilhado entre Pixel + CAPI) ===
   var utms={};

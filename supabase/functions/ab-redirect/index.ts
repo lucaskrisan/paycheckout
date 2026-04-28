@@ -80,7 +80,13 @@ Deno.serve(async (req) => {
     }
 
     // Build redirect with sticky cookie + visitor_id propagated as query for sale tracking
+    // Preserve original query parameters from the request
     const finalUrl = new URL(redirectUrl);
+    url.searchParams.forEach((value, key) => {
+      if (key !== "type") { // Skip internal param
+        finalUrl.searchParams.set(key, value);
+      }
+    });
     finalUrl.searchParams.set("_abv", visitorId);
     finalUrl.searchParams.set("_abt", slug);
 
