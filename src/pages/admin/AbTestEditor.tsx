@@ -505,10 +505,43 @@ function EditorInner() {
     onError: (e: any) => toast.error(e?.message ?? "Erro ao salvar"),
   });
 
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const validateForStart = (): string | null => {
+    const pageNodes = nodes.filter((n) => n.type === "page") as Node<PageData, "page">[];
+    const checkoutNodes = nodes.filter((n) => n.type === "checkout") as Node<CheckoutData, "checkout">[];
+
+    const pagesMissing = pageNodes
+      .filter((n) => !n.data.url || !n.data.url.trim())
+      .map((n) => n.data.label);
+    if (pagesMissing.length > 0) {
+      return `Configure as URLs das páginas de vendas: ${pagesMissing.map((l) => `${l} (sem URL)`).join(", ")}`;
+    }
+
+    const checkoutsMissing = checkoutNodes
+      .filter((n) => !n.data.productId)
+      .map((n) => n.data.label);
+    if (checkoutsMissing.length > 0) {
+      return `Selecione um produto para os checkouts: ${checkoutsMissing.map((l) => `${l} (sem produto)`).join(", ")}`;
+    }
+
+    return null;
+  };
+
   const toggleStatus = useMutation({
     mutationFn: async () => {
       if (!testId) throw new Error("Salve o teste antes de iniciar");
       const newStatus = status === "active" ? "paused" : "active";
+
+      // Validate before activating
+      if (newStatus === "active") {
+        const err = validateForStart();
+        if (err) {
+          setValidationError(err);
+          throw new Error(err);
+        }
+      }
+
       const patch: any = { status: newStatus };
       if (newStatus === "active" && !status.includes("active")) patch.started_at = new Date().toISOString();
       const { error } = await supabase.from("ab_tests" as any).update(patch).eq("id", testId);
@@ -517,6 +550,7 @@ function EditorInner() {
     },
     onSuccess: (newStatus) => {
       setStatus(newStatus);
+      setValidationError(null);
       toast.success(newStatus === "active" ? "Teste iniciado" : "Teste pausado");
     },
     onError: (e: any) => toast.error(e?.message ?? "Erro ao alterar status"),
