@@ -239,7 +239,7 @@ export default function AbTests() {
               <Card
                 key={t.id}
                 className="p-5 cursor-pointer hover:border-primary/40 transition"
-                onClick={() => setEditingId(t.id)}
+                onClick={() => navigate(`/admin/ab-tests/${t.id}`)}
               >
                 <div className="flex items-start justify-between gap-4 flex-wrap">
                   <div className="flex-1 min-w-[260px]">
