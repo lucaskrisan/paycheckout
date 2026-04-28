@@ -22,7 +22,7 @@ import { Breadcrumb as StepBreadcrumb, type StepBreadcrumbStep } from "@/compone
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useFacebookPixel } from "@/hooks/useFacebookPixel";
+import { useFacebookPixel, getVisitorId } from "@/hooks/useFacebookPixel";
 import { useAbandonedCart } from "@/hooks/useAbandonedCart";
 import { useCheckoutPresence } from "@/hooks/useCheckoutPresence";
 import { useGeo } from "@/hooks/useGeo";
