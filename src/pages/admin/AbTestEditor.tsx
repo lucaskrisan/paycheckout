@@ -999,6 +999,7 @@ function EditorInner() {
           </aside>
         )}
       </div>
+      <AbTestTutorial open={showTutorial} onOpenChange={setShowTutorial} />
     </div>
   );
 }
