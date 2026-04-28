@@ -724,50 +724,81 @@ function EditorInner() {
                </div>
              )}
 
-            {selectedNode.type === "checkout" && (
-              <div className="space-y-3">
-                <div>
-                  <Label className="text-xs">Nome</Label>
-                  <Input value={(selectedNode.data as CheckoutData).label} onChange={(e) => updateNodeData(selectedNode.id, { label: e.target.value })} className="h-8 mt-1" />
-                </div>
-                <div>
-                  <Label className="text-xs">Oferta (produto)</Label>
-                  <Select
-                    value={(selectedNode.data as CheckoutData).productId ?? ""}
-                    onValueChange={(v) => updateNodeData(selectedNode.id, { productId: v || null })}
+            {selectedNode.type === "checkout" && (() => {
+              const d = selectedNode.data as CheckoutData;
+              const selectedProduct = products.find((p: any) => p.id === d.productId);
+              return (
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Nome</Label>
+                    <Input
+                      value={d.label}
+                      onChange={(e) => updateNodeData(selectedNode.id, { label: e.target.value })}
+                      className="mt-1.5"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Produto</Label>
+                    <Select
+                      value={d.productId ?? ""}
+                      onValueChange={(v) => updateNodeData(selectedNode.id, { productId: v || null, offerId: null })}
+                    >
+                      <SelectTrigger className="mt-1.5">
+                        <SelectValue placeholder="Selecione um produto" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {products.map((p: any) => (
+                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Oferta</Label>
+                    <Select
+                      value={d.offerId ?? ""}
+                      onValueChange={(v) => updateNodeData(selectedNode.id, { offerId: v || null })}
+                      disabled={!d.productId}
+                    >
+                      <SelectTrigger className="mt-1.5">
+                        <SelectValue placeholder="Selecione uma oferta" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {selectedProduct && (
+                          <SelectItem value={selectedProduct.id}>
+                            Oferta padrão {selectedProduct.price ? `— R$ ${Number(selectedProduct.price).toFixed(2)}` : ""}
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Design</Label>
+                    <Select
+                      value={d.templateId ?? "default"}
+                      onValueChange={(v) => updateNodeData(selectedNode.id, { templateId: v === "default" ? null : v })}
+                    >
+                      <SelectTrigger className="mt-1.5">
+                        <SelectValue placeholder="Design padrão" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="default">Design padrão</SelectItem>
+                        {templates.map((t: any) => (
+                          <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => deleteNode(selectedNode.id)}
+                    className="w-full text-center text-sm text-red-400 hover:text-red-300 transition-colors py-2"
                   >
-                    <SelectTrigger className="h-8 mt-1">
-                      <SelectValue placeholder="Selecionar oferta" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {products.map((p: any) => (
-                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    Excluir Checkout
+                  </button>
                 </div>
-                <div>
-                  <Label className="text-xs">Design do checkout</Label>
-                  <Select
-                    value={(selectedNode.data as CheckoutData).templateId ?? "default"}
-                    onValueChange={(v) => updateNodeData(selectedNode.id, { templateId: v === "default" ? null : v })}
-                  >
-                    <SelectTrigger className="h-8 mt-1">
-                      <SelectValue placeholder="Design padrão" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="default">Design padrão</SelectItem>
-                      {templates.map((t: any) => (
-                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button variant="outline" size="sm" className="w-full text-red-400" onClick={() => deleteNode(selectedNode.id)}>
-                  <Trash2 className="h-3 w-3 mr-2" /> Remover nó
-                </Button>
-              </div>
-            )}
+              );
+            })()}
           </aside>
         )}
       </div>
