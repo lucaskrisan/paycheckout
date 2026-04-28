@@ -10,8 +10,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Trash2, Play, Pause, Copy, MousePointerClick, ShoppingCart, TrendingUp, Trophy, Archive, Beaker, Zap, Code2 } from "lucide-react";
+import { Plus, Trash2, Play, Pause, Copy, MousePointerClick, ShoppingCart, TrendingUp, Trophy, Archive, Beaker, Zap, Code2, X, Code, Facebook } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 const PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID;
 const REDIRECT_BASE = `https://${PROJECT_ID}.supabase.co/functions/v1/ab-redirect`;
