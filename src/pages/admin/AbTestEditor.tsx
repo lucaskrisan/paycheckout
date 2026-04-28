@@ -420,18 +420,42 @@ function EditorInner() {
     setNodes((ns) =>
       ns.map((n) => {
         if (n.type === "page") {
-          const s = stats.find(st => st.page_url === n.data.url && st.label === n.data.label);
-          if (s) return { ...n, data: { ...n.data, stats: { impressions: Number(s.impressions), clicks: Number(s.clicks), sales: Number(s.sales), revenue: Number(s.revenue) } } };
+          const s = stats.find(st => st.page_url === (n.data as PageData).url && st.label === (n.data as PageData).label);
+          if (s) {
+            return { 
+              ...n, 
+              data: { 
+                ...n.data, 
+                stats: { impressions: Number(s.impressions), clicks: Number(s.clicks), sales: Number(s.sales), revenue: Number(s.revenue) } 
+              } 
+            } as FlowNode;
+          }
         }
         if (n.type === "checkout") {
-          const s = stats.find(st => st.checkout_url && st.checkout_url.includes(n.data.productId || ""));
-          if (s) return { ...n, data: { ...n.data, stats: { impressions: Number(s.impressions), clicks: Number(s.clicks), sales: Number(s.sales), revenue: Number(s.revenue) } } };
+          const s = stats.find(st => st.checkout_url && st.checkout_url.includes((n.data as CheckoutData).productId || ""));
+          if (s) {
+            return { 
+              ...n, 
+              data: { 
+                ...n.data, 
+                stats: { impressions: Number(s.impressions), clicks: Number(s.clicks), sales: Number(s.sales), revenue: Number(s.revenue) } 
+              } 
+            } as FlowNode;
+          }
         }
         if (n.type === "config") {
           const totalVisits = stats.reduce((acc, curr) => acc + Number(curr.impressions), 0);
           const totalSales = stats.reduce((acc, curr) => acc + Number(curr.sales), 0);
           const totalRevenue = stats.reduce((acc, curr) => acc + Number(curr.revenue), 0);
-          return { ...n, data: { ...n.data, impressions: totalVisits, sales: totalSales, revenue: totalRevenue } };
+          return { 
+            ...n, 
+            data: { 
+              ...n.data, 
+              impressions: totalVisits, 
+              sales: totalSales, 
+              revenue: totalRevenue 
+            } 
+          } as FlowNode;
         }
         return n;
       })
