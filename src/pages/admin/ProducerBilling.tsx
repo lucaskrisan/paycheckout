@@ -790,12 +790,25 @@ const ProducerBilling = () => {
             </div>
 
             {/* Benefits box */}
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3.5">
-              <p className="text-xs font-semibold text-primary mb-2">Benefícios do crédito pré-pago:</p>
-              <ul className="space-y-1">
-                <li className="text-xs text-muted-foreground">• Taxas são debitadas automaticamente</li>
-                <li className="text-xs text-muted-foreground">• Evite bloqueios por pendências</li>
-                <li className="text-xs text-muted-foreground">• Sem preocupação com cobranças</li>
+            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 shadow-inner relative overflow-hidden group">
+              <div className="absolute -right-4 -top-4 w-12 h-12 bg-primary/10 rounded-full blur-xl group-hover:bg-primary/20 transition-colors" />
+              <p className="text-xs font-bold text-primary mb-3 flex items-center gap-2">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Vantagens do crédito pré-pago:
+              </p>
+              <ul className="space-y-2">
+                <li className="text-[11px] text-muted-foreground flex items-center gap-2">
+                  <div className="w-1 h-1 rounded-full bg-primary/40" />
+                  Taxas são debitadas automaticamente de cada venda
+                </li>
+                <li className="text-[11px] text-muted-foreground flex items-center gap-2">
+                  <div className="w-1 h-1 rounded-full bg-primary/40" />
+                  Evite bloqueios no checkout por pendências financeiras
+                </li>
+                <li className="text-[11px] text-muted-foreground flex items-center gap-2">
+                  <div className="w-1 h-1 rounded-full bg-primary/40" />
+                  Sem mensalidades ou surpresas na fatura
+                </li>
               </ul>
             </div>
 
