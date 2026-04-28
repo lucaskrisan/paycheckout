@@ -165,6 +165,8 @@ const App = () => (
                 <Route path="manual" element={<TechnicalManual />} />
                 <Route path="pixel-mirrors" element={<PixelMirrors />} />
                 <Route path="ab-tests" element={<AbTests />} />
+                <Route path="ab-tests/new" element={<AbTestEditor />} />
+                <Route path="ab-tests/:id" element={<AbTestEditor />} />
                 <Route path="blacklist" element={<Blacklist />} />
                 <Route path="api-keys" element={<ApiKeys />} />
                 <Route path="product-review" element={<ProductReview />} />
