@@ -694,26 +694,34 @@ function EditorInner() {
               );
             })()}
 
-            {selectedNode.type === "page" && (
-              <div className="space-y-3">
-                <div>
-                  <Label className="text-xs">Nome</Label>
-                  <Input value={(selectedNode.data as PageData).label} onChange={(e) => updateNodeData(selectedNode.id, { label: e.target.value })} className="h-8 mt-1" />
-                </div>
-                <div>
-                  <Label className="text-xs">URL da página de vendas</Label>
-                  <Input
-                    placeholder="https://seusite.com/oferta-a"
-                    value={(selectedNode.data as PageData).url}
-                    onChange={(e) => updateNodeData(selectedNode.id, { url: e.target.value })}
-                    className="h-8 mt-1"
-                  />
-                </div>
-                <Button variant="outline" size="sm" className="w-full text-red-400" onClick={() => deleteNode(selectedNode.id)}>
-                  <Trash2 className="h-3 w-3 mr-2" /> Remover nó
-                </Button>
-              </div>
-            )}
+             {selectedNode.type === "page" && (
+               <div className="space-y-4">
+                 <div>
+                   <Label className="text-xs text-muted-foreground">Nome</Label>
+                   <Input
+                     value={(selectedNode.data as PageData).label}
+                     onChange={(e) => updateNodeData(selectedNode.id, { label: e.target.value })}
+                     className="mt-1.5"
+                   />
+                 </div>
+                 <div>
+                   <Label className="text-xs text-muted-foreground">URL da Página</Label>
+                   <Input
+                     placeholder="https://suapagina.com"
+                     value={(selectedNode.data as PageData).url}
+                     onChange={(e) => updateNodeData(selectedNode.id, { url: e.target.value })}
+                     className="mt-1.5"
+                   />
+                 </div>
+                 <Button
+                   variant="outline"
+                   className="w-full bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20 hover:text-red-300"
+                   onClick={() => deleteNode(selectedNode.id)}
+                 >
+                   Excluir Página
+                 </Button>
+               </div>
+             )}
 
             {selectedNode.type === "checkout" && (
               <div className="space-y-3">
