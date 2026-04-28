@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import CustomerJourneyFeed from "./CustomerJourneyFeed";
 import NinaTrackingHeader from "./tracking/NinaTrackingHeader";
 import TickerBar from "./tracking/TickerBar";
-import HeroKPIStrip from "./tracking/HeroKPIStrip";
+
 import SmartAlertsPanel from "./tracking/SmartAlertsPanel";
 import EventFeedCard from "./tracking/EventFeedCard";
 import EventsPerMin from "./tracking/EventsPerMin";
@@ -344,12 +344,6 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
       {/* ── Live Ticker (Purchases) ── */}
       <TickerBar userId={userId} filterProduct={filterProduct} />
 
-      {/* ── Hero KPI Strip ── */}
-      <HeroKPIStrip
-        userId={userId}
-        filterProduct={filterProduct}
-        recentEventsTimestamps={recentTimestamps}
-      />
 
       {/* ── Smart Alerts ── */}
       <SmartAlertsPanel userId={userId} filterProduct={filterProduct} />
