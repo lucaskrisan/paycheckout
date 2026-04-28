@@ -363,6 +363,7 @@ function EditorInner() {
   const [testId, setTestId] = useState<string | null>(routeId && routeId !== "new" ? routeId : null);
   const [name, setName] = useState("Novo Teste A/B");
   const [autoWinner, setAutoWinner] = useState(true);
+  const [minClicks, setMinClicks] = useState(100);
   const [stickyDays, setStickyDays] = useState(30);
   const [entryUrl, setEntryUrl] = useState("");
   const [slug, setSlug] = useState<string | null>(null);
@@ -389,6 +390,7 @@ function EditorInner() {
     if (!existing) return;
     setName(existing.name ?? "Novo Teste A/B");
     setAutoWinner(!!existing.auto_winner_enabled);
+    setMinClicks(existing.auto_winner_min_clicks ?? 100);
     setStickyDays(existing.sticky_days ?? 30);
     setSlug(existing.slug ?? null);
     setStatus(existing.status ?? "draft");
@@ -599,6 +601,7 @@ function EditorInner() {
             name: name.trim() || "Novo Teste A/B",
             slug: theSlug,
             auto_winner_enabled: autoWinner,
+            auto_winner_min_clicks: minClicks,
             sticky_days: stickyDays,
             graph,
             entry_url: generatedEntry,
@@ -617,6 +620,7 @@ function EditorInner() {
           .update({
             name: name.trim() || "Novo Teste A/B",
             auto_winner_enabled: autoWinner,
+            auto_winner_min_clicks: minClicks,
             sticky_days: stickyDays,
             graph,
             entry_url: entryUrl,
@@ -859,6 +863,13 @@ function EditorInner() {
                   <Label className="text-xs">Vencedor automático</Label>
                   <Switch checked={autoWinner} onCheckedChange={setAutoWinner} />
                 </div>
+                {autoWinner && (
+                  <div className="space-y-2">
+                    <Label className="text-xs">Min. Cliques para Decisão</Label>
+                    <Input type="number" value={minClicks} onChange={(e) => setMinClicks(Number(e.target.value))} />
+                    <p className="text-[10px] text-muted-foreground italic">O teste precisa de pelo menos este número de cliques para escolher o vencedor.</p>
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label className="text-xs">Janela de Retenção (Dias)</Label>
                   <Input type="number" value={stickyDays} onChange={(e) => setStickyDays(Number(e.target.value))} />
