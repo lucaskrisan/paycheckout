@@ -6,46 +6,115 @@ const corsHeaders = {
 
 const trackingScript = `
 (function() {
-  const params = new URLSearchParams(window.location.search);
-  const testSlug = params.get('_abt');
-  const visitorId = params.get('_abv');
-  const baseUrl = 'https://vipltojtcrqatwvzobro.supabase.co/functions/v1/ab-tracking';
+  const PARAMS_TO_TRACK = ['_abt', '_abv', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'src', 'sck', 'fbclid', '_fbp', '_fbc'];
+  const STORAGE_KEY = 'panttera_tracking_v2';
+  
+  // 1. Capture and Persist
+  function captureParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    let hasNew = false;
 
-  if (testSlug && visitorId) {
-    localStorage.setItem('panttera_abt', testSlug);
-    localStorage.setItem('panttera_abv', visitorId);
-    
-    // Automatically track impression if we just landed from a redirect
+    PARAMS_TO_TRACK.forEach(key => {
+      const val = urlParams.get(key);
+      if (val) {
+        stored[key] = val;
+        hasNew = true;
+      }
+    });
+
+    if (hasNew) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+    }
+    return stored;
+  }
+
+  const currentParams = captureParams();
+
+  // 2. Link & Form Injection
+  function decorateUrl(urlStr) {
+    try {
+      if (!urlStr || urlStr.startsWith('javascript:') || urlStr.startsWith('#')) return urlStr;
+      const url = new URL(urlStr, window.location.href);
+      
+      // Only decorate links that point to our infrastructure or are relative
+      const isInternal = url.hostname.includes('panttera.com') || 
+                        url.hostname.includes('paolasemfiltro.com') ||
+                        url.hostname === window.location.hostname;
+      
+      if (!isInternal) return urlStr;
+
+      Object.entries(currentParams).forEach(([key, val]) => {
+        if (val) url.searchParams.set(key, val);
+      });
+      return url.toString();
+    } catch (e) { return urlStr; }
+  }
+
+  function injectTracking() {
+    // Decorate Links
+    document.querySelectorAll('a').forEach(a => {
+      if (a.href) a.href = decorateUrl(a.href);
+    });
+
+    // Decorate Forms
+    document.querySelectorAll('form').forEach(form => {
+      Object.entries(currentParams).forEach(([key, val]) => {
+        if (val && !form.querySelector('input[name="' + key + '"]')) {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = key;
+          input.value = val;
+          form.appendChild(input);
+        }
+      });
+    });
+  }
+
+  // 3. API Tracking
+  const baseUrl = 'https://vipltojtcrqatwvzobro.supabase.co/functions/v1/ab-tracking';
+  
+  function trackEvent(event, metadata = {}) {
+    const slug = currentParams['_abt'];
+    const vid = currentParams['_abv'];
+    if (!slug || !vid) return;
+
     fetch(baseUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        event: 'impression',
-        slug: testSlug,
-        visitorId: visitorId,
-        url: window.location.href
+        event: event,
+        slug: slug,
+        visitorId: vid,
+        url: window.location.href,
+        metadata: {
+          ...currentParams,
+          ...metadata
+        }
       })
     }).catch(() => {});
   }
 
-  window.Panttera = {
-    track: function(event, metadata = {}) {
-      const slug = localStorage.getItem('panttera_abt');
-      const vid = localStorage.getItem('panttera_abv');
-      if (!slug || !vid) return;
+  // Auto-track impression on load
+  if (currentParams['_abt'] && currentParams['_abv']) {
+    trackEvent('impression');
+  }
 
-      fetch(baseUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          event: event,
-          slug: slug,
-          visitorId: vid,
-          url: window.location.href,
-          metadata: metadata
-        })
-      }).catch(() => {});
-    }
+  // Initial injection
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', injectTracking);
+  } else {
+    injectTracking();
+  }
+
+  // Mutation observer for dynamic content
+  const observer = new MutationObserver(() => injectTracking());
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  window.Panttera = {
+    track: trackEvent,
+    getParams: () => ({ ...currentParams }),
+    refresh: () => injectTracking()
   };
 })();
 `;
