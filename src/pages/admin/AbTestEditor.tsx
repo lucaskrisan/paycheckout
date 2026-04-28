@@ -788,13 +788,13 @@ function EditorInner() {
       <header className="h-14 border-b border-border/60 bg-background/80 backdrop-blur flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate("/admin/ab-tests")}><ArrowLeft className="h-4 w-4" /></Button>
-          <Input value={name} onChange={(e) => setName(e.target.value)} className="h-8 w-64 bg-transparent border-transparent font-bold" />
+          <Input id="tutorial-name" value={name} onChange={(e) => setName(e.target.value)} className="h-8 w-64 bg-transparent border-transparent font-bold" />
           <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${statusBadge.cls}`}>{statusBadge.label}</span>
           <Button variant="ghost" size="icon" onClick={() => setShowTutorial(true)} className="ml-2 text-zinc-500 hover:text-white">
             <HelpCircle className="h-4 w-4" />
           </Button>
         </div>
-        <div className="flex items-center gap-3">
+        <div id="tutorial-actions" className="flex items-center gap-3">
           {testId && (
             <Button onClick={() => toggleStatus.mutate()} className={status === "active" ? "bg-amber-600" : "bg-emerald-600"}>
               {status === "active" ? <Pause className="h-4 w-4 mr-2" /> : <Play className="h-4 w-4 mr-2" />}
