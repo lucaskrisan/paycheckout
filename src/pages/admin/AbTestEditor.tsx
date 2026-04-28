@@ -370,6 +370,7 @@ function EditorInner() {
   const [entryUrl, setEntryUrl] = useState("");
   const [slug, setSlug] = useState<string | null>(null);
   const [status, setStatus] = useState<string>("draft");
+  const [showTutorial, setShowTutorial] = useState(!routeId || routeId === "new");
 
   const initial = useMemo(() => buildInitialGraph("Novo Teste A/B"), []);
   const [nodes, setNodes, onNodesChange] = useNodesState<FlowNode>(initial.nodes);
