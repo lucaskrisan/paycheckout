@@ -12,9 +12,7 @@ import HeroKPIStrip from "./tracking/HeroKPIStrip";
 import SmartAlertsPanel from "./tracking/SmartAlertsPanel";
 import EventFeedCard from "./tracking/EventFeedCard";
 import EventsPerMin from "./tracking/EventsPerMin";
-import LiveFunnel from "./tracking/LiveFunnel";
 
-import PulseChart from "./tracking/PulseChart";
 import { ninaToast, ninaPurchaseToast } from "./tracking/NinaToast";
 import { playNotificationSound } from "@/lib/notificationSounds";
 import { useGeo } from "@/hooks/useGeo";
@@ -356,10 +354,10 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
       {/* ── Smart Alerts ── */}
       <SmartAlertsPanel userId={userId} filterProduct={filterProduct} />
 
-      {/* ── Layout Bloomberg: Feed dominante (7) + Sidebar (5) ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* ═══ FEED PRINCIPAL (7/12) ═══ */}
-        <section className="lg:col-span-7 rounded-xl bg-[#0d0f1a] border border-white/[0.06] flex flex-col overflow-hidden shadow-[0_1px_0_rgba(255,255,255,0.03)_inset]">
+      {/* ── Feed dominante em largura total ── */}
+      <div>
+        {/* ═══ FEED PRINCIPAL ═══ */}
+        <section className="rounded-xl bg-[#0d0f1a] border border-white/[0.06] flex flex-col overflow-hidden shadow-[0_1px_0_rgba(255,255,255,0.03)_inset]">
           {/* Header do feed — refinado, sem barra preta */}
           <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06] bg-gradient-to-r from-[#14B8A6]/[0.04] via-transparent to-[#D4AF37]/[0.04]">
             <div className="flex items-center gap-3">
@@ -503,11 +501,6 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
           </div>
         </section>
 
-        {/* ═══ SIDEBAR (5/12) — Pulso + Funil ═══ */}
-        <aside className="lg:col-span-5 flex flex-col gap-4">
-          <PulseChart data={chartData} period={period} truncated={events.length >= 500} />
-          <LiveFunnel eventCounts={eventCounts} />
-        </aside>
       </div>
 
       {/* ── Nina Footer ── */}
