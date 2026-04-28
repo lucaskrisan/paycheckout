@@ -380,8 +380,8 @@ ROTAS ESPECIAIS
   • Stripe (cartão, com webhook)
 
   Modalidades:
-  • Split: taxa descontada na hora da venda (3%)
-  • Sob Demanda (Billing): R$ 0,49 fixo + 3% por venda
+  • Split: taxa descontada na hora da venda
+  • Sob Demanda (Billing): R$ 0,99 fixo por venda aprovada
 
   Cada produtor configura suas próprias credenciais.
   Campos: provider, name, environment (sandbox|production), config (JSON), payment_methods (JSON)
