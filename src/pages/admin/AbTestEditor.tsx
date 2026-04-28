@@ -204,7 +204,7 @@ const nodeTypes = {
   checkout: CheckoutNode,
 };
 
-// ---------------- Initial graph (matches reference image) ----------------
+// ---------------- Initial graph ----------------
 
 function buildInitialGraph(testName: string): { nodes: FlowNode[]; edges: Edge[] } {
   const nodes: FlowNode[] = [
@@ -286,7 +286,7 @@ function EditorInner() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>("config");
 
   // Load existing test if editing
-  const { data: existing } = useQuery({
+  const { data: existing, isLoading } = useQuery({
     queryKey: ["ab_test_full", testId],
     enabled: !!testId,
     queryFn: async () => {
@@ -295,6 +295,25 @@ function EditorInner() {
       return data as any;
     },
   });
+
+  // Loading Skeleton
+  if (isLoading) {
+    return (
+      <div className="h-screen bg-[#0d0f15] flex flex-col items-center justify-center p-8 space-y-6">
+        <div className="flex items-center justify-between w-full max-w-7xl px-4">
+          <div className="flex items-center gap-4">
+            <div className="h-8 w-8 rounded bg-white/5 animate-pulse" />
+            <div className="h-6 w-48 bg-white/5 animate-pulse rounded" />
+          </div>
+          <div className="flex gap-2">
+            <div className="h-9 w-24 bg-white/5 animate-pulse rounded" />
+            <div className="h-9 w-32 bg-primary/20 animate-pulse rounded" />
+          </div>
+        </div>
+        <div className="flex-1 w-full max-w-7xl bg-white/5 animate-pulse rounded-xl" />
+      </div>
+    );
+  }
 
   useEffect(() => {
     if (!existing) return;
@@ -445,6 +464,7 @@ function EditorInner() {
         setTestId(id);
         setSlug(theSlug);
         setEntryUrl(generatedEntry);
+        window.history.replaceState(null, "", `/admin/ab-tests/${id}`);
       } else {
         const { error } = await supabase
           .from("ab_tests" as any)
@@ -459,7 +479,6 @@ function EditorInner() {
         if (error) throw error;
       }
 
-      // Sync ab_test_variants from page nodes (so backend reporting still works)
       const pageNodes = nodes.filter((n) => n.type === "page") as Node<PageData, "page">[];
       const checkoutNodes = nodes.filter((n) => n.type === "checkout") as Node<CheckoutData, "checkout">[];
       const variantSlots = Math.max(pageNodes.length, checkoutNodes.length, 2);
@@ -470,7 +489,6 @@ function EditorInner() {
       for (let i = 0; i < variantSlots; i++) {
         const label = String.fromCharCode(65 + i);
         const page = pageNodes[i];
-        const checkout = checkoutNodes[i];
         const payload = {
           name: page?.data?.label ?? `Variante ${label}`,
           page_url: page?.data?.url ?? null,
@@ -486,7 +504,6 @@ function EditorInner() {
           await supabase.from("ab_test_variants" as any).insert({ test_id: id, ...payload });
         }
       }
-      // Remove extra variants if user reduced node count
       for (const e of existing) {
         if (e.sort_order >= variantSlots) {
           await supabase.from("ab_test_variants" as any).delete().eq("id", e.id);
@@ -509,22 +526,8 @@ function EditorInner() {
 
   const validateForStart = (): string | null => {
     const pageNodes = nodes.filter((n) => n.type === "page") as Node<PageData, "page">[];
-    const checkoutNodes = nodes.filter((n) => n.type === "checkout") as Node<CheckoutData, "checkout">[];
-
-    const pagesMissing = pageNodes
-      .filter((n) => !n.data.url || !n.data.url.trim())
-      .map((n) => n.data.label);
-    if (pagesMissing.length > 0) {
-      return `Configure as URLs das páginas de vendas: ${pagesMissing.map((l) => `${l} (sem URL)`).join(", ")}`;
-    }
-
-    const checkoutsMissing = checkoutNodes
-      .filter((n) => !n.data.productId)
-      .map((n) => n.data.label);
-    if (checkoutsMissing.length > 0) {
-      return `Selecione um produto para os checkouts: ${checkoutsMissing.map((l) => `${l} (sem produto)`).join(", ")}`;
-    }
-
+    const pagesMissing = pageNodes.filter((n) => !n.data.url || !n.data.url.trim()).map((n) => n.data.label);
+    if (pagesMissing.length > 0) return `Configure as URLs das páginas de vendas: ${pagesMissing.join(", ")}`;
     return null;
   };
 
@@ -532,16 +535,10 @@ function EditorInner() {
     mutationFn: async () => {
       if (!testId) throw new Error("Salve o teste antes de iniciar");
       const newStatus = status === "active" ? "paused" : "active";
-
-      // Validate before activating
       if (newStatus === "active") {
         const err = validateForStart();
-        if (err) {
-          setValidationError(err);
-          throw new Error(err);
-        }
+        if (err) { setValidationError(err); throw new Error(err); }
       }
-
       const patch: any = { status: newStatus };
       if (newStatus === "active" && !status.includes("active")) patch.started_at = new Date().toISOString();
       const { error } = await supabase.from("ab_tests" as any).update(patch).eq("id", testId);
@@ -553,408 +550,95 @@ function EditorInner() {
       setValidationError(null);
       toast.success(newStatus === "active" ? "Teste iniciado" : "Teste pausado");
     },
-    onError: (e: any) => toast.error(e?.message ?? "Erro ao alterar status"),
   });
 
-  // ---------- Autosave de rascunho (debounced 1.5s) ----------
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const isFirstAutosaveRef = useRef(true);
   useEffect(() => {
-    // Não autossalvar enquanto carregamos um teste existente pela 1ª vez
-    if (isFirstAutosaveRef.current) {
-      isFirstAutosaveRef.current = false;
-      return;
-    }
-    // Não autossalvar se o teste já está ativo (evita sobrescrever em produção sem intenção)
+    if (isFirstAutosaveRef.current) { isFirstAutosaveRef.current = false; return; }
     if (status === "active") return;
     const t = setTimeout(() => {
       if (!save.isPending) {
-        save.mutate(undefined, {
-          onSuccess: () => setLastSavedAt(new Date()),
-        });
+        save.mutate(undefined, { onSuccess: () => setLastSavedAt(new Date()) });
       }
     }, 1500);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodes, edges, name, autoWinner, stickyDays]);
 
   const copyEntryUrl = async () => {
     if (!entryUrl) return;
-    try {
-      await navigator.clipboard.writeText(entryUrl);
-      toast.success("URL copiada!");
-    } catch {
-      toast.error("Não foi possível copiar");
-    }
+    await navigator.clipboard.writeText(entryUrl);
+    toast.success("URL copiada!");
   };
 
   const statusBadge = (() => {
     if (status === "active") return { label: "Ativo", cls: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" };
     if (status === "paused") return { label: "Pausado", cls: "bg-amber-500/15 text-amber-300 border-amber-500/30" };
-    if (status === "ended") return { label: "Finalizado", cls: "bg-zinc-500/15 text-zinc-300 border-zinc-500/30" };
     return { label: "Rascunho", cls: "bg-zinc-700/40 text-zinc-300 border-zinc-600/40" };
   })();
 
   return (
-    <div className="h-[calc(100vh-0px)] flex flex-col">
-      {/* Validation banner */}
+    <div className="h-screen flex flex-col">
       {validationError && (
-        <div className="bg-red-950/60 border-b border-red-500/40 text-red-200 px-4 py-2.5 flex items-center justify-between gap-4 shrink-0">
+        <div className="bg-red-950/60 border-b border-red-500/40 text-red-200 px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm">
-            <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
-            <span>{validationError}</span>
+            <AlertCircle className="h-4 w-4" /> <span>{validationError}</span>
           </div>
-          <button
-            type="button"
-            onClick={() => setValidationError(null)}
-            className="text-red-300 hover:text-red-100 shrink-0"
-            aria-label="Fechar"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <button onClick={() => setValidationError(null)}><X className="h-4 w-4" /></button>
         </div>
       )}
-
-      {/* Top bar */}
-      <header className="h-14 border-b border-border/60 bg-background/80 backdrop-blur flex items-center justify-between px-4 shrink-0 gap-4">
-        <div className="flex items-center gap-3 min-w-0">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/ab-tests")}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <Input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="h-8 w-72 bg-transparent border-transparent hover:border-border focus-visible:border-border text-base font-bold"
-          />
-          <span className={`px-2.5 py-1 rounded-md text-xs font-semibold border ${statusBadge.cls}`}>
-            {statusBadge.label}
-          </span>
-        </div>
-
+      <header className="h-14 border-b border-border/60 bg-background/80 backdrop-blur flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
-          {testId && entryUrl && (
-            <button
-              type="button"
-              onClick={copyEntryUrl}
-              className="hidden md:flex items-center gap-2 h-9 px-3 rounded-md bg-background/60 border border-border/60 hover:border-border text-sm text-muted-foreground hover:text-foreground transition-colors max-w-[320px]"
-              title={entryUrl}
-            >
-              <Link2 className="h-4 w-4 shrink-0" />
-              <span className="truncate font-mono text-xs">{entryUrl}</span>
-              <Copy className="h-3.5 w-3.5 shrink-0" />
-            </button>
-          )}
-
+          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/ab-tests")}><ArrowLeft className="h-4 w-4" /></Button>
+          <Input value={name} onChange={(e) => setName(e.target.value)} className="h-8 w-64 bg-transparent border-transparent font-bold" />
+          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${statusBadge.cls}`}>{statusBadge.label}</span>
+        </div>
+        <div className="flex items-center gap-3">
           {testId && (
-            <Button
-              onClick={() => toggleStatus.mutate()}
-              disabled={toggleStatus.isPending}
-              className={status === "active"
-                ? "bg-amber-600 hover:bg-amber-500 text-white"
-                : "bg-emerald-600 hover:bg-emerald-500 text-white"}
-            >
-              {status === "active" ? (
-                <><Pause className="h-4 w-4 mr-2" /> Pausar</>
-              ) : (
-                <><Play className="h-4 w-4 mr-2" /> Iniciar</>
-              )}
+            <Button onClick={() => toggleStatus.mutate()} className={status === "active" ? "bg-amber-600" : "bg-emerald-600"}>
+              {status === "active" ? <Pause className="h-4 w-4 mr-2" /> : <Play className="h-4 w-4 mr-2" />}
+              {status === "active" ? "Pausar" : "Iniciar"}
             </Button>
           )}
-
-          <span className="hidden sm:inline-block text-xs text-muted-foreground min-w-[88px] text-right">
-            {save.isPending
-              ? "Salvando…"
-              : lastSavedAt
-                ? `Salvo ${lastSavedAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`
-                : testId ? "Rascunho" : "Não salvo"}
+          <span className="text-[10px] text-muted-foreground uppercase tracking-widest">
+            {save.isPending ? "Salvando…" : lastSavedAt ? `Salvo ${lastSavedAt.toLocaleTimeString()}` : "Rascunho"}
           </span>
-          <Button onClick={() => save.mutate()} disabled={save.isPending} className="bg-violet-600 hover:bg-violet-500 text-white">
-            <Save className="h-4 w-4 mr-2" /> Salvar
-          </Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending} className="bg-violet-600"><Save className="h-4 w-4 mr-2" /> Salvar</Button>
         </div>
       </header>
-
-      <div className="flex-1 flex min-h-0">
-        {/* Left palette */}
-        <aside className="w-60 border-r border-border/60 bg-background/60 p-4 space-y-3 overflow-y-auto shrink-0">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Arrastar para adicionar</div>
-          {PALETTE.map((p) => (
-            <PaletteItem key={p.kind} {...p} />
-          ))}
+      <div className="flex-1 flex overflow-hidden">
+        <aside className="w-60 border-r border-border/60 bg-background/60 p-4 space-y-4">
+          <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Paleta</p>
+          {PALETTE.map((p) => <PaletteItem key={p.kind} {...p} />)}
         </aside>
-
-        {/* Canvas */}
-        <div ref={wrapperRef} className="flex-1 relative bg-[#0a0c12]" onDragOver={onDragOver} onDrop={onDrop}>
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onNodeClick={(_, n) => setSelectedNodeId(n.id)}
-            onPaneClick={() => setSelectedNodeId(null)}
-            nodeTypes={nodeTypes as any}
-            fitView
-            proOptions={{ hideAttribution: true }}
-            defaultEdgeOptions={{ type: "smoothstep", animated: true }}
-          >
+        <div ref={wrapperRef} className="flex-1 relative bg-[#0a0c12]">
+          <ReactFlow nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={(_, n) => setSelectedNodeId(n.id)} onPaneClick={() => setSelectedNodeId(null)} nodeTypes={nodeTypes as any} fitView proOptions={{ hideAttribution: true }}>
             <Background gap={20} size={1} color="#1e2230" />
-            <Controls className="!bg-card/80 !border-border" />
+            <Controls />
           </ReactFlow>
         </div>
-
-        {/* Right inspector */}
         {selectedNode && (
-          <aside className="w-80 border-l border-border/60 bg-background/80 backdrop-blur p-5 space-y-4 overflow-y-auto shrink-0">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold">
-                {selectedNode.type === "config" && "Configuração Inicial"}
-                {selectedNode.type === "abtest" && "Configurar Teste"}
-                {selectedNode.type === "page" && "Página de Vendas"}
-                {selectedNode.type === "checkout" && "Checkout"}
-              </h3>
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedNodeId(null)}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-
+          <aside className="w-80 border-l border-border/60 p-5 space-y-4 overflow-y-auto">
+            <h3 className="font-bold">{selectedNode.data.label}</h3>
             {selectedNode.type === "config" && (
               <div className="space-y-4">
-                <div className="rounded-lg bg-muted/40 border border-border/60 p-3">
-                  <div className="text-xs text-muted-foreground mb-1">URL de Entrada:</div>
-                  {entryUrl ? (
-                    <code className="text-xs break-all text-emerald-300">{entryUrl}</code>
-                  ) : (
-                    <span className="text-xs text-amber-300">Salve para gerar URL</span>
-                  )}
+                <div className="p-3 bg-muted/30 rounded border text-xs">
+                  <p className="text-muted-foreground mb-1">URL de Entrada:</p>
+                  <code className="break-all text-emerald-400">{entryUrl || "Salve para gerar"}</code>
                 </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Esta é a URL que você usa nos anúncios. Os visitantes serão distribuídos conforme os testes
-                  configurados.
-                </p>
-                <div className="space-y-2 pt-2 border-t border-border/60">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="aw" className="text-xs">Vencedor automático</Label>
-                    <Switch id="aw" checked={autoWinner} onCheckedChange={setAutoWinner} />
-                  </div>
-                  <div>
-                    <Label htmlFor="sd" className="text-xs">Sticky por visitante (dias)</Label>
-                    <Input id="sd" type="number" value={stickyDays} onChange={(e) => setStickyDays(Number(e.target.value) || 30)} className="mt-1 h-8" />
-                  </div>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs">Vencedor automático</Label>
+                  <Switch checked={autoWinner} onCheckedChange={setAutoWinner} />
                 </div>
               </div>
             )}
-
-            {selectedNode.type === "abtest" && (() => {
-              const d = selectedNode.data as AbTestData;
-              const setSplits = (splits: AbTestData["splits"]) => updateNodeData(selectedNode.id, { splits });
-              const addVariant = () => {
-                const nextLabel = String.fromCharCode(65 + d.splits.length);
-                const equal = Math.floor(100 / (d.splits.length + 1));
-                const splits = [...d.splits.map((s) => ({ ...s, weight: equal })), { label: nextLabel, weight: 100 - equal * d.splits.length }];
-                setSplits(splits);
-              };
-              const distributeEqually = () => {
-                const equal = Math.floor(100 / d.splits.length);
-                const rest = 100 - equal * d.splits.length;
-                setSplits(d.splits.map((s, i) => ({ ...s, weight: equal + (i === 0 ? rest : 0) })));
-              };
-              return (
-                <div className="space-y-5">
-                  <div>
-                    <Label className="text-xs font-semibold">Nome do Teste</Label>
-                    <Input
-                      value={d.label}
-                      onChange={(e) => updateNodeData(selectedNode.id, { label: e.target.value })}
-                      className="mt-2"
-                    />
-                  </div>
-
-                  <div>
-                    <Label className="text-xs font-semibold">Tipo de Teste</Label>
-                    <Select
-                      value={d.subtitle === "Teste de checkout" ? "checkout" : "pages"}
-                      onValueChange={(v) =>
-                        updateNodeData(selectedNode.id, {
-                          subtitle: v === "checkout" ? "Teste de checkout" : "Divide tráfego",
-                        })
-                      }
-                    >
-                      <SelectTrigger className="mt-2">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pages">Teste de Páginas</SelectItem>
-                        <SelectItem value="checkout">Teste de Checkouts</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs font-semibold">Variantes</Label>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2 text-violet-300 hover:text-violet-200 hover:bg-violet-500/10"
-                        onClick={addVariant}
-                      >
-                        + Adicionar
-                      </Button>
-                    </div>
-                    <div className="space-y-2">
-                      {d.splits.map((s, i) => (
-                        <div key={i} className="flex items-center gap-2">
-                          <div className="h-9 w-9 rounded-md bg-violet-500/15 border border-violet-500/30 flex items-center justify-center text-sm font-bold text-violet-200 shrink-0">
-                            {s.label}
-                          </div>
-                          <Input
-                            type="number"
-                            min={0}
-                            max={100}
-                            value={s.weight}
-                            onChange={(e) => {
-                              const splits = [...d.splits];
-                              splits[i] = { ...splits[i], weight: Number(e.target.value) || 0 };
-                              setSplits(splits);
-                            }}
-                            className="h-9 flex-1"
-                          />
-                          <span className="text-sm text-muted-foreground w-4">%</span>
-                          {d.splits.length > 2 && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:text-red-400"
-                              onClick={() => setSplits(d.splits.filter((_, idx) => idx !== i))}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <Button variant="outline" className="w-full" onClick={distributeEqually}>
-                    Distribuir pesos igualmente
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    className="w-full border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20 hover:text-red-200"
-                    onClick={() => deleteNode(selectedNode.id)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" /> Excluir Teste
-                  </Button>
-                </div>
-              );
-            })()}
-
-             {selectedNode.type === "page" && (
-               <div className="space-y-4">
-                 <div>
-                   <Label className="text-xs text-muted-foreground">Nome</Label>
-                   <Input
-                     value={(selectedNode.data as PageData).label}
-                     onChange={(e) => updateNodeData(selectedNode.id, { label: e.target.value })}
-                     className="mt-1.5"
-                   />
-                 </div>
-                 <div>
-                   <Label className="text-xs text-muted-foreground">URL da Página</Label>
-                   <Input
-                     placeholder="https://suapagina.com"
-                     value={(selectedNode.data as PageData).url}
-                     onChange={(e) => updateNodeData(selectedNode.id, { url: e.target.value })}
-                     className="mt-1.5"
-                   />
-                 </div>
-                 <Button
-                   variant="outline"
-                   className="w-full bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20 hover:text-red-300"
-                   onClick={() => deleteNode(selectedNode.id)}
-                 >
-                   Excluir Página
-                 </Button>
-               </div>
-             )}
-
-            {selectedNode.type === "checkout" && (() => {
-              const d = selectedNode.data as CheckoutData;
-              const selectedProduct = products.find((p: any) => p.id === d.productId);
-              return (
-                <div className="space-y-4">
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Nome</Label>
-                    <Input
-                      value={d.label}
-                      onChange={(e) => updateNodeData(selectedNode.id, { label: e.target.value })}
-                      className="mt-1.5"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Produto</Label>
-                    <Select
-                      value={d.productId ?? ""}
-                      onValueChange={(v) => updateNodeData(selectedNode.id, { productId: v || null, offerId: null })}
-                    >
-                      <SelectTrigger className="mt-1.5">
-                        <SelectValue placeholder="Selecione um produto" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {products.map((p: any) => (
-                          <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Oferta</Label>
-                    <Select
-                      value={d.offerId ?? ""}
-                      onValueChange={(v) => updateNodeData(selectedNode.id, { offerId: v || null })}
-                      disabled={!d.productId}
-                    >
-                      <SelectTrigger className="mt-1.5">
-                        <SelectValue placeholder="Selecione uma oferta" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {selectedProduct && (
-                          <SelectItem value={selectedProduct.id}>
-                            Oferta padrão {selectedProduct.price ? `— R$ ${Number(selectedProduct.price).toFixed(2)}` : ""}
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground">Design</Label>
-                    <Select
-                      value={d.templateId ?? "default"}
-                      onValueChange={(v) => updateNodeData(selectedNode.id, { templateId: v === "default" ? null : v })}
-                    >
-                      <SelectTrigger className="mt-1.5">
-                        <SelectValue placeholder="Design padrão" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="default">Design padrão</SelectItem>
-                        {templates.map((t: any) => (
-                          <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => deleteNode(selectedNode.id)}
-                    className="w-full text-center text-sm text-red-400 hover:text-red-300 transition-colors py-2"
-                  >
-                    Excluir Checkout
-                  </button>
-                </div>
-              );
-            })()}
+            {selectedNode.type === "page" && (
+              <div className="space-y-4">
+                <Label className="text-xs">URL da Página</Label>
+                <Input value={(selectedNode.data as PageData).url || ""} onChange={(e) => updateNodeData(selectedNode.id, { url: e.target.value })} />
+                <Button variant="outline" className="w-full text-red-400 border-red-400/30" onClick={() => deleteNode(selectedNode.id)}>Excluir</Button>
+              </div>
+            )}
           </aside>
         )}
       </div>
@@ -963,9 +647,5 @@ function EditorInner() {
 }
 
 export default function AbTestEditor() {
-  return (
-    <ReactFlowProvider>
-      <EditorInner />
-    </ReactFlowProvider>
-  );
+  return <ReactFlowProvider><EditorInner /></ReactFlowProvider>;
 }

@@ -3117,6 +3117,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_ab_variant_stat: {
+        Args: { p_field: string; p_variant_id: string }
+        Returns: undefined
+      }
       increment_coupon_usage: {
         Args: { p_coupon_id: string }
         Returns: boolean

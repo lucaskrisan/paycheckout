@@ -435,7 +435,7 @@ export default function AbTests() {
 
 function ScriptDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   // Script Panttera nativo — captura UTMs/src/sck e propaga para o checkout.
-  const trackingScript = `<script src="https://app.panttera.com.br/tracking.js" data-domain="panttera.com.br" defer></script>`;
+  const trackingScript = `<script src="https://vipltojtcrqatwvzobro.supabase.co/functions/v1/ab-tracking" defer></script>`;
   const fbUtm = `utm_source=FB&utm_campaign={{campaign.name}}|{{campaign.id}}&utm_medium={{adset.name}}|{{adset.id}}&utm_content={{ad.name}}|{{ad.id}}&utm_term={{placement}}`;
 
   const copy = (text: string, label: string) => {
@@ -489,10 +489,11 @@ function ScriptDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o:
           </div>
 
           <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-3 text-sm">
-            <span className="font-bold text-blue-300">Importante:</span>{" "}
+            <span className="font-bold text-blue-300">💡 Para Testes A/B:</span>{" "}
             <span className="text-foreground/90">
-              Sem este script, os parâmetros de rastreamento podem se perder quando o visitante clica no botão de compra
-              da sua página de vendas.
+              Ao usar nossas URLs de redirecionamento, o tracking é automático. Este script é necessário
+              apenas para capturar UTMs em páginas externas ou disparar eventos customizados via
+              <code className="mx-1 bg-black/40 px-1 rounded text-xs">Panttera.track('click')</code>.
             </span>
           </div>
 
