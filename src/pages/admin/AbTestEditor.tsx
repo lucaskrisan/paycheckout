@@ -552,7 +552,7 @@ function EditorInner() {
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold">
                 {selectedNode.type === "config" && "Configuração Inicial"}
-                {selectedNode.type === "abtest" && "Teste A/B"}
+                {selectedNode.type === "abtest" && "Configurar Teste"}
                 {selectedNode.type === "page" && "Página de Vendas"}
                 {selectedNode.type === "checkout" && "Checkout"}
               </h3>
