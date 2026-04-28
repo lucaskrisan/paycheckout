@@ -187,10 +187,23 @@ function AbTestNode({ id, data }: NodeProps<Node<AbTestData, "abtest">>) {
   );
 }
 
-function PageNode({ data }: NodeProps<Node<PageData, "page">>) {
+function PageNode({ id, data }: NodeProps<Node<PageData, "page">>) {
+  const reactFlow = useReactFlow();
   const hasUrl = !!data.url?.trim();
   return (
-    <NodeShell color="#10b981" icon={<FileText className="h-4 w-4" />} title={data.label} subtitle={data.subtitle}>
+    <NodeShell 
+      color="#10b981" 
+      icon={<FileText className="h-4 w-4" />} 
+      title={data.label} 
+      subtitle={data.subtitle}
+      nodeId={id}
+      onDelete={(nodeId) => {
+        const ns = reactFlow.getNodes();
+        const es = reactFlow.getEdges();
+        reactFlow.setNodes(ns.filter(n => n.id !== nodeId));
+        reactFlow.setEdges(es.filter(e => e.source !== nodeId && e.target !== nodeId));
+      }}
+    >
       {data.stats && (
         <div className="grid grid-cols-2 gap-1.5 mb-2">
           <div className="flex flex-col text-[10px] px-2 py-1 rounded bg-white/5 border border-white/5">
