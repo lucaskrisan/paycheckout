@@ -688,8 +688,12 @@ function EditorInner() {
             if (target && target.type === "checkout") {
               const d = target.data as CheckoutData;
               if (d.productId) {
-                // Construct Panttera checkout URL
-                checkoutUrl = `https://checkout.panttera.com.br/pay/${d.productId}`;
+                // Use custom domain if available, fallback to panttera
+                const domain = customDomains[0]?.hostname || "checkout.panttera.com.br";
+                const path = customDomains[0]?.hostname ? "checkout" : "pay";
+                
+                // Construct checkout URL
+                checkoutUrl = `https://${domain}/${path}/${d.productId}`;
                 // Use offerId (config) if selected, otherwise fallback to templateId for legacy reasons
                 const configId = d.offerId || d.templateId;
                 if (configId && configId !== "default") {
