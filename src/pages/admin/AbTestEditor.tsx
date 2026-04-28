@@ -199,6 +199,20 @@ function PageNode({ data }: NodeProps<Node<PageData, "page">>) {
 function CheckoutNode({ data }: NodeProps<Node<CheckoutData, "checkout">>) {
   return (
     <NodeShell color="#f97316" icon={<ShoppingCart className="h-4 w-4" />} title={data.label} subtitle={data.subtitle}>
+      {data.stats && (
+        <div className="grid grid-cols-2 gap-1.5 mb-2">
+          <div className="flex flex-col text-[10px] px-2 py-1 rounded bg-white/5 border border-white/5">
+            <span className="text-muted-foreground">Conv.</span>
+            <span className="font-bold text-orange-400">
+              {data.stats.impressions > 0 ? ((data.stats.sales / data.stats.impressions) * 100).toFixed(1) : 0}%
+            </span>
+          </div>
+          <div className="flex flex-col text-[10px] px-2 py-1 rounded bg-white/5 border border-white/5">
+            <span className="text-muted-foreground">Vendas</span>
+            <span className="font-bold">{data.stats.sales}</span>
+          </div>
+        </div>
+      )}
       <div className="space-y-1">
         <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Oferta</div>
         <div className="flex items-center gap-1.5 text-[11px] px-2 py-1.5 rounded bg-muted/40 border border-border/40 truncate">
