@@ -306,40 +306,63 @@ const ProducerBilling = () => {
         {/* Left: Credit Usage + Tabs + History */}
         <div className="space-y-6">
           {/* Sales Available Bar */}
-          <Card>
-            <CardContent className="pt-5 pb-5">
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Vendas Disponíveis</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+          <Card className="border border-white/10 bg-card/40 backdrop-blur-md overflow-hidden relative group">
+            <CardContent className="pt-6 pb-6 relative z-10">
+              <div className="flex items-start justify-between mb-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-bold text-foreground flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-primary" />
+                    Vendas Disponíveis
+                  </p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
                     {balance > 0
-                      ? `~${toSales(balance)} vendas com saldo pré-pago`
+                      ? `Você possui aproximadamente ~${toSales(balance)} vendas garantidas com seu saldo pré-pago.`
                       : usedCredit < toleranceLimit
-                        ? `~${toSales(toleranceLimit - usedCredit)} vendas restantes no limite`
-                        : "Limite atingido — adicione crédito para continuar vendendo"
+                        ? `Atenção: ~${toSales(toleranceLimit - usedCredit)} vendas restantes antes do bloqueio do checkout.`
+                        : "Limite crítico atingido — o checkout foi pausado para evitar pendências."
                     }
                   </p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Limite: {fmt(creditLimit)} ({tierMeta.title})
-                </p>
+                <div className="text-right">
+                  <Badge variant="outline" className="text-[10px] border-primary/20 bg-primary/5 text-primary">
+                    {usagePercent.toFixed(0)}% Utilizado
+                  </Badge>
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Limite: {fmt(creditLimit)}
+                  </p>
+                </div>
               </div>
-              <Progress value={usagePercent} className="h-2" />
-              <div className="flex justify-between mt-2">
-                <p className="text-xs text-muted-foreground">{fmt(usedCredit)} usado de {fmt(creditLimit)}</p>
-                <p className="text-xs text-muted-foreground">{usagePercent.toFixed(0)}%</p>
+              
+              <div className="relative h-3 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
+                <div 
+                  className={`absolute top-0 left-0 h-full transition-all duration-1000 ease-out rounded-full ${
+                    usagePercent > 90 ? "bg-destructive shadow-[0_0_10px_rgba(var(--destructive),0.5)]" : 
+                    usagePercent > 70 ? "bg-amber-500 shadow-[0_0_10px_rgba(var(--amber-500),0.3)]" : 
+                    "bg-primary shadow-[0_0_10px_rgba(var(--primary),0.3)]"
+                  }`}
+                  style={{ width: `${usagePercent}%` }}
+                />
+              </div>
+
+              <div className="flex justify-between mt-3 items-center">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                  Uso: <span className="text-foreground">{fmt(usedCredit)}</span>
+                </p>
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                  Capacidade: <span className="text-foreground">{fmt(creditLimit)}</span>
+                </p>
               </div>
             </CardContent>
           </Card>
 
       {/* ── Cartão / PIX Tabs ── */}
       <Tabs defaultValue="card" className="w-full">
-        <TabsList className="w-auto">
-          <TabsTrigger value="card" className="gap-2">
-            <CreditCard className="w-4 h-4" /> Cartão
+        <TabsList className="w-auto bg-white/5 border border-white/10 p-1 rounded-xl mb-6">
+          <TabsTrigger value="card" className="gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300">
+            <CreditCard className="w-4 h-4" /> Cartão de Crédito
           </TabsTrigger>
-          <TabsTrigger value="pix" className="gap-2">
-            <DollarSign className="w-4 h-4" /> PIX
+          <TabsTrigger value="pix" className="gap-2 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all duration-300">
+            <DollarSign className="w-4 h-4" /> Recarga via PIX
           </TabsTrigger>
         </TabsList>
 
