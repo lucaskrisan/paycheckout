@@ -102,16 +102,22 @@ const trackingScript = `
     }).catch(() => {});
   }
 
-  // Auto-track impression on load
+  // Auto-track impression on load - use a small debounce/guard to prevent double-firing
+  let lastFired = 0;
   if (currentParams['_abt'] && currentParams['_abv']) {
-    trackEvent('impression');
-    
-    // Also track ViewContent if on a landing page
-    if (window.location.pathname.length > 1) {
-      trackEvent('ViewContent', { 
-        content_type: 'product',
-        content_name: document.title 
-      });
+    // Only track if not fired in last 500ms
+    const now = Date.now();
+    if (now - lastFired > 500) {
+      lastFired = now;
+      trackEvent('impression');
+      
+      // Also track ViewContent if on a landing page
+      if (window.location.pathname.length > 1) {
+        trackEvent('ViewContent', { 
+          content_type: 'product',
+          content_name: document.title 
+        });
+      }
     }
   }
 
@@ -156,11 +162,28 @@ Deno.serve(async (req) => {
   if (req.method === "POST") {
     try {
       const { event, slug: providedSlug, visitorId: providedVisitorId, metadata } = await req.json();
-      
+
       const supabase = createClient(
         Deno.env.get("SUPABASE_URL")!,
         Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
       );
+
+      // --- Deduplication Guard ---
+      // Prevent rapid firing of same event type for same visitor in short window
+      if (event === 'impression' || event === 'PageView') {
+        const dedupKey = `last_fire_${providedSlug}_${providedVisitorId}_${event}`;
+        // We use a simple memory cache in the edge runtime instance
+        // This is per-isolate but covers most rapid-fire bursts
+        const globalCache = (globalThis as any)._ab_fire_cache || {};
+        const now = Date.now();
+        if (globalCache[dedupKey] && (now - globalCache[dedupKey] < 2000)) {
+           return new Response(JSON.stringify({ success: true, message: 'de-duplicated' }), {
+             headers: { ...corsHeaders, "Content-Type": "application/json" },
+           });
+        }
+        globalCache[dedupKey] = now;
+        (globalThis as any)._ab_fire_cache = globalCache;
+      }
 
       let slug = providedSlug;
       let visitorId = providedVisitorId;
