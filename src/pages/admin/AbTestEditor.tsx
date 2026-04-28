@@ -53,6 +53,7 @@ type CheckoutData = {
   label: string;
   subtitle: string;
   productId: string | null;
+  offerId: string | null;
   templateId: string | null;
 };
 
