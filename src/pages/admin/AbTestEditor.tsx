@@ -161,9 +161,22 @@ function ConfigNode({ data }: NodeProps<Node<ConfigData, "config">>) {
   );
 }
 
-function AbTestNode({ data }: NodeProps<Node<AbTestData, "abtest">>) {
+function AbTestNode({ id, data }: NodeProps<Node<AbTestData, "abtest">>) {
+  const reactFlow = useReactFlow();
   return (
-    <NodeShell color="#a855f7" icon={<BarChart3 className="h-4 w-4" />} title={data.label} subtitle={data.subtitle}>
+    <NodeShell 
+      color="#a855f7" 
+      icon={<BarChart3 className="h-4 w-4" />} 
+      title={data.label} 
+      subtitle={data.subtitle}
+      nodeId={id}
+      onDelete={(nodeId) => {
+        const ns = reactFlow.getNodes();
+        const es = reactFlow.getEdges();
+        reactFlow.setNodes(ns.filter(n => n.id !== nodeId));
+        reactFlow.setEdges(es.filter(e => e.source !== nodeId && e.target !== nodeId));
+      }}
+    >
       {data.splits.map((s, i) => (
         <div key={i} className="flex items-center justify-between text-xs px-2 py-1 rounded bg-muted/30">
           <span className="font-semibold">{s.label}</span>
