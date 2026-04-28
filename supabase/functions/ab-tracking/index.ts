@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
         Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
       );
 
-      // Find test and variant
+      // Find test and assignment to get the current variant
       const { data: test } = await supabase
         .from("ab_tests")
         .select("id")
@@ -92,21 +92,38 @@ Deno.serve(async (req) => {
 
       if (!test) return new Response("Test not found or inactive", { status: 404, headers: corsHeaders });
 
-      const { data: assignment } = await supabase
+      const { data: variantData, error: variantErr } = await supabase
         .from("ab_test_assignments")
-        .select("variant_id")
+        .select(`
+          variant_id,
+          variant:ab_test_variants(
+            id,
+            mirror_pixel_id,
+            mirror_pixel:mirror_pixels(
+              id,
+              pixel_id,
+              capi_token
+            )
+          )
+        `)
         .eq("test_id", test.id)
         .eq("visitor_id", visitorId)
         .maybeSingle();
 
-      if (!assignment) return new Response("No assignment found", { status: 404, headers: corsHeaders });
+      if (variantErr || !variantData) {
+        return new Response("No assignment found", { status: 404, headers: corsHeaders });
+      }
 
-      // Record event
+      const variant = (variantData as any).variant;
+      const variantId = variantData.variant_id;
+      const mirrorPixel = variant?.mirror_pixel;
+
+      // Record event in DB
       const eventType = event === "impression" ? "impression" : (event === "click" ? "click" : "sale");
       
       const { error: eventErr } = await supabase.from("ab_test_events").insert({
         test_id: test.id,
-        variant_id: assignment.variant_id,
+        variant_id: variantId,
         visitor_id: visitorId,
         event_type: eventType,
         metadata: metadata || {}
@@ -117,9 +134,76 @@ Deno.serve(async (req) => {
       // Update aggregate counters
       const updateField = eventType === "impression" ? "impressions" : (eventType === "click" ? "clicks" : "sales");
       await supabase.rpc('increment_ab_variant_stat', {
-        p_variant_id: assignment.variant_id,
+        p_variant_id: variantId,
         p_field: updateField
       });
+
+      // --- Meta CAPI Mirroring ---
+      // If the variant has a Mirror Pixel configured with a CAPI token, 
+      // we forward the event to Meta CAPI server-to-server.
+      if (mirrorPixel && mirrorPixel.capi_token && mirrorPixel.pixel_id) {
+        console.log(`[ab-tracking] Mirroring ${event} to Meta CAPI for pixel ${mirrorPixel.pixel_id}`);
+        
+        // Map A/B events to standard Meta events
+        let metaEventName = 'PageView';
+        if (event === 'impression') metaEventName = 'PageView';
+        if (event === 'click') metaEventName = 'Lead';
+        if (event === 'sale') metaEventName = 'Purchase';
+
+        // Use our existing facebook-capi edge function to handle the heavy lifting
+        // This ensures the same high-quality data hashing and formatting.
+        try {
+          const productId = metadata?.product_id;
+          
+          if (productId) {
+            fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/facebook-capi`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
+              },
+              body: JSON.stringify({
+                product_id: productId,
+                event_name: metaEventName,
+                event_id: `ab_${variantId}_${Date.now()}`,
+                visitor_id: visitorId,
+                client_ip: req.headers.get("cf-connecting-ip") || undefined,
+                user_agent: req.headers.get("user-agent") || undefined,
+                custom_data: {
+                  ...metadata,
+                  ab_test_id: test.id,
+                  ab_variant_id: variantId
+                }
+              })
+            }).catch(e => console.error("[ab-tracking] CAPI forward failed:", e));
+          } else {
+            const metaUrl = `https://graph.facebook.com/v22.0/${mirrorPixel.pixel_id}/events`;
+            fetch(metaUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                data: [{
+                  event_name: metaEventName,
+                  event_time: Math.floor(Date.now() / 1000),
+                  action_source: 'website',
+                  user_data: {
+                    external_id: visitorId,
+                    client_ip_address: req.headers.get("cf-connecting-ip") || undefined,
+                    client_user_agent: req.headers.get("user-agent") || undefined,
+                  },
+                  custom_data: {
+                    ab_test_id: test.id,
+                    ab_variant_id: variantId
+                  }
+                }],
+                access_token: mirrorPixel.capi_token
+              })
+            }).catch(e => console.error("[ab-tracking] Direct Meta CAPI failed:", e));
+          }
+        } catch (capiErr) {
+          console.error("[ab-tracking] CAPI mirroring fatal error:", capiErr);
+        }
+      }
 
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
