@@ -581,6 +581,40 @@ function LinkRow({ label, url }: { label: string; url: string }) {
   );
 }
 
+function CompactLinkRow({ label, url }: { label: string; url: string }) {
+  const display = url.replace(/^https?:\/\//, "");
+  return (
+    <div className="flex items-center gap-2 text-xs">
+      <span className="text-muted-foreground w-[60px] shrink-0">{label}:</span>
+      <div className="inline-flex items-center gap-1.5 bg-muted/40 hover:bg-muted/60 transition-colors px-2.5 py-1 rounded-md max-w-full">
+        <code className="font-mono text-xs truncate">https://{display}</code>
+        <button
+          type="button"
+          className="text-muted-foreground hover:text-foreground shrink-0"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigator.clipboard.writeText(url);
+            toast.success("Link copiado");
+          }}
+          aria-label="Copiar"
+        >
+          <Copy className="w-3 h-3" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function formatDuration(startedAt: string): string {
+  const ms = Date.now() - new Date(startedAt).getTime();
+  const days = Math.floor(ms / 86400000);
+  if (days >= 1) return `${days}d`;
+  const hours = Math.floor(ms / 3600000);
+  if (hours >= 1) return `${hours}h`;
+  const minutes = Math.floor(ms / 60000);
+  return `${Math.max(minutes, 0)}m`;
+}
+
 function TestEditor({
   test,
   mirrors,
