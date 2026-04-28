@@ -556,6 +556,28 @@ function EditorInner() {
     onError: (e: any) => toast.error(e?.message ?? "Erro ao alterar status"),
   });
 
+  // ---------- Autosave de rascunho (debounced 1.5s) ----------
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const isFirstAutosaveRef = useRef(true);
+  useEffect(() => {
+    // Não autossalvar enquanto carregamos um teste existente pela 1ª vez
+    if (isFirstAutosaveRef.current) {
+      isFirstAutosaveRef.current = false;
+      return;
+    }
+    // Não autossalvar se o teste já está ativo (evita sobrescrever em produção sem intenção)
+    if (status === "active") return;
+    const t = setTimeout(() => {
+      if (!save.isPending) {
+        save.mutate(undefined, {
+          onSuccess: () => setLastSavedAt(new Date()),
+        });
+      }
+    }, 1500);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodes, edges, name, autoWinner, stickyDays]);
+
   const copyEntryUrl = async () => {
     if (!entryUrl) return;
     try {
@@ -639,6 +661,13 @@ function EditorInner() {
             </Button>
           )}
 
+          <span className="hidden sm:inline-block text-xs text-muted-foreground min-w-[88px] text-right">
+            {save.isPending
+              ? "Salvando…"
+              : lastSavedAt
+                ? `Salvo ${lastSavedAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`
+                : testId ? "Rascunho" : "Não salvo"}
+          </span>
           <Button onClick={() => save.mutate()} disabled={save.isPending} className="bg-violet-600 hover:bg-violet-500 text-white">
             <Save className="h-4 w-4 mr-2" /> Salvar
           </Button>
