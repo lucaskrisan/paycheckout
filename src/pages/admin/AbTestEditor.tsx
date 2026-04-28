@@ -180,13 +180,22 @@ function PageNode({ data }: NodeProps<Node<PageData, "page">>) {
           </div>
         </div>
       )}
-      <div
-        className={`flex items-center gap-1.5 text-[11px] px-2 py-1.5 rounded border truncate ${
-          hasUrl ? "text-emerald-300 bg-emerald-500/10 border-emerald-500/30" : "text-muted-foreground bg-muted/40 border-border/40"
-        }`}
-      >
-        <Link2 className="h-3 w-3 shrink-0" />
-        <span className="truncate">{hasUrl ? data.url : "Configurar URL"}</span>
+      <div className="space-y-1.5">
+        <div
+          className={`flex items-center gap-1.5 text-[11px] px-2 py-1.5 rounded border truncate ${
+            hasUrl ? "text-emerald-300 bg-emerald-500/10 border-emerald-500/30" : "text-muted-foreground bg-muted/40 border-border/40"
+          }`}
+        >
+          <Link2 className="h-3 w-3 shrink-0" />
+          <span className="truncate">{hasUrl ? data.url : "Configurar URL"}</span>
+        </div>
+        
+        {data.mirrorPixelId && (
+          <div className="flex items-center gap-1.5 text-[10px] text-violet-300 px-2 py-1 rounded bg-violet-500/10 border border-violet-500/20 truncate">
+            <SettingsIcon className="h-3 w-3 shrink-0" />
+            <span className="truncate italic">Pixel Ativo</span>
+          </div>
+        )}
       </div>
     </NodeShell>
   );
