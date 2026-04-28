@@ -140,15 +140,35 @@ const Checkout = () => {
     if (!productId) { setNotFound(true); setLoading(false); return; }
     const load = async () => {
       setLoading(true);
-      const builderQuery = requestedConfigId
-        ? supabase.from("checkout_builder_configs" as any).select("layout, price").eq("id", requestedConfigId).eq("product_id", productId).maybeSingle()
-        : supabase.from("checkout_builder_configs" as any).select("layout, price").eq("product_id", productId).eq("is_default", true).order("updated_at", { ascending: false }).limit(1).maybeSingle();
 
-      const [productRes, bumpsRes, builderRes] = await Promise.all([
+      const [productRes, bumpsRes, allConfigsRes] = await Promise.all([
         supabase.from("products").select("*").eq("id", productId).eq("active", true).single(),
         supabase.from("order_bumps").select("id, call_to_action, title, description, use_product_image, bump_product:products!order_bumps_bump_product_id_fkey(id, name, price, image_url)").eq("product_id", productId).eq("active", true).order("sort_order"),
-        builderQuery,
+        supabase.from("checkout_builder_configs" as any).select("id, layout, price, is_default, is_split_active").eq("product_id", productId),
       ]);
+
+      const allConfigs = allConfigsRes.data || [];
+      const splitConfigs = allConfigs.filter((c: any) => c.is_split_active);
+      let targetConfigId = requestedConfigId;
+
+      if (!targetConfigId && splitConfigs.length > 0) {
+        const storageKey = `_abt_${productId}`;
+        const assignedConfigId = localStorage.getItem(storageKey);
+        const assignedConfig = allConfigs.find((c: any) => c.id === assignedConfigId);
+
+        if (assignedConfig) {
+          targetConfigId = assignedConfig.id;
+        } else {
+          const picked = splitConfigs[Math.floor(Math.random() * splitConfigs.length)];
+          localStorage.setItem(storageKey, picked.id);
+          targetConfigId = picked.id;
+        }
+        window.history.replaceState({}, '', `${window.location.pathname}?config=${targetConfigId}${window.location.hash}`);
+      }
+
+      const builderLayoutData = targetConfigId 
+        ? allConfigs.find((c: any) => c.id === targetConfigId)
+        : allConfigs.find((c: any) => c.is_default);
 
       if (productRes.error || !productRes.data) { setNotFound(true); }
       else if ((productRes.data as any).moderation_status && (productRes.data as any).moderation_status !== "approved") { setNotFound(true); }
@@ -157,6 +177,18 @@ const Checkout = () => {
         const configPrice = (builderRes.data as any)?.price;
         if (configPrice != null && configPrice > 0) p.price = Number(configPrice);
         setProduct(p);
+
+        if (requestedConfigId && productId) {
+          supabase.from("pixel_events").insert({
+            product_id: productId,
+            event_name: "ViewContent",
+            source: "browser",
+            visitor_id: localStorage.getItem("_vid") || null,
+            event_id: `view_${requestedConfigId}_${Date.now()}`,
+            user_id: p.user_id,
+            metadata: { config_id: requestedConfigId }
+          }).catch(() => {});
+        }
         if (p.is_subscription || p.currency === 'USD') setPaymentMethod("credit_card");
         if (p.user_id) {
           const [{ data: settingsRows }, { data: billingAcc }, { data: ownerRoles }] = await Promise.all([
@@ -178,15 +210,6 @@ const Checkout = () => {
       }
       if (bumpsRes.data) setOrderBumps(bumpsRes.data as any);
 
-      let builderLayoutData = builderRes.data;
-      if (!builderLayoutData) {
-        const { data: fallbackConfig } = await supabase.from("checkout_builder_configs" as any).select("layout, price").eq("product_id", productId).eq("is_default", true).order("updated_at", { ascending: false }).limit(1).maybeSingle();
-        builderLayoutData = fallbackConfig;
-      }
-      if (!builderLayoutData) {
-        const { data: latestConfig } = await supabase.from("checkout_builder_configs" as any).select("layout, price").eq("product_id", productId).order("updated_at", { ascending: false }).limit(1).maybeSingle();
-        builderLayoutData = latestConfig;
-      }
       const layout = ((builderLayoutData as any)?.layout as unknown as BuilderComponent[] | null) ?? [];
       setBuilderLayout(Array.isArray(layout) ? layout : []);
       setLoading(false);

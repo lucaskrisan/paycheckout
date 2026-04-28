@@ -553,7 +553,7 @@ const ProductEdit = () => {
 
   const defaultCheckout = checkouts.find((c: any) => c.is_default) || checkouts[0] || null;
   const checkoutBaseUrl = activeCustomDomain ? `https://${activeCustomDomain}` : getPublicUrl();
-  const checkoutLink = isNew ? "" : `${checkoutBaseUrl}/checkout/${productId}${defaultCheckout?.id ? `?config=${defaultCheckout.id}` : ""}`;
+  const checkoutLink = isNew ? "" : `${checkoutBaseUrl}/checkout/${productId}`;
 
   return (
     <div className="space-y-0 -m-6">
@@ -1531,7 +1531,32 @@ const ProductEdit = () => {
                                 <MoreVertical className="w-4 h-4 text-muted-foreground" />
                               </button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-44">
+                            <DropdownMenuContent align="end" className="w-52">
+                              {!co.is_default && (
+                                <DropdownMenuItem onClick={async () => {
+                                  // 1. Remover is_default de todos do produto
+                                  await supabase.from("checkout_builder_configs")
+                                    .update({ is_default: false })
+                                    .eq("product_id", productId);
+                                  // 2. Setar is_default neste
+                                  await supabase.from("checkout_builder_configs")
+                                    .update({ is_default: true })
+                                    .eq("id", co.id);
+                                  toast.success(`"${co.name}" agora é o checkout padrão`);
+                                  loadCheckouts();
+                                }} className="gap-2 text-sm">
+                                  <CheckCircle className="w-3.5 h-3.5" /> Definir como padrão
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem onClick={async () => {
+                                await supabase.from("checkout_builder_configs")
+                                  .update({ is_split_active: !co.is_split_active })
+                                  .eq("id", co.id);
+                                toast.success(co.is_split_active ? "Removido do split de tráfego" : "Incluído no split de tráfego");
+                                loadCheckouts();
+                              }} className="gap-2 text-sm">
+                                <Shuffle className="w-3.5 h-3.5" /> {co.is_split_active ? "Remover do split" : "Incluir no split"}
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => {
                                 setEditingCheckout(co);
                                 setEditCheckoutName(co.name);
@@ -1558,6 +1583,11 @@ const ProductEdit = () => {
                                 <LinkIcon className="w-3.5 h-3.5" /> Duplicar
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={async () => {
+                                if (co.is_default && checkouts.length > 1) {
+                                  toast.error("Defina outro checkout como padrão antes de excluir este.");
+                                  return;
+                                }
+                                if (!confirm(`Excluir "${co.name}"?`)) return;
                                 await supabase.from("checkout_builder_configs").delete().eq("id", co.id);
                                 toast.success("Checkout excluído!");
                                 loadCheckouts();

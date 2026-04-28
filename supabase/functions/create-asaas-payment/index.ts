@@ -421,6 +421,7 @@ Deno.serve(async (req) => {
           platform_fee_amount: feeAmount,
           metadata: {
             gateway: 'asaas',
+            config_id: config_id || null,
             coupon_id: coupon_id || null,
             installments: installments || '1',
             checkout_url: checkout_url || null,
