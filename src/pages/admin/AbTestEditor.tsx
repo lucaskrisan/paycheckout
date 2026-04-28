@@ -459,7 +459,7 @@ function EditorInner() {
       const variantSlots = Math.max(pageNodes.length, checkoutNodes.length, 2);
 
       const { data: existingVars } = await supabase.from("ab_test_variants" as any).select("id,sort_order").eq("test_id", id);
-      const existing = (existingVars ?? []) as { id: string; sort_order: number }[];
+      const existing = ((existingVars ?? []) as unknown) as { id: string; sort_order: number }[];
 
       for (let i = 0; i < variantSlots; i++) {
         const label = String.fromCharCode(65 + i);
