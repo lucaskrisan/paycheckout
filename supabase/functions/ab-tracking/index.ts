@@ -153,9 +153,6 @@ Deno.serve(async (req) => {
         // Use our existing facebook-capi edge function to handle the heavy lifting
         // This ensures the same high-quality data hashing and formatting.
         try {
-          // We need a product_id to use facebook-capi. We can try to get it from metadata 
-          // or from the test configuration if we had it there. 
-          // For now, if metadata has product_id, we use it.
           const productId = metadata?.product_id;
           
           if (productId) {
@@ -163,12 +160,12 @@ Deno.serve(async (req) => {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': \`Bearer \${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}\`
+                'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
               },
               body: JSON.stringify({
                 product_id: productId,
                 event_name: metaEventName,
-                event_id: \`ab_\${variantId}_\${Date.now()}\`,
+                event_id: `ab_${variantId}_${Date.now()}`,
                 visitor_id: visitorId,
                 client_ip: req.headers.get("cf-connecting-ip") || undefined,
                 user_agent: req.headers.get("user-agent") || undefined,
@@ -180,9 +177,7 @@ Deno.serve(async (req) => {
               })
             }).catch(e => console.error("[ab-tracking] CAPI forward failed:", e));
           } else {
-            // Fallback: Direct CAPI call if no product_id is linked
-            // (Simplified version of what facebook-capi does)
-            const metaUrl = \`https://graph.facebook.com/v22.0/\${mirrorPixel.pixel_id}/events\`;
+            const metaUrl = `https://graph.facebook.com/v22.0/${mirrorPixel.pixel_id}/events`;
             fetch(metaUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -192,7 +187,7 @@ Deno.serve(async (req) => {
                   event_time: Math.floor(Date.now() / 1000),
                   action_source: 'website',
                   user_data: {
-                    external_id: visitorId, // Use visitorId as fallback external_id
+                    external_id: visitorId,
                     client_ip_address: req.headers.get("cf-connecting-ip") || undefined,
                     client_user_agent: req.headers.get("user-agent") || undefined,
                   },
