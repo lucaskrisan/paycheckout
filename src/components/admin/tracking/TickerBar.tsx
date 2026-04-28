@@ -47,14 +47,14 @@ const TickerBar = ({ userId, filterProduct }: Props) => {
     // Reset seen ids when scope changes (user/product filter)
     seenRef.current = new Set();
     const load = async () => {
-      const since = subHours(new Date(), 6).toISOString();
+      const since = subHours(new Date(), 24).toISOString();
       let q = supabase
         .from("pixel_events")
-        .select("id, customer_name, created_at, product_id, event_value")
+        .select("id, customer_name, created_at, product_id, event_value, customer_country")
         .eq("event_name", "Purchase")
         .gte("created_at", since)
         .order("created_at", { ascending: false })
-        .limit(20);
+        .limit(25);
       if (userId) q = q.eq("user_id", userId);
       if (filterProduct !== "all") q = q.eq("product_id", filterProduct);
       const { data } = await q;
