@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Loader2, ExternalLink, CheckCircle2, AlertCircle, Globe, Code2, Zap,
   Activity, XCircle, AlertTriangle, Play, RefreshCw, Search, Link2, FileCode,
-  Settings2, Radio,
+  Settings2, Radio, TrendingUp,
 } from "lucide-react";
 
 import UtmAttributionTable from "@/components/admin/UtmAttributionTable";
@@ -630,6 +630,11 @@ const Tracking = () => {
             selectedProductId={globalProduct}
             onProductChange={(id) => { setGlobalProduct(id); setSelectedProduct(id); }}
           />
+        </TabsContent>
+
+        {/* ═══ TAB: Atribuição ═══ */}
+        <TabsContent value="attribution" className="space-y-5 mt-0">
+          <UtmAttributionTable />
         </TabsContent>
       </Tabs>
     </div>
