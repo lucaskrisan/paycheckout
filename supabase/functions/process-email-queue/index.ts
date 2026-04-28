@@ -193,6 +193,16 @@ Deno.serve(async (req) => {
     for (let i = 0; i < messages.length; i++) {
       const msg = messages[i]
       const payload = msg.message
+
+      // CHECK UNSUBSCRIBE LIST
+      if (payload.to) {
+        const { data: isUnsubscribed } = await supabase.rpc('is_email_unsubscribed', { p_email: payload.to });
+        if (isUnsubscribed) {
+          console.warn('Skipping send: recipient is unsubscribed', { email: payload.to });
+          await supabase.rpc('delete_email', { queue_name: queue, message_id: msg.msg_id });
+          continue;
+        }
+      }
       const failedAttempts =
         payload?.message_id && typeof payload.message_id === 'string'
           ? (failedAttemptsByMessageId.get(payload.message_id) ?? 0)
