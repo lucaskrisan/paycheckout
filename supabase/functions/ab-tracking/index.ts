@@ -105,6 +105,14 @@ const trackingScript = `
   // Auto-track impression on load
   if (currentParams['_abt'] && currentParams['_abv']) {
     trackEvent('impression');
+    
+    // Also track ViewContent if on a landing page
+    if (window.location.pathname.length > 1) {
+      trackEvent('ViewContent', { 
+        content_type: 'product',
+        content_name: document.title 
+      });
+    }
   }
 
   // Initial injection
