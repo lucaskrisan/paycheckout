@@ -602,6 +602,7 @@ function EditorInner() {
           weight: Math.round(100 / variantSlots),
           label,
           sort_order: i,
+          mirror_pixel_id: page?.data?.mirrorPixelId ?? null,
         };
         const found = existing.find((e) => e.sort_order === i);
         if (found) {
