@@ -91,7 +91,8 @@ const Analytics = () => {
         if (dateFrom) cartsQuery.gte("created_at", dateFrom);
 
         const [settingsRes, ordersRes, eventsRes, cartsRes] = await Promise.all([
-          supabase.from("platform_settings").select("clarity_project_id").limit(1).single(),
+          // Only fetch settings if super admin to avoid permission errors
+          isSuperAdmin ? supabase.from("platform_settings").select("clarity_project_id").limit(1).single() : Promise.resolve({ data: null }),
           ordersQuery,
           eventsQuery,
           cartsQuery,
