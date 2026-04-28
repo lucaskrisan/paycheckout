@@ -260,7 +260,13 @@ Deno.serve(async (req) => {
       if (eventErr) throw eventErr;
 
       // Update aggregate counters
-      const updateField = eventType === "impression" ? "impressions" : (eventType === "click" ? "clicks" : "sales");
+      const updateFieldMap: Record<string, string> = {
+        'impression': 'impressions',
+        'click': 'clicks',
+        'sale': 'sales',
+        'ViewContent': 'impressions' // ViewContent counts as page impression for A/B
+      };
+      const updateField = updateFieldMap[eventType] || 'clicks';
       await supabase.rpc('increment_ab_variant_stat', {
         p_variant_id: variantId,
         p_field: updateField
