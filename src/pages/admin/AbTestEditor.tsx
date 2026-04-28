@@ -48,9 +48,16 @@ import {
 
 type NodeKind = "config" | "abtest" | "page" | "checkout";
 
-type ConfigData = { kind: "config"; label: string; testName: string; entryUrl: string; visits: number };
+type ConfigData = { kind: "config"; label: string; testName: string; entryUrl: string; visits: number; stickyDays?: number; impressions?: number; sales?: number; revenue?: number };
 type AbTestData = { kind: "abtest"; label: string; subtitle: string; splits: { label: string; weight: number }[] };
-type PageData = { kind: "page"; label: string; subtitle: string; url: string };
+type PageData = { 
+  kind: "page"; 
+  label: string; 
+  subtitle: string; 
+  url: string; 
+  mirrorPixelId?: string | null;
+  stats?: { impressions: number; clicks: number; sales: number; revenue: number };
+};
 type CheckoutData = {
   kind: "checkout";
   label: string;
@@ -58,13 +65,10 @@ type CheckoutData = {
   productId: string | null;
   offerId: string | null;
   templateId: string | null;
+  stats?: { impressions: number; clicks: number; sales: number; revenue: number };
 };
 
-type FlowNode =
-  | Node<ConfigData, "config">
-  | Node<AbTestData, "abtest">
-  | Node<PageData, "page">
-  | Node<CheckoutData, "checkout">;
+type FlowNode = Node<any>;
 
 const PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID;
 const REDIRECT_BASE = `https://${PROJECT_ID}.supabase.co/functions/v1/ab-redirect`;
@@ -122,9 +126,15 @@ function ConfigNode({ data }: NodeProps<Node<ConfigData, "config">>) {
       subtitle={data.testName}
       inHandle={false}
     >
-      <div className="flex items-center justify-between text-xs px-2 py-1.5 rounded bg-muted/40">
-        <span className="text-muted-foreground">Acessos</span>
-        <span className="font-bold">{data.visits ?? 0}</span>
+      <div className="grid grid-cols-2 gap-1.5 mb-2">
+        <div className="flex flex-col text-[10px] px-2 py-1 rounded bg-muted/40 border border-border/20">
+          <span className="text-muted-foreground">Vistas</span>
+          <span className="font-bold">{data.impressions ?? 0}</span>
+        </div>
+        <div className="flex flex-col text-[10px] px-2 py-1 rounded bg-muted/40 border border-border/20">
+          <span className="text-muted-foreground">Vendas</span>
+          <span className="font-bold text-emerald-400">{data.sales ?? 0}</span>
+        </div>
       </div>
       {!data.entryUrl ? (
         <div className="flex items-center gap-1.5 text-[11px] text-amber-300 px-2 py-1.5 rounded bg-amber-500/10 border border-amber-500/30">
@@ -156,6 +166,20 @@ function PageNode({ data }: NodeProps<Node<PageData, "page">>) {
   const hasUrl = !!data.url?.trim();
   return (
     <NodeShell color="#10b981" icon={<FileText className="h-4 w-4" />} title={data.label} subtitle={data.subtitle}>
+      {data.stats && (
+        <div className="grid grid-cols-2 gap-1.5 mb-2">
+          <div className="flex flex-col text-[10px] px-2 py-1 rounded bg-white/5 border border-white/5">
+            <span className="text-muted-foreground">CTR</span>
+            <span className="font-bold text-emerald-400">
+              {data.stats.impressions > 0 ? ((data.stats.clicks / data.stats.impressions) * 100).toFixed(1) : 0}%
+            </span>
+          </div>
+          <div className="flex flex-col text-[10px] px-2 py-1 rounded bg-white/5 border border-white/5">
+            <span className="text-muted-foreground">Cliques</span>
+            <span className="font-bold">{data.stats.clicks}</span>
+          </div>
+        </div>
+      )}
       <div
         className={`flex items-center gap-1.5 text-[11px] px-2 py-1.5 rounded border truncate ${
           hasUrl ? "text-emerald-300 bg-emerald-500/10 border-emerald-500/30" : "text-muted-foreground bg-muted/40 border-border/40"
@@ -171,6 +195,20 @@ function PageNode({ data }: NodeProps<Node<PageData, "page">>) {
 function CheckoutNode({ data }: NodeProps<Node<CheckoutData, "checkout">>) {
   return (
     <NodeShell color="#f97316" icon={<ShoppingCart className="h-4 w-4" />} title={data.label} subtitle={data.subtitle}>
+      {data.stats && (
+        <div className="grid grid-cols-2 gap-1.5 mb-2">
+          <div className="flex flex-col text-[10px] px-2 py-1 rounded bg-white/5 border border-white/5">
+            <span className="text-muted-foreground">Conv.</span>
+            <span className="font-bold text-orange-400">
+              {data.stats.impressions > 0 ? ((data.stats.sales / data.stats.impressions) * 100).toFixed(1) : 0}%
+            </span>
+          </div>
+          <div className="flex flex-col text-[10px] px-2 py-1 rounded bg-white/5 border border-white/5">
+            <span className="text-muted-foreground">Vendas</span>
+            <span className="font-bold">{data.stats.sales}</span>
+          </div>
+        </div>
+      )}
       <div className="space-y-1">
         <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Oferta</div>
         <div className="flex items-center gap-1.5 text-[11px] px-2 py-1.5 rounded bg-muted/40 border border-border/40 truncate">
@@ -343,6 +381,82 @@ function EditorInner() {
       return data ?? [];
     },
   });
+  
+  const { data: mirrorPixels = [] } = useQuery({
+    queryKey: ["mirror_pixels_for_ab"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      const { data, error } = await (supabase
+        .from("mirror_pixels" as any)
+        .select("id, name, pixel_id") as any)
+        .eq("user_id", user.id);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // Fetch full stats for the test to update node data
+  const { data: stats } = useQuery({
+    queryKey: ["ab_test_stats", testId],
+    enabled: !!testId,
+    refetchInterval: 30000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ab_test_variants")
+        .select("label, impressions, clicks, sales, revenue, page_url, checkout_url")
+        .eq("test_id", testId);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  useEffect(() => {
+    if (!stats || stats.length === 0) return;
+    setNodes((ns) =>
+      ns.map((n) => {
+        if (n.type === "page") {
+          const s = stats.find(st => st.page_url === (n.data as PageData).url && st.label === (n.data as PageData).label);
+          if (s) {
+            return { 
+              ...n, 
+              data: { 
+                ...n.data, 
+                stats: { impressions: Number(s.impressions), clicks: Number(s.clicks), sales: Number(s.sales), revenue: Number(s.revenue) } 
+              } 
+            } as FlowNode;
+          }
+        }
+        if (n.type === "checkout") {
+          const s = stats.find(st => st.checkout_url && st.checkout_url.includes((n.data as CheckoutData).productId || ""));
+          if (s) {
+            return { 
+              ...n, 
+              data: { 
+                ...n.data, 
+                stats: { impressions: Number(s.impressions), clicks: Number(s.clicks), sales: Number(s.sales), revenue: Number(s.revenue) } 
+              } 
+            } as FlowNode;
+          }
+        }
+        if (n.type === "config") {
+          const totalVisits = stats.reduce((acc, curr) => acc + Number(curr.impressions), 0);
+          const totalSales = stats.reduce((acc, curr) => acc + Number(curr.sales), 0);
+          const totalRevenue = stats.reduce((acc, curr) => acc + Number(curr.revenue), 0);
+          return { 
+            ...n, 
+            data: { 
+              ...n.data, 
+              impressions: totalVisits, 
+              sales: totalSales, 
+              revenue: totalRevenue 
+            } 
+          } as FlowNode;
+        }
+        return n;
+      })
+    );
+  }, [stats, setNodes]);
 
   // Drag from palette → drop on canvas
   const onDragOver = useCallback((e: DragEvent) => {
@@ -488,6 +602,7 @@ function EditorInner() {
           weight: Math.round(100 / variantSlots),
           label,
           sort_order: i,
+          mirror_pixel_id: page?.data?.mirrorPixelId ?? null,
         };
         const found = existing.find((e) => e.sort_order === i);
         if (found) {
@@ -659,6 +774,11 @@ function EditorInner() {
                   <Label className="text-xs">Vencedor automático</Label>
                   <Switch checked={autoWinner} onCheckedChange={setAutoWinner} />
                 </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Janela de Retenção (Dias)</Label>
+                  <Input type="number" value={stickyDays} onChange={(e) => setStickyDays(Number(e.target.value))} />
+                  <p className="text-[10px] text-muted-foreground italic">Quantos dias o visitante ficará "preso" à mesma variante.</p>
+                </div>
               </div>
             )}
             {selectedNode.type === "page" && (
@@ -676,6 +796,24 @@ function EditorInner() {
                     onChange={(e) => updateNodeData(selectedNode.id, { url: e.target.value })} 
                   />
                   <p className="text-[10px] text-muted-foreground italic">Insira a URL real da sua página de vendas.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Pixel Espelho (Opcional)</Label>
+                  <Select 
+                    value={(selectedNode.data as PageData).mirrorPixelId || "none"} 
+                    onValueChange={(v) => updateNodeData(selectedNode.id, { mirrorPixelId: v === "none" ? null : v })}
+                  >
+                    <SelectTrigger className="bg-muted/40 border-border/40">
+                      <SelectValue placeholder="Nenhum pixel espelho" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Nenhum pixel espelho</SelectItem>
+                      {mirrorPixels.map((p: any) => (
+                        <SelectItem key={p.id} value={p.id}>{p.name} ({p.pixel_id})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] text-muted-foreground italic">Escolha um pixel espelho para segmentar o rastreamento desta variante.</p>
                 </div>
                 <Button variant="outline" className="w-full text-red-400 border-red-400/30 hover:bg-red-500/10" onClick={() => deleteNode(selectedNode.id)}>
                   <Trash2 className="h-4 w-4 mr-2" /> Excluir Página
