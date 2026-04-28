@@ -39,6 +39,9 @@ import {
   X,
   GripVertical,
   Trash2,
+  Play,
+  Pause,
+  Copy,
 } from "lucide-react";
 
 // ---------------- Types ----------------
@@ -275,6 +278,7 @@ function EditorInner() {
   const [stickyDays, setStickyDays] = useState(30);
   const [entryUrl, setEntryUrl] = useState("");
   const [slug, setSlug] = useState<string | null>(null);
+  const [status, setStatus] = useState<string>("draft");
 
   const initial = useMemo(() => buildInitialGraph("Novo Teste A/B"), []);
   const [nodes, setNodes, onNodesChange] = useNodesState<FlowNode>(initial.nodes);
@@ -298,6 +302,7 @@ function EditorInner() {
     setAutoWinner(!!existing.auto_winner_enabled);
     setStickyDays(existing.sticky_days ?? 30);
     setSlug(existing.slug ?? null);
+    setStatus(existing.status ?? "draft");
     const generated = existing.slug ? `${REDIRECT_BASE}/${existing.slug}?type=page` : "";
     setEntryUrl(existing.entry_url ?? generated);
     const g = existing.graph;
@@ -491,7 +496,8 @@ function EditorInner() {
       return id!;
     },
     onSuccess: (id) => {
-      toast.success("Teste salvo");
+      const isFirstSave = !routeId && !testId;
+      toast.success(isFirstSave ? "Teste A/B criado com sucesso!" : "Teste salvo");
       qc.invalidateQueries({ queryKey: ["ab_tests"] });
       qc.invalidateQueries({ queryKey: ["ab_test_full", id] });
       if (!routeId) navigate(`/admin/ab-tests/${id}`, { replace: true });
@@ -499,11 +505,45 @@ function EditorInner() {
     onError: (e: any) => toast.error(e?.message ?? "Erro ao salvar"),
   });
 
+  const toggleStatus = useMutation({
+    mutationFn: async () => {
+      if (!testId) throw new Error("Salve o teste antes de iniciar");
+      const newStatus = status === "active" ? "paused" : "active";
+      const patch: any = { status: newStatus };
+      if (newStatus === "active" && !status.includes("active")) patch.started_at = new Date().toISOString();
+      const { error } = await supabase.from("ab_tests" as any).update(patch).eq("id", testId);
+      if (error) throw error;
+      return newStatus;
+    },
+    onSuccess: (newStatus) => {
+      setStatus(newStatus);
+      toast.success(newStatus === "active" ? "Teste iniciado" : "Teste pausado");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao alterar status"),
+  });
+
+  const copyEntryUrl = async () => {
+    if (!entryUrl) return;
+    try {
+      await navigator.clipboard.writeText(entryUrl);
+      toast.success("URL copiada!");
+    } catch {
+      toast.error("Não foi possível copiar");
+    }
+  };
+
+  const statusBadge = (() => {
+    if (status === "active") return { label: "Ativo", cls: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30" };
+    if (status === "paused") return { label: "Pausado", cls: "bg-amber-500/15 text-amber-300 border-amber-500/30" };
+    if (status === "ended") return { label: "Finalizado", cls: "bg-zinc-500/15 text-zinc-300 border-zinc-500/30" };
+    return { label: "Rascunho", cls: "bg-zinc-700/40 text-zinc-300 border-zinc-600/40" };
+  })();
+
   return (
     <div className="h-[calc(100vh-0px)] flex flex-col">
       {/* Top bar */}
-      <header className="h-14 border-b border-border/60 bg-background/80 backdrop-blur flex items-center justify-between px-4 shrink-0">
-        <div className="flex items-center gap-3">
+      <header className="h-14 border-b border-border/60 bg-background/80 backdrop-blur flex items-center justify-between px-4 shrink-0 gap-4">
+        <div className="flex items-center gap-3 min-w-0">
           <Button variant="ghost" size="icon" onClick={() => navigate("/admin/ab-tests")}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -512,10 +552,45 @@ function EditorInner() {
             onChange={(e) => setName(e.target.value)}
             className="h-8 w-72 bg-transparent border-transparent hover:border-border focus-visible:border-border text-base font-bold"
           />
+          <span className={`px-2.5 py-1 rounded-md text-xs font-semibold border ${statusBadge.cls}`}>
+            {statusBadge.label}
+          </span>
         </div>
-        <Button onClick={() => save.mutate()} disabled={save.isPending} className="bg-violet-600 hover:bg-violet-500 text-white">
-          <Save className="h-4 w-4 mr-2" /> Salvar
-        </Button>
+
+        <div className="flex items-center gap-3">
+          {testId && entryUrl && (
+            <button
+              type="button"
+              onClick={copyEntryUrl}
+              className="hidden md:flex items-center gap-2 h-9 px-3 rounded-md bg-background/60 border border-border/60 hover:border-border text-sm text-muted-foreground hover:text-foreground transition-colors max-w-[320px]"
+              title={entryUrl}
+            >
+              <Link2 className="h-4 w-4 shrink-0" />
+              <span className="truncate font-mono text-xs">{entryUrl}</span>
+              <Copy className="h-3.5 w-3.5 shrink-0" />
+            </button>
+          )}
+
+          {testId && (
+            <Button
+              onClick={() => toggleStatus.mutate()}
+              disabled={toggleStatus.isPending}
+              className={status === "active"
+                ? "bg-amber-600 hover:bg-amber-500 text-white"
+                : "bg-emerald-600 hover:bg-emerald-500 text-white"}
+            >
+              {status === "active" ? (
+                <><Pause className="h-4 w-4 mr-2" /> Pausar</>
+              ) : (
+                <><Play className="h-4 w-4 mr-2" /> Iniciar</>
+              )}
+            </Button>
+          )}
+
+          <Button onClick={() => save.mutate()} disabled={save.isPending} className="bg-violet-600 hover:bg-violet-500 text-white">
+            <Save className="h-4 w-4 mr-2" /> Salvar
+          </Button>
+        </div>
       </header>
 
       <div className="flex-1 flex min-h-0">
