@@ -34,6 +34,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
   recovery: RecoveryEmail,
   email_change: EmailChangeEmail,
   reauthentication: ReauthenticationEmail,
+  broadcast: BroadcastEmail,
 }
 
 // Configuration
