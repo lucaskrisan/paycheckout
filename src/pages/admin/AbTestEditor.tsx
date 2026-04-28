@@ -48,9 +48,16 @@ import {
 
 type NodeKind = "config" | "abtest" | "page" | "checkout";
 
-type ConfigData = { kind: "config"; label: string; testName: string; entryUrl: string; visits: number };
+type ConfigData = { kind: "config"; label: string; testName: string; entryUrl: string; visits: number; impressions?: number; sales?: number; revenue?: number };
 type AbTestData = { kind: "abtest"; label: string; subtitle: string; splits: { label: string; weight: number }[] };
-type PageData = { kind: "page"; label: string; subtitle: string; url: string };
+type PageData = { 
+  kind: "page"; 
+  label: string; 
+  subtitle: string; 
+  url: string; 
+  mirrorPixelId?: string | null;
+  stats?: { impressions: number; clicks: number; sales: number; revenue: number };
+};
 type CheckoutData = {
   kind: "checkout";
   label: string;
@@ -58,6 +65,7 @@ type CheckoutData = {
   productId: string | null;
   offerId: string | null;
   templateId: string | null;
+  stats?: { impressions: number; clicks: number; sales: number; revenue: number };
 };
 
 type FlowNode =
