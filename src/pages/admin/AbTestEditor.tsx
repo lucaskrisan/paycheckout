@@ -662,7 +662,17 @@ function EditorInner() {
         if (page) {
           const connectedEdge = edges.find(e => e.source === page.id);
           if (connectedEdge) {
-            const target = nodes.find(n => n.id === connectedEdge.target);
+            let target = nodes.find(n => n.id === connectedEdge.target);
+            
+            // If it's an abtest node, go one level deeper to find the i-th checkout
+            if (target && target.type === "abtest") {
+              const checkoutEdges = edges.filter(e => e.source === target?.id);
+              const nextEdge = checkoutEdges[i] || checkoutEdges[0];
+              if (nextEdge) {
+                target = nodes.find(n => n.id === nextEdge.target);
+              }
+            }
+
             if (target && target.type === "checkout") {
               const d = target.data as CheckoutData;
               if (d.productId) {
