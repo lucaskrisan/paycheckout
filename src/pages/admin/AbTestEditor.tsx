@@ -42,6 +42,7 @@ import {
   Play,
   Pause,
   Copy,
+  Loader2,
 } from "lucide-react";
 
 // ---------------- Types ----------------
@@ -296,6 +297,25 @@ function EditorInner() {
     },
   });
 
+  // Loading Skeleton
+  if (isLoading) {
+    return (
+      <div className="h-screen bg-[#0d0f15] flex flex-col items-center justify-center p-8 space-y-6">
+        <div className="flex items-center justify-between w-full max-w-7xl px-4">
+          <div className="flex items-center gap-4">
+            <div className="h-8 w-8 rounded bg-white/5 animate-pulse" />
+            <div className="h-6 w-48 bg-white/5 animate-pulse rounded" />
+          </div>
+          <div className="flex gap-2">
+            <div className="h-9 w-24 bg-white/5 animate-pulse rounded" />
+            <div className="h-9 w-32 bg-primary/20 animate-pulse rounded" />
+          </div>
+        </div>
+        <div className="flex-1 w-full max-w-7xl bg-white/5 animate-pulse rounded-xl" />
+      </div>
+    );
+  }
+
   useEffect(() => {
     if (!existing) return;
     setName(existing.name ?? "Novo Teste A/B");
@@ -445,6 +465,8 @@ function EditorInner() {
         setTestId(id);
         setSlug(theSlug);
         setEntryUrl(generatedEntry);
+        // Atualiza URL sem recarregar para persistir o rascunho
+        window.history.replaceState(null, "", `/admin/ab-tests/${id}`);
       } else {
         const { error } = await supabase
           .from("ab_tests" as any)
