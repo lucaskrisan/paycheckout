@@ -149,17 +149,46 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Fetch the full payment from Mercado Pago API to get the actual status
-    const MERCADOPAGO_ACCESS_TOKEN = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN');
-    if (!MERCADOPAGO_ACCESS_TOKEN) {
-      console.error('[mp-webhook] MERCADOPAGO_ACCESS_TOKEN not configured');
+    // Resolve the producer's token before fetching payment details
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+
+    let producerToken = Deno.env.get('MERCADOPAGO_ACCESS_TOKEN');
+    
+    // 1. Try to find the order by external_id to get the owner
+    const { data: orderLookup } = await supabase
+      .from('orders')
+      .select('user_id')
+      .eq('external_id', String(dataId))
+      .maybeSingle();
+
+    if (orderLookup?.user_id) {
+      const { data: gw } = await supabase
+        .from('payment_gateways')
+        .select('config')
+        .eq('user_id', orderLookup.user_id)
+        .eq('provider', 'mercadopago')
+        .eq('active', true)
+        .maybeSingle();
+      
+      if (gw?.config && typeof gw.config === 'object' && (gw.config as any).api_key) {
+        producerToken = (gw.config as any).api_key;
+        console.log('[mp-webhook] Using producer token for user:', orderLookup.user_id);
+      }
+    }
+
+    if (!producerToken) {
+      console.error('[mp-webhook] No access token found (global or producer)');
       return new Response(JSON.stringify({ error: 'Token not configured' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
+    // Fetch the full payment from Mercado Pago API to get the actual status
     const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${dataId}`, {
-      headers: { 'Authorization': `Bearer ${MERCADOPAGO_ACCESS_TOKEN}` },
+      headers: { 'Authorization': `Bearer ${producerToken}` },
     });
 
     if (!mpResponse.ok) {
@@ -173,8 +202,9 @@ Deno.serve(async (req) => {
     const payment = await mpResponse.json();
     const mpStatus = payment.status; // approved, pending, rejected, cancelled, refunded, charged_back, in_process
     const paymentId = String(payment.id);
+    const orderId = payment.external_reference;
 
-    console.log('[mp-webhook] Payment', paymentId, 'status:', mpStatus);
+    console.log('[mp-webhook] Payment', paymentId, 'status:', mpStatus, 'external_ref:', orderId);
 
     // Map MP status to our internal status
     let status = 'pending';
@@ -185,18 +215,30 @@ Deno.serve(async (req) => {
     else if (mpStatus === 'charged_back') status = 'chargeback';
     else if (mpStatus === 'in_process') status = 'pending';
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    );
+    // Update order
+    let orderUpdate;
+    
+    if (orderId) {
+      // Try by internal ID first (Bug 3)
+      orderUpdate = await supabase
+        .from('orders')
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq('id', orderId)
+        .select('id, amount, payment_method, product_id, customer_id, user_id, metadata')
+        .maybeSingle();
+    }
 
-    // Update order by external_id
-    const { data: orderData, error } = await supabase
-      .from('orders')
-      .update({ status, updated_at: new Date().toISOString() })
-      .eq('external_id', paymentId)
-      .select('id, amount, payment_method, product_id, customer_id, user_id, metadata')
-      .maybeSingle();
+    // Fallback to external_id if no orderId or not found (for old orders)
+    if (!orderUpdate?.data) {
+      orderUpdate = await supabase
+        .from('orders')
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq('external_id', paymentId)
+        .select('id, amount, payment_method, product_id, customer_id, user_id, metadata')
+        .maybeSingle();
+    }
+
+    const { data: orderData, error } = orderUpdate;
 
     if (error) {
       console.error('[mp-webhook] Error updating order:', error);

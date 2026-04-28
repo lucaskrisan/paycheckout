@@ -217,11 +217,42 @@ Deno.serve(async (req) => {
       customerId = newCustomer!.id;
     }
 
+    // Pre-create the order to get the internal ID for external_reference
+    const { data: orderRecord, error: orderError } = await supabaseAdmin
+      .from('orders')
+      .insert({
+        amount,
+        payment_method: 'pix',
+        status: 'pending',
+        product_id: product_id || null,
+        customer_id: customerId,
+        user_id: productOwnerId,
+        metadata: {
+          gateway: 'mercadopago',
+          coupon_id: coupon_id || null,
+          checkout_url: checkout_url || null,
+          bump_product_ids: (bump_product_ids && bump_product_ids.length > 0) ? bump_product_ids : null,
+          ...(utms || {}),
+        },
+      })
+      .select('id')
+      .single();
+
+    if (orderError || !orderRecord) {
+      console.error('[create-mercadopago-payment] Error pre-creating order:', orderError);
+      return new Response(
+        JSON.stringify({ error: 'Erro ao processar pedido' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Create Mercado Pago payment
     const mpPayload: any = {
       transaction_amount: amount,
       description: productName,
       payment_method_id: 'pix',
+      notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadopago-webhook`,
+      external_reference: orderRecord.id,
       payer: {
         email: customer.email,
         first_name: customer.name.split(' ')[0],
@@ -247,13 +278,16 @@ Deno.serve(async (req) => {
 
     if (!mpResponse.ok) {
       console.error('[create-mercadopago-payment] MP error:', JSON.stringify(mpData));
+      // Delete the pre-created order if MP fails
+      await supabaseAdmin.from('orders').delete().eq('id', orderRecord.id);
+      
       return new Response(
         JSON.stringify({ error: 'Falha ao criar pagamento no Mercado Pago', details: mpData }),
         { status: mpResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Platform fee
+    // Update order with MP data
     const { data: platformSettings } = await supabaseAdmin
       .from('platform_settings')
       .select('platform_fee_percent')
@@ -262,29 +296,14 @@ Deno.serve(async (req) => {
     const feePercent = Number(platformSettings?.platform_fee_percent || 0);
     const feeAmount = Math.round(amount * feePercent) / 100;
 
-    // Save order
-    const { data: orderRecord } = await supabaseAdmin
+    await supabaseAdmin
       .from('orders')
-      .insert({
-        amount,
-        payment_method: 'pix',
-        status: 'pending',
-        product_id: product_id || null,
-        customer_id: customerId,
-        user_id: productOwnerId,
+      .update({
         external_id: String(mpData.id),
         platform_fee_percent: feePercent,
         platform_fee_amount: feeAmount,
-        metadata: {
-          gateway: 'mercadopago',
-          coupon_id: coupon_id || null,
-          checkout_url: checkout_url || null,
-          bump_product_ids: (bump_product_ids && bump_product_ids.length > 0) ? bump_product_ids : null,
-          ...(utms || {}),
-        },
       })
-      .select('id')
-      .single();
+      .eq('id', orderRecord.id);
 
     // Increment coupon usage atomically
     if (coupon_id) {
