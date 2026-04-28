@@ -318,26 +318,31 @@ const IntegrationWebhookGuide = ({ installedProviders }: Props) => {
       </button>
 
       {expanded && (
-        <div className="px-4 pb-4 space-y-4">
+        <div className="px-4 pb-5 space-y-5">
           {/* Critical warning */}
-          <div className="rounded-md bg-destructive/10 border border-destructive/30 p-3">
-            <p className="text-[11px] text-destructive leading-relaxed flex items-start gap-2">
-              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>
-                <strong>ATENÇÃO:</strong> Sem o webhook configurado corretamente, seus pagamentos <strong>NÃO serão confirmados automaticamente</strong>. 
-                Isso significa que mesmo que o cliente pague, o pedido vai ficar como "Pendente" para sempre.
-              </span>
-            </p>
+          <div className="rounded-xl bg-gradient-to-r from-destructive/10 to-destructive/5 border border-destructive/20 p-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5 text-destructive" />
+              </div>
+              <p className="text-[11px] text-foreground leading-relaxed">
+                <strong className="text-destructive font-bold block mb-1">⚠️ ATENÇÃO CRÍTICA:</strong> 
+                Sem o webhook configurado corretamente, seus pagamentos <strong>NÃO serão confirmados automaticamente</strong>. 
+                O pedido ficará como "Pendente" mesmo após o cliente pagar.
+              </p>
+            </div>
           </div>
 
           {/* What is a webhook */}
-          <div className="rounded-md bg-primary/5 border border-primary/20 p-3">
-            <div className="flex items-start gap-2">
-              <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-primary" />
+          <div className="rounded-xl bg-muted/30 border border-border/40 p-4">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <Info className="w-5 h-5 text-primary" />
+              </div>
               <div className="text-[11px] text-muted-foreground leading-relaxed space-y-1">
-                <p><strong className="text-foreground">O que é um Webhook?</strong></p>
-                <p>É um "endereço de notificação" — uma URL que o gateway (Pagar.me, Asaas, etc.) usa para avisar nosso sistema quando um pagamento é aprovado, recusado ou reembolsado.</p>
-                <p>Sem ele, nosso sistema nunca fica sabendo que o cliente pagou.</p>
+                <p><strong className="text-foreground font-semibold">O que é um Webhook?</strong></p>
+                <p>É o "carteiro" do seu sistema. Uma URL que o gateway usa para avisar em tempo real quando um pagamento é aprovado.</p>
+                <p className="text-[10px] opacity-70 italic">Sem ele, nosso sistema nunca recebe a confirmação de venda.</p>
               </div>
             </div>
           </div>
