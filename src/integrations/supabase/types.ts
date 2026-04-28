@@ -611,6 +611,8 @@ export type Database = {
           price: number | null
           product_id: string
           settings: Json
+          test_started_at: string | null
+          traffic_weight: number | null
           updated_at: string
           user_id: string | null
         }
@@ -624,6 +626,8 @@ export type Database = {
           price?: number | null
           product_id: string
           settings?: Json
+          test_started_at?: string | null
+          traffic_weight?: number | null
           updated_at?: string
           user_id?: string | null
         }
@@ -637,6 +641,8 @@ export type Database = {
           price?: number | null
           product_id?: string
           settings?: Json
+          test_started_at?: string | null
+          traffic_weight?: number | null
           updated_at?: string
           user_id?: string | null
         }
