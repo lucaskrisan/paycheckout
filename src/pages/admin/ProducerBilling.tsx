@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table";
 import {
   CreditCard, Loader2, ClipboardCopy, CheckCircle2, Zap, TrendingUp,
-  Wallet, DollarSign, Plus, Receipt,
+  Wallet, DollarSign, Plus, Receipt, ExternalLink, Globe,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
