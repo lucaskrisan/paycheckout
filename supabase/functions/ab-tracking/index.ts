@@ -102,13 +102,11 @@ const trackingScript = `
     }).catch(() => {});
   }
 
-  // Auto-track impression on load - use a small debounce/guard to prevent double-firing
-  let lastFired = 0;
+  // Auto-track impression on load
   if (currentParams['_abt'] && currentParams['_abv']) {
-    // Only track if not fired in last 500ms
-    const now = Date.now();
-    if (now - lastFired > 500) {
-      lastFired = now;
+    const sessionKey = 'ab_tracked_' + currentParams['_abt'];
+    if (!sessionStorage.getItem(sessionKey)) {
+      sessionStorage.setItem(sessionKey, '1');
       trackEvent('impression');
       
       // Also track ViewContent if on a landing page
