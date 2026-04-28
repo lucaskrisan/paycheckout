@@ -445,27 +445,36 @@ const WebhookDetailCard = ({
       {isOpen && (
         <div className="px-3 pb-4 space-y-4">
           {/* Webhook URL - prominent */}
-          <div className="rounded-md bg-primary/5 border border-primary/30 p-3 space-y-2">
-            <p className="text-[11px] font-semibold text-foreground">
-              📋 URL do Webhook do {config.label} — Copie e cole no painel:
-            </p>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 text-[11px] bg-background border border-border rounded px-3 py-2 text-foreground font-mono break-all select-all leading-relaxed">
-                {config.url}
-              </code>
-              <Button
-                variant="default"
-                size="sm"
-                className="h-8 text-[10px] gap-1.5 shrink-0"
-                onClick={() => onCopy(config.url)}
-              >
-                <Copy className="w-3 h-3" />
-                Copiar URL
-              </Button>
+          <div className="rounded-lg bg-background border border-border overflow-hidden shadow-sm">
+            <div className="bg-primary/5 px-4 py-2 border-b border-border flex items-center justify-between">
+              <p className="text-[11px] font-semibold text-foreground flex items-center gap-2">
+                <Copy className="w-3 h-3 text-primary" />
+                URL do Webhook do {config.label}
+              </p>
+              <Badge variant="outline" className="text-[9px] uppercase tracking-wider bg-background">Copie para o painel</Badge>
             </div>
-            <p className="text-[10px] text-destructive font-medium">
-              ⚠️ Cole esta URL no campo "URL" do webhook. NÃO coloque seu e-mail neste campo!
-            </p>
+            <div className="p-4 space-y-3">
+              <div className="flex items-center gap-2 bg-muted/30 p-1.5 rounded-md border border-border/50">
+                <code className="flex-1 text-[11px] px-2 py-1.5 text-foreground font-mono break-all select-all leading-relaxed">
+                  {config.url}
+                </code>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="h-8 text-[10px] px-3 gap-1.5 shrink-0 shadow-sm"
+                  onClick={() => onCopy(config.url)}
+                >
+                  <Copy className="w-3 h-3" />
+                  Copiar
+                </Button>
+              </div>
+              <div className="flex items-start gap-2 text-destructive bg-destructive/5 p-2 rounded border border-destructive/10">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                <p className="text-[10px] font-medium leading-relaxed">
+                  Cole esta URL no campo "URL" do webhook. <strong>NÃO coloque seu e-mail</strong> neste campo!
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Step by step */}
