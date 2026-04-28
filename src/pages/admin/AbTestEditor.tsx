@@ -286,7 +286,7 @@ function EditorInner() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>("config");
 
   // Load existing test if editing
-  const { data: existing } = useQuery({
+  const { data: existing, isLoading } = useQuery({
     queryKey: ["ab_test_full", testId],
     enabled: !!testId,
     queryFn: async () => {
