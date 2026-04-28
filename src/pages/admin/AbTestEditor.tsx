@@ -847,9 +847,8 @@ function EditorInner() {
                   <Trash2 className="h-4 w-4 mr-2" /> Excluir Teste A/B
                 </Button>
               </div>
-            )}
+            {selectedNode.type === "page" && (
               <div className="space-y-4">
-                <Label className="text-xs font-medium uppercase text-muted-foreground tracking-widest">Configuração da Página</Label>
                 <div className="space-y-2">
                   <Label className="text-xs">Nome da Variante</Label>
                   <Input value={selectedNode.data.label} onChange={(e) => updateNodeData(selectedNode.id, { label: e.target.value })} />
