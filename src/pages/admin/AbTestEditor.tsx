@@ -654,9 +654,65 @@ function EditorInner() {
             )}
             {selectedNode.type === "page" && (
               <div className="space-y-4">
-                <Label className="text-xs">URL da Página</Label>
-                <Input value={(selectedNode.data as PageData).url || ""} onChange={(e) => updateNodeData(selectedNode.id, { url: e.target.value })} />
-                <Button variant="outline" className="w-full text-red-400 border-red-400/30" onClick={() => deleteNode(selectedNode.id)}>Excluir</Button>
+                <Label className="text-xs font-medium uppercase text-muted-foreground tracking-widest">Configuração da Página</Label>
+                <div className="space-y-2">
+                  <Label className="text-xs">Nome da Variante</Label>
+                  <Input value={selectedNode.data.label} onChange={(e) => updateNodeData(selectedNode.id, { label: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">URL da Página (LP)</Label>
+                  <Input 
+                    placeholder="https://suapagina.com.br"
+                    value={(selectedNode.data as PageData).url || ""} 
+                    onChange={(e) => updateNodeData(selectedNode.id, { url: e.target.value })} 
+                  />
+                  <p className="text-[10px] text-muted-foreground italic">Insira a URL real da sua página de vendas.</p>
+                </div>
+                <Button variant="outline" className="w-full text-red-400 border-red-400/30 hover:bg-red-500/10" onClick={() => deleteNode(selectedNode.id)}>
+                  <Trash2 className="h-4 w-4 mr-2" /> Excluir Página
+                </Button>
+              </div>
+            )}
+            {selectedNode.type === "checkout" && (
+              <div className="space-y-4">
+                <Label className="text-xs font-medium uppercase text-muted-foreground tracking-widest">Configuração do Checkout</Label>
+                <div className="space-y-2">
+                  <Label className="text-xs">Produto / Oferta</Label>
+                  <Select 
+                    value={(selectedNode.data as CheckoutData).productId || ""} 
+                    onValueChange={(v) => updateNodeData(selectedNode.id, { productId: v })}
+                  >
+                    <SelectTrigger className="bg-muted/40 border-border/40">
+                      <SelectValue placeholder="Selecione um produto" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {products.map((p: any) => (
+                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                      ))}
+                      {products.length === 0 && <div className="p-2 text-xs text-muted-foreground text-center">Nenhum produto ativo</div>}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Design / Template</Label>
+                  <Select 
+                    value={(selectedNode.data as CheckoutData).templateId || ""} 
+                    onValueChange={(v) => updateNodeData(selectedNode.id, { templateId: v })}
+                  >
+                    <SelectTrigger className="bg-muted/40 border-border/40">
+                      <SelectValue placeholder="Design Padrão" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="default">Design Padrão Pantera</SelectItem>
+                      {templates.map((t: any) => (
+                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button variant="outline" className="w-full text-red-400 border-red-400/30 hover:bg-red-500/10" onClick={() => deleteNode(selectedNode.id)}>
+                  <Trash2 className="h-4 w-4 mr-2" /> Excluir Checkout
+                </Button>
               </div>
             )}
           </aside>
