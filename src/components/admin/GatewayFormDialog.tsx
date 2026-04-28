@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { CreditCard, ShieldCheck, Zap, Info, ExternalLink } from "lucide-react";
 import type { GatewayConfig } from "@/pages/admin/Gateways";
 
 interface Props {
