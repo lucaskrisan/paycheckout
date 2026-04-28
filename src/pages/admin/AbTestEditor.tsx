@@ -635,7 +635,7 @@ function EditorInner() {
             {selectedNode.type === "page" && (
               <div className="space-y-4">
                 <Label className="text-xs">URL da Página</Label>
-                <Input value={selectedNode.data.url} onChange={(e) => updateNodeData(selectedNode.id, { url: e.target.value })} />
+                <Input value={(selectedNode.data as PageData).url || ""} onChange={(e) => updateNodeData(selectedNode.id, { url: e.target.value })} />
                 <Button variant="outline" className="w-full text-red-400 border-red-400/30" onClick={() => deleteNode(selectedNode.id)}>Excluir</Button>
               </div>
             )}
