@@ -68,6 +68,7 @@ const Roadmap = lazy(() => import("./pages/admin/Roadmap"));
 const TechnicalManual = lazy(() => import("./pages/admin/TechnicalManual"));
 const PixelMirrors = lazy(() => import("./pages/admin/PixelMirrors"));
 const AbTests = lazy(() => import("./pages/admin/AbTests"));
+const AbTestEditor = lazy(() => import("./pages/admin/AbTestEditor"));
 const Domains = lazy(() => import("./pages/admin/Domains"));
 
 const MyAccount = lazy(() => import("./pages/admin/MyAccount"));
@@ -164,6 +165,8 @@ const App = () => (
                 <Route path="manual" element={<TechnicalManual />} />
                 <Route path="pixel-mirrors" element={<PixelMirrors />} />
                 <Route path="ab-tests" element={<AbTests />} />
+                <Route path="ab-tests/new" element={<AbTestEditor />} />
+                <Route path="ab-tests/:id" element={<AbTestEditor />} />
                 <Route path="blacklist" element={<Blacklist />} />
                 <Route path="api-keys" element={<ApiKeys />} />
                 <Route path="product-review" element={<ProductReview />} />

@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -79,6 +80,7 @@ function conversion(clicks: number, sales: number): number {
 
 export default function AbTests() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [showArchived, setShowArchived] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [scriptOpen, setScriptOpen] = useState(false);
@@ -195,7 +197,7 @@ export default function AbTests() {
             <Button variant="outline" size="sm" onClick={() => setScriptOpen(true)}>
               <Code2 className="w-4 h-4 mr-2" /> Script
             </Button>
-            <Button onClick={() => createTest.mutate()} disabled={createTest.isPending}>
+            <Button onClick={() => navigate("/admin/ab-tests/new")}>
               <Plus className="w-4 h-4 mr-2" /> Novo Teste
             </Button>
           </div>
@@ -237,7 +239,7 @@ export default function AbTests() {
               <Card
                 key={t.id}
                 className="p-5 cursor-pointer hover:border-primary/40 transition"
-                onClick={() => setEditingId(t.id)}
+                onClick={() => navigate(`/admin/ab-tests/${t.id}`)}
               >
                 <div className="flex items-start justify-between gap-4 flex-wrap">
                   <div className="flex-1 min-w-[260px]">

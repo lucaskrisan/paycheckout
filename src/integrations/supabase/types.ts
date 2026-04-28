@@ -183,6 +183,8 @@ export type Database = {
           auto_winner_min_uplift: number
           created_at: string
           ended_at: string | null
+          entry_url: string | null
+          graph: Json
           id: string
           name: string
           slug: string
@@ -200,6 +202,8 @@ export type Database = {
           auto_winner_min_uplift?: number
           created_at?: string
           ended_at?: string | null
+          entry_url?: string | null
+          graph?: Json
           id?: string
           name?: string
           slug: string
@@ -217,6 +221,8 @@ export type Database = {
           auto_winner_min_uplift?: number
           created_at?: string
           ended_at?: string | null
+          entry_url?: string | null
+          graph?: Json
           id?: string
           name?: string
           slug?: string
