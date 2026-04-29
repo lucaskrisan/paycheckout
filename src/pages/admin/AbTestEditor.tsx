@@ -429,8 +429,9 @@ function EditorInner() {
     setStickyDays(existing.sticky_days ?? 30);
     setSlug(existing.slug ?? null);
     setStatus(existing.status ?? "draft");
-    const generated = existing.slug ? `${REDIRECT_BASE}/${existing.slug}?type=page` : "";
-    setEntryUrl(existing.entry_url ?? generated);
+    const origin = window.location.origin;
+    const generated = existing.slug ? `${origin}/go/${existing.slug}?type=page` : "";
+    setEntryUrl(generated);
     const g = existing.graph;
     if (g && Array.isArray(g.nodes) && g.nodes.length > 0) {
       setNodes(g.nodes as FlowNode[]);
