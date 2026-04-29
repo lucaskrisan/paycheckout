@@ -248,11 +248,10 @@ async function sendAccessEmail(
               </a>
             </div>
             <div style="text-align:center;margin:0 0 24px;">
-              <a href="${portalUrl}" style="display:inline-block;background:#111827;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;">
-                ${isEnglish ? '🎓 Create my student account (lifetime access)' : '🎓 Criar minha conta de aluno (acesso vitalício)'}
-              </a>
-              <p style="color:#9ca3af;font-size:11px;line-height:1.5;margin:8px 0 0;">
-                ${isEnglish ? 'Sign in with Google or email and access all your courses with one login.' : 'Entre com Google ou e-mail e acesse todos os seus cursos com um único login.'}
+              <p style="color:#374151;font-size:14px;line-height:1.6;margin:0 0 16px;">
+                ${isEnglish 
+                  ? 'Access via the link above. If you lose it, go to panttera.com.br/login and click "I am a Student" to resend.' 
+                  : 'Acesse pelo link acima ou pelo botão abaixo. Se perder o link, acesse panttera.com.br/login e clique em "Sou Aluno" para reenviar.'}
               </p>
             </div>
             <p style="color:#6b7280;font-size:13px;line-height:1.5;margin:24px 0 0;padding-top:20px;border-top:1px solid #e5e7eb;">

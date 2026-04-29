@@ -130,6 +130,14 @@ const Login = () => {
         toast.success("Conta criada! Verifique seu e-mail para confirmar o cadastro.", { duration: 8000 });
         setLoading(false);
         setIsSignUp(false); // Switch to login view
+      } else if (accountType === 'customer') {
+        const { error } = await supabase.functions.invoke("recover-member-access", {
+          body: { email: email.trim().toLowerCase() }
+        });
+        if (error) throw error;
+        toast.success("Se esse e-mail tem uma compra ativa, você receberá o link de acesso em instantes. Verifique sua caixa de entrada e spam.", { duration: 6000 });
+        setLoading(false);
+        return;
       } else {
         await signIn(email, password);
       }
@@ -312,53 +320,55 @@ const Login = () => {
                   </div>
                 )}
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password" className="text-[13px] font-medium text-muted-foreground">Senha</Label>
-                    {!isSignUp && (
+                {(!isSignUp && accountType === 'customer') ? null : (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password" className="text-[13px] font-medium text-muted-foreground">Senha</Label>
+                      {!isSignUp && (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (!email) {
+                              toast.error("Digite seu e-mail primeiro");
+                              return;
+                            }
+                            try {
+                              const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                                redirectTo: `${getAuthOrigin()}/reset-password`,
+                              });
+                              if (error) throw error;
+                              toast.success("Link de redefinição enviado! Verifique seu e-mail.", { duration: 6000 });
+                            } catch (err: any) {
+                              toast.error(err.message || "Erro ao enviar link de redefinição");
+                            }
+                          }}
+                          className="text-[12px] text-primary/70 hover:text-primary font-medium transition-colors"
+                        >
+                          Esqueceu?
+                        </button>
+                      )}
+                    </div>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Mínimo 6 caracteres"
+                        className="pr-11 h-[52px] bg-card/40 border-border/50 rounded-xl text-[14px] placeholder:text-muted-foreground/40 focus:border-primary/50 focus:bg-card/60 transition-all duration-200"
+                        required
+                        minLength={6}
+                      />
                       <button
                         type="button"
-                        onClick={async () => {
-                          if (!email) {
-                            toast.error("Digite seu e-mail primeiro");
-                            return;
-                          }
-                          try {
-                            const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                              redirectTo: `${getAuthOrigin()}/reset-password`,
-                            });
-                            if (error) throw error;
-                            toast.success("Link de redefinição enviado! Verifique seu e-mail.", { duration: 6000 });
-                          } catch (err: any) {
-                            toast.error(err.message || "Erro ao enviar link de redefinição");
-                          }
-                        }}
-                        className="text-[12px] text-primary/70 hover:text-primary font-medium transition-colors"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-muted-foreground transition-colors"
                       >
-                        Esqueceu?
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
-                    )}
+                    </div>
                   </div>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Mínimo 6 caracteres"
-                      className="pr-11 h-[52px] bg-card/40 border-border/50 rounded-xl text-[14px] placeholder:text-muted-foreground/40 focus:border-primary/50 focus:bg-card/60 transition-all duration-200"
-                      required
-                      minLength={6}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-muted-foreground transition-colors"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
+                )}
 
                 {isSignUp && (
                   <>
@@ -400,7 +410,7 @@ const Login = () => {
                   className="w-full h-[52px] font-bold text-[14px] rounded-xl gap-2 mt-1 shadow-[0_0_30px_hsl(var(--primary)/0.15)] hover:shadow-[0_0_40px_hsl(var(--primary)/0.25)] transition-all duration-300"
                   disabled={loading}
                 >
-                  {loading ? "Aguarde..." : isSignUp ? "Criar conta grátis" : "Entrar"}
+                  {loading ? "Aguarde..." : (isSignUp ? "Criar conta grátis" : (accountType === 'customer' ? "Reenviar meu link de acesso" : "Entrar"))}
                   {!loading && <ArrowRight className="w-4 h-4" />}
                 </Button>
               </form>
