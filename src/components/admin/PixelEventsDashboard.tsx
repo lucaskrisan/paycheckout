@@ -77,9 +77,7 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
   const [feedView, setFeedView] = useState<"feed" | "journeys">("feed");
   const [eventsLastHour, setEventsLastHour] = useState(0);
 
-  const [onlyEngaged, setOnlyEngaged] = useState<boolean>(() =>
-    localStorage.getItem("nina-feed-engaged-only") === "1"
-  );
+  const [onlyEngaged, setOnlyEngaged] = useState<boolean>(false);
 
   const engagedVisitorIds = useMemo(() => {
     const s = new Set<string>();
@@ -435,21 +433,6 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
                   }`}
                 >
                   Jornadas
-                </button>
-                <button
-                  onClick={() => {
-                    const next = !onlyEngaged;
-                    setOnlyEngaged(next);
-                    localStorage.setItem("nina-feed-engaged-only", next ? "1" : "0");
-                  }}
-                  className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider
-                    rounded transition-all ${
-                    onlyEngaged
-                      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  Engajados
                 </button>
               </div>
             </div>
