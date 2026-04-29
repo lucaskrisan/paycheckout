@@ -70,7 +70,7 @@ const geoBootPromise = isExplicitPreview
   ? Promise.resolve()
   : Promise.race([
       bootGeo(),
-      new Promise<void>((resolve) => setTimeout(resolve, 2000)),
+      new Promise<void>((resolve) => setTimeout(resolve, 800)),
     ]);
 
 geoBootPromise.finally(() => {
