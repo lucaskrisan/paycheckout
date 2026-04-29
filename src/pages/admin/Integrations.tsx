@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import AppSellIntegration from "@/components/admin/AppSellIntegration";
 import UtmifyIntegration from "@/components/admin/UtmifyIntegration";
+import GatFlowIntegration from "@/components/admin/GatFlowIntegration";
 import webhookLogo from "@/assets/webhook-logo.png";
 import appsellCardLogo from "@/assets/appsell-logo.png";
 import utmifyLogo from "@/assets/utmify-logo.png";
