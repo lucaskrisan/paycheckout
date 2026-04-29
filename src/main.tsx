@@ -6,7 +6,6 @@ import {
   recoverFromDynamicImportFailure,
   scheduleDynamicImportRecoveryReset,
 } from "@/lib/dynamicImportRecovery";
-import { bootGeo } from "@/lib/cfGeo";
 import { cleanupStaleBrowserCaches } from "@/lib/staleCacheCleanup";
 
 const STYLE_TAG_ID = "app-global-styles";
@@ -62,22 +61,9 @@ window.addEventListener("unhandledrejection", (event) => {
   recoverFromDynamicImportFailure();
 });
 
-// Busca geolocalização do Cloudflare Worker antes de montar o React.
-// No preview/editor ou se houver hostname de preview, pula a chamada externa para evitar travamentos.
-const isExplicitPreview = isPreviewHost || window.location.hostname.includes("preview") || window.location.hostname.includes("gptengineer");
-
-const geoBootPromise = isExplicitPreview
-  ? Promise.resolve()
-  : Promise.race([
-      bootGeo(),
-      new Promise<void>((resolve) => setTimeout(resolve, 800)),
-    ]);
-
-geoBootPromise.finally(() => {
-  const rootElement = document.getElementById("root");
-  if (!rootElement) {
-    console.error("Critical: Root element not found");
-    return;
-  }
+const rootElement = document.getElementById("root");
+if (rootElement) {
   createRoot(rootElement).render(<App />);
-});
+} else {
+  console.error("Critical: Root element not found");
+}
