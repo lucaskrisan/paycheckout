@@ -332,6 +332,7 @@ function CheckoutNode({ id, data }: NodeProps<Node<CheckoutData, "checkout">>) {
 
 function CreativeNode({ id, data }: NodeProps<Node<CreativeData, "creative">>) {
   const reactFlow = useReactFlow();
+  const { id: testId } = useParams<{ id: string }>();
   
   const updateData = (newData: Partial<CreativeData>) => {
     reactFlow.setNodes((nds) =>
@@ -342,6 +343,17 @@ function CreativeNode({ id, data }: NodeProps<Node<CreativeData, "creative">>) {
         return node;
       })
     );
+  };
+
+  const adUrl = testId ? `${REDIRECT_BASE}?t=${testId}&utm_source=${data.utmSource || "facebook"}&utm_content=${id}` : "";
+
+  const copyAdUrl = () => {
+    if (!adUrl) {
+      toast.error("Salve o teste primeiro para gerar a URL");
+      return;
+    }
+    navigator.clipboard.writeText(adUrl);
+    toast.success("Link do anúncio copiado!");
   };
 
   return (
@@ -361,22 +373,43 @@ function CreativeNode({ id, data }: NodeProps<Node<CreativeData, "creative">>) {
     >
       <div className="space-y-3">
         <div className="space-y-1.5">
-          <Label className="text-[10px] text-slate-500 uppercase font-bold">Nome do Anúncio</Label>
+          <Label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Identificação</Label>
           <Input 
             value={data.label} 
             onChange={(e) => updateData({ label: e.target.value })}
-            className="h-8 text-xs bg-white/[0.03] border-white/10"
-            placeholder="Ex: Criativo 01 - Promoção"
+            className="h-8 text-xs bg-white/[0.03] border-white/10 focus:border-pink-500/50 transition-colors"
+            placeholder="Ex: Foto Produto 01"
           />
         </div>
 
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1.5">
+            <Label className="text-[10px] text-slate-500 uppercase font-bold">Origem (Source)</Label>
+            <Input 
+              value={data.utmSource || ""} 
+              onChange={(e) => updateData({ utmSource: e.target.value })}
+              className="h-7 text-[10px] bg-white/[0.02] border-white/5"
+              placeholder="facebook"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-[10px] text-slate-500 uppercase font-bold">Conteúdo (Content)</Label>
+            <Input 
+              value={data.utmContent || ""} 
+              onChange={(e) => updateData({ utmContent: e.target.value })}
+              className="h-7 text-[10px] bg-white/[0.02] border-white/5"
+              placeholder="ad_01"
+            />
+          </div>
+        </div>
+
         <div className="space-y-1.5">
-          <Label className="text-[10px] text-slate-500 uppercase font-bold">URL da Imagem (Opcional)</Label>
+          <Label className="text-[10px] text-slate-500 uppercase font-bold">URL da Imagem</Label>
           <Input 
             value={data.imageUrl || ""} 
             onChange={(e) => updateData({ imageUrl: e.target.value })}
-            className="h-8 text-xs bg-white/[0.03] border-white/10"
-            placeholder="https://..."
+            className="h-7 text-[10px] bg-white/[0.02] border-white/5"
+            placeholder="Link da imagem/vídeo..."
           />
         </div>
 
@@ -384,18 +417,27 @@ function CreativeNode({ id, data }: NodeProps<Node<CreativeData, "creative">>) {
           <div className="rounded-lg overflow-hidden border border-white/10 aspect-video bg-slate-900 group/img relative">
             <img src={data.imageUrl} alt="Creative" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
-              <span className="text-[10px] text-white font-bold uppercase tracking-widest">Preview Criativo</span>
+              <span className="text-[10px] text-white font-bold uppercase tracking-widest">Preview</span>
             </div>
           </div>
         ) : (
-          <div className="rounded-lg border border-dashed border-white/10 aspect-video bg-white/[0.02] flex flex-col items-center justify-center gap-2 text-slate-500">
-            <ImageIcon className="h-6 w-6 opacity-20" />
-            <span className="text-[10px] uppercase tracking-widest font-bold opacity-40">Sem Imagem</span>
+          <div className="rounded-lg border border-dashed border-white/10 py-3 bg-white/[0.02] flex flex-col items-center justify-center gap-1 text-slate-500">
+            <ImageIcon className="h-5 w-5 opacity-20" />
+            <span className="text-[8px] uppercase tracking-widest font-bold opacity-40">Sem Imagem</span>
           </div>
         )}
+
+        <Button 
+          onClick={copyAdUrl}
+          variant="outline" 
+          className="w-full h-8 text-[10px] uppercase font-black tracking-widest border-pink-500/30 bg-pink-500/5 hover:bg-pink-500/20 text-pink-400 gap-2"
+        >
+          <Link2 className="h-3 w-3" />
+          Copiar Link do Anúncio
+        </Button>
         
         {data.stats && (
-          <div className="grid grid-cols-2 gap-2 pt-1">
+          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/5 mt-1">
             <div className="flex flex-col p-2 rounded-xl bg-pink-500/5 border border-pink-500/10">
               <span className="text-[8px] uppercase tracking-wider text-pink-400/70 font-bold">Cliques</span>
               <span className="text-xs font-black text-white">{data.stats.clicks || 0}</span>
@@ -425,6 +467,7 @@ const nodeTypes = {
 
 function buildInitialGraph(testName: string): { nodes: FlowNode[]; edges: Edge[] } {
   const nodes: FlowNode[] = [
+    { id: "creative-main", type: "creative", position: { x: -300, y: 200 }, data: { kind: "creative", label: "Criativo Principal", subtitle: "Anúncio Facebook", imageUrl: "", utmSource: "facebook", utmContent: "main" } },
     { id: "config", type: "config", position: { x: 0, y: 200 }, data: { kind: "config", label: "Configuração Inicial", testName, entryUrl: "", visits: 0 } },
     { id: "abtest-pages", type: "abtest", position: { x: 290, y: 200 }, data: { kind: "abtest", label: "Teste Páginas", subtitle: "Divide tráfego", splits: [{ label: "A", weight: 50 }, { label: "B", weight: 50 }] } },
     { id: "page-a", type: "page", position: { x: 580, y: 60 }, data: { kind: "page", label: "Página A", subtitle: "Landing Page", url: "" } },
@@ -440,6 +483,7 @@ function buildInitialGraph(testName: string): { nodes: FlowNode[]; edges: Edge[]
     markerEnd: { type: MarkerType.ArrowClosed, color },
   });
   const edges: Edge[] = [
+    edge("e0", "creative-main", "config", "#ec4899"),
     edge("e1", "config", "abtest-pages", "#a855f7"),
     edge("e2", "abtest-pages", "page-a", "#10b981"),
     edge("e3", "abtest-pages", "page-b", "#10b981"),
