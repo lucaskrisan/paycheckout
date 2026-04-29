@@ -405,6 +405,7 @@ function EditorInner() {
   const [showTutorial, setShowTutorial] = useState(!routeId || routeId === "new");
   const [conversionGoal, setConversionGoal] = useState<string>("purchase");
   const [targetingRules, setTargetingRules] = useState<any>({ devices: [], utm_filters: [] });
+  const [period, setPeriod] = useState<string>("all");
 
   const initial = useMemo(() => buildInitialGraph("Novo Teste A/B"), []);
   const [nodes, setNodes, onNodesChange] = useNodesState<FlowNode>(initial.nodes);
