@@ -145,10 +145,10 @@ export function detectBot(requireHumanInteraction = true): {
 
   if (requireHumanInteraction && !humanInteractionDetected) {
     // Janela de tolerância: se a página acabou de carregar, ainda é cedo
-    // pra concluir. Damos 3s de carência via performance.now().
+    // pra concluir. Damos 10s de carência para conexões lentas (especialmente mobile/3G).
     const pageAge = typeof performance !== "undefined" ? performance.now() : 0;
-    if (pageAge > 3000) {
-      return { isBot: true, reason: "no_human_interaction_3s" };
+    if (pageAge > 10000) {
+      return { isBot: true, reason: "no_human_interaction_10s" };
     }
   }
 
