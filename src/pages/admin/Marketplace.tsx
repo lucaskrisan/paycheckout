@@ -245,8 +245,12 @@ const Marketplace = () => {
                     Entre no painel da ferramenta com Single Sign-On seguro da Panttera.
                   </p>
                 </div>
-                <Button className="w-full md:w-auto h-12 px-8 font-bold gap-2" disabled={!selectedApp.webhook_url}>
-                  Abrir Dashboard
+                <Button 
+                  className="w-full md:w-auto h-12 px-8 font-bold gap-2" 
+                  disabled={!selectedApp.is_installed || loadingAction === "open"}
+                  onClick={() => handleOpenApp(selectedApp)}
+                >
+                  {loadingAction === "open" ? <Loader2 className="w-4 h-4 animate-spin" /> : "Abrir Dashboard"}
                   <ExternalLink className="w-4 h-4" />
                 </Button>
               </div>
