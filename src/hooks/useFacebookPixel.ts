@@ -270,7 +270,7 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     // Bot filter: eventos de "intenção" (PageView/ViewContent) exigem interação humana.
     // Eventos de ação (AddPaymentInfo, AddToCart, Lead, Purchase, Subscribe) já são
     // disparados após o usuário interagir, então só checam hard signals.
-    const intentEvent = eventName === "PageView" || eventName === "ViewContent" || eventName === "InitiateCheckout";
+    const intentEvent = eventName === "ViewContent" || eventName === "InitiateCheckout";
     const botCheck = detectBot(/* requireHumanInteraction */ intentEvent);
     if (botCheck.isBot) {
       console.log(`[CAPI] Skipping ${eventName} — bot detected:`, botCheck.reason);
@@ -291,7 +291,7 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
         user_agent: navigator.userAgent,
         client_ip: clientIp || undefined,
         ctwa_clid: ctwaClid || undefined,
-        log_browser: false, // Don't force-log browser source from server events to avoid dual checkmark confusion
+        log_browser: true, // Registra fonte 'browser' no banco para exibir os dois checkmarks no painel Nina Tracking
         geo,
         payment_method: (enrichedCustomData as any)?.payment_method,
         is_bot: botCheck.isBot,
