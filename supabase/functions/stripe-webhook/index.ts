@@ -146,7 +146,14 @@ Deno.serve(async (req) => {
       case 'checkout.session.completed':
         if (obj?.payment_status === 'paid') status = 'paid';
         break;
+      case 'invoice.payment_succeeded':
+        status = 'paid';
+        break;
       case 'payment_intent.succeeded':
+        // If it's part of an invoice, we handle it via invoice.payment_succeeded
+        if (obj?.invoice) return new Response(JSON.stringify({ received: true, skip: 'handled_by_invoice' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
         status = 'paid';
         break;
       case 'payment_intent.payment_failed':
@@ -199,6 +206,8 @@ Deno.serve(async (req) => {
     let externalId: string;
     if (event.type === 'checkout.session.completed') {
       externalId = obj.id;
+    } else if (event.type === 'invoice.payment_succeeded' && obj.subscription) {
+      externalId = obj.subscription;
     } else {
       externalId = obj.payment_intent || obj.id;
     }
