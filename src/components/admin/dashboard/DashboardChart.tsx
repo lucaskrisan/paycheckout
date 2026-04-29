@@ -80,9 +80,8 @@ const DashboardChart = memo(function DashboardChart({ data, fmt, currencyPrefix 
             <AreaChart data={data} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorRevGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
-                  <stop offset="60%" stopColor="hsl(var(--primary))" stopOpacity={0.1} />
-                  <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#00E676" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="#00E676" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(215 12% 14%)" vertical={false} opacity={0.6} />
@@ -103,15 +102,15 @@ const DashboardChart = memo(function DashboardChart({ data, fmt, currencyPrefix 
               <Area
                 type="monotone"
                 dataKey="total"
-                stroke="hsl(var(--primary))"
+                stroke="#00E676"
                 fill="url(#colorRevGrad)"
-                strokeWidth={3}
-                dot={hasData ? { r: 3, fill: "hsl(var(--primary))", stroke: "hsl(var(--background))", strokeWidth: 2 } : false}
+                strokeWidth={1.5}
+                dot={hasData ? { r: 3, fill: "#00E676", stroke: "#141417", strokeWidth: 2 } : false}
                 activeDot={{
-                  r: 6,
-                  fill: "hsl(var(--vibranium))",
-                  stroke: "hsl(var(--background))",
-                  strokeWidth: 3,
+                  r: 5,
+                  fill: "#00E676",
+                  stroke: "#141417",
+                  strokeWidth: 2,
                 }}
               />
             </AreaChart>

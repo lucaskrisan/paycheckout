@@ -102,52 +102,43 @@ const DashboardHeroCard = memo(function DashboardHeroCard({ label, value, fmt, s
   const animatedValue = useAnimatedNumber(value);
   const Icon = variantIcons[variant] || Zap;
 
-  const getGradient = () => {
-    switch (variant) {
-      case "revenue": return "from-violet-950 via-purple-900/80 to-violet-800/60";
-      case "sales": return "from-indigo-950 via-blue-900/80 to-indigo-800/60";
-      case "ticket": return "from-slate-900 via-zinc-900 to-stone-900";
-      default: return "from-purple-950 via-violet-900 to-indigo-950";
-    }
-  };
-
   return (
-    <div className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${getGradient()} p-5 h-full min-h-[120px] flex flex-col justify-between shadow-[0_8px_32px_-8px_rgba(0,0,0,0.5)] border border-white/5`}>
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none grainy-texture" />
-      <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-primary/10 blur-3xl" />
+    <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-400 p-5 h-full min-h-[120px] flex flex-col justify-between shadow-[0_4px_24px_-4px_rgba(16,185,129,0.3)]">
+      <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-white/10" />
+      <div className="absolute -right-3 -top-3 w-20 h-20 rounded-full bg-white/[0.06]" />
       <div className="absolute right-4 top-4">
-        <div className="bg-white/5 backdrop-blur-md rounded-full p-2.5 border border-white/10">
-          <Icon className="w-5 h-5 text-primary" />
+        <div className="bg-white/20 backdrop-blur-sm rounded-full p-2.5">
+          <Icon className="w-5 h-5 text-white" />
         </div>
       </div>
 
       <div>
         <div className="flex items-center gap-1.5">
-          <p className="text-[10px] uppercase tracking-widest font-bold text-white/50">{label}</p>
+          <p className="text-xs font-medium text-white/80">{label}</p>
           {tooltip && (
             <TooltipProvider delayDuration={200}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="cursor-help text-xs text-white/20">ⓘ</span>
+                  <span className="cursor-help text-xs text-white/40">ⓘ</span>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[200px] text-xs bg-card border-border">{tooltip}</TooltipContent>
+                <TooltipContent side="top" className="max-w-[200px] text-xs">{tooltip}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           )}
         </div>
-        <p className="text-3xl font-display font-black tracking-tight mt-1 text-white tabular-nums drop-shadow-sm">
+        <p className="text-2xl font-bold tracking-tight mt-2 text-white tabular-nums">
           {fmt(animatedValue)}
         </p>
       </div>
 
       {sparklineData && sparklineData.length > 1 && (
-        <div className="mt-4"><MiniSparkline data={sparklineData} color="rgba(255,255,255,0.4)" /></div>
+        <div className="mt-3"><MiniSparkline data={sparklineData} color="rgba(255,255,255,0.7)" /></div>
       )}
 
       {(sublabel || sublabel2) && (
-        <div className="mt-3 space-y-0.5 border-t border-white/5 pt-2">
-          {sublabel && <p className="text-[10px] font-mono text-white/40 uppercase tracking-tighter">{sublabel}</p>}
-          {sublabel2 && <p className="text-[10px] font-mono text-white/30 tabular-nums">{sublabel2}</p>}
+        <div className="mt-2 space-y-0.5">
+          {sublabel && <p className="text-[11px] text-white/60">{sublabel}</p>}
+          {sublabel2 && <p className="text-[11px] text-white/50 tabular-nums">{sublabel2}</p>}
         </div>
       )}
     </div>
