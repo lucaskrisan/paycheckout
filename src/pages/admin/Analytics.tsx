@@ -311,7 +311,14 @@ const Analytics = () => {
   const utmSources = useMemo(() => {
     const sources: Record<string, number> = {};
     paidOrders.forEach((o) => {
-      const src = (o.metadata as any)?.utm_source || "Orgânico";
+      const meta = (o.metadata as any) || {};
+      const src =
+        meta.utm_source ||
+        (meta.attribution_fbc
+          ? "Meta Ads (sem UTM)"
+          : meta.utm_medium === "email"
+            ? "E-mail"
+            : "Orgânico");
       sources[src] = (sources[src] || 0) + 1;
     });
     return Object.entries(sources)
