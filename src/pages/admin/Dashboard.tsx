@@ -445,35 +445,30 @@ const Dashboard = () => {
       <GatewayAlerts />
 
       {/* ROW 1 — Hero revenue + compact stats. */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <DashboardHeroCard
-          label="Faturamento Total"
-          value={pri("approved_amount", m.total_bruto)}
+          label="Faturamento Líquido"
+          value={pri("approved_amount", totalLiquido)}
           fmt={fmtPrimary}
-          sublabel={subFor("approved_amount", "Líquido")}
+          sublabel={fmt(pri("approved_amount", totalLiquido) + pri("fees_amount", m.total_taxas))}
           variant="revenue"
           sparklineData={chartData.map((d) => d.total)}
+          tooltip="Receita líquida total aprovada após taxas"
         />
         <DashboardHeroCard
           label="Vendas Aprovadas"
           value={pri("approved_count", m.count_approved)}
           fmt={(v) => Math.floor(v).toString()}
-          sublabel={subFor("approved_count", "Vendas")}
+          sublabel={`${m.count_total} pedidos totais`}
           variant="sales"
+          tooltip="Número de pedidos com pagamento confirmado"
         />
         <DashboardHeroCard
           label="Ticket Médio"
           value={pri("avg_ticket", avgTicket)}
           fmt={fmtPrimary}
-          sublabel={subFor("avg_ticket")}
           variant="ticket"
-        />
-        <DashboardHeroCard
-          label="Visitas ao vivo"
-          value={liveVisitors}
-          fmt={(v) => Math.floor(v).toString()}
-          variant="visitors"
-          tooltip="Pessoas visualizando seus checkouts agora."
+          tooltip="Valor médio por venda aprovada"
         />
       </div>
 
