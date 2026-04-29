@@ -139,14 +139,21 @@ const CustomerJourneyFeed = ({ events, products }: Props) => {
         const lastActivity = new Date(lastEvent.created_at).getTime();
         const now = Date.now();
         const tenMinutesAgo = now - 10 * 60 * 1000;
+        const oneHourAgo = now - 60 * 60 * 1000;
         const twentyFourHoursAgo = now - 24 * 60 * 60 * 1000;
 
-        // Regra solicitada:
-        // - Se for Purchase: visível por 24h
-        // - Senão: visível por 10 min
-        const isVisible = completed 
-          ? lastActivity > twentyFourHoursAgo 
-          : lastActivity > tenMinutesAgo;
+        // Regra sugerida:
+        // - Purchase: 24h
+        // - Checkout/Lead: 1h
+        // - PageView: 10 min
+        let isVisible = false;
+        if (completed) {
+          isVisible = lastActivity > twentyFourHoursAgo;
+        } else if (reachedSteps.has('InitiateCheckout') || reachedSteps.has('Lead') || reachedSteps.has('AddPaymentInfo')) {
+          isVisible = lastActivity > oneHourAgo;
+        } else {
+          isVisible = lastActivity > tenMinutesAgo;
+        }
 
         return {
           key,
