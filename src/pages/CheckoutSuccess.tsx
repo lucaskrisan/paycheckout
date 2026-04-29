@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle, PartyPopper, Mail, ArrowRight, Loader2, Gift, ShoppingBag } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getMemberTranslations, type MemberLang } from "@/lib/memberI18n";
