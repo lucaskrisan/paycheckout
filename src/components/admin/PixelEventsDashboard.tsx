@@ -366,8 +366,9 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
     });
     return [...map.values(), ...ungroupedMap.values()]
       .filter((g) => {
-        if (!onlyEngaged) return true;
+        // Se for um evento de conversão/ação, sempre mostra
         if (g.event_name !== "PageView" && g.event_name !== "ViewContent") return true;
+        // Se for apenas visita, só mostra se o visitante já demonstrou engajamento (fez outra ação)
         return g.visitor_id ? engagedVisitorIds.has(g.visitor_id) : false;
       })
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
