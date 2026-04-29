@@ -102,33 +102,50 @@ function NodeShell({
 }) {
   return (
     <div
-      className="rounded-xl bg-[#0d0f15]/95 backdrop-blur-sm shadow-xl min-w-[220px] max-w-[260px] relative group"
-      style={{ border: `1.5px solid ${color}`, boxShadow: `0 0 0 1px ${color}22, 0 8px 24px ${color}33` }}
+      className="rounded-2xl bg-[#0d0f1a] border-[1.5px] border-white/5 shadow-2xl min-w-[240px] max-w-[280px] relative group overflow-hidden transition-all duration-300 hover:border-white/10"
+      style={{ 
+        boxShadow: `0 10px 40px -10px rgba(0,0,0,0.5), 0 0 20px ${color}11`
+      }}
     >
+      <div className="h-1.5 w-full" style={{ backgroundColor: color }} />
+      
       {nodeId && nodeId !== "config" && onDelete && (
         <button 
           onClick={(e) => { e.stopPropagation(); onDelete(nodeId); }}
-          className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:bg-red-600 z-50"
+          className="absolute top-3 right-3 h-7 w-7 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:bg-red-500 hover:text-white z-50"
         >
-          <X className="h-3 w-3" />
+          <X className="h-3.5 w-3.5" />
         </button>
       )}
+      
       {inHandle && (
-        <Handle type="target" position={Position.Left} style={{ background: color, width: 10, height: 10, border: "2px solid #0d0f15" }} />
+        <Handle 
+          type="target" 
+          position={Position.Left} 
+          className="!w-3 !h-3 !bg-slate-900 !border-2 !border-slate-700 hover:!border-white transition-colors"
+          style={{ left: -6 }}
+        />
       )}
       {outHandle && (
-        <Handle type="source" position={Position.Right} style={{ background: color, width: 10, height: 10, border: "2px solid #0d0f15" }} />
+        <Handle 
+          type="source" 
+          position={Position.Right} 
+          className="!w-3 !h-3 !bg-slate-900 !border-2 !border-slate-700 hover:!border-white transition-colors"
+          style={{ right: -6 }}
+        />
       )}
-      <div className="p-3 flex items-center gap-2">
-        <div className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${color}22`, color }}>
+      
+      <div className="p-4 flex items-center gap-3 border-b border-white/5 bg-white/[0.02]">
+        <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 shadow-inner" style={{ background: `${color}15`, color }}>
           {icon}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-bold leading-tight truncate">{title}</div>
-          {subtitle && <div className="text-[11px] text-muted-foreground truncate">{subtitle}</div>}
+          <div className="text-[13px] font-bold text-slate-100 leading-tight truncate uppercase tracking-wide">{title}</div>
+          {subtitle && <div className="text-[11px] text-slate-500 font-medium truncate mt-0.5">{subtitle}</div>}
         </div>
       </div>
-      {children && <div className="px-3 pb-3 space-y-1.5">{children}</div>}
+      
+      {children && <div className="p-4 space-y-3 bg-slate-950/20">{children}</div>}
     </div>
   );
 }
