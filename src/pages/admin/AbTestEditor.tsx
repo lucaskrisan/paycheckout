@@ -682,6 +682,8 @@ function EditorInner() {
             auto_winner_enabled: autoWinner,
             auto_winner_min_clicks: minClicks,
             sticky_days: stickyDays,
+            conversion_goal: conversionGoal,
+            targeting_rules: targetingRules,
             graph,
             entry_url: generatedEntry,
           })
@@ -701,6 +703,8 @@ function EditorInner() {
             auto_winner_enabled: autoWinner,
             auto_winner_min_clicks: minClicks,
             sticky_days: stickyDays,
+            conversion_goal: conversionGoal,
+            targeting_rules: targetingRules,
             graph,
             entry_url: entryUrl,
           })
