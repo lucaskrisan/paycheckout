@@ -58,7 +58,8 @@ const ORDERED_EVENT_NAMES = [
 const NINA_WELCOME_KEY = "nina-tracking-welcome-shown";
 
 const FEED_CACHE_KEY = "nina-tracking-feed-cache";
-const FEED_EXPIRY_MS = 10 * 60 * 1000; // 10 min sem atividade expira (a menos que tenha comprado)
+const FEED_EXPIRY_MS = 10 * 60 * 1000; // 10 min
+const PURCHASE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24h para vendas do dia
 
 const PixelEventsDashboard = ({ products, userId }: Props) => {
   const [filterProduct, setFilterProduct] = useState("all");
