@@ -268,6 +268,15 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
       return;
     }
 
+    // Bot filter: hard signals only at boot (sem janela de interação ainda).
+    // Eventos individuais re-checam com requireHumanInteraction depois.
+    const bootBot = detectBot(/* requireHumanInteraction */ false);
+    if (bootBot.isBot) {
+      console.log("[useFacebookPixel] Bot detected at boot — Pixel & CAPI disabled:", bootBot.reason);
+      initializedRef.current = true;
+      return;
+    }
+
     hydrateClickParams();
 
     let cancelled = false;
