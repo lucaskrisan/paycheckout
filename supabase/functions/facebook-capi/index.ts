@@ -210,6 +210,23 @@ Deno.serve(async (req) => {
     const customerCountry = (geo?.country || cfCountry || null)?.toString().toUpperCase().slice(0, 2) || null;
     const customerCity = geo?.city ? String(geo.city).slice(0, 80) : null;
 
+    if (visitor_id && (event_name === 'PageView' || event_name === 'ViewContent')) {
+      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const { count } = await supabase
+        .from('pixel_events')
+        .select('id', { count: 'exact', head: true })
+        .eq('product_id', product_id)
+        .eq('event_name', event_name)
+        .eq('visitor_id', visitor_id)
+        .gte('created_at', fiveMinAgo);
+      if ((count || 0) > 0) {
+        return new Response(
+          JSON.stringify({ success: true, skipped: 'rate_limited' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     for (const px of allPixels) {
       // Server-side log
       await supabase.from('pixel_events').insert({
