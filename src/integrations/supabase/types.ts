@@ -184,6 +184,7 @@ export type Database = {
           auto_winner_enabled: boolean
           auto_winner_min_clicks: number
           auto_winner_min_uplift: number
+          conversion_goal: string | null
           created_at: string
           ended_at: string | null
           entry_url: string | null
@@ -194,6 +195,7 @@ export type Database = {
           started_at: string | null
           status: string
           sticky_days: number
+          targeting_rules: Json | null
           traffic_split: string
           updated_at: string
           user_id: string
@@ -203,6 +205,7 @@ export type Database = {
           auto_winner_enabled?: boolean
           auto_winner_min_clicks?: number
           auto_winner_min_uplift?: number
+          conversion_goal?: string | null
           created_at?: string
           ended_at?: string | null
           entry_url?: string | null
@@ -213,6 +216,7 @@ export type Database = {
           started_at?: string | null
           status?: string
           sticky_days?: number
+          targeting_rules?: Json | null
           traffic_split?: string
           updated_at?: string
           user_id: string
@@ -222,6 +226,7 @@ export type Database = {
           auto_winner_enabled?: boolean
           auto_winner_min_clicks?: number
           auto_winner_min_uplift?: number
+          conversion_goal?: string | null
           created_at?: string
           ended_at?: string | null
           entry_url?: string | null
@@ -232,6 +237,7 @@ export type Database = {
           started_at?: string | null
           status?: string
           sticky_days?: number
+          targeting_rules?: Json | null
           traffic_split?: string
           updated_at?: string
           user_id?: string
