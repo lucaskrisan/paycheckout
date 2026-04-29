@@ -917,10 +917,25 @@ function EditorInner() {
           </Button>
         </div>
         <div id="tutorial-actions" className="flex items-center gap-3">
+          <Select value={period} onValueChange={setPeriod}>
+            <SelectTrigger className="h-9 w-[110px] bg-white/[0.02] border-white/5 text-slate-300 text-[10px] font-bold uppercase tracking-wider">
+              <SelectValue placeholder="Período" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="24h">Últimas 24h</SelectItem>
+              <SelectItem value="7d">Últimos 7 dias</SelectItem>
+              <SelectItem value="30d">Últimos 30 dias</SelectItem>
+              <SelectItem value="all">Todo período</SelectItem>
+            </SelectContent>
+          </Select>
+
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={() => qc.invalidateQueries({ queryKey: ["ab_test_stats"] })}
+            onClick={() => {
+              qc.invalidateQueries({ queryKey: ["ab_test_stats"] });
+              toast.success("Dados atualizados!");
+            }}
             className="text-xs h-9 border-white/5 bg-white/[0.02] hover:bg-white/5 text-slate-300 font-bold"
           >
             <RefreshCw className="h-3.5 w-3.5 mr-2 text-violet-400" />
