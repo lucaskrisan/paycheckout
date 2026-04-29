@@ -145,15 +145,37 @@ const CustomerJourneyFeed = ({ events, products }: Props) => {
           lastEvent,
           completed,
           productName,
+        const lastActivity = new Date(lastEvent.created_at).getTime();
+        const now = Date.now();
+        const tenMinutesAgo = now - 10 * 60 * 1000;
+        const twentyFourHoursAgo = now - 24 * 60 * 60 * 1000;
+
+        // Regra solicitada:
+        // - Se for Purchase: visível por 24h
+        // - Senão: visível por 10 min
+        const isVisible = completed 
+          ? lastActivity > twentyFourHoursAgo 
+          : lastActivity > tenMinutesAgo;
+
+        return {
+          key,
+          displayName,
+          firstName,
+          events: uniqueSteps,
+          reachedSteps,
+          lastEvent,
+          completed,
+          productName,
           progress,
-          lastActivity: new Date(lastEvent.created_at).getTime(),
+          lastActivity,
           isEngaged: key.startsWith("name:") || (key && engagedVisitorIds.has(key)),
+          isVisible
         };
       })
-      .filter((j) => j.isEngaged || j.completed)
+      .filter((j) => j.isVisible && (j.isEngaged || j.completed))
       .sort((a, b) => b.lastActivity - a.lastActivity);
 
-    return result.slice(0, 50);
+    return result.slice(0, 100);
   }, [events, products]);
 
   if (journeys.length === 0) {
