@@ -291,6 +291,11 @@ export default function AbTests() {
             const leader = sortedByConv[0];
             const linkPage = `${REDIRECT_BASE}/${t.slug}?type=page`;
             const linkCheckout = `${REDIRECT_BASE}/${t.slug}?type=checkout`;
+            
+            // Pretty links using the application's own domain
+            const origin = window.location.origin;
+            const prettyLinkPage = `${origin}/go/${t.slug}?type=page`;
+            const prettyLinkCheckout = `${origin}/go/${t.slug}?type=checkout`;
             return (
               <Card
                 key={t.id}
@@ -311,8 +316,8 @@ export default function AbTests() {
                     </div>
 
                     <div className="space-y-1.5 text-xs">
-                      <CompactLinkRow label="Página" url={linkPage} />
-                      <CompactLinkRow label="Checkout" url={linkCheckout} />
+                      <CompactLinkRow label="Página" url={prettyLinkPage} />
+                      <CompactLinkRow label="Checkout" url={prettyLinkCheckout} />
                       <div className="text-xs text-muted-foreground pl-[68px]">{t.variants.length} variantes</div>
                     </div>
 
