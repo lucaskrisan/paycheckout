@@ -17,23 +17,83 @@ interface MarketplaceApp {
   sso_secret: string;
   webhook_secret: string;
   webhook_url: string;
+  is_installed?: boolean;
 }
 
 const Marketplace = () => {
   const [selectedApp, setSelectedApp] = useState<MarketplaceApp | null>(null);
+  const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
-  const { data: apps, isLoading } = useQuery({
+  const { data: apps, isLoading, refetch } = useQuery({
     queryKey: ["marketplace-apps"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: appsData, error: appsError } = await supabase
         .from("marketplace_apps")
         .select("*")
         .eq("active", true);
 
-      if (error) throw error;
-      return data as MarketplaceApp[];
+      if (appsError) throw appsError;
+
+      const { data: installations } = await supabase
+        .from("marketplace_app_installations")
+        .select("app_id")
+        .eq("active", true);
+
+      return (appsData as MarketplaceApp[]).map(app => ({
+        ...app,
+        is_installed: installations?.some(i => i.app_id === app.id)
+      }));
     },
   });
+
+  const handleInstall = async (app: MarketplaceApp) => {
+    try {
+      setLoadingAction("install");
+      const { data, error } = await supabase.functions.invoke("marketplace-auth", {
+        body: { action: "generate-install-code", appId: app.id }
+      });
+
+      if (error) throw error;
+      window.open(data.url, "_blank");
+      toast.info("Finalize a instalação na página do parceiro.");
+      
+      // Polling simples para detectar instalação
+      const interval = setInterval(async () => {
+        const { data: check } = await supabase
+          .from("marketplace_app_installations")
+          .select("id")
+          .eq("app_id", app.id)
+          .single();
+        if (check) {
+          refetch();
+          clearInterval(interval);
+          toast.success("App instalado com sucesso!");
+        }
+      }, 3000);
+      
+      setTimeout(() => clearInterval(interval), 60000);
+    } catch (err) {
+      toast.error("Erro ao iniciar instalação.");
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  const handleOpenApp = async (app: MarketplaceApp) => {
+    try {
+      setLoadingAction("open");
+      const { data, error } = await supabase.functions.invoke("marketplace-auth", {
+        body: { action: "generate-sso-url", appId: app.id }
+      });
+
+      if (error) throw error;
+      window.open(data.url, "_blank");
+    } catch (err) {
+      toast.error("Erro ao gerar acesso seguro.");
+    } finally {
+      setLoadingAction(null);
+    }
+  };
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
