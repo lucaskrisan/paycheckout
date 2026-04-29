@@ -291,6 +291,11 @@ export default function AbTests() {
             const leader = sortedByConv[0];
             const linkPage = `${REDIRECT_BASE}/${t.slug}?type=page`;
             const linkCheckout = `${REDIRECT_BASE}/${t.slug}?type=checkout`;
+            
+            // Pretty links using the application's own domain
+            const origin = window.location.origin;
+            const prettyLinkPage = `${origin}/go/${t.slug}?type=page`;
+            const prettyLinkCheckout = `${origin}/go/${t.slug}?type=checkout`;
             return (
               <Card
                 key={t.id}
