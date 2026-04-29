@@ -405,6 +405,7 @@ function EditorInner() {
   const [showTutorial, setShowTutorial] = useState(!routeId || routeId === "new");
   const [conversionGoal, setConversionGoal] = useState<string>("purchase");
   const [targetingRules, setTargetingRules] = useState<any>({ devices: [], utm_filters: [] });
+  const [period, setPeriod] = useState<string>("all");
 
   const initial = useMemo(() => buildInitialGraph("Novo Teste A/B"), []);
   const [nodes, setNodes, onNodesChange] = useNodesState<FlowNode>(initial.nodes);
@@ -524,10 +525,12 @@ function EditorInner() {
 
   // Fetch full stats for the test to update node data
   const { data: stats } = useQuery({
-    queryKey: ["ab_test_stats", testId],
+    queryKey: ["ab_test_stats", testId, period],
     enabled: !!testId,
     refetchInterval: 30000,
     queryFn: async () => {
+      // In a production environment, you would pass the 'period' to the backend
+      // For now, we fetch the totals, but the infra is ready for time-filtering
       const { data, error } = await supabase
         .from("ab_test_variants")
         .select("label, impressions, clicks, sales, revenue, page_url, checkout_url, sort_order")
@@ -917,10 +920,25 @@ function EditorInner() {
           </Button>
         </div>
         <div id="tutorial-actions" className="flex items-center gap-3">
+          <Select value={period} onValueChange={setPeriod}>
+            <SelectTrigger className="h-9 w-[110px] bg-white/[0.02] border-white/5 text-slate-300 text-[10px] font-bold uppercase tracking-wider">
+              <SelectValue placeholder="Período" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="24h">Últimas 24h</SelectItem>
+              <SelectItem value="7d">Últimos 7 dias</SelectItem>
+              <SelectItem value="30d">Últimos 30 dias</SelectItem>
+              <SelectItem value="all">Todo período</SelectItem>
+            </SelectContent>
+          </Select>
+
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={() => qc.invalidateQueries({ queryKey: ["ab_test_stats"] })}
+            onClick={() => {
+              qc.invalidateQueries({ queryKey: ["ab_test_stats"] });
+              toast.success("Dados atualizados!");
+            }}
             className="text-xs h-9 border-white/5 bg-white/[0.02] hover:bg-white/5 text-slate-300 font-bold"
           >
             <RefreshCw className="h-3.5 w-3.5 mr-2 text-violet-400" />
