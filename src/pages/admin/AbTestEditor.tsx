@@ -225,7 +225,7 @@ function PageNode({ id, data }: NodeProps<Node<PageData, "page">>) {
       color={isPaused ? "#71717a" : "#10b981"} 
       icon={isPaused ? <Pause className="h-4 w-4" /> : <FileText className="h-4 w-4" />} 
       title={data.label} 
-      subtitle={isPaused ? "PAUSADA — sem tráfego" : data.subtitle}
+      subtitle={isPaused ? "PAUSADA" : data.subtitle}
       nodeId={id}
       onDelete={(nodeId) => {
         const ns = reactFlow.getNodes();
@@ -235,33 +235,33 @@ function PageNode({ id, data }: NodeProps<Node<PageData, "page">>) {
       }}
     >
       {data.stats && (
-        <div className="grid grid-cols-2 gap-1.5 mb-2">
-          <div className="flex flex-col text-[10px] px-2 py-1 rounded bg-white/5 border border-white/5">
-            <span className="text-muted-foreground">CTR</span>
-            <span className="font-bold text-emerald-400">
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          <div className="flex flex-col p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
+            <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">CTR</span>
+            <span className="text-sm font-black text-emerald-400">
               {data.stats.impressions > 0 ? ((data.stats.clicks / data.stats.impressions) * 100).toFixed(1) : 0}%
             </span>
           </div>
-          <div className="flex flex-col text-[10px] px-2 py-1 rounded bg-white/5 border border-white/5">
-            <span className="text-muted-foreground">Cliques</span>
-            <span className="font-bold">{data.stats.clicks}</span>
+          <div className="flex flex-col p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
+            <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Cliques</span>
+            <span className="text-sm font-black text-white">{data.stats.clicks}</span>
           </div>
         </div>
       )}
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <div
-          className={`flex items-center gap-1.5 text-[11px] px-2 py-1.5 rounded border truncate ${
-            hasUrl ? "text-emerald-300 bg-emerald-500/10 border-emerald-500/30" : "text-muted-foreground bg-muted/40 border-border/40"
+          className={`flex items-center gap-2 text-[10px] px-3 py-2 rounded-lg border truncate transition-colors ${
+            hasUrl ? "text-emerald-300 bg-emerald-500/10 border-emerald-500/20" : "text-slate-500 bg-slate-800/20 border-slate-800/40"
           }`}
         >
-          <Link2 className="h-3 w-3 shrink-0" />
-          <span className="truncate">{hasUrl ? data.url : "Configurar URL"}</span>
+          <Link2 className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate font-medium">{hasUrl ? data.url : "Configurar URL"}</span>
         </div>
         
         {data.mirrorPixelId && (
-          <div className="flex items-center gap-1.5 text-[10px] text-violet-300 px-2 py-1 rounded bg-violet-500/10 border border-violet-500/20 truncate">
-            <SettingsIcon className="h-3 w-3 shrink-0" />
-            <span className="truncate italic">Pixel Ativo</span>
+          <div className="flex items-center gap-2 text-[9px] text-violet-300 px-2 py-1.5 rounded-md bg-violet-500/10 border border-violet-500/10 uppercase tracking-widest font-bold">
+            <Zap className="h-3 w-3 shrink-0" />
+            <span>Pixel Ativo</span>
           </div>
         )}
       </div>
