@@ -179,6 +179,7 @@ const App = () => (
                 <Route path="maria-ia" element={<MariaAI />} />
                 <Route path="email-templates" element={<EmailTemplates />} />
               </Route>
+              <Route path="/go/:slug" element={<Go />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
