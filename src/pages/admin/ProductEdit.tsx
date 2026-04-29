@@ -47,7 +47,7 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
-const PUBLISHED_URL = "https://app.panttera.com.br";
+const PUBLISHED_URL = "https://ck.panttera.com.br";
 
 const VariantMetricsCard = ({ co, productId, currency, metrics, isLeader, totalVisits }) => {
   const conversion = metrics.visits > 0 ? (metrics.sales / metrics.visits) * 100 : 0;
