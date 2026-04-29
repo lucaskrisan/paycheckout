@@ -90,6 +90,7 @@ const analiseItems = [
 const configItems = [
   { title: "Gateways", url: "/admin/gateway-management", icon: CreditCard },
   { title: "Integrações", url: "/admin/integrations", icon: Zap },
+  { title: "Marketplace", url: "/admin/marketplace", icon: ShoppingCart },
   
   { title: "Domínios", url: "/admin/domains", icon: Globe },
   
