@@ -43,6 +43,7 @@ interface GroupedEvent {
   event_value: number | null;
   customer_country: string | null;
   customer_city: string | null;
+  visitor_id: string | null;
 }
 
 interface Props {
@@ -75,6 +76,24 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
   const [eventCounts, setEventCounts] = useState<Record<string, number>>({});
   const [feedView, setFeedView] = useState<"feed" | "journeys">("feed");
   const [eventsLastHour, setEventsLastHour] = useState(0);
+
+  const [onlyEngaged, setOnlyEngaged] = useState<boolean>(() =>
+    localStorage.getItem("nina-feed-engaged-only") === "1"
+  );
+
+  const engagedVisitorIds = useMemo(() => {
+    const s = new Set<string>();
+    events.forEach((e) => {
+      if (
+        e.visitor_id &&
+        e.event_name !== "PageView" &&
+        e.event_name !== "ViewContent"
+      ) {
+        s.add(e.visitor_id);
+      }
+    });
+    return s;
+  }, [events]);
   const [initialLoading, setInitialLoading] = useState(() => {
     // Só mostra skeleton no primeiro mount sem cache
     try {
@@ -295,7 +314,7 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
 
   const groupedEvents = useMemo(() => {
     const map = new Map<string, GroupedEvent>();
-    const ungrouped: GroupedEvent[] = [];
+    const ungroupedMap = new Map<string, GroupedEvent>();
     recentEvents.forEach((e) => {
       if (e.event_id) {
         if (map.has(e.event_id)) {
@@ -318,27 +337,43 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
             event_value: e.event_value,
             customer_country: e.customer_country,
             customer_city: e.customer_city,
+            visitor_id: e.visitor_id,
           });
         }
       } else {
-        ungrouped.push({
-          event_id: e.id,
-          event_name: e.event_name,
-          product_id: e.product_id,
-          customer_name: e.customer_name,
-          created_at: e.created_at,
-          sources: [e.source],
-          ids: [e.id],
-          event_value: e.event_value,
-          customer_country: e.customer_country,
-          customer_city: e.customer_city,
-        });
+        const deduKey = e.visitor_id
+          ? `${e.visitor_id}_${e.event_name}`
+          : `anon_${e.id}`;
+        if (!ungroupedMap.has(deduKey)) {
+          ungroupedMap.set(deduKey, {
+            event_id: e.id,
+            event_name: e.event_name,
+            product_id: e.product_id,
+            customer_name: e.customer_name,
+            created_at: e.created_at,
+            sources: [e.source],
+            ids: [e.id],
+            event_value: e.event_value,
+            customer_country: e.customer_country,
+            customer_city: e.customer_city,
+            visitor_id: e.visitor_id,
+          });
+        } else {
+          const g = ungroupedMap.get(deduKey)!;
+          if (!g.sources.includes(e.source)) g.sources.push(e.source);
+          g.ids.push(e.id);
+        }
       }
     });
-    return [...map.values(), ...ungrouped]
+    return [...map.values(), ...ungroupedMap.values()]
+      .filter((g) => {
+        if (!onlyEngaged) return true;
+        if (g.event_name !== "PageView" && g.event_name !== "ViewContent") return true;
+        return g.visitor_id ? engagedVisitorIds.has(g.visitor_id) : false;
+      })
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 100);
-  }, [recentEvents]);
+  }, [recentEvents, period, onlyEngaged, engagedVisitorIds]);
 
   return (
     <div id="nina-tracking-root" className="space-y-5">
@@ -400,6 +435,21 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
                   }`}
                 >
                   Jornadas
+                </button>
+                <button
+                  onClick={() => {
+                    const next = !onlyEngaged;
+                    setOnlyEngaged(next);
+                    localStorage.setItem("nina-feed-engaged-only", next ? "1" : "0");
+                  }}
+                  className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider
+                    rounded transition-all ${
+                    onlyEngaged
+                      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Engajados
                 </button>
               </div>
             </div>
