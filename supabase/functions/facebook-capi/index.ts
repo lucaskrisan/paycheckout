@@ -148,7 +148,15 @@ Deno.serve(async (req) => {
       payment_method,
       geo,
       test_event_code,
+      is_bot,
+      bot_reason,
     } = _payload;
+
+    // Server-side bot fallback: bate UA mesmo se o cliente não declarou.
+    const SERVER_BOT_UA = /bot|crawl|spider|slurp|headlesschrome|phantomjs|selenium|puppeteer|playwright|lighthouse|pagespeed|ahrefs|semrush|mj12bot|dotbot|petalbot|yandex|bingbot|googlebot|baiduspider|applebot|linkedinbot|twitterbot|whatsapp|telegrambot|discordbot|scraper|curl|wget|python-requests|node-fetch|axios/i;
+    const serverDetectedBot = typeof user_agent === 'string' && SERVER_BOT_UA.test(user_agent);
+    const finalIsBot = Boolean(is_bot) || serverDetectedBot;
+    const finalBotReason = bot_reason || (serverDetectedBot ? 'server_ua_match' : null);
 
     if (!product_id || !event_name) {
       return new Response(
