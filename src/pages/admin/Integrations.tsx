@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import AppSellIntegration from "@/components/admin/AppSellIntegration";
 import UtmifyIntegration from "@/components/admin/UtmifyIntegration";
+import GatFlowIntegration from "@/components/admin/GatFlowIntegration";
 import webhookLogo from "@/assets/webhook-logo.png";
 import appsellCardLogo from "@/assets/appsell-logo.png";
 import utmifyLogo from "@/assets/utmify-logo.png";
@@ -20,7 +21,7 @@ const Integrations = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-display text-2xl font-bold text-foreground">Integrações</h1>
+        <h1 className="font-display text-2xl font-bold text-foreground">Apps</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Conecte plataformas externas para automatizar a entrega e gestão dos seus produtos
         </p>
@@ -36,6 +37,7 @@ const Integrations = () => {
 
         <AppSellIntegration />
         <UtmifyIntegration />
+        <GatFlowIntegration />
       </div>
     </div>
   );

@@ -1329,6 +1329,39 @@ export type Database = {
         }
         Relationships: []
       }
+      gatflow_integrations: {
+        Row: {
+          active: boolean | null
+          api_secret: string | null
+          created_at: string
+          id: string
+          plan_tier: string | null
+          shop_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean | null
+          api_secret?: string | null
+          created_at?: string
+          id?: string
+          plan_tier?: string | null
+          shop_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean | null
+          api_secret?: string | null
+          created_at?: string
+          id?: string
+          plan_tier?: string | null
+          shop_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       internal_tasks: {
         Row: {
           category: string | null
@@ -1543,6 +1576,136 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      marketplace_app_installations: {
+        Row: {
+          access_token: string | null
+          active: boolean | null
+          app_id: string | null
+          id: string
+          installed_at: string
+          plan_tier: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          access_token?: string | null
+          active?: boolean | null
+          app_id?: string | null
+          id?: string
+          installed_at?: string
+          plan_tier?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          access_token?: string | null
+          active?: boolean | null
+          app_id?: string | null
+          id?: string
+          installed_at?: string
+          plan_tier?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_app_installations_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_apps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketplace_apps: {
+        Row: {
+          active: boolean | null
+          client_id: string
+          client_secret: string
+          created_at: string
+          description: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          redirect_url: string | null
+          slug: string
+          sso_secret: string
+          sso_url: string | null
+          updated_at: string
+          webhook_secret: string
+          webhook_url: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          client_id?: string
+          client_secret?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          redirect_url?: string | null
+          slug: string
+          sso_secret?: string
+          sso_url?: string | null
+          updated_at?: string
+          webhook_secret?: string
+          webhook_url?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          client_id?: string
+          client_secret?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          redirect_url?: string | null
+          slug?: string
+          sso_secret?: string
+          sso_url?: string | null
+          updated_at?: string
+          webhook_secret?: string
+          webhook_url?: string | null
+        }
+        Relationships: []
+      }
+      marketplace_oauth_codes: {
+        Row: {
+          app_id: string | null
+          code: string
+          expires_at: string
+          id: string
+          used_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          app_id?: string | null
+          code: string
+          expires_at?: string
+          id?: string
+          used_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          app_id?: string | null
+          code?: string
+          expires_at?: string
+          id?: string
+          used_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_oauth_codes_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_apps"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       member_access: {
         Row: {
