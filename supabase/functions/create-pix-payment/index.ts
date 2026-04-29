@@ -457,50 +457,6 @@ Deno.serve(async (req) => {
     const charge = data.charges?.[0];
     const lastTransaction = charge?.last_transaction;
 
-    // Get platform fee
-    const { data: platformSettings } = await supabaseAdmin
-      .from('platform_settings')
-      .select('platform_fee_percent')
-      .limit(1)
-      .maybeSingle();
-    const feePercent = Number(platformSettings?.platform_fee_percent || 0);
-    const feeAmount = Math.round(amount * feePercent) / 100;
-
-    // Save order to database
-    const { data: orderRecord, error: orderError } = await supabaseAdmin
-      .from('orders')
-      .insert({
-        amount,
-        payment_method: 'pix',
-        status: 'pending',
-        product_id: product_id || null,
-        customer_id: customerId,
-        user_id: productOwnerId,
-        external_id: data.id,
-        customer_state: body.customer_state || body.geo?.customer_state_geo || null,
-        customer_city: body.geo?.customer_city || null,
-        customer_zip: body.geo?.customer_zip || null,
-        customer_country: body.geo?.customer_country || null,
-        platform_fee_percent: feePercent,
-        platform_fee_amount: feeAmount,
-        metadata: {
-          gateway: 'pagarme',
-          config_id: config_id || null,
-          coupon_id: coupon_id || null,
-          checkout_url: checkout_url || null,
-          bump_product_ids: (bump_product_ids && bump_product_ids.length > 0) ? bump_product_ids : null,
-          ...(utms || {}),
-        },
-      })
-      .select('id')
-      .single();
-
-    if (orderError) {
-      console.error('[create-pix-payment] Order save error:', orderError);
-    } else {
-      console.log('[create-pix-payment] Order saved:', orderRecord.id);
-    }
-
     // Increment coupon usage atomically
     if (coupon_id) {
       await supabaseAdmin.rpc('increment_coupon_usage', { p_coupon_id: coupon_id });
