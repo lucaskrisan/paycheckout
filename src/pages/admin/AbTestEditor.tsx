@@ -1239,6 +1239,11 @@ function EditorInner() {
                     </SelectContent>
                   </Select>
                 </div>
+                <Button variant="outline" className="w-full text-red-400 border-red-400/30 hover:bg-red-500/10" onClick={() => deleteNode(selectedNode.id)}>
+                  <Trash2 className="h-4 w-4 mr-2" /> Excluir Checkout
+                </Button>
+              </div>
+            )}
             {selectedNode.type === "creative" && (
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -1281,6 +1286,7 @@ function EditorInner() {
                 </div>
               </div>
             )}
+
 
                 <div className="space-y-2">
                   <Label className="text-xs">Preço / Oferta (Configuração)</Label>
