@@ -463,12 +463,84 @@ function CreativeNode({ id, data }: NodeProps<Node<CreativeData, "creative">>) {
   );
 }
 
+function UpsellNode({ id, data }: NodeProps<Node<UpsellData, "upsell">>) {
+  const reactFlow = useReactFlow();
+  
+  const updateData = (newData: Partial<UpsellData>) => {
+    reactFlow.setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === id) {
+          return { ...node, data: { ...node.data, ...newData } };
+        }
+        return node;
+      })
+    );
+  };
+
+  return (
+    <NodeShell 
+      color="#8b5cf6" 
+      icon={<TrendingUp className="h-4 w-4" />} 
+      title={data.label} 
+      subtitle={data.subtitle || "Venda Extra"}
+      nodeId={id}
+      onDelete={(nodeId) => {
+        const ns = reactFlow.getNodes();
+        const es = reactFlow.getEdges();
+        reactFlow.setNodes(ns.filter(n => n.id !== nodeId));
+        reactFlow.setEdges(es.filter(e => e.source !== nodeId && e.target !== nodeId));
+      }}
+    >
+      <div className="space-y-3">
+        <div className="space-y-1.5">
+          <Label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Nome do Upsell</Label>
+          <Input 
+            value={data.label} 
+            onChange={(e) => updateData({ label: e.target.value })}
+            className="h-8 text-xs bg-white/[0.03] border-white/10"
+            placeholder="Ex: Oferta Especial 01"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">URL do Upsell</Label>
+          <div className="flex items-center gap-2">
+            <Link2 className="h-3.5 w-3.5 text-slate-500" />
+            <Input 
+              value={data.url || ""} 
+              onChange={(e) => updateData({ url: e.target.value })}
+              className="h-8 text-xs bg-white/[0.03] border-white/10"
+              placeholder="https://..."
+            />
+          </div>
+        </div>
+
+        {data.stats && (
+          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/5 mt-1">
+            <div className="flex flex-col p-2 rounded-xl bg-violet-500/5 border border-violet-500/10">
+              <span className="text-[8px] uppercase tracking-wider text-violet-400/70 font-bold">Vistas</span>
+              <span className="text-xs font-black text-white">{data.stats.impressions || 0}</span>
+            </div>
+            <div className="flex flex-col p-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+              <span className="text-[8px] uppercase tracking-wider text-emerald-400/70 font-bold">Vendas</span>
+              <span className="text-xs font-black text-emerald-400">
+                {data.stats.sales || 0}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    </NodeShell>
+  );
+}
+
 const nodeTypes = {
   config: ConfigNode,
   abtest: AbTestNode,
   page: PageNode,
   checkout: CheckoutNode,
   creative: CreativeNode,
+  upsell: UpsellNode,
 };
 
 // ---------------- Initial graph ----------------
