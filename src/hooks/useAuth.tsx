@@ -27,7 +27,7 @@ type AuthContextType = AuthState & AuthActions;
 const AuthStateContext = createContext<AuthState | undefined>(undefined);
 const AuthActionsContext = createContext<AuthActions | undefined>(undefined);
 
-const AUTH_BOOT_TIMEOUT_MS = 2000;
+const AUTH_BOOT_TIMEOUT_MS = 5000;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);

@@ -2,12 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    content-visibility: auto;
-  }
-}
-
 /* Nina Tracking™ — TV Mode */
 .nina-tv-mode {
   font-size: 130%;

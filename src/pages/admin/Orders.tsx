@@ -225,23 +225,22 @@ const Orders = () => {
   // Load products list once + revenue totals (header cards when no filter active)
   useEffect(() => {
     if (!user?.id) return;
-    
-    // Non-blocking parallel fetch
-    supabase.from("products").select("id, name").eq("user_id", user.id)
-      .then(res => setProducts(res.data || []));
-      
-    supabase.rpc("get_revenue_summary", { p_user_id: user.id })
-      .then(res => {
-        const rev = Array.isArray(res.data) ? res.data[0] : null;
-        if (rev) {
-          setServerTotals({
-            revenueBrl: Number(rev.total_revenue_brl ?? rev.total_revenue ?? 0),
-            revenueUsd: Number(rev.total_revenue_usd ?? 0),
-            countBrl: Number(rev.paid_count_brl ?? rev.paid_count ?? 0),
-            countUsd: Number(rev.paid_count_usd ?? 0),
-          });
-        }
-      });
+    (async () => {
+      const [productsRes, revenueRes] = await Promise.all([
+        supabase.from("products").select("id, name").eq("user_id", user.id),
+        supabase.rpc("get_revenue_summary", { p_user_id: user.id }),
+      ]);
+      setProducts(productsRes.data || []);
+      const rev = Array.isArray(revenueRes.data) ? revenueRes.data[0] : null;
+      if (rev) {
+        setServerTotals({
+          revenueBrl: Number(rev.total_revenue_brl ?? rev.total_revenue ?? 0),
+          revenueUsd: Number(rev.total_revenue_usd ?? 0),
+          countBrl: Number(rev.paid_count_brl ?? rev.paid_count ?? 0),
+          countUsd: Number(rev.paid_count_usd ?? 0),
+        });
+      }
+    })();
   }, [user?.id]);
 
   // Server-side paginated orders fetch

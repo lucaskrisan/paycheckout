@@ -86,17 +86,15 @@ const analiseItems = [
   { title: "Financeiro", url: "/admin/financeiro", icon: Wallet },
 ];
 
-// 5. APPS — marketplace e integrações externas
-const appsItems = [
-  { title: "Apps Instalados", url: "/admin/marketplace", icon: Zap },
-  { title: "Adicionar App", url: "/admin/marketplace", icon: ShoppingCart },
-];
-
-// 6. CONFIGURAÇÕES — collapsible, menos frequente
+// 5. CONFIGURAÇÕES — collapsible, menos frequente
 const configItems = [
   { title: "Gateways", url: "/admin/gateway-management", icon: CreditCard },
+  { title: "Integrações", url: "/admin/integrations", icon: Zap },
+  
   { title: "Domínios", url: "/admin/domains", icon: Globe },
+  
   { title: "Webhook", url: "/admin/webhooks", icon: Webhook },
+  
   { title: "Notificações", url: "/admin/notifications", icon: Bell },
   { title: "Minha conta", url: "/admin/my-account", icon: User },
 ];
@@ -226,13 +224,7 @@ export function AdminSidebar() {
           <SidebarGroupContent>{renderItems(analiseItems)}</SidebarGroupContent>
         </SidebarGroup>
 
-        {/* 5. APPS */}
-        <SidebarGroup>
-          <SidebarGroupLabel>{renderSectionLabel("Apps")}</SidebarGroupLabel>
-          <SidebarGroupContent>{renderItems(appsItems)}</SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* 6. CONFIGURAÇÕES (collapsible) */}
+        {/* 5. CONFIGURAÇÕES (collapsible) */}
         <SidebarGroup>
           <SidebarGroupLabel>{renderSectionLabel("Geral")}</SidebarGroupLabel>
           <SidebarGroupContent>

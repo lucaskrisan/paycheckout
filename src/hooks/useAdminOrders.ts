@@ -24,18 +24,17 @@ export function useAdminOrders(userId: string | undefined, isSuperAdmin: boolean
     if (!userId) return;
 
     const load = async () => {
-      // Execute in parallel without blocking UI
-      fetchRevenue();
-      
-      supabase
-        .from("notification_settings")
-        .select("notification_sound, send_approved")
-        .eq("user_id", userId)
-        .maybeSingle()
-        .then(res => {
-          notificationSoundRef.current = res.data?.notification_sound || "kaching";
-          playApprovedSaleSoundRef.current = res.data?.send_approved ?? true;
-        });
+      const [, settingsRes] = await Promise.all([
+        fetchRevenue(),
+        supabase
+          .from("notification_settings")
+          .select("notification_sound, send_approved")
+          .eq("user_id", userId)
+          .maybeSingle(),
+      ]);
+
+      notificationSoundRef.current = settingsRes.data?.notification_sound || "kaching";
+      playApprovedSaleSoundRef.current = settingsRes.data?.send_approved ?? true;
     };
 
     load();

@@ -1,12 +1,22 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
-import "./index.css";
+import globalStyles from "./index.css?inline";
 import {
   isDynamicImportFailure,
   recoverFromDynamicImportFailure,
   scheduleDynamicImportRecoveryReset,
 } from "@/lib/dynamicImportRecovery";
+import { bootGeo } from "@/lib/cfGeo";
 import { cleanupStaleBrowserCaches } from "@/lib/staleCacheCleanup";
+
+const STYLE_TAG_ID = "app-global-styles";
+
+if (typeof document !== "undefined" && !document.getElementById(STYLE_TAG_ID)) {
+  const styleTag = document.createElement("style");
+  styleTag.id = STYLE_TAG_ID;
+  styleTag.textContent = globalStyles;
+  document.head.appendChild(styleTag);
+}
 
 scheduleDynamicImportRecoveryReset();
 
@@ -52,9 +62,15 @@ window.addEventListener("unhandledrejection", (event) => {
   recoverFromDynamicImportFailure();
 });
 
-const rootElement = document.getElementById("root");
-if (rootElement) {
-  createRoot(rootElement).render(<App />);
-} else {
-  console.error("Critical: Root element not found");
-}
+// Busca geolocalização do Cloudflare Worker antes de montar o React.
+// No preview/editor, pula a chamada externa para evitar CORS e travamentos falsos.
+const geoBootPromise = isPreviewHost
+  ? Promise.resolve()
+  : Promise.race([
+      bootGeo(),
+      new Promise<void>((resolve) => setTimeout(resolve, 1500)),
+    ]);
+
+geoBootPromise.finally(() => {
+  createRoot(document.getElementById("root")!).render(<App />);
+});
