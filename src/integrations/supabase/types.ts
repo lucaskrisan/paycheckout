@@ -1544,6 +1544,60 @@ export type Database = {
         }
         Relationships: []
       }
+      marketplace_apps: {
+        Row: {
+          active: boolean | null
+          client_id: string
+          client_secret: string
+          created_at: string
+          description: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          redirect_url: string | null
+          slug: string
+          sso_secret: string
+          sso_url: string | null
+          updated_at: string
+          webhook_secret: string
+          webhook_url: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          client_id?: string
+          client_secret?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          redirect_url?: string | null
+          slug: string
+          sso_secret?: string
+          sso_url?: string | null
+          updated_at?: string
+          webhook_secret?: string
+          webhook_url?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          client_id?: string
+          client_secret?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          redirect_url?: string | null
+          slug?: string
+          sso_secret?: string
+          sso_url?: string | null
+          updated_at?: string
+          webhook_secret?: string
+          webhook_url?: string | null
+        }
+        Relationships: []
+      }
       member_access: {
         Row: {
           access_token: string
