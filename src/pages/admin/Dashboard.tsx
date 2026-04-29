@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useEffect, useMemo, useCallback, useState, useRef } from "react";
+import { bootGeo } from "@/lib/cfGeo";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -109,7 +110,7 @@ const Dashboard = () => {
   const [period, setPeriod] = useState<Period>("today");
   const [refreshing, setRefreshing] = useState(false);
   const loadingRequestRef = useRef<number>(0);
-  const [initialLoading, setInitialLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(false);
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("all");
   const [currency, setCurrency] = useState<Currency>("ALL");
@@ -151,24 +152,24 @@ const Dashboard = () => {
   const fetchMetrics = useCallback(async () => {
     if (!user) return;
 
-    const { from, to } = getDateRange(period);
-    const productId = selectedProductId === "all" ? null : selectedProductId;
+    try {
+      const { from, to } = getDateRange(period);
+      const productId = selectedProductId === "all" ? null : selectedProductId;
 
-    const { data, error } = await supabase.rpc("get_dashboard_metrics", {
-      p_user_id: user.id,
-      p_date_from: from,
-      p_date_to: to,
-      p_product_id: productId,
-      p_is_super_admin: isSuperAdmin,
-      p_currency: currency === "ALL" ? null : currency,
-    });
+      const { data, error } = await supabase.rpc("get_dashboard_metrics", {
+        p_user_id: user.id,
+        p_date_from: from,
+        p_date_to: to,
+        p_product_id: productId,
+        p_is_super_admin: isSuperAdmin,
+        p_currency: currency === "ALL" ? null : currency,
+      });
 
-    if (error) {
+      if (error) throw error;
+      setMetrics(data || emptyMetrics);
+    } catch (error) {
       console.error("[dashboard] RPC error:", error);
-      return;
     }
-
-    setMetrics(data || emptyMetrics);
   }, [user, period, selectedProductId, isSuperAdmin, getDateRange, currency]);
 
   /** When in ALL mode, fetch a chart-only snapshot for the chosen chartCurrency
@@ -228,16 +229,25 @@ const Dashboard = () => {
   const loadData = useCallback(async (isRefresh = false) => {
     if (!user) return;
     
-    // Request ID for ordering control
     const requestId = ++loadingRequestRef.current;
     if (isRefresh) setRefreshing(true);
 
     try {
-      await Promise.all([fetchMetrics(), fetchProducts(), fetchWeekdayOrders(), fetchChartOverride()]);
+      // Fetch in parallel but don't block everything on a single failure
+      const results = await Promise.allSettled([
+        fetchMetrics(), 
+        fetchProducts(), 
+        fetchWeekdayOrders(), 
+        fetchChartOverride()
+      ]);
+      
+      const failed = results.filter(r => r.status === 'rejected');
+      if (failed.length > 0) {
+        console.warn("[dashboard] Some data failed to load:", failed);
+      }
     } catch (error) {
-      console.error("[dashboard] loadData error:", error);
+      console.error("[dashboard] loadData critical error:", error);
     } finally {
-      // Only update UI state if this is still the latest request
       if (requestId === loadingRequestRef.current) {
         if (isRefresh) setRefreshing(false);
         setInitialLoading(false);
@@ -248,6 +258,9 @@ const Dashboard = () => {
   // Reconcile on mount — depends only on user so timers are not recreated on period changes
   useEffect(() => {
     if (!user) return;
+    // Background boot for geo data (non-blocking)
+    bootGeo();
+
     const doSync = async () => {
       try {
         const { error } = await supabase.functions.invoke("reconcile-orders", { body: { hours_back: 24 * 30 } });
@@ -401,8 +414,21 @@ const Dashboard = () => {
   );
   const chartPrefix = (currency === "ALL" ? chartCurrency : currency) === "USD" ? "$" : "R$";
 
+  if (initialLoading) {
+    return (
+      <div className="space-y-4 min-h-screen bg-background">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={`hero-${i}`} className="h-[120px] rounded-xl bg-card/70" />
+          ))}
+        </div>
+        <Skeleton className="h-[400px] w-full rounded-xl bg-card/70" />
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 animate-in fade-in duration-700">
       <DashboardHeaderBar
         period={period}
         onPeriodChange={setPeriod}
@@ -418,145 +444,100 @@ const Dashboard = () => {
 
       <GatewayAlerts />
 
-      {/* ROW 1 — Hero revenue + compact stats.
-          In ALL mode, primary KPIs reflect the dominant currency (no money math mixing). */}
-      {initialLoading ? (
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={`hero-${i}`} className="h-[120px] rounded-xl bg-card/70" />
-            ))}
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-            <Skeleton className="lg:col-span-7 h-[320px] rounded-xl bg-card/70" />
-            <div className="lg:col-span-5 grid grid-cols-2 gap-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={`m-${i}`} className="h-[110px] rounded-xl bg-card/70" />
-              ))}
-            </div>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={`b-${i}`} className="h-[180px] rounded-xl bg-card/70" />
-            ))}
-          </div>
-        </>
-      ) : (
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <DashboardHeroCard
-              label="Receita Líquida"
-              value={pri("net_amount", totalLiquido)}
-              fmt={fmtPrimary}
-              variant="revenue"
-              sublabel={
-                (showAllMode ? Number(primaryBreakdown?.fees_amount || 0) : m.total_taxas) > 0
-                  ? `Bruto ${fmtPrimary(pri("approved_amount", m.total_bruto))}`
-                  : undefined
-              }
-              sublabel2={subFor("net_amount")}
-              tooltip="Receita aprovada menos taxas da plataforma"
-            />
-            <DashboardMetricCard
-              label="Vendas Aprovadas"
-              value={String(showAllMode ? (primaryBreakdown?.approved_count || 0) + (secondaryBreakdown?.approved_count || 0) : m.count_approved)}
-              sub={m.count_total > 0 ? `${((m.count_approved / m.count_total) * 100).toFixed(0)}% aprovação` : undefined}
-              sub2={showAllMode && secondaryBreakdown?.approved_count
-                ? `• ${primaryBreakdown?.approved_count || 0} ${dominantCurrency} · ${secondaryBreakdown.approved_count} ${secondaryCurrency}`
-                : undefined}
-              accent
-              tooltip="Total de vendas com pagamento confirmado (todas as moedas)"
-            />
-            <DashboardMetricCard
-              label="Vendas Pendentes"
-              value={fmtPrimary(pri("pending_amount", m.total_pendente))}
-              sub={`${m.count_pending} pedidos`}
-              sub2={subFor("pending_amount")}
-              tooltip="Pedidos aguardando confirmação de pagamento"
-            />
-            <DashboardMetricCard
-              label="Ticket Médio"
-              value={fmtPrimary(pri("avg_ticket", avgTicket))}
-              sub="Valor médio por venda"
-              sub2={subFor("avg_ticket")}
-              tooltip="Valor médio por venda aprovada"
-            />
-          </div>
+      {/* ROW 1 — Hero revenue + compact stats. */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <DashboardHeroCard
+          label="Faturamento Total"
+          value={pri("approved_amount", m.total_bruto)}
+          fmt={fmtPrimary}
+          sublabel={subFor("approved_amount", "Líquido")}
+          variant="revenue"
+          sparklineData={chartData.map((d) => d.total)}
+        />
+        <DashboardHeroCard
+          label="Vendas Aprovadas"
+          value={pri("approved_count", m.count_approved)}
+          fmt={(v) => Math.floor(v).toString()}
+          sublabel={subFor("approved_count", "Vendas")}
+          variant="sales"
+        />
+        <DashboardHeroCard
+          label="Ticket Médio"
+          value={pri("avg_ticket", avgTicket)}
+          fmt={fmtPrimary}
+          sublabel={subFor("avg_ticket")}
+          variant="ticket"
+        />
+        <DashboardHeroCard
+          label="Visitas ao vivo"
+          value={liveVisitors}
+          fmt={(v) => Math.floor(v).toString()}
+          variant="visitors"
+          tooltip="Pessoas visualizando seus checkouts agora."
+        />
+      </div>
 
-          {/* ROW 2 — Chart + metrics */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-            <div className="lg:col-span-7">
-              <DashboardChart
-                data={chartData}
-                fmt={chartFmt}
-                currencyPrefix={chartPrefix}
-                title={isHourly ? "Vendas" : "Receita Diária"}
-                subtitle={isHourly ? "Receita no período selecionado" : undefined}
-                currencyToggle={showAllMode ? { value: chartCurrency, onChange: setChartCurrency } : undefined}
-              />
-            </div>
-            <div className="lg:col-span-5 grid grid-cols-2 gap-3">
-              <DashboardMetricCard
-                label="Total de Pedidos"
-                value={String(m.count_total)}
-                sub={`${m.count_approved} aprovados · ${m.count_pending} pendentes`}
-                sub2={showAllMode && secondaryBreakdown?.total_count
-                  ? `• ${primaryBreakdown?.total_count || 0} ${dominantCurrency} · ${secondaryBreakdown.total_count} ${secondaryCurrency}`
-                  : undefined}
-                tooltip="Número total de pedidos no período (todas as moedas)"
-              />
-              <DashboardMetricCard
-                label="Vendas via Ads"
-                value={String(m.paid_sales_count)}
-                sub={fmtPrimary(pri("ads_revenue", m.paid_revenue))}
-                sub2={subFor("ads_revenue")}
-                tooltip="Vendas com UTM identificado (tráfego pago)"
-              />
-              <DashboardMetricCard
-                label="Vendas Orgânicas"
-                value={String(m.organic_sales_count)}
-                sub={fmtPrimary(pri("organic_revenue", m.organic_revenue))}
-                sub2={subFor("organic_revenue")}
-                tooltip="Vendas sem UTM (tráfego orgânico/direto)"
-              />
-              <DashboardMetricCard
-                label="Reembolsos"
-                value={fmtPrimary(pri("refunded_amount", m.total_refunded))}
-                sub={`${m.count_refunded} pedidos`}
-                sub2={subFor("refunded_amount")}
-                tooltip="Valor total de reembolsos processados"
-                dimmed={m.total_refunded === 0 && !(showAllMode && secondaryBreakdown?.refunded_amount)}
-              />
-              <DashboardMetricCard
-                label="Chargeback"
-                value={fmtPrimary(pri("chargeback_amount", m.total_chargeback))}
-                sub={`${m.count_chargedback} pedidos`}
-                sub2={subFor("chargeback_amount")}
-                tooltip="Valor total de chargebacks"
-                dimmed={m.total_chargeback === 0 && !(showAllMode && secondaryBreakdown?.chargeback_amount)}
-              />
-            </div>
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        {/* Main Chart */}
+        <div className="lg:col-span-8">
+          <DashboardChart
+            data={chartData}
+            fmt={chartFmt}
+            currencyPrefix={chartPrefix}
+            title={period === "today" || period === "yesterday" ? "Receita por Hora" : "Receita Diária"}
+            currencyToggle={currency === "ALL" ? {
+              value: chartCurrency,
+              onChange: setChartCurrency
+            } : undefined}
+          />
+        </div>
 
-          {/* ROW 3 — Bottom cards */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-            <DashboardWeekdayChart orders={weekdayOrders} fmt={fmt} />
-            <DashboardApprovalCard
-              items={[
-                { label: "Cartão", rate: cardApprovalRate },
-                { label: "Pix", rate: pixApprovalRate },
-              ]}
-            />
-            <DashboardMetricCard
-              label="Carrinhos Abandonados"
-              value={String(m.abandoned_total)}
-              sub={`${recoveryRate}% recuperados`}
-              onClick={() => navigate("/admin/abandoned")}
-              tooltip="Total de checkouts iniciados sem finalização"
-            />
-          </div>
-        </>
-      )}
+        {/* Side Metrics */}
+        <div className="lg:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
+          <DashboardMetricCard
+            label="Conversão de Cartão"
+            value={`${cardApprovalRate.toFixed(1)}%`}
+            sub={`${m.card_approved} de ${m.card_decided} tentativas`}
+            accent
+            tooltip="Taxa de aprovação real considerando apenas tentativas processadas pelo gateway."
+          />
+          <DashboardMetricCard
+            label="Conversão de PIX"
+            value={`${pixApprovalRate.toFixed(1)}%`}
+            sub={`${m.pix_approved} de ${m.pix_decided} gerados`}
+            tooltip="Relação entre PIX pagos e PIX gerados."
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <DashboardMetricCard
+          label="Pendente (PIX/Boleto)"
+          value={fmtPrimary(pri("pending_amount", m.total_pendente))}
+          sub={`${pri("pending_count", m.count_pending)} pedidos aguardando`}
+          sub2={subFor("pending_amount")}
+          dimmed={m.count_pending === 0}
+        />
+        <DashboardMetricCard
+          label="Recuperação de Carrinho"
+          value={`${recoveryRate}%`}
+          sub={`${m.abandoned_recovered} recuperados de ${m.abandoned_total}`}
+          tooltip="Percentual de checkouts abandonados que foram convertidos via automação."
+        />
+        <DashboardApprovalCard
+          cardRate={cardApprovalRate}
+          pixRate={pixApprovalRate}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        <div className="lg:col-span-4">
+          <DashboardStateMap salesByState={salesByState} />
+        </div>
+        <div className="lg:col-span-8">
+          <DashboardWeekdayChart orders={weekdayOrders} />
+        </div>
+      </div>
     </div>
   );
 };
