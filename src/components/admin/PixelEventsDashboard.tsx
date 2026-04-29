@@ -345,8 +345,12 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
         }
       } else {
         const day = new Date(e.created_at).toISOString().split('T')[0];
+        // For events without a formal event_id (like older records or generic captures),
+        // we use a more precise key including the second to prevent merging distinct actions 
+        // into a single "dual" row when they are actually different events from the same source.
+        const second = Math.floor(new Date(e.created_at).getTime() / 1000);
         const deduKey = e.visitor_id
-          ? `${day}_${e.visitor_id}_${e.event_name}`
+          ? `${second}_${e.visitor_id}_${e.event_name}`
           : `anon_${e.id}`;
         if (!ungroupedMap.has(deduKey)) {
           ungroupedMap.set(deduKey, {
