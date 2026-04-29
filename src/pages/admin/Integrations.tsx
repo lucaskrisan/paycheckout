@@ -37,6 +37,7 @@ const Integrations = () => {
 
         <AppSellIntegration />
         <UtmifyIntegration />
+        <GatFlowIntegration />
       </div>
     </div>
   );
