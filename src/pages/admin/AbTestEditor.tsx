@@ -496,7 +496,7 @@ function EditorInner() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("ab_test_variants")
-        .select("label, impressions, clicks, sales, revenue, page_url, checkout_url")
+        .select("label, impressions, clicks, sales, revenue, page_url, checkout_url, sort_order")
         .eq("test_id", testId);
       if (error) throw error;
       return data;
