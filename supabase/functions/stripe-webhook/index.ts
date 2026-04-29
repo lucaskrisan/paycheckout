@@ -206,6 +206,8 @@ Deno.serve(async (req) => {
     let externalId: string;
     if (event.type === 'checkout.session.completed') {
       externalId = obj.id;
+    } else if (event.type === 'invoice.payment_succeeded' && obj.subscription) {
+      externalId = obj.subscription;
     } else {
       externalId = obj.payment_intent || obj.id;
     }
