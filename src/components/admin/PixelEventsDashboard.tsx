@@ -233,6 +233,7 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
         if (userId && ne.user_id !== userId) return;
         if (filterProduct !== "all" && ne.product_id !== filterProduct) return;
         if (ne.visitor_id?.startsWith("sim_")) return;
+        if (ne.is_bot === true) return; // 🤖 ignora bots no realtime
         if (new Date(ne.created_at).getTime() < since) return;
 
         setEvents((prev) => [ne, ...prev].slice(0, 500));
