@@ -150,7 +150,16 @@ Deno.serve(async (req) => {
       test_event_code,
       is_bot,
       bot_reason,
+      utm_source,
+      utm_medium,
+      utm_campaign,
+      utm_content,
+      utm_term,
     } = _payload;
+
+    // Se não houver UTMs, tenta extrair do referrer ou do próprio payload (caso venha encapsulado)
+    const finalUtmSource = utm_source || ((!utm_source && !utm_medium && referrer_url?.includes('google.com')) ? 'google' : null) || (utm_source === undefined && !utm_medium ? 'organic' : utm_source);
+    const finalUtmMedium = utm_medium || ((!utm_source && !utm_medium && referrer_url?.includes('google.com')) ? 'organic' : null) || (utm_source === undefined && !utm_medium ? 'organic' : utm_medium);
 
     // Server-side bot fallback: bate UA mesmo se o cliente não declarou.
     const SERVER_BOT_UA = /bot|crawl|spider|slurp|headlesschrome|phantomjs|selenium|puppeteer|playwright|lighthouse|pagespeed|ahrefs|semrush|mj12bot|dotbot|petalbot|yandex|bingbot|googlebot|baiduspider|applebot|linkedinbot|twitterbot|telegrambot|discordbot|scraper|curl|wget|python-requests|node-fetch|axios/i;
@@ -250,6 +259,11 @@ Deno.serve(async (req) => {
         customer_country: customerCountry,
         customer_city: customerCity,
         is_bot: finalIsBot,
+        utm_source: finalUtmSource,
+        utm_medium: finalUtmMedium,
+        utm_campaign: utm_campaign || null,
+        utm_content: utm_content || null,
+        utm_term: utm_term || null,
       });
 
       // Browser-side log (quando o frontend também disparou via fbq)
@@ -267,6 +281,11 @@ Deno.serve(async (req) => {
           customer_country: customerCountry,
           customer_city: customerCity,
           is_bot: finalIsBot,
+          utm_source: finalUtmSource,
+          utm_medium: finalUtmMedium,
+          utm_campaign: utm_campaign || null,
+          utm_content: utm_content || null,
+          utm_term: utm_term || null,
         });
       }
     }
