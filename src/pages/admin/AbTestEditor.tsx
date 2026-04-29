@@ -46,12 +46,14 @@ import {
   RefreshCw,
   Zap,
   Loader2,
+  Image as ImageIcon,
+  MousePointer2,
 } from "lucide-react";
 import { AbTestTutorial } from "@/components/admin/AbTestTutorial";
 
 // ---------------- Types ----------------
 
-type NodeKind = "config" | "abtest" | "page" | "checkout";
+type NodeKind = "config" | "abtest" | "page" | "checkout" | "creative";
 
 type ConfigData = { kind: "config"; label: string; testName: string; entryUrl: string; visits: number; stickyDays?: number; impressions?: number; sales?: number; revenue?: number };
 type AbTestData = { kind: "abtest"; label: string; subtitle: string; splits: { label: string; weight: number }[] };
@@ -71,6 +73,15 @@ type CheckoutData = {
   productId: string | null;
   offerId: string | null;
   templateId: string | null;
+  stats?: { impressions: number; clicks: number; sales: number; revenue: number };
+};
+type CreativeData = {
+  kind: "creative";
+  label: string;
+  subtitle: string;
+  imageUrl?: string;
+  utmSource?: string;
+  utmContent?: string;
   stats?: { impressions: number; clicks: number; sales: number; revenue: number };
 };
 
@@ -319,11 +330,57 @@ function CheckoutNode({ id, data }: NodeProps<Node<CheckoutData, "checkout">>) {
   );
 }
 
+function CreativeNode({ id, data }: NodeProps<Node<CreativeData, "creative">>) {
+  const reactFlow = useReactFlow();
+  return (
+    <NodeShell 
+      color="#ec4899" 
+      icon={<ImageIcon className="h-4 w-4" />} 
+      title={data.label} 
+      subtitle={data.subtitle || "Anúncio / Criativo"}
+      nodeId={id}
+      onDelete={(nodeId) => {
+        const ns = reactFlow.getNodes();
+        const es = reactFlow.getEdges();
+        reactFlow.setNodes(ns.filter(n => n.id !== nodeId));
+        reactFlow.setEdges(es.filter(e => e.source !== nodeId && e.target !== nodeId));
+      }}
+    >
+      {data.imageUrl ? (
+        <div className="mb-3 rounded-lg overflow-hidden border border-white/10 aspect-video bg-slate-900 flex items-center justify-center">
+          <img src={data.imageUrl} alt="Creative" className="w-full h-full object-cover" />
+        </div>
+      ) : (
+        <div className="mb-3 rounded-lg border border-dashed border-white/10 aspect-video bg-white/[0.02] flex flex-col items-center justify-center gap-2 text-slate-500">
+          <ImageIcon className="h-6 w-6 opacity-20" />
+          <span className="text-[10px] uppercase tracking-widest font-bold opacity-40">Sem Imagem</span>
+        </div>
+      )}
+      
+      {data.stats && (
+        <div className="grid grid-cols-2 gap-2">
+          <div className="flex flex-col p-2 rounded-xl bg-pink-500/5 border border-pink-500/10">
+            <span className="text-[8px] uppercase tracking-wider text-pink-400/70 font-bold">Cliques</span>
+            <span className="text-xs font-black text-white">{data.stats.clicks || 0}</span>
+          </div>
+          <div className="flex flex-col p-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+            <span className="text-[8px] uppercase tracking-wider text-emerald-400/70 font-bold">ROI</span>
+            <span className="text-xs font-black text-emerald-400">
+              {data.stats.revenue > 0 ? "EXCELENTE" : "---"}
+            </span>
+          </div>
+        </div>
+      )}
+    </NodeShell>
+  );
+}
+
 const nodeTypes = {
   config: ConfigNode,
   abtest: AbTestNode,
   page: PageNode,
   checkout: CheckoutNode,
+  creative: CreativeNode,
 };
 
 // ---------------- Initial graph ----------------
@@ -359,6 +416,7 @@ function buildInitialGraph(testName: string): { nodes: FlowNode[]; edges: Edge[]
 // ---------------- Sidebar palette ----------------
 
 const PALETTE: { kind: NodeKind; label: string; icon: React.ReactNode; color: string }[] = [
+  { kind: "creative", label: "Criativo / Anúncio", icon: <ImageIcon className="h-4 w-4" />, color: "#ec4899" },
   { kind: "abtest", label: "Teste A/B", icon: <BarChart3 className="h-4 w-4" />, color: "#a855f7" },
   { kind: "page", label: "Página de Vendas", icon: <FileText className="h-4 w-4" />, color: "#10b981" },
   { kind: "checkout", label: "Checkout", icon: <ShoppingCart className="h-4 w-4" />, color: "#f97316" },
@@ -618,6 +676,8 @@ function EditorInner() {
       let newNode: FlowNode;
       if (kind === "abtest") {
         newNode = { id, type: "abtest", position, data: { kind: "abtest", label: "Novo Teste", subtitle: "Divide tráfego", splits: [{ label: "A", weight: 50 }, { label: "B", weight: 50 }] } };
+      } else if (kind === "creative") {
+        newNode = { id, type: "creative", position, data: { kind: "creative", label: "Novo Criativo", subtitle: "Anúncio FB/IG", imageUrl: "", utmSource: "facebook", utmContent: "" } };
       } else if (kind === "page") {
         const idx = nodes.filter((n) => n.type === "page").length;
         newNode = { id, type: "page", position, data: { kind: "page", label: `Página ${String.fromCharCode(65 + idx)}`, subtitle: "Landing Page", url: "" } };
