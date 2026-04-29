@@ -270,7 +270,7 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     // Bot filter: eventos de "intenção" (PageView/ViewContent) exigem interação humana.
     // Eventos de ação (AddPaymentInfo, AddToCart, Lead, Purchase, Subscribe) já são
     // disparados após o usuário interagir, então só checam hard signals.
-    const intentEvent = eventName === "PageView" || eventName === "ViewContent" || eventName === "InitiateCheckout";
+    const intentEvent = eventName === "ViewContent" || eventName === "InitiateCheckout";
     const botCheck = detectBot(/* requireHumanInteraction */ intentEvent);
     if (botCheck.isBot) {
       console.log(`[CAPI] Skipping ${eventName} — bot detected:`, botCheck.reason);
