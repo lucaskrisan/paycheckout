@@ -874,11 +874,12 @@ const Checkout = () => {
         }
         if (data?.error) throw new Error(data.error);
         const paymentId = data?.payment_id || data?.subscription_id || data?.id;
+        const trackingId = data?.order_id || paymentId;
         if (paymentId) {
           toast.success("Pagamento processado com sucesso!");
-          trackPurchase(finalAmount, "BRL", paymentId, selectedBumpItems);
+          trackPurchase(finalAmount, "BRL", trackingId, selectedBumpItems);
           if (product.is_subscription)
-            trackSubscribe(finalAmount, "BRL", paymentId);
+            trackSubscribe(finalAmount, "BRL", trackingId);
           await markPurchased();
           navigate(
             `/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product.id}${data.order_id ? `&order_id=${data.order_id}` : ""}${product.delivery_method ? `&delivery=${product.delivery_method}` : ""}${isUSD ? "&lang=en" : ""}`,
