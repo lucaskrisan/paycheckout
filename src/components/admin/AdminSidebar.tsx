@@ -86,15 +86,19 @@ const analiseItems = [
   { title: "Financeiro", url: "/admin/financeiro", icon: Wallet },
 ];
 
-// 5. CONFIGURAÇÕES — collapsible, menos frequente
+// 5. MARKETING — ferramentas de tração e apps
+const marketingItems = [
+  { title: "Apps", url: "/admin/integrations", icon: Zap },
+  { title: "WhatsApp", url: "/admin/whatsapp", icon: MessageSquare },
+  { title: "Pixels Espelho", url: "/admin/pixel-mirrors", icon: Zap },
+  { title: "Testes A/B", url: "/admin/ab-tests", icon: Beaker },
+];
+
+// 6. CONFIGURAÇÕES — collapsible, menos frequente
 const configItems = [
   { title: "Gateways", url: "/admin/gateway-management", icon: CreditCard },
-  { title: "Integrações", url: "/admin/integrations", icon: Zap },
-  
   { title: "Domínios", url: "/admin/domains", icon: Globe },
-  
   { title: "Webhook", url: "/admin/webhooks", icon: Webhook },
-  
   { title: "Notificações", url: "/admin/notifications", icon: Bell },
   { title: "Minha conta", url: "/admin/my-account", icon: User },
 ];
