@@ -873,12 +873,35 @@ function EditorInner() {
           <button onClick={() => setValidationError(null)}><X className="h-4 w-4" /></button>
         </div>
       )}
-      <header className="h-14 border-b border-border/60 bg-background/80 backdrop-blur flex items-center justify-between px-4">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/ab-tests")}><ArrowLeft className="h-4 w-4" /></Button>
-          <Input id="tutorial-name" value={name} onChange={(e) => setName(e.target.value)} className="h-8 w-64 bg-transparent border-transparent font-bold" />
-          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${statusBadge.cls}`}>{statusBadge.label}</span>
-          <Button variant="ghost" size="icon" onClick={() => setShowTutorial(true)} className="ml-2 text-zinc-500 hover:text-white">
+      <header className="h-16 border-b border-white/5 bg-[#0d0f1a]/80 backdrop-blur-xl flex items-center justify-between px-6 z-50">
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => navigate("/admin/ab-tests")}
+            className="hover:bg-white/5 text-slate-400"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex flex-col">
+            <Input 
+              id="tutorial-name" 
+              value={name} 
+              onChange={(e) => setName(e.target.value)} 
+              className="h-7 p-0 bg-transparent border-transparent font-black text-lg text-white focus-visible:ring-0 w-auto min-w-[200px]" 
+            />
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${statusBadge.cls}`}>
+                {statusBadge.label}
+              </span>
+              {lastSavedAt && (
+                <span className="text-[10px] text-slate-500 font-medium">
+                  Sincronizado às {lastSavedAt.toLocaleTimeString()}
+                </span>
+              )}
+            </div>
+          </div>
+          <Button variant="ghost" size="icon" onClick={() => setShowTutorial(true)} className="text-slate-600 hover:text-white transition-colors">
             <HelpCircle className="h-4 w-4" />
           </Button>
         </div>
@@ -887,21 +910,30 @@ function EditorInner() {
             variant="outline" 
             size="sm" 
             onClick={() => qc.invalidateQueries({ queryKey: ["ab_test_stats"] })}
-            className="text-xs h-8 border-violet-500/30 hover:bg-violet-500/10"
+            className="text-xs h-9 border-white/5 bg-white/[0.02] hover:bg-white/5 text-slate-300 font-bold"
           >
-            <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+            <RefreshCw className="h-3.5 w-3.5 mr-2 text-violet-400" />
             Atualizar Dados
           </Button>
           {testId && (
-            <Button onClick={() => toggleStatus.mutate()} className={status === "active" ? "bg-amber-600" : "bg-emerald-600"} size="sm">
-              {status === "active" ? <Pause className="h-4 w-4 mr-2" /> : <Play className="h-4 w-4 mr-2" />}
-              {status === "active" ? "Pausar" : "Iniciar"}
+            <Button 
+              onClick={() => toggleStatus.mutate()} 
+              className={`h-9 font-black text-xs uppercase tracking-wider ${status === "active" ? "bg-amber-500 hover:bg-amber-600 text-amber-950" : "bg-emerald-500 hover:bg-emerald-600 text-emerald-950"}`} 
+              size="sm"
+            >
+              {status === "active" ? <Pause className="h-3.5 w-3.5 mr-2 fill-current" /> : <Play className="h-3.5 w-3.5 mr-2 fill-current" />}
+              {status === "active" ? "Pausar Teste" : "Iniciar Teste"}
             </Button>
           )}
-          <span className="text-[10px] text-muted-foreground uppercase tracking-widest hidden sm:inline">
-            {save.isPending ? "Salvando…" : lastSavedAt ? `Salvo ${lastSavedAt.toLocaleTimeString()}` : "Rascunho"}
-          </span>
-          <Button onClick={() => save.mutate()} disabled={save.isPending} className="bg-violet-600" size="sm"><Save className="h-4 w-4 mr-2" /> Salvar</Button>
+          <Button 
+            onClick={() => save.mutate()} 
+            disabled={save.isPending} 
+            className="bg-violet-600 hover:bg-violet-500 text-white h-9 px-5 font-black text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(139,92,246,0.3)] transition-all"
+            size="sm"
+          >
+            {save.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5 mr-2" />}
+            Salvar
+          </Button>
         </div>
       </header>
       <div className="flex-1 flex overflow-hidden">
