@@ -159,23 +159,31 @@ function ConfigNode({ data }: NodeProps<Node<ConfigData, "config">>) {
       subtitle={data.testName}
       inHandle={false}
     >
-      <div className="grid grid-cols-2 gap-1.5 mb-2">
-        <div className="flex flex-col text-[10px] px-2 py-1 rounded bg-muted/40 border border-border/20">
-          <span className="text-muted-foreground">Vistas</span>
-          <span className="font-bold">{data.impressions ?? 0}</span>
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        <div className="flex flex-col p-2.5 rounded-xl bg-blue-500/5 border border-blue-500/10">
+          <span className="text-[9px] uppercase tracking-wider text-blue-400/70 font-bold">Vistas</span>
+          <span className="text-sm font-black text-white">{data.impressions ?? 0}</span>
         </div>
-        <div className="flex flex-col text-[10px] px-2 py-1 rounded bg-muted/40 border border-border/20">
-          <span className="text-muted-foreground">Vendas</span>
-          <span className="font-bold text-emerald-400">{data.sales ?? 0}</span>
+        <div className="flex flex-col p-2.5 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+          <span className="text-[9px] uppercase tracking-wider text-emerald-400/70 font-bold">Vendas</span>
+          <span className="text-sm font-black text-emerald-400">{data.sales ?? 0}</span>
         </div>
       </div>
       {!data.entryUrl ? (
-        <div className="flex items-center gap-1.5 text-[11px] text-amber-300 px-2 py-1.5 rounded bg-amber-500/10 border border-amber-500/30">
-          <AlertCircle className="h-3 w-3" /> Salve para gerar URL
+        <div className="flex items-center gap-2 text-[10px] text-amber-300 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+          <AlertCircle className="h-3.5 w-3.5" /> 
+          <span className="font-medium">Salve para gerar URL</span>
         </div>
       ) : (
-        <div className="flex items-center gap-1.5 text-[11px] text-emerald-300 px-2 py-1.5 rounded bg-emerald-500/10 border border-emerald-500/30 truncate">
-          <Link2 className="h-3 w-3 shrink-0" /> <span className="truncate">{data.entryUrl}</span>
+        <div 
+          onClick={() => {
+            navigator.clipboard.writeText(data.entryUrl);
+            toast.success("URL copiada!");
+          }}
+          className="flex items-center gap-2 text-[10px] text-emerald-300 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 truncate cursor-pointer hover:bg-emerald-500/20 transition-colors"
+        >
+          <Link2 className="h-3.5 w-3.5 shrink-0" /> 
+          <span className="truncate font-mono">{data.entryUrl}</span>
         </div>
       )}
     </NodeShell>
