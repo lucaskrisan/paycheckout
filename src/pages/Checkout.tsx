@@ -53,6 +53,7 @@ const Checkout = () => {
   const location = useLocation();
   const requestedConfigId = useMemo(() => new URLSearchParams(location.search).get("config"), [location.search]);
   const [product, setProduct] = useState<Product | null>(null);
+  const isUSD = product?.currency === "USD";
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [producerBlocked, setProducerBlocked] = useState(false);
@@ -332,8 +333,6 @@ const Checkout = () => {
       <div className="text-center space-y-3"><h1 className="text-2xl font-bold text-[#0F1111]">Produto não encontrado</h1><p className="text-[#565959]">Este produto não existe ou não está disponível.</p></div>
     </div>
   );
-  const isUSD = product?.currency === "USD";
-
   const isUSD = product.currency === "USD";
   const { couponDiscount, bumpTotal, pixDiscount, frontEndAmount, finalAmount } = prices;
 
