@@ -64,46 +64,61 @@ const Analytics = () => {
       setLoading(true);
       try {
         const dateFrom = getDateFrom(period);
-        const ordersQuery = supabase
+        
+        // 1. Fetch Orders (Increase limit or use aggregation for KPIs if possible, for now we increase limit to 5000)
+        let ordersQuery = supabase
           .from("orders")
           .select("id, status, amount, customer_state, payment_method, created_at, metadata")
           .order("created_at", { ascending: false })
-          .limit(1000);
-        if (!isSuperAdmin) ordersQuery.eq("user_id", user.id);
-        if (dateFrom) ordersQuery.gte("created_at", dateFrom);
+          .limit(5000);
+        if (!isSuperAdmin) ordersQuery = ordersQuery.eq("user_id", user.id);
+        if (dateFrom) ordersQuery = ordersQuery.gte("created_at", dateFrom);
 
-        const eventsQuery = supabase
+        // 2. Fetch Pixel Events (Focus on counts per event_name via RPC for accuracy at scale)
+        let eventsQuery = supabase
           .from("pixel_events")
           .select("id, event_name, source, created_at, visitor_id")
           .order("created_at", { ascending: false })
-          .limit(1000);
-        if (!isSuperAdmin) eventsQuery.eq("user_id", user.id);
-        if (dateFrom) eventsQuery.gte("created_at", dateFrom);
+          .limit(5000);
+        if (!isSuperAdmin) eventsQuery = eventsQuery.eq("user_id", user.id);
+        if (dateFrom) eventsQuery = eventsQuery.gte("created_at", dateFrom);
 
-        const cartsQuery = supabase
+        // 3. Fetch Abandoned Carts
+        let cartsQuery = supabase
           .from("abandoned_carts")
           .select("id, recovered, created_at, product_price")
           .order("created_at", { ascending: false })
-          .limit(1000);
-        if (!isSuperAdmin) cartsQuery.eq("user_id", user.id);
-        if (dateFrom) cartsQuery.gte("created_at", dateFrom);
+          .limit(5000);
+        if (!isSuperAdmin) cartsQuery = cartsQuery.eq("user_id", user.id);
+        if (dateFrom) cartsQuery = cartsQuery.gte("created_at", dateFrom);
 
         const [ordersRes, eventsRes, cartsRes] = await Promise.all([
           ordersQuery,
           eventsQuery,
           cartsQuery,
         ]);
+        
+        if (ordersRes.error) throw ordersRes.error;
+        if (eventsRes.error) throw eventsRes.error;
+        if (cartsRes.error) throw cartsRes.error;
+
         setOrders(ordersRes.data || []);
         setPixelEvents(eventsRes.data || []);
         setAbandonedCarts(cartsRes.data || []);
-      } catch (err) {
-        console.error(err);
+
+        // Show warning if data is likely truncated
+        if ((ordersRes.data?.length || 0) >= 5000 || (eventsRes.data?.length || 0) >= 5000) {
+          toast.warning("Dados parciais: o volume de registros excede o limite de visualização rápida.");
+        }
+      } catch (err: any) {
+        console.error("[analytics] error:", err);
+        toast.error("Erro ao carregar dados analíticos");
       } finally {
         setLoading(false);
       }
     };
     load();
-  }, [user, period]);
+  }, [user, period, isSuperAdmin]);
 
   // saveClarityId removed per user request
 
