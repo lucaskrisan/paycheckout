@@ -428,7 +428,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="space-y-3 animate-in fade-in duration-700">
+    <div className="space-y-4 animate-in fade-in duration-700">
       <DashboardHeaderBar
         period={period}
         onPeriodChange={setPeriod}
@@ -444,94 +444,70 @@ const Dashboard = () => {
 
       <GatewayAlerts />
 
-      {/* ROW 1 — Hero Cards (Identical to reference layout) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <DashboardHeroCard
+      {/* Identical to April 28 layout: Grid of simple cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <DashboardMetricCard
           label="Faturamento Líquido"
-          value={pri("approved_amount", totalLiquido)}
-          fmt={fmtPrimary}
-          sublabel={subFor("approved_amount", "Faturamento")}
-          variant="revenue"
-          sparklineData={chartData.map((d) => d.total)}
+          value={fmtPrimary(totalLiquido)}
+          sub={fmt(totalLiquido + m.total_taxas)}
+          accent
+          tooltip="Receita líquida total aprovada após taxas"
         />
-        <DashboardHeroCard
+        <DashboardMetricCard
           label="Vendas Aprovadas"
-          value={pri("approved_count", m.count_approved)}
-          fmt={(v) => Math.floor(v).toString()}
-          sublabel={subFor("approved_count", "Vendas")}
-          variant="sales"
+          value={m.count_approved.toString()}
+          sub={`${m.count_total} pedidos totais`}
+          tooltip="Número de pedidos com pagamento confirmado"
         />
-        <DashboardHeroCard
+        <DashboardMetricCard
           label="Ticket Médio"
-          value={pri("avg_ticket", avgTicket)}
-          fmt={fmtPrimary}
-          sublabel={subFor("avg_ticket")}
-          variant="ticket"
+          value={fmtPrimary(avgTicket)}
+          tooltip="Valor médio por venda aprovada"
         />
-        <DashboardHeroCard
-          label="Lucro"
-          value={pri("approved_amount", totalLiquido) * 0.9} // Placeholder/Estimation logic previously used
-          fmt={fmtPrimary}
-          variant="revenue"
-          sublabel={subFor("approved_amount")}
+        <DashboardMetricCard
+          label="Conversão de Cartão"
+          value={`${cardApprovalRate.toFixed(1)}%`}
+          sub={`${m.card_approved} de ${m.card_decided} tentativas`}
+          tooltip="Taxa de aprovação real processada pelo gateway"
+        />
+        <DashboardMetricCard
+          label="Vendas Pagas (Ads)"
+          value={fmtPrimary(pri("ads_revenue", m.paid_revenue))}
+          sub={`${pri("ads_count", m.paid_sales_count)} pedidos`}
+        />
+        <DashboardMetricCard
+          label="Vendas Orgânicas"
+          value={fmtPrimary(pri("organic_revenue", m.organic_revenue))}
+          sub={`${pri("organic_sales_count", m.organic_sales_count)} pedidos`}
+        />
+        <DashboardMetricCard
+          label="Pendente (PIX/Boleto)"
+          value={fmtPrimary(pri("pending_amount", m.total_pendente))}
+          sub={`${pri("pending_count", m.count_pending)} aguardando`}
+          dimmed={m.count_pending === 0}
+        />
+        <DashboardMetricCard
+          label="Recuperação de Carrinho"
+          value={`${recoveryRate}%`}
+          sub={`${m.abandoned_recovered} de ${m.abandoned_total}`}
         />
       </div>
 
-      {/* ROW 2 — Main Chart + Secondary Metrics Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-        <div className="lg:col-span-7">
-          <DashboardChart
-            data={chartData}
-            fmt={chartFmt}
-            currencyPrefix={chartPrefix}
-            title={period === "today" || period === "yesterday" ? "Receita por Hora" : "Receita Diária"}
-            currencyToggle={currency === "ALL" ? {
-              value: chartCurrency,
-              onChange: setChartCurrency
-            } : undefined}
-          />
-        </div>
-
-        <div className="lg:col-span-5 grid grid-cols-2 gap-3">
-          <DashboardMetricCard
-            label="Vendas Pagas (Ads)"
-            value={fmtPrimary(pri("ads_revenue", m.paid_revenue))}
-            sub={`${pri("ads_count", m.paid_sales_count)} pedidos`}
-            accent
-          />
-          <DashboardMetricCard
-            label="Vendas Orgânicas"
-            value={fmtPrimary(pri("organic_revenue", m.organic_revenue))}
-            sub={`${pri("organic_sales_count", m.organic_sales_count)} pedidos`}
-          />
-          <DashboardMetricCard
-            label="Total de Pedidos"
-            value={m.count_total.toString()}
-            sub={`${m.count_approved} aprovados`}
-          />
-          <DashboardMetricCard
-            label="Pendente (PIX/Boleto)"
-            value={fmtPrimary(pri("pending_amount", m.total_pendente))}
-            sub={`${pri("pending_count", m.count_pending)} aguardando`}
-            dimmed={m.count_pending === 0}
-          />
-          <DashboardMetricCard
-            label="Chargeback"
-            value={fmtPrimary(pri("chargeback_amount", m.total_chargeback))}
-            sub={`${pri("chargeback_count", m.count_chargedback)} pedidos`}
-          />
-          <DashboardMetricCard
-            label="Reembolsadas"
-            value={fmtPrimary(pri("refunded_amount", m.total_refunded))}
-            sub={`${pri("count_refunded", m.count_refunded)} pedidos`}
-          />
-        </div>
+      <div className="w-full">
+        <DashboardChart
+          data={chartData}
+          fmt={chartFmt}
+          currencyPrefix={chartPrefix}
+          title={period === "today" || period === "yesterday" ? "Receita por Hora" : "Receita Diária"}
+          currencyToggle={currency === "ALL" ? {
+            value: chartCurrency,
+            onChange: setChartCurrency
+          } : undefined}
+        />
       </div>
 
-      {/* ROW 3 — Footer Charts/Maps */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <DashboardWeekdayChart orders={weekdayOrders} />
-        <DashboardStateMap salesByState={salesByState} fmt={fmt} />
         <DashboardApprovalCard
           items={[
             { label: "Cartão de Crédito", rate: cardApprovalRate },
