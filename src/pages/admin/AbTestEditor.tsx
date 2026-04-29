@@ -1209,6 +1209,7 @@ function EditorInner() {
                 </Button>
               </div>
             )}
+
             {selectedNode.type === "checkout" && (
               <div className="space-y-4">
                 <Label className="text-xs font-medium uppercase text-muted-foreground tracking-widest">Configuração do Checkout</Label>
@@ -1220,6 +1221,7 @@ function EditorInner() {
                   />
                   <p className="text-[10px] text-muted-foreground italic">Ex: Checkout com Order Bump (R$ 67)</p>
                 </div>
+                
                 <div className="space-y-2">
                   <Label className="text-xs">Produto Principal</Label>
                   <Select 
@@ -1239,54 +1241,6 @@ function EditorInner() {
                     </SelectContent>
                   </Select>
                 </div>
-                <Button variant="outline" className="w-full text-red-400 border-red-400/30 hover:bg-red-500/10" onClick={() => deleteNode(selectedNode.id)}>
-                  <Trash2 className="h-4 w-4 mr-2" /> Excluir Checkout
-                </Button>
-              </div>
-            )}
-            {selectedNode.type === "creative" && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-xs">Nome do Criativo / Ad</Label>
-                  <Input value={selectedNode.data.label} onChange={(e) => updateNodeData(selectedNode.id, { label: e.target.value })} />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-xs">URL da Imagem / Thumbnail</Label>
-                  <Input 
-                    placeholder="https://suaimagem.com/thumb.jpg"
-                    value={(selectedNode.data as CreativeData).imageUrl || ""} 
-                    onChange={(e) => updateNodeData(selectedNode.id, { imageUrl: e.target.value })} 
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <Label className="text-[10px] uppercase text-muted-foreground">UTM Source</Label>
-                    <Input 
-                      value={(selectedNode.data as CreativeData).utmSource || ""} 
-                      onChange={(e) => updateNodeData(selectedNode.id, { utmSource: e.target.value })}
-                      className="h-8 text-xs"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-[10px] uppercase text-muted-foreground">UTM Content</Label>
-                    <Input 
-                      value={(selectedNode.data as CreativeData).utmContent || ""} 
-                      onChange={(e) => updateNodeData(selectedNode.id, { utmContent: e.target.value })}
-                      className="h-8 text-xs"
-                    />
-                  </div>
-                </div>
-                <div className="pt-2 border-t border-white/5">
-                  <p className="text-[10px] text-muted-foreground italic mb-2">
-                    Use este nó para visualizar de qual anúncio está vindo o tráfego e comparar a performance visualmente.
-                  </p>
-                  <Button variant="outline" className="w-full text-red-400 border-red-400/30 hover:bg-red-500/10" onClick={() => deleteNode(selectedNode.id)}>
-                    <Trash2 className="h-4 w-4 mr-2" /> Excluir Criativo
-                  </Button>
-                </div>
-              </div>
-            )}
-
 
                 <div className="space-y-2">
                   <Label className="text-xs">Preço / Oferta (Configuração)</Label>
@@ -1329,9 +1283,54 @@ function EditorInner() {
                     </SelectContent>
                   </Select>
                 </div>
+
                 <Button variant="outline" className="w-full text-red-400 border-red-400/30 hover:bg-red-500/10" onClick={() => deleteNode(selectedNode.id)}>
                   <Trash2 className="h-4 w-4 mr-2" /> Excluir Checkout
                 </Button>
+              </div>
+            )}
+
+            {selectedNode.type === "creative" && (
+              <div className="space-y-4">
+                <Label className="text-xs font-medium uppercase text-muted-foreground tracking-widest">Configuração do Criativo</Label>
+                <div className="space-y-2">
+                  <Label className="text-xs">Nome do Criativo / Ad</Label>
+                  <Input value={selectedNode.data.label} onChange={(e) => updateNodeData(selectedNode.id, { label: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">URL da Imagem / Thumbnail</Label>
+                  <Input 
+                    placeholder="https://suaimagem.com/thumb.jpg"
+                    value={(selectedNode.data as CreativeData).imageUrl || ""} 
+                    onChange={(e) => updateNodeData(selectedNode.id, { imageUrl: e.target.value })} 
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase text-muted-foreground font-bold">UTM Source</Label>
+                    <Input 
+                      value={(selectedNode.data as CreativeData).utmSource || ""} 
+                      onChange={(e) => updateNodeData(selectedNode.id, { utmSource: e.target.value })}
+                      className="h-8 text-xs font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[10px] uppercase text-muted-foreground font-bold">UTM Content</Label>
+                    <Input 
+                      value={(selectedNode.data as CreativeData).utmContent || ""} 
+                      onChange={(e) => updateNodeData(selectedNode.id, { utmContent: e.target.value })}
+                      className="h-8 text-xs font-mono"
+                    />
+                  </div>
+                </div>
+                <div className="pt-2 border-t border-white/5">
+                  <p className="text-[10px] text-muted-foreground italic mb-3 bg-pink-500/5 p-2 rounded border border-pink-500/10">
+                    Dica: Use este nó para visualizar qual anúncio (FB/IG/Google) está gerando mais lucro no final do funil.
+                  </p>
+                  <Button variant="outline" className="w-full text-red-400 border-red-400/30 hover:bg-red-500/10" onClick={() => deleteNode(selectedNode.id)}>
+                    <Trash2 className="h-4 w-4 mr-2" /> Excluir Criativo
+                  </Button>
+                </div>
               </div>
             )}
           </aside>
