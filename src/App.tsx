@@ -178,6 +178,7 @@ const App = () => (
                 <Route path="verification-review" element={<VerificationReview />} />
                 <Route path="maria-ia" element={<MariaAI />} />
                 <Route path="email-templates" element={<EmailTemplates />} />
+                <Route path="marketplace" element={<Marketplace />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
