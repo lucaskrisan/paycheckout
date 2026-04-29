@@ -48,12 +48,13 @@ import {
   Loader2,
   Image as ImageIcon,
   MousePointer2,
+  TrendingUp,
 } from "lucide-react";
 import { AbTestTutorial } from "@/components/admin/AbTestTutorial";
 
 // ---------------- Types ----------------
 
-type NodeKind = "config" | "abtest" | "page" | "checkout" | "creative";
+type NodeKind = "config" | "abtest" | "page" | "checkout" | "creative" | "upsell";
 
 type ConfigData = { kind: "config"; label: string; testName: string; entryUrl: string; visits: number; stickyDays?: number; impressions?: number; sales?: number; revenue?: number };
 type AbTestData = { kind: "abtest"; label: string; subtitle: string; splits: { label: string; weight: number }[] };
@@ -73,6 +74,13 @@ type CheckoutData = {
   productId: string | null;
   offerId: string | null;
   templateId: string | null;
+  stats?: { impressions: number; clicks: number; sales: number; revenue: number };
+};
+type UpsellData = {
+  kind: "upsell";
+  label: string;
+  subtitle: string;
+  url: string;
   stats?: { impressions: number; clicks: number; sales: number; revenue: number };
 };
 type CreativeData = {
