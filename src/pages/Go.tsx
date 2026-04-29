@@ -10,6 +10,10 @@ export default function Go() {
 
   useEffect(() => {
     if (slug) {
+      if (slug === "track.js") {
+        window.location.href = `https://${PROJECT_ID}.supabase.co/functions/v1/ab-tracking`;
+        return;
+      }
       const type = searchParams.get("type") || "page";
       const utms = searchParams.toString();
       const finalUrl = `${REDIRECT_BASE}/${slug}?${utms}`;

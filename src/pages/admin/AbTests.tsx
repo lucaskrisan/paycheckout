@@ -292,10 +292,10 @@ export default function AbTests() {
             const linkPage = `${REDIRECT_BASE}/${t.slug}?type=page`;
             const linkCheckout = `${REDIRECT_BASE}/${t.slug}?type=checkout`;
             
-            // Pretty links using the application's own domain
-            const origin = window.location.origin;
-            const prettyLinkPage = `${origin}/go/${t.slug}?type=page`;
-            const prettyLinkCheckout = `${origin}/go/${t.slug}?type=checkout`;
+            // Pretty links using the application's clean domain
+            const publicDomain = "ck.panttera.com.br";
+            const prettyLinkPage = `https://${publicDomain}/go/${t.slug}?type=page`;
+            const prettyLinkCheckout = `https://${publicDomain}/go/${t.slug}?type=checkout`;
             return (
               <Card
                 key={t.id}
@@ -440,8 +440,8 @@ export default function AbTests() {
 
 function ScriptDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   // Script Panttera nativo — captura UTMs/src/sck e propaga para o checkout.
-  const origin = window.location.origin;
-  const trackingScript = `<script src="${origin}/functions/v1/ab-tracking" defer></script>`;
+  const publicDomain = "ck.panttera.com.br";
+  const trackingScript = `<script src="https://${publicDomain}/go/track.js" defer></script>`;
   const fbUtm = `utm_source=FB&utm_campaign={{campaign.name}}|{{campaign.id}}&utm_medium={{adset.name}}|{{adset.id}}&utm_content={{ad.name}}|{{ad.id}}&utm_term={{placement}}`;
 
   const copy = (text: string, label: string) => {

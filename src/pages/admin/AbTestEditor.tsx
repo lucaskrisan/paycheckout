@@ -429,8 +429,8 @@ function EditorInner() {
     setStickyDays(existing.sticky_days ?? 30);
     setSlug(existing.slug ?? null);
     setStatus(existing.status ?? "draft");
-    const origin = window.location.origin;
-    const generated = existing.slug ? `${origin}/go/${existing.slug}?type=page` : "";
+    const publicDomain = "ck.panttera.com.br";
+    const generated = existing.slug ? `https://${publicDomain}/go/${existing.slug}?type=page` : "";
     setEntryUrl(generated);
     const g = existing.graph;
     if (g && Array.isArray(g.nodes) && g.nodes.length > 0) {
@@ -667,8 +667,8 @@ function EditorInner() {
 
       if (!id) {
         theSlug = slugify(`${name}-${Math.random().toString(36).slice(2, 6)}`);
-        const origin = window.location.origin;
-        const generatedEntry = `${origin}/go/${theSlug}?type=page`;
+        const publicDomain = "ck.panttera.com.br";
+        const generatedEntry = `https://${publicDomain}/go/${theSlug}?type=page`;
         const { data, error } = await supabase
           .from("ab_tests" as any)
           .insert({
