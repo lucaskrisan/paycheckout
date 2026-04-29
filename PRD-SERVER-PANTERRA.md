@@ -57,13 +57,14 @@ O servidor da PanteraPay opera como um orquestrador de eventos distribuído. Ele
 **Função:** `abandoned-cart-email-recovery-cron`
 *   **Frequência:** Execução a cada 1 hora.
 *   **Filtros:**
-    *   Janela de tempo: Entre 20 minutos e 24 horas de abandono.
-    *   Status: `recovered = false`.
-    *   Exclusão: Se o cliente comprou qualquer produto do mesmo produtor na última hora, a recuperação é abortada.
+    *   **Janela de tempo:** 30 minutos (ajustável por produtor) até 24 horas após o abandono.
+    *   **Status:** `recovered = false`.
+    *   **Regra de Exclusão (Deduplicação):** A recuperação só é abortada se o cliente já tiver comprado **EXATAMENTE** o mesmo produto do carrinho abandonado (validado via tabela `pixel_events`). Compras de outros produtos não bloqueiam a recuperação.
+    *   **Segurança:** Emails em lista negra (`suppressed_emails`) são automaticamente ignorados.
 
 ## 5. Manutenção e Monitoramento
 *   **Logging:** Todas as Edge Functions escrevem logs em tempo real que podem ser consultados por erro de execução ou latência.
-*   **Domain Health:** Funções `domain-health-check` monitoram o status do SSL e DNS dos checkouts personalizados a cada 15 minutos.
+*   **Domain Health:** Funções `domain-health-check` monitoram o status do SSL e DNS dos checkouts personalizados (disparo manual sob demanda).
 
 ---
 **Documento gerado automaticamente pelo Sistema de Inteligência PanteraPay.**
