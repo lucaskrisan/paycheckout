@@ -2240,16 +2240,18 @@ const ProductEdit = () => {
               <p className="text-xs text-muted-foreground">Deixe vazio para usar o preço padrão do produto</p>
             </div>
 
-            <div className="space-y-1.5 pt-2">
-              <Label>Peso no split: {editCheckoutWeight}%</Label>
+            <div className="space-y-2 pt-2">
+              <div className="flex justify-between items-center">
+                <Label>Peso no split: <span className="text-primary font-bold">{editCheckoutWeight}%</span></Label>
+              </div>
               <input
-                type="range" min={10} max={90} step={10}
+                type="range" min={1} max={100} step={1}
                 value={editCheckoutWeight}
                 onChange={(e) => setEditCheckoutWeight(Number(e.target.value))}
-                className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+                className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary border border-primary/20"
               />
-              <p className="text-xs text-muted-foreground">
-                % de visitantes que verão esta variante no split.
+              <p className="text-[10px] text-muted-foreground leading-tight">
+                Ajuste a porcentagem de visitantes para esta variante.
               </p>
             </div>
 
