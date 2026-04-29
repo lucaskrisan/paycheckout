@@ -22,7 +22,7 @@ import { Breadcrumb as StepBreadcrumb, type StepBreadcrumbStep } from "@/compone
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useFacebookPixel, getVisitorId } from "@/hooks/useFacebookPixel";
+import { useFacebookPixel, getVisitorId, getAttributionUtms } from "@/hooks/useFacebookPixel";
 import { useAbandonedCart } from "@/hooks/useAbandonedCart";
 import { useCheckoutPresence } from "@/hooks/useCheckoutPresence";
 import { useGeo } from "@/hooks/useGeo";
@@ -336,16 +336,15 @@ const Checkout = () => {
   const { couponDiscount, bumpTotal, pixDiscount, frontEndAmount, finalAmount } = prices;
 
   const getUtms = () => {
+    // Use persisted UTMs logic (Layer 1)
+    const utms = getAttributionUtms();
     const params = new URLSearchParams(window.location.search);
+    
     // Prefer visitor ID from URL (A/B test), fallback to persistent browser ID
     const visitorId = params.get("_abv") || getVisitorId();
     
     return {
-      utm_source: params.get("utm_source") || undefined,
-      utm_medium: params.get("utm_medium") || undefined,
-      utm_campaign: params.get("utm_campaign") || undefined,
-      utm_content: params.get("utm_content") || undefined,
-      utm_term: params.get("utm_term") || undefined,
+      ...utms,
       // A/B test attribution
       ab_visitor_id: visitorId,
       ab_test_slug: params.get("_abt") || undefined,

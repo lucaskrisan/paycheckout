@@ -192,6 +192,37 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     return utms;
   }
 
+  /** Get persisted attribution UTMs or current ones if available (7-day persistence) */
+  export function getAttributionUtms(): Record<string, string> {
+    const current = captureUtms();
+    
+    // If current URL has UTMs, update persistence and return them
+    if (current.utm_source) {
+      localStorage.setItem('_panttera_utms', JSON.stringify({
+        ...current,
+        capturedAt: Date.now(),
+        landingUrl: window.location.href,
+      }));
+      return current;
+    }
+
+    // Otherwise, try to recover from localStorage
+    try {
+      const storedRaw = localStorage.getItem('_panttera_utms');
+      if (storedRaw) {
+        const stored = JSON.parse(storedRaw);
+        const sevenDays = 7 * 24 * 60 * 60 * 1000;
+        if (stored?.utm_source && (Date.now() - stored.capturedAt) < sevenDays) {
+          return stored;
+        }
+      }
+    } catch (e) {
+      console.warn("[getAttributionUtms] Failed to parse stored UTMs", e);
+    }
+    
+    return current;
+  }
+
   /** Capture ctwa_clid (WhatsApp Click-to-Action Click ID) from URL if present */
   function captureCtwaClid(): string | null {
     return new URLSearchParams(window.location.search).get("ctwa_clid");
