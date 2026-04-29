@@ -287,29 +287,31 @@ function CheckoutNode({ id, data }: NodeProps<Node<CheckoutData, "checkout">>) {
       }}
     >
       {data.stats && (
-        <div className="grid grid-cols-2 gap-1.5 mb-2">
-          <div className="flex flex-col text-[10px] px-2 py-1 rounded bg-white/5 border border-white/5">
-            <span className="text-muted-foreground">Conv.</span>
-            <span className="font-bold text-orange-400">
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          <div className="flex flex-col p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
+            <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Conversão</span>
+            <span className="text-sm font-black text-orange-400">
               {data.stats.impressions > 0 ? ((data.stats.sales / data.stats.impressions) * 100).toFixed(1) : 0}%
             </span>
           </div>
-          <div className="flex flex-col text-[10px] px-2 py-1 rounded bg-white/5 border border-white/5">
-            <span className="text-muted-foreground">Vendas</span>
-            <span className="font-bold">{data.stats.sales}</span>
+          <div className="flex flex-col p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
+            <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Vendas</span>
+            <span className="text-sm font-black text-white">{data.stats.sales}</span>
           </div>
         </div>
       )}
-      <div className="space-y-1">
-        <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Produto</div>
-        <div className="flex items-center gap-1.5 text-[11px] px-2 py-1.5 rounded bg-muted/40 border border-border/40 truncate">
-          {data.label}
+      <div className="space-y-3">
+        <div className="space-y-1">
+          <div className="text-[9px] text-slate-500 uppercase tracking-[0.1em] font-bold">Produto Vinculado</div>
+          <div className="flex items-center gap-2 text-[10px] px-3 py-2 rounded-lg bg-slate-800/40 border border-slate-800/60 truncate font-medium text-slate-200">
+            {data.label}
+          </div>
         </div>
-      </div>
-      <div className="space-y-1">
-        <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Configuração</div>
-        <div className="flex items-center gap-1.5 text-[11px] px-2 py-1.5 rounded bg-muted/40 border border-border/40 truncate text-orange-300">
-          {data.offerId ? "Oferta ativa" : "Preço Padrão"}
+        <div className="space-y-1">
+          <div className="text-[9px] text-slate-500 uppercase tracking-[0.1em] font-bold">Oferta / Preço</div>
+          <div className="flex items-center gap-2 text-[10px] px-3 py-2 rounded-lg bg-orange-500/5 border border-orange-500/10 truncate text-orange-300 font-bold">
+            {data.offerId ? "Oferta Customizada" : "Preço Padrão"}
+          </div>
         </div>
       </div>
     </NodeShell>
