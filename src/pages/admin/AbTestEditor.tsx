@@ -667,8 +667,8 @@ function EditorInner() {
 
       if (!id) {
         theSlug = slugify(`${name}-${Math.random().toString(36).slice(2, 6)}`);
-        const origin = window.location.origin;
-        const generatedEntry = `${origin}/go/${theSlug}?type=page`;
+        const publicDomain = "ck.panttera.com.br";
+        const generatedEntry = `https://${publicDomain}/go/${theSlug}?type=page`;
         const { data, error } = await supabase
           .from("ab_tests" as any)
           .insert({
