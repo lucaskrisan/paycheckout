@@ -45,6 +45,7 @@ import {
   HelpCircle,
   RefreshCw,
   Zap,
+  Loader2,
 } from "lucide-react";
 import { AbTestTutorial } from "@/components/admin/AbTestTutorial";
 

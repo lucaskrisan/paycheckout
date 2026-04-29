@@ -239,7 +239,7 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
         user_agent: navigator.userAgent,
         client_ip: clientIp || undefined,
         ctwa_clid: ctwaClid || undefined,
-        log_browser: true,
+        log_browser: false, // Don't force-log browser source from server events to avoid dual checkmark confusion
         geo,
         payment_method: (enrichedCustomData as any)?.payment_method,
       },

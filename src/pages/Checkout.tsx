@@ -53,6 +53,7 @@ const Checkout = () => {
   const location = useLocation();
   const requestedConfigId = useMemo(() => new URLSearchParams(location.search).get("config"), [location.search]);
   const [product, setProduct] = useState<Product | null>(null);
+  const isUSD = product?.currency === "USD";
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [producerBlocked, setProducerBlocked] = useState(false);
@@ -273,8 +274,22 @@ const Checkout = () => {
   const countdownMinutes = Number(sortedLayout.find((c) => c.type === "countdown")?.props?.minutes || 15);
   const submitLabel = sortedLayout.find((c) => c.type === "button")?.props?.text;
 
-  useEffect(() => { if (customer.name && customer.email && customer.cpf && customer.phone) { setAdvancedMatching(customer); trackLead(); } }, [customer.name, customer.email, customer.phone, customer.cpf, setAdvancedMatching, trackLead]);
-  useEffect(() => { trackAddPaymentInfo(paymentMethod); }, [paymentMethod, trackAddPaymentInfo]);
+  // Track Lead and Advanced Matching only when relevant data is present
+  useEffect(() => {
+    const hasMinData = customer.name && customer.email && (isUSD || (customer.cpf && customer.phone));
+    if (hasMinData) {
+      setAdvancedMatching(customer);
+      trackLead();
+    }
+  }, [customer.name, customer.email, customer.phone, customer.cpf, isUSD, setAdvancedMatching, trackLead]);
+
+  // Track AddPaymentInfo only when a payment action is actually initiated or method is explicitly selected by user
+  const hasAttemptedPayment = useRef(false);
+  useEffect(() => {
+    if (hasAttemptedPayment.current) {
+      trackAddPaymentInfo(paymentMethod);
+    }
+  }, [paymentMethod, trackAddPaymentInfo]);
 
   const prices = useMemo(() => {
     if (!product) return { couponDiscount: 0, bumpTotal: 0, pixDiscount: 0, frontEndAmount: 0, finalAmount: 0 };
@@ -318,8 +333,6 @@ const Checkout = () => {
       <div className="text-center space-y-3"><h1 className="text-2xl font-bold text-[#0F1111]">Produto não encontrado</h1><p className="text-[#565959]">Este produto não existe ou não está disponível.</p></div>
     </div>
   );
-
-  const isUSD = product.currency === "USD";
   const { couponDiscount, bumpTotal, pixDiscount, frontEndAmount, finalAmount } = prices;
 
   const getUtms = () => {
@@ -349,6 +362,7 @@ const Checkout = () => {
   const eventSourceUrl = window.location.origin + window.location.pathname;
 
   const handleSubmit = async () => {
+    hasAttemptedPayment.current = true;
     if (!customer.name || !customer.email) { toast.error(isUSD ? t.fillRequired : "Preencha todos os campos obrigatórios"); return; }
     if (!isUSD && (!customer.cpf || !customer.phone)) { toast.error("Preencha todos os campos obrigatórios"); return; }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
