@@ -146,7 +146,14 @@ Deno.serve(async (req) => {
       case 'checkout.session.completed':
         if (obj?.payment_status === 'paid') status = 'paid';
         break;
+      case 'invoice.payment_succeeded':
+        status = 'paid';
+        break;
       case 'payment_intent.succeeded':
+        // If it's part of an invoice, we handle it via invoice.payment_succeeded
+        if (obj?.invoice) return new Response(JSON.stringify({ received: true, skip: 'handled_by_invoice' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
         status = 'paid';
         break;
       case 'payment_intent.payment_failed':
