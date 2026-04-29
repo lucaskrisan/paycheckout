@@ -525,8 +525,12 @@ const Dashboard = () => {
           tooltip="Percentual de checkouts abandonados que foram convertidos via automação."
         />
         <DashboardApprovalCard
-          cardRate={cardApprovalRate}
-          pixRate={pixApprovalRate}
+          items={[
+            { label: "Cartão de Crédito", rate: cardApprovalRate },
+            { label: "PIX", rate: pixApprovalRate },
+          ]}
+          chargebackValue={fmtPrimary(pri("chargeback_amount", m.total_chargeback))}
+          chargebackCount={pri("chargeback_count", m.count_chargedback)}
         />
       </div>
 
