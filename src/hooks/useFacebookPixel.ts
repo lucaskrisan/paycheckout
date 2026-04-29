@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getCfGeo, getCountry as getGeoCountry, getCity, getState, getZip, getBestIp } from "@/lib/cfGeo";
+import { detectBot } from "@/lib/botDetection";
 
 declare global {
   interface Window {
@@ -224,6 +225,15 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
       };
     }
 
+    // Bot filter: eventos de "intenção" (PageView/ViewContent) exigem interação humana.
+    // Eventos de ação (AddPaymentInfo, AddToCart, Lead, Purchase, Subscribe) já são
+    // disparados após o usuário interagir, então só checam hard signals.
+    const intentEvent = eventName === "PageView" || eventName === "ViewContent" || eventName === "InitiateCheckout";
+    const botCheck = detectBot(/* requireHumanInteraction */ intentEvent);
+    if (botCheck.isBot) {
+      console.log(`[CAPI] Skipping ${eventName} — bot detected:`, botCheck.reason);
+    }
+
     supabase.functions.invoke("facebook-capi", {
       body: {
         product_id: productId,
@@ -242,6 +252,8 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
         log_browser: false, // Don't force-log browser source from server events to avoid dual checkmark confusion
         geo,
         payment_method: (enrichedCustomData as any)?.payment_method,
+        is_bot: botCheck.isBot,
+        bot_reason: botCheck.reason,
       },
     }).catch((err) => console.warn("[CAPI] non-blocking error:", err));
   }, [productId]);
