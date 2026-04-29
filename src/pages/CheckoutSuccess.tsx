@@ -73,23 +73,24 @@ const CheckoutSuccess = () => {
       try {
         const { data: orderData, error } = await supabase
           .from("orders")
-          .select("total_amount, currency, items:order_items(product_id, price, products(name))")
+          .select("amount, items:order_items(product_id, price, products(name))")
           .eq("id", orderId)
           .single();
 
         if (error || !orderData) return;
 
         purchaseFiredRef.current = true;
-        const mainItem = orderData.items.find((i: any) => i.product_id === productId);
-        const bumpItems = orderData.items
-          .filter((i: any) => i.product_id !== productId)
+        const mainItem = (orderData as any).items?.find((i: any) => i.product_id === productId);
+        const bumpItems = (orderData as any).items
+          ?.filter((i: any) => i.product_id !== productId)
           .map((i: any) => ({
             id: i.product_id,
             price: i.price,
             name: i.products?.name,
-          }));
+          })) || [];
 
-        trackPurchase(orderData.total_amount, orderData.currency || "BRL", orderId, bumpItems);
+        // amount is the column name, default currency BRL if missing
+        trackPurchase((orderData as any).amount, "BRL", orderId, bumpItems);
       } catch (err) {
         console.error("[CheckoutSuccess] Error firing backup purchase pixel:", err);
       }
