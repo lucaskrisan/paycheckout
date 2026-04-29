@@ -316,8 +316,8 @@ export default function AbTests() {
                     </div>
 
                     <div className="space-y-1.5 text-xs">
-                      <CompactLinkRow label="Página" url={linkPage} />
-                      <CompactLinkRow label="Checkout" url={linkCheckout} />
+                      <CompactLinkRow label="Página" url={prettyLinkPage} />
+                      <CompactLinkRow label="Checkout" url={prettyLinkCheckout} />
                       <div className="text-xs text-muted-foreground pl-[68px]">{t.variants.length} variantes</div>
                     </div>
 
