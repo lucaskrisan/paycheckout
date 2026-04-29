@@ -15,34 +15,28 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
   );
 
-  // Para cada pixel, busca o evento mais recente e atualiza last_event_at
-  const { data: pixels } = await supabase
-    .from("product_pixels")
-    .select("id, product_id");
+  // Use an aggregate query to update all pixels in a single efficient operation
+  const { data: recentEvents, error: queryErr } = await supabase.rpc('get_latest_pixel_events_per_product');
+
+  if (queryErr) {
+    console.error('[pixel-monitor] RPC error:', queryErr);
+    return new Response(JSON.stringify({ error: queryErr.message }), { status: 500, headers: corsHeaders });
+  }
 
   let updated = 0;
-  let stale = 0;
-
-  for (const p of pixels ?? []) {
-    const { data: ev } = await supabase
-      .from("pixel_events")
-      .select("created_at")
-      .eq("product_id", p.product_id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (ev?.created_at) {
-      await supabase
-        .from("product_pixels")
-        .update({ last_event_at: ev.created_at })
-        .eq("id", p.id);
-      updated++;
-
-      const ageMin = (Date.now() - new Date(ev.created_at).getTime()) / 60000;
-      if (ageMin > 60) stale++;
-    }
+  for (const row of recentEvents || []) {
+    const { error: updErr } = await supabase
+      .from('product_pixels')
+      .update({ last_event_at: row.latest_event })
+      .eq('product_id', row.product_id);
+    
+    if (!updErr) updated++;
   }
+
+  return new Response(
+    JSON.stringify({ checked: (recentEvents ?? []).length, updated }),
+    { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
 
   return new Response(
     JSON.stringify({ checked: (pixels ?? []).length, updated, stale }),

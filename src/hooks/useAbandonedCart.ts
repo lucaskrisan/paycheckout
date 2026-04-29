@@ -81,7 +81,8 @@ export function useAbandonedCart({
       }
 
       if (createdRef.current) return;
-      createdRef.current = true; // Set BEFORE await to prevent race condition
+      // We'll set createdRef.current = true ONLY after the success response 
+      // to ensure we don't block retries on transient network failures.
 
       const clientId = crypto.randomUUID();
       const { error } = await supabase
@@ -107,6 +108,7 @@ export function useAbandonedCart({
         } as any);
 
       if (!error) {
+        createdRef.current = true;
         cartIdRef.current = clientId;
       } else {
         console.error("[abandoned-cart] insert failed:", error.message);

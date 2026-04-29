@@ -3102,6 +3102,13 @@ export type Database = {
             }
             Returns: Json
           }
+      get_latest_pixel_events_per_product: {
+        Args: never
+        Returns: {
+          latest_event: string
+          product_id: string
+        }[]
+      }
       get_order_delivery_links: {
         Args: { p_order_id: string }
         Returns: {

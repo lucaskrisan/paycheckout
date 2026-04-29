@@ -83,7 +83,8 @@ Deno.serve(async (req) => {
     // supabaseAdmin already created above for rate limiting
 
     const body = await req.json();
-    const { amount, customer, payment_method, installments, product_id, is_subscription, billing_cycle, coupon_id, config_id, bump_product_ids, checkout_url, utms } = body;
+    const { amount, customer, payment_method, product_id, is_subscription, billing_cycle, coupon_id, config_id, bump_product_ids, checkout_url, utms } = body;
+    const installments = Math.min(12, Math.max(1, Number(body.installments || 1)));
 
     if (Array.isArray(bump_product_ids) && bump_product_ids.length > 50) {
       return new Response(
