@@ -249,6 +249,7 @@ Deno.serve(async (req) => {
         event_value: eventValue,
         customer_country: customerCountry,
         customer_city: customerCity,
+        is_bot: finalIsBot,
       });
 
       // Browser-side log (quando o frontend também disparou via fbq)
@@ -265,8 +266,19 @@ Deno.serve(async (req) => {
           event_value: eventValue,
           customer_country: customerCountry,
           customer_city: customerCity,
+          is_bot: finalIsBot,
         });
       }
+    }
+
+    // 🤖 BOT FILTER: registramos o evento (pra auditoria), mas NÃO enviamos pra Meta.
+    // Mantém Meta enxuto e impede que o algoritmo otimize pra audiência ruim.
+    if (finalIsBot) {
+      console.log(`[facebook-capi] 🤖 Bot detected (${finalBotReason}) — event ${event_name} logged but NOT sent to Meta`);
+      return new Response(
+        JSON.stringify({ success: true, skipped: 'bot_filter', reason: finalBotReason }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     if (!pixels || pixels.length === 0) {
