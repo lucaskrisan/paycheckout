@@ -1869,6 +1869,45 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_logs: {
+        Row: {
+          created_at: string | null
+          customer_email: string | null
+          error: Json | null
+          function_name: string
+          id: string
+          level: string | null
+          message: string | null
+          payload: Json | null
+          product_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_email?: string | null
+          error?: Json | null
+          function_name: string
+          id?: string
+          level?: string | null
+          message?: string | null
+          payload?: Json | null
+          product_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_email?: string | null
+          error?: Json | null
+          function_name?: string
+          id?: string
+          level?: string | null
+          message?: string | null
+          payload?: Json | null
+          product_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       pending_sends: {
         Row: {
           created_at: string

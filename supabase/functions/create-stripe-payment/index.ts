@@ -6,20 +6,44 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+async function logPaymentError(supabase: any, functionName: string, message: string, payload: any, error: any, userId?: string, productId?: string, email?: string) {
+  try {
+    await supabase.from('payment_logs').insert({
+      function_name: functionName,
+      level: 'error',
+      message,
+      payload,
+      error: error ? { message: error.message, stack: error.stack, ...error } : null,
+      user_id: userId,
+      product_id: productId,
+      customer_email: email
+    });
+  } catch (e) {
+    console.error('[logger] Failed to log error to DB:', e);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const supabaseAdmin = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  );
+
+  let body: any = {};
+  try {
+    // Parse body early for logging context
+    const clonedReq = req.clone();
+    body = await clonedReq.json();
+  } catch (e) { /* ignore */ }
+
   try {
     // --- Rate Limiting ---
     const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
       || req.headers.get('cf-connecting-ip') || 'unknown';
-
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    );
 
     const { data: rlData } = await supabaseAdmin.rpc('check_rate_limit', {
       p_identifier: clientIp,
@@ -417,6 +441,19 @@ Deno.serve(async (req) => {
     // Stripe card errors → 400 with friendly message
     const msg = error?.raw?.message || error?.message || 'Payment failed';
     console.error('[create-stripe-payment] Error:', msg);
+    
+    // Log to database for debugging
+    await logPaymentError(
+      supabaseAdmin, 
+      'create-stripe-payment', 
+      msg, 
+      body, 
+      error, 
+      body?.user_id, // body doesn't always have it but we'll try
+      body?.product_id, 
+      body?.customer?.email
+    );
+
     const status = error?.statusCode && error.statusCode >= 400 && error.statusCode < 500 ? 400 : 500;
     return new Response(
       JSON.stringify({ error: msg }),
