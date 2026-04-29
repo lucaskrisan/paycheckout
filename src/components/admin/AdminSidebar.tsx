@@ -86,28 +86,27 @@ const analiseItems = [
   { title: "Financeiro", url: "/admin/financeiro", icon: Wallet },
 ];
 
-// 5. MARKETING — ferramentas de tração e apps
-const marketingItems = [
-  { title: "Apps", url: "/admin/integrations", icon: Zap },
-  { title: "WhatsApp", url: "/admin/whatsapp", icon: MessageSquare },
-  { title: "Pixels Espelho", url: "/admin/pixel-mirrors", icon: Zap },
-  { title: "Testes A/B", url: "/admin/ab-tests", icon: Beaker },
-];
-
-// 6. CONFIGURAÇÕES — collapsible, menos frequente
+// 5. CONFIGURAÇÕES — collapsible, menos frequente
 const configItems = [
   { title: "Gateways", url: "/admin/gateway-management", icon: CreditCard },
+  { title: "Integrações", url: "/admin/integrations", icon: Zap },
+  
   { title: "Domínios", url: "/admin/domains", icon: Globe },
+  
   { title: "Webhook", url: "/admin/webhooks", icon: Webhook },
+  
   { title: "Notificações", url: "/admin/notifications", icon: Bell },
   { title: "Minha conta", url: "/admin/my-account", icon: User },
 ];
 
-// Item exclusivo super_admin dentro de config - Removido App Mobile a pedido
-const configSuperAdminOnly = [];
+// Item exclusivo super_admin dentro de config
+const configSuperAdminOnly = [
+  { title: "App Mobile", url: "/admin/pwa", icon: Smartphone },
+];
 
-// 7. SUPER ADMIN — organizado por seções
+// 6. SUPER ADMIN — organizado por seções
 const superAdminAutomacao = [
+  { title: "WhatsApp", url: "/admin/whatsapp", icon: MessageSquare },
   { title: "Nina IA", url: "/admin/maria-ia", icon: Sparkles },
   { title: "Central de E-mails", url: "/admin/email-templates", icon: Mail },
   { title: "Controle de Carrinhos", url: "/admin/cart-control", icon: ShoppingCart },
@@ -129,6 +128,8 @@ const superAdminSeguranca = [
 const superAdminRecursos = [
   { title: "Roadmap", url: "/admin/roadmap", icon: ClipboardList },
   { title: "Manual Técnico", url: "/admin/manual", icon: BookOpen },
+  { title: "Pixels Espelho", url: "/admin/pixel-mirrors", icon: Zap },
+  { title: "Testes A/B", url: "/admin/ab-tests", icon: Beaker },
 ];
 
 /* ── Componente ────────────────────────────────────── */
@@ -223,13 +224,7 @@ export function AdminSidebar() {
           <SidebarGroupContent>{renderItems(analiseItems)}</SidebarGroupContent>
         </SidebarGroup>
 
-        {/* 5. MARKETING */}
-        <SidebarGroup>
-          <SidebarGroupLabel>{renderSectionLabel("Marketing")}</SidebarGroupLabel>
-          <SidebarGroupContent>{renderItems(marketingItems)}</SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* 6. CONFIGURAÇÕES (collapsible) */}
+        {/* 5. CONFIGURAÇÕES (collapsible) */}
         <SidebarGroup>
           <SidebarGroupLabel>{renderSectionLabel("Geral")}</SidebarGroupLabel>
           <SidebarGroupContent>
