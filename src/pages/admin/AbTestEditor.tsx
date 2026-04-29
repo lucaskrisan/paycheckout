@@ -582,6 +582,7 @@ const PALETTE: { kind: NodeKind; label: string; icon: React.ReactNode; color: st
   { kind: "abtest", label: "Teste A/B", icon: <BarChart3 className="h-4 w-4" />, color: "#a855f7" },
   { kind: "page", label: "Página de Vendas", icon: <FileText className="h-4 w-4" />, color: "#10b981" },
   { kind: "checkout", label: "Checkout", icon: <ShoppingCart className="h-4 w-4" />, color: "#f97316" },
+  { kind: "upsell", label: "Upsell", icon: <TrendingUp className="h-4 w-4" />, color: "#8b5cf6" },
 ];
 
 function PaletteItem({ kind, label, icon, color }: { kind: NodeKind; label: string; icon: React.ReactNode; color: string }) {
