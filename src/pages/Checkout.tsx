@@ -755,10 +755,11 @@ const Checkout = () => {
 
         // 3) Payment succeeded
         const paymentId = result.paymentIntentId || data?.payment_intent_id;
+        const trackingId = data?.order_id || paymentId;
         toast.success(t.paymentSuccess);
-        trackPurchase(finalAmount, "USD", paymentId, selectedBumpItems);
+        trackPurchase(finalAmount, "USD", trackingId, selectedBumpItems);
         if (product.is_subscription)
-          trackSubscribe(finalAmount, "USD", paymentId);
+          trackSubscribe(finalAmount, "USD", trackingId);
         await markPurchased();
         navigate(
           `/checkout/sucesso?product=${encodeURIComponent(product.name)}&method=credit_card&email=${encodeURIComponent(customer.email)}&product_id=${product.id}${data.order_id ? `&order_id=${data.order_id}` : ""}${product.delivery_method ? `&delivery=${product.delivery_method}` : ""}&lang=en`,
