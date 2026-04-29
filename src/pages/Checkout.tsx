@@ -266,7 +266,7 @@ const Checkout = () => {
           .order("sort_order"),
         supabase
           .from("checkout_builder_configs" as any)
-          .select("id, layout, price, is_default, is_split_active")
+          .select("id, layout, price, is_default, is_split_active, traffic_weight")
           .eq("product_id", productId),
       ]);
 
@@ -343,18 +343,25 @@ const Checkout = () => {
         setProduct(p);
 
         if (targetConfigId && productId) {
-          supabase
-            .from("pixel_events")
-            .insert({
-              product_id: productId,
-              event_name: "ViewContent",
-              source: "browser",
-              visitor_id: getVisitorId(),
-              event_id: `view_${targetConfigId}_${Date.now()}`,
-              user_id: p.user_id,
-              metadata: { config_id: targetConfigId },
-            } as any)
-            .then(() => {});
+          (async () => {
+            const { detectBot } = await import("@/lib/botDetection");
+            const botCheck = detectBot(false);
+            if (!botCheck.isBot) {
+              supabase
+                .from("pixel_events")
+                .insert({
+                  product_id: productId,
+                  event_name: "ViewContent",
+                  source: "browser",
+                  visitor_id: getVisitorId(),
+                  event_id: `view_${targetConfigId}_${Date.now()}`,
+                  user_id: p.user_id,
+                  is_bot: false,
+                  metadata: { config_id: targetConfigId },
+                } as any)
+                .then(() => {});
+            }
+          })();
         }
         if (p.is_subscription || p.currency === "USD")
           setPaymentMethod("credit_card");

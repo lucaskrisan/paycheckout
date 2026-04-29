@@ -276,6 +276,7 @@ const ProductEdit = () => {
           .select("metadata")
           .eq("product_id", productId)
           .eq("event_name", "ViewContent")
+          .eq("is_bot", false)
           .gte("created_at", testStartDate),
         supabase.from("orders")
           .select("amount, metadata")
@@ -324,25 +325,33 @@ const ProductEdit = () => {
     if (!confirm(`Isso vai definir "${winner.name}" como padrão e pausar o split de tráfego. Confirmar?`)) return;
     
     try {
-      // 1. Set is_default=true on winner, false on others
-      // 2. Set is_split_active=false on all
-      const { error } = await supabase.from("checkout_builder_configs")
+      // 1. Remover is_default de todos do produto e desativar split
+      const { error: resetError } = await supabase.from("checkout_builder_configs")
         .update({ 
           is_default: false,
           is_split_active: false
         })
         .eq("product_id", productId);
       
-      if (error) throw error;
+      if (resetError) throw resetError;
 
-      await supabase.from("checkout_builder_configs")
+      // 2. Setar is_default no vencedor
+      const { error: winnerError } = await supabase.from("checkout_builder_configs")
         .update({ is_default: true })
         .eq("id", winner.id);
 
-      toast.success(`Teste encerrado! "${winner.name}" agora é o checkout padrão.`);
+      if (winnerError) {
+        // Tentativa de rollback manual se o segundo falhar
+        toast.error("Erro ao definir vencedor. O split foi pausado, mas verifique o checkout padrão.");
+        console.error("Winner error:", winnerError);
+      } else {
+        toast.success(`Teste encerrado! "${winner.name}" agora é o checkout padrão.`);
+      }
+      
       loadCheckouts();
     } catch (err: any) {
       toast.error("Erro ao declarar vencedor: " + err.message);
+      loadCheckouts();
     }
   };
 
