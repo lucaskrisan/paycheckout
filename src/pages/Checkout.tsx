@@ -333,7 +333,6 @@ const Checkout = () => {
       <div className="text-center space-y-3"><h1 className="text-2xl font-bold text-[#0F1111]">Produto não encontrado</h1><p className="text-[#565959]">Este produto não existe ou não está disponível.</p></div>
     </div>
   );
-  const isUSD = product.currency === "USD";
   const { couponDiscount, bumpTotal, pixDiscount, frontEndAmount, finalAmount } = prices;
 
   const getUtms = () => {
