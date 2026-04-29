@@ -56,16 +56,15 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // Fetch the secret for the user
-    // We assume the caller is authenticated and we verify the shop_id belongs to them
-    const { data: integration, error } = await supabase
-      .from('gatflow_integrations')
-      .select('api_secret')
-      .eq('shop_id', shop_id)
+    // Fetch the shared secret from marketplace_partners
+    const { data: partner, error: partnerError } = await supabase
+      .from('marketplace_partners')
+      .select('shared_secret')
+      .eq('name', 'GatFlow')
       .single();
 
-    if (error || !integration?.api_secret) {
-      return new Response(JSON.stringify({ error: 'GatFlow integration not configured or secret missing' }), {
+    if (partnerError || !partner?.shared_secret) {
+      return new Response(JSON.stringify({ error: 'GatFlow partner configuration missing' }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -77,7 +76,7 @@ Deno.serve(async (req) => {
       exp: Math.floor(Date.now() / 1000) + (5 * 60) // 5 minutes expiration
     };
 
-    const token = await signHS256(payload, integration.api_secret);
+    const token = await signHS256(payload, partner.shared_secret);
     const ssoUrl = `https://gatflow.com/auth/sso?token=${token}`;
 
     return new Response(JSON.stringify({ url: ssoUrl }), {
