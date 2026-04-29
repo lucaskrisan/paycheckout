@@ -108,6 +108,7 @@ const Dashboard = () => {
   const [metrics, setMetrics] = useState<DashboardMetrics>(emptyMetrics);
   const [period, setPeriod] = useState<Period>("today");
   const [refreshing, setRefreshing] = useState(false);
+  const loadingRequestRef = useRef<number>(0);
   const [initialLoading, setInitialLoading] = useState(true);
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("all");
@@ -226,14 +227,21 @@ const Dashboard = () => {
 
   const loadData = useCallback(async (isRefresh = false) => {
     if (!user) return;
+    
+    // Request ID for ordering control
+    const requestId = ++loadingRequestRef.current;
     if (isRefresh) setRefreshing(true);
+
     try {
       await Promise.all([fetchMetrics(), fetchProducts(), fetchWeekdayOrders(), fetchChartOverride()]);
     } catch (error) {
       console.error("[dashboard] loadData error:", error);
     } finally {
-      if (isRefresh) setRefreshing(false);
-      setInitialLoading(false);
+      // Only update UI state if this is still the latest request
+      if (requestId === loadingRequestRef.current) {
+        if (isRefresh) setRefreshing(false);
+        setInitialLoading(false);
+      }
     }
   }, [fetchMetrics, fetchProducts, fetchWeekdayOrders, fetchChartOverride, user]);
 

@@ -64,22 +64,29 @@ const CheckoutSuccess = () => {
 
   // Fetch all delivery links for the order (main product + bumps)
   useEffect(() => {
-    if (!orderId) {
-      if (delivery === "appsell" && productId) {
-        (supabase.rpc as any)("get_appsell_login_url", { p_product_id: productId })
-          .then(({ data }: { data: unknown }) => {
+    let isCancelled = false;
+
+    const fetchLinks = async () => {
+      try {
+        if (!orderId) {
+          if (delivery === "appsell" && productId) {
+            const { data, error } = await (supabase.rpc as any)("get_appsell_login_url", { p_product_id: productId });
+            if (isCancelled) return;
+            if (error) throw error;
             if (typeof data === "string" && data) {
               setAppsellLoginUrl(data);
               setDeliveryLinks([{ delivery_type: "appsell", access_url: data }]);
             }
-          });
-      } else {
-        setDeliveryLinks([{ delivery_type: delivery, access_url: null }]);
-      }
-      return;
-    }
-    (supabase.rpc as any)("get_order_delivery_links", { p_order_id: orderId })
-      .then(({ data }: { data: any }) => {
+          } else {
+            setDeliveryLinks([{ delivery_type: delivery, access_url: null }]);
+          }
+          return;
+        }
+
+        const { data, error } = await (supabase.rpc as any)("get_order_delivery_links", { p_order_id: orderId });
+        if (isCancelled) return;
+        if (error) throw error;
+
         if (data && data.length > 0) {
           setDeliveryLinks(data);
           const appsell = data.find((d: any) => d.delivery_type === "appsell");
@@ -87,8 +94,18 @@ const CheckoutSuccess = () => {
         } else {
           setDeliveryLinks([{ delivery_type: delivery, access_url: null }]);
         }
-      });
-  }, [orderId, delivery, productId]);
+      } catch (err) {
+        console.error("[checkout-success] Error fetching links:", err);
+        if (!isCancelled) {
+          toast.error(isEN ? "Failed to load access links. Contact support." : "Falha ao carregar links de acesso. Contate o suporte.");
+          setDeliveryLinks([{ delivery_type: delivery, access_url: null }]);
+        }
+      }
+    };
+
+    fetchLinks();
+    return () => { isCancelled = true; };
+  }, [orderId, delivery, productId, isEN]);
 
   // Load upsell offers
   useEffect(() => {

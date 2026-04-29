@@ -228,7 +228,11 @@ Deno.serve(async (req) => {
     const emailStatus = enqueueError ? "error" : "sent";
 
     if (enqueueError) {
-      console.error("[send-abandoned-cart-email] Enqueue error:", enqueueError);
+      console.error("[send-abandoned-cart-email] Enqueue error details:", {
+        cart_id,
+        error: enqueueError,
+        customer_email: cart.customer_email
+      });
     }
 
     // Update cart
