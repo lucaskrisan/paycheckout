@@ -104,13 +104,10 @@ const configItems = [
 ];
 
 // Item exclusivo super_admin dentro de config
-const configSuperAdminOnly = [
-  { title: "App Mobile", url: "/admin/pwa", icon: Smartphone },
-];
+const configSuperAdminOnly = [];
 
-// 6. SUPER ADMIN — organizado por seções
+// 7. SUPER ADMIN — organizado por seções
 const superAdminAutomacao = [
-  { title: "WhatsApp", url: "/admin/whatsapp", icon: MessageSquare },
   { title: "Nina IA", url: "/admin/maria-ia", icon: Sparkles },
   { title: "Central de E-mails", url: "/admin/email-templates", icon: Mail },
   { title: "Controle de Carrinhos", url: "/admin/cart-control", icon: ShoppingCart },
