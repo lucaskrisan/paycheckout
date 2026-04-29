@@ -70,12 +70,21 @@ const CheckoutSuccess = () => {
       try {
         if (!orderId) {
           if (delivery === "appsell" && productId) {
-            const { data, error } = await (supabase.rpc as any)("get_appsell_login_url", { p_product_id: productId });
-            if (isCancelled) return;
-            if (error) throw error;
-            if (typeof data === "string" && data) {
-              setAppsellLoginUrl(data);
-              setDeliveryLinks([{ delivery_type: "appsell", access_url: data }]);
+            try {
+              const { data, error } = await (supabase.rpc as any)("get_appsell_login_url", { p_product_id: productId });
+              if (isCancelled) return;
+              if (error) throw error;
+              if (typeof data === "string" && data) {
+                setAppsellLoginUrl(data);
+                setDeliveryLinks([{ delivery_type: "appsell", access_url: data }]);
+              }
+            } catch (err) {
+              console.error("[checkout-success] appsell login error:", err);
+              if (!isCancelled) {
+                toast.error(isEN 
+                  ? "Could not load access link. Please check your email." 
+                  : "Não foi possível carregar o link de acesso. Verifique seu e-mail.");
+              }
             }
           } else {
             setDeliveryLinks([{ delivery_type: delivery, access_url: null }]);

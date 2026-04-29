@@ -23,14 +23,22 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: queryErr.message }), { status: 500, headers: corsHeaders });
   }
 
-  let updated = 0;
-  for (const row of recentEvents || []) {
-    const { error: updErr } = await supabase
+  // Bug 8: Batch upsert to avoid N-queries loop
+  const updates = (recentEvents || []).map((row: any) => ({
+    product_id: row.product_id,
+    last_event_at: row.latest_event,
+  }));
+
+  if (updates.length > 0) {
+    const { error: upsertErr } = await supabase
       .from('product_pixels')
-      .update({ last_event_at: row.latest_event })
-      .eq('product_id', row.product_id);
+      .upsert(updates, { onConflict: 'product_id' });
     
-    if (!updErr) updated++;
+    if (upsertErr) {
+      console.error('[pixel-monitor] Upsert error:', upsertErr);
+      return new Response(JSON.stringify({ error: upsertErr.message }), { status: 500, headers: corsHeaders });
+    }
+    updated = updates.length;
   }
 
   return new Response(

@@ -109,20 +109,29 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check if the customer already has a paid order for this product
-    const { data: paidOrder } = await supabaseAdmin
-      .from("orders")
-      .select("id")
-      .eq("product_id", cart.product_id)
-      .eq("customer_id", cart.customer_id || '')
-      .in("status", ["paid", "approved", "completed"])
-      .limit(1);
+    // Bug 3: Verify if the customer already has a paid order for this product
+    const { data: customerRecord } = await supabaseAdmin
+      .from('customers')
+      .select('id')
+      .eq('email', cart.customer_email)
+      .maybeSingle();
 
-    if (paidOrder && paidOrder.length > 0) {
-      return new Response(JSON.stringify({ error: "Customer already purchased this product" }), {
-        status: 409,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (customerRecord) {
+      const { data: paidOrder } = await supabaseAdmin
+        .from('orders')
+        .select('id')
+        .eq('customer_id', customerRecord.id)
+        .eq('product_id', cart.product_id)
+        .in('status', ['paid', 'approved', 'completed'])
+        .maybeSingle();
+
+      if (paidOrder) {
+        console.log(`[send-abandoned-cart-email] Customer ${cart.customer_email} already purchased product ${cart.product_id} - skipping email`);
+        return new Response(JSON.stringify({ error: "Customer already purchased this product" }), {
+          status: 409,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     // Fetch checkout settings for company name
