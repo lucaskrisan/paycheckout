@@ -496,7 +496,7 @@ function EditorInner() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("ab_test_variants")
-        .select("label, impressions, clicks, sales, revenue, page_url, checkout_url")
+        .select("label, impressions, clicks, sales, revenue, page_url, checkout_url, sort_order")
         .eq("test_id", testId);
       if (error) throw error;
       return data;
@@ -514,19 +514,33 @@ function EditorInner() {
               ...n, 
               data: { 
                 ...n.data, 
-                stats: { impressions: Number(s.impressions), clicks: Number(s.clicks), sales: Number(s.sales), revenue: Number(s.revenue) } 
+                stats: { 
+                  impressions: Number(s.impressions), 
+                  clicks: Number(s.clicks), 
+                  sales: Number(s.sales), 
+                  revenue: Number(s.revenue) 
+                } 
               } 
             } as FlowNode;
           }
         }
         if (n.type === "checkout") {
-          const s = stats.find(st => st.checkout_url && st.checkout_url.includes((n.data as CheckoutData).productId || ""));
+          // Improved matching: find the variant that points to this specific checkout via sort_order or label
+          // In our flow, Checkout A is usually first (sort_order 0), B is second (1)
+          const nodeIndex = n.id === "checkout-a" ? 0 : n.id === "checkout-b" ? 1 : -1;
+          const s = nodeIndex !== -1 ? stats.find(st => st.sort_order === nodeIndex) : null;
+          
           if (s) {
             return { 
               ...n, 
               data: { 
                 ...n.data, 
-                stats: { impressions: Number(s.impressions), clicks: Number(s.clicks), sales: Number(s.sales), revenue: Number(s.revenue) } 
+                stats: { 
+                  impressions: Number(s.clicks), // For checkout nodes, impressions are actually LP clicks
+                  clicks: Number(s.clicks), 
+                  sales: Number(s.sales), 
+                  revenue: Number(s.revenue) 
+                } 
               } 
             } as FlowNode;
           }
