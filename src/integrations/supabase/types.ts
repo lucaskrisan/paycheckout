@@ -1912,6 +1912,7 @@ export type Database = {
           event_name: string
           event_value: number | null
           id: string
+          is_bot: boolean
           pixel_id: string | null
           product_id: string
           source: string
@@ -1927,6 +1928,7 @@ export type Database = {
           event_name: string
           event_value?: number | null
           id?: string
+          is_bot?: boolean
           pixel_id?: string | null
           product_id: string
           source?: string
@@ -1942,6 +1944,7 @@ export type Database = {
           event_name?: string
           event_value?: number | null
           id?: string
+          is_bot?: boolean
           pixel_id?: string | null
           product_id?: string
           source?: string

@@ -130,6 +130,7 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
       .select("id, product_id, event_name, source, created_at, customer_name, visitor_id, event_id, event_value, customer_country, customer_city")
       .gte("created_at", since)
       .eq("user_id", userId)
+      .eq("is_bot", false)
       .order("created_at", { ascending: false })
       .limit(1000);
     if (filterProduct !== "all") feedQuery = feedQuery.eq("product_id", filterProduct);
@@ -146,6 +147,7 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
           .from("pixel_events")
           .select("id", { count: "exact", head: true })
           .gte("created_at", since)
+          .eq("is_bot", false)
           .eq("event_name", eventName);
         if (userId) q = q.eq("user_id", userId);
         if (filterProduct !== "all") q = q.eq("product_id", filterProduct);
@@ -160,6 +162,7 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
     let lhQ = supabase
       .from("pixel_events")
       .select("id", { count: "exact", head: true })
+      .eq("is_bot", false)
       .gte("created_at", lastHour);
     if (userId) lhQ = lhQ.eq("user_id", userId);
     if (filterProduct !== "all") lhQ = lhQ.eq("product_id", filterProduct);
@@ -230,6 +233,7 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
         if (userId && ne.user_id !== userId) return;
         if (filterProduct !== "all" && ne.product_id !== filterProduct) return;
         if (ne.visitor_id?.startsWith("sim_")) return;
+        if (ne.is_bot === true) return; // 🤖 ignora bots no realtime
         if (new Date(ne.created_at).getTime() < since) return;
 
         setEvents((prev) => [ne, ...prev].slice(0, 500));
