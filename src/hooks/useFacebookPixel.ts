@@ -223,8 +223,8 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     return "BRL";
   }, []);
 
-  /** Capture UTM params from current URL for campaign attribution */
-  function captureUtms(): Record<string, string> {
+  // Internal use within the hook (always current URL)
+  const captureCurrentUtms = () => {
     const p = new URLSearchParams(window.location.search);
     const utms: Record<string, string> = {};
     ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"].forEach((k) => {
@@ -232,7 +232,7 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
       if (v) utms[k] = v;
     });
     return utms;
-  }
+  };
 
   /** Capture ctwa_clid (WhatsApp Click-to-Action Click ID) from URL if present */
   function captureCtwaClid(): string | null {
@@ -249,7 +249,7 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     const fbp = ensureFbp();
     const geo = buildGeoPayload();
     const clientIp = getBestIp();
-    const utms = captureUtms();
+    const utms = captureCurrentUtms();
     const ctwaClid = captureCtwaClid();
     const referrer = document.referrer || undefined;
 
