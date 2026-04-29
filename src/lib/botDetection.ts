@@ -44,7 +44,7 @@ const BOT_UA_PATTERNS = [
   /applebot/i,
   /linkedinbot/i,
   /twitterbot/i,
-  /whatsapp/i,
+  // /whatsapp/i, <-- Removido: tráfego real de vendas vem muito daqui
   /telegrambot/i,
   /discordbot/i,
   /preview/i,
