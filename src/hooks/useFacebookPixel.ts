@@ -15,6 +15,48 @@ function generateEventId(eventName: string): string {
   return `${eventName}_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
+/** Capture UTM params from current URL for campaign attribution */
+export function captureUtms(): Record<string, string> {
+  const p = new URLSearchParams(window.location.search);
+  const utms: Record<string, string> = {};
+  ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"].forEach((k) => {
+    const v = p.get(k);
+    if (v) utms[k] = v;
+  });
+  return utms;
+}
+
+/** Get persisted attribution UTMs or current ones if available (7-day persistence) */
+export function getAttributionUtms(): Record<string, string> {
+  const current = captureUtms();
+  
+  // If current URL has UTMs, update persistence and return them
+  if (current.utm_source) {
+    localStorage.setItem('_panttera_utms', JSON.stringify({
+      ...current,
+      capturedAt: Date.now(),
+      landingUrl: window.location.href,
+    }));
+    return current;
+  }
+
+  // Otherwise, try to recover from localStorage
+  try {
+    const storedRaw = localStorage.getItem('_panttera_utms');
+    if (storedRaw) {
+      const stored = JSON.parse(storedRaw);
+      const sevenDays = 7 * 24 * 60 * 60 * 1000;
+      if (stored?.utm_source && (Date.now() - stored.capturedAt) < sevenDays) {
+        return stored;
+      }
+    }
+  } catch (e) {
+    console.warn("[getAttributionUtms] Failed to parse stored UTMs", e);
+  }
+  
+  return current;
+}
+
 /** Hash value for Advanced Matching (lowercase, trimmed) */
 function normalizeParam(value: string | undefined | null): string {
   return (value || "").trim().toLowerCase();
