@@ -63,14 +63,21 @@ window.addEventListener("unhandledrejection", (event) => {
 });
 
 // Busca geolocalização do Cloudflare Worker antes de montar o React.
-// No preview/editor, pula a chamada externa para evitar CORS e travamentos falsos.
-const geoBootPromise = isPreviewHost
+// No preview/editor ou se houver hostname de preview, pula a chamada externa para evitar travamentos.
+const isExplicitPreview = isPreviewHost || window.location.hostname.includes("preview") || window.location.hostname.includes("gptengineer");
+
+const geoBootPromise = isExplicitPreview
   ? Promise.resolve()
   : Promise.race([
       bootGeo(),
-      new Promise<void>((resolve) => setTimeout(resolve, 1500)),
+      new Promise<void>((resolve) => setTimeout(resolve, 2000)),
     ]);
 
 geoBootPromise.finally(() => {
-  createRoot(document.getElementById("root")!).render(<App />);
+  const rootElement = document.getElementById("root");
+  if (!rootElement) {
+    console.error("Critical: Root element not found");
+    return;
+  }
+  createRoot(rootElement).render(<App />);
 });
