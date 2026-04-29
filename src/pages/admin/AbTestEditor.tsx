@@ -332,6 +332,18 @@ function CheckoutNode({ id, data }: NodeProps<Node<CheckoutData, "checkout">>) {
 
 function CreativeNode({ id, data }: NodeProps<Node<CreativeData, "creative">>) {
   const reactFlow = useReactFlow();
+  
+  const updateData = (newData: Partial<CreativeData>) => {
+    reactFlow.setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === id) {
+          return { ...node, data: { ...node.data, ...newData } };
+        }
+        return node;
+      })
+    );
+  };
+
   return (
     <NodeShell 
       color="#ec4899" 
@@ -339,6 +351,7 @@ function CreativeNode({ id, data }: NodeProps<Node<CreativeData, "creative">>) {
       title={data.label} 
       subtitle={data.subtitle || "Anúncio / Criativo"}
       nodeId={id}
+      inHandle={false}
       onDelete={(nodeId) => {
         const ns = reactFlow.getNodes();
         const es = reactFlow.getEdges();
@@ -346,31 +359,56 @@ function CreativeNode({ id, data }: NodeProps<Node<CreativeData, "creative">>) {
         reactFlow.setEdges(es.filter(e => e.source !== nodeId && e.target !== nodeId));
       }}
     >
-      {data.imageUrl ? (
-        <div className="mb-3 rounded-lg overflow-hidden border border-white/10 aspect-video bg-slate-900 flex items-center justify-center">
-          <img src={data.imageUrl} alt="Creative" className="w-full h-full object-cover" />
+      <div className="space-y-3">
+        <div className="space-y-1.5">
+          <Label className="text-[10px] text-slate-500 uppercase font-bold">Nome do Anúncio</Label>
+          <Input 
+            value={data.label} 
+            onChange={(e) => updateData({ label: e.target.value })}
+            className="h-8 text-xs bg-white/[0.03] border-white/10"
+            placeholder="Ex: Criativo 01 - Promoção"
+          />
         </div>
-      ) : (
-        <div className="mb-3 rounded-lg border border-dashed border-white/10 aspect-video bg-white/[0.02] flex flex-col items-center justify-center gap-2 text-slate-500">
-          <ImageIcon className="h-6 w-6 opacity-20" />
-          <span className="text-[10px] uppercase tracking-widest font-bold opacity-40">Sem Imagem</span>
+
+        <div className="space-y-1.5">
+          <Label className="text-[10px] text-slate-500 uppercase font-bold">URL da Imagem (Opcional)</Label>
+          <Input 
+            value={data.imageUrl || ""} 
+            onChange={(e) => updateData({ imageUrl: e.target.value })}
+            className="h-8 text-xs bg-white/[0.03] border-white/10"
+            placeholder="https://..."
+          />
         </div>
-      )}
-      
-      {data.stats && (
-        <div className="grid grid-cols-2 gap-2">
-          <div className="flex flex-col p-2 rounded-xl bg-pink-500/5 border border-pink-500/10">
-            <span className="text-[8px] uppercase tracking-wider text-pink-400/70 font-bold">Cliques</span>
-            <span className="text-xs font-black text-white">{data.stats.clicks || 0}</span>
+
+        {data.imageUrl ? (
+          <div className="rounded-lg overflow-hidden border border-white/10 aspect-video bg-slate-900 group/img relative">
+            <img src={data.imageUrl} alt="Creative" className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+              <span className="text-[10px] text-white font-bold uppercase tracking-widest">Preview Criativo</span>
+            </div>
           </div>
-          <div className="flex flex-col p-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
-            <span className="text-[8px] uppercase tracking-wider text-emerald-400/70 font-bold">ROI</span>
-            <span className="text-xs font-black text-emerald-400">
-              {data.stats.revenue > 0 ? "EXCELENTE" : "---"}
-            </span>
+        ) : (
+          <div className="rounded-lg border border-dashed border-white/10 aspect-video bg-white/[0.02] flex flex-col items-center justify-center gap-2 text-slate-500">
+            <ImageIcon className="h-6 w-6 opacity-20" />
+            <span className="text-[10px] uppercase tracking-widest font-bold opacity-40">Sem Imagem</span>
           </div>
-        </div>
-      )}
+        )}
+        
+        {data.stats && (
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <div className="flex flex-col p-2 rounded-xl bg-pink-500/5 border border-pink-500/10">
+              <span className="text-[8px] uppercase tracking-wider text-pink-400/70 font-bold">Cliques</span>
+              <span className="text-xs font-black text-white">{data.stats.clicks || 0}</span>
+            </div>
+            <div className="flex flex-col p-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+              <span className="text-[8px] uppercase tracking-wider text-emerald-400/70 font-bold">Vendas</span>
+              <span className="text-xs font-black text-emerald-400">
+                {data.stats.sales || 0}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
     </NodeShell>
   );
 }
