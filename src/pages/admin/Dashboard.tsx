@@ -416,7 +416,7 @@ const Dashboard = () => {
 
   if (initialLoading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 min-h-screen bg-background">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={`hero-${i}`} className="h-[120px] rounded-xl bg-card/70" />
@@ -428,7 +428,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 animate-in fade-in duration-700">
       <DashboardHeaderBar
         period={period}
         onPeriodChange={setPeriod}
