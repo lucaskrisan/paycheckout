@@ -112,10 +112,7 @@ Deno.serve(async (req) => {
       .select('id, external_id, amount, product_id, customer_id, user_id, metadata, payment_method')
       .eq('status', 'pending')
       .gte('created_at', since)
-      .not('external_id', 'is', null)
-      .not('external_id', 'like', 'pi_%')
-      .not('external_id', 'like', 'cs_%')
-      .not('external_id', 'like', 'pay_%'); // pay_* = Asaas
+      .not('external_id', 'is', null);
 
     if (fetchErr) {
       console.error('[reconcile] Error fetching pending orders:', fetchErr);
