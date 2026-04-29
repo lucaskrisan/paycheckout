@@ -2200,6 +2200,25 @@ const ProductEdit = () => {
               </div>
             </div>
 
+            <div className="space-y-1.5 pt-2">
+              <div className="flex justify-between items-center">
+                <Label>Peso no split: {newCheckoutWeight}%</Label>
+              </div>
+              <input 
+                type="range" 
+                min="10" 
+                max="90" 
+                step="10" 
+                value={newCheckoutWeight} 
+                onChange={(e) => setNewCheckoutWeight(Number(e.target.value))}
+                className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+              />
+              <div className="flex justify-between text-[10px] text-muted-foreground font-medium">
+                <span>10% (Raro)</span>
+                <span>90% (Frequente)</span>
+              </div>
+            </div>
+
             <div className="flex items-center gap-2">
               <Switch checked={newCheckoutDefault} onCheckedChange={setNewCheckoutDefault} />
               <Label className="font-normal">Definir esse checkout como padrão</Label>
@@ -2213,6 +2232,87 @@ const ProductEdit = () => {
               >
                 {creatingCheckout && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                 Criar novo checkout
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Editar checkout dialog */}
+      <Dialog open={!!editingCheckout} onOpenChange={(open) => { if (!open) setEditingCheckout(null); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Editar checkout</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-5 pt-2">
+            <div className="space-y-1.5">
+              <Label>Nome</Label>
+              <Input value={editCheckoutName} onChange={(e) => setEditCheckoutName(e.target.value)} autoFocus />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Preço personalizado</Label>
+              <div className="flex items-center">
+                <span className="inline-flex items-center px-3 text-xs text-muted-foreground bg-muted border border-r-0 border-input rounded-l-md h-10 font-semibold">{form.currency === "USD" ? "$" : "R$"}</span>
+                <Input
+                  value={editCheckoutPrice}
+                  onChange={(e) => setEditCheckoutPrice(e.target.value)}
+                  placeholder={form.price ? Number(form.price).toFixed(2).replace(".", form.currency === "USD" ? "." : ",") : "0,00"}
+                  className="rounded-l-none"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">Deixe vazio para usar o preço padrão do produto</p>
+            </div>
+
+            <div className="space-y-1.5 pt-2">
+              <div className="flex justify-between items-center">
+                <Label>Peso no split: {editCheckoutWeight}%</Label>
+              </div>
+              <input 
+                type="range" 
+                min="10" 
+                max="90" 
+                step="10" 
+                value={editCheckoutWeight} 
+                onChange={(e) => setEditCheckoutWeight(Number(e.target.value))}
+                className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+              />
+              <div className="flex justify-between text-[10px] text-muted-foreground font-medium">
+                <span>10% (Raro)</span>
+                <span>90% (Frequente)</span>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setEditingCheckout(null)}>Cancelar</Button>
+              <Button
+                disabled={!editCheckoutName.trim() || savingCheckoutEdit}
+                onClick={async () => {
+                  setSavingCheckoutEdit(true);
+                  try {
+                    const parsedPrice = editCheckoutPrice.trim()
+                      ? parseFloat(editCheckoutPrice.replace(",", "."))
+                      : null;
+                    const { error } = await supabase
+                      .from("checkout_builder_configs")
+                      .update({ 
+                        name: editCheckoutName.trim(), 
+                        price: parsedPrice,
+                        traffic_weight: editCheckoutWeight
+                      } as any)
+                      .eq("id", editingCheckout.id);
+                    if (error) throw error;
+                    toast.success("Checkout atualizado!");
+                    setEditingCheckout(null);
+                    await loadCheckouts();
+                  } catch (err: any) {
+                    toast.error(err?.message || "Erro ao atualizar");
+                  } finally {
+                    setSavingCheckoutEdit(false);
+                  }
+                }}
+              >
+                {savingCheckoutEdit && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                Salvar
               </Button>
             </div>
           </div>
