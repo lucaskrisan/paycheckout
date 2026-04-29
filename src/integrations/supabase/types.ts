@@ -1707,6 +1707,42 @@ export type Database = {
           },
         ]
       }
+      marketplace_partners: {
+        Row: {
+          client_id: string
+          client_secret: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          name: string
+          shared_secret: string
+          updated_at: string
+          webhook_secret: string
+        }
+        Insert: {
+          client_id?: string
+          client_secret?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          shared_secret?: string
+          updated_at?: string
+          webhook_secret?: string
+        }
+        Update: {
+          client_id?: string
+          client_secret?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          shared_secret?: string
+          updated_at?: string
+          webhook_secret?: string
+        }
+        Relationships: []
+      }
       member_access: {
         Row: {
           access_token: string
