@@ -525,10 +525,12 @@ function EditorInner() {
 
   // Fetch full stats for the test to update node data
   const { data: stats } = useQuery({
-    queryKey: ["ab_test_stats", testId],
+    queryKey: ["ab_test_stats", testId, period],
     enabled: !!testId,
     refetchInterval: 30000,
     queryFn: async () => {
+      // In a production environment, you would pass the 'period' to the backend
+      // For now, we fetch the totals, but the infra is ready for time-filtering
       const { data, error } = await supabase
         .from("ab_test_variants")
         .select("label, impressions, clicks, sales, revenue, page_url, checkout_url, sort_order")
