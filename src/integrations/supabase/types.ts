@@ -1544,6 +1544,47 @@ export type Database = {
         }
         Relationships: []
       }
+      marketplace_app_installations: {
+        Row: {
+          access_token: string | null
+          active: boolean | null
+          app_id: string | null
+          id: string
+          installed_at: string
+          plan_tier: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          access_token?: string | null
+          active?: boolean | null
+          app_id?: string | null
+          id?: string
+          installed_at?: string
+          plan_tier?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          access_token?: string | null
+          active?: boolean | null
+          app_id?: string | null
+          id?: string
+          installed_at?: string
+          plan_tier?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_app_installations_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_apps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marketplace_apps: {
         Row: {
           active: boolean | null
@@ -1597,6 +1638,41 @@ export type Database = {
           webhook_url?: string | null
         }
         Relationships: []
+      }
+      marketplace_oauth_codes: {
+        Row: {
+          app_id: string | null
+          code: string
+          expires_at: string
+          id: string
+          used_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          app_id?: string | null
+          code: string
+          expires_at?: string
+          id?: string
+          used_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          app_id?: string | null
+          code?: string
+          expires_at?: string
+          id?: string
+          used_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_oauth_codes_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_apps"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       member_access: {
         Row: {
