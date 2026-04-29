@@ -20,7 +20,7 @@ const Integrations = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-display text-2xl font-bold text-foreground">Integrações</h1>
+        <h1 className="font-display text-2xl font-bold text-foreground">Apps</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Conecte plataformas externas para automatizar a entrega e gestão dos seus produtos
         </p>
