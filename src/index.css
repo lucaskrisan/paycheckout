@@ -57,123 +57,81 @@
 
 @layer base {
   :root {
-    /* PantheraPay — Tactical Dark + Emerald */
-    --background: 220 20% 4%;
+    /* PantheraPay — Abyssal Dark + Vibranium Violet */
+    --background: 260 15% 3%;
     --foreground: 210 15% 93%;
 
-    --card: 215 18% 8%;
+    --card: 260 18% 5%;
     --card-foreground: 210 15% 93%;
 
-    --popover: 215 20% 9%;
+    --popover: 260 20% 6%;
     --popover-foreground: 210 15% 93%;
 
-    --primary: 160 84% 39%;
-    --primary-foreground: 0 0% 0%;
+    --primary: 270 85% 60%; /* Vibranium Violet */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 215 14% 14%;
+    --secondary: 260 14% 10%;
     --secondary-foreground: 210 15% 90%;
 
-    --muted: 215 14% 11%;
-    --muted-foreground: 215 10% 48%;
+    --muted: 260 14% 8%;
+    --muted-foreground: 260 10% 50%;
 
-    --accent: 215 14% 16%;
+    --accent: 260 14% 12%;
     --accent-foreground: 210 15% 93%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 215 12% 14%;
-    --input: 215 14% 11%;
-    --ring: 160 84% 39%;
+    --border: 260 12% 12%;
+    --input: 260 14% 10%;
+    --ring: 270 85% 60%;
 
     --radius: 0.75rem;
 
     /* Checkout */
-    --checkout-surface: 215 18% 8%;
+    --checkout-surface: 260 18% 5%;
     --checkout-surface-foreground: 210 15% 93%;
-    --checkout-highlight: 160 84% 39%;
-    --checkout-highlight-foreground: 0 0% 0%;
-    --checkout-muted: 215 10% 40%;
-    --checkout-badge: 43 64% 52%;
+    --checkout-highlight: 270 85% 60%;
+    --checkout-highlight-foreground: 0 0% 100%;
+    --checkout-muted: 260 10% 40%;
+    --checkout-badge: 185 90% 48%; /* Electric Cyan */
 
     /* Sidebar */
-    --sidebar-background: 220 22% 5%;
-    --sidebar-foreground: 215 10% 48%;
-    --sidebar-primary: 160 84% 39%;
-    --sidebar-primary-foreground: 0 0% 0%;
-    --sidebar-accent: 215 14% 11%;
+    --sidebar-background: 260 22% 4%;
+    --sidebar-foreground: 260 10% 50%;
+    --sidebar-primary: 270 85% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 260 14% 10%;
     --sidebar-accent-foreground: 210 15% 93%;
-    --sidebar-border: 215 12% 14%;
-    --sidebar-ring: 160 84% 39%;
-
-    /* Member area */
-    --member-bg: 220 20% 4%;
-    --member-surface: 215 18% 8%;
-    --member-surface-hover: 215 14% 11%;
-    --member-surface-active: 215 14% 14%;
-    --member-foreground: 210 15% 93%;
-    --member-foreground-muted: 215 10% 48%;
-    --member-accent: 160 84% 39%;
-    --member-accent-glow: 160 90% 50%;
-    --member-border: 215 12% 14%;
-    --member-gradient-start: 160 84% 39%;
-    --member-gradient-end: 155 80% 34%;
-    --member-locked: 215 10% 20%;
-    --member-gold: 43 64% 52%;
+    --sidebar-border: 260 12% 10%;
+    --sidebar-ring: 270 85% 60%;
 
     /* Brand */
-    --brand-gradient: linear-gradient(135deg, #10B981, #059669, #D4AF37);
-    --brand-glow: 0 8px 32px -8px hsl(160 84% 39% / 0.35);
+    --brand-gradient: linear-gradient(135deg, hsl(270 85% 60%), hsl(280 80% 50%), hsl(185 90% 48%));
+    --brand-glow: 0 8px 32px -8px hsla(270, 85%, 60%, 0.4);
 
     /* Vibranium accent */
-    --vibranium: 160 84% 39%;
-    --vibranium-glow: 160 90% 50%;
+    --vibranium: 185 90% 48%;
+    --vibranium-glow: 185 100% 60%;
 
     /* Glass */
-    --glass-border: 215 15% 20%;
-    --glass-bg: 215 18% 8% / 0.6;
+    --glass-border: 260 15% 15%;
+    --glass-bg: 260 18% 5% / 0.6;
     --glass-shine: 210 15% 93% / 0.04;
 
     /* Status */
     --status-success: 160 84% 39%;
     --status-warning: 45 100% 51%;
     --status-error: 0 72% 51%;
-    --status-chargeback: 14 100% 50%;
-
-    /* Gold */
-    --gold: 43 64% 52%;
-    --gold-soft: 43 86% 69%;
+    --status-chargeback: 270 85% 60%;
   }
 
-  /* Light override */
+  /* Light override remains dark for this aesthetic */
   .light {
-    --background: 210 20% 97%;
-    --foreground: 215 18% 8%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 215 18% 8%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 215 18% 8%;
-
-    --primary: 160 84% 39%;
-    --primary-foreground: 0 0% 0%;
-
-    --secondary: 210 10% 93%;
-    --secondary-foreground: 215 18% 8%;
-
-    --muted: 210 10% 93%;
-    --muted-foreground: 215 10% 44%;
-
-    --accent: 210 10% 93%;
-    --accent-foreground: 215 18% 8%;
-
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 210 10% 88%;
-    --input: 210 10% 88%;
-    --ring: 160 84% 39%;
+    --background: 260 15% 3%;
+    --foreground: 210 15% 93%;
+    --card: 260 18% 5%;
+    --border: 260 12% 12%;
   }
 }
 
