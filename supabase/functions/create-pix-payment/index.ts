@@ -312,7 +312,51 @@ Deno.serve(async (req) => {
       customerId = newCustomer!.id;
     }
 
-    // Call Pagar.me API
+    // 1. Save order to database FIRST (as pending) to ensure we don't lose the record
+    const { data: platformSettings } = await supabaseAdmin
+      .from('platform_settings')
+      .select('platform_fee_percent')
+      .limit(1)
+      .maybeSingle();
+    const feePercent = Number(platformSettings?.platform_fee_percent || 0);
+    const feeAmount = Math.round(amount * feePercent) / 100;
+
+    const { data: orderRecord, error: orderError } = await supabaseAdmin
+      .from('orders')
+      .insert({
+        amount,
+        payment_method: 'pix',
+        status: 'pending',
+        product_id: product_id || null,
+        customer_id: customerId,
+        user_id: productOwnerId,
+        customer_state: body.customer_state || body.geo?.customer_state_geo || null,
+        customer_city: body.geo?.customer_city || null,
+        customer_zip: body.geo?.customer_zip || null,
+        customer_country: body.geo?.customer_country || null,
+        platform_fee_percent: feePercent,
+        platform_fee_amount: feeAmount,
+        metadata: {
+          gateway: 'pagarme',
+          config_id: config_id || null,
+          coupon_id: coupon_id || null,
+          checkout_url: checkout_url || null,
+          bump_product_ids: (bump_product_ids && bump_product_ids.length > 0) ? bump_product_ids : null,
+          ...(utms || {}),
+        },
+      })
+      .select('id')
+      .single();
+
+    if (orderError) {
+      console.error('[create-pix-payment] Database error:', orderError);
+      return new Response(
+        JSON.stringify({ error: 'Erro ao processar pedido. Tente novamente.' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // 2. Call Pagar.me API
     const orderPayload = {
       items: [
         {
@@ -344,6 +388,9 @@ Deno.serve(async (req) => {
           pix: { expires_in: 1800 },
         },
       ],
+      metadata: {
+        order_id: orderRecord.id
+      }
     };
 
     const response = await fetch('https://api.pagar.me/core/v5/orders', {
@@ -359,6 +406,9 @@ Deno.serve(async (req) => {
 
     if (!response.ok) {
       console.error('[create-pix-payment] Pagar.me error:', JSON.stringify(data));
+      
+      // Update order status to failed
+      await supabaseAdmin.from('orders').update({ status: 'failed' }).eq('id', orderRecord.id);
 
       // Log gateway failure for the producer
       if (productOwnerId) {
@@ -384,6 +434,9 @@ Deno.serve(async (req) => {
         { status: 422, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // 3. Update order with external_id
+    await supabaseAdmin.from('orders').update({ external_id: data.id }).eq('id', orderRecord.id);
 
     // Check if Pagar.me order failed (e.g. invalid CPF, fraud check)
     if (data.status === 'failed') {
