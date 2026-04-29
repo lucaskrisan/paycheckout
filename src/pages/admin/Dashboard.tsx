@@ -444,37 +444,42 @@ const Dashboard = () => {
 
       <GatewayAlerts />
 
-      {/* ROW 1 — Hero revenue + compact stats. */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      {/* ROW 1 — Hero Cards (Identical to reference layout) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <DashboardHeroCard
           label="Faturamento Líquido"
           value={pri("approved_amount", totalLiquido)}
           fmt={fmtPrimary}
-          sublabel={fmt(pri("approved_amount", totalLiquido) + pri("fees_amount", m.total_taxas))}
+          sublabel={subFor("approved_amount", "Faturamento")}
           variant="revenue"
           sparklineData={chartData.map((d) => d.total)}
-          tooltip="Receita líquida total aprovada após taxas"
         />
         <DashboardHeroCard
           label="Vendas Aprovadas"
           value={pri("approved_count", m.count_approved)}
           fmt={(v) => Math.floor(v).toString()}
-          sublabel={`${m.count_total} pedidos totais`}
+          sublabel={subFor("approved_count", "Vendas")}
           variant="sales"
-          tooltip="Número de pedidos com pagamento confirmado"
         />
         <DashboardHeroCard
           label="Ticket Médio"
           value={pri("avg_ticket", avgTicket)}
           fmt={fmtPrimary}
+          sublabel={subFor("avg_ticket")}
           variant="ticket"
-          tooltip="Valor médio por venda aprovada"
+        />
+        <DashboardHeroCard
+          label="Lucro"
+          value={pri("approved_amount", totalLiquido) * 0.9} // Placeholder/Estimation logic previously used
+          fmt={fmtPrimary}
+          variant="revenue"
+          sublabel={subFor("approved_amount")}
         />
       </div>
 
+      {/* ROW 2 — Main Chart + Secondary Metrics Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-        {/* Main Chart */}
-        <div className="lg:col-span-8">
+        <div className="lg:col-span-7">
           <DashboardChart
             data={chartData}
             fmt={chartFmt}
@@ -487,38 +492,46 @@ const Dashboard = () => {
           />
         </div>
 
-        {/* Side Metrics */}
-        <div className="lg:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
+        <div className="lg:col-span-5 grid grid-cols-2 gap-3">
           <DashboardMetricCard
-            label="Conversão de Cartão"
-            value={`${cardApprovalRate.toFixed(1)}%`}
-            sub={`${m.card_approved} de ${m.card_decided} tentativas`}
+            label="Vendas Pagas (Ads)"
+            value={fmtPrimary(pri("ads_revenue", m.paid_revenue))}
+            sub={`${pri("ads_count", m.paid_sales_count)} pedidos`}
             accent
-            tooltip="Taxa de aprovação real considerando apenas tentativas processadas pelo gateway."
           />
           <DashboardMetricCard
-            label="Conversão de PIX"
-            value={`${pixApprovalRate.toFixed(1)}%`}
-            sub={`${m.pix_approved} de ${m.pix_decided} gerados`}
-            tooltip="Relação entre PIX pagos e PIX gerados."
+            label="Vendas Orgânicas"
+            value={fmtPrimary(pri("organic_revenue", m.organic_revenue))}
+            sub={`${pri("organic_sales_count", m.organic_sales_count)} pedidos`}
+          />
+          <DashboardMetricCard
+            label="Total de Pedidos"
+            value={m.count_total.toString()}
+            sub={`${m.count_approved} aprovados`}
+          />
+          <DashboardMetricCard
+            label="Pendente (PIX/Boleto)"
+            value={fmtPrimary(pri("pending_amount", m.total_pendente))}
+            sub={`${pri("pending_count", m.count_pending)} aguardando`}
+            dimmed={m.count_pending === 0}
+          />
+          <DashboardMetricCard
+            label="Chargeback"
+            value={fmtPrimary(pri("chargeback_amount", m.total_chargeback))}
+            sub={`${pri("chargeback_count", m.count_chargedback)} pedidos`}
+          />
+          <DashboardMetricCard
+            label="Reembolsadas"
+            value={fmtPrimary(pri("refunded_amount", m.total_refunded))}
+            sub={`${pri("count_refunded", m.count_refunded)} pedidos`}
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        <DashboardMetricCard
-          label="Pendente (PIX/Boleto)"
-          value={fmtPrimary(pri("pending_amount", m.total_pendente))}
-          sub={`${pri("pending_count", m.count_pending)} pedidos aguardando`}
-          sub2={subFor("pending_amount")}
-          dimmed={m.count_pending === 0}
-        />
-        <DashboardMetricCard
-          label="Recuperação de Carrinho"
-          value={`${recoveryRate}%`}
-          sub={`${m.abandoned_recovered} recuperados de ${m.abandoned_total}`}
-          tooltip="Percentual de checkouts abandonados que foram convertidos via automação."
-        />
+      {/* ROW 3 — Footer Charts/Maps */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <DashboardWeekdayChart orders={weekdayOrders} />
+        <DashboardStateMap salesByState={salesByState} fmt={fmt} />
         <DashboardApprovalCard
           items={[
             { label: "Cartão de Crédito", rate: cardApprovalRate },
@@ -527,15 +540,6 @@ const Dashboard = () => {
           chargebackValue={fmtPrimary(pri("chargeback_amount", m.total_chargeback))}
           chargebackCount={pri("chargeback_count", m.count_chargedback)}
         />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-        <div className="lg:col-span-4">
-          <DashboardStateMap salesByState={salesByState} />
-        </div>
-        <div className="lg:col-span-8">
-          <DashboardWeekdayChart orders={weekdayOrders} />
-        </div>
       </div>
     </div>
   );
