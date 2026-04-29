@@ -478,14 +478,13 @@ const Dashboard = () => {
         <div className="lg:col-span-8">
           <DashboardChart
             data={chartData}
-            period={period}
-            currencyPrefix={chartPrefix}
-            onRefresh={() => loadData(true)}
-            isRefreshing={refreshing}
-            allCurrenciesMode={currency === "ALL"}
-            activeChartCurrency={chartCurrency}
-            onToggleChartCurrency={() => setChartCurrency((c) => (c === "BRL" ? "USD" : "BRL"))}
             fmt={chartFmt}
+            currencyPrefix={chartPrefix}
+            title={period === "today" || period === "yesterday" ? "Receita por Hora" : "Receita Diária"}
+            currencyToggle={currency === "ALL" ? {
+              value: chartCurrency,
+              onChange: setChartCurrency
+            } : undefined}
           />
         </div>
 
