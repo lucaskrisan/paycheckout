@@ -34,7 +34,7 @@ serve(async (req) => {
         user_id: user.id
       });
 
-      const installUrl = `${app.redirect_url}?shop_id=${user.id}&code=${installCode}`;
+      const installUrl = `https://gatflow.com/auth/panttera/install?shop_id=${user.id}&code=${installCode}`;
       return new Response(JSON.stringify({ url: installUrl }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
