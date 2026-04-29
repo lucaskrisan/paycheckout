@@ -113,8 +113,7 @@ const VariantMetricsCard = ({ co, productId, currency, metrics, isLeader, totalV
     </div>
   );
 };
-const getPublicUrl = () =>
-  window.location.hostname.includes("lovable") ? PUBLISHED_URL : window.location.origin;
+const getPublicUrl = () => "https://ck.panttera.com.br";
 
 const tabStyle =
   "rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 pb-3 pt-1 text-sm";
