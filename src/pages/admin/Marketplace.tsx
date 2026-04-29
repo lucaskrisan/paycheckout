@@ -140,9 +140,15 @@ const Marketplace = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                Configurar Credenciais
-              </Button>
+              {app.is_installed ? (
+                <Button variant="default" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold" onClick={(e) => { e.stopPropagation(); handleOpenApp(app); }}>
+                  Abrir Dashboard
+                </Button>
+              ) : (
+                <Button variant="outline" className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors" onClick={(e) => { e.stopPropagation(); handleInstall(app); }}>
+                  Instalar App
+                </Button>
+              )}
             </CardContent>
           </Card>
         ))}
