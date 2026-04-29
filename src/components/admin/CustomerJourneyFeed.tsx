@@ -93,44 +93,67 @@ const CustomerJourneyFeed = ({ events, products }: Props) => {
       map.delete(sourceKey);
     }
 
-    const result = Array.from(map.entries()).map(([key, evts]) => {
-      const sorted = [...evts].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-      const namedEvent = sorted.find((e) => e.customer_name);
-      const displayName = namedEvent?.customer_name || "Visitante";
-      const firstName = displayName.split(" ")[0];
-      const lastEvent = sorted[sorted.length - 1];
-      const completed = sorted.some((e) => e.event_name === JOURNEY_END);
-      const productName = products.find((p) => p.id === sorted[0].product_id)?.name;
-
-      const seenTypes = new Set<string>();
-      const uniqueSteps = sorted.filter((e) => {
-        if (seenTypes.has(e.event_name)) return false;
-        seenTypes.add(e.event_name);
-        return true;
-      });
-
-      const reachedSteps = new Set(uniqueSteps.map((e) => e.event_name));
-      let maxIndex = -1;
-      FUNNEL_STEPS.forEach((step, i) => {
-        if (reachedSteps.has(step.key)) maxIndex = i;
-      });
-      const progress = FUNNEL_STEPS.length > 1 ? Math.round((maxIndex / (FUNNEL_STEPS.length - 1)) * 100) : 0;
-
-      return {
-        key,
-        displayName,
-        firstName,
-        events: uniqueSteps,
-        reachedSteps,
-        lastEvent,
-        completed,
-        productName,
-        progress,
-        lastActivity: new Date(lastEvent.created_at).getTime(),
-      };
+    const engagedVisitorIds = new Set<string>();
+    events.forEach((e) => {
+      if (
+        e.visitor_id &&
+        e.event_name !== "PageView" &&
+        e.event_name !== "ViewContent"
+      ) {
+        engagedVisitorIds.add(e.visitor_id);
+      }
     });
 
-    return result.sort((a, b) => b.lastActivity - a.lastActivity);
+    const result = Array.from(map.entries())
+      .map(([key, evts]) => {
+        const sorted = [...evts].sort(
+          (a, b) =>
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+        const namedEvent = sorted.find((e) => e.customer_name);
+        const displayName = namedEvent?.customer_name || "Visitante";
+        const firstName = displayName.split(" ")[0];
+        const lastEvent = sorted[sorted.length - 1];
+        const completed = sorted.some((e) => e.event_name === JOURNEY_END);
+        const productName = products.find(
+          (p) => p.id === sorted[0].product_id
+        )?.name;
+
+        const seenTypes = new Set<string>();
+        const uniqueSteps = sorted.filter((e) => {
+          if (seenTypes.has(e.event_name)) return false;
+          seenTypes.add(e.event_name);
+          return true;
+        });
+
+        const reachedSteps = new Set(uniqueSteps.map((e) => e.event_name));
+        let maxIndex = -1;
+        FUNNEL_STEPS.forEach((step, i) => {
+          if (reachedSteps.has(step.key)) maxIndex = i;
+        });
+        const progress =
+          FUNNEL_STEPS.length > 1
+            ? Math.round((maxIndex / (FUNNEL_STEPS.length - 1)) * 100)
+            : 0;
+
+        return {
+          key,
+          displayName,
+          firstName,
+          events: uniqueSteps,
+          reachedSteps,
+          lastEvent,
+          completed,
+          productName,
+          progress,
+          lastActivity: new Date(lastEvent.created_at).getTime(),
+          isEngaged: key.startsWith("name:") || (key && engagedVisitorIds.has(key)),
+        };
+      })
+      .filter((j) => j.isEngaged || j.completed)
+      .sort((a, b) => b.lastActivity - a.lastActivity);
+
+    return result.slice(0, 50);
   }, [events, products]);
 
   if (journeys.length === 0) {
