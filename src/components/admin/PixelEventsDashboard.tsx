@@ -339,8 +339,9 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
           });
         }
       } else {
+        const day = new Date(e.created_at).toISOString().split('T')[0];
         const deduKey = e.visitor_id
-          ? `${e.visitor_id}_${e.event_name}`
+          ? `${day}_${e.visitor_id}_${e.event_name}`
           : `anon_${e.id}`;
         if (!ungroupedMap.has(deduKey)) {
           ungroupedMap.set(deduKey, {
