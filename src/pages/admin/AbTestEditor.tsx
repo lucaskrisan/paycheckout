@@ -44,6 +44,7 @@ import {
   Copy,
   HelpCircle,
   RefreshCw,
+  Zap,
 } from "lucide-react";
 import { AbTestTutorial } from "@/components/admin/AbTestTutorial";
 
