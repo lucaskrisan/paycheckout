@@ -341,6 +341,29 @@ async function processReminders(
     for (const cart of carts) {
       if (totalProcessed >= MAX_EMAILS_PER_RUN) break;
 
+      // Rule: Only block recovery if the customer has bought EXACTLY this product.
+      const { data: purchaseData } = await supabaseAdmin
+        .from("pixel_events")
+        .select("id")
+        .eq("event_name", "Purchase")
+        .eq("product_id", cart.product_id)
+        .ilike("customer_email", cart.customer_email)
+        .limit(1);
+
+      if (purchaseData && purchaseData.length > 0) {
+        totalSkipped++;
+        await supabaseAdmin
+          .from("abandoned_carts")
+          .update({
+            email_recovery_sent_at: new Date().toISOString(),
+            email_recovery_status: "skipped_already_purchased",
+            email_reminder_count: isSecond ? 2 : 1,
+            recovered: true,
+          } as any)
+          .eq("id", cart.id);
+        continue;
+      }
+
       // Blacklist check
       if (opts.suppressedSet.has(cart.customer_email?.toLowerCase())) {
         totalSuppressed++;
