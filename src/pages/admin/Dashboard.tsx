@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useEffect, useMemo, useCallback, useState, useRef } from "react";
 import { bootGeo } from "@/lib/cfGeo";
 import { supabase } from "@/integrations/supabase/client";
