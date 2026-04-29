@@ -136,15 +136,6 @@ const CustomerJourneyFeed = ({ events, products }: Props) => {
             ? Math.round((maxIndex / (FUNNEL_STEPS.length - 1)) * 100)
             : 0;
 
-        return {
-          key,
-          displayName,
-          firstName,
-          events: uniqueSteps,
-          reachedSteps,
-          lastEvent,
-          completed,
-          productName,
         const lastActivity = new Date(lastEvent.created_at).getTime();
         const now = Date.now();
         const tenMinutesAgo = now - 10 * 60 * 1000;
