@@ -1,5 +1,5 @@
-// @ts-nocheck
 import { useEffect, useMemo, useCallback, useState, useRef } from "react";
+import { bootGeo } from "@/lib/cfGeo";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -257,6 +257,9 @@ const Dashboard = () => {
   // Reconcile on mount — depends only on user so timers are not recreated on period changes
   useEffect(() => {
     if (!user) return;
+    // Background boot for geo data (non-blocking)
+    bootGeo();
+
     const doSync = async () => {
       try {
         const { error } = await supabase.functions.invoke("reconcile-orders", { body: { hours_back: 24 * 30 } });
