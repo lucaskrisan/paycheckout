@@ -2182,41 +2182,16 @@ const ProductEdit = () => {
             </div>
 
             <div className="space-y-1.5 pt-2">
-              <div className="flex justify-between items-center">
-                <Label>Peso no split: {newCheckoutWeight}%</Label>
-              </div>
-              <input 
-                type="range" 
-                min="10" 
-                max="90" 
-                step="10" 
-                value={newCheckoutWeight} 
+              <Label>Peso no split: {newCheckoutWeight}%</Label>
+              <input
+                type="range" min={10} max={90} step={10}
+                value={newCheckoutWeight}
                 onChange={(e) => setNewCheckoutWeight(Number(e.target.value))}
                 className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
               />
-              <div className="flex justify-between text-[10px] text-muted-foreground font-medium">
-                <span>10% (Raro)</span>
-                <span>90% (Frequente)</span>
-              </div>
-            </div>
-
-            <div className="space-y-1.5 pt-2">
-              <div className="flex justify-between items-center">
-                <Label>Peso no split: {newCheckoutWeight}%</Label>
-              </div>
-              <input 
-                type="range" 
-                min="10" 
-                max="90" 
-                step="10" 
-                value={newCheckoutWeight} 
-                onChange={(e) => setNewCheckoutWeight(Number(e.target.value))}
-                className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
-              />
-              <div className="flex justify-between text-[10px] text-muted-foreground font-medium">
-                <span>10% (Raro)</span>
-                <span>90% (Frequente)</span>
-              </div>
+              <p className="text-xs text-muted-foreground">
+                % de visitantes que verão esta variante no split.
+              </p>
             </div>
 
             <div className="flex items-center gap-2">
