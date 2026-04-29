@@ -1002,25 +1002,47 @@ function EditorInner() {
             {selectedNode.type === "config" && (
               <div className="space-y-4">
                 <div className="p-3 bg-muted/30 rounded border text-xs">
-                  <p className="text-muted-foreground mb-1">URL de Entrada:</p>
-                  <code className="break-all text-emerald-400">{entryUrl || "Salve para gerar"}</code>
+                  Este nó define as configurações globais do funil de teste.
                 </div>
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs">Vencedor automático</Label>
-                  <Switch checked={autoWinner} onCheckedChange={setAutoWinner} />
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Meta de Conversão Principal</Label>
+                  <Select value={conversionGoal} onValueChange={setConversionGoal}>
+                    <SelectTrigger className="h-8">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="purchase">Venda Final (Purchase)</SelectItem>
+                      <SelectItem value="lead">Lead / Clique no Botão</SelectItem>
+                      <SelectItem value="checkout">Início de Checkout</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                {autoWinner && (
-                  <div className="space-y-2">
-                    <Label className="text-xs">Min. Cliques para Decisão</Label>
-                    <Input type="number" value={minClicks} onChange={(e) => setMinClicks(Number(e.target.value))} />
-                    <p className="text-[10px] text-muted-foreground italic">O teste precisa de pelo menos este número de cliques para escolher o vencedor.</p>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Dias de Retenção (Sticky)</Label>
+                  <Input type="number" value={stickyDays} onChange={(e) => setStickyDays(Number(e.target.value))} className="h-8" />
+                  <p className="text-[10px] text-muted-foreground">Tempo que o usuário ficará preso à mesma variante.</p>
+                </div>
+                <div className="pt-4 border-t space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs">Vencedor Automático</Label>
+                    <Switch checked={autoWinner} onCheckedChange={setAutoWinner} />
+                  </div>
+                  {autoWinner && (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">Mínimo de Cliques</Label>
+                      <Input type="number" value={minClicks} onChange={(e) => setMinClicks(Number(e.target.value))} className="h-8" />
+                    </div>
+                  )}
+                </div>
+                {entryUrl && (
+                  <div className="pt-4 border-t space-y-2">
+                    <Label className="text-xs">URL de Entrada</Label>
+                    <div className="flex gap-1">
+                      <Input value={entryUrl} readOnly className="h-8 text-[10px] font-mono text-emerald-400" />
+                      <Button size="icon" variant="outline" className="h-8 w-8" onClick={copyEntryUrl}><Copy className="h-3 w-3" /></Button>
+                    </div>
                   </div>
                 )}
-                <div className="space-y-2">
-                  <Label className="text-xs">Janela de Retenção (Dias)</Label>
-                  <Input type="number" value={stickyDays} onChange={(e) => setStickyDays(Number(e.target.value))} />
-                  <p className="text-[10px] text-muted-foreground italic">Quantos dias o visitante ficará "preso" à mesma variante.</p>
-                </div>
               </div>
             )}
             {selectedNode.type === "abtest" && (
