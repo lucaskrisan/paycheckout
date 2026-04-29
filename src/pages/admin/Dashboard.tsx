@@ -109,7 +109,7 @@ const Dashboard = () => {
   const [period, setPeriod] = useState<Period>("today");
   const [refreshing, setRefreshing] = useState(false);
   const loadingRequestRef = useRef<number>(0);
-  const [initialLoading, setInitialLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(false);
   const [products, setProducts] = useState<{ id: string; name: string }[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("all");
   const [currency, setCurrency] = useState<Currency>("ALL");
@@ -151,24 +151,24 @@ const Dashboard = () => {
   const fetchMetrics = useCallback(async () => {
     if (!user) return;
 
-    const { from, to } = getDateRange(period);
-    const productId = selectedProductId === "all" ? null : selectedProductId;
+    try {
+      const { from, to } = getDateRange(period);
+      const productId = selectedProductId === "all" ? null : selectedProductId;
 
-    const { data, error } = await supabase.rpc("get_dashboard_metrics", {
-      p_user_id: user.id,
-      p_date_from: from,
-      p_date_to: to,
-      p_product_id: productId,
-      p_is_super_admin: isSuperAdmin,
-      p_currency: currency === "ALL" ? null : currency,
-    });
+      const { data, error } = await supabase.rpc("get_dashboard_metrics", {
+        p_user_id: user.id,
+        p_date_from: from,
+        p_date_to: to,
+        p_product_id: productId,
+        p_is_super_admin: isSuperAdmin,
+        p_currency: currency === "ALL" ? null : currency,
+      });
 
-    if (error) {
+      if (error) throw error;
+      setMetrics(data || emptyMetrics);
+    } catch (error) {
       console.error("[dashboard] RPC error:", error);
-      return;
     }
-
-    setMetrics(data || emptyMetrics);
   }, [user, period, selectedProductId, isSuperAdmin, getDateRange, currency]);
 
   /** When in ALL mode, fetch a chart-only snapshot for the chosen chartCurrency
@@ -228,16 +228,25 @@ const Dashboard = () => {
   const loadData = useCallback(async (isRefresh = false) => {
     if (!user) return;
     
-    // Request ID for ordering control
     const requestId = ++loadingRequestRef.current;
     if (isRefresh) setRefreshing(true);
 
     try {
-      await Promise.all([fetchMetrics(), fetchProducts(), fetchWeekdayOrders(), fetchChartOverride()]);
+      // Fetch in parallel but don't block everything on a single failure
+      const results = await Promise.allSettled([
+        fetchMetrics(), 
+        fetchProducts(), 
+        fetchWeekdayOrders(), 
+        fetchChartOverride()
+      ]);
+      
+      const failed = results.filter(r => r.status === 'rejected');
+      if (failed.length > 0) {
+        console.warn("[dashboard] Some data failed to load:", failed);
+      }
     } catch (error) {
-      console.error("[dashboard] loadData error:", error);
+      console.error("[dashboard] loadData critical error:", error);
     } finally {
-      // Only update UI state if this is still the latest request
       if (requestId === loadingRequestRef.current) {
         if (isRefresh) setRefreshing(false);
         setInitialLoading(false);
