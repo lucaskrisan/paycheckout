@@ -403,6 +403,8 @@ function EditorInner() {
   const [slug, setSlug] = useState<string | null>(null);
   const [status, setStatus] = useState<string>("draft");
   const [showTutorial, setShowTutorial] = useState(!routeId || routeId === "new");
+  const [conversionGoal, setConversionGoal] = useState<string>("purchase");
+  const [targetingRules, setTargetingRules] = useState<any>({ devices: [], utm_filters: [] });
 
   const initial = useMemo(() => buildInitialGraph("Novo Teste A/B"), []);
   const [nodes, setNodes, onNodesChange] = useNodesState<FlowNode>(initial.nodes);
@@ -429,6 +431,8 @@ function EditorInner() {
     setStickyDays(existing.sticky_days ?? 30);
     setSlug(existing.slug ?? null);
     setStatus(existing.status ?? "draft");
+    setConversionGoal(existing.conversion_goal ?? "purchase");
+    setTargetingRules(existing.targeting_rules ?? { devices: [], utm_filters: [] });
     const publicDomain = "ck.panttera.com.br";
     const generated = existing.slug ? `https://${publicDomain}/go/${existing.slug}?type=page` : "";
     setEntryUrl(generated);
