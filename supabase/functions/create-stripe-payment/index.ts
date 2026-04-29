@@ -498,7 +498,9 @@ Deno.serve(async (req) => {
           bump_product_ids?.length > 0 ? JSON.stringify(bump_product_ids) : "",
         customer_country: customer_country || "",
         stripe_tax_enabled: stripeTaxEnabled ? "true" : "false",
-        ...(utms || {}),
+        
+          attribution_fbc: body.attribution_fbc || null,
+          ...(utms || {}),
       },
     };
 
@@ -558,6 +560,8 @@ Deno.serve(async (req) => {
             bump_product_ids && bump_product_ids.length > 0
               ? bump_product_ids
               : null,
+          
+          attribution_fbc: body.attribution_fbc || null,
           ...(utms || {}),
         },
       })

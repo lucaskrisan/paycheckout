@@ -603,6 +603,7 @@ const Checkout = () => {
 
     return {
       ...utms,
+              attribution_fbc: document.cookie.match(/(?:^|;\s*)_fbc=([^;]*)/)?.[1] || null,
       // A/B test attribution
       ab_visitor_id: visitorId,
       ab_test_slug: params.get("_abt") || undefined,
@@ -696,6 +697,7 @@ const Checkout = () => {
               checkout_url: window.location.href,
               event_source_url: eventSourceUrl,
               utms,
+              attribution_fbc: document.cookie.match(/(?:^|;\s*)_fbc=([^;]*)/)?.[1] || null,
               customer_country: selectedCountry,
               geo: geoPayload,
               // No payment_method_id → triggers deferred/PaymentElement flow
@@ -781,6 +783,7 @@ const Checkout = () => {
             checkout_url: window.location.href,
             event_source_url: eventSourceUrl,
             utms,
+              attribution_fbc: document.cookie.match(/(?:^|;\s*)_fbc=([^;]*)/)?.[1] || null,
             customer_state: customerState,
             geo: geoPayload,
             payment_method: "pix",
@@ -830,6 +833,7 @@ const Checkout = () => {
               checkout_url: window.location.href,
               event_source_url: eventSourceUrl,
               utms,
+              attribution_fbc: document.cookie.match(/(?:^|;\s*)_fbc=([^;]*)/)?.[1] || null,
               customer_state: customerState,
               geo: geoPayload,
               customer: {
