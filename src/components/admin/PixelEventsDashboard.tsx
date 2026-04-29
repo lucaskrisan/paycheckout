@@ -371,6 +371,7 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
     });
     return [...map.values(), ...ungroupedMap.values()]
       .filter((g) => {
+        if (!onlyEngaged) return true;
         // Se for um evento de conversão/ação, sempre mostra
         if (g.event_name !== "PageView" && g.event_name !== "ViewContent") return true;
         // Se for apenas visita, só mostra se o visitante já demonstrou engajamento (fez outra ação)
@@ -441,6 +442,16 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
                 >
                   Jornadas
                 </button>
+              </div>
+
+              <div className="ml-2 flex items-center gap-2 px-3 py-1 rounded-md bg-white/[0.02] border border-white/[0.05]">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Engajados</span>
+                <input
+                  type="checkbox"
+                  checked={onlyEngaged}
+                  onChange={(e) => setOnlyEngaged(e.target.checked)}
+                  className="w-3 h-3 accent-emerald-500 rounded border-white/20 bg-black/40 cursor-pointer"
+                />
               </div>
             </div>
             <div className="flex items-center gap-3 text-[9px] text-muted-foreground/70 font-mono uppercase tracking-wider">
