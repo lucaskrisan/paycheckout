@@ -79,18 +79,20 @@ async function stepCapiFallback(params: ProcessOrderPaidParams): Promise<void> {
 
   try {
     // Check if Purchase event was already fired for this order
+    // We use orderData.id (the internal UUID) for deduplication between browser and server,
+    // and also to prevent renewals (which update the same order) from firing multiple purchases.
     const { data: purchaseWithOrderId } = await supabase
       .from('pixel_events')
       .select('id')
       .eq('product_id', orderData.product_id)
       .eq('event_name', 'Purchase')
-      .eq('event_id', externalId)
+      .eq('event_id', orderData.id)
       .limit(1);
 
     const alreadyFired = purchaseWithOrderId && purchaseWithOrderId.length > 0;
 
     if (!alreadyFired) {
-      console.log(`[${source}] Purchase NOT fired by checkout, sending CAPI fallback`);
+      console.log(`[${source}] Purchase NOT fired by checkout, sending CAPI fallback using order_id as event_id`);
 
       const { data: custData } = await supabase
         .from('customers')
@@ -112,7 +114,7 @@ async function stepCapiFallback(params: ProcessOrderPaidParams): Promise<void> {
             body: JSON.stringify({
               product_id: orderData.product_id,
               event_name: 'Purchase',
-              event_id: externalId,
+              event_id: orderData.id,
               event_source_url: checkoutUrl,
               customer: {
                 name: custData.name,
