@@ -428,7 +428,14 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="space-y-4 animate-in fade-in duration-700">
+    <div className="space-y-6 animate-in fade-in duration-700">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-2xl font-black tracking-tight text-foreground">
+          {new Date().getHours() < 12 ? "Bom dia" : new Date().getHours() < 18 ? "Boa tarde" : "Boa noite"}, CEO
+        </h2>
+        <p className="text-sm text-muted-foreground">Aqui está o resumo da sua operação nas últimas horas.</p>
+      </div>
+
       <DashboardHeaderBar
         period={period}
         onPeriodChange={setPeriod}
@@ -444,78 +451,90 @@ const Dashboard = () => {
 
       <GatewayAlerts />
 
-      {/* Identical to April 28 layout: Grid of simple cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <DashboardMetricCard
-          label="Faturamento Líquido"
-          value={fmtPrimary(totalLiquido)}
-          sub={fmt(totalLiquido + m.total_taxas)}
-          accent
-          tooltip="Receita líquida total aprovada após taxas"
-        />
-        <DashboardMetricCard
-          label="Vendas Aprovadas"
-          value={m.count_approved.toString()}
-          sub={`${m.count_total} pedidos totais`}
-          tooltip="Número de pedidos com pagamento confirmado"
-        />
-        <DashboardMetricCard
-          label="Ticket Médio"
-          value={fmtPrimary(avgTicket)}
-          tooltip="Valor médio por venda aprovada"
-        />
-        <DashboardMetricCard
-          label="Conversão de Cartão"
-          value={`${cardApprovalRate.toFixed(1)}%`}
-          sub={`${m.card_approved} de ${m.card_decided} tentativas`}
-          tooltip="Taxa de aprovação real processada pelo gateway"
-        />
-        <DashboardMetricCard
-          label="Vendas Pagas (Ads)"
-          value={fmtPrimary(pri("ads_revenue", m.paid_revenue))}
-          sub={`${pri("ads_count", m.paid_sales_count)} pedidos`}
-        />
-        <DashboardMetricCard
-          label="Vendas Orgânicas"
-          value={fmtPrimary(pri("organic_revenue", m.organic_revenue))}
-          sub={`${pri("organic_sales_count", m.organic_sales_count)} pedidos`}
-        />
-        <DashboardMetricCard
-          label="Pendente (PIX/Boleto)"
-          value={fmtPrimary(pri("pending_amount", m.total_pendente))}
-          sub={`${pri("pending_count", m.count_pending)} aguardando`}
-          dimmed={m.count_pending === 0}
-        />
-        <DashboardMetricCard
-          label="Recuperação de Carrinho"
-          value={`${recoveryRate}%`}
-          sub={`${m.abandoned_recovered} de ${m.abandoned_total}`}
-        />
-      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Main Stats Column */}
+        <div className="lg:col-span-8 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <DashboardHeroCard
+              label="Faturamento Líquido"
+              value={pri("approved_amount", totalLiquido)}
+              fmt={fmtPrimary}
+              variant="revenue"
+              sparklineData={chartData.map((d) => d.total)}
+              tooltip="Soma de todas as vendas aprovadas menos as taxas da plataforma."
+            />
+            <DashboardHeroCard
+              label="Vendas Aprovadas"
+              value={pri("approved_count", m.count_approved)}
+              fmt={(v) => Math.floor(v).toString()}
+              variant="sales"
+              sublabel={`${m.count_total} pedidos gerados`}
+              tooltip="Quantidade total de pedidos que tiveram o pagamento confirmado."
+            />
+          </div>
 
-      <div className="w-full">
-        <DashboardChart
-          data={chartData}
-          fmt={chartFmt}
-          currencyPrefix={chartPrefix}
-          title={period === "today" || period === "yesterday" ? "Receita por Hora" : "Receita Diária"}
-          currencyToggle={currency === "ALL" ? {
-            value: chartCurrency,
-            onChange: setChartCurrency
-          } : undefined}
-        />
-      </div>
+          <DashboardChart
+            data={chartData}
+            fmt={chartFmt}
+            currencyPrefix={chartPrefix}
+            title={period === "today" || period === "yesterday" ? "Faturamento por Hora" : "Faturamento Diário"}
+            currencyToggle={currency === "ALL" ? {
+              value: chartCurrency,
+              onChange: setChartCurrency
+            } : undefined}
+          />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <DashboardWeekdayChart orders={weekdayOrders} />
-        <DashboardApprovalCard
-          items={[
-            { label: "Cartão de Crédito", rate: cardApprovalRate },
-            { label: "PIX", rate: pixApprovalRate },
-          ]}
-          chargebackValue={fmtPrimary(pri("chargeback_amount", m.total_chargeback))}
-          chargebackCount={pri("chargeback_count", m.count_chargedback)}
-        />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <DashboardMetricCard
+              label="Ticket Médio"
+              value={fmtPrimary(avgTicket)}
+              tooltip="Valor médio por venda aprovada no período selecionado."
+            />
+            <DashboardMetricCard
+              label="Vendas via Ads"
+              value={fmtPrimary(pri("ads_revenue", m.paid_revenue))}
+              sub={`${pri("ads_count", m.paid_sales_count)} pedidos trackeados`}
+              accent
+            />
+            <DashboardMetricCard
+              label="Vendas Orgânicas"
+              value={fmtPrimary(pri("organic_revenue", m.organic_revenue))}
+              sub={`${pri("organic_sales_count", m.organic_sales_count)} pedidos diretos`}
+            />
+          </div>
+        </div>
+
+        {/* Sidebar Column */}
+        <div className="lg:col-span-4 space-y-6">
+          <DashboardApprovalCard
+            items={[
+              { label: "Cartão de Crédito", rate: cardApprovalRate },
+              { label: "PIX", rate: pixApprovalRate },
+            ]}
+          />
+
+          <div className="grid grid-cols-1 gap-4">
+            <DashboardMetricCard
+              label="Recuperação de Carrinho"
+              value={`${recoveryRate}%`}
+              sub={`${m.abandoned_recovered} carrinhos recuperados`}
+              tooltip="Percentual de checkouts abandonados que foram convertidos."
+            />
+            <DashboardMetricCard
+              label="Pendente (PIX/Boleto)"
+              value={fmtPrimary(pri("pending_amount", m.total_pendente))}
+              sub={`${pri("pending_count", m.count_pending)} pedidos aguardando`}
+              dimmed={m.count_pending === 0}
+            />
+            <DashboardMetricCard
+              label="Reembolsadas / Chargeback"
+              value={fmtPrimary(pri("refunded_amount", m.total_refunded) + pri("chargeback_amount", m.total_chargeback))}
+              sub={`${pri("count_refunded", m.count_refunded) + pri("chargeback_count", m.count_chargedback)} pedidos estornados`}
+            />
+          </div>
+
+          <DashboardWeekdayChart orders={weekdayOrders} />
+        </div>
       </div>
     </div>
   );
