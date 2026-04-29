@@ -259,6 +259,11 @@ Deno.serve(async (req) => {
         customer_country: customerCountry,
         customer_city: customerCity,
         is_bot: finalIsBot,
+        utm_source: finalUtmSource,
+        utm_medium: finalUtmMedium,
+        utm_campaign: utm_campaign || null,
+        utm_content: utm_content || null,
+        utm_term: utm_term || null,
       });
 
       // Browser-side log (quando o frontend também disparou via fbq)
@@ -276,6 +281,11 @@ Deno.serve(async (req) => {
           customer_country: customerCountry,
           customer_city: customerCity,
           is_bot: finalIsBot,
+          utm_source: finalUtmSource,
+          utm_medium: finalUtmMedium,
+          utm_campaign: utm_campaign || null,
+          utm_content: utm_content || null,
+          utm_term: utm_term || null,
         });
       }
     }
