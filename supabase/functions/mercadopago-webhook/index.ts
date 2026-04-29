@@ -265,161 +265,26 @@ Deno.serve(async (req) => {
       }
     }
 
-    // On confirmed payment, handle member access + notifications
+    // ═══════════════════════════════════════════════════════════════════════
+    // On confirmed payment → delegate ALL side effects to shared processor
+    // ═══════════════════════════════════════════════════════════════════════
     if (status === 'paid' && orderData?.product_id && orderData?.customer_id) {
-      // Check delivery_method before creating member access
-      const { data: mainProd } = await supabase
-        .from('products')
-        .select('delivery_method')
-        .eq('id', orderData.product_id)
-        .maybeSingle();
-
-      const deliveryMethod = mainProd?.delivery_method || 'appsell';
-
-      if (deliveryMethod !== 'panttera') {
-        console.log('[mp-webhook] Skipping member access — delivery_method is', deliveryMethod);
-      } else {
-      try {
-        const { data: course } = await supabase
-          .from('courses')
-          .select('id, title')
-          .eq('product_id', orderData.product_id)
-          .maybeSingle();
-
-        if (course) {
-          const { data: existingAccess } = await supabase
-            .from('member_access')
-            .select('id')
-            .eq('customer_id', orderData.customer_id)
-            .eq('course_id', course.id)
-            .maybeSingle();
-
-          if (!existingAccess) {
-            const { data: newAccess, error: accessErr } = await supabase
-              .from('member_access')
-              .insert({ customer_id: orderData.customer_id, course_id: course.id })
-              .select('access_token')
-              .single();
-
-            if (accessErr) {
-              console.error('[mp-webhook] Error creating member access:', accessErr);
-            } else {
-              console.log('[mp-webhook] Member access created for course:', course.id);
-
-              // Send access email
-              const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-              if (RESEND_API_KEY && newAccess?.access_token) {
-                try {
-                  const { data: customerData } = await supabase
-                    .from('customers')
-                    .select('name, email')
-                    .eq('id', orderData.customer_id)
-                    .single();
-
-                  if (customerData) {
-                    const siteUrl = 'https://app.panttera.com.br';
-                    const accessUrl = `${siteUrl}/membros?token=${newAccess.access_token}`;
-
-                    const emailHtml = `
-                      <!DOCTYPE html>
-                      <html>
-                      <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-                      <body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-                        <div style="max-width:560px;margin:40px auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-                          <div style="background:linear-gradient(135deg,#22c55e,#16a34a);padding:32px 40px;text-align:center;">
-                            <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">🎉 Pagamento confirmado!</h1>
-                          </div>
-                          <div style="padding:32px 40px;">
-                            <p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 16px;">
-                              Olá <strong>${customerData.name.split(' ')[0]}</strong>,
-                            </p>
-                            <p style="color:#374151;font-size:16px;line-height:1.6;margin:0 0 24px;">
-                              Seu pagamento foi confirmado e seu acesso ao curso <strong>"${course.title}"</strong> está liberado! 🚀
-                            </p>
-                            <div style="text-align:center;margin:32px 0;">
-                              <a href="${accessUrl}" style="display:inline-block;background:linear-gradient(135deg,#22c55e,#16a34a);color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:8px;font-size:16px;font-weight:600;box-shadow:0 4px 12px rgba(34,197,94,0.4);">
-                                Acessar Curso
-                              </a>
-                            </div>
-                            <p style="color:#6b7280;font-size:13px;line-height:1.5;margin:24px 0 0;padding-top:20px;border-top:1px solid #e5e7eb;">
-                              Ou copie e cole este link:<br>
-                              <a href="${accessUrl}" style="color:#22c55e;word-break:break-all;">${accessUrl}</a>
-                            </p>
-                          </div>
-                          <div style="background:#f9fafb;padding:20px 40px;text-align:center;">
-                            <p style="color:#9ca3af;font-size:12px;margin:0;">Guarde este email — ele contém seu link de acesso.</p>
-                          </div>
-                        </div>
-                      </body>
-                      </html>
-                    `;
-
-                    const emailRes = await fetch('https://api.resend.com/emails', {
-                      method: 'POST',
-                      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        from: 'PanteraPay <noreply@app.panttera.com.br>',
-                        to: [customerData.email],
-                        subject: `🎉 Acesso liberado — "${course.title}"`,
-                        html: emailHtml,
-                      }),
-                    });
-                    const emailData = await emailRes.json();
-
-                    await supabase.from('email_logs').insert({
-                      user_id: orderData.user_id,
-                      to_email: customerData.email,
-                      to_name: customerData.name,
-                      subject: `🎉 Acesso liberado — "${course.title}"`,
-                      html_body: emailHtml,
-                      email_type: 'payment_confirmed',
-                      status: emailRes.ok ? 'sent' : 'failed',
-                      resend_id: emailData?.id || null,
-                      customer_id: orderData.customer_id,
-                      product_id: orderData.product_id,
-                      source: 'mercadopago-webhook',
-                    });
-
-                    console.log('[mp-webhook] Access email sent to', customerData.email);
-                  }
-                } catch (emailErr) {
-                  console.error('[mp-webhook] Email error (non-blocking):', emailErr);
-                }
-              }
-            }
-          }
-        }
-      } catch (memberErr) {
-        console.error('[mp-webhook] Member access error (non-blocking):', memberErr);
-      }
-      } // end else (panttera delivery)
-
-      try {
-        const ownerId = orderData.user_id;
-        const { data: notifSettings } = await supabase
-          .from('notification_settings')
-          .select('send_approved, show_product_name')
-          .eq('user_id', ownerId || '')
-          .eq('send_approved', true)
-          .maybeSingle();
-
-        if (notifSettings) {
-          const amount = Number(orderData.amount).toFixed(2).replace('.', ',');
-          const method = orderData.payment_method === 'pix' ? '💠 PIX' : '💳 Cartão';
-
-          let productName = 'Produto';
-          let customerName = '';
-
-          if (orderData.product_id) {
-            const { data: prod } = await supabase.from('products').select('name').eq('id', orderData.product_id).maybeSingle();
-            if (prod) productName = prod.name;
-          }
-          if (orderData.customer_id) {
-            const { data: cust } = await supabase.from('customers').select('name').eq('id', orderData.customer_id).maybeSingle();
-            if (cust) customerName = cust.name;
-          }
-
-          await sendPushNotification(
+      await processOrderPaid({
+        supabase,
+        orderData: {
+          id: orderData.id,
+          amount: orderData.amount,
+          payment_method: orderData.payment_method,
+          product_id: orderData.product_id,
+          customer_id: orderData.customer_id,
+          user_id: orderData.user_id,
+          metadata: orderData.metadata as Record<string, unknown> | null,
+        },
+        externalId: paymentId,
+        source: 'mercadopago-webhook',
+        currency: 'BRL',
+      });
+    }
             '💰 Nova venda via Mercado Pago!',
             `${customerName || 'Cliente'} • ${method} R$ ${amount}${notifSettings.show_product_name ? ` • ${productName}` : ''}`,
             ownerId || undefined,
