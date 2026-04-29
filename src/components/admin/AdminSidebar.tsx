@@ -223,7 +223,13 @@ export function AdminSidebar() {
           <SidebarGroupContent>{renderItems(analiseItems)}</SidebarGroupContent>
         </SidebarGroup>
 
-        {/* 5. CONFIGURAÇÕES (collapsible) */}
+        {/* 5. MARKETING */}
+        <SidebarGroup>
+          <SidebarGroupLabel>{renderSectionLabel("Marketing")}</SidebarGroupLabel>
+          <SidebarGroupContent>{renderItems(marketingItems)}</SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* 6. CONFIGURAÇÕES (collapsible) */}
         <SidebarGroup>
           <SidebarGroupLabel>{renderSectionLabel("Geral")}</SidebarGroupLabel>
           <SidebarGroupContent>
