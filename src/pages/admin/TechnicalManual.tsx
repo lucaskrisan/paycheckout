@@ -932,6 +932,37 @@ Build:
   • Sistema de afiliados (links de indicação + comissões)
   • Domínios customizados por produtor
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+21. INTEGRAÇÃO DE PARCEIROS (MARKETPLACE)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+21.1 Visão Geral
+  A PanteraPay permite que apps de terceiros (ex: GatFlow) se integuem 
+  oficialmente via OAuth2 e SSO para oferecer recursos aos lojistas.
+
+21.2 Credenciais de Marketplace (GatFlow)
+  • URLs Base (Produção): https://app.panttera.com.br
+  • Token Endpoint: /api/oauth/token (POST)
+  • User Info: /api/v1/user (GET)
+  • Webhook Endpoint: (Configurável no painel do parceiro)
+
+21.3 Fluxo SSO (JWT HS256)
+  O lojista é redirecionado para o parceiro com um token assinado:
+  https://parceiro.com/auth/sso?token={JWT}
+  
+  O JWT deve ser validado usando o PANTTERA_SHARED_SECRET.
+  Payload padrão:
+  {
+    "shop_id": "ID_DO_LOJISTA",
+    "admin_email": "loja@exemplo.com",
+    "exp": TIMESTAMP_EXPIRACAO
+  }
+
+21.4 Webhooks de Parceiro
+  Notificações de billing e ciclo de vida são enviadas para o parceiro.
+  As assinaturas são enviadas no header x-panttera-signature e validadas
+  usando o PANTTERA_WEBHOOK_SECRET via HMAC SHA-256.
+
 ═══════════════════════════════════════════════════════════════
   FIM DO MANUAL TÉCNICO
   PanteraPay — Checkout as a Service
