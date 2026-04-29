@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle, PartyPopper, Mail, ArrowRight, Loader2, Gift, ShoppingBag } from "lucide-react";
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getMemberTranslations, type MemberLang } from "@/lib/memberI18n";
+import { useFacebookPixel } from "@/hooks/useFacebookPixel";
 
 const confettiColors = ["#22c55e", "#f59e0b", "#3b82f6", "#ef4444", "#a855f7", "#ec4899"];
 
@@ -44,6 +45,8 @@ const CheckoutSuccess = () => {
   const isEN = lang === "en";
 
   const [confetti, setConfetti] = useState<ConfettiPiece[]>([]);
+  const { trackPurchase } = useFacebookPixel(productId, 0, productName);
+  const purchaseFiredRef = useRef(false);
   // deliveryLinks: array of { delivery_type, access_url } for all products in the order
   const [deliveryLinks, setDeliveryLinks] = useState<{ delivery_type: string; access_url: string | null }[]>([]);
   const [appsellLoginUrl, setAppsellLoginUrl] = useState<string | null>(null);
@@ -61,6 +64,40 @@ const CheckoutSuccess = () => {
     }));
     setConfetti(pieces);
   }, []);
+
+  // Track Purchase on Success Page (Deduplicated backup)
+  useEffect(() => {
+    if (!orderId || !productId || purchaseFiredRef.current) return;
+
+    const firePurchase = async () => {
+      try {
+        const { data: orderData, error } = await supabase
+          .from("orders")
+          .select("amount, items:order_items(product_id, price, products(name))")
+          .eq("id", orderId)
+          .single();
+
+        if (error || !orderData) return;
+
+        purchaseFiredRef.current = true;
+        const mainItem = (orderData as any).items?.find((i: any) => i.product_id === productId);
+        const bumpItems = (orderData as any).items
+          ?.filter((i: any) => i.product_id !== productId)
+          .map((i: any) => ({
+            id: i.product_id,
+            price: i.price,
+            name: i.products?.name,
+          })) || [];
+
+        // amount is the column name, default currency BRL if missing
+        trackPurchase((orderData as any).amount, "BRL", orderId, bumpItems);
+      } catch (err) {
+        console.error("[CheckoutSuccess] Error firing backup purchase pixel:", err);
+      }
+    };
+
+    firePurchase();
+  }, [orderId, productId, trackPurchase]);
 
   // Fetch all delivery links for the order (main product + bumps)
   useEffect(() => {

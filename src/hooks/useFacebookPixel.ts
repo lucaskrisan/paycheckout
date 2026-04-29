@@ -524,6 +524,17 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
   ) => {
     const dedupKey = orderId ? `Purchase_${orderId}` : "Purchase";
     if (firedEventsRef.current.has(dedupKey)) return;
+    
+    // Check localStorage for purchase deduplication across reloads/sessions
+    if (orderId) {
+      const storageKey = `_fb_purchased_${orderId}`;
+      if (localStorage.getItem(storageKey)) {
+        console.log(`[useFacebookPixel] Purchase already fired for order ${orderId}, skipping.`);
+        return;
+      }
+      localStorage.setItem(storageKey, "1");
+    }
+    
     firedEventsRef.current.add(dedupKey);
 
     const eventId = orderId || generateEventId("Purchase");
