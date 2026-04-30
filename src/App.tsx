@@ -85,6 +85,7 @@ const MariaAI = lazy(() => import("./pages/admin/MariaAI"));
 const AbandonedCartDetail = lazy(() => import("./pages/admin/AbandonedCartDetail"));
 const CartControl = lazy(() => import("./pages/admin/CartControl"));
 const EmailTemplates = lazy(() => import("./pages/admin/EmailTemplates"));
+const DeliveryHealth = lazy(() => import("./pages/admin/DeliveryHealth"));
 const Go = lazy(() => import("./pages/Go"));
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -150,6 +151,7 @@ const App = () => (
                 <Route path="tracking" element={<Tracking />} />
                 <Route path="reviews" element={<Reviews />} />
                 <Route path="health" element={<SystemHealth />} />
+                <Route path="delivery-health" element={<DeliveryHealth />} />
                 <Route path="webhooks" element={<Webhooks />} />
                 <Route path="emails" element={<Emails />} />
                 <Route path="pwa" element={<PwaSettings />} />
