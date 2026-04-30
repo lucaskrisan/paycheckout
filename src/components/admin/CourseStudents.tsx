@@ -412,7 +412,42 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
           <DialogHeader>
             <DialogTitle className="font-display">Adicionar Aluno</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 pt-4">
+            <div className="space-y-3">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Destino do Acesso</Label>
+              <RadioGroup 
+                value={addForm.deliveryType} 
+                onValueChange={(v: "panttera" | "appsell") => setAddForm({ ...addForm, deliveryType: v })}
+                className="grid grid-cols-2 gap-3"
+              >
+                <div>
+                  <RadioGroupItem value="panttera" id="panttera" className="peer sr-only" />
+                  <Label
+                    htmlFor="panttera"
+                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                  >
+                    <Layout className="mb-2 h-5 w-5" />
+                    <span className="text-xs font-bold">Panttera</span>
+                  </Label>
+                </div>
+                <div>
+                  <RadioGroupItem value="appsell" id="appsell" className="peer sr-only" />
+                  <Label
+                    htmlFor="appsell"
+                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                  >
+                    <Globe className="mb-2 h-5 w-5" />
+                    <span className="text-xs font-bold">AppSell</span>
+                  </Label>
+                </div>
+              </RadioGroup>
+              <p className="text-[10px] text-muted-foreground px-1">
+                {addForm.deliveryType === "panttera" 
+                  ? "O aluno receberá um e-mail com o link da área de membros interna." 
+                  : "O aluno será enviado para a AppSell para entrega externa."}
+              </p>
+            </div>
+
             <div className="space-y-1.5">
               <Label>Nome *</Label>
               <Input
