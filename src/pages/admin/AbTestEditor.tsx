@@ -844,6 +844,8 @@ function EditorInner() {
       } else if (kind === "page") {
         const idx = nodes.filter((n) => n.type === "page").length;
         newNode = { id, type: "page", position, data: { kind: "page", label: `Página ${String.fromCharCode(65 + idx)}`, subtitle: "Landing Page", url: "" } };
+      } else if (kind === "upsell") {
+        newNode = { id, type: "upsell", position, data: { kind: "upsell", label: "Novo Upsell", subtitle: "Página de Upsell", url: "" } };
       } else {
         const idx = nodes.filter((n) => n.type === "checkout").length;
         newNode = { id, type: "checkout", position, data: { kind: "checkout", label: `Checkout ${String.fromCharCode(65 + idx)}`, subtitle: "Página de pagamento", productId: null, offerId: null, templateId: null } };
