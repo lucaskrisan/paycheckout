@@ -371,7 +371,7 @@ function CreativeNode({ id, data }: NodeProps<Node<CreativeData, "creative">>) {
       title={data.label} 
       subtitle={data.subtitle || "Anúncio / Criativo"}
       nodeId={id}
-      inHandle={false}
+      inHandle={true}
       onDelete={(nodeId) => {
         const ns = reactFlow.getNodes();
         const es = reactFlow.getEdges();
