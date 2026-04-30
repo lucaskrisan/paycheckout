@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Users, Plus, Trash2, Search, Loader2, Send } from "lucide-react";
+import { Users, Plus, Trash2, Search, Loader2, Send, Globe, Layout } from "lucide-react";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface Student {
   id: string;
@@ -30,7 +31,7 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [addForm, setAddForm] = useState({ name: "", email: "", cpf: "", phone: "" });
+  const [addForm, setAddForm] = useState({ name: "", email: "", cpf: "", phone: "", deliveryType: "panttera" as "panttera" | "appsell" });
   const [adding, setAdding] = useState(false);
   const [resending, setResending] = useState<string | null>(null);
 
@@ -109,6 +110,8 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
 
     setAdding(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
       // Check if customer already exists
       let customerId: string;
       const { data: existing } = await supabase
@@ -135,76 +138,99 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
         customerId = newCustomer.id;
       }
 
-      // Check if already has access
-      const { data: existingAccess } = await supabase
-        .from("member_access")
-        .select("id")
-        .eq("customer_id", customerId)
-        .eq("course_id", courseId)
-        .maybeSingle();
+      if (addForm.deliveryType === "panttera") {
+        // --- INTERNAL PANTTERA DELIVERY ---
+        const { data: existingAccess } = await supabase
+          .from("member_access")
+          .select("id")
+          .eq("customer_id", customerId)
+          .eq("course_id", courseId)
+          .maybeSingle();
 
-      if (existingAccess) {
-        toast.error("Este aluno já tem acesso a este curso");
-        setAdding(false);
-        return;
-      }
+        if (existingAccess) {
+          toast.error("Este aluno já tem acesso a este curso");
+          setAdding(false);
+          return;
+        }
 
-      // Create member_access
-      const { data: newAccess, error: accessErr } = await supabase
-        .from("member_access")
-        .insert({
-          customer_id: customerId,
-          course_id: courseId,
-        })
-        .select("access_token")
-        .single();
-
-      if (accessErr) throw accessErr;
-
-      const accessUrl = `${getAuthOrigin()}/membros?token=${newAccess.access_token}`;
-      
-      // Send access email via edge function
-      try {
-        const { data: emailResult, error: emailErr } = await supabase.functions.invoke("send-access-link", {
-          body: {
+        const { data: newAccess, error: accessErr } = await supabase
+          .from("member_access")
+          .insert({
             customer_id: customerId,
             course_id: courseId,
-            access_token: newAccess.access_token,
-          },
-        });
-        if (emailErr) {
-          console.error("Email error:", emailErr);
-          toast.success("Aluno adicionado! Link copiado.", {
-            duration: 6000,
-            description: accessUrl,
+          })
+          .select("access_token")
+          .single();
+
+        if (accessErr) throw accessErr;
+
+        const accessUrl = `${getAuthOrigin()}/membros?token=${newAccess.access_token}`;
+        
+        try {
+          const { data: emailResult, error: emailErr } = await supabase.functions.invoke("send-access-link", {
+            body: {
+              customer_id: customerId,
+              course_id: courseId,
+              access_token: newAccess.access_token,
+            },
           });
-        } else if (emailResult?.email_sent === false) {
-          toast.success("Aluno adicionado! Link copiado. (Verifique seu domínio no Resend para enviar emails)", {
-            duration: 8000,
-            description: accessUrl,
-          });
-        } else {
-          toast.success(`Email de acesso enviado para ${addForm.email}!`, {
-            duration: 6000,
-            description: accessUrl,
-          });
+          if (emailErr) {
+            toast.success("Aluno adicionado! Link copiado.", { description: accessUrl });
+          } else {
+            toast.success(`Email enviado para ${addForm.email}!`);
+          }
+        } catch {
+          toast.success("Aluno adicionado! Link copiado.", { description: accessUrl });
         }
-      } catch {
-        toast.success("Aluno adicionado! Link copiado.", {
-          duration: 6000,
-          description: accessUrl,
+        navigator.clipboard.writeText(accessUrl).catch(() => {});
+      } else {
+        // --- EXTERNAL APPSELL DELIVERY ---
+        // 1. Create a "manual" order to trigger appsell-notify
+        const { data: courseData } = await supabase
+          .from("courses")
+          .select("product_id")
+          .eq("id", courseId)
+          .single();
+
+        const { data: order, error: orderErr } = await supabase
+          .from("orders")
+          .insert({
+            customer_id: customerId,
+            product_id: courseData?.product_id || null,
+            user_id: user?.id,
+            amount: 0,
+            status: "paid",
+            payment_method: "manual_entry",
+            metadata: { 
+              manual_entry: true,
+              customer_name: addForm.name,
+              customer_email: addForm.email
+            }
+          })
+          .select("id")
+          .single();
+
+        if (orderErr) throw orderErr;
+
+        // 2. Notify AppSell
+        const { error: notifyErr } = await supabase.functions.invoke("appsell-notify", {
+          body: {
+            event: "order.paid",
+            order_id: order.id,
+            user_id: user?.id
+          }
         });
+
+        if (notifyErr) throw notifyErr;
+        toast.success(`Aluno enviado para o AppSell com sucesso!`);
       }
 
-      // Copy link to clipboard as backup
-      navigator.clipboard.writeText(accessUrl).catch(() => {});
-
       setAddDialogOpen(false);
-      setAddForm({ name: "", email: "", cpf: "", phone: "" });
+      setAddForm({ name: "", email: "", cpf: "", phone: "", deliveryType: "panttera" });
       loadStudents();
     } catch (err: any) {
       console.error(err);
-      toast.error("Erro ao adicionar aluno");
+      toast.error("Erro ao adicionar aluno: " + err.message);
     } finally {
       setAdding(false);
     }
@@ -386,7 +412,42 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
           <DialogHeader>
             <DialogTitle className="font-display">Adicionar Aluno</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 pt-4">
+            <div className="space-y-3">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Destino do Acesso</Label>
+              <RadioGroup 
+                value={addForm.deliveryType} 
+                onValueChange={(v: "panttera" | "appsell") => setAddForm({ ...addForm, deliveryType: v })}
+                className="grid grid-cols-2 gap-3"
+              >
+                <div>
+                  <RadioGroupItem value="panttera" id="panttera" className="peer sr-only" />
+                  <Label
+                    htmlFor="panttera"
+                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                  >
+                    <Layout className="mb-2 h-5 w-5" />
+                    <span className="text-xs font-bold">Panttera</span>
+                  </Label>
+                </div>
+                <div>
+                  <RadioGroupItem value="appsell" id="appsell" className="peer sr-only" />
+                  <Label
+                    htmlFor="appsell"
+                    className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                  >
+                    <Globe className="mb-2 h-5 w-5" />
+                    <span className="text-xs font-bold">AppSell</span>
+                  </Label>
+                </div>
+              </RadioGroup>
+              <p className="text-[10px] text-muted-foreground px-1">
+                {addForm.deliveryType === "panttera" 
+                  ? "O aluno receberá um e-mail com o link da área de membros interna." 
+                  : "O aluno será enviado para a AppSell para entrega externa."}
+              </p>
+            </div>
+
             <div className="space-y-1.5">
               <Label>Nome *</Label>
               <Input
