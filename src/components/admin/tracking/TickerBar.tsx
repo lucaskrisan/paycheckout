@@ -27,15 +27,11 @@ function flagFromCountry(code?: string | null) {
 
 function formatMoney(v?: number | null) {
   if (v == null || isNaN(Number(v))) return null;
-  // Heurística: valores baixos (< 50) provavelmente USD, demais BRL.
-  // Quando event_currency for adicionado, trocar para currency real.
-  const n = Number(v);
-  const isUsdLike = n > 0 && n < 50;
-  return new Intl.NumberFormat(isUsdLike ? "en-US" : "pt-BR", {
+  return new Intl.NumberFormat("pt-BR", {
     style: "currency",
-    currency: isUsdLike ? "USD" : "BRL",
+    currency: "BRL",
     minimumFractionDigits: 2,
-  }).format(n);
+  }).format(Number(v));
 }
 
 const TickerBar = ({ userId, filterProduct }: Props) => {
@@ -59,8 +55,16 @@ const TickerBar = ({ userId, filterProduct }: Props) => {
       if (filterProduct !== "all") q = q.eq("product_id", filterProduct);
       const { data } = await q;
       const list = (data || []) as PurchaseTick[];
-      list.forEach((t) => seenRef.current.add(t.id));
-      setTicks(list);
+      // Dedup por comprador+minuto para evitar repetir mesma compra
+      // (ex: bump + principal disparam Purchases separadas)
+      const deduped: PurchaseTick[] = [];
+      list.forEach((t) => {
+        const key = `${t.customer_name}_${t.created_at?.slice(0, 16)}`;
+        if (seenRef.current.has(key)) return;
+        seenRef.current.add(key);
+        deduped.push(t);
+      });
+      setTicks(deduped);
     };
     load();
   }, [userId, filterProduct]);
@@ -77,8 +81,10 @@ const TickerBar = ({ userId, filterProduct }: Props) => {
           if (userId && ne.user_id !== userId) return;
           if (filterProduct !== "all" && ne.product_id !== filterProduct) return;
           if (ne.visitor_id?.startsWith("sim_")) return;
-          if (seenRef.current.has(ne.id)) return;
-          seenRef.current.add(ne.id);
+          // Dedup por nome + minuto (mesma compradora no mesmo minuto = mesma venda)
+          const tickerDedupKey = `${ne.customer_name}_${ne.created_at?.slice(0, 16)}`;
+          if (seenRef.current.has(tickerDedupKey)) return;
+          seenRef.current.add(tickerDedupKey);
           setTicks((prev) => [ne as PurchaseTick, ...prev].slice(0, 25));
         },
       )
