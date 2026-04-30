@@ -143,16 +143,16 @@ function NodeShell({
         <Handle 
           type="target" 
           position={Position.Left} 
-          className="!w-4 !h-4 !bg-[#0d0f1a] !border-2 !border-slate-700 hover:!border-white hover:!bg-slate-800 transition-all !z-50"
-          style={{ left: -8, top: '50%' }}
+          className="!w-4 !h-4 !bg-slate-900 !border-2 !border-slate-500 hover:!border-white hover:!scale-125 transition-all !z-50 shadow-[0_0_10px_rgba(255,255,255,0.1)]"
+          style={{ left: -8, top: '50%', transform: 'translateY(-50%)' }}
         />
       )}
       {outHandle && (
         <Handle 
           type="source" 
           position={Position.Right} 
-          className="!w-4 !h-4 !bg-[#0d0f1a] !border-2 !border-slate-700 hover:!border-white hover:!bg-slate-800 transition-all !z-50"
-          style={{ right: -8, top: '50%' }}
+          className="!w-4 !h-4 !bg-slate-900 !border-2 !border-slate-500 hover:!border-white hover:!scale-125 transition-all !z-50 shadow-[0_0_10px_rgba(255,255,255,0.1)]"
+          style={{ right: -8, top: '50%', transform: 'translateY(-50%)' }}
         />
       )}
       
