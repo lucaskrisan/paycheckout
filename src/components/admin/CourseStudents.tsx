@@ -465,24 +465,6 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
                 placeholder="email@exemplo.com"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>CPF</Label>
-                <Input
-                  value={addForm.cpf}
-                  onChange={(e) => setAddForm({ ...addForm, cpf: e.target.value })}
-                  placeholder="000.000.000-00"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Telefone</Label>
-                <Input
-                  value={addForm.phone}
-                  onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })}
-                  placeholder="(00) 00000-0000"
-                />
-              </div>
-            </div>
             <Button onClick={addStudent} disabled={adding} className="w-full">
               {adding && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
               Adicionar Aluno
