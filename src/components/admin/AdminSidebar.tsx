@@ -76,6 +76,7 @@ const vendasItems = [
 // 3. CONTEÚDO — entrega e engajamento
 const conteudoItems = [
   { title: "Área de Membros", url: "/admin/courses", icon: GraduationCap },
+  { title: "Saúde de Entregas", url: "/admin/delivery-health", icon: Activity },
   { title: "Avaliações", url: "/admin/reviews", icon: MessageCircle },
 ];
 
