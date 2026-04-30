@@ -111,6 +111,7 @@ const superAdminAutomacao = [
   { title: "Nina IA", url: "/admin/maria-ia", icon: Sparkles },
   { title: "Central de E-mails", url: "/admin/email-templates", icon: Mail },
   { title: "Controle de Carrinhos", url: "/admin/cart-control", icon: ShoppingCart },
+  { title: "Saúde de Entregas", url: "/admin/delivery-health", icon: Activity },
 ];
 
 const superAdminGestao = [
