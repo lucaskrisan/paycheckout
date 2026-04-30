@@ -48,12 +48,13 @@ import {
   Loader2,
   Image as ImageIcon,
   MousePointer2,
+  TrendingUp,
 } from "lucide-react";
 import { AbTestTutorial } from "@/components/admin/AbTestTutorial";
 
 // ---------------- Types ----------------
 
-type NodeKind = "config" | "abtest" | "page" | "checkout" | "creative";
+type NodeKind = "config" | "abtest" | "page" | "checkout" | "creative" | "upsell";
 
 type ConfigData = { kind: "config"; label: string; testName: string; entryUrl: string; visits: number; stickyDays?: number; impressions?: number; sales?: number; revenue?: number };
 type AbTestData = { kind: "abtest"; label: string; subtitle: string; splits: { label: string; weight: number }[] };
@@ -73,6 +74,13 @@ type CheckoutData = {
   productId: string | null;
   offerId: string | null;
   templateId: string | null;
+  stats?: { impressions: number; clicks: number; sales: number; revenue: number };
+};
+type UpsellData = {
+  kind: "upsell";
+  label: string;
+  subtitle: string;
+  url: string;
   stats?: { impressions: number; clicks: number; sales: number; revenue: number };
 };
 type CreativeData = {
@@ -455,12 +463,84 @@ function CreativeNode({ id, data }: NodeProps<Node<CreativeData, "creative">>) {
   );
 }
 
+function UpsellNode({ id, data }: NodeProps<Node<UpsellData, "upsell">>) {
+  const reactFlow = useReactFlow();
+  
+  const updateData = (newData: Partial<UpsellData>) => {
+    reactFlow.setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === id) {
+          return { ...node, data: { ...node.data, ...newData } };
+        }
+        return node;
+      })
+    );
+  };
+
+  return (
+    <NodeShell 
+      color="#8b5cf6" 
+      icon={<TrendingUp className="h-4 w-4" />} 
+      title={data.label} 
+      subtitle={data.subtitle || "Venda Extra"}
+      nodeId={id}
+      onDelete={(nodeId) => {
+        const ns = reactFlow.getNodes();
+        const es = reactFlow.getEdges();
+        reactFlow.setNodes(ns.filter(n => n.id !== nodeId));
+        reactFlow.setEdges(es.filter(e => e.source !== nodeId && e.target !== nodeId));
+      }}
+    >
+      <div className="space-y-3">
+        <div className="space-y-1.5">
+          <Label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Nome do Upsell</Label>
+          <Input 
+            value={data.label} 
+            onChange={(e) => updateData({ label: e.target.value })}
+            className="h-8 text-xs bg-white/[0.03] border-white/10"
+            placeholder="Ex: Oferta Especial 01"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">URL do Upsell</Label>
+          <div className="flex items-center gap-2">
+            <Link2 className="h-3.5 w-3.5 text-slate-500" />
+            <Input 
+              value={data.url || ""} 
+              onChange={(e) => updateData({ url: e.target.value })}
+              className="h-8 text-xs bg-white/[0.03] border-white/10"
+              placeholder="https://..."
+            />
+          </div>
+        </div>
+
+        {data.stats && (
+          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/5 mt-1">
+            <div className="flex flex-col p-2 rounded-xl bg-violet-500/5 border border-violet-500/10">
+              <span className="text-[8px] uppercase tracking-wider text-violet-400/70 font-bold">Vistas</span>
+              <span className="text-xs font-black text-white">{data.stats.impressions || 0}</span>
+            </div>
+            <div className="flex flex-col p-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+              <span className="text-[8px] uppercase tracking-wider text-emerald-400/70 font-bold">Vendas</span>
+              <span className="text-xs font-black text-emerald-400">
+                {data.stats.sales || 0}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    </NodeShell>
+  );
+}
+
 const nodeTypes = {
   config: ConfigNode,
   abtest: AbTestNode,
   page: PageNode,
   checkout: CheckoutNode,
   creative: CreativeNode,
+  upsell: UpsellNode,
 };
 
 // ---------------- Initial graph ----------------
@@ -502,6 +582,7 @@ const PALETTE: { kind: NodeKind; label: string; icon: React.ReactNode; color: st
   { kind: "abtest", label: "Teste A/B", icon: <BarChart3 className="h-4 w-4" />, color: "#a855f7" },
   { kind: "page", label: "Página de Vendas", icon: <FileText className="h-4 w-4" />, color: "#10b981" },
   { kind: "checkout", label: "Checkout", icon: <ShoppingCart className="h-4 w-4" />, color: "#f97316" },
+  { kind: "upsell", label: "Upsell", icon: <TrendingUp className="h-4 w-4" />, color: "#8b5cf6" },
 ];
 
 function PaletteItem({ kind, label, icon, color }: { kind: NodeKind; label: string; icon: React.ReactNode; color: string }) {
@@ -763,6 +844,8 @@ function EditorInner() {
       } else if (kind === "page") {
         const idx = nodes.filter((n) => n.type === "page").length;
         newNode = { id, type: "page", position, data: { kind: "page", label: `Página ${String.fromCharCode(65 + idx)}`, subtitle: "Landing Page", url: "" } };
+      } else if (kind === "upsell") {
+        newNode = { id, type: "upsell", position, data: { kind: "upsell", label: "Novo Upsell", subtitle: "Página de Upsell", url: "" } };
       } else {
         const idx = nodes.filter((n) => n.type === "checkout").length;
         newNode = { id, type: "checkout", position, data: { kind: "checkout", label: `Checkout ${String.fromCharCode(65 + idx)}`, subtitle: "Página de pagamento", productId: null, offerId: null, templateId: null } };
