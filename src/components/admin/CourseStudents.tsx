@@ -30,7 +30,7 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [addForm, setAddForm] = useState({ name: "", email: "", cpf: "", phone: "" });
+  const [addForm, setAddForm] = useState({ name: "", email: "", cpf: "", phone: "", deliveryType: "panttera" as "panttera" | "appsell" });
   const [adding, setAdding] = useState(false);
   const [resending, setResending] = useState<string | null>(null);
 
