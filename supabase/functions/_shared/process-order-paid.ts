@@ -607,6 +607,59 @@ async function stepWhatsAppDispatch(params: ProcessOrderPaidParams): Promise<voi
 }
 
 // ─── 8. Billing low balance notification ─────────────────────────────────────
+// ─── AppSell delivery notification ──────────────────────────────────────────
+async function stepAppsellNotify(params: ProcessOrderPaidParams): Promise<void> {
+  const { supabase, orderData, source } = params;
+  if (!orderData.user_id || !orderData.product_id) return;
+
+  try {
+    // Only fire for products with delivery_method = 'appsell'
+    const { data: prod } = await supabase
+      .from('products')
+      .select('delivery_method')
+      .eq('id', orderData.product_id)
+      .maybeSingle();
+
+    if (prod?.delivery_method !== 'appsell') {
+      console.log(`[${source}] Skipping AppSell notify — delivery_method is ${prod?.delivery_method}`);
+      return;
+    }
+
+    // Confirm the producer has an active AppSell integration before invoking
+    const { data: integration } = await supabase
+      .from('appsell_integrations')
+      .select('active, token')
+      .eq('user_id', orderData.user_id)
+      .maybeSingle();
+
+    if (!integration?.active || !integration?.token) {
+      console.log(`[${source}] Skipping AppSell notify — no active integration for user ${orderData.user_id}`);
+      return;
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+    const res = await fetch(`${supabaseUrl}/functions/v1/appsell-notify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${serviceKey}`,
+      },
+      body: JSON.stringify({
+        event: 'order.paid',
+        order_id: orderData.id,
+        user_id: orderData.user_id,
+      }),
+    });
+
+    const body = await res.text();
+    console.log(`[${source}] AppSell notify response: ${res.status} ${body.substring(0, 200)}`);
+  } catch (err) {
+    console.error(`[${source}] AppSell notify error (non-blocking):`, err);
+  }
+}
+
 async function stepBillingNotification(params: ProcessOrderPaidParams): Promise<void> {
   const { supabase, orderData, source } = params;
   if (!orderData.user_id) return;
@@ -652,6 +705,7 @@ export async function processOrderPaid(params: ProcessOrderPaidParams): Promise<
     { name: 'CAPI Fallback', fn: stepCapiFallback },
     { name: 'Recover Carts', fn: stepRecoverAbandonedCarts },
     { name: 'Member Access', fn: stepMemberAccess },
+    { name: 'AppSell Notify', fn: stepAppsellNotify },
     { name: 'Push Notification', fn: stepPushNotification },
     { name: 'WhatsApp Dispatch', fn: stepWhatsAppDispatch },
     { name: 'Billing Notification', fn: stepBillingNotification },
