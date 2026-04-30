@@ -76,7 +76,6 @@ const vendasItems = [
 // 3. CONTEÚDO — entrega e engajamento
 const conteudoItems = [
   { title: "Área de Membros", url: "/admin/courses", icon: GraduationCap },
-  { title: "Saúde de Entregas", url: "/admin/delivery-health", icon: Activity },
   { title: "Avaliações", url: "/admin/reviews", icon: MessageCircle },
 ];
 
@@ -112,6 +111,7 @@ const superAdminAutomacao = [
   { title: "Nina IA", url: "/admin/maria-ia", icon: Sparkles },
   { title: "Central de E-mails", url: "/admin/email-templates", icon: Mail },
   { title: "Controle de Carrinhos", url: "/admin/cart-control", icon: ShoppingCart },
+  { title: "Saúde de Entregas", url: "/admin/delivery-health", icon: Activity },
 ];
 
 const superAdminGestao = [
