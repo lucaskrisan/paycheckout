@@ -78,21 +78,6 @@ const PixelEventsDashboard = ({ products, userId }: Props) => {
   const [feedView, setFeedView] = useState<"feed" | "journeys">("feed");
   const [eventsLastHour, setEventsLastHour] = useState(0);
 
-  const [onlyEngaged, setOnlyEngaged] = useState<boolean>(false);
-
-  const engagedVisitorIds = useMemo(() => {
-    const s = new Set<string>();
-    events.forEach((e) => {
-      if (
-        e.visitor_id &&
-        e.event_name !== "PageView" &&
-        e.event_name !== "ViewContent"
-      ) {
-        s.add(e.visitor_id);
-      }
-    });
-    return s;
-  }, [events]);
   const [initialLoading, setInitialLoading] = useState(() => {
     // Só mostra skeleton no primeiro mount sem cache
     try {
