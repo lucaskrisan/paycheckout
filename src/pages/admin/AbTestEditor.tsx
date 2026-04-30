@@ -123,12 +123,12 @@ function NodeShell({
 }) {
   return (
     <div
-      className="rounded-2xl bg-[#0d0f1a] border-[1.5px] border-white/5 shadow-2xl min-w-[240px] max-w-[280px] relative group overflow-hidden transition-all duration-300 hover:border-white/10"
+      className="rounded-2xl bg-[#0d0f1a] border-[1.5px] border-white/5 shadow-2xl min-w-[240px] max-w-[280px] relative group transition-all duration-300 hover:border-white/10"
       style={{ 
         boxShadow: `0 10px 40px -10px rgba(0,0,0,0.5), 0 0 20px ${color}11`
       }}
     >
-      <div className="h-1.5 w-full" style={{ backgroundColor: color }} />
+      <div className="h-1.5 w-full rounded-t-2xl" style={{ backgroundColor: color }} />
       
       {nodeId && nodeId !== "config" && onDelete && (
         <button 
@@ -143,16 +143,16 @@ function NodeShell({
         <Handle 
           type="target" 
           position={Position.Left} 
-          className="!w-3 !h-3 !bg-slate-900 !border-2 !border-slate-700 hover:!border-white transition-colors"
-          style={{ left: -6 }}
+          className="!w-4 !h-4 !bg-slate-900 !border-2 !border-slate-500 hover:!border-white hover:!scale-125 transition-all !z-50 shadow-[0_0_10px_rgba(255,255,255,0.1)]"
+          style={{ left: -8, top: '50%', transform: 'translateY(-50%)' }}
         />
       )}
       {outHandle && (
         <Handle 
           type="source" 
           position={Position.Right} 
-          className="!w-3 !h-3 !bg-slate-900 !border-2 !border-slate-700 hover:!border-white transition-colors"
-          style={{ right: -6 }}
+          className="!w-4 !h-4 !bg-slate-900 !border-2 !border-slate-500 hover:!border-white hover:!scale-125 transition-all !z-50 shadow-[0_0_10px_rgba(255,255,255,0.1)]"
+          style={{ right: -8, top: '50%', transform: 'translateY(-50%)' }}
         />
       )}
       
@@ -178,7 +178,7 @@ function ConfigNode({ data }: NodeProps<Node<ConfigData, "config">>) {
       icon={<SettingsIcon className="h-4 w-4" />}
       title={data.label}
       subtitle={data.testName}
-      inHandle={false}
+      inHandle={true}
     >
       <div className="grid grid-cols-2 gap-2 mb-3">
         <div className="flex flex-col p-2.5 rounded-xl bg-blue-500/5 border border-blue-500/10">
