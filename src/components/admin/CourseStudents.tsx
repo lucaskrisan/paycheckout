@@ -110,6 +110,8 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
 
     setAdding(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
       // Check if customer already exists
       let customerId: string;
       const { data: existing } = await supabase
@@ -136,76 +138,99 @@ const CourseStudents = ({ courseId }: CourseStudentsProps) => {
         customerId = newCustomer.id;
       }
 
-      // Check if already has access
-      const { data: existingAccess } = await supabase
-        .from("member_access")
-        .select("id")
-        .eq("customer_id", customerId)
-        .eq("course_id", courseId)
-        .maybeSingle();
+      if (addForm.deliveryType === "panttera") {
+        // --- INTERNAL PANTTERA DELIVERY ---
+        const { data: existingAccess } = await supabase
+          .from("member_access")
+          .select("id")
+          .eq("customer_id", customerId)
+          .eq("course_id", courseId)
+          .maybeSingle();
 
-      if (existingAccess) {
-        toast.error("Este aluno já tem acesso a este curso");
-        setAdding(false);
-        return;
-      }
+        if (existingAccess) {
+          toast.error("Este aluno já tem acesso a este curso");
+          setAdding(false);
+          return;
+        }
 
-      // Create member_access
-      const { data: newAccess, error: accessErr } = await supabase
-        .from("member_access")
-        .insert({
-          customer_id: customerId,
-          course_id: courseId,
-        })
-        .select("access_token")
-        .single();
-
-      if (accessErr) throw accessErr;
-
-      const accessUrl = `${getAuthOrigin()}/membros?token=${newAccess.access_token}`;
-      
-      // Send access email via edge function
-      try {
-        const { data: emailResult, error: emailErr } = await supabase.functions.invoke("send-access-link", {
-          body: {
+        const { data: newAccess, error: accessErr } = await supabase
+          .from("member_access")
+          .insert({
             customer_id: customerId,
             course_id: courseId,
-            access_token: newAccess.access_token,
-          },
-        });
-        if (emailErr) {
-          console.error("Email error:", emailErr);
-          toast.success("Aluno adicionado! Link copiado.", {
-            duration: 6000,
-            description: accessUrl,
+          })
+          .select("access_token")
+          .single();
+
+        if (accessErr) throw accessErr;
+
+        const accessUrl = `${getAuthOrigin()}/membros?token=${newAccess.access_token}`;
+        
+        try {
+          const { data: emailResult, error: emailErr } = await supabase.functions.invoke("send-access-link", {
+            body: {
+              customer_id: customerId,
+              course_id: courseId,
+              access_token: newAccess.access_token,
+            },
           });
-        } else if (emailResult?.email_sent === false) {
-          toast.success("Aluno adicionado! Link copiado. (Verifique seu domínio no Resend para enviar emails)", {
-            duration: 8000,
-            description: accessUrl,
-          });
-        } else {
-          toast.success(`Email de acesso enviado para ${addForm.email}!`, {
-            duration: 6000,
-            description: accessUrl,
-          });
+          if (emailErr) {
+            toast.success("Aluno adicionado! Link copiado.", { description: accessUrl });
+          } else {
+            toast.success(`Email enviado para ${addForm.email}!`);
+          }
+        } catch {
+          toast.success("Aluno adicionado! Link copiado.", { description: accessUrl });
         }
-      } catch {
-        toast.success("Aluno adicionado! Link copiado.", {
-          duration: 6000,
-          description: accessUrl,
+        navigator.clipboard.writeText(accessUrl).catch(() => {});
+      } else {
+        // --- EXTERNAL APPSELL DELIVERY ---
+        // 1. Create a "manual" order to trigger appsell-notify
+        const { data: courseData } = await supabase
+          .from("courses")
+          .select("product_id")
+          .eq("id", courseId)
+          .single();
+
+        const { data: order, error: orderErr } = await supabase
+          .from("orders")
+          .insert({
+            customer_id: customerId,
+            product_id: courseData?.product_id || null,
+            user_id: user?.id,
+            amount: 0,
+            status: "paid",
+            payment_method: "manual_entry",
+            metadata: { 
+              manual_entry: true,
+              customer_name: addForm.name,
+              customer_email: addForm.email
+            }
+          })
+          .select("id")
+          .single();
+
+        if (orderErr) throw orderErr;
+
+        // 2. Notify AppSell
+        const { error: notifyErr } = await supabase.functions.invoke("appsell-notify", {
+          body: {
+            event: "order.paid",
+            order_id: order.id,
+            user_id: user?.id
+          }
         });
+
+        if (notifyErr) throw notifyErr;
+        toast.success(`Aluno enviado para o AppSell com sucesso!`);
       }
 
-      // Copy link to clipboard as backup
-      navigator.clipboard.writeText(accessUrl).catch(() => {});
-
       setAddDialogOpen(false);
-      setAddForm({ name: "", email: "", cpf: "", phone: "" });
+      setAddForm({ name: "", email: "", cpf: "", phone: "", deliveryType: "panttera" });
       loadStudents();
     } catch (err: any) {
       console.error(err);
-      toast.error("Erro ao adicionar aluno");
+      toast.error("Erro ao adicionar aluno: " + err.message);
     } finally {
       setAdding(false);
     }
