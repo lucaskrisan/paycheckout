@@ -142,10 +142,10 @@ const DeliveryHealth = () => {
 
   if (!isSuperAdmin) {
     return (
-      <div className=\"flex flex-col items-center justify-center min-h-[400px] text-center\">
-        <ShieldCheck className=\"w-12 h-12 text-muted-foreground mb-4 opacity-20\" />
-        <h2 className=\"text-xl font-semibold text-white\">Acesso Restrito</h2>
-        <p className=\"text-muted-foreground\">Esta ferramenta está disponível apenas para administradores da plataforma.</p>
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+        <ShieldCheck className="w-12 h-12 text-muted-foreground mb-4 opacity-20" />
+        <h2 className="text-xl font-semibold text-white">Acesso Restrito</h2>
+        <p className="text-muted-foreground">Esta ferramenta está disponível apenas para administradores da plataforma.</p>
       </div>
     );
   }
