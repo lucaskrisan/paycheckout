@@ -227,14 +227,30 @@ Deno.serve(async (req) => {
     const customerCountry = (geo?.country || cfCountry || null)?.toString().toUpperCase().slice(0, 2) || null;
     const customerCity = geo?.city ? String(geo.city).slice(0, 80) : null;
 
-    if (visitor_id && (event_name === 'PageView' || event_name === 'ViewContent')) {
+    // Gera ID estável para visitantes anônimos (sem visitor_id)
+    // usando hash de IP + UA + dia + produto — mesmo visitante = mesmo hash
+    let effectiveVisitorId = visitor_id || null;
+    if (!effectiveVisitorId && (event_name === 'PageView' || event_name === 'ViewContent')) {
+      const ip = client_ip || req.headers.get('cf-connecting-ip') || '';
+      const ua = (user_agent || req.headers.get('user-agent') || '').slice(0, 50);
+      const day = new Date().toISOString().slice(0, 10);
+      const raw = `${ip}_${ua}_${day}_${product_id}`;
+      const encoded = new TextEncoder().encode(raw);
+      const hashBuf = await crypto.subtle.digest('SHA-256', encoded);
+      effectiveVisitorId = 'anon_' + Array.from(new Uint8Array(hashBuf))
+        .slice(0, 8)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+    }
+
+    if (effectiveVisitorId && (event_name === 'PageView' || event_name === 'ViewContent')) {
       const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       const { count } = await supabase
         .from('pixel_events')
         .select('id', { count: 'exact', head: true })
         .eq('product_id', product_id)
         .eq('event_name', event_name)
-        .eq('visitor_id', visitor_id)
+        .eq('visitor_id', effectiveVisitorId)
         .gte('created_at', fiveMinAgo);
       if ((count || 0) > 0) {
         return new Response(
