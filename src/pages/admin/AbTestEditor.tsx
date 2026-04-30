@@ -178,7 +178,7 @@ function ConfigNode({ data }: NodeProps<Node<ConfigData, "config">>) {
       icon={<SettingsIcon className="h-4 w-4" />}
       title={data.label}
       subtitle={data.testName}
-      inHandle={false}
+      inHandle={true}
     >
       <div className="grid grid-cols-2 gap-2 mb-3">
         <div className="flex flex-col p-2.5 rounded-xl bg-blue-500/5 border border-blue-500/10">
