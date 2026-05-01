@@ -270,6 +270,13 @@ function PageNode({ id, data }: NodeProps<Node<PageData, "page">>) {
           </div>
         </div>
       )}
+      
+      {data.thumbnailUrl && (
+        <div className="mb-3 rounded-lg overflow-hidden border border-white/10 aspect-video bg-slate-900">
+          <img src={data.thumbnailUrl} alt="Preview" className="w-full h-full object-cover" />
+        </div>
+      )}
+
       <div className="space-y-2">
         <div
           className={`flex items-center gap-2 text-[10px] px-3 py-2 rounded-lg border truncate transition-colors ${
