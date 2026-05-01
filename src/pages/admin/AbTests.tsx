@@ -400,28 +400,107 @@ export default function AbTests() {
                 </div>
 
                 {/* Per-variant strip */}
-                {totalClicks > 0 && (
-                  <div className="mt-4 grid grid-cols-2 gap-3">
-                    {t.variants.map((v) => {
-                      const conv = conversion(v.clicks, v.sales);
-                      const isLeader = leader && v.id === leader.id && totalClicks > 0;
-                      return (
-                        <div key={v.id} className={`rounded-lg border p-3 ${isLeader ? "border-emerald-500/50 bg-emerald-500/5" : "border-border/40"}`}>
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-bold">{v.label} — {v.name}</span>
-                            {isLeader && <Trophy className="w-3 h-3 text-emerald-400" />}
+                <div className="mt-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {t.variants.map((v) => {
+                    const conv = conversion(v.clicks, v.sales);
+                    const isLeader = leader && v.id === leader.id && totalClicks > 0;
+                    
+                    // Simple logic to get a favicon as a placeholder preview if no thumbnail
+                    const getPreviewUrl = (url: string | null) => {
+                      if (!url) return null;
+                      try {
+                        const domain = new URL(url).hostname;
+                        return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+                      } catch {
+                        return null;
+                      }
+                    };
+
+                    return (
+                      <div 
+                        key={v.id} 
+                        className={`group/variant relative rounded-xl border p-4 transition-all duration-300 hover:shadow-md ${
+                          isLeader 
+                            ? "border-emerald-500/30 bg-emerald-500/5 ring-1 ring-emerald-500/10" 
+                            : "border-border/40 bg-muted/20"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <div className={`flex h-6 w-6 items-center justify-center rounded-md text-[10px] font-black ${
+                              isLeader ? "bg-emerald-500 text-white" : "bg-muted-foreground/20 text-muted-foreground"
+                            }`}>
+                              {v.label}
+                            </div>
+                            <span className="text-xs font-bold truncate max-w-[120px]">{v.name}</span>
                           </div>
-                          <div className="mt-2 flex gap-4 text-xs text-muted-foreground">
-                            <span>{v.clicks} cliques</span>
-                            <span>{v.sales} vendas</span>
-                            <span className="font-semibold text-foreground">{conv.toFixed(1)}%</span>
-                            <span>{fmtBRL(Number(v.revenue || 0))}</span>
+                          {isLeader && (
+                            <Badge variant="outline" className="h-5 px-1.5 text-[9px] uppercase border-emerald-500/30 bg-emerald-500/10 text-emerald-400 gap-1">
+                              <Trophy className="w-2.5 h-2.5" /> Líder
+                            </Badge>
+                          )}
+                        </div>
+
+                        {/* Page Preview Placeholder */}
+                        <div className="relative aspect-video rounded-lg mb-4 bg-muted/40 overflow-hidden border border-border/20">
+                          {v.thumbnail_url ? (
+                            <img src={v.thumbnail_url} alt={v.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center gap-2 opacity-40">
+                              {getPreviewUrl(v.page_url) ? (
+                                <img src={getPreviewUrl(v.page_url)!} className="w-6 h-6 rounded" alt="icon" />
+                              ) : (
+                                <Eye className="w-6 h-6" />
+                              )}
+                              <span className="text-[10px] uppercase font-bold tracking-tighter">Preview</span>
+                            </div>
+                          )}
+                          
+                          {/* Quick access overlay */}
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/variant:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                            {v.page_url && (
+                              <Button 
+                                size="sm" 
+                                variant="secondary" 
+                                className="h-7 text-[10px] font-bold px-2 bg-white text-black hover:bg-zinc-200"
+                                onClick={(e) => { e.stopPropagation(); window.open(v.page_url!, "_blank"); }}
+                              >
+                                <ExternalLink className="w-3 h-3 mr-1" /> Página
+                              </Button>
+                            )}
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
+
+                        <div className="grid grid-cols-2 gap-y-3 gap-x-2">
+                          <div className="space-y-0.5">
+                            <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-wider">Cliques</span>
+                            <div className="text-sm font-black">{v.clicks.toLocaleString("pt-BR")}</div>
+                          </div>
+                          <div className="space-y-0.5 text-right">
+                            <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-wider">Vendas</span>
+                            <div className="text-sm font-black">{v.sales.toLocaleString("pt-BR")}</div>
+                          </div>
+                          <div className="space-y-0.5">
+                            <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-wider">Conversão</span>
+                            <div className={`text-sm font-black ${isLeader ? "text-emerald-400" : ""}`}>{conv.toFixed(1)}%</div>
+                          </div>
+                          <div className="space-y-0.5 text-right">
+                            <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-wider">Receita</span>
+                            <div className="text-sm font-black">{fmtBRL(Number(v.revenue || 0))}</div>
+                          </div>
+                        </div>
+
+                        {/* Conversion Progress Bar */}
+                        <div className="mt-4 h-1 w-full bg-muted rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full transition-all duration-500 ${isLeader ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" : "bg-primary/40"}`}
+                            style={{ width: `${Math.min(conv * 5, 100)}%` }} // Scaled for visibility since conv is usually small
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </Card>
             );
           })}
