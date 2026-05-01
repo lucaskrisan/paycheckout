@@ -1339,6 +1339,14 @@ function EditorInner() {
                   <p className="text-[10px] text-muted-foreground italic">Insira a URL real da sua página de vendas.</p>
                 </div>
                 <div className="space-y-2">
+                  <Label className="text-xs">URL da Thumbnail (Preview)</Label>
+                  <Input 
+                    placeholder="https://suaimagem.com/preview.jpg"
+                    value={(selectedNode.data as PageData).thumbnailUrl || ""} 
+                    onChange={(e) => updateNodeData(selectedNode.id, { thumbnailUrl: e.target.value })} 
+                  />
+                </div>
+                <div className="space-y-2">
                   <Label className="text-xs">Pixel Espelho (Opcional)</Label>
                   <Select 
                     value={(selectedNode.data as PageData).mirrorPixelId || "none"} 
