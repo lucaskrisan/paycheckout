@@ -164,9 +164,9 @@ const Checkout = () => {
   // Scrub PII from URL to prevent Meta Pixel from capturing sensitive data in PageView
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const piiParams = ["email", "name", "phone", "cpf", "full_name"];
+    const piiParams = ["email", "name", "phone", "cpf", "full_name", "e", "n", "p", "c"];
     let hasPii = false;
-    
+
     piiParams.forEach(p => {
       if (params.has(p)) {
         params.delete(p);
