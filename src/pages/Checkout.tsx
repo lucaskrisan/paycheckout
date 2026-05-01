@@ -161,6 +161,26 @@ const Checkout = () => {
     cpf: prefill.cpf,
   });
 
+  // Scrub PII from URL to prevent Meta Pixel from capturing sensitive data in PageView
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const piiParams = ["email", "name", "phone", "cpf", "full_name"];
+    let hasPii = false;
+    
+    piiParams.forEach(p => {
+      if (params.has(p)) {
+        params.delete(p);
+        hasPii = true;
+      }
+    });
+
+    if (hasPii) {
+      const newSearch = params.toString();
+      const newUrl = `${window.location.pathname}${newSearch ? `?${newSearch}` : ""}${window.location.hash}`;
+      window.history.replaceState({}, "", newUrl);
+    }
+  }, [location.search]);
+
   // Prefill form from abandoned cart recovery link (?cart_id=uuid)
   useEffect(() => {
     if (!cartId) return;
