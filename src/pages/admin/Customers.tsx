@@ -53,8 +53,7 @@ const Customers = () => {
     let query = supabase
       .from("customers")
       .select("*, orders(id, amount, status, payment_method, created_at, metadata, product_id, products(name))")
-      .order("created_at", { ascending: false })
-      .limit(1000);
+      .order("created_at", { ascending: false });
     if (!isSuperAdmin) query = query.eq("user_id", user.id);
     const { data } = await query;
     setCustomers((data as any) || []);

@@ -301,21 +301,20 @@ async function processReminders(
     const { data: carts, error: cartsError } = await cartQuery;
     if (cartsError || !carts || carts.length === 0) continue;
 
-    // Deduplication for first reminder
+    // Deduplication for reminders
     let sentSet = new Set<string>();
-    if (!isSecond) {
-      const uniqueEmails = [...new Set(carts.map((c: any) => c.customer_email).filter(Boolean))];
-      const { data: alreadySentCarts } = await supabaseAdmin
-        .from("abandoned_carts")
-        .select("customer_email, product_id")
-        .eq("user_id", config.user_id)
-        .not("email_recovery_sent_at", "is", null)
-        .in("customer_email", uniqueEmails);
+    const uniqueEmails = [...new Set(carts.map((c: any) => c.customer_email).filter(Boolean))];
+    const { data: alreadySentCarts } = await supabaseAdmin
+      .from("abandoned_carts")
+      .select("customer_email, product_id")
+      .eq("user_id", config.user_id)
+      .not("email_recovery_sent_at", "is", null)
+      .eq("email_reminder_count", isSecond ? 2 : 1) // Only count as sent if the specific reminder was sent
+      .in("customer_email", uniqueEmails);
 
-      sentSet = new Set(
-        (alreadySentCarts || []).map((c: any) => `${c.customer_email}::${c.product_id}`)
-      );
-    }
+    sentSet = new Set(
+      (alreadySentCarts || []).map((c: any) => `${c.customer_email}::${c.product_id}`)
+    );
 
     // Fetch company name and custom domain
     const { data: checkoutSettings } = await supabaseAdmin
@@ -378,23 +377,21 @@ async function processReminders(
         continue;
       }
 
-      // Deduplication check (first reminder only)
-      if (!isSecond) {
-        const dedupeKey = `${cart.customer_email}::${cart.product_id}`;
-        if (sentSet.has(dedupeKey)) {
-          totalSkipped++;
-          await supabaseAdmin
-            .from("abandoned_carts")
-            .update({
-              email_recovery_sent_at: new Date().toISOString(),
-              email_recovery_status: "skipped_duplicate",
-              email_reminder_count: 1,
-            } as any)
-            .eq("id", cart.id);
-          continue;
-        }
-        sentSet.add(dedupeKey);
+      // Deduplication check
+      const dedupeKey = `${cart.customer_email?.toLowerCase()}::${cart.product_id}`;
+      if (sentSet.has(dedupeKey)) {
+        totalSkipped++;
+        await supabaseAdmin
+          .from("abandoned_carts")
+          .update({
+            email_recovery_sent_at: new Date().toISOString(),
+            email_recovery_status: "skipped_duplicate",
+            email_reminder_count: isSecond ? 2 : 1,
+          } as any)
+          .eq("id", cart.id);
+        continue;
       }
+      sentSet.add(dedupeKey);
 
       const product = (cart as any).products;
       const finalUrl = buildCheckoutUrl(cart, baseUrl, "email");
