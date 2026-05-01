@@ -377,23 +377,21 @@ async function processReminders(
         continue;
       }
 
-      // Deduplication check (first reminder only)
-      if (!isSecond) {
-        const dedupeKey = `${cart.customer_email}::${cart.product_id}`;
-        if (sentSet.has(dedupeKey)) {
-          totalSkipped++;
-          await supabaseAdmin
-            .from("abandoned_carts")
-            .update({
-              email_recovery_sent_at: new Date().toISOString(),
-              email_recovery_status: "skipped_duplicate",
-              email_reminder_count: 1,
-            } as any)
-            .eq("id", cart.id);
-          continue;
-        }
-        sentSet.add(dedupeKey);
+      // Deduplication check
+      const dedupeKey = `${cart.customer_email?.toLowerCase()}::${cart.product_id}`;
+      if (sentSet.has(dedupeKey)) {
+        totalSkipped++;
+        await supabaseAdmin
+          .from("abandoned_carts")
+          .update({
+            email_recovery_sent_at: new Date().toISOString(),
+            email_recovery_status: "skipped_duplicate",
+            email_reminder_count: isSecond ? 2 : 1,
+          } as any)
+          .eq("id", cart.id);
+        continue;
       }
+      sentSet.add(dedupeKey);
 
       const product = (cart as any).products;
       const finalUrl = buildCheckoutUrl(cart, baseUrl, "email");
