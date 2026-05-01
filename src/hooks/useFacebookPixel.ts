@@ -465,10 +465,13 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
     if (zp) userData.zp = await hashSHA256Browser(digitsOnly(zp));
     userData.country = await hashSHA256Browser(country.toLowerCase());
 
-    pixelIdsRef.current.forEach((pixelId) => {
-      // Re-initialize with hashed data
-      window.fbq("init", pixelId, userData);
-    });
+      pixelIdsRef.current.forEach((pixelId) => {
+        // Re-initialize with hashed data
+        window.fbq("init", pixelId, userData);
+      });
+    } catch (e) {
+      console.warn("[useFacebookPixel] Advanced Matching failed", e);
+    }
   }, [productId, sendCAPI]);
 
   const trackAddPaymentInfo = useCallback((paymentMethod: string) => {
