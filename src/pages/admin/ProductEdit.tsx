@@ -139,7 +139,7 @@ const ProductEdit = () => {
   const [pixels, setPixels] = useState<PixelEntry[]>([]);
   const [activePixelPlatform, setActivePixelPlatform] = useState("Facebook");
   const [savingPixels, setSavingPixels] = useState(false);
-  const [activeCustomDomain, setActiveCustomDomain] = useState<string | null>(null);
+  const [userDomains, setUserDomains] = useState<{ hostname: string }[]>([]);
   const [showBumpDialog, setShowBumpDialog] = useState(false);
   const [showPlanDialog, setShowPlanDialog] = useState(false);
   const [planName, setPlanName] = useState("");
@@ -449,7 +449,7 @@ const ProductEdit = () => {
     };
     loadCoursesAndLink();
 
-    // Load active custom checkout domain
+    // Load user's active custom domains
     if (user) {
       supabase
         .from("custom_domains" as any)
@@ -457,10 +457,8 @@ const ProductEdit = () => {
         .eq("user_id", user.id)
         .eq("status", "active")
         .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle()
         .then(({ data }: any) => {
-          if (data?.hostname) setActiveCustomDomain(data.hostname);
+          if (data) setUserDomains(data);
         });
     }
 
@@ -557,6 +555,7 @@ const ProductEdit = () => {
               fire_on_pix: p.fire_on_pix,
               fire_on_boleto: p.fire_on_boleto,
               capi_token: p.capi_token.trim() || null,
+              domain: p.domain === "app.panttera.com.br" ? null : p.domain,
               user_id: user?.id,
             }))
           )
@@ -1496,6 +1495,25 @@ const ProductEdit = () => {
                                 onChange={(e) => updatePixel(idx, "pixel_id", e.target.value)}
                                 placeholder="Ex: 1234567890"
                               />
+                            </div>
+                            <div className="flex-1 space-y-1.5">
+                              <Label>Domínio de Rastreamento</Label>
+                              <Select 
+                                value={px.domain || "app.panttera.com.br"} 
+                                onValueChange={(v) => updatePixel(idx, "domain", v)}
+                              >
+                                <SelectTrigger className="h-10">
+                                  <SelectValue placeholder="Selecione um domínio" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="app.panttera.com.br">Padrão (app.panttera.com.br)</SelectItem>
+                                  {userDomains.map((d) => (
+                                    <SelectItem key={d.hostname} value={d.hostname}>
+                                      {d.hostname}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </div>
                             <button onClick={() => removePixel(idx)} className="mt-6 text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button>
                           </div>
