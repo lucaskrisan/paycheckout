@@ -449,7 +449,7 @@ const ProductEdit = () => {
     };
     loadCoursesAndLink();
 
-    // Load active custom checkout domain
+    // Load user's active custom domains
     if (user) {
       supabase
         .from("custom_domains" as any)
@@ -457,10 +457,8 @@ const ProductEdit = () => {
         .eq("user_id", user.id)
         .eq("status", "active")
         .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle()
         .then(({ data }: any) => {
-          if (data?.hostname) setActiveCustomDomain(data.hostname);
+          if (data) setUserDomains(data);
         });
     }
 
