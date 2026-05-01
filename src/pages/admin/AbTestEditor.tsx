@@ -997,6 +997,7 @@ function EditorInner() {
           sort_order: i,
           mirror_pixel_id: page?.data?.mirrorPixelId ?? null,
           paused: !!page?.data?.paused,
+          thumbnail_url: page?.data?.thumbnailUrl ?? null,
         };
         const found = existing.find((e) => e.sort_order === i);
         if (found) {
