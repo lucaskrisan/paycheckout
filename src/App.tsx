@@ -87,6 +87,7 @@ const CartControl = lazy(() => import("./pages/admin/CartControl"));
 const EmailTemplates = lazy(() => import("./pages/admin/EmailTemplates"));
 const DeliveryHealth = lazy(() => import("./pages/admin/DeliveryHealth"));
 const Go = lazy(() => import("./pages/Go"));
+const Caderno21 = lazy(() => import("./pages/Caderno21"));
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
     <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -115,6 +116,7 @@ const App = () => (
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/caderno21" element={<Caderno21 />} />
               <Route path="/checkout/sucesso" element={<CheckoutSuccess />} />
               <Route path="/recibo/:orderId" element={<Receipt />} />
               <Route path="/checkout/:productId" element={<Checkout />} />
