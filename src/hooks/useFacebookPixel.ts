@@ -15,6 +15,16 @@ function generateEventId(eventName: string): string {
   return `${eventName}_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
+/** Simple SHA-256 for browser usage */
+async function hashSHA256Browser(value: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(value.trim().toLowerCase());
+  const hash = await window.crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hash))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
 /** Capture UTM params from current URL for campaign attribution */
 export function captureUtms(): Record<string, string> {
   const p = new URLSearchParams(window.location.search);
