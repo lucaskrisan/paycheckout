@@ -634,12 +634,16 @@ function ScriptDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o:
   );
 }
 
-function Stat({ icon: Icon, label, value }: any) {
+function Stat({ icon: Icon, label, value, color }: any) {
   return (
-    <div className="flex items-center gap-2 text-sm">
-      <Icon className="w-4 h-4 text-muted-foreground" />
-      <span className="font-semibold">{value}</span>
-      <span className="text-muted-foreground text-xs">{label}</span>
+    <div className="flex items-center gap-2 text-sm group/stat">
+      <div className={`p-1.5 rounded-md bg-muted/40 ${color || "text-muted-foreground"}`}>
+        <Icon className="w-3.5 h-3.5" />
+      </div>
+      <div className="flex flex-col -space-y-0.5">
+        <span className="font-black text-slate-100 leading-tight">{value}</span>
+        <span className="text-[10px] uppercase font-bold text-muted-foreground/60 tracking-wider leading-tight">{label}</span>
+      </div>
     </div>
   );
 }
