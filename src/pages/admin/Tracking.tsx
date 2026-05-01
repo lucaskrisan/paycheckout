@@ -527,7 +527,7 @@ const Tracking = () => {
 
         {/* ═══ TAB: Eventos ═══ */}
         <TabsContent value="events" className="space-y-5 mt-0">
-          <PixelEventsDashboard products={products} userId={user?.id} />
+          <PixelEventsDashboard products={products} userId={user?.id} initialFilter={globalProduct} />
         </TabsContent>
 
         {/* ═══ TAB: Configuração ═══ */}
