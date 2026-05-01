@@ -11,7 +11,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Trash2, Play, Pause, Copy, MousePointerClick, ShoppingCart, TrendingUp, Trophy, Archive, Beaker, Zap, Code2, X, Code, Facebook, Pencil, Files, Clock } from "lucide-react";
+import { Plus, Trash2, Play, Pause, Copy, MousePointerClick, ShoppingCart, TrendingUp, Trophy, Archive, Beaker, Zap, Code2, X, Code, Facebook, Pencil, Files, Clock, ExternalLink, Eye, Target } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
@@ -32,6 +32,7 @@ type Variant = {
   sales: number;
   revenue: number;
   sort_order: number;
+  thumbnail_url?: string | null;
 };
 
 type AbTest = {
@@ -321,11 +322,12 @@ export default function AbTests() {
                       <div className="text-xs text-muted-foreground pl-[68px]">{t.variants.length} variantes</div>
                     </div>
 
-                    <div className="flex items-center gap-5 text-sm pt-1">
-                      <Stat icon={Zap} label="cliques" value={totalClicks.toLocaleString("pt-BR")} />
-                      <Stat icon={ShoppingCart} label="vendas" value={totalSales.toLocaleString("pt-BR")} />
-                      <Stat icon={TrendingUp} label="" value={`${conversion(totalClicks, totalSales).toFixed(0)}%`} />
-                      <Stat icon={Clock} label="" value={t.started_at ? formatDuration(t.started_at) : "-"} />
+                    <div className="flex items-center gap-5 text-sm pt-2">
+                      <Stat icon={Zap} label="cliques" value={totalClicks.toLocaleString("pt-BR")} color="text-yellow-400" />
+                      <Stat icon={ShoppingCart} label="vendas" value={totalSales.toLocaleString("pt-BR")} color="text-emerald-400" />
+                      <Stat icon={Target} label="conversão" value={`${conversion(totalClicks, totalSales).toFixed(1)}%`} color="text-blue-400" />
+                      <Stat icon={TrendingUp} label="receita" value={fmtBRL(totalRevenue)} color="text-violet-400" />
+                      <Stat icon={Clock} label="duração" value={t.started_at ? formatDuration(t.started_at) : "-"} />
                     </div>
                   </div>
 
@@ -399,28 +401,107 @@ export default function AbTests() {
                 </div>
 
                 {/* Per-variant strip */}
-                {totalClicks > 0 && (
-                  <div className="mt-4 grid grid-cols-2 gap-3">
-                    {t.variants.map((v) => {
-                      const conv = conversion(v.clicks, v.sales);
-                      const isLeader = leader && v.id === leader.id && totalClicks > 0;
-                      return (
-                        <div key={v.id} className={`rounded-lg border p-3 ${isLeader ? "border-emerald-500/50 bg-emerald-500/5" : "border-border/40"}`}>
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-bold">{v.label} — {v.name}</span>
-                            {isLeader && <Trophy className="w-3 h-3 text-emerald-400" />}
+                <div className="mt-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {t.variants.map((v) => {
+                    const conv = conversion(v.clicks, v.sales);
+                    const isLeader = leader && v.id === leader.id && totalClicks > 0;
+                    
+                    // Simple logic to get a favicon as a placeholder preview if no thumbnail
+                    const getPreviewUrl = (url: string | null) => {
+                      if (!url) return null;
+                      try {
+                        const domain = new URL(url).hostname;
+                        return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+                      } catch {
+                        return null;
+                      }
+                    };
+
+                    return (
+                      <div 
+                        key={v.id} 
+                        className={`group/variant relative rounded-xl border p-4 transition-all duration-300 hover:shadow-md ${
+                          isLeader 
+                            ? "border-emerald-500/30 bg-emerald-500/5 ring-1 ring-emerald-500/10" 
+                            : "border-border/40 bg-muted/20"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <div className={`flex h-6 w-6 items-center justify-center rounded-md text-[10px] font-black ${
+                              isLeader ? "bg-emerald-500 text-white" : "bg-muted-foreground/20 text-muted-foreground"
+                            }`}>
+                              {v.label}
+                            </div>
+                            <span className="text-xs font-bold truncate max-w-[120px]">{v.name}</span>
                           </div>
-                          <div className="mt-2 flex gap-4 text-xs text-muted-foreground">
-                            <span>{v.clicks} cliques</span>
-                            <span>{v.sales} vendas</span>
-                            <span className="font-semibold text-foreground">{conv.toFixed(1)}%</span>
-                            <span>{fmtBRL(Number(v.revenue || 0))}</span>
+                          {isLeader && (
+                            <Badge variant="outline" className="h-5 px-1.5 text-[9px] uppercase border-emerald-500/30 bg-emerald-500/10 text-emerald-400 gap-1">
+                              <Trophy className="w-2.5 h-2.5" /> Líder
+                            </Badge>
+                          )}
+                        </div>
+
+                        {/* Page Preview Placeholder */}
+                        <div className="relative aspect-video rounded-lg mb-4 bg-muted/40 overflow-hidden border border-border/20">
+                          {v.thumbnail_url ? (
+                            <img src={v.thumbnail_url} alt={v.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center gap-2 opacity-40">
+                              {getPreviewUrl(v.page_url) ? (
+                                <img src={getPreviewUrl(v.page_url)!} className="w-6 h-6 rounded" alt="icon" />
+                              ) : (
+                                <Eye className="w-6 h-6" />
+                              )}
+                              <span className="text-[10px] uppercase font-bold tracking-tighter">Preview</span>
+                            </div>
+                          )}
+                          
+                          {/* Quick access overlay */}
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/variant:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                            {v.page_url && (
+                              <Button 
+                                size="sm" 
+                                variant="secondary" 
+                                className="h-7 text-[10px] font-bold px-2 bg-white text-black hover:bg-zinc-200"
+                                onClick={(e) => { e.stopPropagation(); window.open(v.page_url!, "_blank"); }}
+                              >
+                                <ExternalLink className="w-3 h-3 mr-1" /> Página
+                              </Button>
+                            )}
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
+
+                        <div className="grid grid-cols-2 gap-y-3 gap-x-2">
+                          <div className="space-y-0.5">
+                            <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-wider">Cliques</span>
+                            <div className="text-sm font-black">{v.clicks.toLocaleString("pt-BR")}</div>
+                          </div>
+                          <div className="space-y-0.5 text-right">
+                            <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-wider">Vendas</span>
+                            <div className="text-sm font-black">{v.sales.toLocaleString("pt-BR")}</div>
+                          </div>
+                          <div className="space-y-0.5">
+                            <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-wider">Conversão</span>
+                            <div className={`text-sm font-black ${isLeader ? "text-emerald-400" : ""}`}>{conv.toFixed(1)}%</div>
+                          </div>
+                          <div className="space-y-0.5 text-right">
+                            <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-wider">Receita</span>
+                            <div className="text-sm font-black">{fmtBRL(Number(v.revenue || 0))}</div>
+                          </div>
+                        </div>
+
+                        {/* Conversion Progress Bar */}
+                        <div className="mt-4 h-1 w-full bg-muted rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full transition-all duration-500 ${isLeader ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" : "bg-primary/40"}`}
+                            style={{ width: `${Math.min(conv * 5, 100)}%` }} // Scaled for visibility since conv is usually small
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </Card>
             );
           })}
@@ -553,12 +634,16 @@ function ScriptDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o:
   );
 }
 
-function Stat({ icon: Icon, label, value }: any) {
+function Stat({ icon: Icon, label, value, color }: any) {
   return (
-    <div className="flex items-center gap-2 text-sm">
-      <Icon className="w-4 h-4 text-muted-foreground" />
-      <span className="font-semibold">{value}</span>
-      <span className="text-muted-foreground text-xs">{label}</span>
+    <div className="flex items-center gap-2 text-sm group/stat">
+      <div className={`p-1.5 rounded-md bg-muted/40 ${color || "text-muted-foreground"}`}>
+        <Icon className="w-3.5 h-3.5" />
+      </div>
+      <div className="flex flex-col -space-y-0.5">
+        <span className="font-black text-slate-100 leading-tight">{value}</span>
+        <span className="text-[10px] uppercase font-bold text-muted-foreground/60 tracking-wider leading-tight">{label}</span>
+      </div>
     </div>
   );
 }

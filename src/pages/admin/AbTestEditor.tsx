@@ -65,6 +65,7 @@ type PageData = {
   url: string; 
   mirrorPixelId?: string | null;
   paused?: boolean;
+  thumbnailUrl?: string | null;
   stats?: { impressions: number; clicks: number; sales: number; revenue: number };
 };
 type CheckoutData = {
@@ -269,6 +270,13 @@ function PageNode({ id, data }: NodeProps<Node<PageData, "page">>) {
           </div>
         </div>
       )}
+      
+      {data.thumbnailUrl && (
+        <div className="mb-3 rounded-lg overflow-hidden border border-white/10 aspect-video bg-slate-900">
+          <img src={data.thumbnailUrl} alt="Preview" className="w-full h-full object-cover" />
+        </div>
+      )}
+
       <div className="space-y-2">
         <div
           className={`flex items-center gap-2 text-[10px] px-3 py-2 rounded-lg border truncate transition-colors ${
@@ -997,6 +1005,7 @@ function EditorInner() {
           sort_order: i,
           mirror_pixel_id: page?.data?.mirrorPixelId ?? null,
           paused: !!page?.data?.paused,
+          thumbnail_url: page?.data?.thumbnailUrl ?? null,
         };
         const found = existing.find((e) => e.sort_order === i);
         if (found) {
@@ -1335,6 +1344,14 @@ function EditorInner() {
                     onChange={(e) => updateNodeData(selectedNode.id, { url: e.target.value })} 
                   />
                   <p className="text-[10px] text-muted-foreground italic">Insira a URL real da sua página de vendas.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">URL da Thumbnail (Preview)</Label>
+                  <Input 
+                    placeholder="https://suaimagem.com/preview.jpg"
+                    value={(selectedNode.data as PageData).thumbnailUrl || ""} 
+                    onChange={(e) => updateNodeData(selectedNode.id, { thumbnailUrl: e.target.value })} 
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs">Pixel Espelho (Opcional)</Label>
