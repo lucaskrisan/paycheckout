@@ -49,6 +49,7 @@ interface GroupedEvent {
 interface Props {
   products: { id: string; name: string }[];
   userId?: string;
+  initialFilter?: string;
 }
 
 const ORDERED_EVENT_NAMES = [
@@ -61,8 +62,15 @@ const FEED_CACHE_KEY = "nina-tracking-feed-cache";
 const FEED_EXPIRY_MS = 10 * 60 * 1000; // 10 min
 const PURCHASE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24h para vendas do dia
 
-const PixelEventsDashboard = ({ products, userId }: Props) => {
-  const [filterProduct, setFilterProduct] = useState("all");
+const PixelEventsDashboard = ({ products, userId, initialFilter = "all" }: Props) => {
+  const [filterProduct, setFilterProduct] = useState(initialFilter);
+
+  // Sincroniza o filtro interno se o prop mudar (ex: mudou no header da página pai)
+  useEffect(() => {
+    if (initialFilter) {
+      setFilterProduct(initialFilter);
+    }
+  }, [initialFilter]);
   const [period, setPeriod] = useState("24h");
   const cacheKey = (uid: string | undefined, fp: string) =>
     `${FEED_CACHE_KEY}-${uid || "anon"}-${fp}`;
