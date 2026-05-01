@@ -139,7 +139,7 @@ const ProductEdit = () => {
   const [pixels, setPixels] = useState<PixelEntry[]>([]);
   const [activePixelPlatform, setActivePixelPlatform] = useState("Facebook");
   const [savingPixels, setSavingPixels] = useState(false);
-  const [activeCustomDomain, setActiveCustomDomain] = useState<string | null>(null);
+  const [userDomains, setUserDomains] = useState<{ hostname: string }[]>([]);
   const [showBumpDialog, setShowBumpDialog] = useState(false);
   const [showPlanDialog, setShowPlanDialog] = useState(false);
   const [planName, setPlanName] = useState("");
