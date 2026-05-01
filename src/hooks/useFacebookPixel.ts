@@ -408,7 +408,7 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
    * Set Advanced Matching data. Phone country prefix is dynamic based on
    * Cloudflare-detected country (only forces +55 when country is BR).
    */
-  const setAdvancedMatching = useCallback((customer: CustomerInfo) => {
+  const setAdvancedMatching = useCallback(async (customer: CustomerInfo) => {
     customerRef.current = customer;
 
     if (!window.fbq || pixelIdsRef.current.length === 0) return;
@@ -445,23 +445,27 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
       formattedPhone = `+55${phone}`;
     }
 
+    // 🛡️ Pre-hash all PII before giving it to the browser SDK.
+    // This prevents Meta's scanner from seeing cleartext PII in the browser context,
+    // which is the primary cause of "Sensitive Data" warnings.
     const userData: Record<string, string> = {};
-    if (normalizedEmail) userData.em = normalizedEmail;
-    if (firstName) userData.fn = firstName;
-    if (lastName) userData.ln = lastName;
-    if (formattedPhone) userData.ph = formattedPhone;
-    if (normalizedCpf) userData.external_id = normalizedCpf;
+    if (normalizedEmail) userData.em = await hashSHA256Browser(normalizedEmail);
+    if (firstName) userData.fn = await hashSHA256Browser(firstName);
+    if (lastName) userData.ln = await hashSHA256Browser(lastName);
+    if (formattedPhone) userData.ph = await hashSHA256Browser(formattedPhone);
+    if (normalizedCpf) userData.external_id = await hashSHA256Browser(normalizedCpf);
 
-    // Geo advanced matching (browser-side)
+    // Geo advanced matching (non-PII or already low sensitivity)
     const ct = getCity();
     const st = getState();
     const zp = getZip();
-    if (ct) userData.ct = normalizeParam(ct).replace(/\s+/g, "");
-    if (st) userData.st = normalizeParam(st);
-    if (zp) userData.zp = digitsOnly(zp);
-    userData.country = country.toLowerCase();
+    if (ct) userData.ct = await hashSHA256Browser(normalizeParam(ct).replace(/\s+/g, ""));
+    if (st) userData.st = await hashSHA256Browser(normalizeParam(st));
+    if (zp) userData.zp = await hashSHA256Browser(digitsOnly(zp));
+    userData.country = await hashSHA256Browser(country.toLowerCase());
 
     pixelIdsRef.current.forEach((pixelId) => {
+      // Re-initialize with hashed data
       window.fbq("init", pixelId, userData);
     });
   }, [productId, sendCAPI]);
