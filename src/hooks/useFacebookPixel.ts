@@ -409,7 +409,8 @@ export function useFacebookPixel(productId: string | undefined, productPrice?: n
    * Cloudflare-detected country (only forces +55 when country is BR).
    */
   const setAdvancedMatching = useCallback(async (customer: CustomerInfo) => {
-    customerRef.current = customer;
+    try {
+      customerRef.current = customer;
 
     if (!window.fbq || pixelIdsRef.current.length === 0) return;
 
