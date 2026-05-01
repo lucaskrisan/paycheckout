@@ -11,22 +11,14 @@ export default function Go() {
   useEffect(() => {
     if (slug) {
       if (slug === "track.js") {
-        window.location.href = `https://${PROJECT_ID}.supabase.co/functions/v1/ab-tracking`;
+        window.location.replace(`https://${PROJECT_ID}.supabase.co/functions/v1/ab-tracking`);
         return;
       }
-      const type = searchParams.get("type") || "page";
       const utms = searchParams.toString();
       const finalUrl = `${REDIRECT_BASE}/${slug}?${utms}`;
-      window.location.href = finalUrl;
+      window.location.replace(finalUrl);
     }
   }, [slug, searchParams]);
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-        <p className="text-muted-foreground animate-pulse">Redirecionando...</p>
-      </div>
-    </div>
-  );
+  return null;
 }
