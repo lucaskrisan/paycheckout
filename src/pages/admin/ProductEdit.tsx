@@ -715,6 +715,7 @@ const ProductEdit = () => {
   }
 
   const defaultCheckout = checkouts.find((c: any) => c.is_default) || checkouts[0] || null;
+  const activeCustomDomain = userDomains.length > 0 ? userDomains[0].hostname : null;
   const checkoutBaseUrl = activeCustomDomain ? `https://${activeCustomDomain}` : getPublicUrl();
   const checkoutLink = isNew ? "" : `${checkoutBaseUrl}/checkout/${productId}`;
 
