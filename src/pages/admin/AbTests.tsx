@@ -322,11 +322,12 @@ export default function AbTests() {
                       <div className="text-xs text-muted-foreground pl-[68px]">{t.variants.length} variantes</div>
                     </div>
 
-                    <div className="flex items-center gap-5 text-sm pt-1">
-                      <Stat icon={Zap} label="cliques" value={totalClicks.toLocaleString("pt-BR")} />
-                      <Stat icon={ShoppingCart} label="vendas" value={totalSales.toLocaleString("pt-BR")} />
-                      <Stat icon={TrendingUp} label="" value={`${conversion(totalClicks, totalSales).toFixed(0)}%`} />
-                      <Stat icon={Clock} label="" value={t.started_at ? formatDuration(t.started_at) : "-"} />
+                    <div className="flex items-center gap-5 text-sm pt-2">
+                      <Stat icon={Zap} label="cliques" value={totalClicks.toLocaleString("pt-BR")} color="text-yellow-400" />
+                      <Stat icon={ShoppingCart} label="vendas" value={totalSales.toLocaleString("pt-BR")} color="text-emerald-400" />
+                      <Stat icon={Target} label="conversão" value={`${conversion(totalClicks, totalSales).toFixed(1)}%`} color="text-blue-400" />
+                      <Stat icon={TrendingUp} label="receita" value={fmtBRL(totalRevenue)} color="text-violet-400" />
+                      <Stat icon={Clock} label="duração" value={t.started_at ? formatDuration(t.started_at) : "-"} />
                     </div>
                   </div>
 
