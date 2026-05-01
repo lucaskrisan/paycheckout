@@ -1495,6 +1495,25 @@ const ProductEdit = () => {
                                 placeholder="Ex: 1234567890"
                               />
                             </div>
+                            <div className="flex-1 space-y-1.5">
+                              <Label>Domínio de Rastreamento</Label>
+                              <Select 
+                                value={px.domain || "app.panttera.com.br"} 
+                                onValueChange={(v) => updatePixel(idx, "domain", v)}
+                              >
+                                <SelectTrigger className="h-10">
+                                  <SelectValue placeholder="Selecione um domínio" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="app.panttera.com.br">Padrão (app.panttera.com.br)</SelectItem>
+                                  {userDomains.map((d) => (
+                                    <SelectItem key={d.hostname} value={d.hostname}>
+                                      {d.hostname}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                             <button onClick={() => removePixel(idx)} className="mt-6 text-destructive hover:text-destructive/80"><Trash2 className="w-4 h-4" /></button>
                           </div>
                           {px.platform === "facebook" && (
