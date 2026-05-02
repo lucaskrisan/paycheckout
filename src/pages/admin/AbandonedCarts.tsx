@@ -87,6 +87,9 @@ const AbandonedCarts = () => {
         if (data.email_button_color) setEmailButtonColor(data.email_button_color);
         setSecondEmailEnabled(data.second_email_enabled ?? true);
         if (data.second_email_delay_hours) setSecondEmailDelay(String(data.second_email_delay_hours));
+        setWhatsappEnabled(data.whatsapp_enabled ?? false);
+        if (data.whatsapp_delay_minutes) setWhatsappDelay(String(data.whatsapp_delay_minutes));
+        if (data.whatsapp_message_template) setWhatsappMessage(data.whatsapp_message_template);
       }
     };
     loadSettings();
