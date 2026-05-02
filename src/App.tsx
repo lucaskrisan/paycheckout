@@ -17,6 +17,7 @@ import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import PwaSettings from "./pages/admin/PwaSettings";
 import WhatsApp from "./pages/admin/WhatsApp";
+import AbTestEditor from "./pages/admin/AbTestEditor";
 
 // Lazy-loaded — admin shell must not be pulled into the public landing bundle
 const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
