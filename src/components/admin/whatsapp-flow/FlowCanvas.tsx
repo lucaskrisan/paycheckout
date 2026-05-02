@@ -632,121 +632,114 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
   return (
     <motion.div
       animate={{ opacity: 1 }}
-      className="absolute inset-0 z-50 flex bg-background"
+      className="absolute inset-0 z-50 flex flex-col bg-background overflow-hidden"
       initial={{ opacity: 0 }}
     >
-      <FlowSidebar onAddNode={handleAddNode} />
+      {/* Compact top header */}
+      <div className="flex h-12 shrink-0 items-center justify-between border-b border-border/60 bg-card/95 px-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <button
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border/60 bg-background/70 text-muted-foreground transition-colors hover:border-gold/35 hover:text-gold"
+            onClick={onBack}
+            type="button"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+          </button>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex h-16 items-center justify-between border-b border-border/60 bg-card/95 px-6">
-          <div className="flex items-center gap-4">
-            <button
-              className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-border/60 bg-background/70 text-muted-foreground transition-colors hover:border-gold/35 hover:text-gold"
-              onClick={onBack}
-              type="button"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </button>
-
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="font-display text-lg font-semibold text-foreground">{draft.name || (isNew ? "Novo template" : "Template sem nome")}</h2>
-                <Badge className="border-gold/25 bg-gold/10 text-gold" variant="outline">
-                  <Workflow className="mr-1.5 h-3 w-3" />
-                  Construtor visual
-                </Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Clique nos cards, conecte os nós e configure tudo sem fricção.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => setShowPreview(!showPreview)}
-            >
-              <Smartphone className="h-3.5 w-3.5" />
-              {showPreview ? "Ocultar preview" : "Preview"}
-            </Button>
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={handleTestSend}
-              disabled={sendingTest}
-            >
-              <Send className="h-3.5 w-3.5" />
-              {sendingTest ? "Enviando..." : "Testar envio"}
-            </Button>
-
-            <Badge variant={draft.active ? "default" : "secondary"}>{draft.active ? "Ativo" : "Inativo"}</Badge>
-
-            {onDelete && !isNew && (
-              <Button className="gap-2" onClick={onDelete} type="button" variant="outline">
-                <Trash2 className="h-4 w-4" />
-                Excluir
-              </Button>
-            )}
-
-            <Button
-              className="gap-2 border border-gold/20 bg-gold text-background hover:bg-gold/90"
-              disabled={saving}
-              onClick={() => onSave({ template: { ...draft, body: primaryBody }, nodes })}
-              type="button"
-            >
-              <Save className="h-4 w-4" />
-              {saving ? "Salvando..." : "Salvar template"}
-            </Button>
+          <div className="flex min-w-0 items-center gap-2">
+            <h2 className="truncate font-display text-sm font-semibold text-foreground">{draft.name || (isNew ? "Novo template" : "Template sem nome")}</h2>
+            <Badge className="hidden border-gold/25 bg-gold/10 text-gold lg:inline-flex" variant="outline">
+              <Workflow className="mr-1 h-3 w-3" />
+              Construtor visual
+            </Badge>
+            <Badge variant={draft.active ? "default" : "secondary"} className="text-[10px]">{draft.active ? "Ativo" : "Inativo"}</Badge>
           </div>
         </div>
 
-        <div className="flex min-h-0 flex-1">
-          <div
-            className="relative min-w-0 flex-1 overflow-auto bg-background"
-            onClick={() => {
-              setSelectedNodeId("");
-              setPendingConnection(null);
-            }}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1.5 text-xs"
+            onClick={() => setShowPreview(!showPreview)}
           >
-            <div className="relative min-h-[980px] min-w-[1200px]">
-              <DotGrid />
-              <ConnectionLines nodes={nodes} />
+            <Smartphone className="h-3.5 w-3.5" />
+            <span className="hidden md:inline">{showPreview ? "Ocultar preview" : "Preview"}</span>
+          </Button>
 
-              <div className="absolute left-6 top-6 z-[3] flex items-center gap-3 rounded-full border border-gold/20 bg-card/90 px-4 py-2 text-sm text-muted-foreground shadow-lg backdrop-blur">
-                <MessageSquare className="h-4 w-4 text-gold" />
-                {pendingConnection ? "Agora clique no próximo nó para criar a ligação." : "Selecione um card para editar, arraste para reposicionar e conecte o fluxo."}
-              </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1.5 text-xs"
+            onClick={handleTestSend}
+            disabled={sendingTest}
+          >
+            <Send className="h-3.5 w-3.5" />
+            <span className="hidden md:inline">{sendingTest ? "Enviando..." : "Testar envio"}</span>
+          </Button>
 
-              {nodes.map((node) => (
-                <CanvasNode
-                  connecting={pendingConnection === node.id}
-                  key={node.id}
-                  node={node}
-                  onConnect={handleConnect}
-                  onDelete={handleDeleteNode}
-                  onDrag={handleDrag}
-                  onSelect={handleSelectNode}
-                  selected={selectedNodeId === node.id}
-                />
-              ))}
+          {onDelete && !isNew && (
+            <Button size="sm" className="h-8 gap-1.5 text-xs" onClick={onDelete} type="button" variant="outline">
+              <Trash2 className="h-3.5 w-3.5" />
+              <span className="hidden md:inline">Excluir</span>
+            </Button>
+          )}
+
+          <Button
+            size="sm"
+            className="h-8 gap-1.5 border border-gold/20 bg-gold text-xs text-background hover:bg-gold/90"
+            disabled={saving}
+            onClick={() => onSave({ template: { ...draft, body: primaryBody }, nodes })}
+            type="button"
+          >
+            <Save className="h-3.5 w-3.5" />
+            {saving ? "Salvando..." : "Salvar"}
+          </Button>
+        </div>
+      </div>
+
+      {/* Three-column body */}
+      <div className="flex min-h-0 flex-1">
+        <FlowSidebar onAddNode={handleAddNode} />
+
+        <div
+          className="scrollbar-premium relative min-w-0 flex-1 overflow-auto bg-background"
+          onClick={() => {
+            setSelectedNodeId("");
+            setPendingConnection(null);
+          }}
+        >
+          <div className="relative h-full min-h-[760px] w-full min-w-[900px]">
+            <DotGrid />
+            <ConnectionLines nodes={nodes} />
+
+            <div className="pointer-events-none absolute left-4 top-4 z-[3] flex items-center gap-2 rounded-full border border-gold/20 bg-card/90 px-3 py-1.5 text-xs text-muted-foreground shadow-lg backdrop-blur">
+              <MessageSquare className="h-3.5 w-3.5 text-gold" />
+              {pendingConnection ? "Clique no próximo nó para conectar." : "Clique em um card para editar, arraste para reposicionar."}
             </div>
+
+            {nodes.map((node) => (
+              <CanvasNode
+                connecting={pendingConnection === node.id}
+                key={node.id}
+                node={node}
+                onConnect={handleConnect}
+                onDelete={handleDeleteNode}
+                onDrag={handleDrag}
+                onSelect={handleSelectNode}
+                selected={selectedNodeId === node.id}
+              />
+            ))}
+          </div>
+        </div>
+
+        <aside className="flex w-[300px] shrink-0 flex-col border-l border-border/60 bg-card/95">
+          <div className="shrink-0 border-b border-border/60 px-4 py-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-gold/80">Configuração</p>
+            <h3 className="mt-0.5 font-display text-sm font-semibold text-foreground">Painel de edição</h3>
           </div>
 
-          <aside className="flex w-[360px] shrink-0 flex-col border-l border-border/60 bg-card/95">
-            <div className="border-b border-border/60 px-5 py-5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-gold/80">Configuração</p>
-              <h3 className="mt-2 font-display text-lg font-semibold text-foreground">Painel de edição</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Tudo o que você selecionar no canvas fica intuitivo e imediato aqui.
-              </p>
-            </div>
-
-            <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5">
+          <div className="scrollbar-premium min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
               <section className="space-y-4 rounded-2xl border border-border/60 bg-background/60 p-4">
                 <div className="flex items-center justify-between">
                   <div>
