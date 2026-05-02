@@ -149,7 +149,7 @@ const TemplateCard = ({
           <ArrowRight className="h-3.5 w-3.5" />
         </div>
         <div className="ml-auto flex items-center gap-1.5">
-          <span className="text-xs text-muted-foreground mr-1">{template.variables.length} variáveis</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mr-1">{template.variables.length} variáveis</span>
           <button
             className="rounded-full border border-border/60 p-1.5 text-muted-foreground transition-colors hover:border-gold/40 hover:text-gold"
             onClick={(event) => {
