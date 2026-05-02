@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
     };
 
     const body = JSON.stringify(payload);
-    const signature = await signHMAC(body, partner.webhook_secret);
+    const signature = await signHMAC(body, partner.shared_secret);
 
     console.log(`Sending webhook to GatFlow for user ${user_id}, plan ${plan_name}`);
 
