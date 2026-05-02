@@ -57,7 +57,10 @@ const WhatsAppRecoveryTab = () => {
         if (data) {
           setEnabled(data.whatsapp_enabled ?? false);
           setDelay(data.whatsapp_delay_minutes ?? 15);
-          setTemplate(data.whatsapp_message_template || "");
+          // Only set template if it's not null/empty, otherwise keep the local state if it was changed
+          if (data.whatsapp_message_template !== null) {
+            setTemplate(data.whatsapp_message_template);
+          }
         }
 
         // Load real stats and history
@@ -98,7 +101,7 @@ const WhatsAppRecoveryTab = () => {
     };
 
     loadSettings();
-  }, [user]);
+  }, [user]); // Removed loading as dependency to avoid refresh loops if state updates locally
 
   const handleSave = async () => {
     if (!user) return;
