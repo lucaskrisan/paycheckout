@@ -637,25 +637,29 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Push notification
+    // Push notification (respect user settings)
     try {
-      const { data: notifSettings } = await supabaseAdmin
-        .from("notification_settings")
-        .select("send_pending, show_product_name")
-        .eq("user_id", productOwnerId || "")
-        .eq("send_pending", true)
-        .maybeSingle();
+      if (productOwnerId) {
+        const { data: notifSettings } = await supabaseAdmin
+          .from("notification_settings")
+          .select("send_pending, show_product_name")
+          .eq("user_id", productOwnerId)
+          .maybeSingle();
 
-      if (notifSettings) {
-        const formattedAmount = Number(amount).toFixed(2).replace(".", ",");
-        const title = "💠 PIX gerado!";
-        const message = `${customer.name} gerou um PIX de R$ ${formattedAmount}${notifSettings.show_product_name ? ` • ${productName}` : ""}`;
-        await sendPushNotification(
-          title,
-          message,
-          productOwnerId || undefined,
-          "https://app.panttera.com.br/admin/orders",
-        );
+        // ONLY send if send_pending is explicitly true (or if settings don't exist, we default to false for pending)
+        if (notifSettings?.send_pending === true) {
+          const formattedAmount = Number(amount).toFixed(2).replace(".", ",");
+          const title = "💠 PIX gerado!";
+          const message = `${customer.name} gerou um PIX de R$ ${formattedAmount}${notifSettings.show_product_name ? ` • ${productName}` : ""}`;
+          await sendPushNotification(
+            title,
+            message,
+            productOwnerId,
+            "https://app.panttera.com.br/admin/orders",
+          );
+        } else {
+          console.log(`[create-pix-payment] Push notification skipped: send_pending is false or not configured for user ${productOwnerId}`);
+        }
       }
     } catch (notifErr) {
       console.error("[create-pix-payment] Notification error:", notifErr);
