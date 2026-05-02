@@ -1123,7 +1123,7 @@ function EditorInner() {
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const validateForStart = (): string | null => {
-    const pageNodes = nodes.filter((n) => n.type === "page") as Node<PageData, "page">[];
+    const pageNodes = nodes.filter((n) => n && n.type === "page") as Node<PageData, "page">[];
     const pagesMissing = pageNodes.filter((n) => !n.data.url || !n.data.url.trim()).map((n) => n.data.label);
     if (pagesMissing.length > 0) return `Configure as URLs das páginas de vendas: ${pagesMissing.join(", ")}`;
     return null;
