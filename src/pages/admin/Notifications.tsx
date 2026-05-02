@@ -119,11 +119,20 @@ const Notifications = () => {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const { data } = await supabase
-        .from("notification_settings")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      const [{ data }, { data: prods }] = await Promise.all([
+        supabase
+          .from("notification_settings")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+        supabase
+          .from("products")
+          .select("id, name")
+          .eq("user_id", user.id)
+          .eq("active", true)
+      ]);
+
+      if (prods) setProducts(prods);
 
       if (data) {
         setSettings({
