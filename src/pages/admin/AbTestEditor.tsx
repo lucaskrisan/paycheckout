@@ -963,10 +963,10 @@ function EditorInner() {
     [setEdges, nodes]
   );
 
-  const selectedNode = nodes.find((n) => n.id === selectedNodeId) ?? null;
+  const selectedNode = nodes.filter(Boolean).find((n) => n.id === selectedNodeId) ?? null;
 
   const updateNodeData = (id: string, patch: Record<string, any>) => {
-    setNodes((ns) => ns.map((n) => (n.id === id ? ({ ...n, data: { ...n.data, ...patch } } as FlowNode) : n)));
+    setNodes((ns) => ns.filter(Boolean).map((n) => (n.id === id ? ({ ...n, data: { ...n.data, ...patch } } as FlowNode) : n)));
   };
 
   const deleteNode = (id: string) => {
@@ -974,7 +974,7 @@ function EditorInner() {
       toast.error("O nó de Configuração Inicial não pode ser removido");
       return;
     }
-    setNodes((ns) => ns.filter((n) => n.id !== id));
+    setNodes((ns) => ns.filter(Boolean).filter((n) => n.id !== id));
     setEdges((es) => es.filter((e) => e.source !== id && e.target !== id));
     setSelectedNodeId(null);
   };
