@@ -350,9 +350,9 @@ const WhatsApp = () => {
             </div>
           )}
 
-          <Card className="border-border/50 shadow-lg overflow-hidden relative">
-            <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
-              <MessageSquare className="w-32 h-32" />
+          <Card className="overflow-hidden border-border/50 bg-gradient-to-br from-card to-muted/10 shadow-xl transition-all hover:shadow-2xl">
+            <div className="absolute right-0 top-0 pointer-events-none p-12 opacity-[0.04]">
+              <Workflow className="h-64 w-64 rotate-12" />
             </div>
             <CardHeader className="pb-3 border-b border-border/50 bg-muted/20">
               <div className="flex items-center justify-between">
