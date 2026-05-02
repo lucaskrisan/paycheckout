@@ -305,8 +305,10 @@ const CheckoutBuilder = () => {
       >
       {/* Main area */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Canvas */}
-        <div className="flex-1 overflow-auto p-6">
+        {/* Left/Component Palette (Optional if you want it separate, but currently it's in the right panel) */}
+        
+        {/* Canvas Area */}
+        <div className="flex-1 overflow-auto bg-muted/30 p-6 flex flex-col items-center">
             <BuilderCanvas
               components={components}
               selectedId={selectedId}
@@ -318,8 +320,8 @@ const CheckoutBuilder = () => {
             />
         </div>
 
-        {/* Right panel */}
-        <div className="w-72 border-l border-border bg-card overflow-auto shrink-0">
+        {/* Right panel (Sidebar) */}
+        <div className="w-80 border-l border-border bg-card flex flex-col shrink-0 z-40">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="w-full rounded-none bg-transparent border-b border-border h-auto p-0">
               <TabsTrigger
