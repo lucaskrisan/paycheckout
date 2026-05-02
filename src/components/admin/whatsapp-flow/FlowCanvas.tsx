@@ -154,27 +154,52 @@ const ConnectionLines = ({ nodes }: { nodes: FlowNodeData[] }) => {
   return (
     <svg className="pointer-events-none absolute inset-0 z-[1] h-full w-full">
       {connections.map(({ from, to }, index) => {
+        // Horizontal center of 290px card
         const startX = from.x + 145;
-        const startY = from.y + 112;
+        
+        // Dynamic height estimation for the start point
+        let estimatedHeight = 180;
+        if (from.type === "paths" || from.type === "question") {
+          const optionsCount = from.config.options?.length || 0;
+          estimatedHeight = 180 + (optionsCount * 36);
+        } else if (from.type === "wait") {
+          estimatedHeight = 200;
+        } else if (from.config.body && from.config.body.length > 100) {
+          estimatedHeight = 220;
+        }
+
+        const startY = from.y + estimatedHeight;
         const endX = to.x + 145;
         const endY = to.y;
-        const deltaY = Math.max(80, Math.abs(endY - startY) * 0.55);
+        
+        const distY = Math.abs(endY - startY);
+        const deltaY = Math.max(70, distY * 0.5);
 
         return (
           <g key={`${from.id}-${to.id}-${index}`}>
+            {/* Glow effect / Background line */}
             <path
               d={`M${startX},${startY} C${startX},${startY + deltaY} ${endX},${endY - deltaY} ${endX},${endY}`}
               fill="none"
-              stroke="hsl(var(--gold) / 0.18)"
-              strokeWidth="8"
+              stroke="hsl(var(--gold) / 0.1)"
+              strokeWidth="10"
+              strokeLinecap="round"
             />
+            {/* Main connection line */}
             <path
               d={`M${startX},${startY} C${startX},${startY + deltaY} ${endX},${endY - deltaY} ${endX},${endY}`}
+              className="transition-all duration-300"
               fill="none"
-              stroke="hsl(var(--gold) / 0.8)"
+              stroke="hsl(var(--gold) / 0.7)"
               strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeDasharray={from.type === "wait" ? "6 4" : "none"}
             />
-            <circle cx={endX} cy={endY} fill="hsl(var(--gold))" r="4" />
+            {/* End arrowhead/point */}
+            <circle cx={endX} cy={endY} fill="hsl(var(--gold))" r="4.5" className="filter drop-shadow-[0_0_8px_hsl(var(--gold)/0.5)]" />
+            
+            {/* Source point marker */}
+            <circle cx={startX} cy={startY} fill="hsl(var(--gold)/0.8)" r="3" />
           </g>
         );
       })}
@@ -238,15 +263,21 @@ const CanvasNode = ({
       style={{ left: node.x, top: node.y }}
     >
       <div
-        className={`group w-[290px] rounded-[24px] border bg-card/95 shadow-2xl backdrop-blur ${
-          selected ? "border-gold/70 shadow-[0_0_40px_hsl(var(--gold)/0.16)]" : "border-border/70"
-        }`}
+        className={`group w-[290px] overflow-hidden rounded-[24px] border bg-card/95 shadow-2xl backdrop-blur transition-all ${
+          selected ? "border-gold/70 shadow-[0_0_40px_hsl(var(--gold)/0.16)]" : "border-border/70 hover:border-border/100"
+        } ${connecting ? "ring-2 ring-gold ring-offset-2 ring-offset-background" : ""}`}
         onClick={(event) => {
-          event.stopPropagation();
-          onSelect(node.id);
+          // If we are in connecting mode, allow clicking anywhere on the node to connect
+          if (connecting) {
+            event.stopPropagation();
+            onSelect(node.id);
+          }
         }}
       >
-        <div className="flex items-center gap-3 border-b border-border/60 px-4 py-3" onMouseDown={handleMouseDown}>
+        <div 
+          className="flex cursor-grab items-center gap-3 border-b border-border/60 px-4 py-3 active:cursor-grabbing" 
+          onMouseDown={handleMouseDown}
+        >
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-gold/20 bg-gold/10 text-gold">
             <Icon className="h-4 w-4" />
           </div>
@@ -254,7 +285,7 @@ const CanvasNode = ({
             <p className="truncate text-sm font-semibold text-foreground">{node.label}</p>
             <p className="text-[11px] text-muted-foreground">{meta.label}</p>
           </div>
-          <GripVertical className="h-4 w-4 text-muted-foreground" />
+          <GripVertical className="h-4 w-4 text-muted-foreground opacity-50" />
           {!locked && (
             <button
               className="rounded-full p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
@@ -270,10 +301,23 @@ const CanvasNode = ({
         </div>
 
         <div className="space-y-3 px-4 py-4">
-          <div className="rounded-2xl border border-border/60 bg-background/60 p-3">
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
-              {node.config.body || "Clique no painel lateral para configurar este nó."}
+          <div 
+            className="group/content relative cursor-pointer rounded-2xl border border-border/60 bg-background/60 p-3 transition-colors hover:border-gold/40 hover:bg-background/80"
+            onClick={(event) => {
+              event.stopPropagation();
+              onSelect(node.id);
+            }}
+          >
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90 line-clamp-4">
+              {node.config.body || "Clique no botão abaixo para configurar este nó."}
             </p>
+            <div className="mt-3 flex items-center justify-between border-t border-border/10 pt-2">
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Configuração</span>
+              <div className="flex items-center gap-1 text-xs font-semibold text-gold">
+                <span>Editar</span>
+                <FileText className="h-3 w-3" />
+              </div>
+            </div>
           </div>
 
           {Array.isArray(node.config.options) && node.config.options.length > 0 && (
@@ -297,7 +341,7 @@ const CanvasNode = ({
           )}
         </div>
 
-        <div className="flex items-center justify-between border-t border-border/60 px-4 py-3">
+        <div className="relative flex items-center justify-between border-t border-border/60 px-4 py-3">
           <button
             className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
               connecting ? "border-gold/50 bg-gold/10 text-gold" : "border-border/60 bg-background/60 text-muted-foreground hover:border-gold/35 hover:text-gold"
@@ -314,6 +358,11 @@ const CanvasNode = ({
 
           <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-gold/30 bg-background">
             <div className="h-2.5 w-2.5 rounded-full bg-gold" />
+          </div>
+          
+          {/* Connection source point visual (absolute centered at bottom) */}
+          <div className="absolute -bottom-1.5 left-1/2 flex h-3 w-3 -translate-x-1/2 items-center justify-center rounded-full border border-gold/40 bg-background shadow-sm">
+            <div className="h-1.5 w-1.5 rounded-full bg-gold" />
           </div>
         </div>
       </div>
@@ -735,7 +784,7 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
 
             <div className="pointer-events-none absolute left-4 top-4 z-[3] flex items-center gap-2 rounded-full border border-gold/20 bg-card/90 px-3 py-1.5 text-xs text-muted-foreground shadow-lg backdrop-blur">
               <MessageSquare className="h-3.5 w-3.5 text-gold" />
-              {pendingConnection ? "Clique no próximo nó para conectar." : "Clique em um card para editar, arraste para reposicionar."}
+              {pendingConnection ? "Clique no próximo bloco para conectar." : "Arraste pelo topo para mover, clique no conteúdo para editar."}
             </div>
 
             {nodes.map((node) => (
