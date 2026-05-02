@@ -72,7 +72,7 @@ const Roadmap = lazy(() => import("./pages/admin/Roadmap"));
 const TechnicalManual = lazy(() => import("./pages/admin/TechnicalManual"));
 const PixelMirrors = lazy(() => import("./pages/admin/PixelMirrors"));
 const AbTests = lazy(() => import("./pages/admin/AbTests"));
-const AbTestEditor = lazy(() => import("./pages/admin/AbTestEditor"));
+// AbTestEditor eagerly loaded above
 const Domains = lazy(() => import("./pages/admin/Domains"));
 
 const MyAccount = lazy(() => import("./pages/admin/MyAccount"));
