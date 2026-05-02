@@ -929,7 +929,6 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
             </div>
           </aside>
         </div>
-      </div>
     </motion.div>
   );
 };
