@@ -245,9 +245,9 @@ const CheckoutBuilder = () => {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-muted/30 overflow-hidden">
+    <div className="absolute inset-0 flex flex-col bg-muted/30 overflow-hidden z-[40]">
       {/* Top bar */}
-      <div className="h-12 bg-card border-b border-border flex items-center justify-between px-4 shrink-0 z-50">
+      <div className="h-12 bg-card border-b border-border flex items-center justify-between px-4 shrink-0 z-[50]">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate(`/admin/products/${productId}/edit`)}
