@@ -733,9 +733,9 @@ function EditorInner() {
     const generated = existing.slug ? `https://${publicDomain}/go/${existing.slug}?type=page` : "";
     setEntryUrl(generated);
     const g = existing.graph;
-    if (g && Array.isArray(g.nodes) && g.nodes.length > 0) {
-      setNodes(g.nodes as FlowNode[]);
-      setEdges((g.edges as Edge[]) ?? []);
+    if (g && Array.isArray(g.nodes)) {
+      setNodes((g.nodes as FlowNode[]).filter(Boolean));
+      setEdges(((g.edges as Edge[]) ?? []).filter(Boolean));
     }
   }, [existing, setNodes, setEdges]);
 
