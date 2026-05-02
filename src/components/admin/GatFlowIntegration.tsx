@@ -6,7 +6,7 @@ import { ExternalLink, Rocket } from "lucide-react";
 import IntegrationCard from "./IntegrationCard";
 import { Button } from "@/components/ui/button";
 
-const GATFLOW_LOGO = "https://rmetppilvfrxosvxzhgj.supabase.co/storage/v1/object/public/message-attachments/52e9fb3f-30ef-489f-aa32-1375e513410c/1777747813313_q3pbm7_Panttera.png";
+const GATFLOW_LOGO = "https://rmetppilvfrxosvxzhgj.supabase.co/storage/v1/object/public/message-attachments/52e9fb3f-30ef-489f-aa32-1375e513410c/1777748812742_ruxkif_Panttera__1_.png";
 
 const GatFlowIntegration = () => {
   const { user } = useAuth();
