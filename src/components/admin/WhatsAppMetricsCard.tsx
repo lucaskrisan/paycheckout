@@ -29,7 +29,7 @@ const StatTile = ({
 }) => (
   <div className="flex flex-col gap-3 rounded-[24px] border border-border/50 bg-background/50 p-6 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1.5 group">
     <div className="flex items-center justify-between">
-      <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${accent} shadow-sm`}>
+      <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${accent} shadow-inner transition-transform group-hover:scale-110`}>
         <Icon className="h-5 w-5" />
       </div>
       {trend && (
