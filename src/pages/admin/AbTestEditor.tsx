@@ -838,7 +838,8 @@ function EditorInner() {
   useEffect(() => {
     if (!stats || stats.length === 0) return;
     setNodes((ns) =>
-      ns.map((n) => {
+      ns.filter(Boolean).map((n) => {
+        if (!n) return n;
         if (n.type === "page") {
           const s = stats.find(st => st.page_url === (n.data as PageData).url && st.label === (n.data as PageData).label);
           if (s) {
@@ -857,8 +858,6 @@ function EditorInner() {
           }
         }
         if (n.type === "checkout") {
-          // Improved matching: find the variant that points to this specific checkout via sort_order or label
-          // In our flow, Checkout A is usually first (sort_order 0), B is second (1)
           const nodeIndex = n.id === "checkout-a" ? 0 : n.id === "checkout-b" ? 1 : -1;
           const s = nodeIndex !== -1 ? stats.find(st => st.sort_order === nodeIndex) : null;
           
@@ -868,7 +867,7 @@ function EditorInner() {
               data: { 
                 ...n.data, 
                 stats: { 
-                  impressions: Number(s.clicks), // For checkout nodes, impressions are actually LP clicks
+                  impressions: Number(s.clicks), 
                   clicks: Number(s.clicks), 
                   sales: Number(s.sales), 
                   revenue: Number(s.revenue) 
@@ -891,11 +890,7 @@ function EditorInner() {
             } 
           } as FlowNode;
         }
-        if (n.type === "whatsapp") {
-          // Find stats in whatsapp_send_log (simulated for now or fetched above)
-          // For now, let's keep it clean as we don't have per-test whatsapp stats yet
-          return n;
-        }
+        return n;
       })
     );
   }, [stats, setNodes]);
