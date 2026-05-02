@@ -15,7 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, MessageSquare, Phone, Power, PowerOff, RefreshCw, CheckCircle2, XCircle, AlertTriangle, Clock, Send, RotateCw, Activity, ShieldCheck, Zap } from "lucide-react";
+import { Loader2, MessageSquare, Phone, Power, PowerOff, RefreshCw, CheckCircle2, XCircle, AlertTriangle, Clock, Send, RotateCw, Activity, ShieldCheck, Zap, Workflow } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
