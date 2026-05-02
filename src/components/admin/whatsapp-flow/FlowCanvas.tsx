@@ -811,7 +811,7 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
 
             {nodes.map((node) => (
               <CanvasNode
-                connecting={pendingConnection === node.id}
+                connecting={pendingConnection !== null}
                 key={node.id}
                 node={node}
                 onConnect={handleConnect}
