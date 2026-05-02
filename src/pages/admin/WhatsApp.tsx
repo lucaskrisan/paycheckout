@@ -354,19 +354,22 @@ const WhatsApp = () => {
             <div className="absolute right-0 top-0 pointer-events-none p-12 opacity-[0.04]">
               <Workflow className="h-64 w-64 rotate-12" />
             </div>
-            <CardHeader className="pb-3 border-b border-border/50 bg-muted/20">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base flex items-center gap-2.5">
-                  <div className="p-2 rounded-lg bg-gold/10 text-gold border border-gold/20">
-                    <ShieldCheck className="w-4 h-4" />
+            <CardHeader className="relative z-10 border-b border-border/40 bg-muted/10 pb-6 pt-8">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-gold/10 text-gold border border-gold/20 shadow-lg">
+                    <ShieldCheck className="h-7 w-7" />
                   </div>
-                  Controle de Instância
-                </CardTitle>
+                  <div>
+                    <CardTitle className="text-xl font-bold font-display">Status do Sistema</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-0.5">Sua ponte direta com os clientes</p>
+                  </div>
+                </div>
                 {status === "connected" && (
-                  <Badge className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border-emerald-500/20 gap-1.5">
-                    <Activity className="w-3 h-3 animate-pulse" />
-                    Sessão Ativa
-                  </Badge>
+                  <div className="flex items-center gap-2 rounded-2xl bg-emerald-500/10 px-4 py-2 text-emerald-600 border border-emerald-500/20">
+                    <Activity className="h-4 w-4 animate-pulse" />
+                    <span className="text-xs font-bold uppercase tracking-wider">Operacional</span>
+                  </div>
                 )}
               </div>
             </CardHeader>
