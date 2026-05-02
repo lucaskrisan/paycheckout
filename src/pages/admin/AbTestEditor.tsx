@@ -1299,17 +1299,17 @@ function EditorInner() {
             <div className="grid grid-cols-1 gap-2">
               <div className="p-3 rounded-lg bg-white/5 border border-border/20">
                 <p className="text-[10px] text-muted-foreground uppercase">Visitantes</p>
-                <p className="text-xl font-bold">{(nodes.find(n => n.id === 'config')?.data as ConfigData)?.impressions ?? 0}</p>
+                <p className="text-xl font-bold">{(nodes.find(n => n && n.id === 'config')?.data as ConfigData)?.impressions ?? 0}</p>
               </div>
               <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
                 <p className="text-[10px] text-emerald-400/70 uppercase font-bold tracking-tight">Vendas Totais</p>
-                <p className="text-xl font-bold text-emerald-400">{(nodes.find(n => n.id === 'config')?.data as ConfigData)?.sales ?? 0}</p>
+                <p className="text-xl font-bold text-emerald-400">{(nodes.find(n => n && n.id === 'config')?.data as ConfigData)?.sales ?? 0}</p>
               </div>
               <div className="p-3 rounded-lg bg-violet-500/5 border border-violet-500/20">
                 <p className="text-[10px] text-violet-400/70 uppercase font-bold tracking-tight">Conversão</p>
                 <p className="text-xl font-bold text-violet-400">
                   {(() => {
-                    const c = nodes.find(n => n.id === 'config')?.data as ConfigData;
+                    const c = nodes.find(n => n && n.id === 'config')?.data as ConfigData;
                     return c?.impressions > 0 ? ((c.sales / c.impressions) * 100).toFixed(1) : "0.0";
                   })()}%
                 </p>
