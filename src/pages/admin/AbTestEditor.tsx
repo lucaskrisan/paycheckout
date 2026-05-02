@@ -370,8 +370,8 @@ function CreativeNode({ id, data }: NodeProps<Node<CreativeData, "creative">>) {
   
   const updateData = (newData: Partial<CreativeData>) => {
     reactFlow.setNodes((nds) =>
-      nds.map((node) => {
-        if (node.id === id) {
+      nds.filter(Boolean).map((node) => {
+        if (node && node.id === id) {
           return { ...node, data: { ...node.data, ...newData } };
         }
         return node;
