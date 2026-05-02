@@ -322,7 +322,7 @@ const CheckoutBuilder = () => {
 
         {/* Right panel (Sidebar) */}
         <div className="w-80 border-l border-border bg-card flex flex-col shrink-0 z-40">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
             <TabsList className="w-full rounded-none bg-transparent border-b border-border h-auto p-0">
               <TabsTrigger
                 value="components"
