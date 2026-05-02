@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
     };
 
     const token = await signHS256(payload, partner.shared_secret);
-    const ssoUrl = `https://gatflow.com/auth/sso?token=${token}`;
+    const ssoUrl = `https://izclmoxvjujxatfivcqv.supabase.co/functions/v1/panttera-auth/auth/sso?token=${token}`;
 
     return new Response(JSON.stringify({ url: ssoUrl }), {
       status: 200,

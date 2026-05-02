@@ -46,30 +46,26 @@ Deno.serve(async (req) => {
     // Get the GatFlow configuration and secret
     const { data: partner } = await supabase
       .from('marketplace_partners')
-      .select('webhook_secret')
+      .select('shared_secret')
       .eq('name', 'GatFlow')
       .single();
 
-    if (!partner?.webhook_secret) {
-      throw new Error('GatFlow webhook secret not found');
+    if (!partner?.shared_secret) {
+      throw new Error('GatFlow shared secret not found');
     }
 
     const payload = {
-      event: 'billing.subscription.updated',
-      timestamp: Math.floor(Date.now() / 1000),
-      data: {
-        panttera_store_id: user_id,
-        plan_name: plan_name, // Starter, Pro, Black
-        status: status || 'active'
-      }
+      event: status === 'uninstalled' ? 'app.uninstalled' : 'subscription.updated',
+      shop_id: user_id,
+      plan_tier: plan_name // Starter, Pro, Black
     };
 
     const body = JSON.stringify(payload);
-    const signature = await signHMAC(body, partner.webhook_secret);
+    const signature = await signHMAC(body, partner.shared_secret);
 
     console.log(`Sending webhook to GatFlow for user ${user_id}, plan ${plan_name}`);
 
-    const response = await fetch('https://gatflow.com/api/webhooks/panttera', {
+    const response = await fetch('https://izclmoxvjujxatfivcqv.supabase.co/functions/v1/webhook-panttera', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
