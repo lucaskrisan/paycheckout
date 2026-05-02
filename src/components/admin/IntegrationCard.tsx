@@ -35,6 +35,7 @@ interface IntegrationCardProps {
   testing?: boolean;
   loading?: boolean;
   extraFields?: React.ReactNode;
+  onCardClick?: () => void;
 }
 
 const IntegrationCard = ({
@@ -59,6 +60,7 @@ const IntegrationCard = ({
   testing,
   loading = false,
   extraFields,
+  onCardClick,
 }: IntegrationCardProps) => {
   const [open, setOpen] = useState(false);
   const [showToken, setShowToken] = useState(false);
@@ -69,7 +71,7 @@ const IntegrationCard = ({
     <>
       {/* Thumbnail card — just the logo */}
       <button
-        onClick={() => setOpen(true)}
+        onClick={() => onCardClick ? onCardClick() : setOpen(true)}
         className="group relative flex items-center justify-center rounded-xl border border-border/40 bg-white p-10 transition-all hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 cursor-pointer h-40"
       >
         <img src={cardLogo || logo} alt={name} className="max-h-20 max-w-[220px] object-contain" />

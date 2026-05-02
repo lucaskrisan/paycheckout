@@ -17,6 +17,7 @@ const GatFlowIntegration = () => {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [exists, setExists] = useState(false);
+  const [showConfig, setShowConfig] = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -108,6 +109,13 @@ const GatFlowIntegration = () => {
       tokenPlaceholder="API Secret do GatFlow"
       tokenHint="Obtenha seu API Secret no painel do GatFlow."
       loading={loading}
+      onCardClick={() => {
+        if (active && shopId && apiSecret) {
+          handleOpenGatFlow();
+        } else {
+          setShowConfig(true);
+        }
+      }}
       extraFields={
         <div className="space-y-4">
           <div className="space-y-1.5">
