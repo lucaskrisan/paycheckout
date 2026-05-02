@@ -110,7 +110,7 @@ const WhatsAppMetricsCard = () => {
   }, [user]);
 
   return (
-    <Card>
+    <Card className="border-border/50 bg-gradient-to-br from-card to-muted/5 shadow-lg">
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <BarChart3 className="w-5 h-5" />
