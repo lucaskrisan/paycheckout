@@ -421,6 +421,7 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
   const [pendingConnection, setPendingConnection] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [sendingTest, setSendingTest] = useState(false);
+  const [showTemplateSettings, setShowTemplateSettings] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
