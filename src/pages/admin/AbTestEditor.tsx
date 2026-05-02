@@ -930,7 +930,7 @@ function EditorInner() {
         const idx = nodes.filter((n) => n && n.type === "checkout").length;
         newNode = { id, type: "checkout", position, data: { kind: "checkout", label: `Checkout ${String.fromCharCode(65 + idx)}`, subtitle: "Página de pagamento", productId: null, offerId: null, templateId: null } };
       }
-      setNodes((ns) => [...ns, newNode]);
+      setNodes((ns) => [...ns.filter(Boolean), newNode]);
     },
     [reactFlow, nodes, setNodes]
   );
