@@ -74,7 +74,7 @@ const IntegrationCard = ({
         onClick={() => onCardClick ? onCardClick() : setOpen(true)}
         className="group relative flex items-center justify-center rounded-xl border border-border/40 bg-white p-10 transition-all hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 cursor-pointer h-40"
       >
-        <img src={cardLogo || logo} alt={name} className="max-h-20 max-w-[220px] object-contain" />
+        <img src={cardLogo || logo} alt={name} className="max-h-20 max-w-[220px] object-contain" loading="lazy" decoding="async" />
         <span className={cn(
           "absolute top-3 right-3 w-3 h-3 rounded-full border-2 border-white shadow-sm transition-colors",
           loading
