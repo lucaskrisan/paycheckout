@@ -309,6 +309,11 @@ export default function AbTests() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="text-base font-bold">{t.name}</h3>
                       <Badge className={STATUS_LABEL[t.status]?.cls ?? ""}>{STATUS_LABEL[t.status]?.label}</Badge>
+                      {t.variants.some(v => v.mirror_pixel_id) && (
+                        <Badge className="bg-violet-600/30 text-violet-300 border border-violet-500/40 flex items-center gap-1">
+                          <Shield className="w-3 h-3" /> Domínio Protegido
+                        </Badge>
+                      )}
                       {winner && (
                         <Badge className="bg-yellow-500/30 text-yellow-200 border border-yellow-400/40">
                           <Trophy className="w-3 h-3 mr-1" /> Vencedor: {t.variants.find((v) => v.id === winner)?.label}

@@ -201,6 +201,11 @@ export default function PixelMirrors() {
                     <Badge className={m.active ? "bg-emerald-600/30 text-emerald-300 border border-emerald-500/40" : "bg-zinc-700/40 text-zinc-300"}>
                       {m.active ? "Ativo" : "Pausado"}
                     </Badge>
+                    {m.last_event_at && (Date.now() - new Date(m.last_event_at).getTime() < 1000 * 60 * 5) && (
+                      <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 animate-pulse flex items-center gap-1">
+                        <Activity className="w-3 h-3" /> Sinal Recebido
+                      </Badge>
+                    )}
                   </div>
 
                   <div className="space-y-1.5 text-xs">
