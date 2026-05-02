@@ -1036,8 +1036,8 @@ function EditorInner() {
         if (error) throw error;
       }
 
-      const pageNodes = nodes.filter((n) => n.type === "page") as Node<PageData, "page">[];
-      const checkoutNodes = nodes.filter((n) => n.type === "checkout") as Node<CheckoutData, "checkout">[];
+      const pageNodes = nodes.filter((n) => n && n.type === "page") as Node<PageData, "page">[];
+      const checkoutNodes = nodes.filter((n) => n && n.type === "checkout") as Node<CheckoutData, "checkout">[];
       
       // Variants are defined by Page nodes. If no page nodes, we'll create at least 2 default ones.
       const variantSlots = Math.max(pageNodes.length, 2);
