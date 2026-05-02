@@ -304,11 +304,10 @@ const CheckoutBuilder = () => {
         onDragEnd={handleDragEnd}
       >
       {/* Main area */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left/Component Palette (Optional if you want it separate, but currently it's in the right panel) */}
-        
+      <div className="flex-1 flex overflow-hidden relative">
         {/* Canvas Area */}
         <div className="flex-1 overflow-auto bg-muted/30 p-6 flex flex-col items-center">
+          <div className="w-full h-fit flex flex-col items-center">
             <BuilderCanvas
               components={components}
               selectedId={selectedId}
@@ -318,6 +317,7 @@ const CheckoutBuilder = () => {
               productImageUrl={product?.image_url || null}
               productName={product?.name || ""}
             />
+          </div>
         </div>
 
         {/* Right panel (Sidebar) */}
