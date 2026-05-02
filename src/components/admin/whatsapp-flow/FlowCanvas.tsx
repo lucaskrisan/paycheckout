@@ -671,6 +671,16 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
             variant="outline"
             size="sm"
             className="h-8 gap-1.5 text-xs"
+            onClick={() => setShowTemplateSettings(true)}
+          >
+            <Settings2 className="h-3.5 w-3.5" />
+            <span className="hidden md:inline">Configurações</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1.5 text-xs"
             onClick={() => setShowPreview(!showPreview)}
           >
             <Smartphone className="h-3.5 w-3.5" />
