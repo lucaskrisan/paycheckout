@@ -80,7 +80,7 @@ const ProducerBilling = lazy(() => import("./pages/admin/ProducerBilling"));
 const Blacklist = lazy(() => import("./pages/admin/Blacklist"));
 const ApiKeys = lazy(() => import("./pages/admin/ApiKeys"));
 const ProductReview = lazy(() => import("./pages/admin/ProductReview"));
-const WhatsApp = lazy(() => import("./pages/admin/WhatsApp"));
+// WhatsApp eagerly loaded above
 const VerificationReview = lazy(() => import("./pages/admin/VerificationReview"));
 const Analytics = lazy(() => import("./pages/admin/Analytics"));
 const MariaAI = lazy(() => import("./pages/admin/MariaAI"));
