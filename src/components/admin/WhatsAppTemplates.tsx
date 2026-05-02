@@ -111,12 +111,12 @@ const TemplateCard = ({
   return (
     <motion.button
       animate={{ opacity: 1, y: 0 }}
-      className="group relative overflow-hidden rounded-[28px] border border-border/60 bg-card/95 p-5 text-left shadow-sm transition-all hover:-translate-y-1 hover:border-gold/35 hover:shadow-[0_24px_60px_hsl(var(--gold)/0.08)]"
+      className="group relative flex flex-col overflow-hidden rounded-[32px] border border-border/60 bg-card/95 p-6 text-left shadow-sm transition-all hover:-translate-y-1.5 hover:border-gold/40 hover:shadow-[0_32px_80px_hsl(var(--gold)/0.12)]"
       initial={{ opacity: 0, y: 16 }}
       onClick={() => onOpen(template)}
       type="button"
     >
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/70 to-transparent" />
+      <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-gold/50 via-gold to-gold/50 opacity-0 transition-opacity group-hover:opacity-100" />
 
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
