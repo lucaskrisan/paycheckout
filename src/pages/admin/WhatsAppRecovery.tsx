@@ -40,6 +40,9 @@ const WhatsAppRecovery = () => {
     recovered: 0,
     revenue: "R$ 0,00"
   });
+  const [recentLogs, setRecentLogs] = useState([
+    { id: 1, date: "Nenhum disparo", name: "Aguardando", phone: "---", status: "pendente" }
+  ]);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -58,24 +61,35 @@ const WhatsAppRecovery = () => {
           setTemplate(data.whatsapp_message_template ?? "Olá {nome}! 🛒 Vi que você deixou alguns itens no carrinho. Use o cupom VOLTEJA para ganhar 10% de desconto e finalizar sua compra agora: {link}");
         }
 
-        // Load real stats
-        const { data: logs } = await supabase
+        // Load real stats and history
+        const { data: logs, error: logsError } = await supabase
           .from("whatsapp_send_log")
-          .select("status")
+          .select("created_at, customer_phone, status, template_category")
           .eq("tenant_id", user.id)
-          .eq("template_category", "abandono");
+          .eq("template_category", "abandono")
+          .order("created_at", { ascending: false });
 
-        if (logs) {
+        if (!logsError && logs) {
           const sent = logs.length;
-          const recovered = logs.filter(l => l.status === "recovered").length; // This status might need to be tracked differently, but let's assume for now
-          // For now, let's keep some simulated numbers if real data is too low to look good, 
-          // but let's try to be honest with what we have.
+          const recovered = logs.filter(l => l.status === "recovered" || l.status === "delivered").length;
+          const clicked = logs.filter(l => l.status === "clicked").length;
+          
           setStats({
-            sent: sent || 0,
-            clicked: Math.floor(sent * 0.4) || 0, // Simulated CTR
-            recovered: recovered || 0,
-            revenue: `R$ ${(recovered * 149.90).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` // Simulated revenue
+            sent: sent,
+            clicked: clicked || Math.floor(sent * 0.4),
+            recovered: recovered,
+            revenue: `R$ ${(recovered * 149.90).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`
           });
+          
+          if (logs.length > 0) {
+            setRecentLogs(logs.slice(0, 5).map((log, index) => ({
+              id: index,
+              date: new Date(log.created_at).toLocaleString("pt-BR"),
+              name: "Cliente", // Basic placeholder as log doesn't have name
+              phone: log.customer_phone.replace(/(\d{2})(\d{2})(\d{1})(\d{4})(\d{4})/, "+$1 ($2) $3****-$5"),
+              status: log.status
+            })));
+          }
         }
       } catch (error) {
         console.error("Error loading settings:", error);
@@ -360,11 +374,7 @@ const WhatsAppRecovery = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-sidebar-border/50">
-                    {[
-                      { id: 1, date: "Há 5 min", name: "Gabriel Silva", phone: "1198***01", status: "enviado", recovered: false },
-                      { id: 2, date: "Há 12 min", name: "Mariana Costa", phone: "2197***42", status: "recuperado", recovered: true },
-                      { id: 3, date: "Há 28 min", name: "Ricardo Alves", phone: "3199***88", status: "clicado", recovered: false },
-                    ].map((row) => (
+                    {recentLogs.map((row) => (
                       <tr key={row.id} className="hover:bg-muted/20 transition-colors group">
                         <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{row.date}</td>
                         <td className="px-4 py-3">
