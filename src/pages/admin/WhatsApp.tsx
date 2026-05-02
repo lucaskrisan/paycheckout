@@ -6,7 +6,10 @@ const WhatsAppFeatureFlags = lazy(() => import("@/components/admin/WhatsAppFeatu
 const WhatsAppSendLog = lazy(() => import("@/components/admin/WhatsAppSendLog"));
 const WhatsAppStarterTemplates = lazy(() => import("@/components/admin/WhatsAppStarterTemplates"));
 const WhatsAppMetricsCard = lazy(() => import("@/components/admin/WhatsAppMetricsCard"));
+const WhatsAppRecoveryTab = lazy(() => import("@/components/admin/WhatsAppRecoveryTab"));
 import WhatsAppTestMessageDialog from "@/components/admin/WhatsAppTestMessageDialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,6 +44,9 @@ const formatRelative = (iso: string | null) => {
 
 const WhatsApp = () => {
   const { user, isSuperAdmin } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const defaultTab = searchParams.get("tab") || "connection";
+  
   const [loading, setLoading] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [reconnecting, setReconnecting] = useState(false);
@@ -280,190 +286,215 @@ const WhatsApp = () => {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold font-display text-foreground">WhatsApp</h1>
+            <h1 className="text-3xl font-bold font-display text-foreground">WhatsApp Hub</h1>
             <Badge variant="outline" className="bg-gold/5 text-gold border-gold/20 gap-1.5 py-0.5">
               <Zap className="w-3 h-3 fill-gold" />
               Empresa Verificada
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground">
-            Gestão centralizada de conexões e fluxos inteligentes.
+            Gestão centralizada de conexões, templates e automações.
           </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="hidden sm:flex flex-col items-end mr-2">
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Status do Servidor</span>
-            <div className="flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-              <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">Operacional</span>
-            </div>
-          </div>
         </div>
       </div>
 
-      {errorMsg && (
-        <div className="flex items-start gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm">
-          <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
-          <div>
-            <p className="font-medium">Erro de conexão</p>
-            <p className="mt-0.5 opacity-90">{errorMsg}</p>
-          </div>
-        </div>
-      )}
+      <Tabs defaultValue={defaultTab} onValueChange={(val) => setSearchParams({ tab: val })} className="space-y-6">
+        <TabsList className="bg-muted/50 p-1 border h-auto flex-wrap">
+          <TabsTrigger value="connection" className="gap-2 py-2">
+            <ShieldCheck className="w-4 h-4" />
+            Conexão
+          </TabsTrigger>
+          <TabsTrigger value="recovery" className="gap-2 py-2">
+            <RotateCw className="w-4 h-4" />
+            Recuperação
+          </TabsTrigger>
+          <TabsTrigger value="templates" className="gap-2 py-2">
+            <MessageSquare className="w-4 h-4" />
+            Templates
+          </TabsTrigger>
+          <TabsTrigger value="logs" className="gap-2 py-2">
+            <Activity className="w-4 h-4" />
+            Logs
+          </TabsTrigger>
+          {isSuperAdmin && (
+            <TabsTrigger value="admin" className="gap-2 py-2">
+              <Zap className="w-4 h-4" />
+              Admin
+            </TabsTrigger>
+          )}
+        </TabsList>
 
-      <Card className="border-border/50 shadow-lg overflow-hidden relative">
-        <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
-          <MessageSquare className="w-32 h-32" />
-        </div>
-        <CardHeader className="pb-3 border-b border-border/50 bg-muted/20">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base flex items-center gap-2.5">
-              <div className="p-2 rounded-lg bg-gold/10 text-gold border border-gold/20">
-                <ShieldCheck className="w-4 h-4" />
+        <TabsContent value="connection" className="space-y-6 animate-in fade-in duration-300">
+          {errorMsg && (
+            <div className="flex items-start gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm">
+              <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium">Erro de conexão</p>
+                <p className="mt-0.5 opacity-90">{errorMsg}</p>
               </div>
-              Controle de Instância
-            </CardTitle>
-            {status === "connected" && (
-              <Badge className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border-emerald-500/20 gap-1.5">
-                <Activity className="w-3 h-3 animate-pulse" />
-                Sessão Ativa
-              </Badge>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="pt-6">
-          {status === "connected" ? (
-            <div className="space-y-4">
-              <div className="flex flex-col md:flex-row items-stretch gap-4 p-5 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 shadow-inner">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                  <CheckCircle2 className="w-8 h-8" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="font-semibold text-emerald-800 dark:text-emerald-300">Conectado</p>
-                      {phoneNumber && (
-                        <p className="text-sm text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5 mt-0.5">
-                          <Phone className="w-3.5 h-3.5" />
-                          {formatPhone(phoneNumber)}
-                        </p>
-                      )}
-                    </div>
-                    <Badge variant="outline" className="border-emerald-300 text-emerald-700 dark:text-emerald-300 shrink-0">
-                      Ativo
-                    </Badge>
-                  </div>
-
-                  <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 pt-3 border-t border-emerald-200/60 dark:border-emerald-800/60">
-                    <div className="flex items-center gap-1.5 text-xs text-emerald-700/80 dark:text-emerald-400/80">
-                      <Clock className="w-3 h-3" />
-                      <span>Conectado {formatRelative(connectedAt)}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs text-emerald-700/80 dark:text-emerald-400/80">
-                      <RefreshCw className="w-3 h-3" />
-                      <span>Verificado {formatRelative(lastChecked?.toISOString() ?? null)}</span>
-                    </div>
-                    {instanceId && (
-                      <div className="flex items-center gap-1.5 text-xs text-emerald-700/80 dark:text-emerald-400/80 truncate" title={instanceId}>
-                        <span className="font-mono opacity-70">ID:</span>
-                        <span className="font-mono truncate">{instanceId}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                <Button onClick={() => setTestOpen(true)} variant="outline" className="gap-2">
-                  <Send className="w-4 h-4" />
-                  Enviar mensagem de teste
-                </Button>
-                <Button onClick={handleReconnect} disabled={reconnecting} variant="outline" className="gap-2">
-                  {reconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCw className="w-4 h-4" />}
-                  {reconnecting ? "Reconectando..." : "Reconectar"}
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={handleDisconnect}
-                  disabled={disconnecting}
-                  className="gap-2"
-                >
-                  {disconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <PowerOff className="w-4 h-4" />}
-                  {disconnecting ? "Desconectando..." : "Desconectar WhatsApp"}
-                </Button>
-              </div>
-            </div>
-          ) : status === "connecting" && qrSrc ? (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  Escaneie o QR Code no seu WhatsApp...
-                </div>
-                <span className="text-xs tabular-nums">
-                  QR renova em {Math.max(0, 30 - qrAge)}s
-                </span>
-              </div>
-              <div className="flex justify-center p-4 bg-white rounded-xl border max-w-xs mx-auto">
-                <img
-                  src={qrSrc}
-                  alt="QR Code WhatsApp"
-                  className="w-64 h-64 object-contain"
-                />
-              </div>
-              <p className="text-xs text-center text-muted-foreground">
-                Abra o WhatsApp → Menu (⋮) → Aparelhos conectados → Conectar aparelho
-              </p>
-              <div className="flex justify-center">
-                <Button onClick={refreshQrCode} variant="ghost" size="sm" className="gap-2 text-xs">
-                  <RotateCw className="w-3 h-3" />
-                  Gerar novo QR Code agora
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border">
-                <XCircle className="w-8 h-8 text-muted-foreground shrink-0" />
-                <div>
-                  <p className="font-medium text-foreground">Desconectado</p>
-                  <p className="text-sm text-muted-foreground">
-                    Nenhum WhatsApp vinculado no momento.
-                  </p>
-                </div>
-              </div>
-              <Button onClick={handleConnect} disabled={loading} className="gap-2">
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Power className="w-4 h-4" />}
-                {loading ? "Gerando QR Code..." : "Conectar WhatsApp"}
-              </Button>
             </div>
           )}
-        </CardContent>
-      </Card>
 
-      {status === "connected" && (
-        <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
-          <WhatsAppMetricsCard />
-        </Suspense>
-      )}
+          <Card className="border-border/50 shadow-lg overflow-hidden relative">
+            <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
+              <MessageSquare className="w-32 h-32" />
+            </div>
+            <CardHeader className="pb-3 border-b border-border/50 bg-muted/20">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2.5">
+                  <div className="p-2 rounded-lg bg-gold/10 text-gold border border-gold/20">
+                    <ShieldCheck className="w-4 h-4" />
+                  </div>
+                  Controle de Instância
+                </CardTitle>
+                {status === "connected" && (
+                  <Badge className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border-emerald-500/20 gap-1.5">
+                    <Activity className="w-3 h-3 animate-pulse" />
+                    Sessão Ativa
+                  </Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6">
+              {status === "connected" ? (
+                <div className="space-y-4">
+                  <div className="flex flex-col md:flex-row items-stretch gap-4 p-5 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 shadow-inner">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                      <CheckCircle2 className="w-8 h-8" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-emerald-800 dark:text-emerald-300">Conectado</p>
+                          {phoneNumber && (
+                            <p className="text-sm text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5 mt-0.5">
+                              <Phone className="w-3.5 h-3.5" />
+                              {formatPhone(phoneNumber)}
+                            </p>
+                          )}
+                        </div>
+                        <Badge variant="outline" className="border-emerald-300 text-emerald-700 dark:text-emerald-300 shrink-0">
+                          Ativo
+                        </Badge>
+                      </div>
 
-      {isSuperAdmin && (
-        <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
-          <WhatsAppFeatureFlags />
-        </Suspense>
-      )}
+                      <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 pt-3 border-t border-emerald-200/60 dark:border-emerald-800/60">
+                        <div className="flex items-center gap-1.5 text-xs text-emerald-700/80 dark:text-emerald-400/80">
+                          <Clock className="w-3 h-3" />
+                          <span>Conectado {formatRelative(connectedAt)}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-emerald-700/80 dark:text-emerald-400/80">
+                          <RefreshCw className="w-3 h-3" />
+                          <span>Verificado {formatRelative(lastChecked?.toISOString() ?? null)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-      <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
-        <WhatsAppStarterTemplates />
-      </Suspense>
+                  <div className="flex flex-wrap gap-2">
+                    <Button onClick={() => setTestOpen(true)} variant="outline" className="gap-2">
+                      <Send className="w-4 h-4" />
+                      Enviar mensagem de teste
+                    </Button>
+                    <Button onClick={handleReconnect} disabled={reconnecting} variant="outline" className="gap-2">
+                      {reconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCw className="w-4 h-4" />}
+                      {reconnecting ? "Reconectando..." : "Reconectar"}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={handleDisconnect}
+                      disabled={disconnecting}
+                      className="gap-2"
+                    >
+                      {disconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <PowerOff className="w-4 h-4" />}
+                      {disconnecting ? "Desconectando..." : "Desconectar"}
+                    </Button>
+                  </div>
+                </div>
+              ) : status === "connecting" && qrSrc ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Escaneie o QR Code no seu WhatsApp...
+                    </div>
+                    <span className="text-xs tabular-nums">
+                      QR renova em {Math.max(0, 30 - qrAge)}s
+                    </span>
+                  </div>
+                  <div className="flex justify-center p-4 bg-white rounded-xl border max-w-xs mx-auto">
+                    <img
+                      src={qrSrc}
+                      alt="QR Code WhatsApp"
+                      className="w-64 h-64 object-contain"
+                    />
+                  </div>
+                  <p className="text-xs text-center text-muted-foreground">
+                    Abra o WhatsApp → Menu (⋮) → Aparelhos conectados → Conectar aparelho
+                  </p>
+                  <div className="flex justify-center">
+                    <Button onClick={refreshQrCode} variant="ghost" size="sm" className="gap-2 text-xs">
+                      <RotateCw className="w-3 h-3" />
+                      Gerar novo QR Code agora
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border">
+                    <XCircle className="w-8 h-8 text-muted-foreground shrink-0" />
+                    <div>
+                      <p className="font-medium text-foreground">Desconectado</p>
+                      <p className="text-sm text-muted-foreground">
+                        Nenhum WhatsApp vinculado no momento.
+                      </p>
+                    </div>
+                  </div>
+                  <Button onClick={handleConnect} disabled={loading} className="gap-2">
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Power className="w-4 h-4" />}
+                    {loading ? "Gerando QR Code..." : "Conectar WhatsApp"}
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-      <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
-        <WhatsAppTemplates />
-      </Suspense>
+          {status === "connected" && (
+            <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
+              <WhatsAppMetricsCard />
+            </Suspense>
+          )}
+        </TabsContent>
 
-      <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
-        <WhatsAppSendLog />
-      </Suspense>
+        <TabsContent value="recovery" className="animate-in fade-in duration-300">
+          <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
+            <WhatsAppRecoveryTab />
+          </Suspense>
+        </TabsContent>
+
+        <TabsContent value="templates" className="space-y-6 animate-in fade-in duration-300">
+          <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
+            <WhatsAppStarterTemplates />
+          </Suspense>
+          <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
+            <WhatsAppTemplates />
+          </Suspense>
+        </TabsContent>
+
+        <TabsContent value="logs" className="animate-in fade-in duration-300">
+          <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
+            <WhatsAppSendLog />
+          </Suspense>
+        </TabsContent>
+
+        {isSuperAdmin && (
+          <TabsContent value="admin" className="animate-in fade-in duration-300">
+            <Suspense fallback={<div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
+              <WhatsAppFeatureFlags />
+            </Suspense>
+          </TabsContent>
+        )}
+      </Tabs>
 
       <WhatsAppTestMessageDialog open={testOpen} onOpenChange={setTestOpen} />
     </div>

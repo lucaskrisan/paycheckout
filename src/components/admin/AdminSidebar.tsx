@@ -91,7 +91,6 @@ const analiseItems = [
 const marketingItems = [
   { title: "Apps", url: "/admin/integrations", icon: Zap },
   { title: "WhatsApp", url: "/admin/whatsapp", icon: MessageSquare },
-  { title: "Recuperação WhatsApp", url: "/admin/whatsapp-recovery", icon: Sparkles },
   { title: "Pixels Espelho", url: "/admin/pixel-mirrors", icon: Zap },
   { title: "Testes A/B", url: "/admin/ab-tests", icon: Beaker },
 ];
