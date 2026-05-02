@@ -417,7 +417,7 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
     if (initialNodes && initialNodes.length > 0) return initialNodes;
     return createStarterNodes(template.body);
   });
-  const [selectedNodeId, setSelectedNodeId] = useState<string>("message-node");
+  const [selectedNodeId, setSelectedNodeId] = useState<string>("");
   const [pendingConnection, setPendingConnection] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [sendingTest, setSendingTest] = useState(false);
