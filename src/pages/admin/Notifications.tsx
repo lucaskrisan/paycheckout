@@ -75,6 +75,7 @@ const Notifications = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [sendingTest, setSendingTest] = useState(false);
+  const [products, setProducts] = useState<{id: string, name: string}[]>([]);
 
   const sendTestNotification = async () => {
     setSendingTest(true);
