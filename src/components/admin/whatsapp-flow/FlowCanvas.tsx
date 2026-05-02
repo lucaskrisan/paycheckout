@@ -343,8 +343,8 @@ const CanvasNode = ({
 
         <div className="relative flex items-center justify-between border-t border-border/60 px-4 py-3">
           <button
-            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-              connecting ? "border-gold/80 bg-gold/20 text-gold" : "border-border/60 bg-background/60 text-muted-foreground hover:border-gold/35 hover:text-gold"
+            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${
+              pendingConnection === node.id ? "border-gold bg-gold/20 text-gold shadow-[0_0_15px_hsl(var(--gold)/0.3)] scale-105" : "border-border/60 bg-background/60 text-muted-foreground hover:border-gold/35 hover:text-gold"
             }`}
             onClick={(event) => {
               event.stopPropagation();
