@@ -116,7 +116,7 @@ const TemplateCard = ({
       onClick={() => onOpen(template)}
       type="button"
     >
-      <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-gold/50 via-gold to-gold/50 opacity-0 transition-opacity group-hover:opacity-100" />
+      <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-gold/30 via-gold to-gold/30 opacity-0 transition-opacity group-hover:opacity-100" />
 
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
