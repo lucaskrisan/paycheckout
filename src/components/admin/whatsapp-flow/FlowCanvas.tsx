@@ -278,10 +278,23 @@ const CanvasNode = ({
         </div>
 
         <div className="space-y-3 px-4 py-4">
-          <div className="rounded-2xl border border-border/60 bg-background/60 p-3">
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
-              {node.config.body || "Clique no painel lateral para configurar este nó."}
+          <div 
+            className="group/content relative cursor-pointer rounded-2xl border border-border/60 bg-background/60 p-3 transition-colors hover:border-gold/40 hover:bg-background/80"
+            onClick={(event) => {
+              event.stopPropagation();
+              onSelect(node.id);
+            }}
+          >
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90 line-clamp-4">
+              {node.config.body || "Clique no botão abaixo para configurar este nó."}
             </p>
+            <div className="mt-3 flex items-center justify-between border-t border-border/10 pt-2">
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Configuração</span>
+              <div className="flex items-center gap-1 text-xs font-semibold text-gold">
+                <span>Editar</span>
+                <FileText className="h-3 w-3" />
+              </div>
+            </div>
           </div>
 
           {Array.isArray(node.config.options) && node.config.options.length > 0 && (
