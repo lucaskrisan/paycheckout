@@ -75,7 +75,7 @@ const AbandonedCarts = () => {
       if (!user) return;
       const { data } = await supabase
         .from("cart_recovery_settings")
-        .select("email_enabled, email_delay_minutes, email_subject, email_heading, email_button_text, email_button_color, second_email_enabled, second_email_delay_hours")
+        .select("email_enabled, email_delay_minutes, email_subject, email_heading, email_button_text, email_button_color, second_email_enabled, second_email_delay_hours, whatsapp_enabled, whatsapp_delay_minutes, whatsapp_message_template")
         .eq("user_id", user.id)
         .maybeSingle();
       if (data) {
