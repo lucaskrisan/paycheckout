@@ -390,6 +390,58 @@ const AbandonedCarts = () => {
                   </div>
                 )}
               </div>
+
+              {/* WhatsApp Recovery */}
+              <div className="pt-4 mt-4 border-t border-border space-y-3">
+                <p className="text-sm font-medium text-foreground">Recuperação por WhatsApp</p>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="flex items-center gap-3">
+                    <Switch
+                      checked={whatsappEnabled}
+                      onCheckedChange={(checked) => {
+                        setWhatsappEnabled(checked);
+                        saveRecoverySetting("whatsapp_enabled", checked);
+                      }}
+                    />
+                    <Label className="text-sm font-medium cursor-pointer">
+                      Ativar recuperação por WhatsApp
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm text-muted-foreground whitespace-nowrap">Enviar após:</Label>
+                    <Select
+                      value={whatsappDelay}
+                      onValueChange={(val) => {
+                        setWhatsappDelay(val);
+                        saveRecoverySetting("whatsapp_delay_minutes", Number(val));
+                      }}
+                    >
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5">5 min</SelectItem>
+                        <SelectItem value="15">15 min</SelectItem>
+                        <SelectItem value="30">30 min</SelectItem>
+                        <SelectItem value="60">1 hora</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {whatsappEnabled && (
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Template da mensagem (use {"{nome}"} e {"{link}"})</Label>
+                    <textarea
+                      value={whatsappMessage}
+                      onChange={(e) => setWhatsappMessage(e.target.value)}
+                      onBlur={() => saveRecoverySetting("whatsapp_message_template", whatsappMessage)}
+                      className="w-full min-h-[100px] p-3 text-sm rounded-md border border-input bg-background"
+                      placeholder="Olá {nome}! Vi que você esqueceu alguns itens..."
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </CardContent>
