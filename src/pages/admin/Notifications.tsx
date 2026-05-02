@@ -61,6 +61,10 @@ const defaultSettings: NotifSettings = {
   report_12: false,
   report_18: false,
   report_23: false,
+  product_whitelist: null,
+  quiet_hours_enabled: false,
+  quiet_hours_start: "22:00",
+  quiet_hours_end: "08:00",
 };
 
 const Notifications = () => {
