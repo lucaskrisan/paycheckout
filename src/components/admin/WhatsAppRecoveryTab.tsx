@@ -57,7 +57,10 @@ const WhatsAppRecoveryTab = () => {
         if (data) {
           setEnabled(data.whatsapp_enabled ?? false);
           setDelay(data.whatsapp_delay_minutes ?? 15);
-          setTemplate(data.whatsapp_message_template || "");
+          setTemplate(data.whatsapp_message_template ?? "");
+        } else {
+          // If no settings found, ensure we don't use a default that could be overwritten
+          setTemplate("");
         }
 
         // Load real stats and history
