@@ -22,8 +22,17 @@ const readResponseBody = async (res: Response) => {
 };
 
 const extractErrorMessage = (payload: any) => {
+  // Evolution API returns 400 with exists:false when number is not on WhatsApp
+  const firstMsg = payload?.response?.message?.[0] ?? payload?.message?.[0];
+  if (firstMsg?.exists === false) {
+    return "Este número não possui WhatsApp ativo.";
+  }
+
   const message = payload?.response?.message ?? payload?.message ?? payload?.error ?? payload;
-  if (Array.isArray(message)) return message.join(" ");
+  if (Array.isArray(message)) {
+    if (typeof message[0] === 'object') return JSON.stringify(message[0]);
+    return message.join(" ");
+  }
   if (typeof message === "string" && message.trim()) return message;
   return "Erro desconhecido";
 };
