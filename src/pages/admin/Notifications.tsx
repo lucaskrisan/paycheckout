@@ -119,6 +119,9 @@ const Notifications = () => {
         setSettings({
           send_pending: data.send_pending,
           send_approved: data.send_approved,
+          send_abandoned_cart: data.send_abandoned_cart ?? true,
+          whatsapp_pix_reminder: data.whatsapp_pix_reminder ?? true,
+          email_pix_reminder: data.email_pix_reminder ?? true,
           show_value: data.show_value,
           show_product_name: data.show_product_name,
           show_utm_campaign: data.show_utm_campaign,
