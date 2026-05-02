@@ -85,7 +85,7 @@ const MariaAI = lazy(() => import("./pages/admin/MariaAI"));
 const AbandonedCartDetail = lazy(() => import("./pages/admin/AbandonedCartDetail"));
 const CartControl = lazy(() => import("./pages/admin/CartControl"));
 const EmailTemplates = lazy(() => import("./pages/admin/EmailTemplates"));
-const DeliveryHealth = lazy(() => import("./pages/admin/DeliveryHealth"));
+const WhatsAppRecovery = lazy(() => import("./pages/admin/WhatsAppRecovery"));
 const Go = lazy(() => import("./pages/Go"));
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -176,6 +176,7 @@ const App = () => (
                 <Route path="api-keys" element={<ApiKeys />} />
                 <Route path="product-review" element={<ProductReview />} />
                 <Route path="whatsapp" element={<WhatsApp />} />
+                <Route path="whatsapp-recovery" element={<WhatsAppRecovery />} />
                 <Route path="analytics" element={<Analytics />} />
                 <Route path="verification-review" element={<VerificationReview />} />
                 <Route path="maria-ia" element={<MariaAI />} />
