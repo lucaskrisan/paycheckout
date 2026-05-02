@@ -642,23 +642,55 @@ Deno.serve(async (req) => {
       if (productOwnerId) {
         const { data: notifSettings } = await supabaseAdmin
           .from("notification_settings")
-          .select("send_pending, show_product_name")
+          .select("*")
           .eq("user_id", productOwnerId)
           .maybeSingle();
 
-        // ONLY send if send_pending is explicitly true (or if settings don't exist, we default to false for pending)
+        // Check if send_pending is enabled
         if (notifSettings?.send_pending === true) {
-          const formattedAmount = Number(amount).toFixed(2).replace(".", ",");
-          const title = "💠 PIX gerado!";
-          const message = `${customer.name} gerou um PIX de R$ ${formattedAmount}${notifSettings.show_product_name ? ` • ${productName}` : ""}`;
-          await sendPushNotification(
-            title,
-            message,
-            productOwnerId,
-            "https://app.panttera.com.br/admin/orders",
-          );
+          let shouldSend = true;
+
+          // Check product whitelist
+          if (notifSettings.product_whitelist && Array.isArray(notifSettings.product_whitelist)) {
+            if (!notifSettings.product_whitelist.includes(product_id)) {
+              shouldSend = false;
+              console.log(`[create-pix-payment] Push skipped: product ${product_id} not in whitelist`);
+            }
+          }
+
+          // Check quiet hours
+          if (shouldSend && notifSettings.quiet_hours_enabled) {
+            const now = new Date();
+            const brTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+            const hours = brTime.getHours().toString().padStart(2, '0');
+            const mins = brTime.getMinutes().toString().padStart(2, '0');
+            const currentTimeStr = `${hours}:${mins}`;
+
+            const start = notifSettings.quiet_hours_start || "22:00";
+            const end = notifSettings.quiet_hours_end || "08:00";
+
+            if (start < end) {
+              if (currentTimeStr >= start && currentTimeStr <= end) shouldSend = false;
+            } else {
+              // Over midnight
+              if (currentTimeStr >= start || currentTimeStr <= end) shouldSend = false;
+            }
+            if (!shouldSend) console.log(`[create-pix-payment] Push skipped: quiet hours (${start}-${end})`);
+          }
+
+          if (shouldSend) {
+            const formattedAmount = Number(amount).toFixed(2).replace(".", ",");
+            const title = "💠 PIX gerado!";
+            const message = `${customer.name} gerou um PIX de R$ ${formattedAmount}${notifSettings.show_product_name ? ` • ${productName}` : ""}`;
+            await sendPushNotification(
+              title,
+              message,
+              productOwnerId,
+              "https://app.panttera.com.br/admin/orders",
+            );
+          }
         } else {
-          console.log(`[create-pix-payment] Push notification skipped: send_pending is false or not configured for user ${productOwnerId}`);
+          console.log(`[create-pix-payment] Push skipped: send_pending is false for user ${productOwnerId}`);
         }
       }
     } catch (notifErr) {
