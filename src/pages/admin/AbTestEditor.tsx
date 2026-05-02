@@ -49,7 +49,9 @@ import {
   Image as ImageIcon,
   MousePointer2,
   TrendingUp,
+  Shield,
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AbTestTutorial } from "@/components/admin/AbTestTutorial";
 
 // ---------------- Types ----------------
