@@ -101,7 +101,7 @@ const WhatsAppRecoveryTab = () => {
     };
 
     loadSettings();
-  }, [user]);
+  }, [user]); // Removed loading as dependency to avoid refresh loops if state updates locally
 
   const handleSave = async () => {
     if (!user) return;
