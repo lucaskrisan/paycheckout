@@ -139,7 +139,7 @@ const WhatsAppRecovery = () => {
               <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-600">
                 <MessageSquare className="w-5 h-5" />
               </div>
-              <Badge variant="ghost" className="text-indigo-600 text-[10px] font-bold">+12% este mês</Badge>
+              <Badge variant="outline" className="text-indigo-600 text-[10px] font-bold">+12% este mês</Badge>
             </div>
             <p className="text-sm text-muted-foreground font-medium">Enviadas</p>
             <h3 className="text-2xl font-bold mt-1">{stats.sent}</h3>
@@ -152,7 +152,7 @@ const WhatsAppRecovery = () => {
               <div className="p-2 bg-amber-500/10 rounded-lg text-amber-600">
                 <MousePointer2 className="w-5 h-5" />
               </div>
-              <Badge variant="ghost" className="text-amber-600 text-[10px] font-bold">62.6% CTR</Badge>
+              <Badge variant="outline" className="text-amber-600 text-[10px] font-bold">62.6% CTR</Badge>
             </div>
             <p className="text-sm text-muted-foreground font-medium">Cliques</p>
             <h3 className="text-2xl font-bold mt-1">{stats.clicked}</h3>
@@ -165,7 +165,7 @@ const WhatsAppRecovery = () => {
               <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-600">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
-              <Badge variant="ghost" className="text-emerald-600 text-[10px] font-bold">23.9% Conv.</Badge>
+              <Badge variant="outline" className="text-emerald-600 text-[10px] font-bold">23.9% Conv.</Badge>
             </div>
             <p className="text-sm text-muted-foreground font-medium">Recuperadas</p>
             <h3 className="text-2xl font-bold mt-1">{stats.recovered}</h3>
