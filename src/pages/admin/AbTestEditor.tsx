@@ -1204,7 +1204,7 @@ function EditorInner() {
           <button onClick={() => setValidationError(null)}><X className="h-4 w-4" /></button>
         </div>
       )}
-      <header className="h-16 border-b border-white/5 bg-[#0d0f1a]/80 backdrop-blur-xl flex items-center justify-between px-6 z-50">
+      <header className="h-16 border-b border-white/5 bg-[#0d0f1a]/80 backdrop-blur-xl flex items-center justify-between px-6 z-40">
         <div className="flex items-center gap-4">
           <Button 
             variant="ghost" 
