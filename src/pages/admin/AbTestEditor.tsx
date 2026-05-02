@@ -1603,6 +1603,43 @@ function EditorInner() {
                 </div>
               </div>
             )}
+            
+            {selectedNode.type === "whatsapp" && (
+              <div className="space-y-4">
+                <Label className="text-xs font-medium uppercase text-muted-foreground tracking-widest">Configuração WhatsApp</Label>
+                <div className="space-y-2">
+                  <Label className="text-xs">Título da Automação</Label>
+                  <Input value={selectedNode.data.label} onChange={(e) => updateNodeData(selectedNode.id, { label: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Tempo de Espera (Minutos)</Label>
+                  <Input 
+                    type="number"
+                    value={(selectedNode.data as WhatsAppData).delay || 15} 
+                    onChange={(e) => updateNodeData(selectedNode.id, { delay: Number(e.target.value) })} 
+                  />
+                  <p className="text-[10px] text-muted-foreground italic">Intervalo entre o abandono e o envio da mensagem.</p>
+                </div>
+                
+                <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20 space-y-2">
+                  <p className="text-xs font-bold text-emerald-400">Recuperação 100% Nativa</p>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">
+                    Este nó ativa automaticamente o disparo de WhatsApp para carrinhos abandonados vinculados a este funil.
+                  </p>
+                  <Button 
+                    onClick={() => navigate("/admin/whatsapp-recovery")}
+                    size="sm"
+                    className="w-full h-7 text-[10px] bg-emerald-600 hover:bg-emerald-500 text-white font-bold"
+                  >
+                    Editar Mensagens
+                  </Button>
+                </div>
+
+                <Button variant="outline" className="w-full text-red-400 border-red-400/30 hover:bg-red-500/10" onClick={() => deleteNode(selectedNode.id)}>
+                  <Trash2 className="h-4 w-4 mr-2" /> Remover Automação
+                </Button>
+              </div>
+            )}
           </aside>
         )}
       </div>
