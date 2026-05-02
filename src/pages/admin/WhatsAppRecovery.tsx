@@ -58,7 +58,7 @@ const WhatsAppRecovery = () => {
         if (data) {
           setEnabled(data.whatsapp_enabled ?? false);
           setDelay(data.whatsapp_delay_minutes ?? 15);
-          setTemplate(data.whatsapp_message_template ?? "Olá {nome}! 🛒 Vi que você deixou alguns itens no carrinho. Use o cupom VOLTEJA para ganhar 10% de desconto e finalizar sua compra agora: {link}");
+          setTemplate(data.whatsapp_message_template || "");
         }
 
         // Load real stats and history
