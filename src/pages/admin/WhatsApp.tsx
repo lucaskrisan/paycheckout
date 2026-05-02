@@ -12,8 +12,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, MessageSquare, Phone, Power, PowerOff, RefreshCw, CheckCircle2, XCircle, AlertTriangle, Clock, Send, RotateCw } from "lucide-react";
+import { Loader2, MessageSquare, Phone, Power, PowerOff, RefreshCw, CheckCircle2, XCircle, AlertTriangle, Clock, Send, RotateCw, Activity, ShieldCheck, Zap } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const formatPhone = (raw: string) => {
   if (!raw) return "";
@@ -275,12 +276,29 @@ const WhatsApp = () => {
     : null;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold font-display text-foreground">WhatsApp</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Conecte seu WhatsApp para enviar mensagens automáticas aos clientes.
-        </p>
+    <div className="space-y-6 pb-20">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold font-display text-foreground">WhatsApp</h1>
+            <Badge variant="outline" className="bg-gold/5 text-gold border-gold/20 gap-1.5 py-0.5">
+              <Zap className="w-3 h-3 fill-gold" />
+              Empresa Verificada
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Gestão centralizada de conexões e fluxos inteligentes.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="hidden sm:flex flex-col items-end mr-2">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Status do Servidor</span>
+            <div className="flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+              <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">Operacional</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {errorMsg && (
@@ -293,24 +311,33 @@ const WhatsApp = () => {
         </div>
       )}
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <MessageSquare className="w-5 h-5" />
-            Conexão WhatsApp
+      <Card className="border-border/50 shadow-lg overflow-hidden relative">
+        <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
+          <MessageSquare className="w-32 h-32" />
+        </div>
+        <CardHeader className="pb-3 border-b border-border/50 bg-muted/20">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2.5">
+              <div className="p-2 rounded-lg bg-gold/10 text-gold border border-gold/20">
+                <ShieldCheck className="w-4 h-4" />
+              </div>
+              Controle de Instância
+            </CardTitle>
             {status === "connected" && (
-              <span className="ml-2 flex items-center gap-1.5 text-xs font-normal text-muted-foreground">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                Monitorando
-              </span>
+              <Badge className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border-emerald-500/20 gap-1.5">
+                <Activity className="w-3 h-3 animate-pulse" />
+                Sessão Ativa
+              </Badge>
             )}
-          </CardTitle>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           {status === "connected" ? (
             <div className="space-y-4">
-              <div className="flex items-start gap-3 p-4 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
-                <CheckCircle2 className="w-8 h-8 text-emerald-600 shrink-0 mt-0.5" />
+              <div className="flex flex-col md:flex-row items-stretch gap-4 p-5 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 shadow-inner">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                  <CheckCircle2 className="w-8 h-8" />
+                </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
