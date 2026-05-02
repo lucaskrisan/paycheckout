@@ -466,7 +466,6 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
   const isMobile = useIsMobile();
   const [draft, setDraft] = useState<TemplateDraft>(template);
   const [nodes, setNodes] = useState<FlowNodeData[]>(() => {
-    // Use saved nodes if available (#9), otherwise create starter
     if (initialNodes && initialNodes.length > 0) return initialNodes;
     return createStarterNodes(template.body);
   });
@@ -484,7 +483,10 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
     } else {
       setNodes(createStarterNodes(template.body));
     }
-    setSelectedNodeId("message-node");
+    // Only auto-select if we don't have nodes already
+    if (!initialNodes || initialNodes.length === 0) {
+      setSelectedNodeId("message-node");
+    }
     setPendingConnection(null);
   }, [template, initialNodes]);
 
@@ -506,9 +508,9 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
     setNodes((current) =>
       current
         .filter((node) => node.id !== id)
-        .map((node) => ({ ...node, outputs: node.outputs.filter((output) => output !== id) })),
+        .map((node) => ({ ...node, outputs: (node.outputs || []).filter((output) => output !== id) })),
     );
-    if (selectedNodeId === id) setSelectedNodeId("message-node");
+    if (selectedNodeId === id) setSelectedNodeId("");
     if (pendingConnection === id) setPendingConnection(null);
   };
 
@@ -517,18 +519,25 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
       setNodes((current) =>
         current.map((node) =>
           node.id === pendingConnection
-            ? { ...node, outputs: [...new Set([...node.outputs, id])] }
+            ? { ...node, outputs: [...new Set([...(node.outputs || []), id])] }
             : node,
         ),
       );
       setPendingConnection(null);
+      toast.success("Nós conectados com sucesso!");
+    } else if (!pendingConnection) {
+      setSelectedNodeId(id);
     }
-    setSelectedNodeId(id);
   };
 
   const handleConnect = (id: string) => {
-    setSelectedNodeId(id);
-    setPendingConnection((current) => (current === id ? null : id));
+    // If clicking connect on the same node that is already pending, cancel it
+    if (pendingConnection === id) {
+      setPendingConnection(null);
+    } else {
+      setPendingConnection(id);
+      toast.info("Agora clique no bloco de destino para conectar.");
+    }
   };
 
   const handleAddNode = (type: NodeType) => {
@@ -548,20 +557,29 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
       variables: { body: "Salvar resposta em variável" },
     };
 
-    setNodes((current) => [
-      ...current.map((node) =>
-        node.id === anchor.id ? { ...node, outputs: [...new Set([...node.outputs, nextId])] } : node,
-      ),
-      {
-        id: nextId,
-        type: type.id,
-        label: type.label,
-        x: anchor.x + 260,
-        y: anchor.y + 180,
-        config: baseConfigMap[type.id] || { body: "Configuração do bloco" },
-        outputs: [],
-      },
-    ]);
+    const newNode: FlowNodeData = {
+      id: nextId,
+      type: type.id,
+      label: type.label,
+      x: anchor ? anchor.x + 320 : 100,
+      y: anchor ? anchor.y + 100 : 100,
+      config: baseConfigMap[type.id] || { body: "Configuração do bloco" },
+      outputs: [],
+    };
+
+    setNodes((current) => {
+      // If we have a selected node, automatically connect it to the new node
+      if (selectedNodeId) {
+        return [
+          ...current.map((node) =>
+            node.id === selectedNodeId ? { ...node, outputs: [...new Set([...(node.outputs || []), nextId])] } : node,
+          ),
+          newNode,
+        ];
+      }
+      return [...current, newNode];
+    });
+    
     setSelectedNodeId(nextId);
   };
 
