@@ -177,7 +177,7 @@ const ConnectionLines = ({ nodes }: { nodes: FlowNodeData[] }) => {
 
         return (
           <g key={`${from.id}-${to.id}-${index}`}>
-            {/* Glow effect / Background line */}
+            {/* Connection line background for glow */}
             <path
               d={`M${startX},${startY} C${startX},${startY + deltaY} ${endX},${endY - deltaY} ${endX},${endY}`}
               fill="none"
@@ -195,10 +195,10 @@ const ConnectionLines = ({ nodes }: { nodes: FlowNodeData[] }) => {
               strokeLinecap="round"
               strokeDasharray={from.type === "wait" ? "6 4" : "none"}
             />
-            {/* End arrowhead/point */}
+            {/* Target point (top of card) */}
             <circle cx={endX} cy={endY} fill="hsl(var(--gold))" r="4.5" className="filter drop-shadow-[0_0_8px_hsl(var(--gold)/0.5)]" />
             
-            {/* Source point marker */}
+            {/* Source point (bottom center) */}
             <circle cx={startX} cy={startY} fill="hsl(var(--gold)/0.8)" r="3" />
           </g>
         );
@@ -265,7 +265,7 @@ const CanvasNode = ({
       <div
         className={`group w-[290px] overflow-hidden rounded-[24px] border bg-card/95 shadow-2xl backdrop-blur transition-all ${
           selected ? "border-gold/70 shadow-[0_0_40px_hsl(var(--gold)/0.16)]" : "border-border/70 hover:border-border/100"
-        } ${connecting ? "ring-2 ring-gold ring-offset-2 ring-offset-background" : ""}`}
+        } ${pendingConnection === node.id ? "ring-2 ring-gold ring-offset-2 ring-offset-background shadow-[0_0_20px_hsl(var(--gold)/0.4)]" : ""} ${pendingConnection && pendingConnection !== node.id ? "hover:ring-2 hover:ring-gold/50 cursor-pointer" : ""}`}
         onClick={(event) => {
           // If we are in connecting mode, allow clicking anywhere on the node to connect
           if (connecting) {
@@ -343,8 +343,8 @@ const CanvasNode = ({
 
         <div className="relative flex items-center justify-between border-t border-border/60 px-4 py-3">
           <button
-            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-              connecting ? "border-gold/50 bg-gold/10 text-gold" : "border-border/60 bg-background/60 text-muted-foreground hover:border-gold/35 hover:text-gold"
+            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${
+              pendingConnection === node.id ? "border-gold bg-gold/20 text-gold shadow-[0_0_15px_hsl(var(--gold)/0.3)] scale-105" : "border-border/60 bg-background/60 text-muted-foreground hover:border-gold/35 hover:text-gold"
             }`}
             onClick={(event) => {
               event.stopPropagation();
@@ -353,14 +353,18 @@ const CanvasNode = ({
             type="button"
           >
             <Workflow className="h-3.5 w-3.5" />
-            {connecting ? "Escolha destino" : "Conectar"}
+            {pendingConnection === node.id ? "Aguardando destino..." : "Conectar"}
           </button>
 
-          <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-gold/30 bg-background">
+          {/* Connection source point visual (absolute centered at bottom) */}
+          <div 
+            className={`flex h-5 w-5 items-center justify-center rounded-full border-2 bg-background transition-all ${
+              pendingConnection === node.id ? "border-gold scale-125 shadow-[0_0_15px_hsl(var(--gold))]" : "border-gold/30 opacity-60"
+            }`}
+          >
             <div className="h-2.5 w-2.5 rounded-full bg-gold" />
           </div>
           
-          {/* Connection source point visual (absolute centered at bottom) */}
           <div className="absolute -bottom-1.5 left-1/2 flex h-3 w-3 -translate-x-1/2 items-center justify-center rounded-full border border-gold/40 bg-background shadow-sm">
             <div className="h-1.5 w-1.5 rounded-full bg-gold" />
           </div>
@@ -462,7 +466,6 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
   const isMobile = useIsMobile();
   const [draft, setDraft] = useState<TemplateDraft>(template);
   const [nodes, setNodes] = useState<FlowNodeData[]>(() => {
-    // Use saved nodes if available (#9), otherwise create starter
     if (initialNodes && initialNodes.length > 0) return initialNodes;
     return createStarterNodes(template.body);
   });
@@ -480,7 +483,10 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
     } else {
       setNodes(createStarterNodes(template.body));
     }
-    setSelectedNodeId("message-node");
+    // Only auto-select if we don't have nodes already
+    if (!initialNodes || initialNodes.length === 0) {
+      setSelectedNodeId("message-node");
+    }
     setPendingConnection(null);
   }, [template, initialNodes]);
 
@@ -502,9 +508,9 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
     setNodes((current) =>
       current
         .filter((node) => node.id !== id)
-        .map((node) => ({ ...node, outputs: node.outputs.filter((output) => output !== id) })),
+        .map((node) => ({ ...node, outputs: (node.outputs || []).filter((output) => output !== id) })),
     );
-    if (selectedNodeId === id) setSelectedNodeId("message-node");
+    if (selectedNodeId === id) setSelectedNodeId("");
     if (pendingConnection === id) setPendingConnection(null);
   };
 
@@ -513,18 +519,25 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
       setNodes((current) =>
         current.map((node) =>
           node.id === pendingConnection
-            ? { ...node, outputs: [...new Set([...node.outputs, id])] }
+            ? { ...node, outputs: [...new Set([...(node.outputs || []), id])] }
             : node,
         ),
       );
       setPendingConnection(null);
+      toast.success("Nós conectados com sucesso!");
+    } else if (!pendingConnection) {
+      setSelectedNodeId(id);
     }
-    setSelectedNodeId(id);
   };
 
   const handleConnect = (id: string) => {
-    setSelectedNodeId(id);
-    setPendingConnection((current) => (current === id ? null : id));
+    // If clicking connect on the same node that is already pending, cancel it
+    if (pendingConnection === id) {
+      setPendingConnection(null);
+    } else {
+      setPendingConnection(id);
+      toast.info("Agora clique no bloco de destino para conectar.");
+    }
   };
 
   const handleAddNode = (type: NodeType) => {
@@ -544,20 +557,29 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
       variables: { body: "Salvar resposta em variável" },
     };
 
-    setNodes((current) => [
-      ...current.map((node) =>
-        node.id === anchor.id ? { ...node, outputs: [...new Set([...node.outputs, nextId])] } : node,
-      ),
-      {
-        id: nextId,
-        type: type.id,
-        label: type.label,
-        x: anchor.x + 260,
-        y: anchor.y + 180,
-        config: baseConfigMap[type.id] || { body: "Configuração do bloco" },
-        outputs: [],
-      },
-    ]);
+    const newNode: FlowNodeData = {
+      id: nextId,
+      type: type.id,
+      label: type.label,
+      x: anchor ? anchor.x + 320 : 100,
+      y: anchor ? anchor.y + 100 : 100,
+      config: baseConfigMap[type.id] || { body: "Configuração do bloco" },
+      outputs: [],
+    };
+
+    setNodes((current) => {
+      // If we have a selected node, automatically connect it to the new node
+      if (selectedNodeId) {
+        return [
+          ...current.map((node) =>
+            node.id === selectedNodeId ? { ...node, outputs: [...new Set([...(node.outputs || []), nextId])] } : node,
+          ),
+          newNode,
+        ];
+      }
+      return [...current, newNode];
+    });
+    
     setSelectedNodeId(nextId);
   };
 
@@ -784,12 +806,12 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
 
             <div className="pointer-events-none absolute left-4 top-4 z-[3] flex items-center gap-2 rounded-full border border-gold/20 bg-card/90 px-3 py-1.5 text-xs text-muted-foreground shadow-lg backdrop-blur">
               <MessageSquare className="h-3.5 w-3.5 text-gold" />
-              {pendingConnection ? "Clique no próximo bloco para conectar." : "Arraste pelo topo para mover, clique no conteúdo para editar."}
+              {pendingConnection ? "Clique no bloco de destino para finalizar a conexão." : "Arraste pelo topo para mover, clique no conteúdo para editar."}
             </div>
 
             {nodes.map((node) => (
               <CanvasNode
-                connecting={pendingConnection === node.id}
+                connecting={pendingConnection !== null}
                 key={node.id}
                 node={node}
                 onConnect={handleConnect}
