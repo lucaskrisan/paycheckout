@@ -161,7 +161,24 @@ const Billing = () => {
       .update({ credit_tier: newTier, credit_limit: newLimit, updated_at: new Date().toISOString() })
       .eq("user_id", userId);
     if (error) toast.error("Erro ao alterar tier");
-    else { toast.success(`Tier alterado para ${t?.label || newTier}`); loadAccounts(); }
+    else { 
+      toast.success(`Tier alterado para ${t?.label || newTier}`); 
+      
+      // Notify GatFlow about the plan change if applicable
+      try {
+        await supabase.functions.invoke("gatflow-billing-webhook", {
+          body: { 
+            user_id: userId, 
+            plan_name: t?.label || newTier,
+            status: "active"
+          }
+        });
+      } catch (webhookErr) {
+        console.error("GatFlow webhook notification failed:", webhookErr);
+      }
+      
+      loadAccounts(); 
+    }
   };
 
   const handleToggleBlock = async (_accountId: string, userId: string, blocked: boolean) => {
