@@ -6,6 +6,7 @@ const WhatsAppFeatureFlags = lazy(() => import("@/components/admin/WhatsAppFeatu
 const WhatsAppSendLog = lazy(() => import("@/components/admin/WhatsAppSendLog"));
 const WhatsAppStarterTemplates = lazy(() => import("@/components/admin/WhatsAppStarterTemplates"));
 const WhatsAppMetricsCard = lazy(() => import("@/components/admin/WhatsAppMetricsCard"));
+const WhatsAppBusinessConfig = lazy(() => import("@/components/admin/WhatsAppBusinessConfig"));
 import WhatsAppTestMessageDialog from "@/components/admin/WhatsAppTestMessageDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -300,6 +301,12 @@ const WhatsApp = () => {
           </div>
         </div>
       </div>
+
+      {isSuperAdmin && (
+        <Suspense fallback={<div className="h-48 animate-pulse bg-muted rounded-xl" />}>
+          <WhatsAppBusinessConfig />
+        </Suspense>
+      )}
 
       {errorMsg && (
         <div className="flex items-start gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm">

@@ -2995,6 +2995,42 @@ export type Database = {
         }
         Relationships: []
       }
+      whatsapp_configs: {
+        Row: {
+          created_at: string
+          id: string
+          metadata: Json | null
+          status: string | null
+          tenant_id: string
+          updated_at: string
+          whatsapp_access_token: string | null
+          whatsapp_business_id: string | null
+          whatsapp_phone_number_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          status?: string | null
+          tenant_id: string
+          updated_at?: string
+          whatsapp_access_token?: string | null
+          whatsapp_business_id?: string | null
+          whatsapp_phone_number_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          status?: string | null
+          tenant_id?: string
+          updated_at?: string
+          whatsapp_access_token?: string | null
+          whatsapp_business_id?: string | null
+          whatsapp_phone_number_id?: string | null
+        }
+        Relationships: []
+      }
       whatsapp_feature_flags: {
         Row: {
           enabled: boolean
