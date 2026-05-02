@@ -43,6 +43,9 @@ const NOTIFICATION_SOUNDS = [
 const defaultSettings: NotifSettings = {
   send_pending: false,
   send_approved: true,
+  send_abandoned_cart: true,
+  whatsapp_pix_reminder: true,
+  email_pix_reminder: true,
   show_value: "commission",
   show_product_name: false,
   show_utm_campaign: false,
