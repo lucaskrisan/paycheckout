@@ -232,10 +232,10 @@ function AbTestNode({ id, data }: NodeProps<Node<AbTestData, "abtest">>) {
       subtitle={data.subtitle}
       nodeId={id}
       onDelete={(nodeId) => {
-        const ns = reactFlow.getNodes();
-        const es = reactFlow.getEdges();
-        reactFlow.setNodes(ns.filter(n => n.id !== nodeId));
-        reactFlow.setEdges(es.filter(e => e.source !== nodeId && e.target !== nodeId));
+        const ns = reactFlow.getNodes().filter(Boolean);
+        const es = reactFlow.getEdges().filter(Boolean);
+        reactFlow.setNodes(ns.filter(n => n && n.id !== nodeId));
+        reactFlow.setEdges(es.filter(e => e && e.source !== nodeId && e.target !== nodeId));
       }}
     >
       {data.splits.map((s, i) => (
@@ -260,10 +260,10 @@ function PageNode({ id, data }: NodeProps<Node<PageData, "page">>) {
       subtitle={isPaused ? "PAUSADA" : data.subtitle}
       nodeId={id}
       onDelete={(nodeId) => {
-        const ns = reactFlow.getNodes();
-        const es = reactFlow.getEdges();
-        reactFlow.setNodes(ns.filter(n => n.id !== nodeId));
-        reactFlow.setEdges(es.filter(e => e.source !== nodeId && e.target !== nodeId));
+        const ns = reactFlow.getNodes().filter(Boolean);
+        const es = reactFlow.getEdges().filter(Boolean);
+        reactFlow.setNodes(ns.filter(n => n && n.id !== nodeId));
+        reactFlow.setEdges(es.filter(e => e && e.source !== nodeId && e.target !== nodeId));
       }}
     >
       {data.stats && (
@@ -326,10 +326,10 @@ function CheckoutNode({ id, data }: NodeProps<Node<CheckoutData, "checkout">>) {
       subtitle={data.subtitle}
       nodeId={id}
       onDelete={(nodeId) => {
-        const ns = reactFlow.getNodes();
-        const es = reactFlow.getEdges();
-        reactFlow.setNodes(ns.filter(n => n.id !== nodeId));
-        reactFlow.setEdges(es.filter(e => e.source !== nodeId && e.target !== nodeId));
+        const ns = reactFlow.getNodes().filter(Boolean);
+        const es = reactFlow.getEdges().filter(Boolean);
+        reactFlow.setNodes(ns.filter(n => n && n.id !== nodeId));
+        reactFlow.setEdges(es.filter(e => e && e.source !== nodeId && e.target !== nodeId));
       }}
     >
       {data.stats && (
@@ -370,8 +370,8 @@ function CreativeNode({ id, data }: NodeProps<Node<CreativeData, "creative">>) {
   
   const updateData = (newData: Partial<CreativeData>) => {
     reactFlow.setNodes((nds) =>
-      nds.map((node) => {
-        if (node.id === id) {
+      nds.filter(Boolean).map((node) => {
+        if (node && node.id === id) {
           return { ...node, data: { ...node.data, ...newData } };
         }
         return node;
@@ -399,10 +399,10 @@ function CreativeNode({ id, data }: NodeProps<Node<CreativeData, "creative">>) {
       nodeId={id}
       inHandle={true}
       onDelete={(nodeId) => {
-        const ns = reactFlow.getNodes();
-        const es = reactFlow.getEdges();
-        reactFlow.setNodes(ns.filter(n => n.id !== nodeId));
-        reactFlow.setEdges(es.filter(e => e.source !== nodeId && e.target !== nodeId));
+        const ns = reactFlow.getNodes().filter(Boolean);
+        const es = reactFlow.getEdges().filter(Boolean);
+        reactFlow.setNodes(ns.filter(n => n && n.id !== nodeId));
+        reactFlow.setEdges(es.filter(e => e && e.source !== nodeId && e.target !== nodeId));
       }}
     >
       <div className="space-y-3">
@@ -494,8 +494,8 @@ function UpsellNode({ id, data }: NodeProps<Node<UpsellData, "upsell">>) {
   
   const updateData = (newData: Partial<UpsellData>) => {
     reactFlow.setNodes((nds) =>
-      nds.map((node) => {
-        if (node.id === id) {
+      nds.filter(Boolean).map((node) => {
+        if (node && node.id === id) {
           return { ...node, data: { ...node.data, ...newData } };
         }
         return node;
@@ -511,10 +511,10 @@ function UpsellNode({ id, data }: NodeProps<Node<UpsellData, "upsell">>) {
       subtitle={data.subtitle || "Venda Extra"}
       nodeId={id}
       onDelete={(nodeId) => {
-        const ns = reactFlow.getNodes();
-        const es = reactFlow.getEdges();
-        reactFlow.setNodes(ns.filter(n => n.id !== nodeId));
-        reactFlow.setEdges(es.filter(e => e.source !== nodeId && e.target !== nodeId));
+        const ns = reactFlow.getNodes().filter(Boolean);
+        const es = reactFlow.getEdges().filter(Boolean);
+        reactFlow.setNodes(ns.filter(n => n && n.id !== nodeId));
+        reactFlow.setEdges(es.filter(e => e && e.source !== nodeId && e.target !== nodeId));
       }}
     >
       <div className="space-y-3">
@@ -572,10 +572,10 @@ function WhatsAppNode({ id, data }: NodeProps<Node<WhatsAppData, "whatsapp">>) {
       subtitle={data.subtitle || "Recuperação"}
       nodeId={id}
       onDelete={(nodeId) => {
-        const ns = reactFlow.getNodes();
-        const es = reactFlow.getEdges();
-        reactFlow.setNodes(ns.filter(n => n.id !== nodeId));
-        reactFlow.setEdges(es.filter(e => e.source !== nodeId && e.target !== nodeId));
+        const ns = reactFlow.getNodes().filter(Boolean);
+        const es = reactFlow.getEdges().filter(Boolean);
+        reactFlow.setNodes(ns.filter(n => n && n.id !== nodeId));
+        reactFlow.setEdges(es.filter(e => e && e.source !== nodeId && e.target !== nodeId));
       }}
     >
       <div className="space-y-3">
@@ -733,16 +733,16 @@ function EditorInner() {
     const generated = existing.slug ? `https://${publicDomain}/go/${existing.slug}?type=page` : "";
     setEntryUrl(generated);
     const g = existing.graph;
-    if (g && Array.isArray(g.nodes) && g.nodes.length > 0) {
-      setNodes(g.nodes as FlowNode[]);
-      setEdges((g.edges as Edge[]) ?? []);
+    if (g && Array.isArray(g.nodes)) {
+      setNodes((g.nodes as FlowNode[]).filter(Boolean));
+      setEdges(((g.edges as Edge[]) ?? []).filter(Boolean));
     }
   }, [existing, setNodes, setEdges]);
 
   // Reflect entry URL inside Config node
   useEffect(() => {
     setNodes((ns) =>
-      ns.map((n) =>
+      ns.filter(Boolean).map((n) =>
         n.id === "config"
           ? ({ ...n, data: { ...(n.data as ConfigData), entryUrl, testName: name } } as FlowNode)
           : n
@@ -920,17 +920,17 @@ function EditorInner() {
       } else if (kind === "creative") {
         newNode = { id, type: "creative", position, data: { kind: "creative", label: "Novo Criativo", subtitle: "Anúncio FB/IG", imageUrl: "", utmSource: "facebook", utmContent: "" } };
       } else if (kind === "page") {
-        const idx = nodes.filter((n) => n.type === "page").length;
+        const idx = nodes.filter((n) => n && n.type === "page").length;
         newNode = { id, type: "page", position, data: { kind: "page", label: `Página ${String.fromCharCode(65 + idx)}`, subtitle: "Landing Page", url: "" } };
       } else if (kind === "upsell") {
         newNode = { id, type: "upsell", position, data: { kind: "upsell", label: "Novo Upsell", subtitle: "Página de Upsell", url: "" } };
       } else if (kind === "whatsapp") {
         newNode = { id, type: "whatsapp", position, data: { kind: "whatsapp", label: "Recuperação WhatsApp", subtitle: "Automação", delay: 15, stats: { sent: 0, clicked: 0, recovered: 0, revenue: 0 } } };
       } else {
-        const idx = nodes.filter((n) => n.type === "checkout").length;
+        const idx = nodes.filter((n) => n && n.type === "checkout").length;
         newNode = { id, type: "checkout", position, data: { kind: "checkout", label: `Checkout ${String.fromCharCode(65 + idx)}`, subtitle: "Página de pagamento", productId: null, offerId: null, templateId: null } };
       }
-      setNodes((ns) => [...ns, newNode]);
+      setNodes((ns) => [...ns.filter(Boolean), newNode]);
     },
     [reactFlow, nodes, setNodes]
   );
@@ -938,8 +938,8 @@ function EditorInner() {
   const onConnect = useCallback(
     (c: Connection) => {
       // Find source/target nodes to decide color
-      const sourceNode = nodes.find(n => n.id === c.source);
-      const targetNode = nodes.find(n => n.id === c.target);
+      const sourceNode = nodes.filter(Boolean).find(n => n.id === c.source);
+      const targetNode = nodes.filter(Boolean).find(n => n.id === c.target);
       
       let edgeColor = "#a855f7"; // default purple
       if (sourceNode?.type === "creative" || targetNode?.type === "creative") edgeColor = "#ec4899";
@@ -963,10 +963,10 @@ function EditorInner() {
     [setEdges, nodes]
   );
 
-  const selectedNode = nodes.find((n) => n.id === selectedNodeId) ?? null;
+  const selectedNode = nodes.filter(Boolean).find((n) => n.id === selectedNodeId) ?? null;
 
   const updateNodeData = (id: string, patch: Record<string, any>) => {
-    setNodes((ns) => ns.map((n) => (n.id === id ? ({ ...n, data: { ...n.data, ...patch } } as FlowNode) : n)));
+    setNodes((ns) => ns.filter(Boolean).map((n) => (n.id === id ? ({ ...n, data: { ...n.data, ...patch } } as FlowNode) : n)));
   };
 
   const deleteNode = (id: string) => {
@@ -974,7 +974,7 @@ function EditorInner() {
       toast.error("O nó de Configuração Inicial não pode ser removido");
       return;
     }
-    setNodes((ns) => ns.filter((n) => n.id !== id));
+    setNodes((ns) => ns.filter(Boolean).filter((n) => n.id !== id));
     setEdges((es) => es.filter((e) => e.source !== id && e.target !== id));
     setSelectedNodeId(null);
   };
@@ -1036,8 +1036,8 @@ function EditorInner() {
         if (error) throw error;
       }
 
-      const pageNodes = nodes.filter((n) => n.type === "page") as Node<PageData, "page">[];
-      const checkoutNodes = nodes.filter((n) => n.type === "checkout") as Node<CheckoutData, "checkout">[];
+      const pageNodes = nodes.filter((n) => n && n.type === "page") as Node<PageData, "page">[];
+      const checkoutNodes = nodes.filter((n) => n && n.type === "checkout") as Node<CheckoutData, "checkout">[];
       
       // Variants are defined by Page nodes. If no page nodes, we'll create at least 2 default ones.
       const variantSlots = Math.max(pageNodes.length, 2);
@@ -1052,16 +1052,16 @@ function EditorInner() {
         // Find if this page is connected to a checkout
         let checkoutUrl = null;
         if (page) {
-          const connectedEdge = edges.find(e => e.source === page.id);
+          const connectedEdge = edges.find(e => e && e.source === page.id);
           if (connectedEdge) {
-            let target = nodes.find(n => n.id === connectedEdge.target);
+            let target = nodes.find(n => n && n.id === connectedEdge.target);
             
             // If it's an abtest node, go one level deeper to find the i-th checkout
             if (target && target.type === "abtest") {
-              const checkoutEdges = edges.filter(e => e.source === target?.id);
+              const checkoutEdges = edges.filter(e => e && e.source === target?.id);
               const nextEdge = checkoutEdges[i] || checkoutEdges[0];
               if (nextEdge) {
-                target = nodes.find(n => n.id === nextEdge.target);
+                target = nodes.find(n => n && n.id === nextEdge.target);
               }
             }
 
@@ -1123,7 +1123,7 @@ function EditorInner() {
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const validateForStart = (): string | null => {
-    const pageNodes = nodes.filter((n) => n.type === "page") as Node<PageData, "page">[];
+    const pageNodes = nodes.filter((n) => n && n.type === "page") as Node<PageData, "page">[];
     const pagesMissing = pageNodes.filter((n) => !n.data.url || !n.data.url.trim()).map((n) => n.data.label);
     if (pagesMissing.length > 0) return `Configure as URLs das páginas de vendas: ${pagesMissing.join(", ")}`;
     return null;
@@ -1299,17 +1299,17 @@ function EditorInner() {
             <div className="grid grid-cols-1 gap-2">
               <div className="p-3 rounded-lg bg-white/5 border border-border/20">
                 <p className="text-[10px] text-muted-foreground uppercase">Visitantes</p>
-                <p className="text-xl font-bold">{(nodes.find(n => n.id === 'config')?.data as ConfigData)?.impressions ?? 0}</p>
+                <p className="text-xl font-bold">{(nodes.find(n => n && n.id === 'config')?.data as ConfigData)?.impressions ?? 0}</p>
               </div>
               <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
                 <p className="text-[10px] text-emerald-400/70 uppercase font-bold tracking-tight">Vendas Totais</p>
-                <p className="text-xl font-bold text-emerald-400">{(nodes.find(n => n.id === 'config')?.data as ConfigData)?.sales ?? 0}</p>
+                <p className="text-xl font-bold text-emerald-400">{(nodes.find(n => n && n.id === 'config')?.data as ConfigData)?.sales ?? 0}</p>
               </div>
               <div className="p-3 rounded-lg bg-violet-500/5 border border-violet-500/20">
                 <p className="text-[10px] text-violet-400/70 uppercase font-bold tracking-tight">Conversão</p>
                 <p className="text-xl font-bold text-violet-400">
                   {(() => {
-                    const c = nodes.find(n => n.id === 'config')?.data as ConfigData;
+                    const c = nodes.find(n => n && n.id === 'config')?.data as ConfigData;
                     return c?.impressions > 0 ? ((c.sales / c.impressions) * 100).toFixed(1) : "0.0";
                   })()}%
                 </p>
