@@ -448,6 +448,104 @@ const Notifications = () => {
           </CardContent>
         </Card>
 
+        {/* Horário de Silêncio e Filtros */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-primary" />
+                Horário de Silêncio
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Evite ser incomodado em horários específicos:
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-lg border bg-card/50">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-semibold">Habilitar Silêncio</Label>
+                  <p className="text-[10px] text-muted-foreground">Não receber push nestes horários</p>
+                </div>
+                <Switch
+                  checked={settings.quiet_hours_enabled}
+                  onCheckedChange={(v) => update("quiet_hours_enabled", v)}
+                />
+              </div>
+
+              {settings.quiet_hours_enabled && (
+                <div className="grid grid-cols-2 gap-4 pt-2">
+                  <div className="space-y-2">
+                    <Label className="text-xs">Início</Label>
+                    <Input 
+                      type="time" 
+                      value={settings.quiet_hours_start} 
+                      onChange={(e) => update("quiet_hours_start", e.target.value)}
+                      className="h-9"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Fim</Label>
+                    <Input 
+                      type="time" 
+                      value={settings.quiet_hours_end} 
+                      onChange={(e) => update("quiet_hours_end", e.target.value)}
+                      className="h-9"
+                    />
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-primary" />
+                Filtro por Produto
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Receba notificações apenas dos produtos selecionados:
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold">Filtrar produtos?</Label>
+                  <Switch
+                    checked={settings.product_whitelist !== null}
+                    onCheckedChange={(v) => update("product_whitelist", v ? [] : null)}
+                  />
+                </div>
+
+                {settings.product_whitelist !== null && (
+                  <div className="space-y-2 pt-2">
+                    <p className="text-[10px] font-bold uppercase text-muted-foreground mb-2">Selecione os produtos:</p>
+                    <div className="max-h-[200px] overflow-y-auto space-y-1 pr-2 custom-scrollbar">
+                      {products.map(p => (
+                        <div key={p.id} className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 transition-colors">
+                          <Switch 
+                            checked={settings.product_whitelist?.includes(p.id)}
+                            onCheckedChange={(v) => {
+                              const current = settings.product_whitelist || [];
+                              const next = v ? [...current, p.id] : current.filter(id => id !== p.id);
+                              update("product_whitelist", next);
+                            }}
+                            className="scale-75"
+                          />
+                          <span className="text-xs truncate">{p.name}</span>
+                        </div>
+                      ))}
+                      {products.length === 0 && (
+                        <p className="text-xs text-muted-foreground italic text-center py-4">Nenhum produto ativo encontrado.</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Notificações de Relatório */}
         <Card>
           <CardHeader>
