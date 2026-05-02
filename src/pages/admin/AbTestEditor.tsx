@@ -1052,16 +1052,16 @@ function EditorInner() {
         // Find if this page is connected to a checkout
         let checkoutUrl = null;
         if (page) {
-          const connectedEdge = edges.find(e => e.source === page.id);
+          const connectedEdge = edges.find(e => e && e.source === page.id);
           if (connectedEdge) {
-            let target = nodes.find(n => n.id === connectedEdge.target);
+            let target = nodes.find(n => n && n.id === connectedEdge.target);
             
             // If it's an abtest node, go one level deeper to find the i-th checkout
             if (target && target.type === "abtest") {
-              const checkoutEdges = edges.filter(e => e.source === target?.id);
+              const checkoutEdges = edges.filter(e => e && e.source === target?.id);
               const nextEdge = checkoutEdges[i] || checkoutEdges[0];
               if (nextEdge) {
-                target = nodes.find(n => n.id === nextEdge.target);
+                target = nodes.find(n => n && n.id === nextEdge.target);
               }
             }
 
