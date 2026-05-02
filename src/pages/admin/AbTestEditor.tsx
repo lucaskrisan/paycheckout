@@ -1195,7 +1195,7 @@ function EditorInner() {
   }
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="absolute inset-0 flex flex-col bg-[#0a0c12] text-white z-[30]">
       {validationError && (
         <div className="bg-red-950/60 border-b border-red-500/40 text-red-200 px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm">
