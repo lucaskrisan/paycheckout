@@ -101,6 +101,18 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       try {
+        // Check if user wants WhatsApp reminders for PIX
+        const { data: notifSettings } = await supabase
+          .from("notification_settings")
+          .select("whatsapp_pix_reminder")
+          .eq("user_id", order.user_id)
+          .maybeSingle();
+
+        if (notifSettings && notifSettings.whatsapp_pix_reminder === false) {
+          console.log(`[pix-reminder] Skipped order ${order.id} — WhatsApp reminders disabled for user ${order.user_id}`);
+          continue;
+        }
+
         const checkoutUrl = (order as any).metadata?.checkout_url 
           || `https://app.panttera.com.br/checkout/${order.product_id}`;
 

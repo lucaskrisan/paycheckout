@@ -88,6 +88,17 @@ serve(async (req) => {
       }
     }
 
+    // Check if user wants Email reminders for PIX
+    const { data: notifSettings } = await supabase
+      .from("notification_settings")
+      .select("email_pix_reminder")
+      .eq("user_id", order.user_id)
+      .maybeSingle();
+
+    if (notifSettings && notifSettings.email_pix_reminder === false && !preview) {
+      throw new Error("Lembretes de PIX via e-mail estão desativados nas configurações.");
+    }
+
     if (order.status !== "pending") throw new Error("Order is not pending");
     if (order.payment_method !== "pix") throw new Error("Order is not PIX");
     if (!order.customers?.email) throw new Error("Customer email not found");

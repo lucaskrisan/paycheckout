@@ -2,10 +2,12 @@ import { useState, useEffect, useRef } from "react";
 import { playNotificationSound } from "@/lib/notificationSounds";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Bell, Clock, Sparkles, FileText, TrendingUp, Loader2, Smartphone, Volume2, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,6 +16,9 @@ import { toast } from "sonner";
 interface NotifSettings {
   send_pending: boolean;
   send_approved: boolean;
+  send_abandoned_cart: boolean;
+  whatsapp_pix_reminder: boolean;
+  email_pix_reminder: boolean;
   show_value: string;
   show_product_name: boolean;
   show_utm_campaign: boolean;
@@ -24,6 +29,10 @@ interface NotifSettings {
   report_12: boolean;
   report_18: boolean;
   report_23: boolean;
+  product_whitelist: string[] | null;
+  quiet_hours_enabled: boolean;
+  quiet_hours_start: string;
+  quiet_hours_end: string;
 }
 
 const NOTIFICATION_SOUNDS = [
@@ -40,6 +49,9 @@ const NOTIFICATION_SOUNDS = [
 const defaultSettings: NotifSettings = {
   send_pending: false,
   send_approved: true,
+  send_abandoned_cart: true,
+  whatsapp_pix_reminder: true,
+  email_pix_reminder: true,
   show_value: "commission",
   show_product_name: false,
   show_utm_campaign: false,
@@ -50,6 +62,10 @@ const defaultSettings: NotifSettings = {
   report_12: false,
   report_18: false,
   report_23: false,
+  product_whitelist: null,
+  quiet_hours_enabled: false,
+  quiet_hours_start: "22:00",
+  quiet_hours_end: "08:00",
 };
 
 const Notifications = () => {
@@ -60,6 +76,7 @@ const Notifications = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [sendingTest, setSendingTest] = useState(false);
+  const [products, setProducts] = useState<{id: string, name: string}[]>([]);
 
   const sendTestNotification = async () => {
     setSendingTest(true);
@@ -103,16 +120,28 @@ const Notifications = () => {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const { data } = await supabase
-        .from("notification_settings")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      const [{ data }, { data: prods }] = await Promise.all([
+        supabase
+          .from("notification_settings")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+        supabase
+          .from("products")
+          .select("id, name")
+          .eq("user_id", user.id)
+          .eq("active", true)
+      ]);
+
+      if (prods) setProducts(prods);
 
       if (data) {
         setSettings({
           send_pending: data.send_pending,
           send_approved: data.send_approved,
+          send_abandoned_cart: data.send_abandoned_cart ?? true,
+          whatsapp_pix_reminder: data.whatsapp_pix_reminder ?? true,
+          email_pix_reminder: data.email_pix_reminder ?? true,
           show_value: data.show_value,
           show_product_name: data.show_product_name,
           show_utm_campaign: data.show_utm_campaign,
@@ -123,6 +152,10 @@ const Notifications = () => {
           report_12: data.report_12,
           report_18: data.report_18,
           report_23: data.report_23,
+          product_whitelist: data.product_whitelist || null,
+          quiet_hours_enabled: data.quiet_hours_enabled ?? false,
+          quiet_hours_start: data.quiet_hours_start || "22:00",
+          quiet_hours_end: data.quiet_hours_end || "08:00",
         });
       }
       setLoading(false);
@@ -249,86 +282,112 @@ const Notifications = () => {
             <h3 className="font-semibold text-foreground">Opções</h3>
 
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Enviar vendas pendentes</Label>
-                <Select
-                  value={settings.send_pending ? "enabled" : "disabled"}
-                  onValueChange={(v) => update("send_pending", v === "enabled")}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="disabled">Desabilitado</SelectItem>
-                    <SelectItem value="enabled">Habilitado</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex items-center justify-between p-3 rounded-lg border bg-card/50">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-semibold">Vendas Pendentes (PIX)</Label>
+                  <p className="text-[10px] text-muted-foreground">Notificar quando um PIX for gerado</p>
+                </div>
+                <Switch
+                  checked={settings.send_pending}
+                  onCheckedChange={(v) => update("send_pending", v)}
+                />
               </div>
 
-              <div className="space-y-2">
-                <Label>Enviar vendas aprovadas</Label>
-                <Select
-                  value={settings.send_approved ? "enabled" : "disabled"}
-                  onValueChange={(v) => update("send_approved", v === "enabled")}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="disabled">Desabilitado</SelectItem>
-                    <SelectItem value="enabled">Habilitado</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex items-center justify-between p-3 rounded-lg border bg-card/50 border-primary/20">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-semibold">Vendas Aprovadas</Label>
+                  <p className="text-[10px] text-muted-foreground">Notificar quando o pagamento for confirmado</p>
+                </div>
+                <Switch
+                  checked={settings.send_approved}
+                  onCheckedChange={(v) => update("send_approved", v)}
+                />
               </div>
 
-              <div className="space-y-2">
-                <Label>Valor da venda</Label>
-                <Select value={settings.show_value} onValueChange={(v) => update("show_value", v)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="commission">Comissão</SelectItem>
-                    <SelectItem value="full">Valor completo</SelectItem>
-                    <SelectItem value="hidden">Esconder</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex items-center justify-between p-3 rounded-lg border bg-card/50">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-semibold">Carrinho Abandonado</Label>
+                  <p className="text-[10px] text-muted-foreground">Notificar quando um cliente sair sem pagar</p>
+                </div>
+                <Switch
+                  checked={settings.send_abandoned_cart}
+                  onCheckedChange={(v) => update("send_abandoned_cart", v)}
+                />
               </div>
 
-              <div className="space-y-2">
-                <Label>Nome do produto</Label>
-                <Select
-                  value={settings.show_product_name ? "show" : "hide"}
-                  onValueChange={(v) => update("show_product_name", v === "show")}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="hide">Esconder</SelectItem>
-                    <SelectItem value="show">Mostrar</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="pt-4 border-t space-y-4">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Remediação Automática</h4>
+                
+                <div className="flex items-center justify-between p-3 rounded-lg border bg-card/50">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-semibold flex items-center gap-2">
+                      Lembrete PIX (WhatsApp)
+                      <Badge variant="secondary" className="h-4 px-1 text-[8px] bg-emerald-500/10 text-emerald-600 border-emerald-500/20">WhatsApp</Badge>
+                    </Label>
+                    <p className="text-[10px] text-muted-foreground">Enviar lembrete automático se o PIX não for pago</p>
+                  </div>
+                  <Switch
+                    checked={settings.whatsapp_pix_reminder}
+                    onCheckedChange={(v) => update("whatsapp_pix_reminder", v)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-lg border bg-card/50">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-semibold">Lembrete PIX (E-mail)</Label>
+                    <p className="text-[10px] text-muted-foreground">Enviar lembrete via e-mail para pagamentos pendentes</p>
+                  </div>
+                  <Switch
+                    checked={settings.email_pix_reminder}
+                    onCheckedChange={(v) => update("email_pix_reminder", v)}
+                  />
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>Valor de utm_campaign</Label>
-                <Select
-                  value={settings.show_utm_campaign ? "show" : "hide"}
-                  onValueChange={(v) => update("show_utm_campaign", v === "show")}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="hide">Esconder</SelectItem>
-                    <SelectItem value="show">Mostrar</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <div className="pt-4 border-t space-y-4">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Detalhes da Notificação</h4>
+                
+                <div className="space-y-2">
+                  <Label className="text-xs">Valor da venda</Label>
+                  <Select value={settings.show_value} onValueChange={(v) => update("show_value", v)}>
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="commission">Comissão (Líquido)</SelectItem>
+                      <SelectItem value="full">Valor bruto</SelectItem>
+                      <SelectItem value="hidden">Ocultar valor</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="space-y-2">
-                <Label>Nome do dashboard</Label>
-                <Select
-                  value={settings.show_dashboard_name ? "show" : "hide"}
-                  onValueChange={(v) => update("show_dashboard_name", v === "show")}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="hide">Esconder</SelectItem>
-                    <SelectItem value="show">Mostrar</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label className="text-xs">Nome do produto</Label>
+                    <Select
+                      value={settings.show_product_name ? "show" : "hide"}
+                      onValueChange={(v) => update("show_product_name", v === "show")}
+                    >
+                      <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="hide">Ocultar</SelectItem>
+                        <SelectItem value="show">Mostrar</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs">UTM Campaign</Label>
+                    <Select
+                      value={settings.show_utm_campaign ? "show" : "hide"}
+                      onValueChange={(v) => update("show_utm_campaign", v === "show")}
+                    >
+                      <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="hide">Ocultar</SelectItem>
+                        <SelectItem value="show">Mostrar</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -389,6 +448,104 @@ const Notifications = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Horário de Silêncio e Filtros */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="w-5 h-5 text-primary" />
+                Horário de Silêncio
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Evite ser incomodado em horários específicos:
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-lg border bg-card/50">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-semibold">Habilitar Silêncio</Label>
+                  <p className="text-[10px] text-muted-foreground">Não receber push nestes horários</p>
+                </div>
+                <Switch
+                  checked={settings.quiet_hours_enabled}
+                  onCheckedChange={(v) => update("quiet_hours_enabled", v)}
+                />
+              </div>
+
+              {settings.quiet_hours_enabled && (
+                <div className="grid grid-cols-2 gap-4 pt-2">
+                  <div className="space-y-2">
+                    <Label className="text-xs">Início</Label>
+                    <Input 
+                      type="time" 
+                      value={settings.quiet_hours_start} 
+                      onChange={(e) => update("quiet_hours_start", e.target.value)}
+                      className="h-9"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Fim</Label>
+                    <Input 
+                      type="time" 
+                      value={settings.quiet_hours_end} 
+                      onChange={(e) => update("quiet_hours_end", e.target.value)}
+                      className="h-9"
+                    />
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-primary" />
+                Filtro por Produto
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Receba notificações apenas dos produtos selecionados:
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold">Filtrar produtos?</Label>
+                  <Switch
+                    checked={settings.product_whitelist !== null}
+                    onCheckedChange={(v) => update("product_whitelist", v ? [] : null)}
+                  />
+                </div>
+
+                {settings.product_whitelist !== null && (
+                  <div className="space-y-2 pt-2">
+                    <p className="text-[10px] font-bold uppercase text-muted-foreground mb-2">Selecione os produtos:</p>
+                    <div className="max-h-[200px] overflow-y-auto space-y-1 pr-2 custom-scrollbar">
+                      {products.map(p => (
+                        <div key={p.id} className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 transition-colors">
+                          <Switch 
+                            checked={settings.product_whitelist?.includes(p.id)}
+                            onCheckedChange={(v) => {
+                              const current = settings.product_whitelist || [];
+                              const next = v ? [...current, p.id] : current.filter(id => id !== p.id);
+                              update("product_whitelist", next);
+                            }}
+                            className="scale-75"
+                          />
+                          <span className="text-xs truncate">{p.name}</span>
+                        </div>
+                      ))}
+                      {products.length === 0 && (
+                        <p className="text-xs text-muted-foreground italic text-center py-4">Nenhum produto ativo encontrado.</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Notificações de Relatório */}
         <Card>
