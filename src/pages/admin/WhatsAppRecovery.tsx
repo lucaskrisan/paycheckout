@@ -155,7 +155,7 @@ const WhatsAppRecovery = () => {
           feature: "abandono",
           enabled: enabled,
           updated_at: new Date().toISOString()
-        }, { onConflict: "tenant_id,feature" });
+        });
 
       toast.success("Configurações salvas e automação atualizada!");
     } catch (error: any) {
