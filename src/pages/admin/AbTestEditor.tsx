@@ -937,14 +937,30 @@ function EditorInner() {
 
   const onConnect = useCallback(
     (c: Connection) => {
+      // Find source/target nodes to decide color
+      const sourceNode = nodes.find(n => n.id === c.source);
+      const targetNode = nodes.find(n => n.id === c.target);
+      
+      let edgeColor = "#a855f7"; // default purple
+      if (sourceNode?.type === "creative" || targetNode?.type === "creative") edgeColor = "#ec4899";
+      if (sourceNode?.type === "page" || targetNode?.type === "page") edgeColor = "#10b981";
+      if (sourceNode?.type === "checkout" || targetNode?.type === "checkout") edgeColor = "#f97316";
+      if (sourceNode?.type === "whatsapp" || targetNode?.type === "whatsapp") edgeColor = "#25d366";
+
       setEdges((eds) =>
         addEdge(
-          { ...c, type: "smoothstep", animated: true, style: { stroke: "#a855f7", strokeWidth: 2, strokeDasharray: "6 6" }, markerEnd: { type: MarkerType.ArrowClosed, color: "#a855f7" } },
+          { 
+            ...c, 
+            type: "smoothstep", 
+            animated: true, 
+            style: { stroke: edgeColor, strokeWidth: 2, strokeDasharray: "6 6" }, 
+            markerEnd: { type: MarkerType.ArrowClosed, color: edgeColor } 
+          },
           eds
         )
       );
     },
-    [setEdges]
+    [setEdges, nodes]
   );
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId) ?? null;
