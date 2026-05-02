@@ -1858,6 +1858,7 @@ export type Database = {
       notification_settings: {
         Row: {
           created_at: string
+          email_pix_reminder: boolean
           id: string
           notification_pattern: string
           notification_sound: string
@@ -1865,6 +1866,7 @@ export type Database = {
           report_12: boolean
           report_18: boolean
           report_23: boolean
+          send_abandoned_cart: boolean
           send_approved: boolean
           send_pending: boolean
           show_dashboard_name: boolean
@@ -1873,9 +1875,11 @@ export type Database = {
           show_value: string
           updated_at: string
           user_id: string
+          whatsapp_pix_reminder: boolean
         }
         Insert: {
           created_at?: string
+          email_pix_reminder?: boolean
           id?: string
           notification_pattern?: string
           notification_sound?: string
@@ -1883,6 +1887,7 @@ export type Database = {
           report_12?: boolean
           report_18?: boolean
           report_23?: boolean
+          send_abandoned_cart?: boolean
           send_approved?: boolean
           send_pending?: boolean
           show_dashboard_name?: boolean
@@ -1891,9 +1896,11 @@ export type Database = {
           show_value?: string
           updated_at?: string
           user_id: string
+          whatsapp_pix_reminder?: boolean
         }
         Update: {
           created_at?: string
+          email_pix_reminder?: boolean
           id?: string
           notification_pattern?: string
           notification_sound?: string
@@ -1901,6 +1908,7 @@ export type Database = {
           report_12?: boolean
           report_18?: boolean
           report_23?: boolean
+          send_abandoned_cart?: boolean
           send_approved?: boolean
           send_pending?: boolean
           show_dashboard_name?: boolean
@@ -1909,6 +1917,7 @@ export type Database = {
           show_value?: string
           updated_at?: string
           user_id?: string
+          whatsapp_pix_reminder?: boolean
         }
         Relationships: []
       }
