@@ -120,8 +120,8 @@ const TemplateCard = ({
 
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-gold/20 bg-gold/10 text-gold">
-            <Icon className="h-5 w-5" />
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-gold/20 bg-gold/10 text-gold shadow-lg transition-transform group-hover:scale-110">
+            <Icon className="h-6 w-6" />
           </div>
           <div className="min-w-0">
             <h3 className="truncate font-display text-lg font-semibold text-foreground">{template.name}</h3>
