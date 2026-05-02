@@ -1332,7 +1332,7 @@ function EditorInner() {
           </ReactFlow>
         </div>
         {selectedNode && (
-          <aside className="w-80 border-l border-border/60 p-5 space-y-4 overflow-y-auto">
+          <aside className="w-80 border-l border-border/60 p-5 space-y-4 overflow-y-auto shrink-0 bg-background/60">
             <h3 className="font-bold">{selectedNode.data.label}</h3>
             {selectedNode.type === "config" && (
               <div className="space-y-4">
