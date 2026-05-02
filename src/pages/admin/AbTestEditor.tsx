@@ -50,13 +50,14 @@ import {
   MousePointer2,
   TrendingUp,
   Shield,
+  MessageSquare,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AbTestTutorial } from "@/components/admin/AbTestTutorial";
 
 // ---------------- Types ----------------
 
-type NodeKind = "config" | "abtest" | "page" | "checkout" | "creative" | "upsell";
+type NodeKind = "config" | "abtest" | "page" | "checkout" | "creative" | "upsell" | "whatsapp";
 
 type ConfigData = { kind: "config"; label: string; testName: string; entryUrl: string; visits: number; stickyDays?: number; impressions?: number; sales?: number; revenue?: number };
 type AbTestData = { kind: "abtest"; label: string; subtitle: string; splits: { label: string; weight: number }[] };
@@ -94,6 +95,13 @@ type CreativeData = {
   utmSource?: string;
   utmContent?: string;
   stats?: { impressions: number; clicks: number; sales: number; revenue: number };
+};
+type WhatsAppData = {
+  kind: "whatsapp";
+  label: string;
+  subtitle: string;
+  delay: number;
+  stats?: { sent: number; clicked: number; recovered: number; revenue: number };
 };
 
 type FlowNode = Node<any>;
@@ -552,6 +560,49 @@ function UpsellNode({ id, data }: NodeProps<Node<UpsellData, "upsell">>) {
   );
 }
 
+function WhatsAppNode({ id, data }: NodeProps<Node<WhatsAppData, "whatsapp">>) {
+  const reactFlow = useReactFlow();
+  const navigate = useNavigate();
+
+  return (
+    <NodeShell 
+      color="#25d366" 
+      icon={<MessageSquare className="h-4 w-4" />} 
+      title={data.label} 
+      subtitle={data.subtitle || "Recuperação"}
+      nodeId={id}
+      onDelete={(nodeId) => {
+        const ns = reactFlow.getNodes();
+        const es = reactFlow.getEdges();
+        reactFlow.setNodes(ns.filter(n => n.id !== nodeId));
+        reactFlow.setEdges(es.filter(e => e.source !== nodeId && e.target !== nodeId));
+      }}
+    >
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-2 mb-1">
+          <div className="flex flex-col p-2.5 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+            <span className="text-[9px] uppercase tracking-wider text-emerald-400/70 font-bold">Enviadas</span>
+            <span className="text-sm font-black text-white">{data.stats?.sent || 0}</span>
+          </div>
+          <div className="flex flex-col p-2.5 rounded-xl bg-blue-500/5 border border-blue-500/10">
+            <span className="text-[9px] uppercase tracking-wider text-blue-400/70 font-bold">Cliques</span>
+            <span className="text-sm font-black text-blue-400">{data.stats?.clicked || 0}</span>
+          </div>
+        </div>
+
+        <Button 
+          onClick={() => navigate("/admin/whatsapp-recovery")}
+          variant="outline" 
+          className="w-full h-8 text-[10px] uppercase font-black tracking-widest border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/20 text-emerald-400 gap-2"
+        >
+          <Zap className="h-3 w-3" />
+          Configurar Fluxo
+        </Button>
+      </div>
+    </NodeShell>
+  );
+}
+
 const nodeTypes = {
   config: ConfigNode,
   abtest: AbTestNode,
@@ -559,6 +610,7 @@ const nodeTypes = {
   checkout: CheckoutNode,
   creative: CreativeNode,
   upsell: UpsellNode,
+  whatsapp: WhatsAppNode,
 };
 
 // ---------------- Initial graph ----------------
@@ -573,6 +625,7 @@ function buildInitialGraph(testName: string): { nodes: FlowNode[]; edges: Edge[]
     { id: "abtest-checkouts", type: "abtest", position: { x: 880, y: 200 }, data: { kind: "abtest", label: "Teste Checkouts", subtitle: "Teste de checkout", splits: [{ label: "A", weight: 50 }, { label: "B", weight: 50 }] } },
     { id: "checkout-a", type: "checkout", position: { x: 1180, y: 60 }, data: { kind: "checkout", label: "Checkout A", subtitle: "Página de pagamento", productId: null, offerId: null, templateId: null } },
     { id: "checkout-b", type: "checkout", position: { x: 1180, y: 340 }, data: { kind: "checkout", label: "Checkout B", subtitle: "Página de pagamento", productId: null, offerId: null, templateId: null } },
+    { id: "whatsapp-recovery", type: "whatsapp", position: { x: 1480, y: 200 }, data: { kind: "whatsapp", label: "Recuperação Whats", subtitle: "Carrinho Abandonado", delay: 15 } },
   ];
   const edge = (id: string, source: string, target: string, color: string): Edge => ({
     id, source, target, type: "smoothstep",
@@ -589,6 +642,8 @@ function buildInitialGraph(testName: string): { nodes: FlowNode[]; edges: Edge[]
     edge("e5", "page-b", "abtest-checkouts", "#a855f7"),
     edge("e6", "abtest-checkouts", "checkout-a", "#f97316"),
     edge("e7", "abtest-checkouts", "checkout-b", "#f97316"),
+    edge("e8", "checkout-a", "whatsapp-recovery", "#25d366"),
+    edge("e9", "checkout-b", "whatsapp-recovery", "#25d366"),
   ];
   return { nodes, edges };
 }
@@ -601,6 +656,7 @@ const PALETTE: { kind: NodeKind; label: string; icon: React.ReactNode; color: st
   { kind: "page", label: "Página de Vendas", icon: <FileText className="h-4 w-4" />, color: "#10b981" },
   { kind: "checkout", label: "Checkout", icon: <ShoppingCart className="h-4 w-4" />, color: "#f97316" },
   { kind: "upsell", label: "Upsell", icon: <TrendingUp className="h-4 w-4" />, color: "#8b5cf6" },
+  { kind: "whatsapp", label: "Recuperação Whats", icon: <MessageSquare className="h-4 w-4" />, color: "#25d366" },
 ];
 
 function PaletteItem({ kind, label, icon, color }: { kind: NodeKind; label: string; icon: React.ReactNode; color: string }) {
@@ -835,7 +891,11 @@ function EditorInner() {
             } 
           } as FlowNode;
         }
-        return n;
+        if (n.type === "whatsapp") {
+          // Find stats in whatsapp_send_log (simulated for now or fetched above)
+          // For now, let's keep it clean as we don't have per-test whatsapp stats yet
+          return n;
+        }
       })
     );
   }, [stats, setNodes]);
@@ -864,6 +924,8 @@ function EditorInner() {
         newNode = { id, type: "page", position, data: { kind: "page", label: `Página ${String.fromCharCode(65 + idx)}`, subtitle: "Landing Page", url: "" } };
       } else if (kind === "upsell") {
         newNode = { id, type: "upsell", position, data: { kind: "upsell", label: "Novo Upsell", subtitle: "Página de Upsell", url: "" } };
+      } else if (kind === "whatsapp") {
+        newNode = { id, type: "whatsapp", position, data: { kind: "whatsapp", label: "Recuperação WhatsApp", subtitle: "Automação", delay: 15, stats: { sent: 0, clicked: 0, recovered: 0, revenue: 0 } } };
       } else {
         const idx = nodes.filter((n) => n.type === "checkout").length;
         newNode = { id, type: "checkout", position, data: { kind: "checkout", label: `Checkout ${String.fromCharCode(65 + idx)}`, subtitle: "Página de pagamento", productId: null, offerId: null, templateId: null } };
@@ -875,14 +937,30 @@ function EditorInner() {
 
   const onConnect = useCallback(
     (c: Connection) => {
+      // Find source/target nodes to decide color
+      const sourceNode = nodes.find(n => n.id === c.source);
+      const targetNode = nodes.find(n => n.id === c.target);
+      
+      let edgeColor = "#a855f7"; // default purple
+      if (sourceNode?.type === "creative" || targetNode?.type === "creative") edgeColor = "#ec4899";
+      if (sourceNode?.type === "page" || targetNode?.type === "page") edgeColor = "#10b981";
+      if (sourceNode?.type === "checkout" || targetNode?.type === "checkout") edgeColor = "#f97316";
+      if (sourceNode?.type === "whatsapp" || targetNode?.type === "whatsapp") edgeColor = "#25d366";
+
       setEdges((eds) =>
         addEdge(
-          { ...c, type: "smoothstep", animated: true, style: { stroke: "#a855f7", strokeWidth: 2, strokeDasharray: "6 6" }, markerEnd: { type: MarkerType.ArrowClosed, color: "#a855f7" } },
+          { 
+            ...c, 
+            type: "smoothstep", 
+            animated: true, 
+            style: { stroke: edgeColor, strokeWidth: 2, strokeDasharray: "6 6" }, 
+            markerEnd: { type: MarkerType.ArrowClosed, color: edgeColor } 
+          },
           eds
         )
       );
     },
-    [setEdges]
+    [setEdges, nodes]
   );
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId) ?? null;
@@ -1523,6 +1601,43 @@ function EditorInner() {
                     <Trash2 className="h-4 w-4 mr-2" /> Excluir Criativo
                   </Button>
                 </div>
+              </div>
+            )}
+            
+            {selectedNode.type === "whatsapp" && (
+              <div className="space-y-4">
+                <Label className="text-xs font-medium uppercase text-muted-foreground tracking-widest">Configuração WhatsApp</Label>
+                <div className="space-y-2">
+                  <Label className="text-xs">Título da Automação</Label>
+                  <Input value={selectedNode.data.label} onChange={(e) => updateNodeData(selectedNode.id, { label: e.target.value })} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Tempo de Espera (Minutos)</Label>
+                  <Input 
+                    type="number"
+                    value={(selectedNode.data as WhatsAppData).delay || 15} 
+                    onChange={(e) => updateNodeData(selectedNode.id, { delay: Number(e.target.value) })} 
+                  />
+                  <p className="text-[10px] text-muted-foreground italic">Intervalo entre o abandono e o envio da mensagem.</p>
+                </div>
+                
+                <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20 space-y-2">
+                  <p className="text-xs font-bold text-emerald-400">Recuperação 100% Nativa</p>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">
+                    Este nó ativa automaticamente o disparo de WhatsApp para carrinhos abandonados vinculados a este funil.
+                  </p>
+                  <Button 
+                    onClick={() => navigate("/admin/whatsapp-recovery")}
+                    size="sm"
+                    className="w-full h-7 text-[10px] bg-emerald-600 hover:bg-emerald-500 text-white font-bold"
+                  >
+                    Editar Mensagens
+                  </Button>
+                </div>
+
+                <Button variant="outline" className="w-full text-red-400 border-red-400/30 hover:bg-red-500/10" onClick={() => deleteNode(selectedNode.id)}>
+                  <Trash2 className="h-4 w-4 mr-2" /> Remover Automação
+                </Button>
               </div>
             )}
           </aside>
