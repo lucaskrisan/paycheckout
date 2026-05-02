@@ -63,7 +63,7 @@ const Reviews = lazy(() => import("./pages/admin/Reviews"));
 const SystemHealth = lazy(() => import("./pages/admin/SystemHealth"));
 const Webhooks = lazy(() => import("./pages/admin/Webhooks"));
 const Emails = lazy(() => import("./pages/admin/Emails"));
-const PwaSettings = lazy(() => import("./pages/admin/PwaSettings"));
+// PwaSettings eagerly loaded above
 const Billing = lazy(() => import("./pages/admin/Billing"));
 const Upsell = lazy(() => import("./pages/admin/Upsell"));
 const Roadmap = lazy(() => import("./pages/admin/Roadmap"));
