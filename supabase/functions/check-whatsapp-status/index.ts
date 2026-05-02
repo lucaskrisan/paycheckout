@@ -22,8 +22,15 @@ const readResponseBody = async (res: Response) => {
 };
 
 const extractErrorMessage = (payload: any) => {
+  const firstMsg = payload?.response?.message?.[0] ?? payload?.message?.[0];
+  if (firstMsg?.exists === false) {
+    return "Número não encontrado no WhatsApp.";
+  }
   const message = payload?.response?.message ?? payload?.message ?? payload?.error ?? payload;
-  if (Array.isArray(message)) return message.join(" ");
+  if (Array.isArray(message)) {
+    if (typeof message[0] === 'object') return JSON.stringify(message[0]);
+    return message.join(" ");
+  }
   if (typeof message === "string" && message.trim()) return message;
   return "Erro desconhecido";
 };

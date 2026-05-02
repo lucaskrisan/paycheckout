@@ -237,8 +237,23 @@ Deno.serve(async (req) => {
 
         if (!sendRes.ok) {
           const errBody = await sendRes.text().catch(() => "");
+          let parsedError = errBody;
+          try {
+            const payload = JSON.parse(errBody);
+            // Evolution API returns 400 with exists:false when number is not on WhatsApp
+            if (payload?.response?.message?.[0]?.exists === false || 
+                payload?.message?.[0]?.exists === false ||
+                (Array.isArray(payload?.response) && payload?.response[0]?.exists === false)) {
+              parsedError = "Número não existe no WhatsApp";
+            } else {
+              parsedError = payload?.response?.message ?? payload?.message ?? payload?.error ?? errBody;
+            }
+          } catch {
+            // Keep original if not JSON
+          }
+          
           sendStatus = "failed";
-          errorMessage = `HTTP ${sendRes.status} on ${msg.type}: ${errBody.slice(0, 200)}`;
+          errorMessage = typeof parsedError === 'string' ? parsedError.slice(0, 200) : JSON.stringify(parsedError).slice(0, 200);
           break;
         }
 

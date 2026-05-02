@@ -34,7 +34,7 @@ const WhatsAppTestMessageDialog = ({ open, onOpenChange }: Props) => {
     try {
       const normalizedPhone = cleanPhone.startsWith("55") ? cleanPhone : `55${cleanPhone}`;
       const { data, error } = await supabase.functions.invoke("send-whatsapp-message", {
-        body: { to: normalizedPhone, message: message.trim() },
+        body: { to_number: normalizedPhone, message: message.trim() },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
