@@ -31,6 +31,28 @@
   background: linear-gradient(180deg, rgba(20, 184, 166, 0.5), rgba(212, 175, 55, 0.5));
 }
 
+/* Subtle dark scrollbar for premium SaaS feel */
+.scrollbar-premium::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-premium::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-premium::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.18);
+  border-radius: 3px;
+}
+.scrollbar-premium::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.35);
+}
+.scrollbar-premium {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 175, 55, 0.25) transparent;
+}
+.scrollbar-hidden::-webkit-scrollbar { display: none; }
+.scrollbar-hidden { scrollbar-width: none; }
+
 /* 3DS Challenge Modal */
 #challengeContainer iframe {
   position: fixed;
