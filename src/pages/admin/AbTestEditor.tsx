@@ -625,6 +625,7 @@ function buildInitialGraph(testName: string): { nodes: FlowNode[]; edges: Edge[]
     { id: "abtest-checkouts", type: "abtest", position: { x: 880, y: 200 }, data: { kind: "abtest", label: "Teste Checkouts", subtitle: "Teste de checkout", splits: [{ label: "A", weight: 50 }, { label: "B", weight: 50 }] } },
     { id: "checkout-a", type: "checkout", position: { x: 1180, y: 60 }, data: { kind: "checkout", label: "Checkout A", subtitle: "Página de pagamento", productId: null, offerId: null, templateId: null } },
     { id: "checkout-b", type: "checkout", position: { x: 1180, y: 340 }, data: { kind: "checkout", label: "Checkout B", subtitle: "Página de pagamento", productId: null, offerId: null, templateId: null } },
+    { id: "whatsapp-recovery", type: "whatsapp", position: { x: 1480, y: 200 }, data: { kind: "whatsapp", label: "Recuperação Whats", subtitle: "Carrinho Abandonado", delay: 15 } },
   ];
   const edge = (id: string, source: string, target: string, color: string): Edge => ({
     id, source, target, type: "smoothstep",
@@ -641,6 +642,8 @@ function buildInitialGraph(testName: string): { nodes: FlowNode[]; edges: Edge[]
     edge("e5", "page-b", "abtest-checkouts", "#a855f7"),
     edge("e6", "abtest-checkouts", "checkout-a", "#f97316"),
     edge("e7", "abtest-checkouts", "checkout-b", "#f97316"),
+    edge("e8", "checkout-a", "whatsapp-recovery", "#25d366"),
+    edge("e9", "checkout-b", "whatsapp-recovery", "#25d366"),
   ];
   return { nodes, edges };
 }
