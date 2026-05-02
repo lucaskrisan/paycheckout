@@ -133,31 +133,35 @@ const WhatsAppStarterTemplates = () => {
   };
 
   return (
-    <Card className="border-border bg-card">
-      <CardHeader className="pb-3">
+    <Card className="border-border/50 bg-card/50 shadow-sm overflow-hidden">
+      <CardHeader className="pb-3 bg-muted/20 border-b border-border/50">
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-primary" />
-            Templates Pré-Prontos
-          </CardTitle>
+          <div className="space-y-1">
+            <CardTitle className="text-lg flex items-center gap-2.5 font-display">
+              <div className="p-2 rounded-lg bg-primary/10 text-primary border border-primary/20">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              Biblioteca de Estratégias
+            </CardTitle>
+            <CardDescription>
+              Templates otimizados para conversão. Instale e edite no builder.
+            </CardDescription>
+          </div>
           <Button
             size="sm"
             variant="outline"
             onClick={handleInstallAll}
             disabled={installing === "all" || installed.size === STARTER_TEMPLATES.length}
-            className="gap-1.5"
+            className="gap-1.5 h-9"
           >
             {installing === "all" ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
               <Sparkles className="w-3.5 h-3.5" />
             )}
-            Instalar todos
+            Instalar tudo (Recomendado)
           </Button>
         </div>
-        <p className="text-sm text-muted-foreground mt-1">
-          Templates prontos para os cenários mais comuns. Instale e personalize no builder visual.
-        </p>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -169,10 +173,10 @@ const WhatsAppStarterTemplates = () => {
             return (
               <div
                 key={template.name}
-                className={`rounded-xl border p-4 space-y-3 transition-all ${
+                className={`rounded-2xl border p-5 space-y-4 transition-all duration-300 ${
                   isInstalled
-                    ? "border-emerald-300 bg-emerald-50/50 dark:bg-emerald-950/20 dark:border-emerald-800"
-                    : "border-border hover:border-primary/30 hover:shadow-sm"
+                    ? "border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-500/10 shadow-sm"
+                    : "border-border/50 bg-background/50 hover:border-primary/40 hover:shadow-lg hover:-translate-y-1"
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
