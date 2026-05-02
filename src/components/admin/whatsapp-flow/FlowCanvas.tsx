@@ -733,201 +733,182 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
           </div>
         </div>
 
-        <aside className="flex w-[300px] shrink-0 flex-col border-l border-border/60 bg-card/95">
+        <aside className={`flex w-[300px] shrink-0 flex-col border-l border-border/60 bg-card/95 transition-all duration-300 ${!selectedNodeId ? 'translate-x-full opacity-0 pointer-events-none w-0' : 'translate-x-0 opacity-100'}`}>
           <div className="shrink-0 border-b border-border/60 px-4 py-3">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-gold/80">Configuração</p>
-            <h3 className="mt-0.5 font-display text-sm font-semibold text-foreground">Painel de edição</h3>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-gold/80">Configuração</p>
+                <h3 className="mt-0.5 font-display text-sm font-semibold text-foreground">Painel de edição</h3>
+              </div>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7 rounded-lg text-muted-foreground hover:bg-muted"
+                onClick={() => setSelectedNodeId("")}
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           </div>
 
           <div className="scrollbar-premium min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
-              <section className="space-y-4 rounded-2xl border border-border/60 bg-background/60 p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">Identidade do template</p>
-                    <p className="text-xs text-muted-foreground">Defina nome, categoria e status sem sair do fluxo.</p>
+            {selectedNode && (
+              <>
+                <section className="space-y-4 rounded-2xl border border-border/60 bg-background/60 p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Identidade do template</p>
+                      <p className="text-xs text-muted-foreground">Nome e categoria do fluxo.</p>
+                    </div>
                   </div>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-gold/20 bg-gold/10 text-gold">
-                    <CheckCircle2 className="h-4 w-4" />
+
+                  <div className="space-y-2">
+                    <Label className="text-xs">Nome</Label>
+                    <Input
+                      className="h-8 text-sm"
+                      onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
+                      placeholder="Ex: Recuperação de checkout"
+                      value={draft.name}
+                    />
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label>Nome</Label>
-                  <Input
-                    onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
-                    placeholder="Ex: Recuperação de checkout"
-                    value={draft.name}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Categoria</Label>
-                  <Select onValueChange={(value) => setDraft((current) => ({ ...current, category: value }))} value={draft.category}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma categoria" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.value} value={category.value}>{category.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-card/80 px-4 py-3">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Template ativo</p>
-                    <p className="text-xs text-muted-foreground">Pronto para entrar na automação.</p>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Categoria</Label>
+                    <Select onValueChange={(value) => setDraft((current) => ({ ...current, category: value }))} value={draft.category}>
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((category) => (
+                          <SelectItem key={category.value} value={category.value}>{category.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <Switch checked={draft.active} onCheckedChange={(value) => setDraft((current) => ({ ...current, active: value }))} />
-                </div>
-              </section>
 
-              {/* Preview section (#3) */}
-              {showPreview && (
-                <section className="space-y-2">
-                  <WhatsAppPreview body={primaryBody} />
+                  <div className="flex items-center justify-between rounded-xl border border-border/60 bg-card/80 px-3 py-2">
+                    <span className="text-xs font-medium">Ativo</span>
+                    <Switch checked={draft.active} onCheckedChange={(value) => setDraft((current) => ({ ...current, active: value }))} />
+                  </div>
                 </section>
-              )}
 
-              <section className="space-y-4 rounded-2xl border border-border/60 bg-background/60 p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">Resumo visual</p>
-                    <p className="text-xs text-muted-foreground">O texto salvo sai do primeiro bloco de mensagem principal.</p>
+                {showPreview && (
+                  <section className="space-y-2">
+                    <WhatsAppPreview body={primaryBody} />
+                  </section>
+                )}
+
+                <section className="space-y-4 rounded-2xl border border-border/60 bg-background/60 p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Editar bloco: {selectedNode.label}</p>
+                      <p className="text-xs text-muted-foreground">Ajuste o conteúdo com precisão.</p>
+                    </div>
+                    <Badge className="border-gold/25 bg-gold/10 text-gold" variant="outline">{selectedNode.type}</Badge>
                   </div>
-                  <Badge className="border-gold/25 bg-gold/10 text-gold" variant="outline">{nodes.length} nós</Badge>
-                </div>
 
-                <div className="rounded-2xl border border-border/60 bg-card/80 p-3">
-                  <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Mensagem principal</p>
-                  <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">{primaryBody || "Adicione uma mensagem principal no canvas."}</p>
-                </div>
-              </section>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Título do Bloco</Label>
+                    <Input
+                      className="h-8 text-sm"
+                      onChange={(event) => updateSelectedNode((node) => ({ ...node, label: event.target.value }))}
+                      value={selectedNode.label}
+                    />
+                  </div>
 
-              <section className="space-y-4 rounded-2xl border border-border/60 bg-background/60 p-4">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Nó selecionado</p>
-                  <p className="text-xs text-muted-foreground">Ajuste conteúdo, espera ou opções com precisão.</p>
-                </div>
-
-                {selectedNode ? (
-                  <>
+                  {(MESSAGE_TYPES.includes(selectedNode.type) || OPTION_TYPES.includes(selectedNode.type) || ["trigger", "delivery", "tags", "variables"].includes(selectedNode.type)) && (
                     <div className="space-y-2">
-                      <Label>Rótulo</Label>
+                      <Label className="text-xs">Conteúdo</Label>
+                      <Textarea
+                        ref={textareaRef}
+                        className="min-h-[140px] text-sm scrollbar-premium"
+                        onChange={(event) => updateSelectedNode((node) => ({ ...node, config: { ...node.config, body: event.target.value } }))}
+                        placeholder="Escreva sua mensagem..."
+                        value={selectedNode.config.body || ""}
+                      />
+                      {MESSAGE_TYPES.includes(selectedNode.type) && (
+                        <VariableButtons onInsert={handleInsertVariable} />
+                      )}
+                    </div>
+                  )}
+
+                  {["image", "music", "audio", "video", "document"].includes(selectedNode.type) && (
+                    <div className="space-y-2">
+                      <Label className="text-xs">URL da mídia</Label>
                       <Input
-                        onChange={(event) => updateSelectedNode((node) => ({ ...node, label: event.target.value }))}
-                        value={selectedNode.label}
+                        className="h-8 text-sm"
+                        placeholder="https://..."
+                        value={selectedNode.config.media_url || ""}
+                        onChange={(event) => updateSelectedNode((node) => ({
+                          ...node,
+                          config: { ...node.config, media_url: event.target.value },
+                        }))}
                       />
                     </div>
+                  )}
 
-                    {(MESSAGE_TYPES.includes(selectedNode.type) || OPTION_TYPES.includes(selectedNode.type) || ["trigger", "delivery", "tags", "variables"].includes(selectedNode.type)) && (
+                  {selectedNode.type === "wait" && (
+                    <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-2">
-                        <Label>Conteúdo</Label>
-                        <Textarea
-                          ref={textareaRef}
-                          className="min-h-[120px]"
-                          onChange={(event) => updateSelectedNode((node) => ({ ...node, config: { ...node.config, body: event.target.value } }))}
-                          placeholder="Descreva ou escreva o conteúdo deste bloco"
-                          value={selectedNode.config.body || ""}
-                        />
-                        {/* Variable insertion buttons (#6) */}
-                        {MESSAGE_TYPES.includes(selectedNode.type) && (
-                          <VariableButtons onInsert={handleInsertVariable} />
-                        )}
-                      </div>
-                    )}
-
-                    {/* Media URL field for image/audio/video/document nodes */}
-                    {["image", "music", "audio", "video", "document"].includes(selectedNode.type) && (
-                      <div className="space-y-2">
-                        <Label>
-                          URL da mídia
-                          <span className="ml-1 text-xs text-muted-foreground font-normal">
-                            ({selectedNode.type === "image" ? "JPG, PNG, WEBP" :
-                              selectedNode.type === "video" ? "MP4" :
-                              selectedNode.type === "audio" || selectedNode.type === "music" ? "MP3, OGG, M4A" :
-                              "PDF, DOCX, etc."})
-                          </span>
-                        </Label>
+                        <Label className="text-xs">Tempo</Label>
                         <Input
-                          placeholder="https://exemplo.com/arquivo.jpg"
-                          value={selectedNode.config.media_url || ""}
-                          onChange={(event) => updateSelectedNode((node) => ({
-                            ...node,
-                            config: { ...node.config, media_url: event.target.value },
-                          }))}
+                          className="h-8 text-sm"
+                          onChange={(event) => updateSelectedNode((node) => ({ ...node, config: { ...node.config, waitTime: event.target.value } }))}
+                          value={selectedNode.config.waitTime || ""}
                         />
-                        <p className="text-[11px] text-muted-foreground">
-                          Cole a URL pública do arquivo. Será enviado como {selectedNode.type === "music" ? "áudio" : selectedNode.type} no WhatsApp.
-                        </p>
                       </div>
-                    )}
-
-                    {selectedNode.type === "wait" && (
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                          <Label>Tempo</Label>
-                          <Input
-                            onChange={(event) => updateSelectedNode((node) => ({ ...node, config: { ...node.config, waitTime: event.target.value } }))}
-                            value={selectedNode.config.waitTime || ""}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Unidade</Label>
-                          <Select
-                            onValueChange={(value) => updateSelectedNode((node) => ({ ...node, config: { ...node.config, waitUnit: value } }))}
-                            value={selectedNode.config.waitUnit || "minutos"}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="minutos">Minutos</SelectItem>
-                              <SelectItem value="horas">Horas</SelectItem>
-                              <SelectItem value="dias">Dias</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">Unidade</Label>
+                        <Select
+                          onValueChange={(value) => updateSelectedNode((node) => ({ ...node, config: { ...node.config, waitUnit: value } }))}
+                          value={selectedNode.config.waitUnit || "minutos"}
+                        >
+                          <SelectTrigger className="h-8 text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="minutos">Minutos</SelectItem>
+                            <SelectItem value="horas">Horas</SelectItem>
+                            <SelectItem value="dias">Dias</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                    )}
+                    </div>
+                  )}
 
-                    {OPTION_TYPES.includes(selectedNode.type) && (
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <Label>Opções</Label>
-                          <Button className="gap-2" onClick={addOption} size="sm" type="button" variant="outline">
-                            <Plus className="h-3.5 w-3.5" />
-                            Adicionar
-                          </Button>
-                        </div>
-
-                        <div className="space-y-2">
-                          {(selectedNode.config.options || []).map((option: string, index: number) => (
-                            <div key={`${selectedNode.id}-editor-${index}`} className="flex items-center gap-2">
-                              <Input onChange={(event) => updateOption(index, event.target.value)} value={option} />
-                              <Button
-                                onClick={() => removeOption(index)}
-                                size="icon"
-                                type="button"
-                                variant="outline"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
+                  {OPTION_TYPES.includes(selectedNode.type) && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs">Opções</Label>
+                        <Button className="h-7 gap-1 px-2 text-[10px]" onClick={addOption} size="sm" type="button" variant="outline">
+                          <Plus className="h-3 w-3" />
+                          Nova
+                        </Button>
                       </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="rounded-2xl border border-dashed border-border/60 bg-card/70 p-5 text-sm text-muted-foreground">
-                    Clique em qualquer card do canvas para editar esse bloco aqui.
-                  </div>
-                )}
-              </section>
-            </div>
-          </aside>
+
+                      <div className="space-y-2">
+                        {(selectedNode.config.options || []).map((option: string, index: number) => (
+                          <div key={`${selectedNode.id}-editor-${index}`} className="flex items-center gap-2">
+                            <Input className="h-8 text-sm" onChange={(event) => updateOption(index, event.target.value)} value={option} />
+                            <Button
+                              className="h-8 w-8 shrink-0"
+                              onClick={() => removeOption(index)}
+                              size="icon"
+                              type="button"
+                              variant="outline"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </section>
+              </>
+            )}
+          </div>
+        </aside>
         </div>
     </motion.div>
   );
