@@ -18,22 +18,31 @@ const StatTile = ({
   value,
   hint,
   accent,
+  trend,
 }: {
   icon: any;
   label: string;
   value: string;
   hint?: string;
   accent: string;
+  trend?: string;
 }) => (
-  <div className="flex flex-col gap-2 rounded-xl border border-border/60 bg-card/80 p-4">
-    <div className="flex items-center gap-2">
-      <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${accent}`}>
-        <Icon className="h-4 w-4" />
+  <div className="flex flex-col gap-3 rounded-2xl border border-border/50 bg-card/50 p-5 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5">
+    <div className="flex items-center justify-between">
+      <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${accent} shadow-sm`}>
+        <Icon className="h-5 w-5" />
       </div>
-      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      {trend && (
+        <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
+          {trend}
+        </span>
+      )}
     </div>
-    <p className="text-2xl font-bold font-display text-foreground leading-none">{value}</p>
-    {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
+    <div className="space-y-1">
+      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</p>
+      <p className="text-3xl font-bold font-display text-foreground leading-none">{value}</p>
+    </div>
+    {hint && <p className="text-[11px] text-muted-foreground/70 italic">{hint}</p>}
   </div>
 );
 
@@ -115,31 +124,32 @@ const WhatsAppMetricsCard = () => {
             <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatTile
               icon={Send}
               label="Enviadas hoje"
               value={String(metrics?.sentToday ?? 0)}
-              accent="bg-blue-500/10 text-blue-500"
+              accent="bg-blue-500/10 text-blue-600 border border-blue-500/20"
             />
             <StatTile
               icon={CheckCheck}
               label="Taxa de entrega"
               value={metrics?.deliveryRate !== null ? `${metrics?.deliveryRate}%` : "—"}
-              hint={metrics?.deliveryRate === null ? "Sem dados ainda" : "entregues / enviadas"}
-              accent="bg-emerald-500/10 text-emerald-500"
+              hint={metrics?.deliveryRate === null ? "Aguardando envios" : "Status: Excelente"}
+              accent="bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+              trend={metrics?.deliveryRate && metrics.deliveryRate > 90 ? "↑ Alta" : undefined}
             />
             <StatTile
               icon={ShoppingCart}
               label="Carrinhos recuperados"
               value={String(metrics?.cartRecovered ?? 0)}
-              accent="bg-amber-500/10 text-amber-500"
+              accent="bg-amber-500/10 text-amber-600 border border-amber-500/20"
             />
             <StatTile
               icon={QrCode}
               label="PIX lembrados"
               value={String(metrics?.pixReminded ?? 0)}
-              accent="bg-violet-500/10 text-violet-500"
+              accent="bg-violet-500/10 text-violet-600 border border-violet-500/20"
             />
           </div>
         )}
