@@ -177,7 +177,7 @@ const ConnectionLines = ({ nodes }: { nodes: FlowNodeData[] }) => {
 
         return (
           <g key={`${from.id}-${to.id}-${index}`}>
-            {/* Glow effect / Background line */}
+            {/* Connection line background for glow */}
             <path
               d={`M${startX},${startY} C${startX},${startY + deltaY} ${endX},${endY - deltaY} ${endX},${endY}`}
               fill="none"
@@ -195,10 +195,10 @@ const ConnectionLines = ({ nodes }: { nodes: FlowNodeData[] }) => {
               strokeLinecap="round"
               strokeDasharray={from.type === "wait" ? "6 4" : "none"}
             />
-            {/* End arrowhead/point */}
+            {/* Target point (top of card) */}
             <circle cx={endX} cy={endY} fill="hsl(var(--gold))" r="4.5" className="filter drop-shadow-[0_0_8px_hsl(var(--gold)/0.5)]" />
             
-            {/* Source point marker */}
+            {/* Source point (bottom center) */}
             <circle cx={startX} cy={startY} fill="hsl(var(--gold)/0.8)" r="3" />
           </g>
         );
