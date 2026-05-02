@@ -27,9 +27,9 @@ const StatTile = ({
   accent: string;
   trend?: string;
 }) => (
-  <div className="flex flex-col gap-3 rounded-2xl border border-border/50 bg-card/50 p-5 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5">
+  <div className="flex flex-col gap-3 rounded-[24px] border border-border/50 bg-background/50 p-6 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1.5 group">
     <div className="flex items-center justify-between">
-      <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${accent} shadow-sm`}>
+      <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${accent} shadow-inner transition-transform group-hover:scale-110`}>
         <Icon className="h-5 w-5" />
       </div>
       {trend && (
@@ -110,7 +110,7 @@ const WhatsAppMetricsCard = () => {
   }, [user]);
 
   return (
-    <Card>
+    <Card className="border-border/50 bg-gradient-to-br from-card to-muted/5 shadow-lg">
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <BarChart3 className="w-5 h-5" />
@@ -124,7 +124,7 @@ const WhatsAppMetricsCard = () => {
             <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatTile
               icon={Send}
               label="Enviadas hoje"

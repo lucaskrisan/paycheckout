@@ -299,30 +299,45 @@ const WhatsApp = () => {
       </div>
 
       <Tabs defaultValue={defaultTab} onValueChange={(val) => setSearchParams({ tab: val })} className="space-y-6">
-        <TabsList className="bg-muted/50 p-1 border h-auto flex-wrap">
-          <TabsTrigger value="connection" className="gap-2 py-2">
-            <ShieldCheck className="w-4 h-4" />
-            Conexão
-          </TabsTrigger>
-          <TabsTrigger value="recovery" className="gap-2 py-2">
-            <RotateCw className="w-4 h-4" />
-            Recuperação
-          </TabsTrigger>
-          <TabsTrigger value="templates" className="gap-2 py-2">
-            <MessageSquare className="w-4 h-4" />
-            Templates
-          </TabsTrigger>
-          <TabsTrigger value="logs" className="gap-2 py-2">
-            <Activity className="w-4 h-4" />
-            Logs
-          </TabsTrigger>
-          {isSuperAdmin && (
-            <TabsTrigger value="admin" className="gap-2 py-2">
-              <Zap className="w-4 h-4" />
-              Admin
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <TabsList className="h-12 w-fit bg-muted/40 p-1 backdrop-blur-md border shadow-sm">
+            <TabsTrigger value="connection" className="gap-2 px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:text-gold data-[state=active]:shadow-sm">
+              <ShieldCheck className="w-4 h-4" />
+              Conexão
             </TabsTrigger>
-          )}
-        </TabsList>
+            <TabsTrigger value="templates" className="gap-2 px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:text-gold data-[state=active]:shadow-sm">
+              <MessageSquare className="w-4 h-4" />
+              Templates
+            </TabsTrigger>
+            <TabsTrigger value="recovery" className="gap-2 px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:text-gold data-[state=active]:shadow-sm">
+              <RotateCw className="w-4 h-4" />
+              Recuperação
+            </TabsTrigger>
+            <TabsTrigger value="logs" className="gap-2 px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:text-gold data-[state=active]:shadow-sm">
+              <Activity className="w-4 h-4" />
+              Logs
+            </TabsTrigger>
+            {isSuperAdmin && (
+              <TabsTrigger value="admin" className="gap-2 px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:text-gold data-[state=active]:shadow-sm">
+                <Zap className="w-4 h-4" />
+                Admin
+              </TabsTrigger>
+            )}
+          </TabsList>
+
+          <div className="flex items-center gap-3">
+            <div className="hidden items-center gap-1.5 rounded-full border border-border/60 bg-muted/20 px-4 py-2 text-[11px] font-medium text-muted-foreground lg:flex">
+              <Clock className="h-3.5 w-3.5 text-gold" />
+              Último check: {formatRelative(lastChecked?.toISOString() ?? null)}
+            </div>
+            {status === "connected" && (
+              <Badge className="h-10 border-emerald-500/20 bg-emerald-500/10 px-4 text-emerald-600 gap-1.5 shadow-sm">
+                <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+                Instância Ativa
+              </Badge>
+            )}
+          </div>
+        </div>
 
         <TabsContent value="connection" className="space-y-6 animate-in fade-in duration-300">
           {errorMsg && (
@@ -335,125 +350,161 @@ const WhatsApp = () => {
             </div>
           )}
 
-          <Card className="border-border/50 shadow-lg overflow-hidden relative">
-            <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
-              <MessageSquare className="w-32 h-32" />
+          <Card className="overflow-hidden border-border/50 bg-gradient-to-br from-card to-muted/10 shadow-xl transition-all hover:shadow-2xl">
+            <div className="absolute right-0 top-0 pointer-events-none p-12 opacity-[0.04]">
+              <Workflow className="h-64 w-64 rotate-12" />
             </div>
-            <CardHeader className="pb-3 border-b border-border/50 bg-muted/20">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base flex items-center gap-2.5">
-                  <div className="p-2 rounded-lg bg-gold/10 text-gold border border-gold/20">
-                    <ShieldCheck className="w-4 h-4" />
+            <CardHeader className="relative z-10 border-b border-border/40 bg-muted/10 pb-6 pt-8">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-gold/10 text-gold border border-gold/20 shadow-lg">
+                    <ShieldCheck className="h-7 w-7" />
                   </div>
-                  Controle de Instância
-                </CardTitle>
+                  <div>
+                    <CardTitle className="text-xl font-bold font-display">Status do Sistema</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-0.5">Sua ponte direta com os clientes</p>
+                  </div>
+                </div>
                 {status === "connected" && (
-                  <Badge className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border-emerald-500/20 gap-1.5">
-                    <Activity className="w-3 h-3 animate-pulse" />
-                    Sessão Ativa
-                  </Badge>
+                  <div className="flex items-center gap-2 rounded-2xl bg-emerald-500/10 px-4 py-2 text-emerald-600 border border-emerald-500/20">
+                    <Activity className="h-4 w-4 animate-pulse" />
+                    <span className="text-xs font-bold uppercase tracking-wider">Operacional</span>
+                  </div>
                 )}
               </div>
             </CardHeader>
-            <CardContent className="pt-6">
+            <CardContent className="relative z-10 pt-8 pb-10">
               {status === "connected" ? (
-                <div className="space-y-4">
-                  <div className="flex flex-col md:flex-row items-stretch gap-4 p-5 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 shadow-inner">
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                      <CheckCircle2 className="w-8 h-8" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="font-semibold text-emerald-800 dark:text-emerald-300">Conectado</p>
+                <div className="mx-auto max-w-4xl space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="md:col-span-2 flex flex-col justify-between gap-6 p-8 rounded-[32px] bg-emerald-500/5 border border-emerald-500/20 shadow-inner">
+                      <div className="flex items-start gap-5">
+                        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-3xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 shadow-lg">
+                          <CheckCircle2 className="w-9 h-9" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-xl font-bold text-foreground">Sua conexão está saudável</h3>
+                            <Badge className="bg-emerald-500 text-white border-none text-[10px] h-5">LIVE</Badge>
+                          </div>
                           {phoneNumber && (
-                            <p className="text-sm text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5 mt-0.5">
-                              <Phone className="w-3.5 h-3.5" />
+                            <p className="text-lg font-medium text-muted-foreground flex items-center gap-2 mt-1">
+                              <Phone className="w-4 h-4 text-emerald-500" />
                               {formatPhone(phoneNumber)}
                             </p>
                           )}
                         </div>
-                        <Badge variant="outline" className="border-emerald-300 text-emerald-700 dark:text-emerald-300 shrink-0">
-                          Ativo
-                        </Badge>
                       </div>
 
-                      <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 pt-3 border-t border-emerald-200/60 dark:border-emerald-800/60">
-                        <div className="flex items-center gap-1.5 text-xs text-emerald-700/80 dark:text-emerald-400/80">
-                          <Clock className="w-3 h-3" />
-                          <span>Conectado {formatRelative(connectedAt)}</span>
+                      <div className="grid grid-cols-2 gap-4 pt-6 border-t border-emerald-500/10">
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Tempo de Atividade</p>
+                          <p className="text-sm font-medium text-foreground">{formatRelative(connectedAt)}</p>
                         </div>
-                        <div className="flex items-center gap-1.5 text-xs text-emerald-700/80 dark:text-emerald-400/80">
-                          <RefreshCw className="w-3 h-3" />
-                          <span>Verificado {formatRelative(lastChecked?.toISOString() ?? null)}</span>
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">ID da Instância</p>
+                          <p className="text-sm font-mono text-foreground truncate">{instanceId}</p>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    <Button onClick={() => setTestOpen(true)} variant="outline" className="gap-2">
-                      <Send className="w-4 h-4" />
-                      Enviar mensagem de teste
-                    </Button>
-                    <Button onClick={handleReconnect} disabled={reconnecting} variant="outline" className="gap-2">
-                      {reconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCw className="w-4 h-4" />}
-                      {reconnecting ? "Reconectando..." : "Reconectar"}
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={handleDisconnect}
-                      disabled={disconnecting}
-                      className="gap-2"
-                    >
-                      {disconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <PowerOff className="w-4 h-4" />}
-                      {disconnecting ? "Desconectando..." : "Desconectar"}
-                    </Button>
+                    <div className="flex flex-col gap-3">
+                      <Button onClick={() => setTestOpen(true)} className="h-14 w-full gap-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all shadow-sm">
+                        <Send className="w-5 h-5" />
+                        <span className="font-semibold">Testar Disparo</span>
+                      </Button>
+                      <Button onClick={handleReconnect} disabled={reconnecting} variant="outline" className="h-14 w-full gap-3 rounded-2xl border-border/60 hover:border-gold/30 hover:bg-gold/5 transition-all">
+                        {reconnecting ? <Loader2 className="w-5 h-5 animate-spin" /> : <RotateCw className="w-5 h-5" />}
+                        <span className="font-semibold">{reconnecting ? "Reiniciando..." : "Reiniciar Sessão"}</span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        onClick={handleDisconnect}
+                        disabled={disconnecting}
+                        className="h-14 w-full gap-3 rounded-2xl text-destructive hover:bg-destructive/5 transition-all"
+                      >
+                        {disconnecting ? <Loader2 className="w-5 h-5 animate-spin" /> : <PowerOff className="w-5 h-5" />}
+                        <span className="font-semibold">Desconectar Agora</span>
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <Card className="border-border/40 bg-muted/20 shadow-none hover:border-gold/20 transition-all cursor-default group">
+                      <CardContent className="p-4 flex items-center gap-3">
+                        <div className="p-2 rounded-xl bg-gold/10 text-gold group-hover:scale-110 transition-transform">
+                          <Zap className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-medium text-muted-foreground uppercase">Automações</p>
+                          <p className="text-sm font-bold">Resiliência Máxima</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    {/* Mais cards de status rápido aqui... */}
                   </div>
                 </div>
               ) : status === "connecting" && qrSrc ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      Escaneie o QR Code no seu WhatsApp...
-                    </div>
-                    <span className="text-xs tabular-nums">
-                      QR renova em {Math.max(0, 30 - qrAge)}s
-                    </span>
+                <div className="mx-auto max-w-lg space-y-8 py-4 text-center">
+                  <div className="space-y-2">
+                    <h3 className="text-2xl font-bold text-foreground">Conecte seu WhatsApp</h3>
+                    <p className="text-muted-foreground">Escaneie o código abaixo com o aparelho que enviará as mensagens.</p>
                   </div>
-                  <div className="flex justify-center p-4 bg-white rounded-xl border max-w-xs mx-auto">
+
+                  <div className="relative mx-auto w-fit p-8 bg-white rounded-[40px] border shadow-2xl transition-all hover:scale-[1.02]">
+                    <div className="absolute inset-0 border-[12px] border-primary/5 rounded-[40px] pointer-events-none" />
                     <img
                       src={qrSrc}
                       alt="QR Code WhatsApp"
-                      className="w-64 h-64 object-contain"
+                      className="w-64 h-64 object-contain relative z-10"
                     />
-                  </div>
-                  <p className="text-xs text-center text-muted-foreground">
-                    Abra o WhatsApp → Menu (⋮) → Aparelhos conectados → Conectar aparelho
-                  </p>
-                  <div className="flex justify-center">
-                    <Button onClick={refreshQrCode} variant="ghost" size="sm" className="gap-2 text-xs">
-                      <RotateCw className="w-3 h-3" />
-                      Gerar novo QR Code agora
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border">
-                    <XCircle className="w-8 h-8 text-muted-foreground shrink-0" />
-                    <div>
-                      <p className="font-medium text-foreground">Desconectado</p>
-                      <p className="text-sm text-muted-foreground">
-                        Nenhum WhatsApp vinculado no momento.
-                      </p>
+                    <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-primary px-6 py-2 text-[10px] font-bold text-primary-foreground shadow-xl tabular-nums">
+                      RENOVA EM {Math.max(0, 30 - qrAge)}s
                     </div>
                   </div>
-                  <Button onClick={handleConnect} disabled={loading} className="gap-2">
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Power className="w-4 h-4" />}
-                    {loading ? "Gerando QR Code..." : "Conectar WhatsApp"}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
+                    <div className="flex gap-3 p-4 rounded-2xl bg-muted/30 border border-border/40">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold/10 text-gold">1</div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">Abra o <strong>WhatsApp</strong> no seu celular</p>
+                    </div>
+                    <div className="flex gap-3 p-4 rounded-2xl bg-muted/30 border border-border/40">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gold/10 text-gold">2</div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">Vá em <strong>Aparelhos Conectados</strong> e escaneie</p>
+                    </div>
+                  </div>
+
+                  <Button onClick={refreshQrCode} variant="ghost" size="sm" className="gap-2 text-xs hover:bg-gold/5 hover:text-gold transition-colors">
+                    <RotateCw className="w-3 h-3" />
+                    Não está carregando? Gerar novo QR
                   </Button>
+                </div>
+              ) : (
+                <div className="mx-auto max-w-lg space-y-8 py-10 text-center">
+                  <div className="flex justify-center">
+                    <div className="relative">
+                      <div className="absolute inset-0 animate-ping rounded-full bg-primary/20" />
+                      <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-muted border-4 border-background shadow-xl text-muted-foreground">
+                        <PowerOff className="h-10 w-10" />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <h3 className="text-2xl font-bold text-foreground">Pronto para escalar?</h3>
+                    <p className="text-muted-foreground leading-relaxed">Conecte sua conta WhatsApp para disparar automações de vendas, recuperação de carrinho e lembretes PIX em tempo real.</p>
+                  </div>
+
+                  <Button 
+                    onClick={handleConnect} 
+                    disabled={loading} 
+                    className="h-16 w-full gap-3 rounded-[24px] bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-primary/20"
+                  >
+                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <Zap className="h-6 w-6 fill-primary-foreground" />}
+                    <span className="text-lg font-bold">{loading ? "Gerando QR Code..." : "Ativar Automação Agora"}</span>
+                  </Button>
+                  
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-widest">Ativação instantânea via QR Code</p>
                 </div>
               )}
             </CardContent>

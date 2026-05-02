@@ -111,17 +111,17 @@ const TemplateCard = ({
   return (
     <motion.button
       animate={{ opacity: 1, y: 0 }}
-      className="group relative overflow-hidden rounded-[28px] border border-border/60 bg-card/95 p-5 text-left shadow-sm transition-all hover:-translate-y-1 hover:border-gold/35 hover:shadow-[0_24px_60px_hsl(var(--gold)/0.08)]"
+      className="group relative flex flex-col overflow-hidden rounded-[32px] border border-border/60 bg-card/95 p-6 text-left shadow-sm transition-all hover:-translate-y-1.5 hover:border-gold/40 hover:shadow-[0_32px_80px_hsl(var(--gold)/0.12)]"
       initial={{ opacity: 0, y: 16 }}
       onClick={() => onOpen(template)}
       type="button"
     >
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/70 to-transparent" />
+      <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-gold/30 via-gold to-gold/30 opacity-0 transition-opacity group-hover:opacity-100" />
 
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-gold/20 bg-gold/10 text-gold">
-            <Icon className="h-5 w-5" />
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-gold/20 bg-gold/10 text-gold shadow-lg transition-transform group-hover:scale-110">
+            <Icon className="h-6 w-6" />
           </div>
           <div className="min-w-0">
             <h3 className="truncate font-display text-lg font-semibold text-foreground">{template.name}</h3>
@@ -132,8 +132,8 @@ const TemplateCard = ({
         <Badge variant={template.active ? "default" : "secondary"}>{template.active ? "Ativo" : "Inativo"}</Badge>
       </div>
 
-      <div className="mt-5 rounded-[22px] border border-border/60 bg-background/60 p-4">
-        <p className="line-clamp-3 whitespace-pre-wrap text-sm leading-relaxed text-foreground/88">{template.body}</p>
+      <div className="mt-6 rounded-2xl border border-border/40 bg-background/40 p-5 backdrop-blur-sm">
+        <p className="line-clamp-4 whitespace-pre-wrap text-[13px] leading-relaxed text-foreground/80">{template.body}</p>
       </div>
 
       <div className="mt-4 flex items-center gap-2 overflow-hidden">
@@ -149,7 +149,7 @@ const TemplateCard = ({
           <ArrowRight className="h-3.5 w-3.5" />
         </div>
         <div className="ml-auto flex items-center gap-1.5">
-          <span className="text-xs text-muted-foreground mr-1">{template.variables.length} variáveis</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mr-1">{template.variables.length} variáveis</span>
           <button
             className="rounded-full border border-border/60 p-1.5 text-muted-foreground transition-colors hover:border-gold/40 hover:text-gold"
             onClick={(event) => {
