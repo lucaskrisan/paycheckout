@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
 
     console.log(`Sending webhook to GatFlow for user ${user_id}, plan ${plan_name}`);
 
-    const response = await fetch('https://gatflow.com/api/webhooks/panttera', {
+    const response = await fetch('https://izclmoxvjujxatfivcqv.supabase.co/functions/v1/webhook-panttera', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
