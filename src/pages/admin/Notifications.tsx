@@ -141,6 +141,10 @@ const Notifications = () => {
           report_12: data.report_12,
           report_18: data.report_18,
           report_23: data.report_23,
+          product_whitelist: data.product_whitelist || null,
+          quiet_hours_enabled: data.quiet_hours_enabled ?? false,
+          quiet_hours_start: data.quiet_hours_start || "22:00",
+          quiet_hours_end: data.quiet_hours_end || "08:00",
         });
       }
       setLoading(false);
