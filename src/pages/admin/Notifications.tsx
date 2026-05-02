@@ -28,6 +28,10 @@ interface NotifSettings {
   report_12: boolean;
   report_18: boolean;
   report_23: boolean;
+  product_whitelist: string[] | null;
+  quiet_hours_enabled: boolean;
+  quiet_hours_start: string;
+  quiet_hours_end: string;
 }
 
 const NOTIFICATION_SOUNDS = [
