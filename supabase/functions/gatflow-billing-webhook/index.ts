@@ -55,13 +55,9 @@ Deno.serve(async (req) => {
     }
 
     const payload = {
-      event: 'billing.subscription.updated',
-      timestamp: Math.floor(Date.now() / 1000),
-      data: {
-        panttera_store_id: user_id,
-        plan_name: plan_name, // Starter, Pro, Black
-        status: status || 'active'
-      }
+      event: status === 'uninstalled' ? 'app.uninstalled' : 'subscription.updated',
+      shop_id: user_id,
+      plan_tier: plan_name // Starter, Pro, Black
     };
 
     const body = JSON.stringify(payload);
