@@ -245,9 +245,9 @@ const CheckoutBuilder = () => {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-muted/30">
+    <div className="h-screen flex flex-col bg-muted/30 overflow-hidden">
       {/* Top bar */}
-      <div className="h-12 bg-card border-b border-border flex items-center justify-between px-4 shrink-0">
+      <div className="h-12 bg-card border-b border-border flex items-center justify-between px-4 shrink-0 z-50">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate(`/admin/products/${productId}/edit`)}
@@ -304,9 +304,10 @@ const CheckoutBuilder = () => {
         onDragEnd={handleDragEnd}
       >
       {/* Main area */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Canvas */}
-        <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Canvas Area */}
+        <div className="flex-1 overflow-auto bg-muted/30 p-6 flex flex-col items-center">
+          <div className="w-full h-fit flex flex-col items-center">
             <BuilderCanvas
               components={components}
               selectedId={selectedId}
@@ -316,11 +317,12 @@ const CheckoutBuilder = () => {
               productImageUrl={product?.image_url || null}
               productName={product?.name || ""}
             />
+          </div>
         </div>
 
-        {/* Right panel */}
-        <div className="w-72 border-l border-border bg-card overflow-auto shrink-0">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
+        {/* Right panel (Sidebar) */}
+        <div className="w-80 border-l border-border bg-card flex flex-col shrink-0 z-40">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
             <TabsList className="w-full rounded-none bg-transparent border-b border-border h-auto p-0">
               <TabsTrigger
                 value="components"
@@ -342,16 +344,16 @@ const CheckoutBuilder = () => {
               </TabsTrigger>
             </TabsList>
 
-            <div className="p-4">
-              <TabsContent value="components" className="mt-0">
+            <div className="flex-1 overflow-auto p-4">
+              <TabsContent value="components" className="mt-0 focus-visible:outline-none">
                 <ComponentPalette />
               </TabsContent>
 
-              <TabsContent value="links" className="mt-0">
+              <TabsContent value="links" className="mt-0 focus-visible:outline-none">
                 <p className="text-xs text-muted-foreground">Links de checkout disponíveis em breve.</p>
               </TabsContent>
 
-              <TabsContent value="config" className="mt-0">
+              <TabsContent value="config" className="mt-0 focus-visible:outline-none">
                 {selectedComponent ? (
                   <ComponentEditor
                     component={selectedComponent}

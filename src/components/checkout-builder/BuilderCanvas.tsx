@@ -123,7 +123,7 @@ const BuilderCanvas = ({ components, selectedId, onRemove, onSelect, isMobile, p
 
   return (
     <div
-      className={`mx-auto rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.05)] overflow-hidden ${isMobile ? "max-w-[375px]" : "max-w-[900px]"}`}
+      className={`mx-auto rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.05)] overflow-hidden w-full ${isMobile ? "max-w-[375px]" : "max-w-[900px]"}`}
       style={{ backgroundColor: "#F2F4F8", fontFamily: "Arial, sans-serif" }}
     >
       {/* Topbar preview */}
