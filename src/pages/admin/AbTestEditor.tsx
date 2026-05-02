@@ -260,10 +260,10 @@ function PageNode({ id, data }: NodeProps<Node<PageData, "page">>) {
       subtitle={isPaused ? "PAUSADA" : data.subtitle}
       nodeId={id}
       onDelete={(nodeId) => {
-        const ns = reactFlow.getNodes();
-        const es = reactFlow.getEdges();
-        reactFlow.setNodes(ns.filter(n => n.id !== nodeId));
-        reactFlow.setEdges(es.filter(e => e.source !== nodeId && e.target !== nodeId));
+        const ns = reactFlow.getNodes().filter(Boolean);
+        const es = reactFlow.getEdges().filter(Boolean);
+        reactFlow.setNodes(ns.filter(n => n && n.id !== nodeId));
+        reactFlow.setEdges(es.filter(e => e && e.source !== nodeId && e.target !== nodeId));
       }}
     >
       {data.stats && (
