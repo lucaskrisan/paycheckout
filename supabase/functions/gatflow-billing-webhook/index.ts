@@ -50,8 +50,8 @@ Deno.serve(async (req) => {
       .eq('name', 'GatFlow')
       .single();
 
-    if (!partner?.webhook_secret) {
-      throw new Error('GatFlow webhook secret not found');
+    if (!partner?.shared_secret) {
+      throw new Error('GatFlow shared secret not found');
     }
 
     const payload = {
