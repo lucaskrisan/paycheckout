@@ -57,6 +57,9 @@ const AbandonedCarts = () => {
   const [emailButtonColor, setEmailButtonColor] = useState("#22c55e");
   const [secondEmailEnabled, setSecondEmailEnabled] = useState(true);
   const [secondEmailDelay, setSecondEmailDelay] = useState("24");
+  const [whatsappEnabled, setWhatsappEnabled] = useState(false);
+  const [whatsappDelay, setWhatsappDelay] = useState("15");
+  const [whatsappMessage, setWhatsappMessage] = useState("Olá {nome}! 🛒 Vi que você deixou alguns itens no carrinho. Use o cupom VOLTEJA para ganhar 10% de desconto e finalizar sua compra agora: {link}");
 
   // Filters
   const [filterRecovered, setFilterRecovered] = useState<boolean[]>([]);
@@ -72,7 +75,7 @@ const AbandonedCarts = () => {
       if (!user) return;
       const { data } = await supabase
         .from("cart_recovery_settings")
-        .select("email_enabled, email_delay_minutes, email_subject, email_heading, email_button_text, email_button_color, second_email_enabled, second_email_delay_hours")
+        .select("email_enabled, email_delay_minutes, email_subject, email_heading, email_button_text, email_button_color, second_email_enabled, second_email_delay_hours, whatsapp_enabled, whatsapp_delay_minutes, whatsapp_message_template")
         .eq("user_id", user.id)
         .maybeSingle();
       if (data) {
@@ -84,6 +87,9 @@ const AbandonedCarts = () => {
         if (data.email_button_color) setEmailButtonColor(data.email_button_color);
         setSecondEmailEnabled(data.second_email_enabled ?? true);
         if (data.second_email_delay_hours) setSecondEmailDelay(String(data.second_email_delay_hours));
+        setWhatsappEnabled(data.whatsapp_enabled ?? false);
+        if (data.whatsapp_delay_minutes) setWhatsappDelay(String(data.whatsapp_delay_minutes));
+        if (data.whatsapp_message_template) setWhatsappMessage(data.whatsapp_message_template);
       }
     };
     loadSettings();
@@ -381,6 +387,58 @@ const AbandonedCarts = () => {
                         <SelectItem value="48">48 horas</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                )}
+              </div>
+
+              {/* WhatsApp Recovery */}
+              <div className="pt-4 mt-4 border-t border-border space-y-3">
+                <p className="text-sm font-medium text-foreground">Recuperação por WhatsApp</p>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="flex items-center gap-3">
+                    <Switch
+                      checked={whatsappEnabled}
+                      onCheckedChange={(checked) => {
+                        setWhatsappEnabled(checked);
+                        saveRecoverySetting("whatsapp_enabled", checked);
+                      }}
+                    />
+                    <Label className="text-sm font-medium cursor-pointer">
+                      Ativar recuperação por WhatsApp
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm text-muted-foreground whitespace-nowrap">Enviar após:</Label>
+                    <Select
+                      value={whatsappDelay}
+                      onValueChange={(val) => {
+                        setWhatsappDelay(val);
+                        saveRecoverySetting("whatsapp_delay_minutes", Number(val));
+                      }}
+                    >
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5">5 min</SelectItem>
+                        <SelectItem value="15">15 min</SelectItem>
+                        <SelectItem value="30">30 min</SelectItem>
+                        <SelectItem value="60">1 hora</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {whatsappEnabled && (
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Template da mensagem (use {"{nome}"} e {"{link}"})</Label>
+                    <textarea
+                      value={whatsappMessage}
+                      onChange={(e) => setWhatsappMessage(e.target.value)}
+                      onBlur={() => saveRecoverySetting("whatsapp_message_template", whatsappMessage)}
+                      className="w-full min-h-[100px] p-3 text-sm rounded-md border border-input bg-background"
+                      placeholder="Olá {nome}! Vi que você esqueceu alguns itens..."
+                    />
                   </div>
                 )}
               </div>
