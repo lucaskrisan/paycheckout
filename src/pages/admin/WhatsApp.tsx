@@ -44,6 +44,9 @@ const formatRelative = (iso: string | null) => {
 
 const WhatsApp = () => {
   const { user, isSuperAdmin } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const defaultTab = searchParams.get("tab") || "connection";
+  
   const [loading, setLoading] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [reconnecting, setReconnecting] = useState(false);
