@@ -632,7 +632,7 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
   return (
     <motion.div
       animate={{ opacity: 1 }}
-      className="fixed inset-0 z-50 flex bg-background"
+      className="absolute inset-0 z-50 flex bg-background"
       initial={{ opacity: 0 }}
     >
       <FlowSidebar onAddNode={handleAddNode} />
