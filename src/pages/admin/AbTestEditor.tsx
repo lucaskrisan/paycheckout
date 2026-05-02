@@ -938,8 +938,8 @@ function EditorInner() {
   const onConnect = useCallback(
     (c: Connection) => {
       // Find source/target nodes to decide color
-      const sourceNode = nodes.find(n => n.id === c.source);
-      const targetNode = nodes.find(n => n.id === c.target);
+      const sourceNode = nodes.filter(Boolean).find(n => n.id === c.source);
+      const targetNode = nodes.filter(Boolean).find(n => n.id === c.target);
       
       let edgeColor = "#a855f7"; // default purple
       if (sourceNode?.type === "creative" || targetNode?.type === "creative") edgeColor = "#ec4899";
