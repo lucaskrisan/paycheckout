@@ -2,9 +2,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -26,8 +27,16 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Loader2, MessageSquare, CheckCircle2, XCircle, RefreshCw, ChevronLeft, ChevronRight, Check, CheckCheck } from "lucide-react";
-import { format } from "date-fns";
+import { 
+  Loader2, MessageSquare, CheckCircle2, XCircle, RefreshCw, 
+  ChevronLeft, ChevronRight, Check, CheckCheck, Search, Filter, 
+  Calendar as CalendarIcon, Eye, EyeOff 
+} from "lucide-react";
+import { format, subDays, startOfDay, endOfDay } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 interface LogEntry {
   id: string;
@@ -98,6 +107,9 @@ const WhatsAppSendLog = () => {
   const [hasMore, setHasMore] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [search, setSearch] = useState("");
+  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [showFullPhone, setShowFullPhone] = useState(false);
 
   const fetchLogs = useCallback(async () => {
     if (!user) return;
@@ -105,7 +117,7 @@ const WhatsAppSendLog = () => {
 
     let query = supabase
       .from("whatsapp_send_log")
-      .select("*")
+      .select("*", { count: "exact" })
       .order("created_at", { ascending: false })
       .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
@@ -115,23 +127,35 @@ const WhatsAppSendLog = () => {
     if (filterCategory !== "all") {
       query = query.eq("template_category", filterCategory);
     }
+    if (search) {
+      query = query.or(`customer_phone.ilike.%${search}%,message_body.ilike.%${search}%,order_id.ilike.%${search}%`);
+    }
+    if (date) {
+      const start = startOfDay(date).toISOString();
+      const end = endOfDay(date).toISOString();
+      query = query.gte("created_at", start).lte("created_at", end);
+    }
 
-    const { data, error } = await query;
+    const { data, error, count } = await query;
 
     if (error) {
       console.error("Error fetching logs:", error);
     } else {
       setLogs((data || []) as LogEntry[]);
-      setHasMore((data || []).length > PAGE_SIZE);
+      setHasMore(count ? count > (page + 1) * PAGE_SIZE : false);
     }
     setLoading(false);
-  }, [user, page, filterStatus, filterCategory]);
+  }, [user, page, filterStatus, filterCategory, search, date]);
 
   useEffect(() => {
-    fetchLogs();
+    const timer = setTimeout(() => {
+      fetchLogs();
+    }, 500);
+    return () => clearTimeout(timer);
   }, [fetchLogs]);
 
   const maskPhone = (phone: string) => {
+    if (showFullPhone) return phone;
     const d = phone.replace(/\D/g, "");
     if (d.length >= 10) {
       return `${d.slice(0, 4)}****${d.slice(-2)}`;
@@ -140,38 +164,99 @@ const WhatsAppSendLog = () => {
   };
 
   return (
-    <Card>
+    <Card className="border-border/50 shadow-sm">
       <CardHeader className="pb-3">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle className="text-base flex items-center gap-2">
-            <MessageSquare className="w-5 h-5" />
-            Histórico de Envios WhatsApp
-          </CardTitle>
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <CardTitle className="text-lg flex items-center gap-2 font-display">
+                <MessageSquare className="w-5 h-5 text-gold" />
+                Histórico de Envios
+              </CardTitle>
+              <CardDescription>
+                Acompanhe em tempo real o status de cada mensagem enviada.
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setShowFullPhone(!showFullPhone)}
+                title={showFullPhone ? "Mascarar números" : "Mostrar números completos"}
+              >
+                {showFullPhone ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+              <Button variant="outline" size="sm" className="gap-1.5 h-9" onClick={() => { setPage(0); fetchLogs(); }}>
+                <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
+                Sincronizar
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+            <div className="relative col-span-1 md:col-span-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Telefone, mensagem..."
+                className="pl-9 h-9 text-xs"
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+              />
+            </div>
+            
             <Select value={filterStatus} onValueChange={(v) => { setFilterStatus(v); setPage(0); }}>
-              <SelectTrigger className="w-[130px] h-9 text-xs">
+              <SelectTrigger className="h-9 text-xs">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="all">Todos os Status</SelectItem>
                 <SelectItem value="sent">Enviado</SelectItem>
                 <SelectItem value="failed">Falhou</SelectItem>
               </SelectContent>
             </Select>
+
             <Select value={filterCategory} onValueChange={(v) => { setFilterCategory(v); setPage(0); }}>
-              <SelectTrigger className="w-[140px] h-9 text-xs">
-                <SelectValue placeholder="Categoria" />
+              <SelectTrigger className="h-9 text-xs">
+                <SelectValue placeholder="Todas Categorias" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
+                <SelectItem value="all">Todas Categorias</SelectItem>
                 {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
                   <SelectItem key={k} value={k}>{v}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={fetchLogs}>
-              <RefreshCw className="h-3.5 w-3.5" />
-            </Button>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "h-9 text-xs justify-start text-left font-normal w-full",
+                    !date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {date ? format(date, "PPP", { locale: ptBR }) : "Filtrar por data"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={(d) => { setDate(d); setPage(0); }}
+                  initialFocus
+                  locale={ptBR}
+                />
+                {date && (
+                  <div className="p-2 border-t flex justify-center">
+                    <Button variant="ghost" size="sm" className="text-xs" onClick={() => { setDate(undefined); setPage(0); }}>
+                      Limpar data
+                    </Button>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </CardHeader>
@@ -186,7 +271,7 @@ const WhatsAppSendLog = () => {
           </div>
         ) : (
           <>
-            <div className="rounded-lg border overflow-x-auto">
+            <div className="rounded-xl border border-border/50 overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -199,7 +284,7 @@ const WhatsAppSendLog = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {logs.slice(0, PAGE_SIZE).map((log) => (
+                  {logs.map((log) => (
                     <TableRow key={log.id}>
                       <TableCell className="text-xs whitespace-nowrap">
                         {format(new Date(log.created_at), "dd/MM HH:mm")}
