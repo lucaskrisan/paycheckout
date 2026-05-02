@@ -343,6 +343,31 @@ const WhatsAppTemplates = () => {
     await fetchTemplates();
   };
 
+  const handleDuplicate = async (template: Template) => {
+    if (!user) return;
+    setSaving(true);
+    const payload = {
+      name: `${template.name} (Cópia)`,
+      category: template.category,
+      body: template.body,
+      active: template.active,
+      user_id: user.id,
+      variables: template.variables,
+      flow_nodes: template.flow_nodes,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error } = await supabase.from("whatsapp_templates").insert(payload);
+
+    if (error) {
+      toast.error("Erro ao duplicar template");
+    } else {
+      toast.success("Template duplicado com sucesso");
+      await fetchTemplates();
+    }
+    setSaving(false);
+  };
+
   if (builderTemplate) {
     return (
       <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
