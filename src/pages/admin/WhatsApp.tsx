@@ -370,60 +370,75 @@ const WhatsApp = () => {
                 )}
               </div>
             </CardHeader>
-            <CardContent className="pt-6">
+            <CardContent className="relative z-10 pt-8 pb-10">
               {status === "connected" ? (
-                <div className="space-y-4">
-                  <div className="flex flex-col md:flex-row items-stretch gap-4 p-5 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 shadow-inner">
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                      <CheckCircle2 className="w-8 h-8" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="font-semibold text-emerald-800 dark:text-emerald-300">Conectado</p>
+                <div className="mx-auto max-w-4xl space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="md:col-span-2 flex flex-col justify-between gap-6 p-8 rounded-[32px] bg-emerald-500/5 border border-emerald-500/20 shadow-inner">
+                      <div className="flex items-start gap-5">
+                        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-3xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 shadow-lg">
+                          <CheckCircle2 className="w-9 h-9" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-xl font-bold text-foreground">Sua conexão está saudável</h3>
+                            <Badge className="bg-emerald-500 text-white border-none text-[10px] h-5">LIVE</Badge>
+                          </div>
                           {phoneNumber && (
-                            <p className="text-sm text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5 mt-0.5">
-                              <Phone className="w-3.5 h-3.5" />
+                            <p className="text-lg font-medium text-muted-foreground flex items-center gap-2 mt-1">
+                              <Phone className="w-4 h-4 text-emerald-500" />
                               {formatPhone(phoneNumber)}
                             </p>
                           )}
                         </div>
-                        <Badge variant="outline" className="border-emerald-300 text-emerald-700 dark:text-emerald-300 shrink-0">
-                          Ativo
-                        </Badge>
                       </div>
 
-                      <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2 pt-3 border-t border-emerald-200/60 dark:border-emerald-800/60">
-                        <div className="flex items-center gap-1.5 text-xs text-emerald-700/80 dark:text-emerald-400/80">
-                          <Clock className="w-3 h-3" />
-                          <span>Conectado {formatRelative(connectedAt)}</span>
+                      <div className="grid grid-cols-2 gap-4 pt-6 border-t border-emerald-500/10">
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Tempo de Atividade</p>
+                          <p className="text-sm font-medium text-foreground">{formatRelative(connectedAt)}</p>
                         </div>
-                        <div className="flex items-center gap-1.5 text-xs text-emerald-700/80 dark:text-emerald-400/80">
-                          <RefreshCw className="w-3 h-3" />
-                          <span>Verificado {formatRelative(lastChecked?.toISOString() ?? null)}</span>
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">ID da Instância</p>
+                          <p className="text-sm font-mono text-foreground truncate">{instanceId}</p>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    <Button onClick={() => setTestOpen(true)} variant="outline" className="gap-2">
-                      <Send className="w-4 h-4" />
-                      Enviar mensagem de teste
-                    </Button>
-                    <Button onClick={handleReconnect} disabled={reconnecting} variant="outline" className="gap-2">
-                      {reconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCw className="w-4 h-4" />}
-                      {reconnecting ? "Reconectando..." : "Reconectar"}
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={handleDisconnect}
-                      disabled={disconnecting}
-                      className="gap-2"
-                    >
-                      {disconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <PowerOff className="w-4 h-4" />}
-                      {disconnecting ? "Desconectando..." : "Desconectar"}
-                    </Button>
+                    <div className="flex flex-col gap-3">
+                      <Button onClick={() => setTestOpen(true)} className="h-14 w-full gap-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all shadow-sm">
+                        <Send className="w-5 h-5" />
+                        <span className="font-semibold">Testar Disparo</span>
+                      </Button>
+                      <Button onClick={handleReconnect} disabled={reconnecting} variant="outline" className="h-14 w-full gap-3 rounded-2xl border-border/60 hover:border-gold/30 hover:bg-gold/5 transition-all">
+                        {reconnecting ? <Loader2 className="w-5 h-5 animate-spin" /> : <RotateCw className="w-5 h-5" />}
+                        <span className="font-semibold">{reconnecting ? "Reiniciando..." : "Reiniciar Sessão"}</span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        onClick={handleDisconnect}
+                        disabled={disconnecting}
+                        className="h-14 w-full gap-3 rounded-2xl text-destructive hover:bg-destructive/5 transition-all"
+                      >
+                        {disconnecting ? <Loader2 className="w-5 h-5 animate-spin" /> : <PowerOff className="w-5 h-5" />}
+                        <span className="font-semibold">Desconectar Agora</span>
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <Card className="border-border/40 bg-muted/20 shadow-none hover:border-gold/20 transition-all cursor-default group">
+                      <CardContent className="p-4 flex items-center gap-3">
+                        <div className="p-2 rounded-xl bg-gold/10 text-gold group-hover:scale-110 transition-transform">
+                          <Zap className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-medium text-muted-foreground uppercase">Automações</p>
+                          <p className="text-sm font-bold">Resiliência Máxima</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    {/* Mais cards de status rápido aqui... */}
                   </div>
                 </div>
               ) : status === "connecting" && qrSrc ? (
