@@ -50,13 +50,14 @@ import {
   MousePointer2,
   TrendingUp,
   Shield,
+  MessageSquare,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AbTestTutorial } from "@/components/admin/AbTestTutorial";
 
 // ---------------- Types ----------------
 
-type NodeKind = "config" | "abtest" | "page" | "checkout" | "creative" | "upsell";
+type NodeKind = "config" | "abtest" | "page" | "checkout" | "creative" | "upsell" | "whatsapp";
 
 type ConfigData = { kind: "config"; label: string; testName: string; entryUrl: string; visits: number; stickyDays?: number; impressions?: number; sales?: number; revenue?: number };
 type AbTestData = { kind: "abtest"; label: string; subtitle: string; splits: { label: string; weight: number }[] };
@@ -601,6 +602,7 @@ const PALETTE: { kind: NodeKind; label: string; icon: React.ReactNode; color: st
   { kind: "page", label: "Página de Vendas", icon: <FileText className="h-4 w-4" />, color: "#10b981" },
   { kind: "checkout", label: "Checkout", icon: <ShoppingCart className="h-4 w-4" />, color: "#f97316" },
   { kind: "upsell", label: "Upsell", icon: <TrendingUp className="h-4 w-4" />, color: "#8b5cf6" },
+  { kind: "whatsapp", label: "Recuperação Whats", icon: <MessageSquare className="h-4 w-4" />, color: "#25d366" },
 ];
 
 function PaletteItem({ kind, label, icon, color }: { kind: NodeKind; label: string; icon: React.ReactNode; color: string }) {
