@@ -302,12 +302,6 @@ const WhatsApp = () => {
         </div>
       </div>
 
-      {isSuperAdmin && (
-        <Suspense fallback={<div className="h-48 animate-pulse bg-muted rounded-xl" />}>
-          <WhatsAppBusinessConfig />
-        </Suspense>
-      )}
-
       {errorMsg && (
         <div className="flex items-start gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm">
           <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
