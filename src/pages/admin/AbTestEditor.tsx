@@ -742,7 +742,7 @@ function EditorInner() {
   // Reflect entry URL inside Config node
   useEffect(() => {
     setNodes((ns) =>
-      ns.map((n) =>
+      ns.filter(Boolean).map((n) =>
         n.id === "config"
           ? ({ ...n, data: { ...(n.data as ConfigData), entryUrl, testName: name } } as FlowNode)
           : n
