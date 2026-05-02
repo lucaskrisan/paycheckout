@@ -353,13 +353,13 @@ const CanvasNode = ({
             type="button"
           >
             <Workflow className="h-3.5 w-3.5" />
-            {connecting ? "Selecione o destino" : "Conectar"}
+            {pendingConnection === node.id ? "Aguardando destino..." : "Conectar"}
           </button>
 
           {/* Connection source point visual (absolute centered at bottom) */}
           <div 
             className={`flex h-5 w-5 items-center justify-center rounded-full border-2 bg-background transition-all ${
-              connecting ? "border-gold scale-110 shadow-[0_0_10px_hsl(var(--gold))]" : "border-gold/30 opacity-60"
+              pendingConnection === node.id ? "border-gold scale-125 shadow-[0_0_15px_hsl(var(--gold))]" : "border-gold/30 opacity-60"
             }`}
           >
             <div className="h-2.5 w-2.5 rounded-full bg-gold" />
