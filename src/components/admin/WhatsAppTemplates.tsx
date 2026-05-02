@@ -27,6 +27,7 @@ import {
   UserPlus,
   Workflow,
   Zap,
+  Copy,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -101,6 +102,7 @@ const TemplateCard = ({
 }: {
   onDelete: (template: Template) => void;
   onOpen: (template: Template) => void;
+  onDuplicate: (template: Template) => void;
   template: Template;
 }) => {
   const category = CATEGORIES.find((item) => item.value === template.category) || CATEGORIES[CATEGORIES.length - 1];
@@ -146,8 +148,19 @@ const TemplateCard = ({
         <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-gold/20 bg-gold/10 text-gold">
           <ArrowRight className="h-3.5 w-3.5" />
         </div>
-        <div className="ml-auto flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">{template.variables.length} variáveis</span>
+        <div className="ml-auto flex items-center gap-1.5">
+          <span className="text-xs text-muted-foreground mr-1">{template.variables.length} variáveis</span>
+          <button
+            className="rounded-full border border-border/60 p-1.5 text-muted-foreground transition-colors hover:border-gold/40 hover:text-gold"
+            onClick={(event) => {
+              event.stopPropagation();
+              onDuplicate(template);
+            }}
+            title="Duplicar"
+            type="button"
+          >
+            <Copy className="h-3.5 w-3.5" />
+          </button>
           <button
             className="rounded-full border border-border/60 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-destructive/40 hover:text-destructive"
             onClick={(event) => {
@@ -330,6 +343,31 @@ const WhatsAppTemplates = () => {
     await fetchTemplates();
   };
 
+  const handleDuplicate = async (template: Template) => {
+    if (!user) return;
+    setSaving(true);
+    const payload = {
+      name: `${template.name} (Cópia)`,
+      category: template.category,
+      body: template.body,
+      active: template.active,
+      user_id: user.id,
+      variables: template.variables,
+      flow_nodes: template.flow_nodes,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error } = await supabase.from("whatsapp_templates").insert(payload);
+
+    if (error) {
+      toast.error("Erro ao duplicar template");
+    } else {
+      toast.success("Template duplicado com sucesso");
+      await fetchTemplates();
+    }
+    setSaving(false);
+  };
+
   if (builderTemplate) {
     return (
       <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
@@ -410,6 +448,7 @@ const WhatsAppTemplates = () => {
                       key={template.id}
                       onDelete={setDeleteTarget}
                       onOpen={openBuilderForTemplate}
+                      onDuplicate={handleDuplicate}
                       template={template}
                     />
                   ))}
