@@ -154,36 +154,52 @@ const ConnectionLines = ({ nodes }: { nodes: FlowNodeData[] }) => {
   return (
     <svg className="pointer-events-none absolute inset-0 z-[1] h-full w-full">
       {connections.map(({ from, to }, index) => {
-        // Center of the card horizontally (290/2)
+        // Horizontal center of 290px card
         const startX = from.x + 145;
-        // Start from bottom area - using a larger offset to be closer to the bottom of most cards
-        const startY = from.y + 160; 
+        
+        // Dynamic height estimation for the start point
+        let estimatedHeight = 180;
+        if (from.type === "paths" || from.type === "question") {
+          const optionsCount = from.config.options?.length || 0;
+          estimatedHeight = 180 + (optionsCount * 36);
+        } else if (from.type === "wait") {
+          estimatedHeight = 200;
+        } else if (from.config.body && from.config.body.length > 100) {
+          estimatedHeight = 220;
+        }
+
+        const startY = from.y + estimatedHeight;
         const endX = to.x + 145;
         const endY = to.y;
         
-        // Dynamic curvature based on distance
         const distY = Math.abs(endY - startY);
-        const deltaY = Math.max(60, distY * 0.6);
+        const deltaY = Math.max(70, distY * 0.5);
 
         return (
           <g key={`${from.id}-${to.id}-${index}`}>
+            {/* Glow effect / Background line */}
             <path
               d={`M${startX},${startY} C${startX},${startY + deltaY} ${endX},${endY - deltaY} ${endX},${endY}`}
               fill="none"
-              stroke="hsl(var(--gold) / 0.12)"
-              strokeWidth="12"
+              stroke="hsl(var(--gold) / 0.1)"
+              strokeWidth="10"
               strokeLinecap="round"
             />
+            {/* Main connection line */}
             <path
               d={`M${startX},${startY} C${startX},${startY + deltaY} ${endX},${endY - deltaY} ${endX},${endY}`}
+              className="transition-all duration-300"
               fill="none"
-              stroke="hsl(var(--gold) / 0.6)"
-              strokeWidth="3"
+              stroke="hsl(var(--gold) / 0.7)"
+              strokeWidth="2.5"
               strokeLinecap="round"
-              strokeDasharray={from.type === "wait" ? "8 4" : "none"}
+              strokeDasharray={from.type === "wait" ? "6 4" : "none"}
             />
-            <circle cx={startX} cy={startY} fill="hsl(var(--gold) / 0.8)" r="3" />
-            <circle cx={endX} cy={endY} fill="hsl(var(--gold))" r="5" />
+            {/* End arrowhead/point */}
+            <circle cx={endX} cy={endY} fill="hsl(var(--gold))" r="4.5" className="filter drop-shadow-[0_0_8px_hsl(var(--gold)/0.5)]" />
+            
+            {/* Source point marker */}
+            <circle cx={startX} cy={startY} fill="hsl(var(--gold)/0.8)" r="3" />
           </g>
         );
       })}
