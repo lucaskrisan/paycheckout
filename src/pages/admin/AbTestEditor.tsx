@@ -511,10 +511,10 @@ function UpsellNode({ id, data }: NodeProps<Node<UpsellData, "upsell">>) {
       subtitle={data.subtitle || "Venda Extra"}
       nodeId={id}
       onDelete={(nodeId) => {
-        const ns = reactFlow.getNodes();
-        const es = reactFlow.getEdges();
-        reactFlow.setNodes(ns.filter(n => n.id !== nodeId));
-        reactFlow.setEdges(es.filter(e => e.source !== nodeId && e.target !== nodeId));
+        const ns = reactFlow.getNodes().filter(Boolean);
+        const es = reactFlow.getEdges().filter(Boolean);
+        reactFlow.setNodes(ns.filter(n => n && n.id !== nodeId));
+        reactFlow.setEdges(es.filter(e => e && e.source !== nodeId && e.target !== nodeId));
       }}
     >
       <div className="space-y-3">
