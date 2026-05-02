@@ -920,14 +920,14 @@ function EditorInner() {
       } else if (kind === "creative") {
         newNode = { id, type: "creative", position, data: { kind: "creative", label: "Novo Criativo", subtitle: "Anúncio FB/IG", imageUrl: "", utmSource: "facebook", utmContent: "" } };
       } else if (kind === "page") {
-        const idx = nodes.filter((n) => n.type === "page").length;
+        const idx = nodes.filter((n) => n && n.type === "page").length;
         newNode = { id, type: "page", position, data: { kind: "page", label: `Página ${String.fromCharCode(65 + idx)}`, subtitle: "Landing Page", url: "" } };
       } else if (kind === "upsell") {
         newNode = { id, type: "upsell", position, data: { kind: "upsell", label: "Novo Upsell", subtitle: "Página de Upsell", url: "" } };
       } else if (kind === "whatsapp") {
         newNode = { id, type: "whatsapp", position, data: { kind: "whatsapp", label: "Recuperação WhatsApp", subtitle: "Automação", delay: 15, stats: { sent: 0, clicked: 0, recovered: 0, revenue: 0 } } };
       } else {
-        const idx = nodes.filter((n) => n.type === "checkout").length;
+        const idx = nodes.filter((n) => n && n.type === "checkout").length;
         newNode = { id, type: "checkout", position, data: { kind: "checkout", label: `Checkout ${String.fromCharCode(65 + idx)}`, subtitle: "Página de pagamento", productId: null, offerId: null, templateId: null } };
       }
       setNodes((ns) => [...ns, newNode]);
