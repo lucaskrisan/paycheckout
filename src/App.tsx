@@ -15,6 +15,9 @@ import { Loader2 } from "lucide-react";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+import PwaSettings from "./pages/admin/PwaSettings";
+import WhatsApp from "./pages/admin/WhatsApp";
+import AbTestEditor from "./pages/admin/AbTestEditor";
 
 // Lazy-loaded — admin shell must not be pulled into the public landing bundle
 const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
@@ -62,14 +65,14 @@ const Reviews = lazy(() => import("./pages/admin/Reviews"));
 const SystemHealth = lazy(() => import("./pages/admin/SystemHealth"));
 const Webhooks = lazy(() => import("./pages/admin/Webhooks"));
 const Emails = lazy(() => import("./pages/admin/Emails"));
-const PwaSettings = lazy(() => import("./pages/admin/PwaSettings"));
+// PwaSettings eagerly loaded above
 const Billing = lazy(() => import("./pages/admin/Billing"));
 const Upsell = lazy(() => import("./pages/admin/Upsell"));
 const Roadmap = lazy(() => import("./pages/admin/Roadmap"));
 const TechnicalManual = lazy(() => import("./pages/admin/TechnicalManual"));
 const PixelMirrors = lazy(() => import("./pages/admin/PixelMirrors"));
 const AbTests = lazy(() => import("./pages/admin/AbTests"));
-const AbTestEditor = lazy(() => import("./pages/admin/AbTestEditor"));
+// AbTestEditor eagerly loaded above
 const Domains = lazy(() => import("./pages/admin/Domains"));
 
 const MyAccount = lazy(() => import("./pages/admin/MyAccount"));
@@ -78,7 +81,7 @@ const ProducerBilling = lazy(() => import("./pages/admin/ProducerBilling"));
 const Blacklist = lazy(() => import("./pages/admin/Blacklist"));
 const ApiKeys = lazy(() => import("./pages/admin/ApiKeys"));
 const ProductReview = lazy(() => import("./pages/admin/ProductReview"));
-const WhatsApp = lazy(() => import("./pages/admin/WhatsApp"));
+// WhatsApp eagerly loaded above
 const VerificationReview = lazy(() => import("./pages/admin/VerificationReview"));
 const Analytics = lazy(() => import("./pages/admin/Analytics"));
 const MariaAI = lazy(() => import("./pages/admin/MariaAI"));
