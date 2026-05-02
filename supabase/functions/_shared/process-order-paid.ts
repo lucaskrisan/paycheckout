@@ -457,14 +457,44 @@ async function stepPushNotification(params: ProcessOrderPaidParams): Promise<voi
   try {
     const { data: notifSettings } = await supabase
       .from('notification_settings')
-      .select('send_approved, show_product_name')
+      .select('*')
       .eq('user_id', orderData.user_id)
-      .eq('send_approved', true)
       .maybeSingle();
 
-    if (!notifSettings) {
+    if (!notifSettings || notifSettings.send_approved === false) {
       console.log(`[${source}] Push skipped: send_approved is false or settings not found for user ${orderData.user_id}`);
       return;
+    }
+
+    // Check product whitelist
+    if (notifSettings.product_whitelist && Array.isArray(notifSettings.product_whitelist)) {
+      if (orderData.product_id && !notifSettings.product_whitelist.includes(orderData.product_id)) {
+        console.log(`[${source}] Push skipped: product ${orderData.product_id} not in whitelist`);
+        return;
+      }
+    }
+
+    // Check quiet hours
+    if (notifSettings.quiet_hours_enabled) {
+      const now = new Date();
+      const brTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+      const hours = brTime.getHours().toString().padStart(2, '0');
+      const mins = brTime.getMinutes().toString().padStart(2, '0');
+      const currentTimeStr = `${hours}:${mins}`;
+
+      const start = notifSettings.quiet_hours_start || "22:00";
+      const end = notifSettings.quiet_hours_end || "08:00";
+
+      let isQuiet = false;
+      if (start < end) {
+        if (currentTimeStr >= start && currentTimeStr <= end) isQuiet = true;
+      } else {
+        if (currentTimeStr >= start || currentTimeStr <= end) isQuiet = true;
+      }
+      if (isQuiet) {
+        console.log(`[${source}] Push skipped: quiet hours (${start}-${end})`);
+        return;
+      }
     }
 
     let productName = 'Produto';
