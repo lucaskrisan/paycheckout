@@ -14,7 +14,8 @@ export const getErrorMessage = (value: unknown): string => {
 
 export const isDynamicImportFailure = (value: unknown) => {
   const message = getErrorMessage(value);
-  return /Failed to fetch dynamically imported module|error loading dynamically imported module|Importing a module script failed/i.test(message);
+  // Also catches the generic React lazy error that sometimes manifests as undefined default
+  return /Failed to fetch dynamically imported module|error loading dynamically imported module|Importing a module script failed|Cannot read properties of undefined \(reading 'default'\)/i.test(message);
 };
 
 export const recoverFromDynamicImportFailure = () => {
