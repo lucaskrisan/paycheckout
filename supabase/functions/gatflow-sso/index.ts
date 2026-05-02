@@ -73,6 +73,7 @@ Deno.serve(async (req) => {
     const payload = {
       shop_id: shop_id,
       admin_email: admin_email,
+      iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + (5 * 60) // 5 minutes expiration
     };
 
