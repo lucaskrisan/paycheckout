@@ -265,7 +265,7 @@ const CanvasNode = ({
       <div
         className={`group w-[290px] overflow-hidden rounded-[24px] border bg-card/95 shadow-2xl backdrop-blur transition-all ${
           selected ? "border-gold/70 shadow-[0_0_40px_hsl(var(--gold)/0.16)]" : "border-border/70 hover:border-border/100"
-        } ${connecting ? "ring-2 ring-gold ring-offset-2 ring-offset-background" : ""}`}
+        } ${pendingConnection === node.id ? "ring-2 ring-gold ring-offset-2 ring-offset-background shadow-[0_0_20px_hsl(var(--gold)/0.4)]" : ""} ${pendingConnection && pendingConnection !== node.id ? "hover:ring-2 hover:ring-gold/50 cursor-pointer" : ""}`}
         onClick={(event) => {
           // If we are in connecting mode, allow clicking anywhere on the node to connect
           if (connecting) {
