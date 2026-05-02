@@ -477,20 +477,31 @@ const WhatsApp = () => {
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border">
-                    <XCircle className="w-8 h-8 text-muted-foreground shrink-0" />
-                    <div>
-                      <p className="font-medium text-foreground">Desconectado</p>
-                      <p className="text-sm text-muted-foreground">
-                        Nenhum WhatsApp vinculado no momento.
-                      </p>
+                <div className="mx-auto max-w-lg space-y-8 py-10 text-center">
+                  <div className="flex justify-center">
+                    <div className="relative">
+                      <div className="absolute inset-0 animate-ping rounded-full bg-primary/20" />
+                      <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-muted border-4 border-background shadow-xl text-muted-foreground">
+                        <PowerOff className="h-10 w-10" />
+                      </div>
                     </div>
                   </div>
-                  <Button onClick={handleConnect} disabled={loading} className="gap-2">
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Power className="w-4 h-4" />}
-                    {loading ? "Gerando QR Code..." : "Conectar WhatsApp"}
+                  
+                  <div className="space-y-2">
+                    <h3 className="text-2xl font-bold text-foreground">Pronto para escalar?</h3>
+                    <p className="text-muted-foreground leading-relaxed">Conecte sua conta WhatsApp para disparar automações de vendas, recuperação de carrinho e lembretes PIX em tempo real.</p>
+                  </div>
+
+                  <Button 
+                    onClick={handleConnect} 
+                    disabled={loading} 
+                    className="h-16 w-full gap-3 rounded-[24px] bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-primary/20"
+                  >
+                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <Zap className="h-6 w-6 fill-primary-foreground" />}
+                    <span className="text-lg font-bold">{loading ? "Gerando QR Code..." : "Ativar Automação Agora"}</span>
                   </Button>
+                  
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-widest">Ativação instantânea via QR Code</p>
                 </div>
               )}
             </CardContent>
