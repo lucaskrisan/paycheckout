@@ -114,7 +114,7 @@ const WhatsAppRecovery = () => {
           whatsapp_delay_minutes: delay,
           whatsapp_message_template: template,
           updated_at: new Date().toISOString()
-        }, { onConflict: "user_id" });
+        });
 
       if (settingsError) throw settingsError;
 
