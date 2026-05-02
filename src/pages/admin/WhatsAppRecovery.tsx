@@ -71,7 +71,8 @@ const WhatsAppRecovery = () => {
     if (!user) return;
     setSaving(true);
     try {
-      const { error } = await supabase
+      // 1. Update cart recovery settings
+      const { error: settingsError } = await supabase
         .from("cart_recovery_settings")
         .upsert({
           user_id: user.id,
@@ -81,8 +82,48 @@ const WhatsAppRecovery = () => {
           updated_at: new Date().toISOString()
         }, { onConflict: "user_id" });
 
-      if (error) throw error;
-      toast.success("Configurações salvas com sucesso!");
+      if (settingsError) throw settingsError;
+
+      // 2. Sync with whatsapp_templates
+      const { data: existingTemplate } = await supabase
+        .from("whatsapp_templates")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("category", "abandono")
+        .maybeSingle();
+
+      if (existingTemplate) {
+        await supabase
+          .from("whatsapp_templates")
+          .update({
+            body: template,
+            active: enabled,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", existingTemplate.id);
+      } else {
+        await supabase
+          .from("whatsapp_templates")
+          .insert({
+            user_id: user.id,
+            category: "abandono",
+            name: "Recuperação Automática",
+            body: template,
+            active: enabled
+          });
+      }
+
+      // 3. Sync with whatsapp_feature_flags
+      await supabase
+        .from("whatsapp_feature_flags")
+        .upsert({
+          tenant_id: user.id,
+          feature: "abandono",
+          enabled: enabled,
+          updated_at: new Date().toISOString()
+        }, { onConflict: "tenant_id,feature" });
+
+      toast.success("Configurações salvas e automação atualizada!");
     } catch (error: any) {
       toast.error("Erro ao salvar: " + error.message);
     } finally {
