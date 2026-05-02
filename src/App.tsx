@@ -87,7 +87,6 @@ const CartControl = lazy(() => import("./pages/admin/CartControl"));
 const EmailTemplates = lazy(() => import("./pages/admin/EmailTemplates"));
 const WhatsAppRecovery = lazy(() => import("./pages/admin/WhatsAppRecovery"));
 const DeliveryHealth = lazy(() => import("./pages/admin/DeliveryHealth"));
-const MCPManagement = lazy(() => import("./pages/admin/MCPManagement"));
 const Go = lazy(() => import("./pages/Go"));
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -161,7 +160,6 @@ const App = () => (
                 <Route path="billing" element={<Billing />} />
                 <Route path="platform" element={<SuperAdminDashboard />} />
                 <Route path="cart-control" element={<CartControl />} />
-                <Route path="mcp" element={<MCPManagement />} />
                 <Route path="domains" element={<Domains />} />
                 
                 

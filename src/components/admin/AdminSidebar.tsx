@@ -114,7 +114,6 @@ const superAdminAutomacao = [
   { title: "Central de E-mails", url: "/admin/email-templates", icon: Mail },
   { title: "Controle de Carrinhos", url: "/admin/cart-control", icon: ShoppingCart },
   { title: "Saúde de Entregas", url: "/admin/delivery-health", icon: Activity },
-  { title: "MCP Control", url: "/admin/mcp", icon: Cpu },
 ];
 
 const superAdminGestao = [
