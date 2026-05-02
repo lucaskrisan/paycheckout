@@ -344,16 +344,16 @@ const CheckoutBuilder = () => {
               </TabsTrigger>
             </TabsList>
 
-            <div className="p-4">
-              <TabsContent value="components" className="mt-0">
+            <div className="flex-1 overflow-auto p-4">
+              <TabsContent value="components" className="mt-0 focus-visible:outline-none">
                 <ComponentPalette />
               </TabsContent>
 
-              <TabsContent value="links" className="mt-0">
+              <TabsContent value="links" className="mt-0 focus-visible:outline-none">
                 <p className="text-xs text-muted-foreground">Links de checkout disponíveis em breve.</p>
               </TabsContent>
 
-              <TabsContent value="config" className="mt-0">
+              <TabsContent value="config" className="mt-0 focus-visible:outline-none">
                 {selectedComponent ? (
                   <ComponentEditor
                     component={selectedComponent}
