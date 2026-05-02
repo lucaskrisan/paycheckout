@@ -14,6 +14,9 @@ import { toast } from "sonner";
 interface NotifSettings {
   send_pending: boolean;
   send_approved: boolean;
+  send_abandoned_cart: boolean;
+  whatsapp_pix_reminder: boolean;
+  email_pix_reminder: boolean;
   show_value: string;
   show_product_name: boolean;
   show_utm_campaign: boolean;
