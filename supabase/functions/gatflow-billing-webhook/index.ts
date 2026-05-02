@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
     // Get the GatFlow configuration and secret
     const { data: partner } = await supabase
       .from('marketplace_partners')
-      .select('webhook_secret')
+      .select('shared_secret')
       .eq('name', 'GatFlow')
       .single();
 
