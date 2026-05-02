@@ -299,30 +299,45 @@ const WhatsApp = () => {
       </div>
 
       <Tabs defaultValue={defaultTab} onValueChange={(val) => setSearchParams({ tab: val })} className="space-y-6">
-        <TabsList className="bg-muted/50 p-1 border h-auto flex-wrap">
-          <TabsTrigger value="connection" className="gap-2 py-2">
-            <ShieldCheck className="w-4 h-4" />
-            Conexão
-          </TabsTrigger>
-          <TabsTrigger value="recovery" className="gap-2 py-2">
-            <RotateCw className="w-4 h-4" />
-            Recuperação
-          </TabsTrigger>
-          <TabsTrigger value="templates" className="gap-2 py-2">
-            <MessageSquare className="w-4 h-4" />
-            Templates
-          </TabsTrigger>
-          <TabsTrigger value="logs" className="gap-2 py-2">
-            <Activity className="w-4 h-4" />
-            Logs
-          </TabsTrigger>
-          {isSuperAdmin && (
-            <TabsTrigger value="admin" className="gap-2 py-2">
-              <Zap className="w-4 h-4" />
-              Admin
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <TabsList className="h-12 w-fit bg-muted/40 p-1 backdrop-blur-md border shadow-sm">
+            <TabsTrigger value="connection" className="gap-2 px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:text-gold data-[state=active]:shadow-sm">
+              <ShieldCheck className="w-4 h-4" />
+              Conexão
             </TabsTrigger>
-          )}
-        </TabsList>
+            <TabsTrigger value="templates" className="gap-2 px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:text-gold data-[state=active]:shadow-sm">
+              <MessageSquare className="w-4 h-4" />
+              Templates
+            </TabsTrigger>
+            <TabsTrigger value="recovery" className="gap-2 px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:text-gold data-[state=active]:shadow-sm">
+              <RotateCw className="w-4 h-4" />
+              Recuperação
+            </TabsTrigger>
+            <TabsTrigger value="logs" className="gap-2 px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:text-gold data-[state=active]:shadow-sm">
+              <Activity className="w-4 h-4" />
+              Logs
+            </TabsTrigger>
+            {isSuperAdmin && (
+              <TabsTrigger value="admin" className="gap-2 px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:text-gold data-[state=active]:shadow-sm">
+                <Zap className="w-4 h-4" />
+                Admin
+              </TabsTrigger>
+            )}
+          </TabsList>
+
+          <div className="flex items-center gap-3">
+            <div className="hidden items-center gap-1.5 rounded-full border border-border/60 bg-muted/20 px-4 py-2 text-[11px] font-medium text-muted-foreground lg:flex">
+              <Clock className="h-3.5 w-3.5 text-gold" />
+              Último check: {formatRelative(lastChecked?.toISOString() ?? null)}
+            </div>
+            {status === "connected" && (
+              <Badge className="h-10 border-emerald-500/20 bg-emerald-500/10 px-4 text-emerald-600 gap-1.5 shadow-sm">
+                <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+                Instância Ativa
+              </Badge>
+            )}
+          </div>
+        </div>
 
         <TabsContent value="connection" className="space-y-6 animate-in fade-in duration-300">
           {errorMsg && (
