@@ -891,7 +891,11 @@ function EditorInner() {
             } 
           } as FlowNode;
         }
-        return n;
+        if (n.type === "whatsapp") {
+          // Find stats in whatsapp_send_log (simulated for now or fetched above)
+          // For now, let's keep it clean as we don't have per-test whatsapp stats yet
+          return n;
+        }
       })
     );
   }, [stats, setNodes]);
