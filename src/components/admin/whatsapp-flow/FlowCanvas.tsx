@@ -154,27 +154,36 @@ const ConnectionLines = ({ nodes }: { nodes: FlowNodeData[] }) => {
   return (
     <svg className="pointer-events-none absolute inset-0 z-[1] h-full w-full">
       {connections.map(({ from, to }, index) => {
+        // Center of the card horizontally (290/2)
         const startX = from.x + 145;
-        const startY = from.y + 112;
+        // Start from bottom area - using a larger offset to be closer to the bottom of most cards
+        const startY = from.y + 160; 
         const endX = to.x + 145;
         const endY = to.y;
-        const deltaY = Math.max(80, Math.abs(endY - startY) * 0.55);
+        
+        // Dynamic curvature based on distance
+        const distY = Math.abs(endY - startY);
+        const deltaY = Math.max(60, distY * 0.6);
 
         return (
           <g key={`${from.id}-${to.id}-${index}`}>
             <path
               d={`M${startX},${startY} C${startX},${startY + deltaY} ${endX},${endY - deltaY} ${endX},${endY}`}
               fill="none"
-              stroke="hsl(var(--gold) / 0.18)"
-              strokeWidth="8"
+              stroke="hsl(var(--gold) / 0.12)"
+              strokeWidth="12"
+              strokeLinecap="round"
             />
             <path
               d={`M${startX},${startY} C${startX},${startY + deltaY} ${endX},${endY - deltaY} ${endX},${endY}`}
               fill="none"
-              stroke="hsl(var(--gold) / 0.8)"
-              strokeWidth="2.5"
+              stroke="hsl(var(--gold) / 0.6)"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeDasharray={from.type === "wait" ? "8 4" : "none"}
             />
-            <circle cx={endX} cy={endY} fill="hsl(var(--gold))" r="4" />
+            <circle cx={startX} cy={startY} fill="hsl(var(--gold) / 0.8)" r="3" />
+            <circle cx={endX} cy={endY} fill="hsl(var(--gold))" r="5" />
           </g>
         );
       })}
