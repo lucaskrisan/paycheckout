@@ -58,9 +58,11 @@ export default function AdminLayout() {
             signOut={signOut}
             isVerified={isVerified}
           />
-          <main className="flex-1 bg-background relative overflow-hidden">
-            <div className="absolute inset-0 overflow-y-auto overflow-x-hidden p-6">
-              <Outlet />
+          <main className="flex-1 bg-background relative overflow-hidden min-h-0">
+            <div className="absolute inset-0 overflow-y-auto overflow-x-hidden">
+              <div className="p-6 min-h-full">
+                <Outlet />
+              </div>
             </div>
           </main>
         </div>
