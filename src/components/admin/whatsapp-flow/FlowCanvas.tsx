@@ -33,6 +33,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Settings2 } from "lucide-react";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -408,10 +417,11 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
     if (initialNodes && initialNodes.length > 0) return initialNodes;
     return createStarterNodes(template.body);
   });
-  const [selectedNodeId, setSelectedNodeId] = useState<string>("message-node");
+  const [selectedNodeId, setSelectedNodeId] = useState<string>("");
   const [pendingConnection, setPendingConnection] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [sendingTest, setSendingTest] = useState(false);
+  const [showTemplateSettings, setShowTemplateSettings] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -661,6 +671,16 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
             variant="outline"
             size="sm"
             className="h-8 gap-1.5 text-xs"
+            onClick={() => setShowTemplateSettings(true)}
+          >
+            <Settings2 className="h-3.5 w-3.5" />
+            <span className="hidden md:inline">Configurações</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1.5 text-xs"
             onClick={() => setShowPreview(!showPreview)}
           >
             <Smartphone className="h-3.5 w-3.5" />
@@ -733,183 +753,207 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
           </div>
         </div>
 
-        <aside className={`flex w-[300px] shrink-0 flex-col border-l border-border/60 bg-card/95 transition-all duration-300 ${!selectedNodeId ? 'translate-x-full opacity-0 pointer-events-none w-0' : 'translate-x-0 opacity-100'}`}>
-          <div className="shrink-0 border-b border-border/60 px-4 py-3">
-            <div className="flex items-center justify-between">
+      </div>
+
+      {/* Floating preview panel (toggle in header) */}
+      {showPreview && (
+        <div className="absolute right-4 bottom-4 z-[60] w-[300px] rounded-2xl border border-border/60 bg-card/95 p-3 shadow-2xl backdrop-blur">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-xs font-semibold text-foreground">Preview WhatsApp</p>
+            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setShowPreview(false)}>
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+          <WhatsAppPreview body={primaryBody} />
+        </div>
+      )}
+
+      {/* Template settings modal */}
+      <Dialog open={showTemplateSettings} onOpenChange={setShowTemplateSettings}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings2 className="h-4 w-4 text-gold" />
+              Configurações do template
+            </DialogTitle>
+            <DialogDescription>Defina nome, categoria e status da automação.</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Nome do template</Label>
+              <Input
+                onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
+                placeholder="Ex: Recuperação de checkout"
+                value={draft.name}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Categoria</Label>
+              <Select onValueChange={(value) => setDraft((current) => ({ ...current, category: value }))} value={draft.category}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.value} value={category.value}>{category.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/30 px-4 py-3">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-gold/80">Configuração</p>
-                <h3 className="mt-0.5 font-display text-sm font-semibold text-foreground">Painel de edição</h3>
+                <p className="text-sm font-medium text-foreground">Template ativo</p>
+                <p className="text-xs text-muted-foreground">Pronto para entrar na automação.</p>
               </div>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-7 w-7 rounded-lg text-muted-foreground hover:bg-muted"
-                onClick={() => setSelectedNodeId("")}
-              >
-                <X className="h-3.5 w-3.5" />
-              </Button>
+              <Switch checked={draft.active} onCheckedChange={(value) => setDraft((current) => ({ ...current, active: value }))} />
             </div>
           </div>
 
-          <div className="scrollbar-premium min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
-            {selectedNode && (
-              <>
-                <section className="space-y-4 rounded-2xl border border-border/60 bg-background/60 p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">Identidade do template</p>
-                      <p className="text-xs text-muted-foreground">Nome e categoria do fluxo.</p>
-                    </div>
-                  </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowTemplateSettings(false)}>Fechar</Button>
+            <Button
+              className="border border-gold/20 bg-gold text-background hover:bg-gold/90"
+              onClick={() => setShowTemplateSettings(false)}
+            >
+              Concluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
+      {/* Node editor modal */}
+      <Dialog open={!!selectedNode} onOpenChange={(open) => { if (!open) setSelectedNodeId(""); }}>
+        <DialogContent className="max-w-lg">
+          {selectedNode && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  Editar bloco
+                  <Badge className="border-gold/25 bg-gold/10 text-gold" variant="outline">{selectedNode.type}</Badge>
+                </DialogTitle>
+                <DialogDescription>Ajuste o conteúdo deste bloco do fluxo.</DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto scrollbar-premium pr-1">
+                <div className="space-y-2">
+                  <Label>Título do bloco</Label>
+                  <Input
+                    onChange={(event) => updateSelectedNode((node) => ({ ...node, label: event.target.value }))}
+                    value={selectedNode.label}
+                  />
+                </div>
+
+                {(MESSAGE_TYPES.includes(selectedNode.type) || OPTION_TYPES.includes(selectedNode.type) || ["trigger", "delivery", "tags", "variables"].includes(selectedNode.type)) && (
                   <div className="space-y-2">
-                    <Label className="text-xs">Nome</Label>
-                    <Input
-                      className="h-8 text-sm"
-                      onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
-                      placeholder="Ex: Recuperação de checkout"
-                      value={draft.name}
+                    <Label>Conteúdo</Label>
+                    <Textarea
+                      ref={textareaRef}
+                      className="min-h-[160px] scrollbar-premium"
+                      onChange={(event) => updateSelectedNode((node) => ({ ...node, config: { ...node.config, body: event.target.value } }))}
+                      placeholder="Escreva sua mensagem..."
+                      value={selectedNode.config.body || ""}
                     />
+                    {MESSAGE_TYPES.includes(selectedNode.type) && (
+                      <VariableButtons onInsert={handleInsertVariable} />
+                    )}
                   </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-xs">Categoria</Label>
-                    <Select onValueChange={(value) => setDraft((current) => ({ ...current, category: value }))} value={draft.category}>
-                      <SelectTrigger className="h-8 text-sm">
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category.value} value={category.value}>{category.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex items-center justify-between rounded-xl border border-border/60 bg-card/80 px-3 py-2">
-                    <span className="text-xs font-medium">Ativo</span>
-                    <Switch checked={draft.active} onCheckedChange={(value) => setDraft((current) => ({ ...current, active: value }))} />
-                  </div>
-                </section>
-
-                {showPreview && (
-                  <section className="space-y-2">
-                    <WhatsAppPreview body={primaryBody} />
-                  </section>
                 )}
 
-                <section className="space-y-4 rounded-2xl border border-border/60 bg-background/60 p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">Editar bloco: {selectedNode.label}</p>
-                      <p className="text-xs text-muted-foreground">Ajuste o conteúdo com precisão.</p>
-                    </div>
-                    <Badge className="border-gold/25 bg-gold/10 text-gold" variant="outline">{selectedNode.type}</Badge>
-                  </div>
-
+                {["image", "music", "audio", "video", "document"].includes(selectedNode.type) && (
                   <div className="space-y-2">
-                    <Label className="text-xs">Título do Bloco</Label>
+                    <Label>
+                      URL da mídia
+                      <span className="ml-1 text-xs text-muted-foreground font-normal">
+                        ({selectedNode.type === "image" ? "JPG, PNG, WEBP" :
+                          selectedNode.type === "video" ? "MP4" :
+                          selectedNode.type === "audio" || selectedNode.type === "music" ? "MP3, OGG, M4A" :
+                          "PDF, DOCX, etc."})
+                      </span>
+                    </Label>
                     <Input
-                      className="h-8 text-sm"
-                      onChange={(event) => updateSelectedNode((node) => ({ ...node, label: event.target.value }))}
-                      value={selectedNode.label}
+                      placeholder="https://exemplo.com/arquivo.jpg"
+                      value={selectedNode.config.media_url || ""}
+                      onChange={(event) => updateSelectedNode((node) => ({
+                        ...node,
+                        config: { ...node.config, media_url: event.target.value },
+                      }))}
                     />
                   </div>
+                )}
 
-                  {(MESSAGE_TYPES.includes(selectedNode.type) || OPTION_TYPES.includes(selectedNode.type) || ["trigger", "delivery", "tags", "variables"].includes(selectedNode.type)) && (
+                {selectedNode.type === "wait" && (
+                  <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <Label className="text-xs">Conteúdo</Label>
-                      <Textarea
-                        ref={textareaRef}
-                        className="min-h-[140px] text-sm scrollbar-premium"
-                        onChange={(event) => updateSelectedNode((node) => ({ ...node, config: { ...node.config, body: event.target.value } }))}
-                        placeholder="Escreva sua mensagem..."
-                        value={selectedNode.config.body || ""}
-                      />
-                      {MESSAGE_TYPES.includes(selectedNode.type) && (
-                        <VariableButtons onInsert={handleInsertVariable} />
-                      )}
-                    </div>
-                  )}
-
-                  {["image", "music", "audio", "video", "document"].includes(selectedNode.type) && (
-                    <div className="space-y-2">
-                      <Label className="text-xs">URL da mídia</Label>
+                      <Label>Tempo</Label>
                       <Input
-                        className="h-8 text-sm"
-                        placeholder="https://..."
-                        value={selectedNode.config.media_url || ""}
-                        onChange={(event) => updateSelectedNode((node) => ({
-                          ...node,
-                          config: { ...node.config, media_url: event.target.value },
-                        }))}
+                        onChange={(event) => updateSelectedNode((node) => ({ ...node, config: { ...node.config, waitTime: event.target.value } }))}
+                        value={selectedNode.config.waitTime || ""}
                       />
                     </div>
-                  )}
-
-                  {selectedNode.type === "wait" && (
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-2">
-                        <Label className="text-xs">Tempo</Label>
-                        <Input
-                          className="h-8 text-sm"
-                          onChange={(event) => updateSelectedNode((node) => ({ ...node, config: { ...node.config, waitTime: event.target.value } }))}
-                          value={selectedNode.config.waitTime || ""}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs">Unidade</Label>
-                        <Select
-                          onValueChange={(value) => updateSelectedNode((node) => ({ ...node, config: { ...node.config, waitUnit: value } }))}
-                          value={selectedNode.config.waitUnit || "minutos"}
-                        >
-                          <SelectTrigger className="h-8 text-sm">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="minutos">Minutos</SelectItem>
-                            <SelectItem value="horas">Horas</SelectItem>
-                            <SelectItem value="dias">Dias</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                    <div className="space-y-2">
+                      <Label>Unidade</Label>
+                      <Select
+                        onValueChange={(value) => updateSelectedNode((node) => ({ ...node, config: { ...node.config, waitUnit: value } }))}
+                        value={selectedNode.config.waitUnit || "minutos"}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="minutos">Minutos</SelectItem>
+                          <SelectItem value="horas">Horas</SelectItem>
+                          <SelectItem value="dias">Dias</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {OPTION_TYPES.includes(selectedNode.type) && (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-xs">Opções</Label>
-                        <Button className="h-7 gap-1 px-2 text-[10px]" onClick={addOption} size="sm" type="button" variant="outline">
-                          <Plus className="h-3 w-3" />
-                          Nova
-                        </Button>
-                      </div>
-
-                      <div className="space-y-2">
-                        {(selectedNode.config.options || []).map((option: string, index: number) => (
-                          <div key={`${selectedNode.id}-editor-${index}`} className="flex items-center gap-2">
-                            <Input className="h-8 text-sm" onChange={(event) => updateOption(index, event.target.value)} value={option} />
-                            <Button
-                              className="h-8 w-8 shrink-0"
-                              onClick={() => removeOption(index)}
-                              size="icon"
-                              type="button"
-                              variant="outline"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
+                {OPTION_TYPES.includes(selectedNode.type) && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label>Opções</Label>
+                      <Button className="gap-1.5" onClick={addOption} size="sm" type="button" variant="outline">
+                        <Plus className="h-3.5 w-3.5" />
+                        Nova
+                      </Button>
                     </div>
-                  )}
-                </section>
-              </>
-            )}
-          </div>
-        </aside>
-        </div>
+
+                    <div className="space-y-2">
+                      {(selectedNode.config.options || []).map((option: string, index: number) => (
+                        <div key={`${selectedNode.id}-editor-${index}`} className="flex items-center gap-2">
+                          <Input onChange={(event) => updateOption(index, event.target.value)} value={option} />
+                          <Button
+                            onClick={() => removeOption(index)}
+                            size="icon"
+                            type="button"
+                            variant="outline"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setSelectedNodeId("")}>Cancelar</Button>
+                <Button
+                  className="border border-gold/20 bg-gold text-background hover:bg-gold/90"
+                  onClick={() => setSelectedNodeId("")}
+                >
+                  Salvar bloco
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 };
