@@ -318,7 +318,7 @@ const CanvasNode = ({
           )}
         </div>
 
-        <div className="flex items-center justify-between border-t border-border/60 px-4 py-3">
+        <div className="relative flex items-center justify-between border-t border-border/60 px-4 py-3">
           <button
             className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
               connecting ? "border-gold/50 bg-gold/10 text-gold" : "border-border/60 bg-background/60 text-muted-foreground hover:border-gold/35 hover:text-gold"
@@ -335,6 +335,11 @@ const CanvasNode = ({
 
           <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-gold/30 bg-background">
             <div className="h-2.5 w-2.5 rounded-full bg-gold" />
+          </div>
+          
+          {/* Connection source point visual (absolute centered at bottom) */}
+          <div className="absolute -bottom-1.5 left-1/2 flex h-3 w-3 -translate-x-1/2 items-center justify-center rounded-full border border-gold/40 bg-background shadow-sm">
+            <div className="h-1.5 w-1.5 rounded-full bg-gold" />
           </div>
         </div>
       </div>
