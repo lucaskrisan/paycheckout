@@ -92,12 +92,24 @@ export default function PixelMirrors() {
     }));
   };
 
+  const [showTutorial, setShowTutorial] = useState(false);
+
   return (
     <TooltipProvider>
       <div className="p-6 space-y-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold tracking-normal">Pixels Espelho</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold tracking-normal">Pixels Espelho</h1>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 text-violet-400 hover:text-violet-300 hover:bg-violet-500/10"
+                onClick={() => setShowTutorial(true)}
+              >
+                <Info className="w-5 h-5" />
+              </Button>
+            </div>
             <p className="text-sm text-muted-foreground mt-1">Duplicação de eventos via CAPI puro para proteção de domínio</p>
           </div>
           <div className="flex items-center gap-2">
@@ -259,6 +271,84 @@ export default function PixelMirrors() {
             </Card>
           ))}
         </div>
+
+        {/* Tutorial Dialog */}
+        <Dialog open={showTutorial} onOpenChange={setShowTutorial}>
+          <DialogContent className="max-w-2xl bg-[#0d0f15] border-border/40 max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <Zap className="w-5 h-5 text-violet-400" />
+                Guia: Como usar o Pixel Espelho
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-6 py-4">
+              <section className="space-y-3">
+                <h4 className="font-bold text-violet-300 flex items-center gap-2">
+                  <Shield className="w-4 h-4" /> 
+                  O que é e por que usar?
+                </h4>
+                <div className="grid gap-4 text-sm text-muted-foreground leading-relaxed">
+                  <p>
+                    O Pixel Espelho é uma ferramenta de <strong className="text-foreground">rastreamento 100% via servidor (CAPI)</strong>. 
+                    Ao contrário do pixel convencional, ele não carrega nenhum script no navegador do cliente.
+                  </p>
+                  <div className="bg-violet-500/5 border border-violet-500/10 rounded-lg p-3 space-y-2">
+                    <p className="text-xs font-semibold text-violet-200 uppercase tracking-wider">Principais Vantagens:</p>
+                    <ul className="list-disc list-inside space-y-1 text-xs">
+                      <li><span className="text-foreground font-medium">Proteção de Domínio:</span> O Facebook não consegue "rastrear" ou categorizar seu domínio principal, evitando bloqueios por "serviços financeiros".</li>
+                      <li><span className="text-foreground font-medium">ROI Máximo:</span> Bypass completo de AdBlockers e restrições de navegadores.</li>
+                      <li><span className="text-foreground font-medium">Segmentação A/B:</span> Envie dados para pixels diferentes para cada variante do seu teste.</li>
+                    </ul>
+                  </div>
+                </div>
+              </section>
+
+              <section className="space-y-3">
+                <h4 className="font-bold text-violet-300 flex items-center gap-2">
+                  <Settings2 className="w-4 h-4" /> 
+                  Passo a Passo da Configuração
+                </h4>
+                <div className="space-y-4">
+                  <div className="flex gap-3">
+                    <div className="h-6 w-6 rounded-full bg-violet-600/20 text-violet-400 flex items-center justify-center shrink-0 font-bold text-xs border border-violet-500/30">1</div>
+                    <div className="text-sm">
+                      <p className="font-semibold text-slate-200">Gerar Token CAPI</p>
+                      <p className="text-muted-foreground text-xs">No Gerenciador de Eventos do Facebook, vá em <strong className="text-slate-300 italic">Configurações → Gerar token de acesso</strong>.</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="h-6 w-6 rounded-full bg-violet-600/20 text-violet-400 flex items-center justify-center shrink-0 font-bold text-xs border border-violet-500/30">2</div>
+                    <div className="text-sm">
+                      <p className="font-semibold text-slate-200">Cadastrar na Panttera</p>
+                      <p className="text-muted-foreground text-xs">Clique em "Novo Pixel" nesta tela, insira o ID do Pixel e o Token gerado.</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="h-6 w-6 rounded-full bg-violet-600/20 text-violet-400 flex items-center justify-center shrink-0 font-bold text-xs border border-violet-500/30">3</div>
+                    <div className="text-sm">
+                      <p className="font-semibold text-slate-200">Vincular a Variantes</p>
+                      <p className="text-muted-foreground text-xs">Ao editar um Teste A/B, você verá a opção de escolher um "Pixel Espelho" para cada página.</p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/20 flex gap-3 items-start">
+                <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-amber-200/80 leading-normal">
+                  <strong className="text-amber-300">Dica Extra:</strong> O Pixel Espelho é enviado mesmo que o cliente feche o checkout antes do tempo, pois ele é disparado assim que os dados chegam no nosso servidor. É a forma mais estável de garantir que sua conversão seja marcada.
+                </p>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button className="w-full bg-violet-600 hover:bg-violet-700" onClick={() => setShowTutorial(false)}>
+                Entendi, vamos lucrar!
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </TooltipProvider>
   );
