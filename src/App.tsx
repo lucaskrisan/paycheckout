@@ -86,6 +86,7 @@ const AbandonedCartDetail = lazy(() => import("./pages/admin/AbandonedCartDetail
 const CartControl = lazy(() => import("./pages/admin/CartControl"));
 const EmailTemplates = lazy(() => import("./pages/admin/EmailTemplates"));
 const WhatsAppRecovery = lazy(() => import("./pages/admin/WhatsAppRecovery"));
+const DeliveryHealth = lazy(() => import("./pages/admin/DeliveryHealth"));
 const Go = lazy(() => import("./pages/Go"));
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
