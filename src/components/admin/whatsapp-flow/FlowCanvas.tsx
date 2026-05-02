@@ -265,7 +265,14 @@ const CanvasNode = ({
       <div
         className={`group w-[290px] overflow-hidden rounded-[24px] border bg-card/95 shadow-2xl backdrop-blur transition-all ${
           selected ? "border-gold/70 shadow-[0_0_40px_hsl(var(--gold)/0.16)]" : "border-border/70 hover:border-border/100"
-        }`}
+        } ${connecting ? "ring-2 ring-gold ring-offset-2 ring-offset-background" : ""}`}
+        onClick={(event) => {
+          // If we are in connecting mode, allow clicking anywhere on the node to connect
+          if (connecting) {
+            event.stopPropagation();
+            onSelect(node.id);
+          }
+        }}
       >
         <div 
           className="flex cursor-grab items-center gap-3 border-b border-border/60 px-4 py-3 active:cursor-grabbing" 
