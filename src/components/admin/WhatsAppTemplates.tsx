@@ -132,8 +132,8 @@ const TemplateCard = ({
         <Badge variant={template.active ? "default" : "secondary"}>{template.active ? "Ativo" : "Inativo"}</Badge>
       </div>
 
-      <div className="mt-5 rounded-[22px] border border-border/60 bg-background/60 p-4">
-        <p className="line-clamp-3 whitespace-pre-wrap text-sm leading-relaxed text-foreground/88">{template.body}</p>
+      <div className="mt-6 rounded-2xl border border-border/40 bg-background/40 p-5 backdrop-blur-sm">
+        <p className="line-clamp-4 whitespace-pre-wrap text-[13px] leading-relaxed text-foreground/80">{template.body}</p>
       </div>
 
       <div className="mt-4 flex items-center gap-2 overflow-hidden">
