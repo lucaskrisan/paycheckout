@@ -96,6 +96,13 @@ type CreativeData = {
   utmContent?: string;
   stats?: { impressions: number; clicks: number; sales: number; revenue: number };
 };
+type WhatsAppData = {
+  kind: "whatsapp";
+  label: string;
+  subtitle: string;
+  delay: number;
+  stats?: { sent: number; clicked: number; recovered: number; revenue: number };
+};
 
 type FlowNode = Node<any>;
 
@@ -553,6 +560,49 @@ function UpsellNode({ id, data }: NodeProps<Node<UpsellData, "upsell">>) {
   );
 }
 
+function WhatsAppNode({ id, data }: NodeProps<Node<WhatsAppData, "whatsapp">>) {
+  const reactFlow = useReactFlow();
+  const navigate = useNavigate();
+
+  return (
+    <NodeShell 
+      color="#25d366" 
+      icon={<MessageSquare className="h-4 w-4" />} 
+      title={data.label} 
+      subtitle={data.subtitle || "Recuperação"}
+      nodeId={id}
+      onDelete={(nodeId) => {
+        const ns = reactFlow.getNodes();
+        const es = reactFlow.getEdges();
+        reactFlow.setNodes(ns.filter(n => n.id !== nodeId));
+        reactFlow.setEdges(es.filter(e => e.source !== nodeId && e.target !== nodeId));
+      }}
+    >
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-2 mb-1">
+          <div className="flex flex-col p-2.5 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+            <span className="text-[9px] uppercase tracking-wider text-emerald-400/70 font-bold">Enviadas</span>
+            <span className="text-sm font-black text-white">{data.stats?.sent || 0}</span>
+          </div>
+          <div className="flex flex-col p-2.5 rounded-xl bg-blue-500/5 border border-blue-500/10">
+            <span className="text-[9px] uppercase tracking-wider text-blue-400/70 font-bold">Cliques</span>
+            <span className="text-sm font-black text-blue-400">{data.stats?.clicked || 0}</span>
+          </div>
+        </div>
+
+        <Button 
+          onClick={() => navigate("/admin/whatsapp-recovery")}
+          variant="outline" 
+          className="w-full h-8 text-[10px] uppercase font-black tracking-widest border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/20 text-emerald-400 gap-2"
+        >
+          <Zap className="h-3 w-3" />
+          Configurar Fluxo
+        </Button>
+      </div>
+    </NodeShell>
+  );
+}
+
 const nodeTypes = {
   config: ConfigNode,
   abtest: AbTestNode,
@@ -560,6 +610,7 @@ const nodeTypes = {
   checkout: CheckoutNode,
   creative: CreativeNode,
   upsell: UpsellNode,
+  whatsapp: WhatsAppNode,
 };
 
 // ---------------- Initial graph ----------------
@@ -866,6 +917,8 @@ function EditorInner() {
         newNode = { id, type: "page", position, data: { kind: "page", label: `Página ${String.fromCharCode(65 + idx)}`, subtitle: "Landing Page", url: "" } };
       } else if (kind === "upsell") {
         newNode = { id, type: "upsell", position, data: { kind: "upsell", label: "Novo Upsell", subtitle: "Página de Upsell", url: "" } };
+      } else if (kind === "whatsapp") {
+        newNode = { id, type: "whatsapp", position, data: { kind: "whatsapp", label: "Recuperação WhatsApp", subtitle: "Automação", delay: 15, stats: { sent: 0, clicked: 0, recovered: 0, revenue: 0 } } };
       } else {
         const idx = nodes.filter((n) => n.type === "checkout").length;
         newNode = { id, type: "checkout", position, data: { kind: "checkout", label: `Checkout ${String.fromCharCode(65 + idx)}`, subtitle: "Página de pagamento", productId: null, offerId: null, templateId: null } };
