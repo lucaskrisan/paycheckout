@@ -49,7 +49,9 @@ import {
   Image as ImageIcon,
   MousePointer2,
   TrendingUp,
+  Shield,
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AbTestTutorial } from "@/components/admin/AbTestTutorial";
 
 // ---------------- Types ----------------
@@ -288,9 +290,17 @@ function PageNode({ id, data }: NodeProps<Node<PageData, "page">>) {
         </div>
         
         {data.mirrorPixelId && (
-          <div className="flex items-center gap-2 text-[9px] text-violet-300 px-2 py-1.5 rounded-md bg-violet-500/10 border border-violet-500/10 uppercase tracking-widest font-bold">
-            <Zap className="h-3 w-3 shrink-0" />
-            <span>Pixel Ativo</span>
+          <div className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-md bg-violet-500/10 border border-violet-500/20">
+            <div className="flex items-center gap-2 text-[9px] text-violet-300 uppercase tracking-widest font-bold">
+              <Shield className="h-3.5 w-3.5 shrink-0" />
+              <span>Domínio Blindado</span>
+            </div>
+            <Tooltip>
+              <TooltipTrigger>
+                <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse" />
+              </TooltipTrigger>
+              <TooltipContent className="text-[10px]">CAPI Ativo & Protegido</TooltipContent>
+            </Tooltip>
           </div>
         )}
       </div>
