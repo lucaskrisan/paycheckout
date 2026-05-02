@@ -57,6 +57,9 @@ const AbandonedCarts = () => {
   const [emailButtonColor, setEmailButtonColor] = useState("#22c55e");
   const [secondEmailEnabled, setSecondEmailEnabled] = useState(true);
   const [secondEmailDelay, setSecondEmailDelay] = useState("24");
+  const [whatsappEnabled, setWhatsappEnabled] = useState(false);
+  const [whatsappDelay, setWhatsappDelay] = useState("15");
+  const [whatsappMessage, setWhatsappMessage] = useState("Olá {nome}! 🛒 Vi que você deixou alguns itens no carrinho. Use o cupom VOLTEJA para ganhar 10% de desconto e finalizar sua compra agora: {link}");
 
   // Filters
   const [filterRecovered, setFilterRecovered] = useState<boolean[]>([]);
