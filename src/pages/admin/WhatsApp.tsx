@@ -331,7 +331,7 @@ const WhatsApp = () => {
               Último check: {formatRelative(lastChecked?.toISOString() ?? null)}
             </div>
             {status === "connected" && (
-              <Badge className="h-10 border-emerald-500/20 bg-emerald-500/10 px-4 text-emerald-600 gap-1.5 shadow-sm">
+              <Badge className="h-9 border-emerald-500/10 bg-emerald-500/5 px-4 text-emerald-600 font-medium text-[11px] gap-2 rounded-full shadow-none">
                 <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
                 Instância Ativa
               </Badge>
