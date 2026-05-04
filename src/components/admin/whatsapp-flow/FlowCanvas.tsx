@@ -165,21 +165,22 @@ const ConnectionLines = ({
     // Horizontal offset if multiple outputs
     const offsetX = totalOutputs > 1 ? (outputIndex - (totalOutputs - 1) / 2) * 30 : 0;
     
-    // Dynamic height estimation for the start point
-    let estimatedHeight = 180;
+    // Calculate node height based on content
+    let nodeHeight = 220; // Default base height including header and padding
+    
     if (node.type === "paths" || node.type === "question") {
       const optionsCount = node.config.options?.length || 0;
-      estimatedHeight = 180 + (optionsCount * 44);
+      nodeHeight = 200 + (optionsCount * 44);
     } else if (node.type === "wait") {
-      estimatedHeight = 160;
+      nodeHeight = 160;
     } else if (node.config.body && node.config.body.length > 100) {
-      estimatedHeight = 210;
+      nodeHeight = 240;
     } else if (["image", "video"].includes(node.type)) {
-      estimatedHeight = 220;
+      nodeHeight = 240;
     }
     
-    // Add space for the footer area
-    return { x: x + offsetX, y: node.y + estimatedHeight + 40 };
+    // Y position is the bottom of the card
+    return { x: x + offsetX, y: node.y + nodeHeight };
   };
 
   return (
