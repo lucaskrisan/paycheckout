@@ -320,7 +320,7 @@ const CanvasNode = ({
       <div
         className={`group w-[290px] overflow-hidden rounded-[24px] border bg-card/95 shadow-2xl backdrop-blur transition-all ${
           selected ? "border-gold/70 shadow-[0_0_40px_hsl(var(--gold)/0.16)]" : "border-border/70 hover:border-border/100"
-        } ${pendingConnection === node.id ? "ring-2 ring-gold ring-offset-2 ring-offset-background shadow-[0_0_20px_hsl(var(--gold)/0.4)]" : ""} ${connecting && pendingConnection !== node.id ? "hover:border-gold/60 cursor-pointer ring-1 ring-gold/20" : ""}`}
+        } ${pendingConnection === node.id ? "ring-2 ring-gold ring-offset-2 ring-offset-background shadow-[0_0_20px_hsl(var(--gold)/0.4)]" : ""} ${connecting && pendingConnection !== node.id ? "hover:border-gold/60 cursor-pointer ring-1 ring-gold/40 bg-gold/5" : ""}`}
         onMouseDown={(event) => {
           if (connecting && pendingConnection !== node.id) {
             event.stopPropagation();
