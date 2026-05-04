@@ -1119,7 +1119,9 @@ function EditorInner() {
       toast.success(isFirstSave ? "Teste A/B criado com sucesso!" : "Teste salvo");
       qc.invalidateQueries({ queryKey: ["ab_tests"] });
       qc.invalidateQueries({ queryKey: ["ab_test_full", id] });
-      if (!routeId || routeId === "new") navigate(`/admin/ab-tests/${id}`, { replace: true });
+      if (!routeId || routeId === "new") {
+        window.location.href = `/admin/ab-tests/${id}`;
+      }
     },
     onError: (e: any) => toast.error(e?.message ?? "Erro ao salvar"),
   });
@@ -1310,8 +1312,14 @@ function EditorInner() {
                 <p className="text-xl font-bold text-emerald-400">{(nodes.find(n => n && n.id === 'config')?.data as ConfigData)?.sales ?? 0}</p>
               </div>
               <div className="p-3 rounded-lg bg-violet-500/5 border border-violet-500/20">
-                <p className="text-[10px] text-violet-400/70 uppercase font-bold tracking-tight">Conversão</p>
+                <p className="text-[10px] text-violet-400/70 uppercase font-bold tracking-tight">Receita Total</p>
                 <p className="text-xl font-bold text-violet-400">
+                  {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format((nodes.find(n => n && n.id === 'config')?.data as ConfigData)?.revenue || 0)}
+                </p>
+              </div>
+              <div className="p-3 rounded-lg bg-zinc-500/5 border border-zinc-500/20">
+                <p className="text-[10px] text-zinc-400/70 uppercase font-bold tracking-tight">Conversão</p>
+                <p className="text-xl font-bold text-zinc-300">
                   {(() => {
                     const c = nodes.find(n => n && n.id === 'config')?.data as ConfigData;
                     return c?.impressions > 0 ? ((c.sales / c.impressions) * 100).toFixed(1) : "0.0";
