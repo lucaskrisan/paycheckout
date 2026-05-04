@@ -165,21 +165,22 @@ const ConnectionLines = ({
     // Horizontal offset if multiple outputs
     const offsetX = totalOutputs > 1 ? (outputIndex - (totalOutputs - 1) / 2) * 30 : 0;
     
-    // Dynamic height estimation for the start point
-    let estimatedHeight = 180;
+    // Calculate node height based on content
+    let nodeHeight = 220; // Default base height including header and padding
+    
     if (node.type === "paths" || node.type === "question") {
-      const optionsCount = node.config.options?.length || 0;
-      estimatedHeight = 180 + (optionsCount * 44);
+      const optionsCount = (node.config.options || []).length;
+      nodeHeight = 200 + (optionsCount * 44);
     } else if (node.type === "wait") {
-      estimatedHeight = 160;
+      nodeHeight = 160;
     } else if (node.config.body && node.config.body.length > 100) {
-      estimatedHeight = 210;
+      nodeHeight = 240;
     } else if (["image", "video"].includes(node.type)) {
-      estimatedHeight = 220;
+      nodeHeight = 240;
     }
     
-    // Add space for the footer area
-    return { x: x + offsetX, y: node.y + estimatedHeight + 40 };
+    // Y position is the bottom of the card - fixed to be consistent with the card UI
+    return { x: x + offsetX, y: node.y + nodeHeight - 1 };
   };
 
   return (
@@ -319,8 +320,8 @@ const CanvasNode = ({
       <div
         className={`group w-[290px] overflow-hidden rounded-[24px] border bg-card/95 shadow-2xl backdrop-blur transition-all ${
           selected ? "border-gold/70 shadow-[0_0_40px_hsl(var(--gold)/0.16)]" : "border-border/70 hover:border-border/100"
-        } ${pendingConnection === node.id ? "ring-2 ring-gold ring-offset-2 ring-offset-background shadow-[0_0_20px_hsl(var(--gold)/0.4)]" : ""} ${connecting && pendingConnection !== node.id ? "hover:border-gold/60 cursor-pointer ring-1 ring-gold/20" : ""}`}
-        onClick={(event) => {
+        } ${pendingConnection === node.id ? "ring-2 ring-gold ring-offset-2 ring-offset-background shadow-[0_0_20px_hsl(var(--gold)/0.4)]" : ""} ${connecting && pendingConnection !== node.id ? "hover:border-gold/60 cursor-pointer ring-1 ring-gold/40 bg-gold/5" : ""}`}
+        onMouseDown={(event) => {
           if (connecting && pendingConnection !== node.id) {
             event.stopPropagation();
             onSelect(node.id);
@@ -422,7 +423,7 @@ const CanvasNode = ({
             className={`absolute -bottom-1.5 left-1/2 z-10 flex h-4 w-4 -translate-x-1/2 cursor-crosshair items-center justify-center rounded-full border border-gold/40 bg-background shadow-sm transition-all hover:scale-150 hover:border-gold ${
               pendingConnection === node.id ? "scale-150 border-gold shadow-[0_0_10px_hsl(var(--gold))]" : ""
             }`}
-            onClick={(e) => {
+            onMouseDown={(e) => {
               e.stopPropagation();
               onConnect(node.id);
             }}
@@ -859,7 +860,7 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
         <div
           ref={containerRef}
           className="scrollbar-premium relative min-w-0 flex-1 overflow-auto bg-background"
-          onClick={() => {
+          onMouseDown={() => {
             setSelectedNodeId("");
             setPendingConnection(null);
           }}
