@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Send, RotateCcw, Clock, CheckCheck, Workflow, Zap, MessageSquare } from "lucide-react";
+import { Send, RotateCcw, Clock, CheckCheck } from "lucide-react";
 import WhatsAppIcon from "@/components/WhatsAppIcon";
 import { Badge } from "@/components/ui/badge";
 
