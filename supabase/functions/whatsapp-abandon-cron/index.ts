@@ -123,10 +123,14 @@ Deno.serve(async (req) => {
       if (baseUrl) {
         try {
           const u = new URL(baseUrl);
-          ["name", "email", "phone", "cpf"].forEach(k => u.searchParams.delete(k));
-          u.searchParams.set("cart_id", cart.id);
-          u.searchParams.set("utm_source", "recovery");
-          u.searchParams.set("utm_medium", "whatsapp");
+          // Remove bulky params to keep the URL shorter
+          ["name", "email", "phone", "cpf", "customer_name", "customer_email", "customer_phone"].forEach(k => u.searchParams.delete(k));
+          
+          // Add essential tracking
+          u.searchParams.set("c", cart.id.split("-")[0]); // Use short ID prefix if possible or keep full if necessary
+          u.searchParams.set("utm_source", "wa");
+          u.searchParams.set("utm_medium", "rec");
+          
           recoveryLink = u.toString();
         } catch (_) {}
       }
