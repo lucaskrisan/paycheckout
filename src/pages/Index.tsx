@@ -84,6 +84,7 @@ const Index = () => {
       </a>
 
 
+      <LandingHeader />
       <main id="main-content">
         <GlobalSalesSection />
         <HeroSection />
