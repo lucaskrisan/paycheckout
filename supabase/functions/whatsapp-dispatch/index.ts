@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
     const messagesToSend: MessageToSend[] = [];
 
     const flowNodes = Array.isArray(template.flow_nodes) ? template.flow_nodes : [];
-    const messageNodeTypes = ["text", "image", "audio", "video", "document", "music"];
+    const messageNodeTypes = ["text", "image", "audio", "video", "document", "music", "wait"];
 
     if (flowNodes.length > 0) {
       const nodeMap = new Map<string, any>();
