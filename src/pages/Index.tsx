@@ -16,6 +16,7 @@ import NotificationsSection from "@/components/landing/NotificationsSection";
 import AchievementsSection from "@/components/landing/AchievementsSection";
 import CheckoutCustomSection from "@/components/landing/CheckoutCustomSection";
 import PricingSection from "@/components/landing/PricingSection";
+import GlobalSalesSection from "@/components/landing/GlobalSalesSection";
 // Note: CookieConsent now mounted globally in App.tsx — no longer needed here.
 
 const Index = () => {
