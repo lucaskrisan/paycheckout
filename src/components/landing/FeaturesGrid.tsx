@@ -1,4 +1,4 @@
-import { CreditCard, QrCode, GraduationCap, Paintbrush, Sparkles, Target } from "lucide-react";
+import { CreditCard, QrCode, GraduationCap, Paintbrush, Sparkles, Target, Layers } from "lucide-react";
 import { motion } from "framer-motion";
 
 const features = [
@@ -31,6 +31,11 @@ const features = [
     icon: Target,
     title: "Rastreamento avançado Meta",
     desc: "Pixel + CAPI com deduplicação DUAL ✓ e EMQ otimizado. Cada centavo de anúncio rastreado.",
+  },
+  {
+    icon: Layers,
+    title: "GatFlow: Máquina de Vendas",
+    desc: "Clonador de páginas, construtor de Pressel e Quiz Builder integrados para escalar seu funil sem limites.",
   },
 ];
 
