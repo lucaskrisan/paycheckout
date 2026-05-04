@@ -159,8 +159,11 @@ const ConnectionLines = ({
     });
   });
 
-  const getSourcePoint = (node: FlowNodeData) => {
+  const getSourcePoint = (node: FlowNodeData, outputIndex: number = 0, totalOutputs: number = 1) => {
     const x = node.x + 145; // Center of 290px card
+    
+    // Horizontal offset if multiple outputs
+    const offsetX = totalOutputs > 1 ? (outputIndex - (totalOutputs - 1) / 2) * 30 : 0;
     
     // Dynamic height estimation for the start point
     let estimatedHeight = 180;
@@ -176,13 +179,15 @@ const ConnectionLines = ({
     }
     
     // Add space for the footer area
-    return { x, y: node.y + estimatedHeight + 40 };
+    return { x: x + offsetX, y: node.y + estimatedHeight + 40 };
   };
 
   return (
     <svg className="pointer-events-none absolute inset-0 z-[1] h-full w-full">
       {connections.map(({ from, to }, index) => {
-        const start = getSourcePoint(from);
+        const fromOutputs = from.outputs || [];
+        const outputIndex = fromOutputs.indexOf(to.id);
+        const start = getSourcePoint(from, outputIndex >= 0 ? outputIndex : 0, fromOutputs.length || 1);
         const endX = to.x + 145;
         const endY = to.y;
         
