@@ -135,7 +135,7 @@ const WhatsAppSection = () => (
       </div>
 
       {/* Global Sales Design Integration */}
-      <div className="mt-32">
+      <div id="global-sales" className="mt-32">
         <div className="relative min-h-[700px] flex flex-col items-center justify-start pt-16 px-4 overflow-hidden rounded-[40px] border border-white/[0.05] bg-[#050505]">
           {/* Top-right radial glow effect */}
           <div className="absolute top-[-10%] right-[-5%] w-[60%] h-[60%] bg-[radial-gradient(circle,_rgba(74,222,128,0.2)_0%,_rgba(0,0,0,0)_70%)] pointer-events-none z-1" />
