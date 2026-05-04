@@ -1119,7 +1119,9 @@ function EditorInner() {
       toast.success(isFirstSave ? "Teste A/B criado com sucesso!" : "Teste salvo");
       qc.invalidateQueries({ queryKey: ["ab_tests"] });
       qc.invalidateQueries({ queryKey: ["ab_test_full", id] });
-      if (!routeId || routeId === "new") navigate(`/admin/ab-tests/${id}`, { replace: true });
+      if (!routeId || routeId === "new") {
+        window.location.href = `/admin/ab-tests/${id}`;
+      }
     },
     onError: (e: any) => toast.error(e?.message ?? "Erro ao salvar"),
   });
