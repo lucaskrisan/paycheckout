@@ -282,8 +282,8 @@ export default function AbTests() {
 
         <div className="grid gap-4">
           {tests.map((t) => {
-            const totalClicks = t.variants.reduce((a, v) => a + v.clicks, 0);
-            const totalSales = t.variants.reduce((a, v) => a + v.sales, 0);
+            const totalClicks = t.variants.reduce((a, v) => a + Number(v.clicks || 0), 0);
+            const totalSales = t.variants.reduce((a, v) => a + Number(v.sales || 0), 0);
             const totalRevenue = t.variants.reduce((a, v) => a + Number(v.revenue || 0), 0);
             const winner = t.winner_variant_id;
             const sortedByConv = [...t.variants].sort(

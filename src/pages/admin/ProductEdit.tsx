@@ -1703,8 +1703,11 @@ const ProductEdit = () => {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {co.price != null ? `${form.currency === "USD" ? "$" : "R$"} ${Number(co.price).toFixed(2).replace(".", form.currency === "USD" ? "." : ",")}` : `${form.currency === "USD" ? "$" : "R$"} ${Number(form.price).toFixed(2).replace(".", form.currency === "USD" ? "." : ",")} (padrão)`}
+                        <TableCell className="text-[11px] font-bold text-foreground">
+                          {co.price != null 
+                            ? `${form.currency === "USD" ? "$" : "R$"} ${Number(co.price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` 
+                            : `${form.currency === "USD" ? "$" : "R$"} ${Number(form.price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (padrão)`
+                          }
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1.5">
