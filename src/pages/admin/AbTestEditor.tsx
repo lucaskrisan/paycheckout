@@ -200,6 +200,12 @@ function ConfigNode({ data }: NodeProps<Node<ConfigData, "config">>) {
           <span className="text-[9px] uppercase tracking-wider text-emerald-400/70 font-bold">Vendas</span>
           <span className="text-sm font-black text-emerald-400">{data.sales ?? 0}</span>
         </div>
+        <div className="col-span-2 flex flex-col p-2.5 rounded-xl bg-violet-500/5 border border-violet-500/10">
+          <span className="text-[9px] uppercase tracking-wider text-violet-400/70 font-bold">Receita Total</span>
+          <span className="text-sm font-black text-violet-400">
+            {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(data.revenue || 0)}
+          </span>
+        </div>
       </div>
       {!data.entryUrl ? (
         <div className="flex items-center gap-2 text-[10px] text-amber-300 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
@@ -879,14 +885,15 @@ function EditorInner() {
           }
         }
         if (n.type === "config") {
-          const totalVisits = stats.reduce((acc, curr) => acc + Number(curr.impressions), 0);
-          const totalSales = stats.reduce((acc, curr) => acc + Number(curr.sales), 0);
-          const totalRevenue = stats.reduce((acc, curr) => acc + Number(curr.revenue), 0);
+          const totalImpressions = stats.reduce((acc, curr) => acc + Number(curr.impressions || 0), 0);
+          const totalClicks = stats.reduce((acc, curr) => acc + Number(curr.clicks || 0), 0);
+          const totalSales = stats.reduce((acc, curr) => acc + Number(curr.sales || 0), 0);
+          const totalRevenue = stats.reduce((acc, curr) => acc + Number(curr.revenue || 0), 0);
           return { 
             ...n, 
             data: { 
               ...n.data, 
-              impressions: totalVisits, 
+              impressions: totalImpressions, 
               sales: totalSales, 
               revenue: totalRevenue 
             } 
