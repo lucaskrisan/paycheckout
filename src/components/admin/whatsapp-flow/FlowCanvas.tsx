@@ -169,7 +169,7 @@ const ConnectionLines = ({
     let nodeHeight = 220; // Default base height including header and padding
     
     if (node.type === "paths" || node.type === "question") {
-      const optionsCount = node.config.options?.length || 0;
+      const optionsCount = (node.config.options || []).length;
       nodeHeight = 200 + (optionsCount * 44);
     } else if (node.type === "wait") {
       nodeHeight = 160;
@@ -179,8 +179,8 @@ const ConnectionLines = ({
       nodeHeight = 240;
     }
     
-    // Y position is the bottom of the card
-    return { x: x + offsetX, y: node.y + nodeHeight };
+    // Y position is the bottom of the card - fixed to be consistent with the card UI
+    return { x: x + offsetX, y: node.y + nodeHeight - 1 };
   };
 
   return (
