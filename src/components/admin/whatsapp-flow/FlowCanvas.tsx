@@ -798,15 +798,76 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
         <FlowSidebar onAddNode={handleAddNode} />
 
         <div
+          ref={containerRef}
           className="scrollbar-premium relative min-w-0 flex-1 overflow-auto bg-background"
           onClick={() => {
             setSelectedNodeId("");
             setPendingConnection(null);
           }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            const typeId = e.dataTransfer.getData("application/reactflow");
+            if (!typeId) return;
+
+            const rect = containerRef.current?.getBoundingClientRect();
+            if (rect) {
+              const x = e.clientX - rect.left + (containerRef.current?.scrollLeft || 0);
+              const y = e.clientY - rect.top + (containerRef.current?.scrollTop || 0);
+              
+              const nodeType = NODE_TYPES.find(t => t.id === typeId);
+              if (nodeType) {
+                const nextId = `${typeId}-${Date.now()}`;
+                const baseConfigMap = {
+                  text: { body: "Nova mensagem" },
+                  image: { body: "Envio de imagem com legenda" },
+                  music: { body: "Envio de música" },
+                  audio: { body: "Envio de áudio" },
+                  video: { body: "Envio de vídeo" },
+                  document: { body: "Envio de documento" },
+                  paths: { body: "Defina os caminhos do fluxo", options: ["Se respondeu sim", "Se pediu suporte"] },
+                  wait: { body: "Aguardar antes do próximo passo", waitTime: "5", waitUnit: "minutos" },
+                  question: { body: "Qual opção faz mais sentido?", options: ["Quero comprar", "Tenho dúvida"] },
+                  tags: { body: "Aplicar tag ao contato" },
+                  variables: { body: "Salvar resposta em variável" },
+                };
+
+                const newNode: FlowNodeData = {
+                  id: nextId,
+                  type: typeId,
+                  label: nodeType.label,
+                  x: x - 145, // Center the node on drop
+                  y: y - 40,
+                  config: baseConfigMap[typeId] || { body: "Configuração do bloco" },
+                  outputs: [],
+                };
+
+                setNodes(current => [...current, newNode]);
+                setSelectedNodeId(nextId);
+                toast.success(`${nodeType.label} adicionado ao fluxo`);
+              }
+            }
+          }}
+          onMouseMove={(e) => {
+            if (pendingConnection) {
+              const rect = containerRef.current?.getBoundingClientRect();
+              if (rect) {
+                setMousePosition({
+                  x: e.clientX - rect.left + (containerRef.current?.scrollLeft || 0),
+                  y: e.clientY - rect.top + (containerRef.current?.scrollTop || 0),
+                });
+              }
+            } else if (mousePosition) {
+              setMousePosition(null);
+            }
+          }}
         >
           <div className="relative h-full min-h-[760px] w-full min-w-[900px]">
             <DotGrid />
-            <ConnectionLines nodes={nodes} />
+            <ConnectionLines nodes={nodes} pendingConnection={pendingConnection} mousePosition={mousePosition} />
 
             <div className="pointer-events-none absolute left-4 top-4 z-[3] flex items-center gap-2 rounded-full border border-gold/20 bg-card/90 px-3 py-1.5 text-xs text-muted-foreground shadow-lg backdrop-blur">
               <MessageSquare className="h-3.5 w-3.5 text-gold" />
