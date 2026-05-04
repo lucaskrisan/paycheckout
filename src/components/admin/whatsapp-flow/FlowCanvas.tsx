@@ -341,7 +341,6 @@ const CanvasNode = ({
       initial={{ opacity: 0, scale: 0.94 }}
       style={{ left: node.x, top: node.y }}
     >
-      {/* Target connection point (top center) */}
       <div 
         className={`absolute -top-1.5 left-1/2 z-10 h-3 w-3 -translate-x-1/2 rounded-full border border-gold/40 bg-background transition-all ${
           connecting && pendingConnection !== node.id ? "scale-150 border-gold bg-gold shadow-[0_0_10px_hsl(var(--gold))]" : "opacity-0"
@@ -471,7 +470,11 @@ const CanvasNode = ({
         <div className="relative flex items-center justify-between border-t border-border/60 px-4 py-3">
           <button
             className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${
-              pendingConnection === node.id ? "border-gold bg-gold/20 text-gold shadow-[0_0_15px_hsl(var(--gold)/0.3)] scale-105" : "border-border/60 bg-background/60 text-muted-foreground hover:border-gold/35 hover:text-gold"
+              pendingConnection === node.id 
+                ? "border-gold bg-gold/20 text-gold shadow-[0_0_15px_hsl(var(--gold)/0.3)] scale-105" 
+                : node.outputs && node.outputs.length > 0
+                ? "border-gold/40 bg-gold/5 text-gold hover:border-gold"
+                : "border-border/60 bg-background/60 text-muted-foreground hover:border-gold/35 hover:text-gold"
             }`}
             onClick={(event) => {
               event.stopPropagation();
@@ -480,7 +483,11 @@ const CanvasNode = ({
             type="button"
           >
             <Workflow className="h-3.5 w-3.5" />
-            {pendingConnection === node.id ? "Aguardando destino..." : "Conectar"}
+            {pendingConnection === node.id 
+              ? "Aguardando destino..." 
+              : node.outputs && node.outputs.length > 0
+              ? "Conectado"
+              : "Conectar"}
           </button>
 
           {/* Connection source point visual (absolute centered at bottom) */}
