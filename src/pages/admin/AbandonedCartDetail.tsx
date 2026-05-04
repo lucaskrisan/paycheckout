@@ -112,6 +112,53 @@ const AbandonedCartDetail = () => {
     setSendingEmail(false);
   };
 
+  const sendWhatsAppRecovery = async () => {
+    if (!cart) return;
+    setSendingWhatsApp(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+
+      // Calculate recovery link
+      const baseUrl = cart.checkout_url || cart.page_url || "";
+      let recoveryLink = baseUrl;
+      if (baseUrl) {
+        try {
+          const u = new URL(baseUrl);
+          ["name", "email", "phone", "cpf"].forEach(k => u.searchParams.delete(k));
+          u.searchParams.set("cart_id", cart.id);
+          u.searchParams.set("utm_source", "manual_recovery");
+          u.searchParams.set("utm_medium", "whatsapp");
+          recoveryLink = u.toString();
+        } catch (_) {}
+      }
+
+      const res = await supabase.functions.invoke("whatsapp-dispatch", {
+        body: {
+          tenant_id: (cart as any).user_id,
+          order_id: cart.id,
+          customer_phone: cart.customer_phone,
+          customer_name: cart.customer_name || "Cliente",
+          product_name: cart.products?.name || "Produto",
+          product_price: (cart.product_price || cart.products?.price || 0).toString(),
+          access_link: recoveryLink,
+          category: "abandono",
+        },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      if (res.error || !res.data?.success) {
+        const errorMsg = res.error?.message || res.data?.details || res.data?.error || "Erro desconhecido";
+        toast.error("Erro ao enviar WhatsApp: " + errorMsg);
+      } else {
+        toast.success("Mensagem de WhatsApp enviada com sucesso!");
+      }
+    } catch (e: any) {
+      toast.error("Erro: " + e.message);
+    }
+    setSendingWhatsApp(false);
+  };
+
   const copyUrl = () => {
     const url = cart?.checkout_url || cart?.page_url || "";
     navigator.clipboard.writeText(url);
