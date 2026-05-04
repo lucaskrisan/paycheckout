@@ -363,11 +363,20 @@ const CanvasNode = ({
           className="flex cursor-grab items-center gap-3 border-b border-border/60 px-4 py-3 active:cursor-grabbing" 
           onMouseDown={handleMouseDown}
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-gold/20 bg-gold/10 text-gold">
+          <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border shadow-sm transition-colors ${
+            node.type === "wait" ? "border-amber-500/30 bg-amber-500/10 text-amber-500" : "border-gold/20 bg-gold/10 text-gold"
+          }`}>
             <Icon className="h-4 w-4" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-foreground">{node.label}</p>
+            <div className="flex items-center gap-2">
+              <p className="truncate text-sm font-semibold text-foreground">{node.label}</p>
+              {node.type === "wait" && (
+                <Badge variant="outline" className="h-4 border-amber-500/30 bg-amber-500/10 px-1 text-[9px] font-bold text-amber-600">
+                  TIMER
+                </Badge>
+              )}
+            </div>
             <p className="text-[11px] text-muted-foreground">{meta.label}</p>
           </div>
           <GripVertical className="h-4 w-4 text-muted-foreground opacity-50" />
@@ -419,9 +428,28 @@ const CanvasNode = ({
           )}
 
           {node.type === "wait" && (
-            <div className="inline-flex items-center gap-2 rounded-full border border-gold/20 bg-gold/10 px-3 py-1.5 text-xs font-medium text-gold">
-              <Clock3 className="h-3.5 w-3.5" />
-              {node.config.waitTime || "5"} {node.config.waitUnit || "minutos"}
+            <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 shadow-inner">
+              <div className="mb-2 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-amber-500/20 text-amber-600">
+                    <Clock3 className="h-3.5 w-3.5" />
+                  </div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-amber-600">Tempo de Espera</span>
+                </div>
+              </div>
+              
+              <div className="flex items-baseline gap-1.5">
+                <span className="font-display text-3xl font-black text-amber-600">
+                  {node.config.waitTime || "5"}
+                </span>
+                <span className="text-sm font-medium text-amber-600/70">
+                  {node.config.waitUnit || "minutos"}
+                </span>
+              </div>
+              
+              <p className="mt-2 text-[10px] leading-tight text-amber-600/60">
+                O fluxo aguardará este tempo antes de prosseguir para o próximo bloco conectado.
+              </p>
             </div>
           )}
         </div>
