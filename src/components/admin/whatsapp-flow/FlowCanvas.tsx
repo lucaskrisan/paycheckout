@@ -143,11 +143,13 @@ const DotGrid = () => (
 const ConnectionLines = ({ 
   nodes, 
   pendingConnection, 
-  mousePosition 
+  mousePosition,
+  onRemoveConnection
 }: { 
   nodes: FlowNodeData[]; 
   pendingConnection: string | null;
   mousePosition: { x: number; y: number } | null;
+  onRemoveConnection: (fromId: string, toId: string) => void;
 }) => {
   const nodeMap = new Map(nodes.map((node) => [node.id, node]));
   const connections: Array<{ from: FlowNodeData; to: FlowNodeData }> = [];
@@ -195,8 +197,19 @@ const ConnectionLines = ({
         const distY = Math.abs(endY - start.y);
         const deltaY = Math.max(70, distY * 0.5);
 
+        // Calculate center point of the bezier curve for the delete button
+        const midX = (start.x + endX) / 2;
+        const midY = (start.y + endY) / 2;
+
         return (
-          <g key={`${from.id}-${to.id}-${index}`}>
+          <g key={`${from.id}-${to.id}-${index}`} className="group/line pointer-events-auto">
+            <path
+              d={`M${start.x},${start.y} C${start.x},${start.y + deltaY} ${endX},${endY - deltaY} ${endX},${endY}`}
+              fill="none"
+              stroke="transparent"
+              strokeWidth="15"
+              className="cursor-default"
+            />
             <path
               d={`M${start.x},${start.y} C${start.x},${start.y + deltaY} ${endX},${endY - deltaY} ${endX},${endY}`}
               fill="none"
@@ -206,13 +219,31 @@ const ConnectionLines = ({
             />
             <path
               d={`M${start.x},${start.y} C${start.x},${start.y + deltaY} ${endX},${endY - deltaY} ${endX},${endY}`}
-              className="transition-all duration-300"
+              className="transition-all duration-300 group-hover/line:stroke-gold group-hover/line:stroke-[3.5px]"
               fill="none"
               stroke="hsl(var(--gold) / 0.7)"
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeDasharray={from.type === "wait" ? "6 4" : "none"}
             />
+            
+            {/* Delete button at midpoint */}
+            <g 
+              className="cursor-pointer opacity-0 transition-opacity group-hover/line:opacity-100"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemoveConnection(from.id, to.id);
+              }}
+            >
+              <circle cx={midX} cy={midY} r="12" fill="hsl(var(--background))" stroke="hsl(var(--destructive)/0.5)" strokeWidth="1" className="shadow-lg" />
+              <path 
+                d={`M${midX-4},${midY-4} L${midX+4},${midY+4} M${midX+4},${midY-4} L${midX-4},${midY+4}`} 
+                stroke="hsl(var(--destructive))" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+              />
+            </g>
+
             <circle cx={endX} cy={endY} fill="hsl(var(--gold))" r="4.5" className="filter drop-shadow-[0_0_8px_hsl(var(--gold)/0.5)]" />
             <circle cx={start.x} cy={start.y} fill="hsl(var(--gold)/0.8)" r="3" />
           </g>
@@ -604,6 +635,17 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
     }
   };
 
+  const handleRemoveConnection = (fromId: string, toId: string) => {
+    setNodes((current) =>
+      current.map((node) =>
+        node.id === fromId
+          ? { ...node, outputs: (node.outputs || []).filter((id) => id !== toId) }
+          : node
+      )
+    );
+    toast.success("Conexão removida");
+  };
+
   const handleAddNode = (type: NodeType) => {
     const anchor = nodes.find((node) => node.id === selectedNodeId) || nodes[nodes.length - 1];
     const nextId = `${type.id}-${Date.now()}`;
@@ -927,7 +969,12 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
         >
           <div className="relative h-full min-h-[760px] w-full min-w-[900px]">
             <DotGrid />
-            <ConnectionLines nodes={nodes} pendingConnection={pendingConnection} mousePosition={mousePosition} />
+            <ConnectionLines 
+              nodes={nodes} 
+              pendingConnection={pendingConnection} 
+              mousePosition={mousePosition} 
+              onRemoveConnection={handleRemoveConnection}
+            />
 
             <div className="pointer-events-none absolute left-4 top-4 z-[3] flex items-center gap-2 rounded-full border border-gold/20 bg-card/90 px-3 py-1.5 text-xs text-muted-foreground shadow-lg backdrop-blur">
               <MessageSquare className="h-3.5 w-3.5 text-gold" />
