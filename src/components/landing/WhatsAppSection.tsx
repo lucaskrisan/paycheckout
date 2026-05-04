@@ -206,7 +206,7 @@ const WhatsAppSection = () => (
               {/* World Map Background */}
               <div className="absolute inset-0 opacity-10 pointer-events-none select-none mix-blend-screen">
                 <svg viewBox="0 0 1000 500" className="w-full h-full text-primary">
-                  <path fill="currentColor" d="M250,150 Q300,100 350,150 T450,150 T550,150 T650,150 T750,150" opacity="0.2" fill="none" stroke="currentColor" strokeWidth="1" />
+                  <path fill="none" d="M250,150 Q300,100 350,150 T450,150 T550,150 T650,150 T750,150" opacity="0.2" stroke="currentColor" strokeWidth="1" />
                   <circle cx="200" cy="200" r="2" fill="currentColor" />
                   <circle cx="500" cy="150" r="2" fill="currentColor" />
                   <circle cx="800" cy="300" r="2" fill="currentColor" />
