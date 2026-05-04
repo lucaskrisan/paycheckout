@@ -83,7 +83,7 @@ const Index = () => {
         Pular para o conteúdo principal
       </a>
 
-      <LandingHeader />
+
       <main id="main-content">
         <GlobalSalesSection />
         <HeroSection />
