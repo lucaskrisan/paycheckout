@@ -46,9 +46,9 @@ const LandingHeader = () => {
             </span>
           </Link>
         </motion.div>
-            { href: "#global-sales", label: "Global" },
         <div className="hidden md:flex items-center gap-8 text-[13px] font-medium text-[#7A7A85]">
           {[
+            { href: "#global-sales", label: "Global" },
             { href: "#features", label: "Recursos" },
             { href: "#showcase", label: "Plataforma" },
             { href: "#pricing", label: "Preços" },
