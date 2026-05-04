@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
-import { Send, RotateCcw, Clock, CheckCheck, Globe, ShieldCheck, Zap } from "lucide-react";
+import { Send, RotateCcw, Clock, CheckCheck, Globe, ShieldCheck, Zap, Languages, Banknote } from "lucide-react";
 import panteraMascot from "@/assets/pantera-mascot.png";
+import globalSalesMap from "@/assets/global-sales-map.png";
 import WhatsAppIcon from "@/components/WhatsAppIcon";
 import { Badge } from "@/components/ui/badge";
 
@@ -135,187 +136,110 @@ const WhatsAppSection = () => (
         </motion.div>
       </div>
 
-      {/* Global Sales Section - Modern Reconstruction */}
-      <div id="global-sales" className="mt-40 relative group">
-        {/* Background glow effects */}
-        <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/5 blur-[120px] pointer-events-none" />
-        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-primary/10 blur-[120px] pointer-events-none" />
-
-        <div className="relative min-h-[600px] flex flex-col items-center gap-12 pt-16 pb-24 overflow-hidden rounded-[48px] border border-white/[0.05] bg-[#050505] shadow-[0_40px_100px_rgba(0,0,0,0.8)]">
-          {/* Section Header */}
-          <div className="relative z-20 text-center space-y-4 px-6 max-w-3xl">
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="inline-flex items-center gap-2 bg-primary/5 border border-primary/10 rounded-full px-4 py-1.5 mb-2"
-            >
-              <Globe className="w-3.5 h-3.5 text-primary" />
-              <span className="text-[11px] font-bold text-primary uppercase tracking-[0.2em]">Escala Sem Fronteiras</span>
-            </motion.div>
-            
-            <motion.h2 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-              className="text-4xl md:text-6xl font-black font-display leading-[1.05] tracking-tight text-white"
-            >
-              Domine o <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-[#4ADE80] to-[#2DD4BF]">Mercado Global</span>
-            </motion.h2>
-            
-            <motion.p 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-              className="text-gray-400 text-lg md:text-xl leading-relaxed font-light"
-            >
-              Venda em dólares, euros ou ienes. A Panttera remove as barreiras geográficas <br className="hidden md:block" />
-              e coloca seu produto nas mãos de clientes em todo o mundo.
-            </motion.p>
+      {/* Global Sales Section — Premium SaaS */}
+      <div id="global-sales" className="mt-40 relative">
+        <div className="relative overflow-hidden rounded-[40px] border border-white/[0.06] bg-[#030303] shadow-[0_60px_140px_-40px_rgba(0,0,0,0.9)]">
+          {/* Radial green glow */}
+          <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] bg-[radial-gradient(circle,_rgba(0,230,118,0.12)_0%,_rgba(0,230,118,0.04)_30%,_transparent_65%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_40%,_rgba(0,0,0,0.6)_100%)]" />
           </div>
 
-          {/* Central Visual Area */}
-          <div className="relative w-full max-w-6xl px-6 flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-4 mt-8">
-            
-            {/* Left Column: Metrics */}
-            <div className="w-full lg:w-1/4 space-y-6 order-2 lg:order-1">
-              {[
-                { label: "Taxa de Conversão", value: "98.2%", sub: "Global Average", color: "from-primary/20" },
-                { label: "Tempo de Setup", value: "2 min", sub: "Instant Activation", color: "from-blue-500/20" }
-              ].map((card, i) => (
-                <motion.div 
-                  key={i}
-                  initial={{ opacity: 0, x: -30 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.3 + (i * 0.1) }}
-                  className={`bg-white/[0.02] border border-white/[0.05] rounded-[32px] p-8 relative overflow-hidden group hover:border-primary/20 transition-all duration-500`}
-                >
-                  <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${card.color} to-transparent opacity-0 group-hover:opacity-100 transition-opacity`} />
-                  <p className="text-gray-500 text-[10px] uppercase tracking-widest font-bold mb-1">{card.label}</p>
-                  <p className="text-4xl font-black text-white mb-1">{card.value}</p>
-                  <p className="text-primary text-[11px] font-medium">{card.sub}</p>
-                </motion.div>
-              ))}
+          {/* Subtle grid */}
+          <div
+            className="absolute inset-0 opacity-[0.03] pointer-events-none"
+            style={{
+              backgroundImage: "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
+              backgroundSize: "60px 60px",
+            }}
+            aria-hidden="true"
+          />
+
+          <div className="relative z-10 px-6 md:px-12 lg:px-16 pt-20 md:pt-24 pb-16 md:pb-20">
+            {/* Header */}
+            <div className="text-center max-w-3xl mx-auto space-y-5">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="inline-flex items-center gap-2 bg-primary/[0.06] border border-primary/15 rounded-full px-4 py-1.5 backdrop-blur-sm"
+              >
+                <Globe className="w-3.5 h-3.5 text-primary" />
+                <span className="text-[11px] font-semibold text-primary uppercase tracking-[0.22em]">Vendas Globais</span>
+              </motion.div>
+
+              <motion.h2
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 }}
+                className="font-display text-4xl md:text-5xl lg:text-6xl font-black tracking-[-0.03em] leading-[1.05] text-white"
+              >
+                Seu produto vendendo
+                <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-[#4ADE80] to-primary">no mundo inteiro.</span>
+              </motion.h2>
+
+              <motion.p
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.15 }}
+                className="text-[15px] md:text-[17px] text-[#9A9AA5] leading-[1.7] font-light max-w-2xl mx-auto"
+              >
+                Receba em <span className="text-white font-medium">180+ moedas</span>, traduza seu checkout automaticamente e acesse compradores em qualquer país. Infraestrutura global, operação simples.
+              </motion.p>
             </div>
 
-            {/* Center: Mascot & Map */}
-            <div className="relative flex-1 flex items-center justify-center order-1 lg:order-2 py-10">
-              {/* World Map Background */}
-              <div className="absolute inset-0 opacity-10 pointer-events-none select-none mix-blend-screen">
-                <svg viewBox="0 0 1000 500" className="w-full h-full text-primary">
-                  <path fill="none" d="M250,150 Q300,100 350,150 T450,150 T550,150 T650,150 T750,150" opacity="0.2" stroke="currentColor" strokeWidth="1" />
-                  <circle cx="200" cy="200" r="2" fill="currentColor" />
-                  <circle cx="500" cy="150" r="2" fill="currentColor" />
-                  <circle cx="800" cy="300" r="2" fill="currentColor" />
-                  <circle cx="300" cy="400" r="2" fill="currentColor" />
-                </svg>
-              </div>
+            {/* Centerpiece: world map */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.9, delay: 0.2 }}
+              className="relative mt-16 md:mt-20 max-w-5xl mx-auto"
+            >
+              {/* Glow under image */}
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(0,230,118,0.18)_0%,_transparent_60%)] blur-3xl pointer-events-none" aria-hidden="true" />
 
-              {/* Main Mascot Interaction */}
-              <div className="relative z-10">
+              <img
+                src={globalSalesMap}
+                alt="Vendas globais aprovadas em tempo real"
+                className="relative w-full h-auto select-none drop-shadow-[0_30px_80px_rgba(0,230,118,0.15)]"
+                loading="lazy"
+              />
+
+              {/* Fade bottom */}
+              <div className="absolute bottom-0 inset-x-0 h-24 bg-gradient-to-t from-[#030303] to-transparent pointer-events-none" aria-hidden="true" />
+            </motion.div>
+
+            {/* Floating cards row */}
+            <div className="relative mt-12 md:mt-16 grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl mx-auto">
+              {[
+                { icon: Banknote, title: "180+ moedas", desc: "Receba em BRL, USD, EUR, JPY e mais." },
+                { icon: Languages, title: "Checkout multi-idioma", desc: "Tradução automática por geolocalização." },
+                { icon: ShieldCheck, title: "Compliance global", desc: "Impostos e regulações locais aplicados." },
+              ].map((c, i) => (
                 <motion.div
-                  animate={{ 
-                    y: [0, -20, 0],
-                    rotate: [0, 1, 0]
-                  }}
-                  transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                  className="relative"
-                >
-                  <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full scale-125 opacity-50" />
-                  <img 
-                    src={panteraMascot} 
-                    alt="Panttera Global" 
-                    className="w-72 h-72 md:w-[450px] md:h-[450px] object-contain drop-shadow-[0_0_80px_rgba(74,222,128,0.25)] relative z-10" 
-                  />
-                </motion.div>
-
-                {/* Floating Global Sales Notifications */}
-                <div className="absolute inset-0 pointer-events-none">
-                  {/* USA Sale */}
-                  <motion.div 
-                    initial={{ scale: 0, opacity: 0 }}
-                    whileInView={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: 0.6, type: "spring", stiffness: 100 }}
-                    className="absolute -top-10 -right-4 md:-right-20 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-[24px] p-5 shadow-2xl flex items-center gap-4 min-w-[200px]"
-                  >
-                    <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-2xl shadow-inner">🇺🇸</div>
-                    <div>
-                      <p className="text-[10px] font-black text-primary uppercase tracking-tighter">New Sale: New York</p>
-                      <p className="text-xl font-black text-white">$ 249.00</p>
-                      <div className="flex items-center gap-1 mt-1">
-                        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                        <span className="text-[9px] text-gray-500 font-bold uppercase">Confirmed</span>
-                      </div>
-                    </div>
-                  </motion.div>
-
-                  {/* Japan Sale */}
-                  <motion.div 
-                    initial={{ scale: 0, opacity: 0 }}
-                    whileInView={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: 0.9, type: "spring", stiffness: 100 }}
-                    className="absolute bottom-4 -left-4 md:-left-32 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-[24px] p-5 shadow-2xl flex items-center gap-4 min-w-[200px]"
-                  >
-                    <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-2xl shadow-inner">🇯🇵</div>
-                    <div>
-                      <p className="text-[10px] font-black text-[#FFB800] uppercase tracking-tighter">Sale: Tokyo</p>
-                      <p className="text-xl font-black text-white">¥ 38,000</p>
-                      <div className="flex items-center gap-1 mt-1">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#FFB800] animate-pulse" />
-                        <span className="text-[9px] text-gray-500 font-bold uppercase">Processing</span>
-                      </div>
-                    </div>
-                  </motion.div>
-
-                  {/* Brazil Sale */}
-                  <motion.div 
-                    initial={{ scale: 0, opacity: 0 }}
-                    whileInView={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: 1.2, type: "spring", stiffness: 100 }}
-                    className="absolute -bottom-16 right-0 md:right-10 bg-black/60 backdrop-blur-2xl border border-white/10 rounded-[24px] p-5 shadow-2xl flex items-center gap-4 min-w-[200px]"
-                  >
-                    <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-2xl shadow-inner">🇧🇷</div>
-                    <div>
-                      <p className="text-[10px] font-black text-[#009739] uppercase tracking-tighter">Venda: São Paulo</p>
-                      <p className="text-xl font-black text-white">R$ 1.497,00</p>
-                      <div className="flex items-center gap-1 mt-1">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#009739] animate-pulse" />
-                        <span className="text-[9px] text-gray-500 font-bold uppercase">Aprovada</span>
-                      </div>
-                    </div>
-                  </motion.div>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column: Features */}
-            <div className="w-full lg:w-1/4 space-y-6 order-3">
-              {[
-                { title: "Compliance Automático", desc: "Leis de taxas e impostos locais aplicadas instantaneamente.", icon: ShieldCheck },
-                { title: "180+ Moedas", desc: "Receba em sua moeda local, venda na moeda do seu cliente.", icon: Zap }
-              ].map((item, i) => (
-                <motion.div 
-                  key={i}
-                  initial={{ opacity: 0, x: 30 }}
-                  whileInView={{ opacity: 1, x: 0 }}
+                  key={c.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: 0.5 + (i * 0.1) }}
-                  className="flex flex-col gap-3 p-6 bg-white/[0.01] hover:bg-white/[0.03] rounded-3xl border border-white/[0.05] transition-all"
+                  transition={{ delay: 0.4 + i * 0.08 }}
+                  className="group relative bg-white/[0.02] border border-white/[0.06] rounded-2xl p-5 backdrop-blur-sm hover:border-primary/20 hover:bg-white/[0.04] transition-all duration-500"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <item.icon className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-white mb-1">{item.title}</h4>
-                    <p className="text-[11px] text-gray-500 leading-relaxed">{item.desc}</p>
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 shrink-0 rounded-xl bg-primary/10 border border-primary/15 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
+                      <c.icon className="w-4.5 h-4.5 text-primary" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <h3 className="text-[14px] font-bold text-white mb-1">{c.title}</h3>
+                      <p className="text-[12px] text-[#7A7A85] leading-relaxed font-light">{c.desc}</p>
+                    </div>
                   </div>
                 </motion.div>
               ))}
             </div>
-
           </div>
         </div>
       </div>
