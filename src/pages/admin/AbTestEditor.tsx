@@ -860,7 +860,7 @@ function EditorInner() {
           }
         }
         if (n.type === "checkout") {
-          const nodeIndex = n.id === "checkout-a" ? 0 : n.id === "checkout-b" ? 1 : -1;
+          const nodeIndex = n.id === "checkout-a" || n.data.label?.includes("A") ? 0 : (n.id === "checkout-b" || n.data.label?.includes("B") ? 1 : -1);
           const s = nodeIndex !== -1 ? stats.find(st => st.sort_order === nodeIndex) : null;
           
           if (s) {
