@@ -395,23 +395,44 @@ const AbandonedCartDetail = () => {
           </Card>
 
           {/* Actions */}
+          <div className="space-y-2">
+            {cart.email_recovery_sent_at ? (
+              <Button variant="outline" className="w-full gap-2" disabled>
+                <Mail className="w-4 h-4" />
+                E-mail já enviado ({format(new Date(cart.email_recovery_sent_at), "dd/MM HH:mm")})
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                className="w-full gap-2"
+                onClick={sendRecoveryEmail}
+                disabled={sendingEmail || !cart.customer_email}
+              >
+                <Mail className="w-4 h-4" />
+                {sendingEmail ? "Enviando..." : "Enviar e-mail de recuperação"}
+              </Button>
+            )}
 
-          {cart.email_recovery_sent_at ? (
-            <Button variant="outline" className="w-full gap-2" disabled>
-              <Mail className="w-4 h-4" />
-              E-mail já enviado ({format(new Date(cart.email_recovery_sent_at), "dd/MM HH:mm")})
-            </Button>
-          ) : (
             <Button
-              variant="outline"
-              className="w-full gap-2"
-              onClick={sendRecoveryEmail}
-              disabled={sendingEmail || !cart.customer_email}
+              variant="default"
+              className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+              onClick={sendWhatsAppRecovery}
+              disabled={sendingWhatsApp || !cart.customer_phone}
             >
-              <Mail className="w-4 h-4" />
-              {sendingEmail ? "Enviando..." : "Enviar e-mail de recuperação"}
+              <WhatsAppIcon className="w-4 h-4" />
+              {sendingWhatsApp ? "Enviando..." : "Enviar WhatsApp Nativo"}
             </Button>
-          )}
+
+            <Button
+              variant="ghost"
+              className="w-full gap-2 text-muted-foreground text-xs"
+              onClick={openWhatsApp}
+              disabled={!cart.customer_phone}
+            >
+              <WhatsAppIcon className="w-3 h-3 opacity-70" />
+              Abrir conversa manual (wa.me)
+            </Button>
+          </div>
         </div>
       </div>
     </div>
