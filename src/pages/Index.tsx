@@ -85,8 +85,8 @@ const Index = () => {
 
       <LandingHeader />
       <main id="main-content">
-        <HeroSection />
         <GlobalSalesSection />
+        <HeroSection />
         <ShowcaseSection />
         <WhatsAppSection />
         <FeaturesGrid />
