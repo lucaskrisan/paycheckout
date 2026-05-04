@@ -300,25 +300,25 @@ const WhatsApp = () => {
 
       <Tabs defaultValue={defaultTab} onValueChange={(val) => setSearchParams({ tab: val })} className="space-y-6">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <TabsList className="h-12 w-fit bg-muted/40 p-1 backdrop-blur-md border shadow-sm">
-            <TabsTrigger value="connection" className="gap-2 px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:text-gold data-[state=active]:shadow-sm">
+          <TabsList className="h-11 w-full lg:w-fit bg-muted/40 p-1 backdrop-blur-md border border-border/50 rounded-xl shadow-sm">
+            <TabsTrigger value="connection" className="flex-1 lg:flex-none gap-2 px-6 py-2 rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all duration-200">
               <ShieldCheck className="w-4 h-4" />
               Conexão
             </TabsTrigger>
-            <TabsTrigger value="templates" className="gap-2 px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:text-gold data-[state=active]:shadow-sm">
+            <TabsTrigger value="templates" className="flex-1 lg:flex-none gap-2 px-6 py-2 rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all duration-200">
               <MessageSquare className="w-4 h-4" />
               Templates
             </TabsTrigger>
-            <TabsTrigger value="recovery" className="gap-2 px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:text-gold data-[state=active]:shadow-sm">
+            <TabsTrigger value="recovery" className="flex-1 lg:flex-none gap-2 px-6 py-2 rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all duration-200">
               <RotateCw className="w-4 h-4" />
               Recuperação
             </TabsTrigger>
-            <TabsTrigger value="logs" className="gap-2 px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:text-gold data-[state=active]:shadow-sm">
+            <TabsTrigger value="logs" className="flex-1 lg:flex-none gap-2 px-6 py-2 rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all duration-200">
               <Activity className="w-4 h-4" />
               Logs
             </TabsTrigger>
             {isSuperAdmin && (
-              <TabsTrigger value="admin" className="gap-2 px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:text-gold data-[state=active]:shadow-sm">
+              <TabsTrigger value="admin" className="flex-1 lg:flex-none gap-2 px-6 py-2 rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all duration-200">
                 <Zap className="w-4 h-4" />
                 Admin
               </TabsTrigger>
@@ -331,7 +331,7 @@ const WhatsApp = () => {
               Último check: {formatRelative(lastChecked?.toISOString() ?? null)}
             </div>
             {status === "connected" && (
-              <Badge className="h-10 border-emerald-500/20 bg-emerald-500/10 px-4 text-emerald-600 gap-1.5 shadow-sm">
+              <Badge className="h-9 border-emerald-500/10 bg-emerald-500/5 px-4 text-emerald-600 font-medium text-[11px] gap-2 rounded-full shadow-none">
                 <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
                 Instância Ativa
               </Badge>
@@ -350,98 +350,83 @@ const WhatsApp = () => {
             </div>
           )}
 
-          <Card className="overflow-hidden border-border/50 bg-gradient-to-br from-card to-muted/10 shadow-xl transition-all hover:shadow-2xl">
-            <div className="absolute right-0 top-0 pointer-events-none p-12 opacity-[0.04]">
-              <Workflow className="h-64 w-64 rotate-12" />
-            </div>
-            <CardHeader className="relative z-10 border-b border-border/40 bg-muted/10 pb-6 pt-8">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-gold/10 text-gold border border-gold/20 shadow-lg">
-                    <ShieldCheck className="h-7 w-7" />
+          <Card className="overflow-hidden border-border/40 bg-card/30 backdrop-blur-sm shadow-none rounded-[24px]">
+            <CardHeader className="relative z-10 border-b border-border/40 bg-muted/5 pb-5 pt-6 px-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/5 text-primary border border-primary/10">
+                    <ShieldCheck className="h-5 w-5" />
                   </div>
                   <div>
-                    <CardTitle className="text-xl font-bold font-display">Status do Sistema</CardTitle>
-                    <p className="text-sm text-muted-foreground mt-0.5">Sua ponte direta com os clientes</p>
+                    <CardTitle className="text-lg font-bold">Status do Sistema</CardTitle>
+                    <p className="text-xs text-muted-foreground">Monitoramento da conexão principal</p>
                   </div>
                 </div>
-                {status === "connected" && (
-                  <div className="flex items-center gap-2 rounded-2xl bg-emerald-500/10 px-4 py-2 text-emerald-600 border border-emerald-500/20">
-                    <Activity className="h-4 w-4 animate-pulse" />
-                    <span className="text-xs font-bold uppercase tracking-wider">Operacional</span>
-                  </div>
-                )}
               </div>
             </CardHeader>
-            <CardContent className="relative z-10 pt-8 pb-10">
+            <CardContent className="relative z-10 p-6">
               {status === "connected" ? (
-                <div className="mx-auto max-w-4xl space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="md:col-span-2 flex flex-col justify-between gap-6 p-8 rounded-[32px] bg-emerald-500/5 border border-emerald-500/20 shadow-inner">
-                      <div className="flex items-start gap-5">
-                        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-3xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 shadow-lg">
-                          <CheckCircle2 className="w-9 h-9" />
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="md:col-span-2 flex flex-col justify-between gap-6 p-6 rounded-2xl bg-emerald-500/[0.02] border border-emerald-500/10">
+                      <div className="flex items-start gap-4">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                          <CheckCircle2 className="w-6 h-6" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-xl font-bold text-foreground">Sua conexão está saudável</h3>
-                            <Badge className="bg-emerald-500 text-white border-none text-[10px] h-5">LIVE</Badge>
-                          </div>
+                          <h3 className="text-base font-bold text-foreground">Conexão Ativa</h3>
                           {phoneNumber && (
-                            <p className="text-lg font-medium text-muted-foreground flex items-center gap-2 mt-1">
-                              <Phone className="w-4 h-4 text-emerald-500" />
+                            <p className="text-sm font-medium text-muted-foreground flex items-center gap-2 mt-1">
+                              <Phone className="w-3.5 h-3.5 text-emerald-500" />
                               {formatPhone(phoneNumber)}
                             </p>
                           )}
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4 pt-6 border-t border-emerald-500/10">
-                        <div className="space-y-1">
-                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Tempo de Atividade</p>
-                          <p className="text-sm font-medium text-foreground">{formatRelative(connectedAt)}</p>
+                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-emerald-500/10">
+                        <div className="space-y-0.5">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">Atividade</p>
+                          <p className="text-xs font-medium text-foreground">{formatRelative(connectedAt)}</p>
                         </div>
-                        <div className="space-y-1">
-                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">ID da Instância</p>
-                          <p className="text-sm font-mono text-foreground truncate">{instanceId}</p>
+                        <div className="space-y-0.5">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">Instância</p>
+                          <p className="text-xs font-mono text-foreground truncate">{instanceId}</p>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-3">
-                      <Button onClick={() => setTestOpen(true)} className="h-14 w-full gap-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all shadow-sm">
-                        <Send className="w-5 h-5" />
-                        <span className="font-semibold">Testar Disparo</span>
+                    <div className="flex flex-col gap-2">
+                      <Button onClick={() => setTestOpen(true)} className="h-11 w-full gap-2 rounded-xl bg-primary text-primary-foreground font-semibold shadow-sm">
+                        <Send className="w-4 h-4" />
+                        Testar Disparo
                       </Button>
-                      <Button onClick={handleReconnect} disabled={reconnecting} variant="outline" className="h-14 w-full gap-3 rounded-2xl border-border/60 hover:border-gold/30 hover:bg-gold/5 transition-all">
-                        {reconnecting ? <Loader2 className="w-5 h-5 animate-spin" /> : <RotateCw className="w-5 h-5" />}
-                        <span className="font-semibold">{reconnecting ? "Reiniciando..." : "Reiniciar Sessão"}</span>
+                      <Button onClick={handleReconnect} disabled={reconnecting} variant="outline" className="h-11 w-full gap-2 rounded-xl border-border/60 hover:bg-muted/50 transition-all font-medium">
+                        {reconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCw className="w-4 h-4" />}
+                        Reconectar
                       </Button>
                       <Button
                         variant="ghost"
                         onClick={handleDisconnect}
                         disabled={disconnecting}
-                        className="h-14 w-full gap-3 rounded-2xl text-destructive hover:bg-destructive/5 transition-all"
+                        className="h-11 w-full gap-2 rounded-xl text-destructive hover:bg-destructive/5 transition-all font-medium"
                       >
-                        {disconnecting ? <Loader2 className="w-5 h-5 animate-spin" /> : <PowerOff className="w-5 h-5" />}
-                        <span className="font-semibold">Desconectar Agora</span>
+                        {disconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <PowerOff className="w-4 h-4" />}
+                        Desconectar
                       </Button>
                     </div>
                   </div>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <Card className="border-border/40 bg-muted/20 shadow-none hover:border-gold/20 transition-all cursor-default group">
-                      <CardContent className="p-4 flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-gold/10 text-gold group-hover:scale-110 transition-transform">
-                          <Zap className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-medium text-muted-foreground uppercase">Automações</p>
-                          <p className="text-sm font-bold">Resiliência Máxima</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    {/* Mais cards de status rápido aqui... */}
+                    <div className="p-4 rounded-xl border border-border/40 bg-muted/10 flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600">
+                        <Zap className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">Status</p>
+                        <p className="text-xs font-bold">100% Operacional</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ) : status === "connecting" && qrSrc ? (
@@ -480,31 +465,26 @@ const WhatsApp = () => {
                   </Button>
                 </div>
               ) : (
-                <div className="mx-auto max-w-lg space-y-8 py-10 text-center">
+                <div className="mx-auto max-w-sm space-y-6 py-10 text-center">
                   <div className="flex justify-center">
-                    <div className="relative">
-                      <div className="absolute inset-0 animate-ping rounded-full bg-primary/20" />
-                      <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-muted border-4 border-background shadow-xl text-muted-foreground">
-                        <PowerOff className="h-10 w-10" />
-                      </div>
+                    <div className="h-16 w-16 items-center justify-center rounded-2xl bg-muted/50 flex border border-border/50 text-muted-foreground">
+                      <MessageSquare className="h-8 w-8" />
                     </div>
                   </div>
                   
                   <div className="space-y-2">
-                    <h3 className="text-2xl font-bold text-foreground">Pronto para escalar?</h3>
-                    <p className="text-muted-foreground leading-relaxed">Conecte sua conta WhatsApp para disparar automações de vendas, recuperação de carrinho e lembretes PIX em tempo real.</p>
+                    <h3 className="text-xl font-bold">Automação WhatsApp</h3>
+                    <p className="text-sm text-muted-foreground">Conecte sua instância para ativar notificações e recuperações automáticas.</p>
                   </div>
 
                   <Button 
                     onClick={handleConnect} 
                     disabled={loading} 
-                    className="h-16 w-full gap-3 rounded-[24px] bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-primary/20"
+                    className="h-12 w-full gap-2 rounded-xl bg-primary font-bold shadow-sm"
                   >
-                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <Zap className="h-6 w-6 fill-primary-foreground" />}
-                    <span className="text-lg font-bold">{loading ? "Gerando QR Code..." : "Ativar Automação Agora"}</span>
+                    {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Zap className="h-5 w-5 fill-primary-foreground" />}
+                    {loading ? "Iniciando..." : "Conectar Instância"}
                   </Button>
-                  
-                  <p className="text-[11px] text-muted-foreground uppercase tracking-widest">Ativação instantânea via QR Code</p>
                 </div>
               )}
             </CardContent>
