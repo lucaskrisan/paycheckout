@@ -821,6 +821,7 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
                 onDrag={handleDrag}
                 onSelect={handleSelectNode}
                 selected={selectedNodeId === node.id}
+                pendingConnection={pendingConnection}
               />
             ))}
           </div>
