@@ -269,14 +269,14 @@ function PageNode({ id, data }: NodeProps<Node<PageData, "page">>) {
       {data.stats && (
         <div className="grid grid-cols-2 gap-2 mb-3">
           <div className="flex flex-col p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
-            <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">CTR</span>
+            <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Conversão</span>
             <span className="text-sm font-black text-emerald-400">
-              {data.stats.impressions > 0 ? ((data.stats.clicks / data.stats.impressions) * 100).toFixed(1) : 0}%
+              {data.stats.clicks > 0 ? ((data.stats.sales / data.stats.clicks) * 100).toFixed(1) : 0}%
             </span>
           </div>
           <div className="flex flex-col p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
-            <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Cliques</span>
-            <span className="text-sm font-black text-white">{data.stats.clicks}</span>
+            <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Vendas</span>
+            <span className="text-sm font-black text-white">{data.stats.sales || 0}</span>
           </div>
         </div>
       )}
@@ -337,12 +337,14 @@ function CheckoutNode({ id, data }: NodeProps<Node<CheckoutData, "checkout">>) {
           <div className="flex flex-col p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
             <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Conversão</span>
             <span className="text-sm font-black text-orange-400">
-              {data.stats.impressions > 0 ? ((data.stats.sales / data.stats.impressions) * 100).toFixed(1) : 0}%
+              {data.stats.clicks > 0 ? ((data.stats.sales / data.stats.clicks) * 100).toFixed(1) : 0}%
             </span>
           </div>
           <div className="flex flex-col p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
-            <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Vendas</span>
-            <span className="text-sm font-black text-white">{data.stats.sales}</span>
+            <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Receita</span>
+            <span className="text-sm font-black text-white">
+              {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(data.stats.revenue || 0)}
+            </span>
           </div>
         </div>
       )}
@@ -858,7 +860,7 @@ function EditorInner() {
           }
         }
         if (n.type === "checkout") {
-          const nodeIndex = n.id === "checkout-a" ? 0 : n.id === "checkout-b" ? 1 : -1;
+          const nodeIndex = n.id === "checkout-a" || n.data.label?.includes("A") ? 0 : (n.id === "checkout-b" || n.data.label?.includes("B") ? 1 : -1);
           const s = nodeIndex !== -1 ? stats.find(st => st.sort_order === nodeIndex) : null;
           
           if (s) {
