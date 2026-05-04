@@ -473,10 +473,12 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
   });
   const [selectedNodeId, setSelectedNodeId] = useState<string>("");
   const [pendingConnection, setPendingConnection] = useState<string | null>(null);
+  const [mousePosition, setMousePosition] = useState<{ x: number; y: number } | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [sendingTest, setSendingTest] = useState(false);
   const [showTemplateSettings, setShowTemplateSettings] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setDraft(template);
