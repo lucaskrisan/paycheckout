@@ -140,54 +140,66 @@ const DotGrid = () => (
   </svg>
 );
 
-const ConnectionLines = ({ nodes }: { nodes: FlowNodeData[] }) => {
+const ConnectionLines = ({ 
+  nodes, 
+  pendingConnection, 
+  mousePosition 
+}: { 
+  nodes: FlowNodeData[]; 
+  pendingConnection: string | null;
+  mousePosition: { x: number; y: number } | null;
+}) => {
   const nodeMap = new Map(nodes.map((node) => [node.id, node]));
   const connections: Array<{ from: FlowNodeData; to: FlowNodeData }> = [];
 
   nodes.forEach((node) => {
-    node.outputs.forEach((outputId) => {
+    (node.outputs || []).forEach((outputId) => {
       const target = nodeMap.get(outputId);
       if (target) connections.push({ from: node, to: target });
     });
   });
 
+  const getSourcePoint = (node: FlowNodeData) => {
+    const x = node.x + 145; // Center of 290px card
+    
+    // Dynamic height estimation for the start point
+    let estimatedHeight = 180;
+    if (node.type === "paths" || node.type === "question") {
+      const optionsCount = node.config.options?.length || 0;
+      estimatedHeight = 180 + (optionsCount * 44);
+    } else if (node.type === "wait") {
+      estimatedHeight = 160;
+    } else if (node.config.body && node.config.body.length > 100) {
+      estimatedHeight = 210;
+    } else if (["image", "video"].includes(node.type)) {
+      estimatedHeight = 220;
+    }
+    
+    // Add space for the footer area
+    return { x, y: node.y + estimatedHeight + 40 };
+  };
+
   return (
     <svg className="pointer-events-none absolute inset-0 z-[1] h-full w-full">
       {connections.map(({ from, to }, index) => {
-        // Horizontal center of 290px card
-        const startX = from.x + 145;
-        
-        // Dynamic height estimation for the start point
-        let estimatedHeight = 180;
-        if (from.type === "paths" || from.type === "question") {
-          const optionsCount = from.config.options?.length || 0;
-          estimatedHeight = 180 + (optionsCount * 36);
-        } else if (from.type === "wait") {
-          estimatedHeight = 200;
-        } else if (from.config.body && from.config.body.length > 100) {
-          estimatedHeight = 220;
-        }
-
-        const startY = from.y + estimatedHeight;
+        const start = getSourcePoint(from);
         const endX = to.x + 145;
         const endY = to.y;
         
-        const distY = Math.abs(endY - startY);
+        const distY = Math.abs(endY - start.y);
         const deltaY = Math.max(70, distY * 0.5);
 
         return (
           <g key={`${from.id}-${to.id}-${index}`}>
-            {/* Connection line background for glow */}
             <path
-              d={`M${startX},${startY} C${startX},${startY + deltaY} ${endX},${endY - deltaY} ${endX},${endY}`}
+              d={`M${start.x},${start.y} C${start.x},${start.y + deltaY} ${endX},${endY - deltaY} ${endX},${endY}`}
               fill="none"
               stroke="hsl(var(--gold) / 0.1)"
               strokeWidth="10"
               strokeLinecap="round"
             />
-            {/* Main connection line */}
             <path
-              d={`M${startX},${startY} C${startX},${startY + deltaY} ${endX},${endY - deltaY} ${endX},${endY}`}
+              d={`M${start.x},${start.y} C${start.x},${start.y + deltaY} ${endX},${endY - deltaY} ${endX},${endY}`}
               className="transition-all duration-300"
               fill="none"
               stroke="hsl(var(--gold) / 0.7)"
@@ -195,14 +207,42 @@ const ConnectionLines = ({ nodes }: { nodes: FlowNodeData[] }) => {
               strokeLinecap="round"
               strokeDasharray={from.type === "wait" ? "6 4" : "none"}
             />
-            {/* Target point (top of card) */}
             <circle cx={endX} cy={endY} fill="hsl(var(--gold))" r="4.5" className="filter drop-shadow-[0_0_8px_hsl(var(--gold)/0.5)]" />
-            
-            {/* Source point (bottom center) */}
-            <circle cx={startX} cy={startY} fill="hsl(var(--gold)/0.8)" r="3" />
+            <circle cx={start.x} cy={start.y} fill="hsl(var(--gold)/0.8)" r="3" />
           </g>
         );
       })}
+
+      {/* Pending connection line */}
+      {pendingConnection && mousePosition && (
+        (() => {
+          const fromNode = nodeMap.get(pendingConnection);
+          if (!fromNode) return null;
+          
+          const start = getSourcePoint(fromNode);
+          const endX = mousePosition.x;
+          const endY = mousePosition.y;
+          
+          const distY = Math.abs(endY - start.y);
+          const deltaY = Math.max(70, distY * 0.5);
+
+          return (
+            <g>
+              <path
+                d={`M${start.x},${start.y} C${start.x},${start.y + deltaY} ${endX},${endY - deltaY} ${endX},${endY}`}
+                fill="none"
+                stroke="hsl(var(--gold) / 0.4)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeDasharray="5 5"
+                className="animate-pulse"
+              />
+              <circle cx={start.x} cy={start.y} fill="hsl(var(--gold))" r="4" />
+              <circle cx={endX} cy={endY} fill="hsl(var(--gold))" r="3" />
+            </g>
+          );
+        })()
+      )}
     </svg>
   );
 };
