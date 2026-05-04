@@ -304,13 +304,19 @@ const CanvasNode = ({
       initial={{ opacity: 0, scale: 0.94 }}
       style={{ left: node.x, top: node.y }}
     >
+      {/* Target connection point (top center) */}
+      <div 
+        className={`absolute -top-1.5 left-1/2 z-10 h-3 w-3 -translate-x-1/2 rounded-full border border-gold/40 bg-background transition-all ${
+          connecting && pendingConnection !== node.id ? "scale-150 border-gold bg-gold shadow-[0_0_10px_hsl(var(--gold))]" : "opacity-0"
+        }`}
+      />
+
       <div
         className={`group w-[290px] overflow-hidden rounded-[24px] border bg-card/95 shadow-2xl backdrop-blur transition-all ${
           selected ? "border-gold/70 shadow-[0_0_40px_hsl(var(--gold)/0.16)]" : "border-border/70 hover:border-border/100"
-        } ${pendingConnection === node.id ? "ring-2 ring-gold ring-offset-2 ring-offset-background shadow-[0_0_20px_hsl(var(--gold)/0.4)]" : ""} ${pendingConnection && pendingConnection !== node.id ? "hover:ring-2 hover:ring-gold/50 cursor-pointer" : ""}`}
+        } ${pendingConnection === node.id ? "ring-2 ring-gold ring-offset-2 ring-offset-background shadow-[0_0_20px_hsl(var(--gold)/0.4)]" : ""} ${connecting && pendingConnection !== node.id ? "hover:border-gold/60 cursor-pointer ring-1 ring-gold/20" : ""}`}
         onClick={(event) => {
-          // If we are in connecting mode, allow clicking anywhere on the node to connect
-          if (connecting) {
+          if (connecting && pendingConnection !== node.id) {
             event.stopPropagation();
             onSelect(node.id);
           }
