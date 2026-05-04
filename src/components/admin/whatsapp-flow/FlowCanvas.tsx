@@ -341,7 +341,6 @@ const CanvasNode = ({
       initial={{ opacity: 0, scale: 0.94 }}
       style={{ left: node.x, top: node.y }}
     >
-      {/* Target connection point (top center) */}
       <div 
         className={`absolute -top-1.5 left-1/2 z-10 h-3 w-3 -translate-x-1/2 rounded-full border border-gold/40 bg-background transition-all ${
           connecting && pendingConnection !== node.id ? "scale-150 border-gold bg-gold shadow-[0_0_10px_hsl(var(--gold))]" : "opacity-0"
