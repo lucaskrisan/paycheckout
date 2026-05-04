@@ -366,35 +366,32 @@ const WhatsApp = () => {
             </CardHeader>
             <CardContent className="relative z-10 p-6">
               {status === "connected" ? (
-                <div className="mx-auto max-w-4xl space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="md:col-span-2 flex flex-col justify-between gap-6 p-8 rounded-[32px] bg-emerald-500/5 border border-emerald-500/20 shadow-inner">
-                      <div className="flex items-start gap-5">
-                        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-3xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 shadow-lg">
-                          <CheckCircle2 className="w-9 h-9" />
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="md:col-span-2 flex flex-col justify-between gap-6 p-6 rounded-2xl bg-emerald-500/[0.02] border border-emerald-500/10">
+                      <div className="flex items-start gap-4">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                          <CheckCircle2 className="w-6 h-6" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-xl font-bold text-foreground">Sua conexão está saudável</h3>
-                            <Badge className="bg-emerald-500 text-white border-none text-[10px] h-5">LIVE</Badge>
-                          </div>
+                          <h3 className="text-base font-bold text-foreground">Conexão Ativa</h3>
                           {phoneNumber && (
-                            <p className="text-lg font-medium text-muted-foreground flex items-center gap-2 mt-1">
-                              <Phone className="w-4 h-4 text-emerald-500" />
+                            <p className="text-sm font-medium text-muted-foreground flex items-center gap-2 mt-1">
+                              <Phone className="w-3.5 h-3.5 text-emerald-500" />
                               {formatPhone(phoneNumber)}
                             </p>
                           )}
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4 pt-6 border-t border-emerald-500/10">
-                        <div className="space-y-1">
-                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Tempo de Atividade</p>
-                          <p className="text-sm font-medium text-foreground">{formatRelative(connectedAt)}</p>
+                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-emerald-500/10">
+                        <div className="space-y-0.5">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">Atividade</p>
+                          <p className="text-xs font-medium text-foreground">{formatRelative(connectedAt)}</p>
                         </div>
-                        <div className="space-y-1">
-                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">ID da Instância</p>
-                          <p className="text-sm font-mono text-foreground truncate">{instanceId}</p>
+                        <div className="space-y-0.5">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">Instância</p>
+                          <p className="text-xs font-mono text-foreground truncate">{instanceId}</p>
                         </div>
                       </div>
                     </div>
