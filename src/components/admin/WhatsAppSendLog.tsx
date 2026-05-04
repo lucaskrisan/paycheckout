@@ -110,6 +110,37 @@ const WhatsAppSendLog = () => {
   const [search, setSearch] = useState("");
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [showFullPhone, setShowFullPhone] = useState(false);
+  const [retrying, setRetrying] = useState<string | null>(null);
+
+  const handleRetry = async (log: LogEntry) => {
+    if (!user) return;
+    setRetrying(log.id);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+
+      // Use send-whatsapp-message for simple text retry
+      const res = await supabase.functions.invoke("send-whatsapp-message", {
+        body: {
+          to_number: log.customer_phone,
+          message: log.message_body,
+        },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      if (res.error || !res.data?.success) {
+        const errorMsg = res.error?.message || res.data?.details || res.data?.error || "Erro desconhecido";
+        toast.error("Erro ao reenviar: " + errorMsg);
+      } else {
+        toast.success("Mensagem reenviada com sucesso!");
+        fetchLogs(); // Refresh to show new log entry if applicable
+      }
+    } catch (error: any) {
+      toast.error("Erro no reenvio: " + error.message);
+    } finally {
+      setRetrying(null);
+    }
+  };
 
   const fetchLogs = useCallback(async () => {
     if (!user) return;
