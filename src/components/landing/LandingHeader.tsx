@@ -119,7 +119,7 @@ const LandingHeader = () => {
             aria-label="Menu mobile"
           >
             {[
-              
+              { href: "#global-sales", label: "Global" },
               { href: "#features", label: "Recursos" },
               { href: "#showcase", label: "Plataforma" },
               { href: "#pricing", label: "Preços" },
