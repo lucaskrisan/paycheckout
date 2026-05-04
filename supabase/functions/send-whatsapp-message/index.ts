@@ -109,6 +109,11 @@ Deno.serve(async (req) => {
       cleanNumber = `55${cleanNumber}`;
     }
 
+    // Fix for 11 digit mobile numbers (adding the 9 if missing)
+    if (cleanNumber.length === 12 && cleanNumber[4] !== "9") {
+      cleanNumber = cleanNumber.slice(0, 4) + "9" + cleanNumber.slice(4);
+    }
+
     if (cleanNumber.length < 12 || cleanNumber.length > 15) {
       return json({ error: "Número de destino inválido" }, 400);
     }

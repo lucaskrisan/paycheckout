@@ -110,6 +110,37 @@ const WhatsAppSendLog = () => {
   const [search, setSearch] = useState("");
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [showFullPhone, setShowFullPhone] = useState(false);
+  const [retrying, setRetrying] = useState<string | null>(null);
+
+  const handleRetry = async (log: LogEntry) => {
+    if (!user) return;
+    setRetrying(log.id);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+
+      // Use send-whatsapp-message for simple text retry
+      const res = await supabase.functions.invoke("send-whatsapp-message", {
+        body: {
+          to_number: log.customer_phone,
+          message: log.message_body,
+        },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      if (res.error || !res.data?.success) {
+        const errorMsg = res.error?.message || res.data?.details || res.data?.error || "Erro desconhecido";
+        toast.error("Erro ao reenviar: " + errorMsg);
+      } else {
+        toast.success("Mensagem reenviada com sucesso!");
+        fetchLogs(); // Refresh to show new log entry if applicable
+      }
+    } catch (error: any) {
+      toast.error("Erro no reenvio: " + error.message);
+    } finally {
+      setRetrying(null);
+    }
+  };
 
   const fetchLogs = useCallback(async () => {
     if (!user) return;
@@ -307,11 +338,27 @@ const WhatsAppSendLog = () => {
                             Enviado
                           </Badge>
                         ) : (
-                          <div className="flex flex-col gap-0.5">
-                            <Badge variant="destructive" className="gap-1 text-[10px] w-fit" title={log.error_message || ""}>
-                              <XCircle className="h-3 w-3" />
-                              Falhou
-                            </Badge>
+                          <div className="flex flex-col gap-1.5">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="destructive" className="gap-1 text-[10px] w-fit" title={log.error_message || ""}>
+                                <XCircle className="h-3 w-3" />
+                                Falhou
+                              </Badge>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-6 w-6 text-muted-foreground hover:text-gold"
+                                onClick={() => handleRetry(log)}
+                                disabled={!!retrying}
+                                title="Reenviar agora"
+                              >
+                                {retrying === log.id ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <RefreshCw className="h-3 w-3" />
+                                )}
+                              </Button>
+                            </div>
                             {log.error_message && (
                               <p className="text-[10px] text-red-400/80 mt-0.5 max-w-[200px] truncate" title={log.error_message}>
                                 {log.error_message}
