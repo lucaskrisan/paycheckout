@@ -423,7 +423,7 @@ const CanvasNode = ({
             className={`absolute -bottom-1.5 left-1/2 z-10 flex h-4 w-4 -translate-x-1/2 cursor-crosshair items-center justify-center rounded-full border border-gold/40 bg-background shadow-sm transition-all hover:scale-150 hover:border-gold ${
               pendingConnection === node.id ? "scale-150 border-gold shadow-[0_0_10px_hsl(var(--gold))]" : ""
             }`}
-            onClick={(e) => {
+            onMouseDown={(e) => {
               e.stopPropagation();
               onConnect(node.id);
             }}
