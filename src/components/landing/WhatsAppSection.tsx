@@ -199,7 +199,7 @@ const WhatsAppSection = () => (
                     </div>
                     <span className="text-xs font-bold text-white uppercase tracking-tighter">Mensagem</span>
                   </div>
-                  <p className="text-[10px] text-[#9A9AA5] leading-relaxed line-clamp-2">"Ei {nome}, notamos que você..."</p>
+                  <p className="text-[10px] text-[#9A9AA5] leading-relaxed line-clamp-2">"Ei &#123;nome&#125;, notamos que você..."</p>
                   <div className="mt-3 flex items-center gap-1.5">
                     <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[8px] font-bold border border-primary/20">CUPOM</span>
                     <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[8px] font-bold border border-primary/20">LINK</span>
