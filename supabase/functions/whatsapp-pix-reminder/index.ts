@@ -113,8 +113,22 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        const checkoutUrl = (order as any).metadata?.checkout_url 
+        const rawCheckoutUrl = (order as any).metadata?.checkout_url 
           || `https://app.panttera.com.br/checkout/${order.product_id}`;
+
+        let checkoutUrl = rawCheckoutUrl;
+        try {
+          const u = new URL(rawCheckoutUrl);
+          // Remove bulky params to keep the URL shorter
+          ["name", "email", "phone", "cpf", "customer_name", "customer_email", "customer_phone"].forEach(k => u.searchParams.delete(k));
+          
+          // Add minimalist tracking
+          u.searchParams.set("o", order.id.split("-")[0]); // order short prefix
+          u.searchParams.set("utm_source", "wa");
+          u.searchParams.set("utm_medium", "pix");
+          
+          checkoutUrl = u.toString();
+        } catch (_) {}
 
         await supabase.functions.invoke("whatsapp-dispatch", {
           body: {
