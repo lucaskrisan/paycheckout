@@ -428,9 +428,28 @@ const CanvasNode = ({
           )}
 
           {node.type === "wait" && (
-            <div className="inline-flex items-center gap-2 rounded-full border border-gold/20 bg-gold/10 px-3 py-1.5 text-xs font-medium text-gold">
-              <Clock3 className="h-3.5 w-3.5" />
-              {node.config.waitTime || "5"} {node.config.waitUnit || "minutos"}
+            <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 shadow-inner">
+              <div className="mb-2 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-amber-500/20 text-amber-600">
+                    <Clock3 className="h-3.5 w-3.5" />
+                  </div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-amber-600">Tempo de Espera</span>
+                </div>
+              </div>
+              
+              <div className="flex items-baseline gap-1.5">
+                <span className="font-display text-3xl font-black text-amber-600">
+                  {node.config.waitTime || "5"}
+                </span>
+                <span className="text-sm font-medium text-amber-600/70">
+                  {node.config.waitUnit || "minutos"}
+                </span>
+              </div>
+              
+              <p className="mt-2 text-[10px] leading-tight text-amber-600/60">
+                O fluxo aguardará este tempo antes de prosseguir para o próximo bloco conectado.
+              </p>
             </div>
           )}
         </div>
