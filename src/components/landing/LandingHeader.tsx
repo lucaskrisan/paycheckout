@@ -121,7 +121,7 @@ const LandingHeader = () => {
             {[
               { href: "#features", label: "Recursos" },
               { href: "#showcase", label: "Plataforma" },
-              { href: "#all-features", label: "Segurança" },
+              { href: "#pricing", label: "Preços" },
               { href: "#cta", label: "Contato" },
             ].map((l) => (
               <a key={l.label} href={l.href} className="block text-sm text-[#9A9AA5] hover:text-white py-2" onClick={() => setMobileOpen(false)}>
