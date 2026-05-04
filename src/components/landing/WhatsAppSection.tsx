@@ -132,6 +132,100 @@ const WhatsAppSection = () => (
           <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[60%] h-[40px] bg-[radial-gradient(ellipse,_rgba(37,211,102,0.15)_0%,_transparent_70%)] blur-xl" />
         </motion.div>
       </div>
+
+      {/* New Flow Builder Visual for Producers */}
+      <motion.div 
+        className="mt-32 relative max-w-5xl mx-auto"
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8 }}
+      >
+        <div className="text-center mb-12">
+          <Badge className="bg-primary/10 text-primary border-primary/20 mb-4 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest">Tecnologia Exclusiva</Badge>
+          <h3 className="text-3xl md:text-4xl font-display font-black mb-4">Desenhe sua conversão visualmente</h3>
+          <p className="text-[#9A9AA5] max-w-2xl mx-auto text-sm leading-relaxed">
+            Esqueça configurações chatas. Na Panttera você desenha o fluxo de conversa do seu cliente como um mapa mental. Arraste, conecte e lucre.
+          </p>
+        </div>
+
+        <div className="relative rounded-[32px] border border-white/[0.08] bg-[#0B0B0D] p-4 md:p-8 overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.6)]">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,_rgba(74,222,128,0.1)_0%,_transparent_70%)]" />
+          
+          <div className="relative flex flex-col md:flex-row gap-8 items-center">
+            {/* Mock Flow Visual */}
+            <div className="flex-1 grid grid-cols-1 gap-6 w-full">
+              {/* Node 1: Trigger */}
+              <div className="flex items-center gap-4">
+                <div className="w-[200px] bg-[#1A1A1E] border border-primary/30 rounded-2xl p-4 shadow-lg relative group">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
+                      <Zap className="w-4 h-4 fill-current" />
+                    </div>
+                    <span className="text-xs font-bold text-white uppercase tracking-tighter">Disparo</span>
+                  </div>
+                  <p className="text-[10px] text-[#6A6A75]">Carrinho abandonado detectado</p>
+                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full border border-primary/40 bg-[#0B0B0D] flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                  </div>
+                </div>
+                <div className="hidden md:block flex-1 h-px bg-gradient-to-r from-primary to-amber-500/50" />
+              </div>
+
+              {/* Node 2: Timer */}
+              <div className="flex items-center gap-4 md:pl-24">
+                <div className="w-[180px] bg-[#1A1A1E] border border-amber-500/30 rounded-2xl p-4 shadow-lg relative group scale-105 ring-4 ring-amber-500/10">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-500">
+                      <Clock className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-bold text-white uppercase tracking-tighter text-amber-500">Timer</span>
+                  </div>
+                  <p className="text-lg font-black text-amber-500">15 min</p>
+                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full border border-amber-500/40 bg-[#0B0B0D] flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  </div>
+                </div>
+                <div className="hidden md:block flex-1 h-px bg-gradient-to-r from-amber-500/50 to-primary" />
+              </div>
+
+              {/* Node 3: Message */}
+              <div className="flex items-center gap-4 md:pl-48">
+                <div className="w-[220px] bg-[#1A1A1E] border border-primary/30 rounded-2xl p-4 shadow-lg relative group">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
+                      <MessageSquare className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-bold text-white uppercase tracking-tighter">Mensagem</span>
+                  </div>
+                  <p className="text-[10px] text-[#9A9AA5] leading-relaxed line-clamp-2">"Ei {nome}, notamos que você..."</p>
+                  <div className="mt-3 flex items-center gap-1.5">
+                    <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[8px] font-bold border border-primary/20">CUPOM</span>
+                    <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[8px] font-bold border border-primary/20">LINK</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Benefit List */}
+            <div className="w-full md:w-[320px] space-y-4">
+              {[
+                { title: "Builder Visual Intuitivo", desc: "Não precisa de código. Apenas desenhe." },
+                { title: "Timers Inteligentes", desc: "Controle o timing exato para não dar spam." },
+                { title: "Variáveis Dinâmicas", desc: "Links, nomes e valores automáticos." }
+              ].map((item, i) => (
+                <div key={i} className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.05] transition-colors">
+                  <div className="flex items-center gap-3 mb-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_#4ade80]" />
+                    <h4 className="text-sm font-bold text-white">{item.title}</h4>
+                  </div>
+                  <p className="text-xs text-[#6A6A75] pl-4">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </motion.div>
     </div>
   </section>
 );
