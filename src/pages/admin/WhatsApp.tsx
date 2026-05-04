@@ -300,25 +300,25 @@ const WhatsApp = () => {
 
       <Tabs defaultValue={defaultTab} onValueChange={(val) => setSearchParams({ tab: val })} className="space-y-6">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <TabsList className="h-12 w-fit bg-muted/40 p-1 backdrop-blur-md border shadow-sm">
-            <TabsTrigger value="connection" className="gap-2 px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:text-gold data-[state=active]:shadow-sm">
+          <TabsList className="h-11 w-full lg:w-fit bg-muted/40 p-1 backdrop-blur-md border border-border/50 rounded-xl shadow-sm">
+            <TabsTrigger value="connection" className="flex-1 lg:flex-none gap-2 px-6 py-2 rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all duration-200">
               <ShieldCheck className="w-4 h-4" />
               Conexão
             </TabsTrigger>
-            <TabsTrigger value="templates" className="gap-2 px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:text-gold data-[state=active]:shadow-sm">
+            <TabsTrigger value="templates" className="flex-1 lg:flex-none gap-2 px-6 py-2 rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all duration-200">
               <MessageSquare className="w-4 h-4" />
               Templates
             </TabsTrigger>
-            <TabsTrigger value="recovery" className="gap-2 px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:text-gold data-[state=active]:shadow-sm">
+            <TabsTrigger value="recovery" className="flex-1 lg:flex-none gap-2 px-6 py-2 rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all duration-200">
               <RotateCw className="w-4 h-4" />
               Recuperação
             </TabsTrigger>
-            <TabsTrigger value="logs" className="gap-2 px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:text-gold data-[state=active]:shadow-sm">
+            <TabsTrigger value="logs" className="flex-1 lg:flex-none gap-2 px-6 py-2 rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all duration-200">
               <Activity className="w-4 h-4" />
               Logs
             </TabsTrigger>
             {isSuperAdmin && (
-              <TabsTrigger value="admin" className="gap-2 px-6 py-2.5 data-[state=active]:bg-background data-[state=active]:text-gold data-[state=active]:shadow-sm">
+              <TabsTrigger value="admin" className="flex-1 lg:flex-none gap-2 px-6 py-2 rounded-lg data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all duration-200">
                 <Zap className="w-4 h-4" />
                 Admin
               </TabsTrigger>
