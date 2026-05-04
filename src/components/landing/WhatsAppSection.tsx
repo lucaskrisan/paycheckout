@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { Send, RotateCcw, Clock, CheckCheck } from "lucide-react";
+import { Send, RotateCcw, Clock, CheckCheck, Globe, ShieldCheck, Zap } from "lucide-react";
+import panteraMascot from "@/assets/pantera-mascot.png";
 import WhatsAppIcon from "@/components/WhatsAppIcon";
 import { Badge } from "@/components/ui/badge";
 
