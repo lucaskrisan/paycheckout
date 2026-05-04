@@ -402,16 +402,30 @@ const CanvasNode = ({
               onSelect(node.id);
             }}
           >
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90 line-clamp-4">
-              {node.config.body || "Clique no botão abaixo para configurar este nó."}
-            </p>
-            <div className="mt-3 flex items-center justify-between border-t border-border/10 pt-2">
-              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Configuração</span>
-              <div className="flex items-center gap-1 text-xs font-semibold text-gold">
-                <span>Editar</span>
-                <FileText className="h-3 w-3" />
+            {node.type === "wait" ? (
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600">
+                  <Clock3 className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-foreground">Tempo de Espera</p>
+                  <p className="text-xs text-muted-foreground">Clique para editar o atraso</p>
+                </div>
               </div>
-            </div>
+            ) : (
+              <>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90 line-clamp-4">
+                  {node.config.body || "Clique para configurar este bloco."}
+                </p>
+                <div className="mt-3 flex items-center justify-between border-t border-border/10 pt-2">
+                  <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Configuração</span>
+                  <div className="flex items-center gap-1 text-xs font-semibold text-gold">
+                    <span>Editar</span>
+                    <FileText className="h-3 w-3" />
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           {Array.isArray(node.config.options) && node.config.options.length > 0 && (
