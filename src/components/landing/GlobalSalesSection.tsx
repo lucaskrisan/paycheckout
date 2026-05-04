@@ -3,7 +3,9 @@ import LandingHeader from "./LandingHeader";
 
 const GlobalSalesSection = () => {
   return (
-    <section id="global-sales" className="relative min-h-screen flex flex-col items-center justify-start pt-16 px-4 overflow-hidden bg-[#050505] text-white font-sans">
+    <>
+    <LandingHeader />
+    <section id="global-sales" className="relative min-h-screen flex flex-col items-center justify-start pt-32 px-4 overflow-hidden bg-[#050505] text-white font-sans">
       {/* Top-right radial glow effect */}
       <div className="absolute top-[-10%] right-[-5%] w-[60%] h-[60%] bg-[radial-gradient(circle,_rgba(74,222,128,0.2)_0%,_rgba(0,0,0,0)_70%)] pointer-events-none z-1" />
 
