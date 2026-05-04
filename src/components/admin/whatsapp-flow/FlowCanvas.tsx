@@ -363,11 +363,20 @@ const CanvasNode = ({
           className="flex cursor-grab items-center gap-3 border-b border-border/60 px-4 py-3 active:cursor-grabbing" 
           onMouseDown={handleMouseDown}
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-gold/20 bg-gold/10 text-gold">
+          <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border shadow-sm transition-colors ${
+            node.type === "wait" ? "border-amber-500/30 bg-amber-500/10 text-amber-500" : "border-gold/20 bg-gold/10 text-gold"
+          }`}>
             <Icon className="h-4 w-4" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-foreground">{node.label}</p>
+            <div className="flex items-center gap-2">
+              <p className="truncate text-sm font-semibold text-foreground">{node.label}</p>
+              {node.type === "wait" && (
+                <Badge variant="outline" className="h-4 border-amber-500/30 bg-amber-500/10 px-1 text-[9px] font-bold text-amber-600">
+                  TIMER
+                </Badge>
+              )}
+            </div>
             <p className="text-[11px] text-muted-foreground">{meta.label}</p>
           </div>
           <GripVertical className="h-4 w-4 text-muted-foreground opacity-50" />
