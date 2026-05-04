@@ -893,7 +893,7 @@ function EditorInner() {
             ...n, 
             data: { 
               ...n.data, 
-              impressions: totalVisits, 
+              impressions: totalImpressions, 
               sales: totalSales, 
               revenue: totalRevenue 
             } 
