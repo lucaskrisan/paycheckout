@@ -473,15 +473,15 @@ function CreativeNode({ id, data }: NodeProps<Node<CreativeData, "creative">>) {
         </Button>
         
         {data.stats && (
-          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/5 mt-1">
+          <div className="grid grid-cols-2 gap-2 mb-2">
             <div className="flex flex-col p-2 rounded-xl bg-pink-500/5 border border-pink-500/10">
-              <span className="text-[8px] uppercase tracking-wider text-pink-400/70 font-bold">Cliques</span>
-              <span className="text-xs font-black text-white">{data.stats.clicks || 0}</span>
+              <span className="text-[9px] uppercase tracking-wider text-pink-400/70 font-bold">Vendas</span>
+              <span className="text-sm font-black text-white">{data.stats.sales || 0}</span>
             </div>
             <div className="flex flex-col p-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
-              <span className="text-[8px] uppercase tracking-wider text-emerald-400/70 font-bold">Vendas</span>
-              <span className="text-xs font-black text-emerald-400">
-                {data.stats.sales || 0}
+              <span className="text-[9px] uppercase tracking-wider text-emerald-400/70 font-bold">Receita</span>
+              <span className="text-sm font-black text-emerald-400">
+                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(data.stats.revenue || 0)}
               </span>
             </div>
           </div>
@@ -544,15 +544,15 @@ function UpsellNode({ id, data }: NodeProps<Node<UpsellData, "upsell">>) {
         </div>
 
         {data.stats && (
-          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/5 mt-1">
+          <div className="grid grid-cols-2 gap-2 mb-2">
             <div className="flex flex-col p-2 rounded-xl bg-violet-500/5 border border-violet-500/10">
-              <span className="text-[8px] uppercase tracking-wider text-violet-400/70 font-bold">Vistas</span>
-              <span className="text-xs font-black text-white">{data.stats.impressions || 0}</span>
+              <span className="text-[9px] uppercase tracking-wider text-violet-400/70 font-bold">Vendas</span>
+              <span className="text-sm font-black text-white">{data.stats.sales || 0}</span>
             </div>
             <div className="flex flex-col p-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
-              <span className="text-[8px] uppercase tracking-wider text-emerald-400/70 font-bold">Vendas</span>
-              <span className="text-xs font-black text-emerald-400">
-                {data.stats.sales || 0}
+              <span className="text-[9px] uppercase tracking-wider text-emerald-400/70 font-bold">Receita</span>
+              <span className="text-sm font-black text-emerald-400">
+                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(data.stats.revenue || 0)}
               </span>
             </div>
           </div>
