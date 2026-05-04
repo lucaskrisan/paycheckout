@@ -215,6 +215,7 @@ const CanvasNode = ({
   onDrag,
   onSelect,
   selected,
+  pendingConnection,
 }: {
   connecting: boolean;
   node: FlowNodeData;
@@ -223,6 +224,7 @@ const CanvasNode = ({
   onDrag: (id: string, x: number, y: number) => void;
   onSelect: (id: string) => void;
   selected: boolean;
+  pendingConnection: string | null;
 }) => {
   const meta = NODE_TYPES.find((item) => item.id === node.type) || INTERNAL_NODE_META[node.type] || INTERNAL_NODE_META.trigger;
   const Icon = meta.icon;
