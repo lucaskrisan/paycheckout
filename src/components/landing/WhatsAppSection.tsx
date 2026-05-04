@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
-import { Send, RotateCcw, Clock, CheckCheck, Globe, ShieldCheck, Zap, Languages, Banknote } from "lucide-react";
-import panteraMascot from "@/assets/pantera-mascot.png";
-import globalSalesMap from "@/assets/global-sales-map.png";
+import { Send, RotateCcw, Clock, CheckCheck, Globe, ShieldCheck, Languages, Banknote } from "lucide-react";
+import globalSalesPanther from "@/assets/global-sales-panther.png";
 import WhatsAppIcon from "@/components/WhatsAppIcon";
 import { Badge } from "@/components/ui/badge";
 
