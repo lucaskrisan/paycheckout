@@ -860,7 +860,7 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
         <div
           ref={containerRef}
           className="scrollbar-premium relative min-w-0 flex-1 overflow-auto bg-background"
-          onClick={() => {
+          onMouseDown={() => {
             setSelectedNodeId("");
             setPendingConnection(null);
           }}
