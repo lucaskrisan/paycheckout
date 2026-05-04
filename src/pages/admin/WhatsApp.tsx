@@ -465,31 +465,26 @@ const WhatsApp = () => {
                   </Button>
                 </div>
               ) : (
-                <div className="mx-auto max-w-lg space-y-8 py-10 text-center">
+                <div className="mx-auto max-w-sm space-y-6 py-10 text-center">
                   <div className="flex justify-center">
-                    <div className="relative">
-                      <div className="absolute inset-0 animate-ping rounded-full bg-primary/20" />
-                      <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-muted border-4 border-background shadow-xl text-muted-foreground">
-                        <PowerOff className="h-10 w-10" />
-                      </div>
+                    <div className="h-16 w-16 items-center justify-center rounded-2xl bg-muted/50 flex border border-border/50 text-muted-foreground">
+                      <MessageSquare className="h-8 w-8" />
                     </div>
                   </div>
                   
                   <div className="space-y-2">
-                    <h3 className="text-2xl font-bold text-foreground">Pronto para escalar?</h3>
-                    <p className="text-muted-foreground leading-relaxed">Conecte sua conta WhatsApp para disparar automações de vendas, recuperação de carrinho e lembretes PIX em tempo real.</p>
+                    <h3 className="text-xl font-bold">Automação WhatsApp</h3>
+                    <p className="text-sm text-muted-foreground">Conecte sua instância para ativar notificações e recuperações automáticas.</p>
                   </div>
 
                   <Button 
                     onClick={handleConnect} 
                     disabled={loading} 
-                    className="h-16 w-full gap-3 rounded-[24px] bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-primary/20"
+                    className="h-12 w-full gap-2 rounded-xl bg-primary font-bold shadow-sm"
                   >
-                    {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <Zap className="h-6 w-6 fill-primary-foreground" />}
-                    <span className="text-lg font-bold">{loading ? "Gerando QR Code..." : "Ativar Automação Agora"}</span>
+                    {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Zap className="h-5 w-5 fill-primary-foreground" />}
+                    {loading ? "Iniciando..." : "Conectar Instância"}
                   </Button>
-                  
-                  <p className="text-[11px] text-muted-foreground uppercase tracking-widest">Ativação instantânea via QR Code</p>
                 </div>
               )}
             </CardContent>
