@@ -1,6 +1,6 @@
 import {
   BarChart3, Globe, ShoppingCart, Users, Layers, Webhook,
-  Bell, Mail, TrendingUp, FileText, Shield,
+  Bell, Mail, TrendingUp, FileText, Shield, MousePointer2,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { SectionHeader } from "./FeaturesGrid";
@@ -23,6 +23,7 @@ const allFeatures = [
   { icon: FileText, title: "Relatórios cirúrgicos", desc: "Métricas por método, chargeback, reembolso. Dados que decidem." },
   { icon: Shield, title: "Segurança blindada", desc: "RLS, SSL, antifraude. Seu dinheiro protegido em todos os gateways." },
   { icon: WhatsAppFeatureIcon, title: "WhatsApp (em breve)", desc: "Recuperação e entrega via WhatsApp. O canal que todo mundo usa." },
+  { icon: MousePointer2, title: "Clonador & Quiz", desc: "Clone qualquer página e construa quizzes lucrativos em segundos." },
 ];
 
 const AllFeatures = () => (
