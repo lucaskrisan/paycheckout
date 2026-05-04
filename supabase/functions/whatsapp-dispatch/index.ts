@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
     const messagesToSend: MessageToSend[] = [];
 
     const flowNodes = Array.isArray(template.flow_nodes) ? template.flow_nodes : [];
-    const messageNodeTypes = ["text", "image", "audio", "video", "document", "music"];
+    const messageNodeTypes = ["text", "image", "audio", "video", "document", "music", "wait"];
 
     if (flowNodes.length > 0) {
       const nodeMap = new Map<string, any>();
@@ -175,14 +175,27 @@ Deno.serve(async (req) => {
         if (!node) continue;
 
         if (messageNodeTypes.includes(node.type)) {
-          const nodeType = node.type === "music" ? "audio" : node.type;
-          const text = resolveVars(node.config?.body || "");
-          const mediaUrl = node.config?.media_url?.trim() || "";
+          if (node.type === "wait") {
+            const time = parseInt(node.config?.waitTime || "0");
+            const unit = node.config?.waitUnit || "minutos";
+            let ms = time * 60 * 1000;
+            if (unit === "horas") ms = time * 60 * 60 * 1000;
+            if (unit === "dias") ms = time * 24 * 60 * 60 * 1000;
+            
+            if (ms > 0) {
+              console.log(`[whatsapp-dispatch] Waiting ${time} ${unit} (${ms}ms)`);
+              await new Promise((r) => setTimeout(r, Math.min(ms, 30000))); // Cap at 30s for edge functions
+            }
+          } else {
+            const nodeType = node.type === "music" ? "audio" : node.type;
+            const text = resolveVars(node.config?.body || "");
+            const mediaUrl = node.config?.media_url?.trim() || "";
 
-          if (isMediaType(nodeType) && mediaUrl) {
-            messagesToSend.push({ type: nodeType, text, mediaUrl });
-          } else if (text) {
-            messagesToSend.push({ type: "text", text, mediaUrl: undefined });
+            if (isMediaType(nodeType) && mediaUrl) {
+              messagesToSend.push({ type: nodeType, text, mediaUrl });
+            } else if (text) {
+              messagesToSend.push({ type: "text", text, mediaUrl: undefined });
+            }
           }
         }
 
