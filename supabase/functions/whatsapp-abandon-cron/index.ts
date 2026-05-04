@@ -12,7 +12,7 @@ const json = (payload: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-const MAX_ATTEMPTS_PER_CART = 2;
+const MAX_ATTEMPTS_PER_CART = 1;
 const RETRY_COOLDOWN_MS = 6 * 60 * 60 * 1000; // 6 hours
 
 Deno.serve(async (req) => {

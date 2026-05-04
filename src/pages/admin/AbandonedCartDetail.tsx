@@ -54,6 +54,7 @@ const AbandonedCartDetail = () => {
   const [notes, setNotes] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -109,6 +110,53 @@ const AbandonedCartDetail = () => {
       toast.error("Erro: " + e.message);
     }
     setSendingEmail(false);
+  };
+
+  const sendWhatsAppRecovery = async () => {
+    if (!cart) return;
+    setSendingWhatsApp(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+
+      // Calculate recovery link
+      const baseUrl = cart.checkout_url || cart.page_url || "";
+      let recoveryLink = baseUrl;
+      if (baseUrl) {
+        try {
+          const u = new URL(baseUrl);
+          ["name", "email", "phone", "cpf"].forEach(k => u.searchParams.delete(k));
+          u.searchParams.set("cart_id", cart.id);
+          u.searchParams.set("utm_source", "manual_recovery");
+          u.searchParams.set("utm_medium", "whatsapp");
+          recoveryLink = u.toString();
+        } catch (_) {}
+      }
+
+      const res = await supabase.functions.invoke("whatsapp-dispatch", {
+        body: {
+          tenant_id: (cart as any).user_id,
+          order_id: cart.id,
+          customer_phone: cart.customer_phone,
+          customer_name: cart.customer_name || "Cliente",
+          product_name: cart.products?.name || "Produto",
+          product_price: (cart.product_price || cart.products?.price || 0).toString(),
+          access_link: recoveryLink,
+          category: "abandono",
+        },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      if (res.error || !res.data?.success) {
+        const errorMsg = res.error?.message || res.data?.details || res.data?.error || "Erro desconhecido";
+        toast.error("Erro ao enviar WhatsApp: " + errorMsg);
+      } else {
+        toast.success("Mensagem de WhatsApp enviada com sucesso!");
+      }
+    } catch (e: any) {
+      toast.error("Erro: " + e.message);
+    }
+    setSendingWhatsApp(false);
   };
 
   const copyUrl = () => {
@@ -347,23 +395,44 @@ const AbandonedCartDetail = () => {
           </Card>
 
           {/* Actions */}
+          <div className="space-y-2">
+            {cart.email_recovery_sent_at ? (
+              <Button variant="outline" className="w-full gap-2" disabled>
+                <Mail className="w-4 h-4" />
+                E-mail já enviado ({format(new Date(cart.email_recovery_sent_at), "dd/MM HH:mm")})
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                className="w-full gap-2"
+                onClick={sendRecoveryEmail}
+                disabled={sendingEmail || !cart.customer_email}
+              >
+                <Mail className="w-4 h-4" />
+                {sendingEmail ? "Enviando..." : "Enviar e-mail de recuperação"}
+              </Button>
+            )}
 
-          {cart.email_recovery_sent_at ? (
-            <Button variant="outline" className="w-full gap-2" disabled>
-              <Mail className="w-4 h-4" />
-              E-mail já enviado ({format(new Date(cart.email_recovery_sent_at), "dd/MM HH:mm")})
-            </Button>
-          ) : (
             <Button
-              variant="outline"
-              className="w-full gap-2"
-              onClick={sendRecoveryEmail}
-              disabled={sendingEmail || !cart.customer_email}
+              variant="default"
+              className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+              onClick={sendWhatsAppRecovery}
+              disabled={sendingWhatsApp || !cart.customer_phone}
             >
-              <Mail className="w-4 h-4" />
-              {sendingEmail ? "Enviando..." : "Enviar e-mail de recuperação"}
+              <WhatsAppIcon className="w-4 h-4" />
+              {sendingWhatsApp ? "Enviando..." : "Enviar WhatsApp Nativo"}
             </Button>
-          )}
+
+            <Button
+              variant="ghost"
+              className="w-full gap-2 text-muted-foreground text-xs"
+              onClick={openWhatsApp}
+              disabled={!cart.customer_phone}
+            >
+              <WhatsAppIcon className="w-3 h-3 opacity-70" />
+              Abrir conversa manual (wa.me)
+            </Button>
+          </div>
         </div>
       </div>
     </div>
