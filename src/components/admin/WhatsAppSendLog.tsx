@@ -338,11 +338,27 @@ const WhatsAppSendLog = () => {
                             Enviado
                           </Badge>
                         ) : (
-                          <div className="flex flex-col gap-0.5">
-                            <Badge variant="destructive" className="gap-1 text-[10px] w-fit" title={log.error_message || ""}>
-                              <XCircle className="h-3 w-3" />
-                              Falhou
-                            </Badge>
+                          <div className="flex flex-col gap-1.5">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="destructive" className="gap-1 text-[10px] w-fit" title={log.error_message || ""}>
+                                <XCircle className="h-3 w-3" />
+                                Falhou
+                              </Badge>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-6 w-6 text-muted-foreground hover:text-gold"
+                                onClick={() => handleRetry(log)}
+                                disabled={!!retrying}
+                                title="Reenviar agora"
+                              >
+                                {retrying === log.id ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <RefreshCw className="h-3 w-3" />
+                                )}
+                              </Button>
+                            </div>
                             {log.error_message && (
                               <p className="text-[10px] text-red-400/80 mt-0.5 max-w-[200px] truncate" title={log.error_message}>
                                 {log.error_message}
