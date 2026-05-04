@@ -635,6 +635,17 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
     }
   };
 
+  const handleRemoveConnection = (fromId: string, toId: string) => {
+    setNodes((current) =>
+      current.map((node) =>
+        node.id === fromId
+          ? { ...node, outputs: (node.outputs || []).filter((id) => id !== toId) }
+          : node
+      )
+    );
+    toast.success("Conexão removida");
+  };
+
   const handleAddNode = (type: NodeType) => {
     const anchor = nodes.find((node) => node.id === selectedNodeId) || nodes[nodes.length - 1];
     const nextId = `${type.id}-${Date.now()}`;
