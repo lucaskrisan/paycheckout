@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import LandingHeader from "./LandingHeader";
 
 const GlobalSalesSection = () => {
   return (
