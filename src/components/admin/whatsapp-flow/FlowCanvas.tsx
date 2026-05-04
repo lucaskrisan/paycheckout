@@ -969,7 +969,12 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
         >
           <div className="relative h-full min-h-[760px] w-full min-w-[900px]">
             <DotGrid />
-            <ConnectionLines nodes={nodes} pendingConnection={pendingConnection} mousePosition={mousePosition} />
+            <ConnectionLines 
+              nodes={nodes} 
+              pendingConnection={pendingConnection} 
+              mousePosition={mousePosition} 
+              onRemoveConnection={handleRemoveConnection}
+            />
 
             <div className="pointer-events-none absolute left-4 top-4 z-[3] flex items-center gap-2 rounded-full border border-gold/20 bg-card/90 px-3 py-1.5 text-xs text-muted-foreground shadow-lg backdrop-blur">
               <MessageSquare className="h-3.5 w-3.5 text-gold" />
