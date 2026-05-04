@@ -418,18 +418,15 @@ const WhatsApp = () => {
                   </div>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <Card className="border-border/40 bg-muted/20 shadow-none hover:border-gold/20 transition-all cursor-default group">
-                      <CardContent className="p-4 flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-gold/10 text-gold group-hover:scale-110 transition-transform">
-                          <Zap className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-medium text-muted-foreground uppercase">Automações</p>
-                          <p className="text-sm font-bold">Resiliência Máxima</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    {/* Mais cards de status rápido aqui... */}
+                    <div className="p-4 rounded-xl border border-border/40 bg-muted/10 flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600">
+                        <Zap className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">Status</p>
+                        <p className="text-xs font-bold">100% Operacional</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ) : status === "connecting" && qrSrc ? (
