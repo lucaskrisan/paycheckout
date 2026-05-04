@@ -350,30 +350,21 @@ const WhatsApp = () => {
             </div>
           )}
 
-          <Card className="overflow-hidden border-border/50 bg-gradient-to-br from-card to-muted/10 shadow-xl transition-all hover:shadow-2xl">
-            <div className="absolute right-0 top-0 pointer-events-none p-12 opacity-[0.04]">
-              <Workflow className="h-64 w-64 rotate-12" />
-            </div>
-            <CardHeader className="relative z-10 border-b border-border/40 bg-muted/10 pb-6 pt-8">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-gold/10 text-gold border border-gold/20 shadow-lg">
-                    <ShieldCheck className="h-7 w-7" />
+          <Card className="overflow-hidden border-border/40 bg-card/30 backdrop-blur-sm shadow-none rounded-[24px]">
+            <CardHeader className="relative z-10 border-b border-border/40 bg-muted/5 pb-5 pt-6 px-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/5 text-primary border border-primary/10">
+                    <ShieldCheck className="h-5 w-5" />
                   </div>
                   <div>
-                    <CardTitle className="text-xl font-bold font-display">Status do Sistema</CardTitle>
-                    <p className="text-sm text-muted-foreground mt-0.5">Sua ponte direta com os clientes</p>
+                    <CardTitle className="text-lg font-bold">Status do Sistema</CardTitle>
+                    <p className="text-xs text-muted-foreground">Monitoramento da conexão principal</p>
                   </div>
                 </div>
-                {status === "connected" && (
-                  <div className="flex items-center gap-2 rounded-2xl bg-emerald-500/10 px-4 py-2 text-emerald-600 border border-emerald-500/20">
-                    <Activity className="h-4 w-4 animate-pulse" />
-                    <span className="text-xs font-bold uppercase tracking-wider">Operacional</span>
-                  </div>
-                )}
               </div>
             </CardHeader>
-            <CardContent className="relative z-10 pt-8 pb-10">
+            <CardContent className="relative z-10 p-6">
               {status === "connected" ? (
                 <div className="mx-auto max-w-4xl space-y-8">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
