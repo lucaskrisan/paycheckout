@@ -40,7 +40,7 @@ const CTASection = () => (
         </Link>
 
         <div className="flex items-center justify-center gap-8 pt-4 flex-wrap">
-          {["R$ 0,99 por venda", "Sem mensalidade", "Setup em 5 min"].map((t) => (
+          {["R$ 0,99 por venda", "Recursos Exclusivos", "Setup em 5 min"].map((t) => (
             <span key={t} className="flex items-center gap-2.5 text-[11px] text-[#6A6A75] uppercase tracking-[0.15em] font-semibold">
               <div className="w-1.5 h-1.5 rounded-full bg-gradient-to-r from-primary to-gold" aria-hidden="true" />
               {t}
