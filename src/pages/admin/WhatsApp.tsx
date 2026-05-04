@@ -396,23 +396,23 @@ const WhatsApp = () => {
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-3">
-                      <Button onClick={() => setTestOpen(true)} className="h-14 w-full gap-3 rounded-2xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all shadow-sm">
-                        <Send className="w-5 h-5" />
-                        <span className="font-semibold">Testar Disparo</span>
+                    <div className="flex flex-col gap-2">
+                      <Button onClick={() => setTestOpen(true)} className="h-11 w-full gap-2 rounded-xl bg-primary text-primary-foreground font-semibold shadow-sm">
+                        <Send className="w-4 h-4" />
+                        Testar Disparo
                       </Button>
-                      <Button onClick={handleReconnect} disabled={reconnecting} variant="outline" className="h-14 w-full gap-3 rounded-2xl border-border/60 hover:border-gold/30 hover:bg-gold/5 transition-all">
-                        {reconnecting ? <Loader2 className="w-5 h-5 animate-spin" /> : <RotateCw className="w-5 h-5" />}
-                        <span className="font-semibold">{reconnecting ? "Reiniciando..." : "Reiniciar Sessão"}</span>
+                      <Button onClick={handleReconnect} disabled={reconnecting} variant="outline" className="h-11 w-full gap-2 rounded-xl border-border/60 hover:bg-muted/50 transition-all font-medium">
+                        {reconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCw className="w-4 h-4" />}
+                        Reconectar
                       </Button>
                       <Button
                         variant="ghost"
                         onClick={handleDisconnect}
                         disabled={disconnecting}
-                        className="h-14 w-full gap-3 rounded-2xl text-destructive hover:bg-destructive/5 transition-all"
+                        className="h-11 w-full gap-2 rounded-xl text-destructive hover:bg-destructive/5 transition-all font-medium"
                       >
-                        {disconnecting ? <Loader2 className="w-5 h-5 animate-spin" /> : <PowerOff className="w-5 h-5" />}
-                        <span className="font-semibold">Desconectar Agora</span>
+                        {disconnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <PowerOff className="w-4 h-4" />}
+                        Desconectar
                       </Button>
                     </div>
                   </div>
