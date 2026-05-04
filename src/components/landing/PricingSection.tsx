@@ -1,220 +1,283 @@
 import { motion } from "framer-motion";
-import { Check, DollarSign, Zap, Shield, Info, ArrowRight } from "lucide-react";
+import { Check, Zap, Star, Shield, Crown, ArrowRight, Info } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
 
-const includedFeatures = [
-  "Checkout otimizado para conversão",
-  "Rastreamento DUAL (Pixel + CAPI)",
-  "Área de membros integrada",
-  "One-click upsell",
-  "Multi-gateway (PIX, Cartão, Boleto)",
-  "Builder visual de checkout",
-  "Dashboard em tempo real",
-  "Notificações push de venda",
-  "Webhooks com HMAC",
-  "Suporte incluso",
-];
-
-const transparencyItems = [
+const plans = [
   {
-    icon: DollarSign,
-    title: "R$ 0,99 por venda aprovada",
-    desc: "Cobrado apenas quando o pagamento é confirmado. Vendas pendentes, recusadas ou canceladas não geram taxa.",
+    name: "PANTTERA BABY",
+    description: "O início da jornada.",
+    price: "Grátis",
+    monthlyPrice: 0,
+    annualPrice: 0,
+    commission: "3%",
+    fixedFee: "R$ 0,99",
+    features: [
+      "10 Produtos",
+      "3 Webhooks",
+      "Histórico Carrinhos: 45 dias",
+      "Checkout Transparente",
+      "Recuperação WhatsApp Automática",
+      "Suporte Especializado",
+    ],
+    buttonText: "Começar Grátis",
+    icon: Star,
+    color: "from-orange-400 to-orange-600",
+    popular: false,
   },
   {
+    name: "PANTTERA ALPHA",
+    description: "Liderando o bando.",
+    price: "R$ 97",
+    monthlyPrice: 97,
+    annualPrice: 77, // R$ 77/mês no anual
+    commission: "2.5%",
+    fixedFee: "R$ 0,99",
+    features: [
+      "Produtos Ilimitados",
+      "Webhooks Ilimitados",
+      "Histórico Carrinhos: 90 dias",
+      "GatFlow: Ferramentas de WhatsApp",
+      "GatFlow: Quizzes e Presells",
+      "Pixel Espelho (Mirror Pixel)",
+      "Teste A/B de Checkout",
+    ],
+    buttonText: "Assinar Alpha",
     icon: Zap,
-    title: "Sem mensalidade. Sem setup. Sem surpresa.",
-    desc: "Você não paga nada para criar sua conta, configurar produtos ou publicar seu checkout.",
+    color: "from-primary to-[#00C853]",
+    popular: true,
   },
   {
+    name: "PANTTERA APEX",
+    description: "O topo da cadeia alimentar.",
+    price: "R$ 247",
+    monthlyPrice: 247,
+    annualPrice: 197,
+    commission: "2%",
+    fixedFee: "R$ 0,99",
+    features: [
+      "Tudo do Alpha +",
+      "Histórico Carrinhos: 120 dias",
+      "Checkout Personalizado Pro",
+      "Recuperação de Boletos Ativa",
+      "Gerente de Conta Dedicado",
+      "Prioridade em Novos Recursos",
+    ],
+    buttonText: "Assinar Apex",
     icon: Shield,
-    title: "Sem taxa sobre o gateway",
-    desc: "A Panttera não cobra spread sobre a taxa do gateway de pagamento. Você paga apenas a taxa padrão do Pagar.me, Asaas ou Stripe diretamente.",
+    color: "from-blue-500 to-indigo-600",
+    popular: false,
+  },
+  {
+    name: "PANTTERA BLACK",
+    description: "Soberano. Domínio total.",
+    price: "R$ 497",
+    monthlyPrice: 497,
+    annualPrice: 397,
+    commission: "1.5%",
+    fixedFee: "R$ 0,99",
+    features: [
+      "Tudo do Apex +",
+      "Histórico Vitalício",
+      "Área de Membros Estilo Netflix",
+      "GatFlow Unlimited (Tudo Ilimitado)",
+      "Taxa Exclusiva de 1.5%",
+      "Suporte Ultra-Prioritário",
+    ],
+    buttonText: "Assinar Black",
+    icon: Crown,
+    color: "from-gray-800 to-black",
+    popular: false,
+    isBlack: true,
   },
 ];
 
-const PricingSection = () => (
-  <section
-    id="pricing"
-    aria-label="Preços e taxas da plataforma Panttera"
-    className="relative z-10 py-28 lg:py-36 overflow-hidden"
-  >
-    {/* Background glow */}
-    <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[600px] bg-[radial-gradient(ellipse,_rgba(0,230,118,0.06)_0%,_transparent_60%)] blur-3xl" />
-    </div>
+const PricingSection = () => {
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
 
-    <div className="container max-w-5xl mx-auto px-6">
-      {/* Header */}
-      <motion.div
-        className="text-center mb-16 space-y-5"
-        initial={{ opacity: 0, y: 25 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
-      >
-        <span className="inline-block text-[10px] font-bold text-primary uppercase tracking-[0.25em] mb-2 bg-primary/[0.06] border border-primary/15 rounded-full px-4 py-1.5">
-          Preço transparente
-        </span>
-        <h2 className="text-3xl md:text-[2.75rem] lg:text-[3.5rem] font-black tracking-[-0.04em] leading-[1.05] font-display">
-          Uma taxa.{" "}
-          <span
-            className="text-transparent bg-clip-text"
-            style={{ backgroundImage: "linear-gradient(90deg, #00E676, #00C853, #D4AF37)" }}
-          >
-            Sem letra miúda.
+  return (
+    <section
+      id="pricing"
+      aria-label="Preços e planos da plataforma Panttera"
+      className="relative z-10 py-28 lg:py-36 overflow-hidden"
+    >
+      {/* Background glow */}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[600px] bg-[radial-gradient(ellipse,_rgba(0,230,118,0.06)_0%,_transparent_60%)] blur-3xl" />
+      </div>
+
+      <div className="container max-w-7xl mx-auto px-6">
+        {/* Header */}
+        <motion.div
+          className="text-center mb-12 space-y-5"
+          initial={{ opacity: 0, y: 25 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <span className="inline-block text-[10px] font-bold text-primary uppercase tracking-[0.25em] mb-2 bg-primary/[0.06] border border-primary/15 rounded-full px-4 py-1.5">
+            Escolha seu Plano
           </span>
-        </h2>
-        <p className="text-sm text-[#6A6A75] font-light max-w-lg mx-auto leading-relaxed">
-          Acreditamos que transparência constrói confiança. Aqui você sabe exatamente o que paga — sempre.
-        </p>
-      </motion.div>
+          <h2 className="text-3xl md:text-[2.75rem] lg:text-[3.5rem] font-black tracking-[-0.04em] leading-[1.05] font-display">
+            Selecione o plano ideal para{" "}
+            <span
+              className="text-transparent bg-clip-text"
+              style={{ backgroundImage: "linear-gradient(90deg, #00E676, #00C853, #D4AF37)" }}
+            >
+              o seu negócio.
+            </span>
+          </h2>
+          <p className="text-sm text-[#6A6A75] font-light max-w-lg mx-auto leading-relaxed">
+            Nomes fortes para quem quer dominar o mercado. Evolua sua operação conforme sua escala.
+          </p>
 
-      {/* Main pricing card */}
-      <motion.div
-        className="relative max-w-xl mx-auto"
-        initial={{ opacity: 0, y: 20, scale: 0.97 }}
-        whileInView={{ opacity: 1, y: 0, scale: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6, delay: 0.15 }}
-      >
-        <div className="absolute -inset-px rounded-3xl bg-gradient-to-b from-primary/20 via-primary/5 to-transparent blur-sm" />
-        <div className="relative bg-[#141417]/90 border border-white/[0.08] rounded-3xl overflow-hidden backdrop-blur-xl">
-          {/* Price header */}
-          <div className="p-8 pb-6 text-center border-b border-white/[0.06]">
-            <p className="text-[11px] text-primary uppercase tracking-[0.2em] font-bold mb-4">
-              Taxa única por venda
-            </p>
-            <div className="flex items-baseline justify-center gap-1">
-              <span className="text-[#6A6A75] text-lg font-light">R$</span>
-              <span className="text-6xl md:text-7xl font-black text-foreground font-display tracking-[-0.04em]">
-                0,99
-              </span>
-            </div>
-            <p className="text-[13px] text-[#6A6A75] font-light mt-3">
-              por venda aprovada · pré-pago
-            </p>
-            <div className="mt-4 inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-4 py-1.5">
-              <Zap className="w-3.5 h-3.5 text-primary" />
-              <span className="text-[12px] font-bold text-primary">Primeiras 500 vendas grátis</span>
-            </div>
+          {/* Billing Switch */}
+          <div className="flex items-center justify-center gap-4 mt-8">
+            <span className={cn("text-sm font-medium transition-colors", billingCycle === "monthly" ? "text-foreground" : "text-muted-foreground")}>
+              Mensal
+            </span>
+            <button
+              onClick={() => setBillingCycle(billingCycle === "monthly" ? "annual" : "monthly")}
+              className="relative w-14 h-7 bg-white/5 border border-white/10 rounded-full transition-colors focus:outline-none"
+            >
+              <motion.div
+                animate={{ x: billingCycle === "monthly" ? 4 : 32 }}
+                className="w-5 h-5 bg-primary rounded-full"
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+              />
+            </button>
+            <span className={cn("text-sm font-medium transition-colors", billingCycle === "annual" ? "text-foreground" : "text-muted-foreground")}>
+              Anual <span className="text-primary text-[10px] font-bold bg-primary/10 px-2 py-0.5 rounded-full ml-1">ECONOMIZE 20%</span>
+            </span>
           </div>
+        </motion.div>
 
-          {/* Features list */}
-          <div className="p-8 space-y-3">
-            <p className="text-[11px] text-[#6A6A75] uppercase tracking-[0.15em] font-semibold mb-4">
-              Tudo incluso:
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {includedFeatures.map((feat) => (
-                <div key={feat} className="flex items-center gap-2.5">
-                  <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Check className="w-3 h-3 text-primary" />
-                  </div>
-                  <span className="text-[13px] text-white/80 font-light">{feat}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* CTA */}
-          <div className="p-8 pt-4">
-            <Link to="/login?signup=true">
-              <Button className="w-full h-14 bg-gradient-to-r from-primary to-[#00C853] hover:from-[#00C853] hover:to-primary text-primary-foreground font-extrabold rounded-2xl text-[15px] shadow-[0_4px_40px_rgba(0,230,118,0.35)] hover:shadow-[0_8px_60px_rgba(0,230,118,0.55)] transition-all duration-500 group">
-                Começar agora — é grátis
-                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1.5 transition-transform" />
-              </Button>
-            </Link>
-            <p className="text-center text-[11px] text-[#6A6A75] mt-3">
-              Sem cartão de crédito. Sem compromisso.
-            </p>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Transparency section */}
-      <motion.div
-        className="mt-16 space-y-6"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6, delay: 0.3 }}
-      >
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 text-[11px] text-[#6A6A75] uppercase tracking-[0.15em] font-semibold">
-            <Info className="w-3.5 h-3.5 text-primary/60" />
-            Transparência total — sem asteriscos
-          </div>
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-4">
-          {transparencyItems.map((item, i) => (
+        {/* Pricing Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-16">
+          {plans.map((plan, i) => (
             <motion.div
-              key={item.title}
-              className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 hover:border-primary/15 transition-all duration-300"
-              initial={{ opacity: 0, y: 15 }}
+              key={plan.name}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: 0.4 + i * 0.1 }}
+              transition={{ duration: 0.5, delay: i * 0.1 }}
+              className={cn(
+                "relative flex flex-col h-full rounded-3xl border transition-all duration-300 group",
+                plan.popular ? "border-primary/50 bg-[#141417]/90 scale-105 z-10 shadow-[0_20px_50px_rgba(0,230,118,0.15)]" : "border-white/[0.08] bg-[#141417]/60 hover:border-white/20",
+                plan.isBlack && "bg-black/80 border-gray-800"
+              )}
             >
-              <div className="w-10 h-10 rounded-xl bg-primary/[0.06] border border-primary/10 flex items-center justify-center mb-4">
-                <item.icon className="w-5 h-5 text-primary/70" />
+              {plan.popular && (
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                  Mais Popular
+                </div>
+              )}
+
+              <div className="p-8 pb-6 border-b border-white/[0.06]">
+                <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center mb-6 bg-gradient-to-br", plan.color)}>
+                  <plan.icon className="w-6 h-6 text-white" />
+                </div>
+                <h3 className={cn("text-xl font-black font-display tracking-tight mb-1", plan.isBlack ? "text-white" : "text-foreground")}>
+                  {plan.name}
+                </h3>
+                <p className="text-xs text-[#6A6A75] font-light mb-6">
+                  {plan.description}
+                </p>
+                
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-black text-foreground">
+                    {typeof plan.price === "string" && isNaN(Number(plan.price.replace("R$ ", ""))) 
+                      ? plan.price 
+                      : `R$ ${billingCycle === "monthly" ? plan.monthlyPrice : plan.annualPrice}`}
+                  </span>
+                  {typeof plan.price === "number" || !isNaN(Number(plan.price.replace("R$ ", ""))) ? (
+                    <span className="text-[#6A6A75] text-xs">/mês</span>
+                  ) : null}
+                </div>
+                
+                <div className="mt-4 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-primary font-bold text-lg">{plan.commission}</span>
+                    <span className="text-[10px] text-[#6A6A75] uppercase tracking-wider">Comissão por venda</span>
+                  </div>
+                  <div className="text-[11px] text-[#6A6A75]">
+                    + {plan.fixedFee} fixo por venda aprovada
+                  </div>
+                </div>
               </div>
-              <h3 className="text-[14px] font-bold text-foreground mb-2">{item.title}</h3>
-              <p className="text-[12px] text-[#6A6A75] font-light leading-relaxed">{item.desc}</p>
+
+              <div className="p-8 flex-grow space-y-4">
+                <p className="text-[10px] text-[#6A6A75] uppercase tracking-[0.15em] font-bold">
+                  Recursos Inclusos:
+                </p>
+                <ul className="space-y-3">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-start gap-3">
+                      <div className="mt-1 w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Check className="w-2.5 h-2.5 text-primary" />
+                      </div>
+                      <span className="text-[13px] text-white/70 font-light leading-tight">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="p-8 pt-0 mt-auto">
+                <Link to="/login?signup=true" className="block w-full">
+                  <Button 
+                    className={cn(
+                      "w-full h-12 font-bold rounded-xl text-[14px] transition-all duration-300 group",
+                      plan.popular 
+                        ? "bg-gradient-to-r from-primary to-[#00C853] text-primary-foreground shadow-[0_10px_30px_rgba(0,230,118,0.3)] hover:shadow-[0_15px_40px_rgba(0,230,118,0.5)]" 
+                        : "bg-white/5 border border-white/10 hover:bg-white/10 text-white",
+                      plan.isBlack && "bg-white text-black hover:bg-white/90"
+                    )}
+                  >
+                    {plan.buttonText}
+                    <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+              </div>
             </motion.div>
           ))}
         </div>
 
-        {/* Fine print — full transparency */}
-        <div className="mt-8 bg-white/[0.01] border border-white/[0.04] rounded-2xl p-6">
-          <h4 className="text-[12px] font-bold text-foreground mb-3 flex items-center gap-2">
-            <Shield className="w-3.5 h-3.5 text-primary/60" />
-            Detalhamento completo de custos
-          </h4>
-          <div className="grid sm:grid-cols-2 gap-x-8 gap-y-2 text-[12px] text-[#6A6A75] font-light">
-            <div className="flex justify-between py-1.5 border-b border-white/[0.03]">
-              <span>Taxa Panttera por venda</span>
-              <span className="font-semibold text-foreground">R$ 0,99</span>
+        {/* Transparency footer */}
+        <motion.div
+          className="mt-20 p-8 rounded-3xl bg-white/[0.02] border border-white/[0.06] backdrop-blur-sm"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+        >
+          <div className="flex flex-col md:flex-row items-center gap-6 justify-between">
+            <div className="flex items-start gap-4 max-w-2xl">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Info className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h4 className="text-lg font-bold text-foreground mb-1">Custo Fixo de Infraestrutura</h4>
+                <p className="text-sm text-[#6A6A75] font-light leading-relaxed">
+                  O valor de <strong>R$ 0,99</strong> por venda é nosso custo fixo para garantir que cada transação tenha a melhor infraestrutura do mercado, 
+                  com rastreamento Dual Pixel + CAPI e notificações em tempo real. Você paga apenas por vendas aprovadas.
+                </p>
+              </div>
             </div>
-            <div className="flex justify-between py-1.5 border-b border-white/[0.03]">
-              <span>Mensalidade</span>
-              <span className="font-semibold text-primary">R$ 0,00</span>
-            </div>
-            <div className="flex justify-between py-1.5 border-b border-white/[0.03]">
-              <span>Setup / ativação</span>
-              <span className="font-semibold text-primary">R$ 0,00</span>
-            </div>
-            <div className="flex justify-between py-1.5 border-b border-white/[0.03]">
-              <span>Taxa sobre gateway</span>
-              <span className="font-semibold text-primary">R$ 0,00</span>
-            </div>
-            <div className="flex justify-between py-1.5 border-b border-white/[0.03]">
-              <span>E-mails transacionais</span>
-              <span className="font-semibold text-primary">Incluso</span>
-            </div>
-            <div className="flex justify-between py-1.5 border-b border-white/[0.03]">
-              <span>Notificações push</span>
-              <span className="font-semibold text-primary">Incluso</span>
-            </div>
-            <div className="flex justify-between py-1.5 border-b border-white/[0.03]">
-              <span>Área de membros</span>
-              <span className="font-semibold text-primary">Incluso</span>
-            </div>
-            <div className="flex justify-between py-1.5 border-b border-white/[0.03]">
-              <span>Rastreamento DUAL</span>
-              <span className="font-semibold text-primary">Incluso</span>
+            <div className="text-center md:text-right">
+              <p className="text-[10px] text-[#4A4A55] uppercase tracking-widest font-bold mb-2">Segurança Garantida</p>
+              <div className="flex gap-4">
+                <Shield className="w-8 h-8 text-white/10" />
+                <Zap className="w-8 h-8 text-white/10" />
+                <Star className="w-8 h-8 text-white/10" />
+              </div>
             </div>
           </div>
-          <p className="text-[11px] text-[#4A4A55] mt-4 leading-relaxed">
-            * As taxas dos gateways de pagamento (Pagar.me, Asaas, Stripe, Mercado Pago) são cobradas
-            diretamente pelo gateway, não pela Panttera. Consulte as condições do seu gateway para detalhes.
-          </p>
-        </div>
-      </motion.div>
-    </div>
-  </section>
-);
+        </motion.div>
+      </div>
+    </section>
+  );
+};
 
 export default PricingSection;
