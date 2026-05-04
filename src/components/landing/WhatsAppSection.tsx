@@ -134,99 +134,89 @@ const WhatsAppSection = () => (
         </motion.div>
       </div>
 
-      {/* New Flow Builder Visual for Producers */}
-      <motion.div 
-        className="mt-32 relative max-w-5xl mx-auto"
-        initial={{ opacity: 0, y: 40 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8 }}
-      >
-        <div className="text-center mb-12">
-          <Badge className="bg-primary/10 text-primary border-primary/20 mb-4 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest">Tecnologia Exclusiva</Badge>
-          <h3 className="text-3xl md:text-4xl font-display font-black mb-4">Desenhe sua conversão visualmente</h3>
-          <p className="text-[#9A9AA5] max-w-2xl mx-auto text-sm leading-relaxed">
-            Esqueça configurações chatas. Na Panttera você desenha o fluxo de conversa do seu cliente como um mapa mental. Arraste, conecte e lucre.
-          </p>
-        </div>
+      {/* Global Sales Design Integration */}
+      <div className="mt-32">
+        <div className="relative min-h-[700px] flex flex-col items-center justify-start pt-16 px-4 overflow-hidden rounded-[40px] border border-white/[0.05] bg-[#050505]">
+          {/* Top-right radial glow effect */}
+          <div className="absolute top-[-10%] right-[-5%] w-[60%] h-[60%] bg-[radial-gradient(circle,_rgba(74,222,128,0.2)_0%,_rgba(0,0,0,0)_70%)] pointer-events-none z-1" />
 
-        <div className="relative rounded-[32px] border border-white/[0.08] bg-[#0B0B0D] p-4 md:p-8 overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.6)]">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,_rgba(74,222,128,0.1)_0%,_transparent_70%)]" />
-          
-          <div className="relative flex flex-col md:flex-row gap-8 items-center">
-            {/* Mock Flow Visual */}
-            <div className="flex-1 grid grid-cols-1 gap-6 w-full">
-              {/* Node 1: Trigger */}
-              <div className="flex items-center gap-4">
-                <div className="w-[200px] bg-[#1A1A1E] border border-primary/30 rounded-2xl p-4 shadow-lg relative group">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
-                      <Zap className="w-4 h-4 fill-current" />
-                    </div>
-                    <span className="text-xs font-bold text-white uppercase tracking-tighter">Disparo</span>
-                  </div>
-                  <p className="text-[10px] text-[#6A6A75]">Carrinho abandonado detectado</p>
-                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full border border-primary/40 bg-[#0B0B0D] flex items-center justify-center">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                  </div>
-                </div>
-                <div className="hidden md:block flex-1 h-px bg-gradient-to-r from-primary to-amber-500/50" />
-              </div>
+          {/* HeaderText */}
+          <div className="relative z-20 text-center max-w-4xl mx-auto mb-12">
+            <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 text-white">
+              Vendas Globais com a <span className="text-[#4ADE80]">Panttera</span>
+            </h2>
+            <p className="text-gray-400 text-lg md:text-xl leading-relaxed max-w-2xl mx-auto">
+              Seus produtos em mais de 180 países. Processamento de pagamentos e compliance local, tudo desenhado para converter no mundo todo.
+            </p>
+          </div>
 
-              {/* Node 2: Timer */}
-              <div className="flex items-center gap-4 md:pl-24">
-                <div className="w-[180px] bg-[#1A1A1E] border border-amber-500/30 rounded-2xl p-4 shadow-lg relative group scale-105 ring-4 ring-amber-500/10">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-500">
-                      <Clock className="w-4 h-4" />
-                    </div>
-                    <span className="text-xs font-bold text-white uppercase tracking-tighter text-amber-500">Timer</span>
-                  </div>
-                  <p className="text-lg font-black text-amber-500">15 min</p>
-                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full border border-amber-500/40 bg-[#0B0B0D] flex items-center justify-center">
-                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                  </div>
-                </div>
-                <div className="hidden md:block flex-1 h-px bg-gradient-to-r from-amber-500/50 to-primary" />
-              </div>
-
-              {/* Node 3: Message */}
-              <div className="flex items-center gap-4 md:pl-48">
-                <div className="w-[220px] bg-[#1A1A1E] border border-primary/30 rounded-2xl p-4 shadow-lg relative group">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
-                      <MessageSquare className="w-4 h-4" />
-                    </div>
-                    <span className="text-xs font-bold text-white uppercase tracking-tighter">Mensagem</span>
-                  </div>
-                  <p className="text-[10px] text-[#9A9AA5] leading-relaxed line-clamp-2">"Ei &#123;nome&#125;, notamos que você..."</p>
-                  <div className="mt-3 flex items-center gap-1.5">
-                    <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[8px] font-bold border border-primary/20">CUPOM</span>
-                    <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[8px] font-bold border border-primary/20">LINK</span>
-                  </div>
-                </div>
-              </div>
+          {/* MainVisualArea */}
+          <div className="relative w-full max-w-7xl h-[600px] mt-8">
+            {/* Black Panther Asset */}
+            <div className="absolute left-[-15%] lg:left-[-12%] bottom-0 w-[65%] lg:w-[50%] z-30 pointer-events-none opacity-90">
+              <img 
+                alt="Majestic Black Panther" 
+                className="w-full h-auto object-contain" 
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDWb_6uJjr5EwGLvgiBED8SGwiuBTXmkvj2Uds63aVbx08ohlOuCKxS9468RSE6Sju9UyEf_gDYb5yC1oZ9ETmCCvJaGmATaRvdKEEE0tXWXSWFcPvwO_u9hDmI0UUvdCQwSfSOl8lPn0p_yUopTJZB_6g1fqr7S5eV0aXMIRvxczJarswLMOEGXaw2LoGKPHmCi19w0jlFybATWKQ96XulmyPgLRh2VWHgmDjt4ACD_V-2baDAphbd1_YWQ0ae_pnwc8e0b1iy4s"
+              />
             </div>
 
-            {/* Benefit List */}
-            <div className="w-full md:w-[320px] space-y-4">
-              {[
-                { title: "Builder Visual Intuitivo", desc: "Não precisa de código. Apenas desenhe." },
-                { title: "Timers Inteligentes", desc: "Controle o timing exato para não dar spam." },
-                { title: "Variáveis Dinâmicas", desc: "Links, nomes e valores automáticos." }
-              ].map((item, i) => (
-                <div key={i} className="p-4 rounded-2xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.05] transition-colors">
-                  <div className="flex items-center gap-3 mb-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_#4ade80]" />
-                    <h4 className="text-sm font-bold text-white">{item.title}</h4>
-                  </div>
-                  <p className="text-xs text-[#6A6A75] pl-4">{item.desc}</p>
-                </div>
-              ))}
+            {/* World Map Background Asset */}
+            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-full lg:w-[85%] h-full z-10 opacity-40">
+              <img 
+                alt="Global Network Map" 
+                className="w-full h-full object-contain" 
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBlkA1n2z490ertV7ECMS3dQn8JfgTRdLEqIttIyDmNe_19X_Yg6sQOheVH5kiGJqZjhvdnuZ2EiUU9m7lUK_v6WPuJxGfHCMyAz6llxDlDn4fmiD4wasUZqCZrM9QZOtyId7oUdn8OlbpKzHPUz9UTmi8VzJTctub_q9bgzYfS4IEFEII7zlcGZjgGcuxn957UKhF-uMoqt2GuqfC396Oug__N1dSIbFndEQAbax5ER_jp2G5dlOZxwnsdBtNeLNVuGyFejnuwoe0"
+              />
             </div>
+
+            {/* NotificationCards */}
+            {/* Card: USA */}
+            <div className="absolute top-[20%] left-[45%] z-40 group hidden md:block">
+              <div className="bg-gradient-to-br from-[rgba(20,25,20,0.85)] to-[rgba(10,15,10,0.9)] backdrop-blur-md border border-[rgba(74,222,128,0.25)] shadow-[0_4px_20px_rgba(0,0,0,0.6),_inset_0_0_10px_rgba(74,222,128,0.05)] min-w-[200px] flex items-center p-3 rounded-xl">
+                <div className="mr-3">
+                  <div className="bg-black/50 rounded-full p-1 border border-[#4ADE80]/30">
+                    <img alt="Logo" className="w-8 h-8 rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC4RMq1gh8wfTxFTHJ0BeGmBg2XsVHA4D_F7ACb83Kc-8s9ISUn6JCKpCinA1vZeu_HTFnKwDOq9jrCSCZTDVUVbL2fDB9tHypyzatZi0YnZdAI5Au6VfHvPOpaAsFrRI_ql99Ni441-5Npc-UKh_GryhPg2J8J7ozXSwnnRSsKTTG9VtqlKItun_qoudP4mh7iJ9acrfbEOiR42j3FEiQJk8TOPvPbMWJKp61KEP8fw5f75PY_oEButG4cW2XSMMIKdUTpZL2iW1E"/>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-xs font-bold text-white">Sale Approved!</span>
+                    <img alt="USA Flag" className="rounded-sm" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDKxS2wEQqe4khKh0ycJJ6CDsGxv4aCdwnzZXZDgyqFK08RC51UYfIOtvWm6PnZBzaMrfbRjwVgUMpAscjRutgjnHvuJVVb6WGydBQILoV3sXGhuFjUOS5Rh63KJ_ygkexjQk6Bl7y905QARBQ9I6AjK7x_lvCR86ux-v6qtic4I4NF2aPihb4ItL6vv5N0PwXd5RLZaZwaPTdchum1Sb0j_R-FwFAak9sugNKtZGR8K1oboJ4tJxRBNJTblsUy4Jdf3LQoKBm1HFY" width="16"/>
+                  </div>
+                  <p className="text-[10px] text-gray-400">Your Commission <span className="text-white font-semibold">$150.00</span></p>
+                </div>
+              </div>
+              <div className="w-2 h-2 bg-[#4ade80] rounded-full shadow-[0_0_10px_#4ade80,_0_0_20px_#4ade80] -ml-2 mt-4 animate-pulse"></div>
+            </div>
+
+            {/* Card: Brazil */}
+            <div className="absolute bottom-[20%] left-[55%] z-40 md:block">
+              <div className="bg-gradient-to-br from-[rgba(20,25,20,0.85)] to-[rgba(10,15,10,0.9)] backdrop-blur-md border border-[rgba(74,222,128,0.25)] shadow-[0_4px_20px_rgba(0,0,0,0.6),_inset_0_0_10px_rgba(74,222,128,0.05)] min-w-[200px] flex items-center p-3 rounded-xl">
+                <div className="mr-3">
+                  <div className="bg-black/50 rounded-full p-1 border border-[#4ADE80]/30">
+                    <img alt="Logo" className="w-8 h-8 rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC4RMq1gh8wfTxFTHJ0BeGmBg2XsVHA4D_F7ACb83Kc-8s9ISUn6JCKpCinA1vZeu_HTFnKwDOq9jrCSCZTDVUVbL2fDB9tHypyzatZi0YnZdAI5Au6VfHvPOpaAsFrRI_ql99Ni441-5Npc-UKh_GryhPg2J8J7ozXSwnnRSsKTTG9VtqlKItun_qoudP4mh7iJ9acrfbEOiR42j3FEiQJk8TOPvPbMWJKp61KEP8fw5f75PY_oEButG4cW2XSMMIKdUTpZL2iW1E"/>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-xs font-bold text-white">Venda Aprovada!</span>
+                    <img alt="Brazil Flag" className="rounded-sm" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDF7tzfQa3-677prLiTEU5Ze4q_1dvq98LwAEIJpTd6wY-NFmwGm58LRNbqzdyWDVspCXMMEL5zZfVqwOJ4N0H88dnbgPjFWu2F4IDBEKne6WU-I1cWcW-nWU6PMZ9N5RtjIMZjFpT3uQ2tZlWkJnJUAU2UWnTpeXO_y9GUVUOCNQHkLeqS2hMMDHwh1ItQgoOZZOqhoLtVy24yhR0fKaPuQL2zasDeL-WGbQ11gdq5nFJV40g-DXhq7c7zYQUwVtFDMJrUlBoLOQ" width="16"/>
+                  </div>
+                  <p className="text-[10px] text-gray-400">Sua comissão <span className="text-white font-semibold">R$219,72</span></p>
+                </div>
+              </div>
+              <div className="w-2 h-2 bg-[#4ade80] rounded-full shadow-[0_0_10px_#4ade80,_0_0_20px_#4ade80] -ml-2 mt-4 animate-pulse"></div>
+            </div>
+
+            {/* Connector Lines SVG */}
+            <svg className="absolute top-0 left-0 w-full h-full z-20 pointer-events-none" style={{ filter: 'drop-shadow(0 0 2px rgba(74, 222, 128, 0.8))' }}>
+              <line stroke="rgba(74,222,128,0.4)" strokeWidth="1" x1="50%" x2="45%" y1="55%" y2="25%" />
+              <line stroke="rgba(74,222,128,0.4)" strokeWidth="1" x1="50%" x2="55%" y1="55%" y2="80%" />
+            </svg>
           </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   </section>
 );
