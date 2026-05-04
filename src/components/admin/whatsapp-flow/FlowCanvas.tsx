@@ -143,11 +143,13 @@ const DotGrid = () => (
 const ConnectionLines = ({ 
   nodes, 
   pendingConnection, 
-  mousePosition 
+  mousePosition,
+  onRemoveConnection
 }: { 
   nodes: FlowNodeData[]; 
   pendingConnection: string | null;
   mousePosition: { x: number; y: number } | null;
+  onRemoveConnection: (fromId: string, toId: string) => void;
 }) => {
   const nodeMap = new Map(nodes.map((node) => [node.id, node]));
   const connections: Array<{ from: FlowNodeData; to: FlowNodeData }> = [];
