@@ -432,16 +432,16 @@ export default function AbTests() {
                         }`}
                       >
                         <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <div className={`flex h-6 w-6 items-center justify-center rounded-md text-[10px] font-black ${
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[10px] font-black ${
                               isLeader ? "bg-emerald-500 text-white" : "bg-muted-foreground/20 text-muted-foreground"
                             }`}>
                               {v.label}
                             </div>
-                            <span className="text-xs font-bold truncate max-w-[120px]">{v.name}</span>
+                            <span className="text-xs font-bold truncate">{v.name}</span>
                           </div>
                           {isLeader && (
-                            <Badge variant="outline" className="h-5 px-1.5 text-[9px] uppercase border-emerald-500/30 bg-emerald-500/10 text-emerald-400 gap-1">
+                            <Badge variant="outline" className="h-5 px-1.5 text-[9px] uppercase border-emerald-500/30 bg-emerald-500/10 text-emerald-400 gap-1 shrink-0">
                               <Trophy className="w-2.5 h-2.5" /> Líder
                             </Badge>
                           )}
@@ -480,11 +480,11 @@ export default function AbTests() {
                         <div className="grid grid-cols-2 gap-y-3 gap-x-2">
                           <div className="space-y-0.5">
                             <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-wider">Cliques</span>
-                            <div className="text-sm font-black">{v.clicks.toLocaleString("pt-BR")}</div>
+                            <div className="text-sm font-black">{v.clicks?.toLocaleString("pt-BR") || 0}</div>
                           </div>
                           <div className="space-y-0.5 text-right">
                             <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-wider">Vendas</span>
-                            <div className="text-sm font-black">{v.sales.toLocaleString("pt-BR")}</div>
+                            <div className="text-sm font-black">{v.sales?.toLocaleString("pt-BR") || 0}</div>
                           </div>
                           <div className="space-y-0.5">
                             <span className="text-[9px] uppercase font-bold text-muted-foreground tracking-wider">Conversão</span>
