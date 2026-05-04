@@ -140,54 +140,71 @@ const DotGrid = () => (
   </svg>
 );
 
-const ConnectionLines = ({ nodes }: { nodes: FlowNodeData[] }) => {
+const ConnectionLines = ({ 
+  nodes, 
+  pendingConnection, 
+  mousePosition 
+}: { 
+  nodes: FlowNodeData[]; 
+  pendingConnection: string | null;
+  mousePosition: { x: number; y: number } | null;
+}) => {
   const nodeMap = new Map(nodes.map((node) => [node.id, node]));
   const connections: Array<{ from: FlowNodeData; to: FlowNodeData }> = [];
 
   nodes.forEach((node) => {
-    node.outputs.forEach((outputId) => {
+    (node.outputs || []).forEach((outputId) => {
       const target = nodeMap.get(outputId);
       if (target) connections.push({ from: node, to: target });
     });
   });
 
+  const getSourcePoint = (node: FlowNodeData, outputIndex: number = 0, totalOutputs: number = 1) => {
+    const x = node.x + 145; // Center of 290px card
+    
+    // Horizontal offset if multiple outputs
+    const offsetX = totalOutputs > 1 ? (outputIndex - (totalOutputs - 1) / 2) * 30 : 0;
+    
+    // Dynamic height estimation for the start point
+    let estimatedHeight = 180;
+    if (node.type === "paths" || node.type === "question") {
+      const optionsCount = node.config.options?.length || 0;
+      estimatedHeight = 180 + (optionsCount * 44);
+    } else if (node.type === "wait") {
+      estimatedHeight = 160;
+    } else if (node.config.body && node.config.body.length > 100) {
+      estimatedHeight = 210;
+    } else if (["image", "video"].includes(node.type)) {
+      estimatedHeight = 220;
+    }
+    
+    // Add space for the footer area
+    return { x: x + offsetX, y: node.y + estimatedHeight + 40 };
+  };
+
   return (
     <svg className="pointer-events-none absolute inset-0 z-[1] h-full w-full">
       {connections.map(({ from, to }, index) => {
-        // Horizontal center of 290px card
-        const startX = from.x + 145;
-        
-        // Dynamic height estimation for the start point
-        let estimatedHeight = 180;
-        if (from.type === "paths" || from.type === "question") {
-          const optionsCount = from.config.options?.length || 0;
-          estimatedHeight = 180 + (optionsCount * 36);
-        } else if (from.type === "wait") {
-          estimatedHeight = 200;
-        } else if (from.config.body && from.config.body.length > 100) {
-          estimatedHeight = 220;
-        }
-
-        const startY = from.y + estimatedHeight;
+        const fromOutputs = from.outputs || [];
+        const outputIndex = fromOutputs.indexOf(to.id);
+        const start = getSourcePoint(from, outputIndex >= 0 ? outputIndex : 0, fromOutputs.length || 1);
         const endX = to.x + 145;
         const endY = to.y;
         
-        const distY = Math.abs(endY - startY);
+        const distY = Math.abs(endY - start.y);
         const deltaY = Math.max(70, distY * 0.5);
 
         return (
           <g key={`${from.id}-${to.id}-${index}`}>
-            {/* Connection line background for glow */}
             <path
-              d={`M${startX},${startY} C${startX},${startY + deltaY} ${endX},${endY - deltaY} ${endX},${endY}`}
+              d={`M${start.x},${start.y} C${start.x},${start.y + deltaY} ${endX},${endY - deltaY} ${endX},${endY}`}
               fill="none"
               stroke="hsl(var(--gold) / 0.1)"
               strokeWidth="10"
               strokeLinecap="round"
             />
-            {/* Main connection line */}
             <path
-              d={`M${startX},${startY} C${startX},${startY + deltaY} ${endX},${endY - deltaY} ${endX},${endY}`}
+              d={`M${start.x},${start.y} C${start.x},${start.y + deltaY} ${endX},${endY - deltaY} ${endX},${endY}`}
               className="transition-all duration-300"
               fill="none"
               stroke="hsl(var(--gold) / 0.7)"
@@ -195,14 +212,42 @@ const ConnectionLines = ({ nodes }: { nodes: FlowNodeData[] }) => {
               strokeLinecap="round"
               strokeDasharray={from.type === "wait" ? "6 4" : "none"}
             />
-            {/* Target point (top of card) */}
             <circle cx={endX} cy={endY} fill="hsl(var(--gold))" r="4.5" className="filter drop-shadow-[0_0_8px_hsl(var(--gold)/0.5)]" />
-            
-            {/* Source point (bottom center) */}
-            <circle cx={startX} cy={startY} fill="hsl(var(--gold)/0.8)" r="3" />
+            <circle cx={start.x} cy={start.y} fill="hsl(var(--gold)/0.8)" r="3" />
           </g>
         );
       })}
+
+      {/* Pending connection line */}
+      {pendingConnection && mousePosition && (
+        (() => {
+          const fromNode = nodeMap.get(pendingConnection);
+          if (!fromNode) return null;
+          
+          const start = getSourcePoint(fromNode);
+          const endX = mousePosition.x;
+          const endY = mousePosition.y;
+          
+          const distY = Math.abs(endY - start.y);
+          const deltaY = Math.max(70, distY * 0.5);
+
+          return (
+            <g>
+              <path
+                d={`M${start.x},${start.y} C${start.x},${start.y + deltaY} ${endX},${endY - deltaY} ${endX},${endY}`}
+                fill="none"
+                stroke="hsl(var(--gold) / 0.4)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeDasharray="5 5"
+                className="animate-pulse"
+              />
+              <circle cx={start.x} cy={start.y} fill="hsl(var(--gold))" r="4" />
+              <circle cx={endX} cy={endY} fill="hsl(var(--gold))" r="3" />
+            </g>
+          );
+        })()
+      )}
     </svg>
   );
 };
@@ -264,13 +309,19 @@ const CanvasNode = ({
       initial={{ opacity: 0, scale: 0.94 }}
       style={{ left: node.x, top: node.y }}
     >
+      {/* Target connection point (top center) */}
+      <div 
+        className={`absolute -top-1.5 left-1/2 z-10 h-3 w-3 -translate-x-1/2 rounded-full border border-gold/40 bg-background transition-all ${
+          connecting && pendingConnection !== node.id ? "scale-150 border-gold bg-gold shadow-[0_0_10px_hsl(var(--gold))]" : "opacity-0"
+        }`}
+      />
+
       <div
         className={`group w-[290px] overflow-hidden rounded-[24px] border bg-card/95 shadow-2xl backdrop-blur transition-all ${
           selected ? "border-gold/70 shadow-[0_0_40px_hsl(var(--gold)/0.16)]" : "border-border/70 hover:border-border/100"
-        } ${pendingConnection === node.id ? "ring-2 ring-gold ring-offset-2 ring-offset-background shadow-[0_0_20px_hsl(var(--gold)/0.4)]" : ""} ${pendingConnection && pendingConnection !== node.id ? "hover:ring-2 hover:ring-gold/50 cursor-pointer" : ""}`}
+        } ${pendingConnection === node.id ? "ring-2 ring-gold ring-offset-2 ring-offset-background shadow-[0_0_20px_hsl(var(--gold)/0.4)]" : ""} ${connecting && pendingConnection !== node.id ? "hover:border-gold/60 cursor-pointer ring-1 ring-gold/20" : ""}`}
         onClick={(event) => {
-          // If we are in connecting mode, allow clicking anywhere on the node to connect
-          if (connecting) {
+          if (connecting && pendingConnection !== node.id) {
             event.stopPropagation();
             onSelect(node.id);
           }
@@ -367,8 +418,16 @@ const CanvasNode = ({
             <div className="h-2.5 w-2.5 rounded-full bg-gold" />
           </div>
           
-          <div className="absolute -bottom-1.5 left-1/2 flex h-3 w-3 -translate-x-1/2 items-center justify-center rounded-full border border-gold/40 bg-background shadow-sm">
-            <div className="h-1.5 w-1.5 rounded-full bg-gold" />
+          <div 
+            className={`absolute -bottom-1.5 left-1/2 z-10 flex h-4 w-4 -translate-x-1/2 cursor-crosshair items-center justify-center rounded-full border border-gold/40 bg-background shadow-sm transition-all hover:scale-150 hover:border-gold ${
+              pendingConnection === node.id ? "scale-150 border-gold shadow-[0_0_10px_hsl(var(--gold))]" : ""
+            }`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onConnect(node.id);
+            }}
+          >
+            <div className="h-2 w-2 rounded-full bg-gold" />
           </div>
         </div>
       </div>
@@ -473,10 +532,12 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
   });
   const [selectedNodeId, setSelectedNodeId] = useState<string>("");
   const [pendingConnection, setPendingConnection] = useState<string | null>(null);
+  const [mousePosition, setMousePosition] = useState<{ x: number; y: number } | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [sendingTest, setSendingTest] = useState(false);
   const [showTemplateSettings, setShowTemplateSettings] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setDraft(template);
@@ -796,15 +857,76 @@ const FlowCanvas = ({ categories, isNew, onBack, onDelete, onSave, saving, templ
         <FlowSidebar onAddNode={handleAddNode} />
 
         <div
+          ref={containerRef}
           className="scrollbar-premium relative min-w-0 flex-1 overflow-auto bg-background"
           onClick={() => {
             setSelectedNodeId("");
             setPendingConnection(null);
           }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            const typeId = e.dataTransfer.getData("application/reactflow");
+            if (!typeId) return;
+
+            const rect = containerRef.current?.getBoundingClientRect();
+            if (rect) {
+              const x = e.clientX - rect.left + (containerRef.current?.scrollLeft || 0);
+              const y = e.clientY - rect.top + (containerRef.current?.scrollTop || 0);
+              
+              const nodeType = NODE_TYPES.find(t => t.id === typeId);
+              if (nodeType) {
+                const nextId = `${typeId}-${Date.now()}`;
+                const baseConfigMap = {
+                  text: { body: "Nova mensagem" },
+                  image: { body: "Envio de imagem com legenda" },
+                  music: { body: "Envio de música" },
+                  audio: { body: "Envio de áudio" },
+                  video: { body: "Envio de vídeo" },
+                  document: { body: "Envio de documento" },
+                  paths: { body: "Defina os caminhos do fluxo", options: ["Se respondeu sim", "Se pediu suporte"] },
+                  wait: { body: "Aguardar antes do próximo passo", waitTime: "5", waitUnit: "minutos" },
+                  question: { body: "Qual opção faz mais sentido?", options: ["Quero comprar", "Tenho dúvida"] },
+                  tags: { body: "Aplicar tag ao contato" },
+                  variables: { body: "Salvar resposta em variável" },
+                };
+
+                const newNode: FlowNodeData = {
+                  id: nextId,
+                  type: typeId,
+                  label: nodeType.label,
+                  x: x - 145, // Center the node on drop
+                  y: y - 40,
+                  config: baseConfigMap[typeId] || { body: "Configuração do bloco" },
+                  outputs: [],
+                };
+
+                setNodes(current => [...current, newNode]);
+                setSelectedNodeId(nextId);
+                toast.success(`${nodeType.label} adicionado ao fluxo`);
+              }
+            }
+          }}
+          onMouseMove={(e) => {
+            if (pendingConnection) {
+              const rect = containerRef.current?.getBoundingClientRect();
+              if (rect) {
+                setMousePosition({
+                  x: e.clientX - rect.left + (containerRef.current?.scrollLeft || 0),
+                  y: e.clientY - rect.top + (containerRef.current?.scrollTop || 0),
+                });
+              }
+            } else if (mousePosition) {
+              setMousePosition(null);
+            }
+          }}
         >
           <div className="relative h-full min-h-[760px] w-full min-w-[900px]">
             <DotGrid />
-            <ConnectionLines nodes={nodes} />
+            <ConnectionLines nodes={nodes} pendingConnection={pendingConnection} mousePosition={mousePosition} />
 
             <div className="pointer-events-none absolute left-4 top-4 z-[3] flex items-center gap-2 rounded-full border border-gold/20 bg-card/90 px-3 py-1.5 text-xs text-muted-foreground shadow-lg backdrop-blur">
               <MessageSquare className="h-3.5 w-3.5 text-gold" />
