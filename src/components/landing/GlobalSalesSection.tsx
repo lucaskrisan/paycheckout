@@ -125,6 +125,7 @@ const GlobalSalesSection = () => {
         </svg>
       </div>
     </section>
+    </>
   );
 };
 
