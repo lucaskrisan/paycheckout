@@ -200,6 +200,12 @@ function ConfigNode({ data }: NodeProps<Node<ConfigData, "config">>) {
           <span className="text-[9px] uppercase tracking-wider text-emerald-400/70 font-bold">Vendas</span>
           <span className="text-sm font-black text-emerald-400">{data.sales ?? 0}</span>
         </div>
+        <div className="col-span-2 flex flex-col p-2.5 rounded-xl bg-violet-500/5 border border-violet-500/10">
+          <span className="text-[9px] uppercase tracking-wider text-violet-400/70 font-bold">Receita Total</span>
+          <span className="text-sm font-black text-violet-400">
+            {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(data.revenue || 0)}
+          </span>
+        </div>
       </div>
       {!data.entryUrl ? (
         <div className="flex items-center gap-2 text-[10px] text-amber-300 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
