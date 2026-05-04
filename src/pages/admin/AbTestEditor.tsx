@@ -885,9 +885,10 @@ function EditorInner() {
           }
         }
         if (n.type === "config") {
-          const totalVisits = stats.reduce((acc, curr) => acc + Number(curr.impressions), 0);
-          const totalSales = stats.reduce((acc, curr) => acc + Number(curr.sales), 0);
-          const totalRevenue = stats.reduce((acc, curr) => acc + Number(curr.revenue), 0);
+          const totalImpressions = stats.reduce((acc, curr) => acc + Number(curr.impressions || 0), 0);
+          const totalClicks = stats.reduce((acc, curr) => acc + Number(curr.clicks || 0), 0);
+          const totalSales = stats.reduce((acc, curr) => acc + Number(curr.sales || 0), 0);
+          const totalRevenue = stats.reduce((acc, curr) => acc + Number(curr.revenue || 0), 0);
           return { 
             ...n, 
             data: { 
