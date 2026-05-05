@@ -372,11 +372,13 @@ const Analytics = () => {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {[
           { label: "Faturamento", value: fmt(totalRevenue), icon: TrendingUp },
           { label: "Vendas", value: paidOrders.length, icon: ShoppingCart },
+          { label: "Chargebacks", value: chargebackedOrders.length, icon: AlertTriangle, color: "text-red-500" },
           { label: "Visitantes", value: deviceData.uniqueVisitors, icon: Eye },
+
           {
             label: "Conversão",
             value:
