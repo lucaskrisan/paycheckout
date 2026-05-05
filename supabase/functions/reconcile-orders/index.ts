@@ -227,7 +227,28 @@ Deno.serve(async (req) => {
               console.error('[reconcile] Webhook fire error:', whErr);
             }
           }
-        } else if (pagarmeStatus === 'canceled' || pagarmeStatus === 'failed') {
+        } else if (pagarmeStatus === 'refunded' || pagarmeStatus === 'under_dispute' || pagarmeStatus === 'dispute_succeeded') {
+          const newStatus = pagarmeStatus === 'refunded' ? 'refunded' : 'chargedback';
+          if (order.status !== newStatus) {
+            await supabase
+              .from('orders')
+              .update({ status: newStatus, updated_at: new Date().toISOString() })
+              .eq('id', order.id);
+            
+            await processOrderRevoked({
+              supabase,
+              orderData: {
+                id: order.id,
+                product_id: order.product_id,
+                customer_id: order.customer_id,
+                user_id: order.user_id,
+              },
+              source: 'reconcile-orders',
+              reason: newStatus === 'chargedback' ? 'chargedback' : 'refunded',
+            });
+            results.push({ order_id: order.id, external_id: order.external_id, pagarme_status: pagarmeStatus, action: `updated_to_${newStatus}`, customer: customerName });
+          }
+        } else if ((pagarmeStatus === 'canceled' || pagarmeStatus === 'failed') && order.status === 'pending') {
           // Update to reflect actual status
           const mappedStatus = pagarmeStatus === 'canceled' ? 'cancelled' : 'failed';
           await supabase
@@ -236,6 +257,7 @@ Deno.serve(async (req) => {
             .eq('id', order.id);
           results.push({ order_id: order.id, external_id: order.external_id, pagarme_status: pagarmeStatus, action: `updated_to_${mappedStatus}`, customer: customerName });
         } else {
+
           results.push({ order_id: order.id, external_id: order.external_id, pagarme_status: pagarmeStatus, action: 'no_change', customer: customerName });
         }
 
