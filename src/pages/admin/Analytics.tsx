@@ -336,6 +336,9 @@ const Analytics = () => {
     0,
   );
   const pendingOrders = orders.filter((o) => o.status === "pending");
+  const chargebackedOrders = orders.filter((o) => ["chargeback", "chargedback"].includes(o.status));
+  const totalChargebacked = chargebackedOrders.reduce((s, o) => s + Number(o.amount || 0), 0);
+
 
   if (loading)
     return (
