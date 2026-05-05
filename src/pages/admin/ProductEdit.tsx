@@ -292,12 +292,13 @@ const ProductEdit = () => {
           .gte("created_at", testStartDate)
       ]);
 
-      const stats: Record<string, { visits: number; sales: number; revenue: number }> = {};
+      const stats: Record<string, { visits: number; sales: number; revenue: number; chargebacks: number }> = {};
       
       // Initialize stats for each checkout
       checkouts.forEach(co => {
-        stats[co.id] = { visits: 0, sales: 0, revenue: 0 };
+        stats[co.id] = { visits: 0, sales: 0, revenue: 0, chargebacks: 0 };
       });
+
 
       visitsRes.data?.forEach((evt: any) => {
         const configId = evt.metadata?.config_id;
