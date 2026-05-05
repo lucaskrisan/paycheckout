@@ -886,7 +886,7 @@ function EditorInner() {
       if (productIds.length > 0) {
         const { data: ordersData } = await supabase
           .from("orders")
-          .select("id, amount, metadata, status, created_at")
+          .select("id, amount, metadata, status, created_at, product_id")
           .in("product_id", productIds)
           .eq("status", "paid")
           .gte("created_at", startTime.toISOString());
@@ -896,11 +896,9 @@ function EditorInner() {
       // Fetch WhatsApp recovery data
       const { data: waData } = await supabase
         .from("whatsapp_send_log")
-        .select("id, status, created_at, order_id")
+        .select("id, status, delivery_status, created_at, order_id")
         .gte("created_at", startTime.toISOString());
 
-      // If period is all, we still want to use the calculated stats for consistency
-      // but ab_test_events might be more accurate for click attribution
       const { data: events, error: eError } = await supabase
         .from("ab_test_events")
         .select("variant_id, event_type, amount, metadata, order_id")
@@ -909,11 +907,18 @@ function EditorInner() {
       
       if (eError) throw eError;
 
+      // Fetch Pixel Events for checkout/creative attribution (ViewContent/InitiateCheckout)
+      const { data: pixelEvents } = await supabase
+        .from("pixel_events")
+        .select("event_name, utm_content, product_id")
+        .in("product_id", productIds)
+        .in("event_name", ["ViewContent", "InitiateCheckout"])
+        .gte("created_at", startTime.toISOString());
+
       // Aggregate everything
       return {
         variants: variants.map(v => {
           const vEvents = events.filter(e => e.variant_id === v.id);
-          // Attributing orders to variants via metadata.ab_visitor_id or variant_id if present
           const vOrders = orders.filter(o => 
             o.metadata?.variant_id === v.id || 
             events.some(e => e.event_type === 'sale' && e.variant_id === v.id && (e as any).order_id === o.id)
@@ -923,15 +928,15 @@ function EditorInner() {
             ...v,
             impressions: vEvents.filter(e => e.event_type === 'impression').length,
             clicks: vEvents.filter(e => e.event_type === 'click').length,
-            sales: vOrders.length || vEvents.filter(e => e.event_type === 'sale').length,
-            revenue: vOrders.reduce((acc, curr) => acc + Number(curr.amount || 0), 0) || 
-                     vEvents.filter(e => e.event_type === 'sale').reduce((acc, curr) => acc + Number(curr.amount || 0), 0)
+            sales: vOrders.length,
+            revenue: vOrders.reduce((acc, curr) => acc + Number(curr.amount || 0), 0)
           };
         }),
         orders,
+        pixelEvents: pixelEvents || [],
         whatsapp: waData ? {
-          sent: waData.filter(w => w.status === 'sent').length || 0,
-          delivered: waData.filter(w => w.status === 'delivered').length || 0,
+          sent: waData.length || 0, // Total attempts
+          delivered: waData.filter(w => w.delivery_status === 'sent' || w.status === 'sent').length || 0,
           recovered: orders.filter(o => waData.some(w => w.order_id === o.id)).length || 0,
           revenue: orders.filter(o => waData.some(w => w.order_id === o.id)).reduce((acc, curr) => acc + Number(curr.amount || 0), 0)
         } : { sent: 0, delivered: 0, recovered: 0, revenue: 0 }
