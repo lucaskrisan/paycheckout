@@ -352,7 +352,12 @@ function CheckoutNode({ id, data }: NodeProps<Node<CheckoutData, "checkout">>) {
               {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(data.stats.revenue || 0)}
             </span>
           </div>
+          <div className="flex flex-col p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
+            <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Chargebacks</span>
+            <span className="text-sm font-black text-red-400">{data.stats.chargebacks || 0}</span>
+          </div>
         </div>
+
       )}
       <div className="space-y-3">
         <div className="space-y-1">
