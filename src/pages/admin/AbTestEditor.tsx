@@ -888,7 +888,7 @@ function EditorInner() {
           .from("orders")
           .select("id, amount, metadata, status, created_at, product_id")
           .in("product_id", productIds)
-          .eq("status", "paid")
+          .in("status", ["paid", "refunded", "chargedback", "chargeback"])
           .gte("created_at", startTime.toISOString());
         orders = ordersData || [];
       }
