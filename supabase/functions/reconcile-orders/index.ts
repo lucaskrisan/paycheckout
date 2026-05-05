@@ -174,13 +174,13 @@ Deno.serve(async (req) => {
           if (cust) customerName = cust.name;
         }
 
-        if (pagarmeStatus === 'paid') {
+        if (pagarmeStatus === 'paid' && order.status === 'pending') {
           // This order was paid but webhook missed it - update!
           const { error: updateErr } = await supabase
             .from('orders')
             .update({ status: 'paid', updated_at: new Date().toISOString() })
-            .eq('id', order.id)
-            .eq('status', 'pending');
+            .eq('id', order.id);
+
 
           if (updateErr) {
             console.error(`[reconcile] Failed to update ${order.id}:`, updateErr);
