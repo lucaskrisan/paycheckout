@@ -198,8 +198,8 @@ Deno.serve(async (req) => {
       .from('orders')
       .update({ status, updated_at: new Date().toISOString() })
       .eq('external_id', externalId)
-      .not('status', 'in', `(${['paid', 'refunded'].filter(s => {
-        const p: Record<string, number> = { pending: 1, failed: 2, paid: 3, refunded: 4, cancelled: 4 };
+      .not('status', 'in', `(${['paid', 'refunded', 'chargedback'].filter(s => {
+        const p: Record<string, number> = { pending: 1, failed: 2, paid: 3, refunded: 4, cancelled: 4, chargedback: 5 };
         return (p[s] || 0) >= (p[status!] || 0);
       }).join(',')})`)
       .select('id, amount, payment_method, product_id, customer_id, user_id, metadata')
