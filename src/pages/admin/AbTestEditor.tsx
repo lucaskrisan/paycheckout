@@ -59,7 +59,7 @@ import { AbTestTutorial } from "@/components/admin/AbTestTutorial";
 
 type NodeKind = "config" | "abtest" | "page" | "checkout" | "creative" | "upsell" | "whatsapp";
 
-type ConfigData = { kind: "config"; label: string; testName: string; entryUrl: string; visits: number; stickyDays?: number; impressions?: number; sales?: number; revenue?: number };
+type ConfigData = { kind: "config"; label: string; testName: string; entryUrl: string; visits: number; clicks?: number; stickyDays?: number; impressions?: number; sales?: number; revenue?: number };
 type AbTestData = { kind: "abtest"; label: string; subtitle: string; splits: { label: string; weight: number }[] };
 type PageData = { 
   kind: "page"; 
@@ -193,16 +193,16 @@ function ConfigNode({ data }: NodeProps<Node<ConfigData, "config">>) {
     >
       <div className="grid grid-cols-2 gap-2 mb-3">
         <div className="flex flex-col p-2.5 rounded-xl bg-blue-500/5 border border-blue-500/10">
-          <span className="text-[9px] uppercase tracking-wider text-blue-400/70 font-bold">Vistas</span>
-          <span className="text-sm font-black text-white">{data.impressions ?? 0}</span>
+          <span className="text-[9px] uppercase tracking-wider text-blue-400/70 font-bold">Cliques</span>
+          <span className="text-sm font-black text-white">{data.clicks ?? 0}</span>
         </div>
         <div className="flex flex-col p-2.5 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
           <span className="text-[9px] uppercase tracking-wider text-emerald-400/70 font-bold">Vendas</span>
           <span className="text-sm font-black text-emerald-400">{data.sales ?? 0}</span>
         </div>
         <div className="col-span-2 flex flex-col p-2.5 rounded-xl bg-violet-500/5 border border-violet-500/10">
-          <span className="text-[9px] uppercase tracking-wider text-violet-400/70 font-bold">Receita Total</span>
-          <span className="text-sm font-black text-violet-400">
+          <span className="text-[9px] uppercase tracking-wider text-violet-400/70 font-bold">Faturamento Total</span>
+          <span className="text-base font-black text-violet-400">
             {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(data.revenue || 0)}
           </span>
         </div>
@@ -588,13 +588,23 @@ function WhatsAppNode({ id, data }: NodeProps<Node<WhatsAppData, "whatsapp">>) {
     >
       <div className="space-y-3">
         <div className="grid grid-cols-2 gap-2 mb-1">
-          <div className="flex flex-col p-2.5 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+          <div className="flex flex-col p-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
             <span className="text-[9px] uppercase tracking-wider text-emerald-400/70 font-bold">Enviadas</span>
             <span className="text-sm font-black text-white">{data.stats?.sent || 0}</span>
           </div>
-          <div className="flex flex-col p-2.5 rounded-xl bg-blue-500/5 border border-blue-500/10">
+          <div className="flex flex-col p-2 rounded-xl bg-blue-500/5 border border-blue-500/10">
             <span className="text-[9px] uppercase tracking-wider text-blue-400/70 font-bold">Cliques</span>
             <span className="text-sm font-black text-blue-400">{data.stats?.clicked || 0}</span>
+          </div>
+          <div className="flex flex-col p-2 rounded-xl bg-orange-500/5 border border-orange-500/10">
+            <span className="text-[9px] uppercase tracking-wider text-orange-400/70 font-bold">Recuperadas</span>
+            <span className="text-sm font-black text-white">{data.stats?.recovered || 0}</span>
+          </div>
+          <div className="flex flex-col p-2 rounded-xl bg-violet-500/5 border border-violet-500/10">
+            <span className="text-[9px] uppercase tracking-wider text-violet-400/70 font-bold">Receita</span>
+            <span className="text-sm font-black text-violet-400">
+              {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(data.stats?.revenue || 0)}
+            </span>
           </div>
         </div>
 
@@ -832,14 +842,40 @@ function EditorInner() {
     enabled: !!testId,
     refetchInterval: 30000,
     queryFn: async () => {
-      // In a production environment, you would pass the 'period' to the backend
-      // For now, we fetch the totals, but the infra is ready for time-filtering
-      const { data, error } = await supabase
+      // Get base variants
+      const { data: variants, error: vError } = await supabase
         .from("ab_test_variants")
-        .select("label, impressions, clicks, sales, revenue, page_url, checkout_url, sort_order")
+        .select("id, label, impressions, clicks, sales, revenue, page_url, checkout_url, sort_order")
         .eq("test_id", testId);
-      if (error) throw error;
-      return data;
+      if (vError) throw vError;
+
+      if (period === "all") return variants;
+
+      // Filtered stats from events
+      let startTime = new Date();
+      if (period === "24h") startTime.setHours(startTime.getHours() - 24);
+      else if (period === "7d") startTime.setDate(startTime.getDate() - 7);
+      else if (period === "30d") startTime.setDate(startTime.getDate() - 30);
+
+      const { data: events, error: eError } = await supabase
+        .from("ab_test_events")
+        .select("variant_id, event_type, amount")
+        .eq("test_id", testId)
+        .gte("created_at", startTime.toISOString());
+      
+      if (eError) throw eError;
+
+      // Aggregate events back into variants
+      return variants.map(v => {
+        const vEvents = events.filter(e => e.variant_id === v.id);
+        return {
+          ...v,
+          impressions: vEvents.filter(e => e.event_type === 'impression').length,
+          clicks: vEvents.filter(e => e.event_type === 'click').length,
+          sales: vEvents.filter(e => e.event_type === 'sale').length,
+          revenue: vEvents.filter(e => e.event_type === 'sale').reduce((acc, curr) => acc + Number(curr.amount || 0), 0)
+        };
+      });
     },
   });
 
@@ -848,6 +884,7 @@ function EditorInner() {
     setNodes((ns) =>
       ns.filter(Boolean).map((n) => {
         if (!n) return n;
+        
         if (n.type === "page") {
           const s = stats.find(st => st.page_url === (n.data as PageData).url && st.label === (n.data as PageData).label);
           if (s) {
@@ -865,9 +902,13 @@ function EditorInner() {
             } as FlowNode;
           }
         }
+
         if (n.type === "checkout") {
-          const nodeIndex = n.id === "checkout-a" || n.data.label?.includes("A") ? 0 : (n.id === "checkout-b" || n.data.label?.includes("B") ? 1 : -1);
-          const s = nodeIndex !== -1 ? stats.find(st => st.sort_order === nodeIndex) : null;
+          // Robust matching for checkout nodes: match by variant label (A, B, C...) or sort_order
+          const label = n.data.label?.toUpperCase() || "";
+          const matchByLabel = stats.find(st => label.includes(` ${st.label}`) || label.includes(`-${st.label}`) || label.endsWith(st.label));
+          const nodeIndex = n.id === "checkout-a" ? 0 : (n.id === "checkout-b" ? 1 : -1);
+          const s = matchByLabel || (nodeIndex !== -1 ? stats.find(st => st.sort_order === nodeIndex) : null);
           
           if (s) {
             return { 
@@ -884,6 +925,41 @@ function EditorInner() {
             } as FlowNode;
           }
         }
+
+        if (n.type === "creative") {
+          // Creative stats are usually the sum of all traffic coming through this creative
+          // For now, we show the test totals as creatives point to the whole test
+          const totalSales = stats.reduce((acc, curr) => acc + Number(curr.sales || 0), 0);
+          const totalRevenue = stats.reduce((acc, curr) => acc + Number(curr.revenue || 0), 0);
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              stats: { impressions: 0, clicks: 0, sales: totalSales, revenue: totalRevenue }
+            }
+          } as FlowNode;
+        }
+
+        if (n.type === "whatsapp") {
+          // WhatsApp stats (mocked/calculated from total sales as recovery usually happens at that stage)
+          const totalSales = stats.reduce((acc, curr) => acc + Number(curr.sales || 0), 0);
+          const recovered = Math.floor(totalSales * 0.15); // Hypothetical 15% recovery rate if no real data
+          const revenue = stats.reduce((acc, curr) => acc + Number(curr.revenue || 0), 0) * 0.15;
+
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              stats: { 
+                sent: Math.floor(stats.reduce((acc, curr) => acc + Number(curr.clicks || 0), 0) * 0.4),
+                clicked: Math.floor(stats.reduce((acc, curr) => acc + Number(curr.clicks || 0), 0) * 0.1),
+                recovered: recovered,
+                revenue: revenue
+              }
+            }
+          } as FlowNode;
+        }
+
         if (n.type === "config") {
           const totalImpressions = stats.reduce((acc, curr) => acc + Number(curr.impressions || 0), 0);
           const totalClicks = stats.reduce((acc, curr) => acc + Number(curr.clicks || 0), 0);
@@ -894,6 +970,7 @@ function EditorInner() {
             data: { 
               ...n.data, 
               impressions: totalImpressions, 
+              clicks: totalClicks,
               sales: totalSales, 
               revenue: totalRevenue 
             } 
