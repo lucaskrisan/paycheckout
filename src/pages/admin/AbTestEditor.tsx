@@ -59,7 +59,7 @@ import { AbTestTutorial } from "@/components/admin/AbTestTutorial";
 
 type NodeKind = "config" | "abtest" | "page" | "checkout" | "creative" | "upsell" | "whatsapp";
 
-type ConfigData = { kind: "config"; label: string; testName: string; entryUrl: string; visits: number; clicks?: number; stickyDays?: number; impressions?: number; sales?: number; revenue?: number };
+type ConfigData = { kind: "config"; label: string; testName: string; entryUrl: string; visits: number; clicks?: number; stickyDays?: number; impressions?: number; sales?: number; revenue?: number; chargebacks?: number };
 type AbTestData = { kind: "abtest"; label: string; subtitle: string; splits: { label: string; weight: number }[] };
 type PageData = { 
   kind: "page"; 
