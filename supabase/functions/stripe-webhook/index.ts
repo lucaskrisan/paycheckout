@@ -283,6 +283,19 @@ Deno.serve(async (req) => {
         currency: productCurrency,
       });
     }
+    if ((status === 'refunded' || status === 'chargedback') && orderData) {
+      await processOrderRevoked({
+        supabase,
+        orderData: {
+          id: orderData.id,
+          product_id: orderData.product_id,
+          customer_id: orderData.customer_id,
+          user_id: orderData.user_id,
+        },
+        source: 'stripe-webhook',
+        reason: status === 'chargedback' ? 'chargedback' : 'refunded',
+      });
+    }
 
     return new Response(JSON.stringify({ received: true, status }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
