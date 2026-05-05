@@ -15,6 +15,7 @@ interface PurchaseConfirmationParams {
   currency?: string;
   source: string;
   deliveryMethod?: string; // 'panttera' | 'appsell' | 'email'
+  appsellLoginUrl?: string | null;
 }
 
 function escapeHtml(str: string): string {
@@ -22,7 +23,7 @@ function escapeHtml(str: string): string {
 }
 
 export async function sendPurchaseConfirmationEmail(params: PurchaseConfirmationParams): Promise<void> {
-  const { supabase, orderId, customerId, productId, userId, amount, paymentMethod, currency = 'BRL', source, deliveryMethod = 'panttera' } = params;
+  const { supabase, orderId, customerId, productId, userId, amount, paymentMethod, currency = 'BRL', source, deliveryMethod = 'panttera', appsellLoginUrl: appsellLoginUrlParam } = params;
 
   try {
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
@@ -50,8 +51,8 @@ export async function sendPurchaseConfirmationEmail(params: PurchaseConfirmation
       .eq('id', productId)
       .maybeSingle();
 
-    let appsellLoginUrl: string | null = null;
-    if (deliveryMethod === 'appsell' && userId) {
+    let appsellLoginUrl: string | null = appsellLoginUrlParam || null;
+    if (!appsellLoginUrl && deliveryMethod === 'appsell' && userId) {
       const { data: appsellData } = await supabase
         .from('appsell_integrations')
         .select('login_url')

@@ -47,13 +47,23 @@ async function stepPurchaseConfirmationEmail(params: ProcessOrderPaidParams): Pr
   if (!orderData.product_id || !orderData.customer_id) return;
 
   try {
-    // Get delivery method to pass AppSell login link in email
+    // Get delivery method and login link for AppSell when applicable
     const { data: prodDelivery } = await supabase
       .from('products')
       .select('delivery_method')
       .eq('id', orderData.product_id)
       .maybeSingle();
     const deliveryMethod = prodDelivery?.delivery_method || 'panttera';
+
+    let appsellLoginUrl: string | null = null;
+    if (deliveryMethod === 'appsell' && orderData.user_id) {
+      const { data: appsellInt } = await supabase
+        .from('appsell_integrations')
+        .select('login_url')
+        .eq('user_id', orderData.user_id)
+        .maybeSingle();
+      appsellLoginUrl = appsellInt?.login_url || null;
+    }
 
     await sendPurchaseConfirmationEmail({
       supabase,
@@ -66,6 +76,7 @@ async function stepPurchaseConfirmationEmail(params: ProcessOrderPaidParams): Pr
       currency: currency || 'BRL',
       source,
       deliveryMethod,
+      appsellLoginUrl,
     });
   } catch (err) {
     console.error(`[${source}] Purchase confirmation email error (non-blocking):`, err);

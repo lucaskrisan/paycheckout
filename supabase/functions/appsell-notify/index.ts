@@ -152,7 +152,7 @@ Deno.serve(async (req) => {
         .from('customers')
         .select('name, email, phone, cpf')
         .eq('id', order.customer_id)
-        .single();
+        .maybeSingle();
       if (cust) {
         customer = {
           name: cust.name || '',
@@ -171,7 +171,7 @@ Deno.serve(async (req) => {
         .from('products')
         .select('id, name, price, currency')
         .eq('id', order.product_id)
-        .single();
+        .maybeSingle();
       if (prod) {
         productCurrency = (prod as any).currency || 'BRL';
         products.push({
