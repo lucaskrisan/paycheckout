@@ -910,7 +910,7 @@ function EditorInner() {
       // Fetch Pixel Events for checkout/creative attribution (ViewContent/InitiateCheckout)
       const { data: pixelEvents } = await supabase
         .from("pixel_events")
-        .select("event_name, utm_content, product_id")
+        .select("event_name, utm_content, utm_source, product_id")
         .in("product_id", productIds)
         .in("event_name", ["ViewContent", "InitiateCheckout"])
         .gte("created_at", startTime.toISOString());
