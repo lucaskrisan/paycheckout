@@ -49,7 +49,9 @@ const STATUS_MAP: Record<string, { label: string; variant: "paid" | "pending" | 
   refused: { label: "Recusado", variant: "refused" },
   failed: { label: "Recusado", variant: "refused" },
   chargeback: { label: "Chargeback", variant: "refused" },
+  chargedback: { label: "Chargeback", variant: "refused" },
   cancelled: { label: "Cancelado", variant: "default" },
+
 };
 
 const VARIANT_CLASSES: Record<string, string> = {
