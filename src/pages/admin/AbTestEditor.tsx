@@ -1071,8 +1071,9 @@ function EditorInner() {
         if (n.type === "config") {
           const totalImpressions = stats.variants.reduce((acc, curr) => acc + Number(curr.impressions || 0), 0);
           const totalClicks = stats.variants.reduce((acc, curr) => acc + Number(curr.clicks || 0), 0);
-          const totalSales = stats.orders.length; // Use total product orders for total sales
-          const totalRevenue = stats.orders.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+          const totalSales = stats.orders.filter(o => o.status === 'paid').length; 
+          const totalRevenue = stats.orders.filter(o => o.status === 'paid').reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+          const totalChargebacks = stats.orders.filter(o => o.status === 'chargedback' || o.status === 'chargeback').length;
           
           return { 
             ...n, 
@@ -1081,10 +1082,12 @@ function EditorInner() {
               impressions: totalImpressions, 
               clicks: totalClicks,
               sales: totalSales, 
-              revenue: totalRevenue 
+              revenue: totalRevenue,
+              chargebacks: totalChargebacks
             } 
           } as FlowNode;
         }
+
         return n;
       })
     );
