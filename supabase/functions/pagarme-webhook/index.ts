@@ -155,6 +155,19 @@ Deno.serve(async (req) => {
         currency: 'BRL',
       });
     }
+    if ((status === 'refunded' || status === 'chargedback') && orderData) {
+      await processOrderRevoked({
+        supabase,
+        orderData: {
+          id: orderData.id,
+          product_id: orderData.product_id,
+          customer_id: orderData.customer_id,
+          user_id: orderData.user_id,
+        },
+        source: 'pagarme-webhook',
+        reason: status === 'chargedback' ? 'chargedback' : 'refunded',
+      });
+    }
 
     // --- Billing recharge confirmation (Pagar.me PIX) ---
     // This is gateway-specific and stays in the webhook handler
