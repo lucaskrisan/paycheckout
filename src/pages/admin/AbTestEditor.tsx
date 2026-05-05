@@ -970,6 +970,7 @@ function EditorInner() {
             data: { 
               ...n.data, 
               impressions: totalImpressions, 
+              clicks: totalClicks,
               sales: totalSales, 
               revenue: totalRevenue 
             } 
