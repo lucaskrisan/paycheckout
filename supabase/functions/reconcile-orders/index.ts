@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
     const { data: pendingOrders, error: fetchErr } = await supabase
       .from('orders')
       .select('id, external_id, amount, product_id, customer_id, user_id, metadata, payment_method')
-      .eq('status', 'pending')
+      .in('status', ['pending', 'paid'])
       .gte('created_at', since)
       .not('external_id', 'is', null);
 
