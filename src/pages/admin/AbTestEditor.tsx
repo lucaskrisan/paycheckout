@@ -69,7 +69,7 @@ type PageData = {
   mirrorPixelId?: string | null;
   paused?: boolean;
   thumbnailUrl?: string | null;
-  stats?: { impressions: number; clicks: number; sales: number; revenue: number };
+  stats?: { impressions: number; clicks: number; sales: number; revenue: number; chargebacks?: number };
 };
 type CheckoutData = {
   kind: "checkout";
