@@ -96,7 +96,12 @@ const VariantMetricsCard = ({ co, productId, currency, metrics, isLeader, totalV
           <p className="text-[9px] text-muted-foreground uppercase font-semibold">Vendas</p>
           <p className="text-sm font-semibold">{metrics.sales}</p>
         </div>
+        <div>
+          <p className="text-[9px] text-muted-foreground uppercase font-semibold">Chargebacks</p>
+          <p className={`text-sm font-semibold ${metrics.chargebacks > 0 ? 'text-red-500' : ''}`}>{metrics.chargebacks}</p>
+        </div>
       </div>
+
       
       <div className="pt-1 flex justify-between items-end">
         <div>
