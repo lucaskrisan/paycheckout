@@ -78,13 +78,6 @@ async function stepPurchaseConfirmationEmail(params: ProcessOrderPaidParams): Pr
       deliveryMethod,
       appsellLoginUrl,
     });
-      amount: orderData.amount,
-      paymentMethod: orderData.payment_method,
-      currency: currency || 'BRL',
-      source,
-      deliveryMethod,
-      appsellLoginUrl,
-    });
   } catch (err) {
     console.error(`[${source}] Purchase confirmation email error (non-blocking):`, err);
   }
