@@ -85,7 +85,7 @@ type UpsellData = {
   label: string;
   subtitle: string;
   url: string;
-  stats?: { impressions: number; clicks: number; sales: number; revenue: number };
+  stats?: { impressions: number; clicks: number; sales: number; revenue: number; chargebacks?: number };
 };
 type CreativeData = {
   kind: "creative";
@@ -102,7 +102,7 @@ type WhatsAppData = {
   label: string;
   subtitle: string;
   delay: number;
-  stats?: { sent: number; clicked: number; recovered: number; revenue: number };
+  stats?: { sent: number; clicked: number; recovered: number; revenue: number; chargebacks?: number };
 };
 
 type FlowNode = Node<any>;
