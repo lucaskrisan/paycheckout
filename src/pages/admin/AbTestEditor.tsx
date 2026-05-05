@@ -78,7 +78,7 @@ type CheckoutData = {
   productId: string | null;
   offerId: string | null;
   templateId: string | null;
-  stats?: { impressions: number; clicks: number; sales: number; revenue: number };
+  stats?: { impressions: number; clicks: number; sales: number; revenue: number; chargebacks?: number };
 };
 type UpsellData = {
   kind: "upsell";
