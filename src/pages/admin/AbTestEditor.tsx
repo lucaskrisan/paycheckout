@@ -939,7 +939,6 @@ function EditorInner() {
       };
     },
   });
-  });
 
   useEffect(() => {
     if (!stats || stats.length === 0) return;
