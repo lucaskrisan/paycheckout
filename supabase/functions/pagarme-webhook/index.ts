@@ -118,7 +118,6 @@ Deno.serve(async (req) => {
     if (orderData?.id && orderData?.user_id) {
       const eventPairs: string[][] = [];
       if (status === 'paid') eventPairs.push(['payment.approved', 'order.paid']);
-      else if (status === 'refunded') eventPairs.push(['payment.refunded', 'order.refunded']);
       else if (status === 'cancelled') eventPairs.push(['payment.failed', 'order.cancelled']);
       else if (status === 'failed') eventPairs.push(['payment.failed']);
 
