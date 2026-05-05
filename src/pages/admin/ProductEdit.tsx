@@ -310,10 +310,15 @@ const ProductEdit = () => {
       salesRes.data?.forEach((order: any) => {
         const configId = order.metadata?.config_id;
         if (configId && stats[configId]) {
-          stats[configId].sales++;
-          stats[configId].revenue += Number(order.amount);
+          if (["paid", "approved", "confirmed"].includes(order.status)) {
+            stats[configId].sales++;
+            stats[configId].revenue += Number(order.amount);
+          } else if (["chargeback", "chargedback"].includes(order.status)) {
+            stats[configId].chargebacks++;
+          }
         }
       });
+
 
       setVariantStats(stats);
     } catch (err) {
