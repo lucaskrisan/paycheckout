@@ -247,10 +247,10 @@ Deno.serve(async (req) => {
     if (orderData.user_id) {
       const evtMap: Record<string, string[]> = {
         paid: ['payment.approved', 'order.paid'],
-        refunded: ['payment.refunded', 'order.refunded'],
         failed: ['payment.failed'],
         cancelled: ['payment.failed', 'order.cancelled'],
       };
+
       for (const evt of (evtMap[status] || [])) {
         fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/fire-webhooks`, {
           method: 'POST',
