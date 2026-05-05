@@ -588,13 +588,23 @@ function WhatsAppNode({ id, data }: NodeProps<Node<WhatsAppData, "whatsapp">>) {
     >
       <div className="space-y-3">
         <div className="grid grid-cols-2 gap-2 mb-1">
-          <div className="flex flex-col p-2.5 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+          <div className="flex flex-col p-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
             <span className="text-[9px] uppercase tracking-wider text-emerald-400/70 font-bold">Enviadas</span>
             <span className="text-sm font-black text-white">{data.stats?.sent || 0}</span>
           </div>
-          <div className="flex flex-col p-2.5 rounded-xl bg-blue-500/5 border border-blue-500/10">
+          <div className="flex flex-col p-2 rounded-xl bg-blue-500/5 border border-blue-500/10">
             <span className="text-[9px] uppercase tracking-wider text-blue-400/70 font-bold">Cliques</span>
             <span className="text-sm font-black text-blue-400">{data.stats?.clicked || 0}</span>
+          </div>
+          <div className="flex flex-col p-2 rounded-xl bg-orange-500/5 border border-orange-500/10">
+            <span className="text-[9px] uppercase tracking-wider text-orange-400/70 font-bold">Recuperadas</span>
+            <span className="text-sm font-black text-white">{data.stats?.recovered || 0}</span>
+          </div>
+          <div className="flex flex-col p-2 rounded-xl bg-violet-500/5 border border-violet-500/10">
+            <span className="text-[9px] uppercase tracking-wider text-violet-400/70 font-bold">Receita</span>
+            <span className="text-sm font-black text-violet-400">
+              {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(data.stats?.revenue || 0)}
+            </span>
           </div>
         </div>
 
