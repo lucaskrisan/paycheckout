@@ -285,9 +285,10 @@ const ProductEdit = () => {
           .eq("is_bot", false)
           .gte("created_at", testStartDate),
         supabase.from("orders")
-          .select("amount, metadata")
+          .select("status, amount, metadata")
           .eq("product_id", productId)
-          .eq("status", "paid")
+          .in("status", ["paid", "approved", "confirmed", "chargeback", "chargedback"])
+
           .gte("created_at", testStartDate)
       ]);
 
