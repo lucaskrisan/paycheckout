@@ -928,8 +928,10 @@ function EditorInner() {
             ...v,
             impressions: vEvents.filter(e => e.event_type === 'impression').length,
             clicks: vEvents.filter(e => e.event_type === 'click').length,
-            sales: vOrders.length,
-            revenue: vOrders.reduce((acc, curr) => acc + Number(curr.amount || 0), 0)
+            sales: vOrders.filter(o => o.status === 'paid').length,
+            revenue: vOrders.filter(o => o.status === 'paid').reduce((acc, curr) => acc + Number(curr.amount || 0), 0),
+            chargebacks: vOrders.filter(o => o.status === 'chargedback' || o.status === 'chargeback').length
+
           };
         }),
         orders,
