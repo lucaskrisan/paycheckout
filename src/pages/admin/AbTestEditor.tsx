@@ -988,8 +988,10 @@ function EditorInner() {
                 stats: { 
                   impressions: Math.max(productVisits / (ns.filter(node => node?.type === 'checkout').length || 1), configOrders.length * 1.5),
                   clicks: Math.max(productVisits / (ns.filter(node => node?.type === 'checkout').length || 1), configOrders.length * 1.2), 
-                  sales: configOrders.length, 
-                  revenue: configOrders.reduce((acc, curr) => acc + Number(curr.amount || 0), 0) 
+                  sales: configOrders.filter(o => o.status === 'paid').length, 
+                  revenue: configOrders.filter(o => o.status === 'paid').reduce((acc, curr) => acc + Number(curr.amount || 0), 0),
+                  chargebacks: configOrders.filter(o => o.status === 'chargedback' || o.status === 'chargeback').length
+
                 } 
               } 
             } as FlowNode;
