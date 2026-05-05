@@ -3,9 +3,6 @@ import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -16,23 +13,16 @@ import {
 import { toast } from "sonner";
 import {
   BarChart3,
-  Map,
   Eye,
   Activity,
-  Settings,
-  Save,
   Loader2,
   TrendingUp,
   Globe,
   ShoppingCart,
   CreditCard,
-  ArrowDown,
-  Copy,
   CheckCircle,
-  XCircle,
   AlertTriangle,
 } from "lucide-react";
-import BrazilMap from "@/components/admin/analytics/BrazilMap";
 import {
   BarChart,
   Bar,
@@ -41,9 +31,6 @@ import {
   CartesianGrid,
   Tooltip as ReTooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
 } from "recharts";
 
 const FUNNEL_STEPS = [
@@ -79,31 +66,15 @@ const FUNNEL_STEPS = [
   },
 ];
 
-const PIE_COLORS = [
-  "hsl(151,100%,45%)",
-  "hsl(220,80%,55%)",
-  "hsl(280,60%,55%)",
-  "hsl(40,90%,55%)",
-];
-
 const Analytics = () => {
   const { user, isSuperAdmin } = useAuth();
-  // Clarity ID removed per user request
   const [loading, setLoading] = useState(true);
-  const [orders, setOrders] = useState<any[]>([]);
-  const [pixelEvents, setPixelEvents] = useState<any[]>([]);
-  const [abandonedCarts, setAbandonedCarts] = useState<any[]>([]);
+  const [data, setData] = useState(null);
   const [period, setPeriod] = useState("30days");
 
-  const getDateFrom = (p: string) => {
+  const getDateFrom = (p) => {
     const now = new Date();
-    if (p === "today") {
-      return new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate(),
-      ).toISOString();
-    }
+    if (p === "today") return new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
     if (p === "7days") {
       const d = new Date(now);
       d.setDate(d.getDate() - 7);
@@ -119,9 +90,6 @@ const Analytics = () => {
       d.setDate(d.getDate() - 90);
       return d.toISOString();
     }
-    if (p === "total") {
-      return null;
-    }
     return null;
   };
 
@@ -131,60 +99,15 @@ const Analytics = () => {
       setLoading(true);
       try {
         const dateFrom = getDateFrom(period);
+        const { data: res, error } = await supabase.rpc("get_analytics_summary", {
+          p_user_id: user.id,
+          p_date_from: dateFrom,
+          p_is_super_admin: isSuperAdmin,
+        });
 
-        // 1. Fetch Orders (Increase limit or use aggregation for KPIs if possible, for now we increase limit to 5000)
-        let ordersQuery = supabase
-          .from("orders")
-          .select(
-            "id, status, amount, customer_state, payment_method, created_at, metadata",
-          )
-          .order("created_at", { ascending: false })
-          .limit(5000);
-        if (!isSuperAdmin) ordersQuery = ordersQuery.eq("user_id", user.id);
-        if (dateFrom) ordersQuery = ordersQuery.gte("created_at", dateFrom);
-
-        // 2. Fetch Pixel Events (Focus on counts per event_name via RPC for accuracy at scale)
-        let eventsQuery = supabase
-          .from("pixel_events")
-          .select("id, event_name, source, created_at, visitor_id")
-          .order("created_at", { ascending: false })
-          .limit(5000);
-        if (!isSuperAdmin) eventsQuery = eventsQuery.eq("user_id", user.id);
-        if (dateFrom) eventsQuery = eventsQuery.gte("created_at", dateFrom);
-
-        // 3. Fetch Abandoned Carts
-        let cartsQuery = supabase
-          .from("abandoned_carts")
-          .select("id, recovered, created_at, product_price")
-          .order("created_at", { ascending: false })
-          .limit(5000);
-        if (!isSuperAdmin) cartsQuery = cartsQuery.eq("user_id", user.id);
-        if (dateFrom) cartsQuery = cartsQuery.gte("created_at", dateFrom);
-
-        const [ordersRes, eventsRes, cartsRes] = await Promise.all([
-          ordersQuery,
-          eventsQuery,
-          cartsQuery,
-        ]);
-
-        if (ordersRes.error) throw ordersRes.error;
-        if (eventsRes.error) throw eventsRes.error;
-        if (cartsRes.error) throw cartsRes.error;
-
-        setOrders(ordersRes.data || []);
-        setPixelEvents(eventsRes.data || []);
-        setAbandonedCarts(cartsRes.data || []);
-
-        // Show warning if data is likely truncated
-        if (
-          (ordersRes.data?.length || 0) >= 5000 ||
-          (eventsRes.data?.length || 0) >= 5000
-        ) {
-          toast.warning(
-            "Dados parciais: o volume de registros excede o limite de visualização rápida.",
-          );
-        }
-      } catch (err: any) {
+        if (error) throw error;
+        setData(res);
+      } catch (err) {
         console.error("[analytics] error:", err);
         toast.error("Erro ao carregar dados analíticos");
       } finally {
@@ -194,151 +117,26 @@ const Analytics = () => {
     load();
   }, [user, period, isSuperAdmin]);
 
-  // saveClarityId removed per user request
-
-  const salesByState = useMemo(() => {
-    const map: Record<string, { count: number; revenue: number }> = {};
-    orders
-      .filter((o) => ["paid", "approved", "confirmed", "chargeback", "chargedback"].includes(o.status))
-      .forEach((o) => {
-        const state = o.customer_state?.toUpperCase();
-        if (!state) return;
-        if (!map[state]) map[state] = { count: 0, revenue: 0 };
-        map[state].count += 1;
-        map[state].revenue += Number(o.amount || 0);
-      });
-    return map;
-  }, [orders]);
-
-  const totalWithState = useMemo(
-    () =>
-      orders.filter(
-        (o) =>
-          o.customer_state &&
-          ["paid", "approved", "confirmed"].includes(o.status),
-      ).length,
-    [orders],
-  );
-  const topStates = useMemo(
-    () =>
-      Object.entries(salesByState)
-        .sort((a, b) => b[1].revenue - a[1].revenue)
-        .slice(0, 5),
-    [salesByState],
-  );
-
   const funnelData = useMemo(() => {
-    const counts: Record<string, number> = {};
-    pixelEvents.forEach((e) => {
-      counts[e.event_name] = (counts[e.event_name] || 0) + 1;
-    });
+    const counts = data?.funnel || {};
     return FUNNEL_STEPS.map((step) => ({
       ...step,
       count: counts[step.key] || 0,
     }));
-  }, [pixelEvents]);
+  }, [data]);
 
   const funnelMax = Math.max(...funnelData.map((f) => f.count), 1);
+  const revenueByDay = data?.revenue_by_day || [];
+  const totalRevenue = data?.total_revenue || 0;
+  const paidCount = data?.paid_count || 0;
+  const chargebackCount = data?.chargeback_count || 0;
+  const uniqueVisitors = data?.unique_visitors || 0;
 
-  const cartMetrics = useMemo(() => {
-    const total = abandonedCarts.length;
-    const recovered = abandonedCarts.filter((c) => c.recovered).length;
-    const abandoned = total - recovered;
-    const recoveryRate =
-      total > 0 ? ((recovered / total) * 100).toFixed(1) : "0";
-    return { total, recovered, abandoned, recoveryRate };
-  }, [abandonedCarts]);
-
-  const paidOrders = useMemo(
-    () =>
-      orders.filter((o) =>
-        ["paid", "approved", "confirmed"].includes(o.status),
-      ),
-    [orders],
-  );
-  const paymentDist = useMemo(() => {
-    const pix = paidOrders.filter((o) => o.payment_method === "pix").length;
-    const card = paidOrders.filter(
-      (o) => o.payment_method === "credit_card",
-    ).length;
-    const boleto = paidOrders.filter(
-      (o) => o.payment_method === "boleto",
-    ).length;
-    const other = paidOrders.length - pix - card - boleto;
-    return [
-      { name: "PIX", value: pix },
-      { name: "Cartão", value: card },
-      { name: "Boleto", value: boleto },
-      { name: "Outros", value: other },
-    ].filter((d) => d.value > 0);
-  }, [paidOrders]);
-
-  const revenueByDay = useMemo(() => {
-    const days: Record<string, number> = {};
-    const numDays =
-      period === "7days"
-        ? 7
-        : period === "30days"
-          ? 30
-          : period === "today"
-            ? 1
-            : 90;
-    const now = new Date();
-    for (let i = numDays - 1; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i);
-      days[
-        d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
-      ] = 0;
-    }
-    paidOrders.forEach((o) => {
-      const key = new Date(o.created_at).toLocaleDateString("pt-BR", {
-        day: "2-digit",
-        month: "2-digit",
-      });
-      if (days[key] !== undefined) days[key] += Number(o.amount || 0);
-    });
-    return Object.entries(days).map(([name, total]) => ({ name, total }));
-  }, [paidOrders, period]);
-
-  const deviceData = useMemo(() => {
-    const uniqueVisitors = new Set(
-      pixelEvents.filter((e) => e.visitor_id).map((e) => e.visitor_id),
-    );
-    return { uniqueVisitors: uniqueVisitors.size };
-  }, [pixelEvents]);
-
-  const utmSources = useMemo(() => {
-    const sources: Record<string, number> = {};
-    paidOrders.forEach((o) => {
-      const meta = (o.metadata as any) || {};
-      const src =
-        meta.utm_source ||
-        (meta.attribution_fbc
-          ? "Meta Ads (sem UTM)"
-          : meta.utm_medium === "email"
-            ? "E-mail"
-            : "Orgânico");
-      sources[src] = (sources[src] || 0) + 1;
-    });
-    return Object.entries(sources)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5);
-  }, [paidOrders]);
-
-  const fmt = (v: number) =>
+  const fmt = (v) =>
     new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
     }).format(v || 0);
-  const totalRevenue = paidOrders.reduce(
-    (s, o) => s + Number(o.amount || 0),
-    0,
-  );
-  const pendingOrders = orders.filter((o) => o.status === "pending");
-  const chargebackedOrders = orders.filter((o) => ["chargeback", "chargedback"].includes(o.status));
-  const totalChargebacked = chargebackedOrders.reduce((s, o) => s + Number(o.amount || 0), 0);
-
 
   if (loading)
     return (
@@ -371,35 +169,25 @@ const Analytics = () => {
         </Select>
       </div>
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {[
           { label: "Faturamento", value: fmt(totalRevenue), icon: TrendingUp },
-          { label: "Vendas", value: paidOrders.length, icon: ShoppingCart },
-          { label: "Chargebacks", value: chargebackedOrders.length, icon: AlertTriangle, color: "text-red-500" },
-          { label: "Visitantes", value: deviceData.uniqueVisitors, icon: Eye },
-
+          { label: "Vendas", value: paidCount, icon: ShoppingCart },
+          { label: "Chargebacks", value: chargebackCount, icon: AlertTriangle, color: "text-red-500" },
+          { label: "Visitantes", value: uniqueVisitors, icon: Eye },
           {
             label: "Conversão",
-            value:
-              deviceData.uniqueVisitors > 0
-                ? `${((paidOrders.length / deviceData.uniqueVisitors) * 100).toFixed(1)}%`
-                : "0%",
+            value: uniqueVisitors > 0 ? `${((paidCount / uniqueVisitors) * 100).toFixed(1)}%` : "0%",
             icon: Activity,
           },
         ].map((kpi, i) => (
-          <Card
-            key={i}
-            className="bg-gradient-to-br from-card to-card/50 shadow-sm border-border/50"
-          >
+          <Card key={i} className="bg-gradient-to-br from-card to-card/50 shadow-sm border-border/50">
             <CardContent className="p-5 flex items-center gap-4">
               <div className={`p-3 bg-primary/10 rounded-xl ${kpi.color || 'text-primary'}`}>
                 <kpi.icon className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10px] uppercase font-bold text-muted-foreground">
-                  {kpi.label}
-                </p>
+                <p className="text-[10px] uppercase font-bold text-muted-foreground">{kpi.label}</p>
                 <p className="text-lg font-bold">{kpi.value}</p>
               </div>
             </CardContent>
@@ -415,23 +203,11 @@ const Analytics = () => {
           <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={revenueByDay}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                  stroke="hsl(var(--border))"
-                />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={(v) => `R$${v}`}
-                />
-                <ReTooltip formatter={(v: number) => [fmt(v), ""]} />
-                <Bar
-                  dataKey="total"
-                  fill="hsl(var(--primary))"
-                  radius={[4, 4, 0, 0]}
-                />
+                <YAxis axisLine={false} tickLine={false} tickFormatter={(v) => `R$${v}`} />
+                <ReTooltip formatter={(v) => [fmt(v), ""]} />
+                <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -446,11 +222,7 @@ const Analytics = () => {
               <div key={step.key}>
                 <div className="flex justify-between text-sm mb-1">
                   <span className="flex items-center gap-2 font-medium">
-                    <step.icon
-                      className="w-4 h-4"
-                      style={{ color: step.color }}
-                    />{" "}
-                    {step.label}
+                    <step.icon className="w-4 h-4" style={{ color: step.color }} /> {step.label}
                   </span>
                   <span className="font-bold">{step.count}</span>
                 </div>
@@ -468,8 +240,6 @@ const Analytics = () => {
           </CardContent>
         </Card>
       </div>
-
-      {/* Microsoft Clarity section removed per user request */}
     </div>
   );
 };

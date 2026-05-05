@@ -3390,6 +3390,14 @@ export type Database = {
           product_id: string
         }[]
       }
+      get_analytics_summary: {
+        Args: {
+          p_date_from: string
+          p_is_super_admin?: boolean
+          p_user_id: string
+        }
+        Returns: Json
+      }
       get_appsell_login_url: { Args: { p_product_id: string }; Returns: string }
       get_checkout_settings: {
         Args: { p_user_id: string }
