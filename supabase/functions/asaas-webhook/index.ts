@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
       .from('orders')
       .update({ status, updated_at: new Date().toISOString() })
       .eq('external_id', payment.id)
-      .not('status', 'in', `(${['paid', 'refunded'].filter(s => statusPriority[s] >= statusPriority[status]).join(',')})`)
+      .not('status', 'in', `(${['paid', 'refunded', 'chargedback'].filter(s => statusPriority[s] >= statusPriority[status]).join(',')})`)
       .select('id, amount, payment_method, product_id, customer_id, user_id, metadata')
       .maybeSingle();
 
