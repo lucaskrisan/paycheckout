@@ -22,7 +22,7 @@ function escapeHtml(str: string): string {
 }
 
 export async function sendPurchaseConfirmationEmail(params: PurchaseConfirmationParams): Promise<void> {
-  const { supabase, orderId, customerId, productId, userId, amount, paymentMethod, currency = 'BRL', source, deliveryMethod = 'appsell' } = params;
+  const { supabase, orderId, customerId, productId, userId, amount, paymentMethod, currency = 'BRL', source, deliveryMethod = 'panttera' } = params;
 
   try {
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');

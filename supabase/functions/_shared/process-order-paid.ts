@@ -53,7 +53,7 @@ async function stepPurchaseConfirmationEmail(params: ProcessOrderPaidParams): Pr
       .select('delivery_method')
       .eq('id', orderData.product_id)
       .maybeSingle();
-    const deliveryMethod = prodDelivery?.delivery_method || 'appsell';
+    const deliveryMethod = prodDelivery?.delivery_method || 'panttera';
 
     await sendPurchaseConfirmationEmail({
       supabase,
@@ -324,7 +324,7 @@ async function stepMemberAccess(params: ProcessOrderPaidParams): Promise<void> {
       .eq('id', orderData.product_id)
       .maybeSingle();
 
-    const mainDelivery = mainProd?.delivery_method || 'appsell';
+    const mainDelivery = mainProd?.delivery_method || 'panttera';
 
     // Collect product IDs that need access
     const productIdsForAccess: string[] = mainDelivery === 'panttera' ? [orderData.product_id] : [];
@@ -685,6 +685,36 @@ async function stepAppsellNotify(params: ProcessOrderPaidParams): Promise<void> 
 
     const body = await res.text();
     console.log(`[${source}] AppSell notify response: ${res.status} ${body.substring(0, 200)}`);
+
+    // BUG 3 Fix: Retry if not successful
+    try {
+      if (body.trim()) {
+        const responseData = JSON.parse(body);
+        if (!responseData.success) {
+          console.error(`[${source}] AppSell FAILED for order ${orderData.id}: ${responseData.appsell_response}. Retrying in 3s...`);
+          
+          await new Promise(r => setTimeout(r, 3000));
+          
+          const retryRes = await fetch(`${supabaseUrl}/functions/v1/appsell-notify`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${serviceKey}`,
+            },
+            body: JSON.stringify({
+              event: 'order.paid',
+              order_id: orderData.id,
+              user_id: orderData.user_id,
+            }),
+          });
+          
+          const retryBody = await retryRes.text();
+          console.log(`[${source}] AppSell retry response: ${retryRes.status} ${retryBody.substring(0, 200)}`);
+        }
+      }
+    } catch (parseErr) {
+      console.error(`[${source}] Error parsing AppSell response or during retry:`, parseErr);
+    }
   } catch (err) {
     console.error(`[${source}] AppSell notify error (non-blocking):`, err);
   }
