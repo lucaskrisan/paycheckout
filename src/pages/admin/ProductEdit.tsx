@@ -50,6 +50,8 @@ import { useAuth } from "@/hooks/useAuth";
 const PUBLISHED_URL = "https://ck.panttera.com.br";
 
 const VariantMetricsCard = ({ co, productId, currency, metrics, isLeader, totalVisits }) => {
+  const chargebackRate = metrics.sales > 0 ? (metrics.chargebacks / (metrics.sales + metrics.chargebacks)) * 100 : 0;
+
   const conversion = metrics.visits > 0 ? (metrics.sales / metrics.visits) * 100 : 0;
   const expectedTraffic = totalVisits > 0 ? (metrics.visits / totalVisits) * 100 : 0;
   const targetTraffic = co.traffic_weight || 50;
