@@ -166,7 +166,7 @@ const ProductEdit = () => {
   const [editCheckoutWeight, setEditCheckoutWeight] = useState(50);
   const [savingCheckoutEdit, setSavingCheckoutEdit] = useState(false);
   const [checkouts, setCheckouts] = useState<any[]>([]);
-  const [variantStats, setVariantStats] = useState<Record<string, { visits: number; sales: number; revenue: number }>>({});
+  const [variantStats, setVariantStats] = useState<Record<string, { visits: number; sales: number; revenue: number; chargebacks: number }>>({});
   const [testStartDate, setTestStartDate] = useState<string>(() => {
     const d = new Date();
     d.setDate(d.getDate() - 30);
