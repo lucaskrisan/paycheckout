@@ -91,6 +91,8 @@ Deno.serve(async (req) => {
       status = 'paid';
     } else if (eventType === 'charge.refunded') {
       status = 'refunded';
+    } else if (eventType === 'charge.under_dispute') {
+      status = 'chargedback';
     }
 
     // --- Status transition guard ---
