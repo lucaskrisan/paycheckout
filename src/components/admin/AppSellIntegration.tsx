@@ -55,6 +55,10 @@ const AppSellIntegration = () => {
       toast.error("Insira o token da API do AppSell");
       return;
     }
+    if (!loginUrl.trim()) {
+      toast.error("Insira o link de acesso (Login URL) do AppSell");
+      return;
+    }
 
     setSaving(true);
 
@@ -152,18 +156,25 @@ const AppSellIntegration = () => {
       testing={testing}
       loading={loading}
       extraFields={
-        <div className="space-y-1.5">
-          <Label className="text-xs font-medium text-muted-foreground">Login URL do AppSell</Label>
-          <Input
-            type="url"
-            value={loginUrl}
-            onChange={(e) => setLoginUrl(e.target.value)}
-            placeholder="https://appsell-software.com/login_app/seu-slug"
-            className="text-xs h-9 bg-background border-border/50"
-          />
-          <p className="text-[10px] text-muted-foreground leading-relaxed">
-            Este é o link que seus clientes verão no botão "Acessar agora" após a compra.
-          </p>
+        <div className="space-y-2">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground">Login URL do AppSell</Label>
+            <Input
+              type="url"
+              value={loginUrl}
+              onChange={(e) => setLoginUrl(e.target.value)}
+              placeholder="https://app.seuappsell.com/login"
+              className={`text-xs h-9 bg-background ${!loginUrl ? 'border-red-500/50' : 'border-border/50'}`}
+            />
+            {!loginUrl && (
+              <p className="text-[10px] text-red-400 font-medium">
+                ⚠️ Link de acesso não configurado. Compradores não terão botão de acesso no email de confirmação.
+              </p>
+            )}
+            <p className="text-[10px] text-muted-foreground leading-relaxed">
+              Este é o link que seus clientes verão no botão "Acessar agora" após a compra.
+            </p>
+          </div>
         </div>
       }
     />
