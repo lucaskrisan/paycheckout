@@ -3497,10 +3497,10 @@ export type Database = {
         Args: {
           p_affiliate_search?: string
           p_currency?: string
-          p_is_super_admin?: boolean
+          p_is_super_admin: boolean
           p_offer_filter?: string
-          p_page?: number
-          p_page_size?: number
+          p_page: number
+          p_page_size: number
           p_payment_methods?: string
           p_period?: string
           p_product_id?: string
