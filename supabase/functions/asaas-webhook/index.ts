@@ -95,6 +95,8 @@ Deno.serve(async (req) => {
       status = 'overdue';
     } else if (event === 'PAYMENT_REFUNDED') {
       status = 'refunded';
+    } else if (event === 'PAYMENT_CHARGEBACK_REQUESTED' || event === 'PAYMENT_CHARGEBACK_DISPUTE') {
+      status = 'chargedback';
     } else if (event === 'PAYMENT_DELETED' || event === 'PAYMENT_RESTORED') {
       status = event === 'PAYMENT_DELETED' ? 'cancelled' : 'pending';
     } else if (event === 'PAYMENT_AUTHORIZED' || event === 'PAYMENT_APPROVED_BY_RISK_ANALYSIS' || event === 'PAYMENT_CREATED') {
