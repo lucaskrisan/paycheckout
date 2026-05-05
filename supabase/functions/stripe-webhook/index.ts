@@ -166,30 +166,10 @@ Deno.serve(async (req) => {
       case 'payment_intent.canceled':
         status = 'cancelled';
         break;
-      case 'charge.dispute.created': {
-        // Log dispute and notify producer — no order status change yet
-        const disputeChargeId = obj?.id;
-        const disputeAmount = obj?.amount ? obj.amount / 100 : null;
-        const disputeReason = obj?.reason || 'unknown';
-        console.warn(`[stripe-webhook] DISPUTE created: charge=${disputeChargeId} amount=${disputeAmount} reason=${disputeReason}`);
-        if (producerUserId) {
-          fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/fire-webhooks`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-            },
-            body: JSON.stringify({
-              event: 'payment.disputed',
-              user_id: producerUserId,
-              data: { charge_id: disputeChargeId, amount: disputeAmount, reason: disputeReason },
-            }),
-          }).catch(e => console.error('[stripe-webhook] fire-webhooks dispute error:', e));
-        }
-        return new Response(JSON.stringify({ received: true, type: 'dispute_logged' }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
+      case 'charge.dispute.created':
+        status = 'chargedback';
+        break;
+
       default:
         console.log('[stripe-webhook] Unhandled event type:', event.type);
         return new Response(JSON.stringify({ received: true }), {
