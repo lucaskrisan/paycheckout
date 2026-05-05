@@ -393,7 +393,7 @@ const Analytics = () => {
             className="bg-gradient-to-br from-card to-card/50 shadow-sm border-border/50"
           >
             <CardContent className="p-5 flex items-center gap-4">
-              <div className="p-3 bg-primary/10 rounded-xl text-primary">
+              <div className={`p-3 bg-primary/10 rounded-xl ${kpi.color || 'text-primary'}`}>
                 <kpi.icon className="w-5 h-5" />
               </div>
               <div>
