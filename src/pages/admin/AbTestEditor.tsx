@@ -849,34 +849,96 @@ function EditorInner() {
         .eq("test_id", testId);
       if (vError) throw vError;
 
-      if (period === "all") return variants;
+      // Get the test to extract products from the graph
+      const { data: test, error: tError } = await supabase
+        .from("ab_tests")
+        .select("graph, created_at")
+        .eq("id", testId)
+        .single();
+      
+      if (tError) throw tError;
 
-      // Filtered stats from events
-      let startTime = new Date();
-      if (period === "24h") startTime.setHours(startTime.getHours() - 24);
-      else if (period === "7d") startTime.setDate(startTime.getDate() - 7);
-      else if (period === "30d") startTime.setDate(startTime.getDate() - 30);
+      const graph = (test?.graph as any) || { nodes: [] };
+      const productIds = Array.from(new Set(
+        graph.nodes
+          ?.filter((n: any) => n.type === "checkout" && n.data?.productId)
+          ?.map((n: any) => n.data.productId)
+      )) as string[];
 
+      // Filtered stats timing
+      let startTime = new Date(test.created_at);
+      if (period === "24h") {
+        const d = new Date();
+        d.setHours(d.getHours() - 24);
+        startTime = d;
+      } else if (period === "7d") {
+        const d = new Date();
+        d.setDate(d.getDate() - 7);
+        startTime = d;
+      } else if (period === "30d") {
+        const d = new Date();
+        d.setDate(d.getDate() - 30);
+        startTime = d;
+      }
+
+      // Fetch real orders for synchronization with ProductEdit
+      let orders: any[] = [];
+      if (productIds.length > 0) {
+        const { data: ordersData } = await supabase
+          .from("orders")
+          .select("id, amount, metadata, status, created_at")
+          .in("product_id", productIds)
+          .eq("status", "paid")
+          .gte("created_at", startTime.toISOString());
+        orders = ordersData || [];
+      }
+
+      // Fetch WhatsApp recovery data
+      const { data: waData } = await supabase
+        .from("whatsapp_send_log")
+        .select("id, status, created_at, order_id")
+        .gte("created_at", startTime.toISOString());
+
+      // If period is all, we still want to use the calculated stats for consistency
+      // but ab_test_events might be more accurate for click attribution
       const { data: events, error: eError } = await supabase
         .from("ab_test_events")
-        .select("variant_id, event_type, amount")
+        .select("variant_id, event_type, amount, metadata")
         .eq("test_id", testId)
         .gte("created_at", startTime.toISOString());
       
       if (eError) throw eError;
 
-      // Aggregate events back into variants
-      return variants.map(v => {
-        const vEvents = events.filter(e => e.variant_id === v.id);
-        return {
-          ...v,
-          impressions: vEvents.filter(e => e.event_type === 'impression').length,
-          clicks: vEvents.filter(e => e.event_type === 'click').length,
-          sales: vEvents.filter(e => e.event_type === 'sale').length,
-          revenue: vEvents.filter(e => e.event_type === 'sale').reduce((acc, curr) => acc + Number(curr.amount || 0), 0)
-        };
-      });
+      // Aggregate everything
+      return {
+        variants: variants.map(v => {
+          const vEvents = events.filter(e => e.variant_id === v.id);
+          // Attributing orders to variants via metadata.ab_visitor_id or variant_id if present
+          // This is a fallback if ab_test_events didn't capture the sale correctly
+          const vOrders = orders.filter(o => 
+            o.metadata?.variant_id === v.id || 
+            events.some(e => e.event_type === 'sale' && e.variant_id === v.id && e.order_id === o.id)
+          );
+
+          return {
+            ...v,
+            impressions: vEvents.filter(e => e.event_type === 'impression').length,
+            clicks: vEvents.filter(e => e.event_type === 'click').length,
+            sales: vOrders.length || vEvents.filter(e => e.event_type === 'sale').length,
+            revenue: vOrders.reduce((acc, curr) => acc + Number(curr.amount || 0), 0) || 
+                     vEvents.filter(e => e.event_type === 'sale').reduce((acc, curr) => acc + Number(curr.amount || 0), 0)
+          };
+        }),
+        orders,
+        whatsapp: {
+          sent: waData?.filter(w => w.status === 'sent').length || 0,
+          delivered: waData?.filter(w => w.status === 'delivered').length || 0,
+          recovered: orders.filter(o => waData?.some(w => w.order_id === o.id)).length || 0,
+          revenue: orders.filter(o => waData?.some(w => w.order_id === o.id)).reduce((acc, curr) => acc + Number(curr.amount || 0), 0)
+        }
+      };
     },
+  });
   });
 
   useEffect(() => {
