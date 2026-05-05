@@ -3422,8 +3422,8 @@ export type Database = {
         | {
             Args: {
               p_currency?: string
-              p_date_from: string
-              p_date_to: string
+              p_date_from?: string
+              p_date_to?: string
               p_is_super_admin?: boolean
               p_product_id?: string
               p_user_id: string
