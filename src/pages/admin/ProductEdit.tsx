@@ -1071,6 +1071,13 @@ const ProductEdit = () => {
               {/* Área de membros select — only visible if panttera */}
               {form.delivery_method === "panttera" && (
                 <div className="grid lg:grid-cols-12 gap-8">
+                  <div className="lg:col-span-12">
+                    {form.delivery_method === 'panttera' && !selectedCourseId && (
+                      <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-sm mb-6">
+                        ⚠️ Nenhum curso vinculado. Compradores não receberão acesso até você vincular um curso a este produto.
+                      </div>
+                    )}
+                  </div>
                   <div className="lg:col-span-4">
                     <h2 className="text-base font-semibold text-foreground">Área de Membros</h2>
                     <p className="text-sm text-primary mt-1">
