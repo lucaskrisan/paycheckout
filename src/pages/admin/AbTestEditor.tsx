@@ -94,7 +94,8 @@ type CreativeData = {
   imageUrl?: string;
   utmSource?: string;
   utmContent?: string;
-  stats?: { impressions: number; clicks: number; sales: number; revenue: number };
+  stats?: { impressions: number; clicks: number; sales: number; revenue: number; chargebacks?: number };
+
 };
 type WhatsAppData = {
   kind: "whatsapp";
