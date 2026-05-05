@@ -53,7 +53,7 @@ async function stepPurchaseConfirmationEmail(params: ProcessOrderPaidParams): Pr
       .select('delivery_method')
       .eq('id', orderData.product_id)
       .maybeSingle();
-    const deliveryMethod = prodDelivery?.delivery_method || 'appsell';
+    const deliveryMethod = prodDelivery?.delivery_method || 'panttera';
 
     await sendPurchaseConfirmationEmail({
       supabase,
@@ -324,7 +324,7 @@ async function stepMemberAccess(params: ProcessOrderPaidParams): Promise<void> {
       .eq('id', orderData.product_id)
       .maybeSingle();
 
-    const mainDelivery = mainProd?.delivery_method || 'appsell';
+    const mainDelivery = mainProd?.delivery_method || 'panttera';
 
     // Collect product IDs that need access
     const productIdsForAccess: string[] = mainDelivery === 'panttera' ? [orderData.product_id] : [];

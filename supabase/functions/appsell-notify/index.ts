@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
         .from('appsell_integrations')
         .select('token, active')
         .eq('user_id', user_id)
-        .single();
+        .maybeSingle();
 
       if (!integration?.token) {
         return new Response(JSON.stringify({ error: 'Token não configurado' }), {
@@ -120,7 +120,7 @@ Deno.serve(async (req) => {
       .from('appsell_integrations')
       .select('token, active')
       .eq('user_id', user_id)
-      .single();
+      .maybeSingle();
 
     if (!integration?.active || !integration?.token) {
       console.log('[appsell-notify] No active AppSell integration for user', user_id);
