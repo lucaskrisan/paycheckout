@@ -199,7 +199,7 @@ const Analytics = () => {
   const salesByState = useMemo(() => {
     const map: Record<string, { count: number; revenue: number }> = {};
     orders
-      .filter((o) => ["paid", "approved", "confirmed"].includes(o.status))
+      .filter((o) => ["paid", "approved", "confirmed", "chargeback", "chargedback"].includes(o.status))
       .forEach((o) => {
         const state = o.customer_state?.toUpperCase();
         if (!state) return;
