@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { processOrderPaid } from '../_shared/process-order-paid.ts';
+import { processOrderRevoked } from '../_shared/process-order-revoked.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
