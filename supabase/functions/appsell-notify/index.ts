@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
       .from('orders')
       .select('id, amount, payment_method, status, external_id, metadata, product_id, customer_id, created_at')
       .eq('id', order_id)
-      .single();
+      .maybeSingle();
 
     if (orderError || !order) {
       console.error('[appsell-notify] Order not found:', orderError);
