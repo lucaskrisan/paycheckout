@@ -199,7 +199,7 @@ const Analytics = () => {
   const salesByState = useMemo(() => {
     const map: Record<string, { count: number; revenue: number }> = {};
     orders
-      .filter((o) => ["paid", "approved", "confirmed"].includes(o.status))
+      .filter((o) => ["paid", "approved", "confirmed", "chargeback", "chargedback"].includes(o.status))
       .forEach((o) => {
         const state = o.customer_state?.toUpperCase();
         if (!state) return;
@@ -336,6 +336,9 @@ const Analytics = () => {
     0,
   );
   const pendingOrders = orders.filter((o) => o.status === "pending");
+  const chargebackedOrders = orders.filter((o) => ["chargeback", "chargedback"].includes(o.status));
+  const totalChargebacked = chargebackedOrders.reduce((s, o) => s + Number(o.amount || 0), 0);
+
 
   if (loading)
     return (
@@ -369,11 +372,13 @@ const Analytics = () => {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {[
           { label: "Faturamento", value: fmt(totalRevenue), icon: TrendingUp },
           { label: "Vendas", value: paidOrders.length, icon: ShoppingCart },
+          { label: "Chargebacks", value: chargebackedOrders.length, icon: AlertTriangle, color: "text-red-500" },
           { label: "Visitantes", value: deviceData.uniqueVisitors, icon: Eye },
+
           {
             label: "Conversão",
             value:
@@ -388,7 +393,7 @@ const Analytics = () => {
             className="bg-gradient-to-br from-card to-card/50 shadow-sm border-border/50"
           >
             <CardContent className="p-5 flex items-center gap-4">
-              <div className="p-3 bg-primary/10 rounded-xl text-primary">
+              <div className={`p-3 bg-primary/10 rounded-xl ${kpi.color || 'text-primary'}`}>
                 <kpi.icon className="w-5 h-5" />
               </div>
               <div>

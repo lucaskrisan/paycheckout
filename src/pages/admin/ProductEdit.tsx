@@ -50,6 +50,8 @@ import { useAuth } from "@/hooks/useAuth";
 const PUBLISHED_URL = "https://ck.panttera.com.br";
 
 const VariantMetricsCard = ({ co, productId, currency, metrics, isLeader, totalVisits }) => {
+  const chargebackRate = metrics.sales > 0 ? (metrics.chargebacks / (metrics.sales + metrics.chargebacks)) * 100 : 0;
+
   const conversion = metrics.visits > 0 ? (metrics.sales / metrics.visits) * 100 : 0;
   const expectedTraffic = totalVisits > 0 ? (metrics.visits / totalVisits) * 100 : 0;
   const targetTraffic = co.traffic_weight || 50;
@@ -94,7 +96,12 @@ const VariantMetricsCard = ({ co, productId, currency, metrics, isLeader, totalV
           <p className="text-[9px] text-muted-foreground uppercase font-semibold">Vendas</p>
           <p className="text-sm font-semibold">{metrics.sales}</p>
         </div>
+        <div>
+          <p className="text-[9px] text-muted-foreground uppercase font-semibold">Chargebacks</p>
+          <p className={`text-sm font-semibold ${metrics.chargebacks > 0 ? 'text-red-500' : ''}`}>{metrics.chargebacks}</p>
+        </div>
       </div>
+
       
       <div className="pt-1 flex justify-between items-end">
         <div>
@@ -159,7 +166,7 @@ const ProductEdit = () => {
   const [editCheckoutWeight, setEditCheckoutWeight] = useState(50);
   const [savingCheckoutEdit, setSavingCheckoutEdit] = useState(false);
   const [checkouts, setCheckouts] = useState<any[]>([]);
-  const [variantStats, setVariantStats] = useState<Record<string, { visits: number; sales: number; revenue: number }>>({});
+  const [variantStats, setVariantStats] = useState<Record<string, { visits: number; sales: number; revenue: number; chargebacks: number }>>({});
   const [testStartDate, setTestStartDate] = useState<string>(() => {
     const d = new Date();
     d.setDate(d.getDate() - 30);
@@ -278,18 +285,20 @@ const ProductEdit = () => {
           .eq("is_bot", false)
           .gte("created_at", testStartDate),
         supabase.from("orders")
-          .select("amount, metadata")
+          .select("status, amount, metadata")
           .eq("product_id", productId)
-          .eq("status", "paid")
+          .in("status", ["paid", "approved", "confirmed", "chargeback", "chargedback"])
+
           .gte("created_at", testStartDate)
       ]);
 
-      const stats: Record<string, { visits: number; sales: number; revenue: number }> = {};
+      const stats: Record<string, { visits: number; sales: number; revenue: number; chargebacks: number }> = {};
       
       // Initialize stats for each checkout
       checkouts.forEach(co => {
-        stats[co.id] = { visits: 0, sales: 0, revenue: 0 };
+        stats[co.id] = { visits: 0, sales: 0, revenue: 0, chargebacks: 0 };
       });
+
 
       visitsRes.data?.forEach((evt: any) => {
         const configId = evt.metadata?.config_id;
@@ -301,10 +310,15 @@ const ProductEdit = () => {
       salesRes.data?.forEach((order: any) => {
         const configId = order.metadata?.config_id;
         if (configId && stats[configId]) {
-          stats[configId].sales++;
-          stats[configId].revenue += Number(order.amount);
+          if (["paid", "approved", "confirmed"].includes(order.status)) {
+            stats[configId].sales++;
+            stats[configId].revenue += Number(order.amount);
+          } else if (["chargeback", "chargedback"].includes(order.status)) {
+            stats[configId].chargebacks++;
+          }
         }
       });
+
 
       setVariantStats(stats);
     } catch (err) {
