@@ -201,7 +201,12 @@ function ConfigNode({ data }: NodeProps<Node<ConfigData, "config">>) {
           <span className="text-[9px] uppercase tracking-wider text-emerald-400/70 font-bold">Vendas</span>
           <span className="text-sm font-black text-emerald-400">{data.sales ?? 0}</span>
         </div>
+        <div className="flex flex-col p-2.5 rounded-xl bg-red-500/5 border border-red-500/10">
+          <span className="text-[9px] uppercase tracking-wider text-red-400/70 font-bold">Chargebacks</span>
+          <span className="text-sm font-black text-red-400">{data.chargebacks ?? 0}</span>
+        </div>
         <div className="col-span-2 flex flex-col p-2.5 rounded-xl bg-violet-500/5 border border-violet-500/10">
+
           <span className="text-[9px] uppercase tracking-wider text-violet-400/70 font-bold">Faturamento Total</span>
           <span className="text-base font-black text-violet-400">
             {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(data.revenue || 0)}
