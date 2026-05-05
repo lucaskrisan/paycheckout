@@ -106,8 +106,9 @@ Deno.serve(async (req) => {
 
     // --- Status transition guard ---
     const statusPriority: Record<string, number> = {
-      pending: 1, overdue: 2, paid: 3, refunded: 4, cancelled: 4,
+      pending: 1, overdue: 2, paid: 3, refunded: 4, cancelled: 4, chargedback: 5,
     };
+
 
     let { data: orderData, error } = await supabase
       .from('orders')
