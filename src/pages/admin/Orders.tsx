@@ -75,6 +75,7 @@ const STATUS_FILTERS = [
   { value: "pending", label: "Aguardando pagamento" },
   { value: "refunded", label: "Reembolso" },
   { value: "chargeback", label: "Chargeback" },
+  { value: "chargedback", label: "Chargeback" },
   { value: "refund_pending", label: "Reembolso pendente" },
   { value: "authorized", label: "Autorizado" },
 ];
