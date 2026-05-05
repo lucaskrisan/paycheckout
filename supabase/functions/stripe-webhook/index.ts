@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { processOrderPaid } from '../_shared/process-order-paid.ts';
+import { processOrderRevoked } from '../_shared/process-order-revoked.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -165,30 +166,10 @@ Deno.serve(async (req) => {
       case 'payment_intent.canceled':
         status = 'cancelled';
         break;
-      case 'charge.dispute.created': {
-        // Log dispute and notify producer — no order status change yet
-        const disputeChargeId = obj?.id;
-        const disputeAmount = obj?.amount ? obj.amount / 100 : null;
-        const disputeReason = obj?.reason || 'unknown';
-        console.warn(`[stripe-webhook] DISPUTE created: charge=${disputeChargeId} amount=${disputeAmount} reason=${disputeReason}`);
-        if (producerUserId) {
-          fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/fire-webhooks`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-            },
-            body: JSON.stringify({
-              event: 'payment.disputed',
-              user_id: producerUserId,
-              data: { charge_id: disputeChargeId, amount: disputeAmount, reason: disputeReason },
-            }),
-          }).catch(e => console.error('[stripe-webhook] fire-webhooks dispute error:', e));
-        }
-        return new Response(JSON.stringify({ received: true, type: 'dispute_logged' }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
+      case 'charge.dispute.created':
+        status = 'chargedback';
+        break;
+
       default:
         console.log('[stripe-webhook] Unhandled event type:', event.type);
         return new Response(JSON.stringify({ received: true }), {
@@ -217,8 +198,8 @@ Deno.serve(async (req) => {
       .from('orders')
       .update({ status, updated_at: new Date().toISOString() })
       .eq('external_id', externalId)
-      .not('status', 'in', `(${['paid', 'refunded'].filter(s => {
-        const p: Record<string, number> = { pending: 1, failed: 2, paid: 3, refunded: 4, cancelled: 4 };
+      .not('status', 'in', `(${['paid', 'refunded', 'chargedback'].filter(s => {
+        const p: Record<string, number> = { pending: 1, failed: 2, paid: 3, refunded: 4, cancelled: 4, chargedback: 5 };
         return (p[s] || 0) >= (p[status!] || 0);
       }).join(',')})`)
       .select('id, amount, payment_method, product_id, customer_id, user_id, metadata')
@@ -266,10 +247,10 @@ Deno.serve(async (req) => {
     if (orderData.user_id) {
       const evtMap: Record<string, string[]> = {
         paid: ['payment.approved', 'order.paid'],
-        refunded: ['payment.refunded', 'order.refunded'],
         failed: ['payment.failed'],
         cancelled: ['payment.failed', 'order.cancelled'],
       };
+
       for (const evt of (evtMap[status] || [])) {
         fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/fire-webhooks`, {
           method: 'POST',
@@ -300,6 +281,19 @@ Deno.serve(async (req) => {
         externalId,
         source: 'stripe-webhook',
         currency: productCurrency,
+      });
+    }
+    if ((status === 'refunded' || status === 'chargedback') && orderData) {
+      await processOrderRevoked({
+        supabase,
+        orderData: {
+          id: orderData.id,
+          product_id: orderData.product_id,
+          customer_id: orderData.customer_id,
+          user_id: orderData.user_id,
+        },
+        source: 'stripe-webhook',
+        reason: status === 'chargedback' ? 'chargedback' : 'refunded',
       });
     }
 

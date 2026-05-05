@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { processOrderPaid } from '../_shared/process-order-paid.ts';
+import { processOrderRevoked } from '../_shared/process-order-revoked.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -94,6 +95,8 @@ Deno.serve(async (req) => {
       status = 'overdue';
     } else if (event === 'PAYMENT_REFUNDED') {
       status = 'refunded';
+    } else if (event === 'PAYMENT_CHARGEBACK_REQUESTED' || event === 'PAYMENT_CHARGEBACK_DISPUTE') {
+      status = 'chargedback';
     } else if (event === 'PAYMENT_DELETED' || event === 'PAYMENT_RESTORED') {
       status = event === 'PAYMENT_DELETED' ? 'cancelled' : 'pending';
     } else if (event === 'PAYMENT_AUTHORIZED' || event === 'PAYMENT_APPROVED_BY_RISK_ANALYSIS' || event === 'PAYMENT_CREATED') {
@@ -103,14 +106,15 @@ Deno.serve(async (req) => {
 
     // --- Status transition guard ---
     const statusPriority: Record<string, number> = {
-      pending: 1, overdue: 2, paid: 3, refunded: 4, cancelled: 4,
+      pending: 1, overdue: 2, paid: 3, refunded: 4, cancelled: 4, chargedback: 5,
     };
+
 
     let { data: orderData, error } = await supabase
       .from('orders')
       .update({ status, updated_at: new Date().toISOString() })
       .eq('external_id', payment.id)
-      .not('status', 'in', `(${['paid', 'refunded'].filter(s => statusPriority[s] >= statusPriority[status]).join(',')})`)
+      .not('status', 'in', `(${['paid', 'refunded', 'chargedback'].filter(s => statusPriority[s] >= statusPriority[status]).join(',')})`)
       .select('id, amount, payment_method, product_id, customer_id, user_id, metadata')
       .maybeSingle();
 
@@ -136,7 +140,6 @@ Deno.serve(async (req) => {
     if (orderData?.id && orderData?.user_id) {
       const eventPairs: string[][] = [];
       if (status === 'paid') eventPairs.push(['payment.approved', 'order.paid']);
-      else if (status === 'refunded') eventPairs.push(['payment.refunded', 'order.refunded']);
       else if (status === 'cancelled') eventPairs.push(['payment.failed', 'order.cancelled']);
 
       // Detect subscription events
@@ -183,6 +186,19 @@ Deno.serve(async (req) => {
         externalId: payment.id,
         source: 'asaas-webhook',
         currency: 'BRL',
+      });
+    }
+    if ((status === 'refunded' || status === 'chargedback') && orderData) {
+      await processOrderRevoked({
+        supabase,
+        orderData: {
+          id: orderData.id,
+          product_id: orderData.product_id,
+          customer_id: orderData.customer_id,
+          user_id: orderData.user_id,
+        },
+        source: 'asaas-webhook',
+        reason: status === 'chargedback' ? 'chargedback' : 'refunded',
       });
     }
 

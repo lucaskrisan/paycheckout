@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { processOrderPaid } from '../_shared/process-order-paid.ts';
+import { processOrderRevoked } from '../_shared/process-order-revoked.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -110,7 +111,7 @@ Deno.serve(async (req) => {
     const { data: pendingOrders, error: fetchErr } = await supabase
       .from('orders')
       .select('id, external_id, amount, product_id, customer_id, user_id, metadata, payment_method')
-      .eq('status', 'pending')
+      .in('status', ['pending', 'paid'])
       .gte('created_at', since)
       .not('external_id', 'is', null);
 
@@ -160,7 +161,7 @@ Deno.serve(async (req) => {
         const pagarmeOrder = await pagarmeRes.json();
         const pagarmeStatus = pagarmeOrder.status;
 
-        console.log(`[reconcile] ${order.external_id}: Pagar.me=${pagarmeStatus}, PanteraPay=pending`);
+        console.log(`[reconcile] ${order.external_id}: Pagar.me=${pagarmeStatus}, PanteraPay=${order.status}`);
 
         // Get customer name for logging
         let customerName = '';
@@ -173,13 +174,13 @@ Deno.serve(async (req) => {
           if (cust) customerName = cust.name;
         }
 
-        if (pagarmeStatus === 'paid') {
+        if (pagarmeStatus === 'paid' && order.status === 'pending') {
           // This order was paid but webhook missed it - update!
           const { error: updateErr } = await supabase
             .from('orders')
             .update({ status: 'paid', updated_at: new Date().toISOString() })
-            .eq('id', order.id)
-            .eq('status', 'pending');
+            .eq('id', order.id);
+
 
           if (updateErr) {
             console.error(`[reconcile] Failed to update ${order.id}:`, updateErr);
@@ -226,7 +227,28 @@ Deno.serve(async (req) => {
               console.error('[reconcile] Webhook fire error:', whErr);
             }
           }
-        } else if (pagarmeStatus === 'canceled' || pagarmeStatus === 'failed') {
+        } else if (pagarmeStatus === 'refunded' || pagarmeStatus === 'under_dispute' || pagarmeStatus === 'dispute_succeeded') {
+          const newStatus = pagarmeStatus === 'refunded' ? 'refunded' : 'chargedback';
+          if (order.status !== newStatus) {
+            await supabase
+              .from('orders')
+              .update({ status: newStatus, updated_at: new Date().toISOString() })
+              .eq('id', order.id);
+            
+            await processOrderRevoked({
+              supabase,
+              orderData: {
+                id: order.id,
+                product_id: order.product_id,
+                customer_id: order.customer_id,
+                user_id: order.user_id,
+              },
+              source: 'reconcile-orders',
+              reason: newStatus === 'chargedback' ? 'chargedback' : 'refunded',
+            });
+            results.push({ order_id: order.id, external_id: order.external_id, pagarme_status: pagarmeStatus, action: `updated_to_${newStatus}`, customer: customerName });
+          }
+        } else if ((pagarmeStatus === 'canceled' || pagarmeStatus === 'failed') && order.status === 'pending') {
           // Update to reflect actual status
           const mappedStatus = pagarmeStatus === 'canceled' ? 'cancelled' : 'failed';
           await supabase
@@ -235,6 +257,7 @@ Deno.serve(async (req) => {
             .eq('id', order.id);
           results.push({ order_id: order.id, external_id: order.external_id, pagarme_status: pagarmeStatus, action: `updated_to_${mappedStatus}`, customer: customerName });
         } else {
+
           results.push({ order_id: order.id, external_id: order.external_id, pagarme_status: pagarmeStatus, action: 'no_change', customer: customerName });
         }
 

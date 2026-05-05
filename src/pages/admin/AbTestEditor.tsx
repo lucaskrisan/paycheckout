@@ -59,7 +59,7 @@ import { AbTestTutorial } from "@/components/admin/AbTestTutorial";
 
 type NodeKind = "config" | "abtest" | "page" | "checkout" | "creative" | "upsell" | "whatsapp";
 
-type ConfigData = { kind: "config"; label: string; testName: string; entryUrl: string; visits: number; clicks?: number; stickyDays?: number; impressions?: number; sales?: number; revenue?: number };
+type ConfigData = { kind: "config"; label: string; testName: string; entryUrl: string; visits: number; clicks?: number; stickyDays?: number; impressions?: number; sales?: number; revenue?: number; chargebacks?: number };
 type AbTestData = { kind: "abtest"; label: string; subtitle: string; splits: { label: string; weight: number }[] };
 type PageData = { 
   kind: "page"; 
@@ -69,7 +69,7 @@ type PageData = {
   mirrorPixelId?: string | null;
   paused?: boolean;
   thumbnailUrl?: string | null;
-  stats?: { impressions: number; clicks: number; sales: number; revenue: number };
+  stats?: { impressions: number; clicks: number; sales: number; revenue: number; chargebacks?: number };
 };
 type CheckoutData = {
   kind: "checkout";
@@ -78,14 +78,14 @@ type CheckoutData = {
   productId: string | null;
   offerId: string | null;
   templateId: string | null;
-  stats?: { impressions: number; clicks: number; sales: number; revenue: number };
+  stats?: { impressions: number; clicks: number; sales: number; revenue: number; chargebacks?: number };
 };
 type UpsellData = {
   kind: "upsell";
   label: string;
   subtitle: string;
   url: string;
-  stats?: { impressions: number; clicks: number; sales: number; revenue: number };
+  stats?: { impressions: number; clicks: number; sales: number; revenue: number; chargebacks?: number };
 };
 type CreativeData = {
   kind: "creative";
@@ -94,14 +94,15 @@ type CreativeData = {
   imageUrl?: string;
   utmSource?: string;
   utmContent?: string;
-  stats?: { impressions: number; clicks: number; sales: number; revenue: number };
+  stats?: { impressions: number; clicks: number; sales: number; revenue: number; chargebacks?: number };
+
 };
 type WhatsAppData = {
   kind: "whatsapp";
   label: string;
   subtitle: string;
   delay: number;
-  stats?: { sent: number; clicked: number; recovered: number; revenue: number };
+  stats?: { sent: number; clicked: number; recovered: number; revenue: number; chargebacks?: number };
 };
 
 type FlowNode = Node<any>;
@@ -200,7 +201,12 @@ function ConfigNode({ data }: NodeProps<Node<ConfigData, "config">>) {
           <span className="text-[9px] uppercase tracking-wider text-emerald-400/70 font-bold">Vendas</span>
           <span className="text-sm font-black text-emerald-400">{data.sales ?? 0}</span>
         </div>
+        <div className="flex flex-col p-2.5 rounded-xl bg-red-500/5 border border-red-500/10">
+          <span className="text-[9px] uppercase tracking-wider text-red-400/70 font-bold">Chargebacks</span>
+          <span className="text-sm font-black text-red-400">{data.chargebacks ?? 0}</span>
+        </div>
         <div className="col-span-2 flex flex-col p-2.5 rounded-xl bg-violet-500/5 border border-violet-500/10">
+
           <span className="text-[9px] uppercase tracking-wider text-violet-400/70 font-bold">Faturamento Total</span>
           <span className="text-base font-black text-violet-400">
             {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(data.revenue || 0)}
@@ -352,7 +358,12 @@ function CheckoutNode({ id, data }: NodeProps<Node<CheckoutData, "checkout">>) {
               {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(data.stats.revenue || 0)}
             </span>
           </div>
+          <div className="flex flex-col p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
+            <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Chargebacks</span>
+            <span className="text-sm font-black text-red-400">{data.stats.chargebacks || 0}</span>
+          </div>
         </div>
+
       )}
       <div className="space-y-3">
         <div className="space-y-1">
@@ -888,7 +899,7 @@ function EditorInner() {
           .from("orders")
           .select("id, amount, metadata, status, created_at, product_id")
           .in("product_id", productIds)
-          .eq("status", "paid")
+          .in("status", ["paid", "refunded", "chargedback", "chargeback"])
           .gte("created_at", startTime.toISOString());
         orders = ordersData || [];
       }
@@ -928,8 +939,10 @@ function EditorInner() {
             ...v,
             impressions: vEvents.filter(e => e.event_type === 'impression').length,
             clicks: vEvents.filter(e => e.event_type === 'click').length,
-            sales: vOrders.length,
-            revenue: vOrders.reduce((acc, curr) => acc + Number(curr.amount || 0), 0)
+            sales: vOrders.filter(o => o.status === 'paid').length,
+            revenue: vOrders.filter(o => o.status === 'paid').reduce((acc, curr) => acc + Number(curr.amount || 0), 0),
+            chargebacks: vOrders.filter(o => o.status === 'chargedback' || o.status === 'chargeback').length
+
           };
         }),
         orders,
@@ -986,8 +999,10 @@ function EditorInner() {
                 stats: { 
                   impressions: Math.max(productVisits / (ns.filter(node => node?.type === 'checkout').length || 1), configOrders.length * 1.5),
                   clicks: Math.max(productVisits / (ns.filter(node => node?.type === 'checkout').length || 1), configOrders.length * 1.2), 
-                  sales: configOrders.length, 
-                  revenue: configOrders.reduce((acc, curr) => acc + Number(curr.amount || 0), 0) 
+                  sales: configOrders.filter(o => o.status === 'paid').length, 
+                  revenue: configOrders.filter(o => o.status === 'paid').reduce((acc, curr) => acc + Number(curr.amount || 0), 0),
+                  chargebacks: configOrders.filter(o => o.status === 'chargedback' || o.status === 'chargeback').length
+
                 } 
               } 
             } as FlowNode;
@@ -1056,8 +1071,9 @@ function EditorInner() {
         if (n.type === "config") {
           const totalImpressions = stats.variants.reduce((acc, curr) => acc + Number(curr.impressions || 0), 0);
           const totalClicks = stats.variants.reduce((acc, curr) => acc + Number(curr.clicks || 0), 0);
-          const totalSales = stats.orders.length; // Use total product orders for total sales
-          const totalRevenue = stats.orders.reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+          const totalSales = stats.orders.filter(o => o.status === 'paid').length; 
+          const totalRevenue = stats.orders.filter(o => o.status === 'paid').reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
+          const totalChargebacks = stats.orders.filter(o => o.status === 'chargedback' || o.status === 'chargeback').length;
           
           return { 
             ...n, 
@@ -1066,10 +1082,12 @@ function EditorInner() {
               impressions: totalImpressions, 
               clicks: totalClicks,
               sales: totalSales, 
-              revenue: totalRevenue 
+              revenue: totalRevenue,
+              chargebacks: totalChargebacks
             } 
           } as FlowNode;
         }
+
         return n;
       })
     );

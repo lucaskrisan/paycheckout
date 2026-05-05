@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { processOrderPaid } from '../_shared/process-order-paid.ts';
+import { processOrderRevoked } from '../_shared/process-order-revoked.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -90,6 +91,8 @@ Deno.serve(async (req) => {
       status = 'paid';
     } else if (eventType === 'charge.refunded') {
       status = 'refunded';
+    } else if (eventType === 'charge.under_dispute') {
+      status = 'chargedback';
     }
 
     // --- Status transition guard ---
@@ -98,8 +101,8 @@ Deno.serve(async (req) => {
       .from('orders')
       .update({ status, updated_at: new Date().toISOString() })
       .eq('external_id', externalId)
-      .not('status', 'in', `(${['paid', 'refunded'].filter(s => {
-        const p: Record<string, number> = { pending: 1, failed: 2, paid: 3, refunded: 4, cancelled: 4 };
+      .not('status', 'in', `(${['paid', 'refunded', 'chargedback'].filter(s => {
+        const p: Record<string, number> = { pending: 1, failed: 2, paid: 3, refunded: 4, cancelled: 4, chargedback: 5 };
         return (p[s] || 0) >= (p[status] || 0);
       }).join(',')})`)
       .select('id, amount, payment_method, product_id, customer_id, user_id, metadata')
@@ -115,7 +118,6 @@ Deno.serve(async (req) => {
     if (orderData?.id && orderData?.user_id) {
       const eventPairs: string[][] = [];
       if (status === 'paid') eventPairs.push(['payment.approved', 'order.paid']);
-      else if (status === 'refunded') eventPairs.push(['payment.refunded', 'order.refunded']);
       else if (status === 'cancelled') eventPairs.push(['payment.failed', 'order.cancelled']);
       else if (status === 'failed') eventPairs.push(['payment.failed']);
 
@@ -151,6 +153,19 @@ Deno.serve(async (req) => {
         externalId,
         source: 'pagarme-webhook',
         currency: 'BRL',
+      });
+    }
+    if ((status === 'refunded' || status === 'chargedback') && orderData) {
+      await processOrderRevoked({
+        supabase,
+        orderData: {
+          id: orderData.id,
+          product_id: orderData.product_id,
+          customer_id: orderData.customer_id,
+          user_id: orderData.user_id,
+        },
+        source: 'pagarme-webhook',
+        reason: status === 'chargedback' ? 'chargedback' : 'refunded',
       });
     }
 

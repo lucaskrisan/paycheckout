@@ -49,7 +49,9 @@ const STATUS_MAP: Record<string, { label: string; variant: "paid" | "pending" | 
   refused: { label: "Recusado", variant: "refused" },
   failed: { label: "Recusado", variant: "refused" },
   chargeback: { label: "Chargeback", variant: "refused" },
+  chargedback: { label: "Chargeback", variant: "refused" },
   cancelled: { label: "Cancelado", variant: "default" },
+
 };
 
 const VARIANT_CLASSES: Record<string, string> = {
@@ -73,6 +75,7 @@ const STATUS_FILTERS = [
   { value: "pending", label: "Aguardando pagamento" },
   { value: "refunded", label: "Reembolso" },
   { value: "chargeback", label: "Chargeback" },
+  { value: "chargedback", label: "Chargeback" },
   { value: "refund_pending", label: "Reembolso pendente" },
   { value: "authorized", label: "Autorizado" },
 ];
