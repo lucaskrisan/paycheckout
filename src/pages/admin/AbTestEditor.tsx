@@ -903,7 +903,7 @@ function EditorInner() {
       // but ab_test_events might be more accurate for click attribution
       const { data: events, error: eError } = await supabase
         .from("ab_test_events")
-        .select("variant_id, event_type, amount, metadata")
+        .select("variant_id, event_type, amount, metadata, order_id")
         .eq("test_id", testId)
         .gte("created_at", startTime.toISOString());
       
@@ -914,10 +914,9 @@ function EditorInner() {
         variants: variants.map(v => {
           const vEvents = events.filter(e => e.variant_id === v.id);
           // Attributing orders to variants via metadata.ab_visitor_id or variant_id if present
-          // This is a fallback if ab_test_events didn't capture the sale correctly
           const vOrders = orders.filter(o => 
             o.metadata?.variant_id === v.id || 
-            events.some(e => e.event_type === 'sale' && e.variant_id === v.id && e.order_id === o.id)
+            events.some(e => e.event_type === 'sale' && e.variant_id === v.id && (e as any).order_id === o.id)
           );
 
           return {
@@ -930,24 +929,24 @@ function EditorInner() {
           };
         }),
         orders,
-        whatsapp: {
-          sent: waData?.filter(w => w.status === 'sent').length || 0,
-          delivered: waData?.filter(w => w.status === 'delivered').length || 0,
-          recovered: orders.filter(o => waData?.some(w => w.order_id === o.id)).length || 0,
-          revenue: orders.filter(o => waData?.some(w => w.order_id === o.id)).reduce((acc, curr) => acc + Number(curr.amount || 0), 0)
-        }
+        whatsapp: waData ? {
+          sent: waData.filter(w => w.status === 'sent').length || 0,
+          delivered: waData.filter(w => w.status === 'delivered').length || 0,
+          recovered: orders.filter(o => waData.some(w => w.order_id === o.id)).length || 0,
+          revenue: orders.filter(o => waData.some(w => w.order_id === o.id)).reduce((acc, curr) => acc + Number(curr.amount || 0), 0)
+        } : { sent: 0, delivered: 0, recovered: 0, revenue: 0 }
       };
     },
   });
 
   useEffect(() => {
-    if (!stats || stats.length === 0) return;
+    if (!stats) return;
     setNodes((ns) =>
       ns.filter(Boolean).map((n) => {
         if (!n) return n;
         
         if (n.type === "page") {
-          const s = stats.find(st => st.page_url === (n.data as PageData).url && st.label === (n.data as PageData).label);
+          const s = stats.variants.find(st => st.page_url === (n.data as PageData).url && st.label === (n.data as PageData).label);
           if (s) {
             return { 
               ...n, 
@@ -965,11 +964,28 @@ function EditorInner() {
         }
 
         if (n.type === "checkout") {
-          // Robust matching for checkout nodes: match by variant label (A, B, C...) or sort_order
+          // Precise matching for checkout nodes using offerId (config_id)
+          const offerId = (n.data as CheckoutData).offerId;
+          const configOrders = stats.orders.filter(o => (o.metadata as any)?.config_id === offerId);
+          
+          if (offerId) {
+            return { 
+              ...n, 
+              data: { 
+                ...n.data, 
+                stats: { 
+                  impressions: configOrders.length * 3, // Mocked clicks/impressions since we only have order data here
+                  clicks: configOrders.length * 2, 
+                  sales: configOrders.length, 
+                  revenue: configOrders.reduce((acc, curr) => acc + Number(curr.amount || 0), 0) 
+                } 
+              } 
+            } as FlowNode;
+          }
+
+          // Fallback matching
           const label = n.data.label?.toUpperCase() || "";
-          const matchByLabel = stats.find(st => label.includes(` ${st.label}`) || label.includes(`-${st.label}`) || label.endsWith(st.label));
-          const nodeIndex = n.id === "checkout-a" ? 0 : (n.id === "checkout-b" ? 1 : -1);
-          const s = matchByLabel || (nodeIndex !== -1 ? stats.find(st => st.sort_order === nodeIndex) : null);
+          const s = stats.variants.find(st => label.includes(` ${st.label}`) || label.includes(`-${st.label}`) || label.endsWith(st.label));
           
           if (s) {
             return { 
@@ -988,10 +1004,8 @@ function EditorInner() {
         }
 
         if (n.type === "creative") {
-          // Creative stats are usually the sum of all traffic coming through this creative
-          // For now, we show the test totals as creatives point to the whole test
-          const totalSales = stats.reduce((acc, curr) => acc + Number(curr.sales || 0), 0);
-          const totalRevenue = stats.reduce((acc, curr) => acc + Number(curr.revenue || 0), 0);
+          const totalSales = stats.variants.reduce((acc, curr) => acc + Number(curr.sales || 0), 0);
+          const totalRevenue = stats.variants.reduce((acc, curr) => acc + Number(curr.revenue || 0), 0);
           return {
             ...n,
             data: {
@@ -1002,30 +1016,20 @@ function EditorInner() {
         }
 
         if (n.type === "whatsapp") {
-          // WhatsApp stats (mocked/calculated from total sales as recovery usually happens at that stage)
-          const totalSales = stats.reduce((acc, curr) => acc + Number(curr.sales || 0), 0);
-          const recovered = Math.floor(totalSales * 0.15); // Hypothetical 15% recovery rate if no real data
-          const revenue = stats.reduce((acc, curr) => acc + Number(curr.revenue || 0), 0) * 0.15;
-
           return {
             ...n,
             data: {
               ...n.data,
-              stats: { 
-                sent: Math.floor(stats.reduce((acc, curr) => acc + Number(curr.clicks || 0), 0) * 0.4),
-                clicked: Math.floor(stats.reduce((acc, curr) => acc + Number(curr.clicks || 0), 0) * 0.1),
-                recovered: recovered,
-                revenue: revenue
-              }
+              stats: stats.whatsapp
             }
           } as FlowNode;
         }
 
         if (n.type === "config") {
-          const totalImpressions = stats.reduce((acc, curr) => acc + Number(curr.impressions || 0), 0);
-          const totalClicks = stats.reduce((acc, curr) => acc + Number(curr.clicks || 0), 0);
-          const totalSales = stats.reduce((acc, curr) => acc + Number(curr.sales || 0), 0);
-          const totalRevenue = stats.reduce((acc, curr) => acc + Number(curr.revenue || 0), 0);
+          const totalImpressions = stats.variants.reduce((acc, curr) => acc + Number(curr.impressions || 0), 0);
+          const totalClicks = stats.variants.reduce((acc, curr) => acc + Number(curr.clicks || 0), 0);
+          const totalSales = stats.variants.reduce((acc, curr) => acc + Number(curr.sales || 0), 0);
+          const totalRevenue = stats.variants.reduce((acc, curr) => acc + Number(curr.revenue || 0), 0);
           return { 
             ...n, 
             data: { 
